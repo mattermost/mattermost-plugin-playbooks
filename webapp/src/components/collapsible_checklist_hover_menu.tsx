@@ -1,15 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import {useDispatch} from 'react-redux';
+import React from 'react';
 import styled from 'styled-components';
-
 import {useIntl} from 'react-intl';
-
 import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
-import {addNewTask} from 'src/actions';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -24,7 +20,6 @@ export interface Props {
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
-    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
     return (
@@ -32,20 +27,10 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
             {props.dragHandleProps &&
             <Handle
                 title={formatMessage({defaultMessage: 'Drag to reorder checklist'})}
-                className={'icon icon-menu'}
+                className={'icon icon-drag-vertical'}
                 {...props.dragHandleProps}
             />
             }
-            <AddNewTask
-                data-testid={'addNewTask'}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    dispatch(addNewTask(props.checklistIndex));
-                }}
-            >
-                <i className='icon-18 icon-plus'/>
-                {formatMessage({defaultMessage: 'Task'})}
-            </AddNewTask>
             <DotMenu
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
@@ -82,30 +67,6 @@ const ButtonRow = styled.div`
 
     margin-left: auto;
     margin-right: 8px;
-`;
-
-const AddNewTask = styled.button`
-    margin: 0 8px 0 auto;
-    padding: 0 8px 0 0;
-    border-radius: 4px;
-    border: 0;
-
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 32px;
-    white-space: nowrap;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: transparent;
-
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08)
-    }
-
-    &:active {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-    }
 `;
 
 export const DotMenuIcon = styled(HamburgerButton)`

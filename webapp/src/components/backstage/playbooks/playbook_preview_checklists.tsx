@@ -67,6 +67,9 @@ const PlaybookPreviewChecklists = (props: Props) => {
                                     dragging={false}
                                     disabled={true}
                                     collapsibleDescription={false}
+                                    newItem={false}
+                                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                                    cancelAddingItem={() => {}}
                                 />
                             );
                         })}
