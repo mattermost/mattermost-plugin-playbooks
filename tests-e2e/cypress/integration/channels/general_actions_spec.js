@@ -155,6 +155,80 @@ describe('channels > general actions', () => {
             });
         });
 
+        it('deletes the post and ignores the thread when clicking on No, ignore thread', () => {
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                memberIDs: [],
+            });
+
+            // # Login as the non-sysadmin user first
+            // # to do the channel & action creation.
+            // # In the 'Select a playbook' dropdown later in this test,
+            // # sysadmin users could potentially see many other playbooks
+            // # besides the one created directly above. `testUser` will not.
+            cy.apiLogin(testUser);
+            cy.apiCreateChannel(
+                testTeam.id,
+                'action-channel',
+                'Action Channel',
+                'O'
+            ).then(({channel}) => {
+                // # Go to the test channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+
+                // # Open Channel Header and the Channel Actions modal
+                cy.get('#channelHeaderTitle').click();
+                cy.findByText('Channel Actions').click();
+
+                // # Set a keyword, enable the playbook trigger,
+                // # and select the Playbook to run
+                cy.contains('Add keywords').click().type('red alert{enter}');
+                cy.contains('Prompt to run a playbook').click();
+                cy.contains('Select a playbook').click();
+                cy.findByText('Public Playbook').click();
+
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+
+                // # Post the trigger phrase
+                cy.uiPostMessageQuickly('error detected red alert!');
+
+                // * Verify that the bot posts the expected prompt
+                // # Click on No, ignore thread
+                cy.getLastPostId().then((postId) => {
+                    cy.get(`#post_${postId}`).within(() => {
+                        cy.contains('trigger for the Public Playbook').should('exist');
+                        cy.contains('No, ignore thread').should('exist').click();
+                    });
+                });
+
+                // # Reload the channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+
+                // * Verify that the prompt post is no longer there
+                cy.getLastPostId().then((postId) => {
+                    cy.get(`#post_${postId}`).within(() => {
+                        cy.contains('No, ignore thread').should('not.exist');
+                    });
+                });
+
+                // # Reply to the last thread with the trigger phrase
+                cy.getLastPostId().then((postId) => {
+                    cy.clickPostCommentIcon(postId);
+                    cy.postMessageReplyInRHS('error detected red alert!');
+                });
+
+                // * Verify that the bot did not post the prompt
+                cy.getLastPostId().then((postId) => {
+                    cy.get(`#post_${postId}`).within(() => {
+                        cy.contains('trigger for the Public Playbook').should('not.exist');
+                    });
+                });
+            });
+        });
+
         it('disabled triggers do not run even with a keyword set', () => {
             // # Create a public playbook
             cy.apiCreatePlaybook({
