@@ -190,8 +190,11 @@ describe('channels > rhs > checklist', () => {
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
+            // # Click dot menu
+            cy.findByTitle('More').click();
+
             // # Click the skip button
-            cy.get('.icon-close-circle-outline').click();
+            cy.findByRole('button', {name: 'Skip task'}).click();
 
             // * Verify the item has been skipped
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
@@ -201,8 +204,11 @@ describe('channels > rhs > checklist', () => {
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
+            // # Click dot menu
+            cy.findByTitle('More').click();
+
             // # Click the restore button
-            cy.get('.icon-refresh').click();
+            cy.findByRole('button', {name: 'Restore task'}).click();
 
             // * Verify the item has been restored
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {

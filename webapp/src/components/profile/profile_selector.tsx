@@ -49,6 +49,7 @@ interface Props {
     customControlProps?: any;
     showOnRight?: boolean;
     className?: string;
+    selectWithoutName?: boolean;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -202,6 +203,7 @@ export default function ProfileSelector(props: Props) {
                 enableEdit={props.enableEdit}
                 userId={props.selectedUserId}
                 withoutProfilePic={props.withoutProfilePic}
+                withoutName={props.selectWithoutName}
                 profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
             />

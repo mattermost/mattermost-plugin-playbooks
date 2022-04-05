@@ -109,7 +109,9 @@ func NewPlaybookRunHandler(
 	checklistItem.HandleFunc("/restore", handler.itemRestore).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/command", handler.itemSetCommand).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
+	checklistItem.HandleFunc("/duplicate", handler.itemDuplicate).Methods(http.MethodPost)
 	checklistItem.HandleFunc("/duedate", handler.itemSetDueDate).Methods(http.MethodPut)
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
@@ -1177,6 +1179,37 @@ func (h *PlaybookRunHandler) itemSetDueDate(w http.ResponseWriter, r *http.Reque
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
+func (h *PlaybookRunHandler) itemSetCommand(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		Command string `json:"command"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetCommandToChecklistItem(id, userID, checklistNum, itemNum, params.Command); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
 func (h *PlaybookRunHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
@@ -1199,6 +1232,29 @@ func (h *PlaybookRunHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) itemDuplicate(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.DuplicateChecklistItem(playbookRunID, userID, checklistNum, itemNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *PlaybookRunHandler) addChecklist(w http.ResponseWriter, r *http.Request) {
