@@ -4,5 +4,5 @@ objectclass: iNetOrgPerson
 sn: FourLDAP
 cn: TestLDAP
 uid: e2etest.four
-mail: e2etest.four@mmtest.com
+mail: e2etest.four@example.com
 userPassword: Password1

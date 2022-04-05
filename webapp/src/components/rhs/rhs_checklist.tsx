@@ -18,7 +18,7 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
-import RHSChecklistItem from 'src/components/rhs/rhs_checklist_item';
+import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
 
 // disable all react-beautiful-dnd development warnings
@@ -122,7 +122,7 @@ const RHSChecklist = (props: Props) => {
                             }
 
                             return (
-                                <RHSChecklistItem
+                                <DraggableChecklistItem
                                     key={checklistItem.title}
                                     playbookRun={props.playbookRun}
                                     checklistIndex={props.checklistIndex}
@@ -144,11 +144,11 @@ const ChecklistContainer = styled.div`
     border-radius: 0 0 4px 4px;
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
-    padding: 16px 12px;
+    padding: 16px 0px;
 `;
 
 const EmptyChecklistContainer = styled(ChecklistContainer)`
-    padding: 12px;
+    padding: 12px 0px;
 `;
 
 const AddTaskLink = styled.button`

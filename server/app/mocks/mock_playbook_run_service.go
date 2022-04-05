@@ -148,6 +148,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) DMTodoDigestToUser(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DMTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).DMTodoDigestToUser), arg0, arg1)
 }
 
+// DuplicateChecklistItem mocks base method
+func (m *MockPlaybookRunService) DuplicateChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DuplicateChecklistItem", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DuplicateChecklistItem indicates an expected call of DuplicateChecklistItem
+func (mr *MockPlaybookRunServiceMockRecorder) DuplicateChecklistItem(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).DuplicateChecklistItem), arg0, arg1, arg2, arg3)
+}
+
 // EditChecklistItem mocks base method
 func (m *MockPlaybookRunService) EditChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
@@ -480,17 +494,17 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenAddToTimelineDialog(arg0, arg1
 }
 
 // OpenCreatePlaybookRunDialog mocks base method
-func (m *MockPlaybookRunService) OpenCreatePlaybookRunDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []app.Playbook, arg6 bool) error {
+func (m *MockPlaybookRunService) OpenCreatePlaybookRunDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []app.Playbook, arg6 bool, arg7 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenCreatePlaybookRunDialog", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "OpenCreatePlaybookRunDialog", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenCreatePlaybookRunDialog indicates an expected call of OpenCreatePlaybookRunDialog
-func (mr *MockPlaybookRunServiceMockRecorder) OpenCreatePlaybookRunDialog(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) OpenCreatePlaybookRunDialog(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreatePlaybookRunDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenCreatePlaybookRunDialog), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreatePlaybookRunDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenCreatePlaybookRunDialog), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // OpenFinishPlaybookRunDialog mocks base method
@@ -658,6 +672,20 @@ func (m *MockPlaybookRunService) SetAssignee(arg0, arg1, arg2 string, arg3, arg4
 func (mr *MockPlaybookRunServiceMockRecorder) SetAssignee(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignee", reflect.TypeOf((*MockPlaybookRunService)(nil).SetAssignee), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SetCommandToChecklistItem mocks base method
+func (m *MockPlaybookRunService) SetCommandToChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetCommandToChecklistItem", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetCommandToChecklistItem indicates an expected call of SetCommandToChecklistItem
+func (mr *MockPlaybookRunServiceMockRecorder) SetCommandToChecklistItem(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommandToChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).SetCommandToChecklistItem), arg0, arg1, arg2, arg3, arg4)
 }
 
 // SetNewReminder mocks base method

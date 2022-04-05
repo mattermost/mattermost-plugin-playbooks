@@ -189,28 +189,28 @@ func (e *TestEnvironment) CreateClients() {
 
 	userPassword := "Password123!"
 	admin, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
-		Email:    "playbooksadmin@test.com",
+		Email:    "playbooksadmin@example.com",
 		Username: "playbooksadmin",
 		Password: userPassword,
 	})
 	e.AdminUser = admin
 
 	user, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
-		Email:    "playbooksuser@test.com",
+		Email:    "playbooksuser@example.com",
 		Username: "playbooksuser",
 		Password: userPassword,
 	})
 	e.RegularUser = user
 
 	user2, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
-		Email:    "playbooksuser2@test.com",
+		Email:    "playbooksuser2@example.com",
 		Username: "playbooksuser2",
 		Password: userPassword,
 	})
 	e.RegularUser2 = user2
 
 	notInTeam, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
-		Email:    "playbooksusernotinteam@test.com",
+		Email:    "playbooksusernotinteam@example.com",
 		Username: "playbooksusenotinteam",
 		Password: userPassword,
 	})

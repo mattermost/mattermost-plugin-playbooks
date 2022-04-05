@@ -324,6 +324,13 @@ export async function clientRemoveChecklistItem(playbookRunID: string, checklist
     });
 }
 
+export async function clientDuplicateChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/duplicate`, {
+        method: 'post',
+        body: '',
+    });
+}
+
 export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
         method: 'put',
@@ -339,9 +346,9 @@ export async function clientRestoreChecklistItem(playbookRunID: string, checklis
 }
 
 interface ChecklistItemUpdate {
-    title: string
+    title?: string
     command: string
-    description: string
+    description?: string
 }
 
 export async function clientEditChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number, itemUpdate: ChecklistItemUpdate) {
@@ -350,6 +357,15 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
             title: itemUpdate.title,
             command: itemUpdate.command,
             description: itemUpdate.description,
+        }));
+
+    return data;
+}
+
+export async function clientSetChecklistItemCommand(playbookRunID: string, checklistNum: number, itemNum: number, command: string) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/command`,
+        JSON.stringify({
+            command,
         }));
 
     return data;
