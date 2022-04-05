@@ -53,7 +53,7 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
                     onChange={(e) => {
                         props.onEdit(e.target.value);
                     }}
-                    autoFocus={true}
+                    autoFocus={props.value !== ''}
                     onFocus={(e) => {
                         const val = e.target.value;
                         e.target.value = '';
@@ -134,7 +134,6 @@ const ChecklistItemDescriptionContainer = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
     margin: 4px 0 0 35px;
     overflow: hidden;
 `;

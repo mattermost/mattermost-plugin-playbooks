@@ -23,6 +23,8 @@ interface CommandProps {
     command_last_run: number;
     command: string;
     isEditing: boolean;
+
+    onChangeCommand: (newCommand: string) => void;
 }
 
 const RunningTimeout = 1000;
@@ -95,10 +97,8 @@ const Command = (props: CommandProps) => {
 
     const commandDropdown = (
         <EditCommandDropdown
-            playbookRunId={props.playbookRunId}
-            checklistNum={props.checklistNum}
-            itemNum={props.itemNum}
             onDone={() => setCommandOpen(false)}
+            onChangeCommand={props.onChangeCommand}
             taskCommand={props.command}
             grabFocus={wasOpened}
         />
@@ -212,9 +212,7 @@ export default Command;
 
 interface EditCommandDropdownProps {
     onDone: () => void;
-    checklistNum: number;
-    playbookRunId: string;
-    itemNum: number;
+    onChangeCommand: (newCommand: string) => void;
     taskCommand: string;
     grabFocus: boolean;
 }
@@ -235,8 +233,8 @@ const EditCommandDropdown = (props: EditCommandDropdownProps) => {
             <CancelSaveButtons
                 onCancel={props.onDone}
                 onSave={() => {
-                    clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, command);
                     props.onDone();
+                    props.onChangeCommand(command);
                 }}
             />
             <Blanket onClick={props.onDone}/>

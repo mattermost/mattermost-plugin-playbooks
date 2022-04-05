@@ -10,8 +10,10 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import {
     clientEditChecklistItem,
+    clientAddChecklistItem,
     setDueDate,
     setAssignee,
+    clientSetChecklistItemCommand,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
@@ -35,6 +37,8 @@ interface ChecklistItemProps {
     dragging: boolean;
     disabled: boolean;
     collapsibleDescription: boolean;
+    newItem: boolean;
+    cancelAddingItem: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -43,13 +47,23 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [isEditing, setIsEditing] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
+    const [command, setCommand] = useState(props.checklistItem.command);
+    const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const portal = usePortal(document.body);
+
+    if (props.newItem && !isEditing) {
+        setIsEditing(true);
+    }
 
     const [showMenu, setShowMenu] = useState(false);
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+        setAssigneeID(user?.id);
+        if (props.newItem) {
+            return;
+        }
         setShowMenu(false);
         if (!props.playbookRunId) {
             return;
@@ -75,6 +89,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
+    const onCommandChange = async (newCommand: string) => {
+        setCommand(newCommand);
+        if (props.newItem) {
+            return;
+        }
+        clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, newCommand);
+    };
+
     const content = (
         <ItemContainer
             ref={props.draggableProvided?.innerRef}
@@ -97,7 +119,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         description={props.checklistItem.description}
                         showDescription={showDescription}
                         toggleDescription={toggleDescription}
-                        assignee_id={props.checklistItem.assignee_id || ''}
+                        assignee_id={assigneeID || ''}
                         onAssigneeChange={onAssigneeChange}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
@@ -139,23 +161,24 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 />
             }
             <Row>
-                {(props.checklistItem.assignee_id !== '' || isEditing) &&
+                {(assigneeID !== '' || isEditing) &&
                     <AssignTo
-                        assignee_id={props.checklistItem.assignee_id || ''}
+                        assignee_id={assigneeID || ''}
                         editable={isEditing}
-                        withoutName={props.checklistItem.command !== '' && !isEditing}
+                        withoutName={command !== '' && !isEditing}
                         onSelectedChange={onAssigneeChange}
                     />
                 }
-                {(props.checklistItem.command !== '' || isEditing) &&
+                {(command !== '' || isEditing) &&
                     <Command
                         checklistNum={props.checklistNum}
-                        command={props.checklistItem.command}
+                        command={command}
                         command_last_run={props.checklistItem.command_last_run}
                         disabled={props.disabled}
                         itemNum={props.itemNum}
                         playbookRunId={props.playbookRunId}
                         isEditing={isEditing}
+                        onChangeCommand={onCommandChange}
                     />
                 }
             </Row>
@@ -165,14 +188,28 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
+                        props.cancelAddingItem();
                     }}
                     onSave={() => {
                         setIsEditing(false);
-                        clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                            title: titleValue,
-                            command: props.checklistItem.command,
-                            description: descValue,
-                        });
+                        if (props.newItem) {
+                            props.cancelAddingItem();
+                            clientAddChecklistItem(props.playbookRunId, props.checklistNum, {
+                                title: titleValue,
+                                command,
+                                description: descValue,
+                                state: ChecklistItemState.Open,
+                                command_last_run: 0,
+                                due_date: 0,
+                                assignee_id: assigneeID,
+                            });
+                        } else {
+                            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                                title: titleValue,
+                                command,
+                                description: descValue,
+                            });
+                        }
                     }}
                 />
             }

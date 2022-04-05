@@ -228,7 +228,6 @@ const ChecklistItemDescription = styled.div<{height: string}>`
     font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
     margin: 4px 0 0 2px;
 
     // Fix default markdown styling in the paragraphs
