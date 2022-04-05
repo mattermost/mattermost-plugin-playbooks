@@ -39,6 +39,7 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
     };
 
     const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        e.target.style.height = '5px';
         e.target.style.height = (e.target.scrollHeight) + 'px';
     };
 

@@ -4,29 +4,22 @@
 import React, {useState} from 'react';
 import ReactDOM from 'react-dom';
 import {useIntl} from 'react-intl';
-import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {handleFormattedTextClick} from 'src/browser_routing';
 import {
     clientEditChecklistItem,
     setDueDate,
     setAssignee,
 } from 'src/client';
-import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
 import {DateTimeOption} from 'src/components/datetime_selector';
 
 import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
+import ChecklistItemTitle from './title';
 import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
@@ -46,27 +39,13 @@ interface ChecklistItemProps {
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
-    const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const [showDescription, setShowDescription] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const portal = usePortal(document.body);
 
-    const markdownOptions = {
-        singleline: true,
-        mentionHighlight: false,
-        atMentions: true,
-        team,
-        channelNamesMap,
-    };
-
     const [showMenu, setShowMenu] = useState(false);
-
-    const title = props.checklistItem.title;
-    const labelText = messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {});
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -95,62 +74,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             console.log(response.error); // eslint-disable-line no-console
         }
     };
-
-    const extraRow = (
-        <Row>
-            {(props.checklistItem.assignee_id !== '' || isEditing) &&
-                <AssignTo
-                    assignee_id={props.checklistItem.assignee_id || ''}
-                    editable={isEditing}
-                    withoutName={props.checklistItem.command !== '' && !isEditing}
-                    onSelectedChange={onAssigneeChange}
-                />
-            }
-            {(props.checklistItem.command !== '' || isEditing) &&
-                <Command
-                    checklistNum={props.checklistNum}
-                    command={props.checklistItem.command}
-                    command_last_run={props.checklistItem.command_last_run}
-                    disabled={props.disabled}
-                    itemNum={props.itemNum}
-                    playbookRunId={props.playbookRunId}
-                    isEditing={isEditing}
-                />
-            }
-        </Row>
-    );
-
-    let itemLabel = (
-        <label title={title}>
-            <div
-                onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-            >
-                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough data-cy={'skipped'}>{labelText}</StrikeThrough> : labelText}
-            </div>
-        </label>
-    );
-    if (isEditing) {
-        itemLabel = (
-            <LabelInput
-                type='input'
-                autoFocus={true}
-                value={titleValue}
-                onChange={(e) => {
-                    setTitleValue(e.target.value);
-                }}
-            />
-        );
-    }
-
-    const itemDescription = (
-        (descValue || props.checklistItem.description || isEditing) &&
-        <ChecklistItemDescription
-            editingItem={isEditing}
-            showDescription={showDescription}
-            onEdit={setDescValue}
-            value={descValue || props.checklistItem.description}
-        />
-    );
 
     const content = (
         <ItemContainer
@@ -195,15 +118,47 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         }
                     }}
                 />
-                <ChecklistItemLabel
+                <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
-                    clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
                 >
-                    {itemLabel}
-                </ChecklistItemLabel>
+                    <ChecklistItemTitle
+                        editingItem={isEditing}
+                        onEdit={setTitleValue}
+                        value={titleValue}
+                        skipped={props.checklistItem.state === ChecklistItemState.Skip}
+                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                    />
+                </ChecklistItemTitleWrapper>
             </CheckboxContainer>
-            {itemDescription}
-            {extraRow}
+            {(descValue || isEditing) &&
+                <ChecklistItemDescription
+                    editingItem={isEditing}
+                    showDescription={showDescription}
+                    onEdit={setDescValue}
+                    value={descValue}
+                />
+            }
+            <Row>
+                {(props.checklistItem.assignee_id !== '' || isEditing) &&
+                    <AssignTo
+                        assignee_id={props.checklistItem.assignee_id || ''}
+                        editable={isEditing}
+                        withoutName={props.checklistItem.command !== '' && !isEditing}
+                        onSelectedChange={onAssigneeChange}
+                    />
+                }
+                {(props.checklistItem.command !== '' || isEditing) &&
+                    <Command
+                        checklistNum={props.checklistNum}
+                        command={props.checklistItem.command}
+                        command_last_run={props.checklistItem.command_last_run}
+                        disabled={props.disabled}
+                        itemNum={props.itemNum}
+                        playbookRunId={props.playbookRunId}
+                        isEditing={isEditing}
+                    />
+                }
+            </Row>
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
@@ -348,20 +303,10 @@ export const CheckboxContainer = styled.div`
     }
 `;
 
-const ChecklistItemLabel = styled.div<{clickable: boolean}>`
+const ChecklistItemTitleWrapper = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
-
-    ${({clickable}) => clickable && css`
-        cursor: pointer;
-
-        // This is somehow needed to override the
-        // cursor style in the item title
-        label {
-            cursor: pointer;
-        }
-    `}
 `;
 
 const DragButton = styled.i<{isVisible: boolean}>`
@@ -374,20 +319,6 @@ const DragButton = styled.i<{isVisible: boolean}>`
     ${({isVisible}) => !isVisible && `
         visibility: hidden
     `}
-`;
-
-const StrikeThrough = styled.text`
-    text-decoration: line-through;
-`;
-
-const LabelInput = styled.input`
-    border: none;
-    background: none;
-    font-style: normal;
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
-    padding: 0px;
 `;
 
 const Row = styled.div`
