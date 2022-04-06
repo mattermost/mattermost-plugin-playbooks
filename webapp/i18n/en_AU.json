@@ -523,5 +523,10 @@
     "MtrTNy": "Tomorrow",
     "MbapTE": "{num} {num, plural, =1 {task} other {tasks}} overdue",
     "I7+d55": "Specify date/time ('in 4 hours', '1st of May'...)",
-    "AF7+5o": "Add a due date"
+    "AF7+5o": "Add a due date",
+    "mw9jVA": "Add a title",
+    "lyXljU": "Duplicate task",
+    "lglICE": "Add a description (optional)",
+    "W0aij2": "Assign to...",
+    "UlJJ1i": "Add slash command"
 }
