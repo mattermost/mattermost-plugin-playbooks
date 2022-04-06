@@ -1,11 +1,83 @@
 package sqlstore
 
 import (
+	"context"
+	"embed"
+	"fmt"
+	"path/filepath"
+
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+
+	"github.com/isacikgoz/morph"
+	"github.com/isacikgoz/morph/drivers"
+	ms "github.com/isacikgoz/morph/drivers/mysql"
+	ps "github.com/isacikgoz/morph/drivers/postgres"
+	"github.com/isacikgoz/morph/sources/embedded"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
+//go:embed migrations
+var assets embed.FS
+
 func (sqlStore *SQLStore) Migrate(originalSchemaVersion semver.Version) error {
+	driverName := sqlStore.db.DriverName()
+	assetsList, err := assets.ReadDir(filepath.Join("migrations", driverName))
+	if err != nil {
+		return err
+	}
+
+	assetNamesForDriver := make([]string, len(assetsList))
+	for i, entry := range assetsList {
+		assetNamesForDriver[i] = entry.Name()
+	}
+
+	src, err := embedded.WithInstance(&embedded.AssetSource{
+		Names: assetNamesForDriver,
+		AssetFunc: func(name string) ([]byte, error) {
+			return assets.ReadFile(filepath.Join("migrations", driverName, name))
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	config := drivers.Config{
+		StatementTimeoutInSecs: 100000,
+		MigrationsTable:        "IR_db_migrations",
+	}
+
+	var driver drivers.Driver
+	switch driverName {
+	case model.DatabaseDriverMysql:
+		driver, err = ms.WithInstance(sqlStore.db.DB, &ms.Config{
+			Config: config,
+		})
+
+	case model.DatabaseDriverPostgres:
+		driver, err = ps.WithInstance(sqlStore.db.DB, &ps.Config{
+			Config: config,
+		})
+	default:
+		err = fmt.Errorf("unsupported database type %s for migration", driverName)
+	}
+	if err != nil {
+		return err
+	}
+
+	opts := []morph.EngineOption{
+		morph.WithLock("mm-playbooks-lock-key"),
+	}
+	engine, err := morph.New(context.Background(), driver, src, opts...)
+	if err != nil {
+		return err
+	}
+	defer engine.Close()
+
+	if err := engine.ApplyAll(); err != nil {
+		return fmt.Errorf("could not apply migrations: %w", err)
+	}
+
 	currentSchemaVersion := originalSchemaVersion
 	for _, migration := range migrations {
 		if !currentSchemaVersion.EQ(migration.fromVersion) {
