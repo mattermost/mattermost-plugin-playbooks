@@ -101,7 +101,7 @@ const CommandInput = (props: CommandInputProps) => {
                     onKeyPress={() => true}
                     openWhenEmpty={true}
                 />
-                <InputTrashIcon show={hover}>
+                {command ? <InputTrashIcon show={hover}>
                     <i
                         className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'
                         onClick={() => {
@@ -109,7 +109,7 @@ const CommandInput = (props: CommandInputProps) => {
                             props.setCommand('');
                         }}
                     />
-                </InputTrashIcon>
+                </InputTrashIcon> : null}
             </AutocompleteWrapper>
         </>
     );
