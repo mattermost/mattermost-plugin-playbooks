@@ -2,11 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
-import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import {Draggable, DraggableProvided, DraggableStateSnapshot, DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
+import {DraggableProvided} from 'react-beautiful-dnd';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -58,6 +57,33 @@ const CollapsibleChecklist = ({
             ref: draggableProvided.innerRef,
         };
     }
+
+    let areAllTasksSkipped = true;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].state !== ChecklistItemState.Skip) {
+            areAllTasksSkipped = false;
+            break;
+        }
+    }
+    let isChecklistSkipped = false;
+    if (areAllTasksSkipped) {
+        isChecklistSkipped = true;
+    }
+    if (items.length === 0) {
+        isChecklistSkipped = false;
+    }
+
+    let titleText = (
+        <TextWithTooltipWhenEllipsis
+            id={index.toString(10)}
+            text={title}
+            parentRef={titleRef}
+        />
+    );
+    if (isChecklistSkipped) {
+        titleText = (<StrikeThrough>{title}</StrikeThrough>);
+    }
+
     return (
         <Border {...borderProps}>
             <HorizontalBG
@@ -72,11 +98,7 @@ const CollapsibleChecklist = ({
                 >
                     <Icon className={icon}/>
                     <Title ref={titleRef}>
-                        <TextWithTooltipWhenEllipsis
-                            id={index.toString(10)}
-                            text={title}
-                            parentRef={titleRef}
-                        />
+                        {titleText}
                     </Title>
                     {titleHelpText || (
                         <TitleHelpTextWrapper>
@@ -95,6 +117,7 @@ const CollapsibleChecklist = ({
                             onRenameChecklist={() => setShowRenameDialog(true)}
                             onDeleteChecklist={() => setShowDeleteDialog(true)}
                             dragHandleProps={draggableProvided?.dragHandleProps}
+                            isChecklistSkipped={isChecklistSkipped}
                         />
                     }
                 </Horizontal>
@@ -119,6 +142,10 @@ const CollapsibleChecklist = ({
         </Border>
     );
 };
+
+const StrikeThrough = styled.text`
+    text-decoration: line-through;
+`;
 
 const Border = styled.div`
     margin-bottom: 12px;
