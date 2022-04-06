@@ -2,7 +2,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
@@ -113,6 +113,13 @@ export const DueDateButton = ({
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showOnRight, setShowOnRight] = useState(false);
+    const ref = useRef<any>(null);
+
+    useEffect(() => {
+        // depending on component left offset decide where to show popup
+        setShowOnRight(ref.current.offsetLeft > 50);
+    }, [props.editable]);
 
     const suggestedOptions = makeDefaultDateTimeOptions();
     if (date) {
@@ -153,6 +160,7 @@ export const DueDateButton = ({
 
     const dueDateButton = (
         <DueDateContainer
+            ref={ref}
             className={className}
         >
             <DateTimeSelector
@@ -179,7 +187,7 @@ export const DueDateButton = ({
                     onCustomReset: resetDueDate,
                 }}
                 controlledOpenToggle={dateTimeSelectorToggle}
-                showOnRight={false}
+                showOnRight={showOnRight}
             />
             {upgradeModal}
         </DueDateContainer>
