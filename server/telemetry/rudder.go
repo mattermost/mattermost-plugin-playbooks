@@ -389,7 +389,11 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 	totalChecklistItemsWithCommands := 0
 	for _, checklist := range playbook.Checklists {
 		totalChecklistItems += len(checklist.Items)
-
+		for _, item := range checklist.Items {
+			if item.Command != "" {
+				totalChecklistItemsWithCommands++
+			}
+		}
 	}
 
 	return map[string]interface{}{

@@ -487,6 +487,7 @@ func TestTaskProperties(t *testing.T) {
 		"HasCommand":              true,
 		"CommandLastRun":          dummyTask.CommandLastRun,
 		"HasDescription":          true,
+		"HasDueDate":              true,
 	}
 
 	require.Equal(t, expectedProperties, properties)
