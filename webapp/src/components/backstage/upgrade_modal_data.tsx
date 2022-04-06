@@ -169,8 +169,8 @@ export const getUpgradeModalCopy = (
             helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs, and track performance.'/>;
             break;
         case AdminNotificationType.CHECKLIST_ITEM_DUE_DATE:
-            titleText = <FormattedMessage defaultMessage='TODO: title text'/>;
-            helpText = <FormattedMessage defaultMessage='TODO: description text.'/>;
+            titleText = <FormattedMessage defaultMessage='Work more effectively'/>;
+            helpText = <FormattedMessage defaultMessage='Assign due dates to tasks so assignees can prioritize and get things done.'/>;
         }
 
         if (!isAdmin) {
