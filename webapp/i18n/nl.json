@@ -524,5 +524,7 @@
     "MtrTNy": "Morgen",
     "MbapTE": "{num} {num, plural, =1 {taak} other {taken}} laattijdig",
     "I7+d55": "Geef een datum/tijd op (\"over 4 uur\", \"1 mei\"...)",
-    "AF7+5o": "Vervaldatum toevoegen"
+    "AF7+5o": "Vervaldatum toevoegen",
+    "W0aij2": "Toewijzen aan...",
+    "UlJJ1i": "Slash-opdracht toevoegen"
 }
