@@ -158,13 +158,13 @@ export const DueDateButton = ({
             <DateTimeSelector
                 placeholder={
                     <PlaceholderDiv onClick={handleButtonClick}>
-                        <DueDateIcon
+                        <CalendarIcon
                             className={'icon-calendar-outline icon-14 btn-icon'}
                         />
                         <DueDateTextContainer editable={props.editable}>
                             {label}
                         </DueDateTextContainer>
-                        {props.editable && <i className='icon-chevron-down icon--small ml-2'/>}
+                        {props.editable && <SelectorRightIcon className='icon-chevron-down icon-14'/>}
                     </PlaceholderDiv>
                 }
 
@@ -179,7 +179,7 @@ export const DueDateButton = ({
                     onCustomReset: resetDueDate,
                 }}
                 controlledOpenToggle={dateTimeSelectorToggle}
-                showOnRight={true}
+                showOnRight={false}
             />
             {upgradeModal}
         </DueDateContainer>
@@ -189,7 +189,7 @@ export const DueDateButton = ({
     const toolTip = formatMessage({defaultMessage: 'Due on {date}'}, {date: dateInfo});
 
     return (
-        date ? (
+        (date && !props.editable) ? (
             <OverlayTrigger
                 placement='bottom'
                 delay={OVERLAY_DELAY}
@@ -294,7 +294,7 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
-    white-space: nowrap;    
+    white-space: nowrap;  
 `;
 
 const DueDateTextContainer = styled.div<{editable?: boolean}>`
@@ -303,7 +303,7 @@ const DueDateTextContainer = styled.div<{editable?: boolean}>`
     font-weight: ${(props) => (props.editable ? '600' : '400')};
 `;
 
-const DueDateIcon = styled.i`
+const CalendarIcon = styled.i`
     width: 20px;
     height: 20px;
     display: flex;
@@ -312,11 +312,25 @@ const DueDateIcon = styled.i`
     flex: table;
     margin-right: 5px;
     color: inherit;
-    pointer-events: none;
+    pointer-events: none;  
+`;
+
+export const SelectorRightIcon = styled.i`
+    font-weight: 400;
+    font-size: 14.4px;
+    line-height: 14px;
+    margin-left: 4px;
 `;
 
 const DueDateContainer = styled.div`
-    max-width: calc(100% - 210px);
+    display: flex;  
+    flex-wrap: wrap;
+
+    border-radius: 13px;
+    padding: 2px 8px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    max-width: 100%;
+
 
     &.NowDue {
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);

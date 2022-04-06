@@ -17,7 +17,7 @@ import {
 } from 'src/client';
 
 import AssignTo from './assign_to';
-import DueDate from './duedate';
+import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId: string;
@@ -57,7 +57,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 inHoverMenu={true}
                 onSelectedChange={props.onAssigneeChange}
             />
-            <DueDate
+            <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={Mode.DateTimeValue}
                 onSelectedChange={props.onDueDateChange}
