@@ -63,6 +63,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 onSelectedChange={props.onDueDateChange}
             />
             <HoverMenuButton
+                data-testid='hover-menu-edit-button'
                 title={formatMessage({defaultMessage: 'Edit'})}
                 className={'icon-pencil-outline icon-16 btn-icon'}
                 onClick={() => {

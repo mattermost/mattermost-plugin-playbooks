@@ -162,7 +162,10 @@ export const DueDateButton = ({
         >
             <DateTimeSelector
                 placeholder={
-                    <PlaceholderDiv onClick={handleButtonClick}>
+                    <PlaceholderDiv
+                        onClick={handleButtonClick}
+                        data-testid='due-date-info-button'
+                    >
                         <CalendarIcon
                             className={'icon-calendar-outline icon-14 btn-icon'}
                             dueUntilToday={dueUntilToday}

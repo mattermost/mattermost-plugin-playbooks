@@ -311,5 +311,41 @@ describe('channels > rhs > checklist', () => {
                 cy.findByText(title).should('not.exist');
             });
         });
+
+        it('can set due date, from hover menu', () => {
+            // # Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
+
+            // # Click the set due date button
+            cy.get('.icon-calendar-outline').click();
+
+            // # Enter due date in 10 min
+            cy.get('.playbook-run-user-select__value-container').type('in 10 min').type('Cypress.io{enter}');
+
+            // * Verify if Due in 10 minutes button is added
+            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
+                cy.findByText('in 10 minutes').should('exist');
+                cy.findByText('Due').should('exist');
+            });
+        });
+
+        it('can set due date, from edit mode', () => {
+            // # Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
+
+            // # Click the edit button
+            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
+
+            cy.findAllByTestId('due-date-info-button').eq(0).click();
+
+            // # Enter due date in 3 days
+            cy.get('.playbook-run-user-select__value-container').type('in 3 days').type('Cypress.io{enter}');
+
+            // * Verify if Due in 3 days minutes button is added
+            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
+                cy.findByText('in 3 days').should('exist');
+                cy.findByText('Due').should('exist');
+            });
+        });
     });
 });
