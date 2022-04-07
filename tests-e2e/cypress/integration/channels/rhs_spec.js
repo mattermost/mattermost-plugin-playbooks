@@ -371,7 +371,7 @@ describe('channels > rhs', () => {
             });
         });
 
-        it.only('when navigating directly to a finished playbook run channel and clicking on the button', () => {
+        it('when navigating directly to a finished playbook run channel and clicking on the button', () => {
             // # Run the playbook
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
