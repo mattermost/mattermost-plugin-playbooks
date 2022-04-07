@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useState} from 'react';
+import React, {HTMLAttributes} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import Icon from '@mdi/react';
@@ -27,7 +27,6 @@ import {
     autoFollowPlaybook,
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
-    getSiteUrl,
     playbookExportProps,
     archivePlaybook,
     createPlaybookRun,
@@ -40,9 +39,6 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
-import {copyToClipboard} from 'src/utils';
-
-import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
@@ -94,17 +90,19 @@ type Props = {
     onFollowingChange: (following: boolean) => void;
 }
 
+type Attrs = HTMLAttributes<HTMLElement>;
+
 const TitleBar = ({
     playbook,
     isFollowing,
     onFollowingChange,
-}: Props) => {
+    ...attrs
+}: Props & Attrs) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const currentUserId = useSelector(getCurrentUserId);
     const currentUser = useSelector(getCurrentUser);
-    const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
     const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
             archivePlaybook(playbook.id);
@@ -167,42 +165,15 @@ const TitleBar = ({
         </Tooltip>
     );
 
-    const copyPlaybookLink = () => {
-        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbook.id);
-        setPlaybookLinkCopied(true);
-    };
-
-    let copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to playbook'});
-    if (playbookLinkCopied) {
-        copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
-    }
-
-    const playbookLink = (
-        <OverlayTrigger
-            placement='bottom'
-            delay={OVERLAY_DELAY}
-            onExit={() => setPlaybookLinkCopied(false)}
-            shouldUpdatePosition={true}
-            overlay={
-                <Tooltip id='copy-playbook-link-tooltip'>
-                    {copyPlaybookLinkTooltipMessage}
-                </Tooltip>
-            }
-        >
-            <CopyIcon
-                className='icon-link-variant'
-                onClick={copyPlaybookLink}
-                clicked={playbookLinkCopied}
-            />
-        </OverlayTrigger>
-    );
-
     const archived = playbook?.delete_at !== 0;
     const enableRunPlaybook = !archived && hasPermissionToRunPlaybook;
     const [exportHref, exportFilename] = playbookExportProps(playbook);
 
     return (
-        <TopContainer id='title-row'>
+        <TopContainer
+            {...attrs}
+            id='title-row'
+        >
             <Header>
                 <LeftArrow
                     className='icon-arrow-left'
@@ -262,7 +233,6 @@ const TitleBar = ({
                         status={BadgeType.Archived}
                     />
                 )}
-                {playbookLink}
                 <SecondaryButtonLargerRightStyled
                     checked={isFollowing}
                     disabled={archived}
@@ -389,6 +359,7 @@ const TopContainer = styled.div`
     top: 0;
     background: var(--center-channel-bg);
     width: 100%;
+    height: 100%;
     box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
@@ -396,10 +367,11 @@ const Header = styled.div`
     display: flex;
     align-items: center;
     padding: 0 32px;
-    height: 82px;
+    height: 100%;
 `;
 
 const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
-export default TitleBar;
+
+export default styled(TitleBar)``;

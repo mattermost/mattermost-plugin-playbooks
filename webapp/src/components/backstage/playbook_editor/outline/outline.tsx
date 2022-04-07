@@ -8,12 +8,10 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import renderActions from 'src/components/backstage/playbooks/playbook_preview_actions';
 import renderChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
-import renderDescription from 'src/components/backstage/playbooks/playbook_preview_description';
 import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
-import {HorizontalBG} from 'src/components/collapsible_checklist';
 
-import Navbar, {SectionID} from './tab_outline_navbar';
+import ScrollNavBase, {SectionID} from './scroll_nav';
 
 interface Props {
     playbook: PlaybookWithChecklist;
@@ -23,11 +21,6 @@ interface Props {
 
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
 const Outline = (props: Props) => {
-    const description = renderDescription({
-        id: SectionID.Description,
-        playbook: props.playbook,
-    });
-
     const checklists = renderChecklists({
         id: SectionID.Checklists,
         playbook: props.playbook,
@@ -50,52 +43,42 @@ const Outline = (props: Props) => {
     });
 
     return (
-        <Container>
-            <Navbar
+        <>
+            <ScrollNav
                 playbook={props.playbook}
                 runsInProgress={props.runsInProgress}
                 archived={props.playbook.delete_at !== 0}
                 showElements={{
-                    description: description !== null,
+                    statusUpdates: statusUpdates !== null,
                     checklists: checklists !== null,
                     actions: actions !== null,
-                    statusUpdates: statusUpdates !== null,
                     retrospective: retrospective !== null,
                 }}
             />
-            <Content data-testid='preview-content'>
-                {description}
-                {checklists}
-                {actions}
+            <Sections data-testid='preview-content'>
                 {statusUpdates}
+                {checklists}
                 {retrospective}
-            </Content>
-        </Container>
+                {actions}
+            </Sections>
+        </>
     );
 };
 
-const Container = styled.main`
-    height: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    flex-grow: 1;
-    column-gap: 7rem;
-    padding: 40px 20px 20px;
-    z-index: 1;
+export const ScrollNav = styled(ScrollNavBase)`
 
-    ${HorizontalBG} {
-        /* sticky checklist header */
-        top: 82px;
-    }
 `;
 
-const Content = styled.div`
+export const Sections = styled.div`
     display: flex;
     flex-direction: column;
-    max-width: 780px;
-    margin-bottom: 40px;
     flex-grow: 1;
+    margin-bottom: 40px;
+    padding: 5rem;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
+    background: var(--center-channel-bg);
 `;
 
 export default Outline;

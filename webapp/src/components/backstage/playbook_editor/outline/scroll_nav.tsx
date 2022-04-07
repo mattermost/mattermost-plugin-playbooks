@@ -2,18 +2,15 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, HTMLAttributes} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
+import {mdiTextBoxOutline} from '@mdi/js';
 
 import {telemetryEventForPlaybook} from 'src/client';
 import {BackstageID} from 'src/components/backstage/backstage';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
-import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 
 const prefix = 'playbooks-playbookPreview-';
 
@@ -30,7 +27,6 @@ interface Props {
     runsInProgress: number;
     archived: boolean;
     showElements: {
-        description: boolean,
         checklists: boolean,
         actions: boolean,
         statusUpdates: boolean,
@@ -38,14 +34,14 @@ interface Props {
     };
 }
 
+type Attrs = HTMLAttributes<HTMLElement>;
+
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const TabOutlineNavbar = ({playbook, runsInProgress, archived, showElements}: Props) => {
+const ScrollNav = ({playbook, runsInProgress, archived, showElements, ...attrs}: Props & Attrs) => {
     const {formatMessage} = useIntl();
     const [activeId, setActiveId] = useState(SectionID.Description);
-    const punchoutNavbar = useMeasurePunchouts(['playbook-preview-navbar'], [], {y: -5, height: 10, x: -5, width: 10});
-    const showNavbarTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.Navbar, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -141,76 +137,50 @@ const TabOutlineNavbar = ({playbook, runsInProgress, archived, showElements}: Pr
     const Item = generateItemComponent(isSectionActive, scrollToSection);
 
     return (
-        <Wrapper>
-            {showNavbarTutorial &&
-            <TutorialTourTip
-                title={<FormattedMessage defaultMessage='See what’s in this playbook at any time'/>}
-                screen={<FormattedMessage defaultMessage='You can check out different sections of the playbook in detail on this page.'/>}
-                tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
-                step={PlaybookPreviewTutorialSteps.Navbar}
-                placement='left'
-                pulsatingDotPlacement='left'
-                pulsatingDotTranslate={{x: -10, y: -50}}
-                autoTour={true}
-                width={360}
-                punchOut={punchoutNavbar}
-                telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.Navbar}_Navbar`}
-            />
-            }
-            <div
-                id={'playbook-preview-navbar'}
-            >
-                <Header>
-                    {formatMessage({defaultMessage: 'In this playbook'})}
-                </Header>
-                <Items >
-                    <Item
-                        id={SectionID.Description}
-                        iconName={'information-outline'}
-                        title={formatMessage({defaultMessage: 'Description'})}
-                        show={showElements.description}
-                    />
-                    <Item
-                        id={SectionID.Checklists}
-                        iconName={'check-all'}
-                        title={formatMessage({defaultMessage: 'Checklists'})}
-                        show={showElements.checklists}
-                    />
-                    <Item
-                        id={SectionID.Actions}
-                        iconName={'sync'}
-                        title={formatMessage({defaultMessage: 'Actions'})}
-                        show={showElements.actions}
-                    />
-                    <Item
-                        id={SectionID.StatusUpdates}
-                        iconName={'update'}
-                        title={formatMessage({defaultMessage: 'Status updates'})}
-                        show={showElements.statusUpdates}
-                    />
-                    <Item
-                        id={SectionID.Retrospective}
-                        iconName={'lightbulb-outline'}
-                        title={formatMessage({defaultMessage: 'Retrospective'})}
-                        show={showElements.retrospective}
-                    />
-                </Items>
-            </div>
+        <Wrapper
+            id='playbook-preview-navbar'
+            {...attrs}
+        >
+            <Header>
+                <Icon
+                    path={mdiTextBoxOutline}
+                    size={1}
+                />
+                <FormattedMessage defaultMessage='Contents'/>
+            </Header>
+            <Items>
+                <Item
+                    id={SectionID.StatusUpdates}
+                    title={formatMessage({defaultMessage: 'Status updates'})}
+                    show={showElements.statusUpdates}
+                />
+                <Item
+                    id={SectionID.Checklists}
+                    title={formatMessage({defaultMessage: 'Checklists'})}
+                    show={showElements.checklists}
+                />
+
+                <Item
+                    id={SectionID.Retrospective}
+                    title={formatMessage({defaultMessage: 'Retrospective'})}
+                    show={showElements.retrospective}
+                />
+                <Item
+                    id={SectionID.Actions}
+                    title={formatMessage({defaultMessage: 'Actions'})}
+                    show={showElements.actions}
+                />
+            </Items>
         </Wrapper>
     );
 };
 
 const Wrapper = styled.nav`
-    width: 172px;
 
-    position: sticky;
-    align-self: flex-start;
-    top: 116px;
 `;
 
 const Header = styled.div`
     height: 32px;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     text-transform: uppercase;
 
     font-weight: 600;
@@ -223,6 +193,10 @@ const Header = styled.div`
     padding-top: 4px;
 
     margin-bottom: 8px;
+
+    display: flex;
+    align-items: center;
+    gap: .75rem;
 `;
 
 const Items = styled.div`
@@ -232,7 +206,7 @@ const Items = styled.div`
 `;
 
 const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
-    return (props: {id: SectionID, iconName: string, title: string, show: boolean}) => {
+    return (props: {id: SectionID, title: string, show: boolean}) => {
         if (!props.show) {
             return null;
         }
@@ -242,7 +216,6 @@ const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scro
                 active={isSectionActive(props.id)}
                 onClick={() => scrollToSection(props.id)}
             >
-                <i className={`icon-${props.iconName} icon-16`}/>
                 {props.title}
             </ItemWrapper>
         );
@@ -254,6 +227,7 @@ const ItemWrapper = styled.div<{active: boolean}>`
     flex-direction: row;
     align-items: center;
     padding: 8px 12px;
+    padding-right: 30px;
     cursor: pointer;
 
     border-radius: 4px;
@@ -264,12 +238,12 @@ const ItemWrapper = styled.div<{active: boolean}>`
         margin-bottom: 8px;
     }
 
-    font-weight: 600;
+    font-weight: 400;
     font-size: 14px;
     line-height: 14px;
 
     background: transparent;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
+    color: var(--center-channel-color);
 
     ${({active}) => active && css`
         background: rgba(var(--button-bg-rgb), 0.08);
@@ -278,12 +252,7 @@ const ItemWrapper = styled.div<{active: boolean}>`
 
     :hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-    }
-
-    i {
-        margin-right: 2px;
     }
 `;
 
-export default TabOutlineNavbar;
+export default ScrollNav;
