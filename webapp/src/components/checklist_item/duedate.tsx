@@ -13,7 +13,6 @@ import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_se
 import {Mode} from '../datetime_input';
 import {HoverMenuButton} from '../rhs/rhs_shared';
 import {Timestamp} from 'src/webapp_globals';
-import {FutureTimeSpec, PastTimeSpec} from '../rhs/rhs_post_update';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
@@ -37,6 +36,23 @@ const ControlComponentDueDate = (ownProps: ControlProps<DateTimeOption, boolean>
         )}
     </div>
 );
+
+const PastTimeSpec = [
+    {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
+    ['minute', -59],
+    ['hour', -12],
+    ['day', -30],
+    ['month', -12],
+    'year',
+];
+
+const FutureTimeSpec = [
+    ['minute', 59],
+    ['hour', 12],
+    ['day', 30],
+    ['month', 12],
+    'year',
+];
 
 export const DueDateHoverMenuButton = ({
     date,
