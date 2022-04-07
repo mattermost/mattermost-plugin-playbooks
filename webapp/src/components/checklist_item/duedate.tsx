@@ -5,7 +5,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {DateTime} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
@@ -152,24 +152,25 @@ export const DueDateButton = ({
         />
     );
 
-    let className = 'NoDueDate';
-    if (date) {
-        className = dueUntilToday(date) ? 'NowDue' : 'FutureDue';
-    }
+    const dueUntilToday = isDueUntilToday(date);
     const label = buttonLabel(date);
 
     const dueDateButton = (
         <DueDateContainer
             ref={ref}
-            className={className}
+            dueUntilToday={dueUntilToday}
         >
             <DateTimeSelector
                 placeholder={
                     <PlaceholderDiv onClick={handleButtonClick}>
                         <CalendarIcon
                             className={'icon-calendar-outline icon-14 btn-icon'}
+                            dueUntilToday={dueUntilToday}
                         />
-                        <DueDateTextContainer editable={props.editable}>
+                        <DueDateTextContainer
+                            editable={props.editable}
+                            dueUntilToday={dueUntilToday}
+                        >
                             {label}
                         </DueDateTextContainer>
                         {props.editable && <SelectorRightIcon className='icon-chevron-down icon-14'/>}
@@ -212,7 +213,7 @@ export const DueDateButton = ({
 
 const buttonLabel = (date?: number) => {
     if (!date) {
-        return <FormattedMessage defaultMessage='Add time frame'/>;
+        return <FormattedMessage defaultMessage='Add due date'/>;
     }
 
     const timespec = (date < DateTime.now().toMillis()) ? PastTimeSpec : FutureTimeSpec;
@@ -269,7 +270,10 @@ const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.Dura
     labelRHS: (<CheckIcon className={'icon icon-check'}/>),
 });
 
-const dueUntilToday = (date: number) => {
+const isDueUntilToday = (date?: number) => {
+    if (!date) {
+        return false;
+    }
     const dueDate = DateTime.fromMillis(date);
     const now = DateTime.now();
     const dueToday = now.day === dueDate.day && now.year === dueDate.year && now.month === dueDate.month;
@@ -305,13 +309,14 @@ const PlaceholderDiv = styled.div`
     white-space: nowrap;  
 `;
 
-const DueDateTextContainer = styled.div<{editable?: boolean}>`
+const DueDateTextContainer = styled.div<{editable?: boolean, dueUntilToday: boolean}>`
     font-size: 12px;
     line-height: 15px;
-    font-weight: ${(props) => (props.editable ? '600' : '400')};
+
+    font-weight:  ${(props) => (props.dueUntilToday || props.editable ? '600' : '400')};
 `;
 
-const CalendarIcon = styled.i`
+const CalendarIcon = styled.div<{dueUntilToday: boolean}>`
     width: 20px;
     height: 20px;
     display: flex;
@@ -320,17 +325,21 @@ const CalendarIcon = styled.i`
     flex: table;
     margin-right: 5px;
     color: inherit;
-    pointer-events: none;  
+    pointer-events: none;
+
+    ${({dueUntilToday}) => !dueUntilToday && `
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    `}
 `;
 
-export const SelectorRightIcon = styled.i`
+const SelectorRightIcon = styled.i`
     font-weight: 400;
     font-size: 14.4px;
     line-height: 14px;
     margin-left: 4px;
 `;
 
-const DueDateContainer = styled.div`
+const DueDateContainer = styled.div<{dueUntilToday: boolean}>`
     display: flex;  
     flex-wrap: wrap;
 
@@ -339,19 +348,11 @@ const DueDateContainer = styled.div`
     background: rgba(var(--center-channel-color-rgb), 0.08);
     max-width: 100%;
 
-
-    &.NowDue {
+    ${({dueUntilToday}) => (dueUntilToday ? css`
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);
         color: var(--dnd-indicator);
-    }
-
-    &.FutureDue {
+    ` : css`
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
-    }    
-
-    &.NoDueDate {
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color);
-    }    
+    `)}
 `;
