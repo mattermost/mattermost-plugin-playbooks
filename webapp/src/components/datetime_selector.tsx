@@ -61,7 +61,6 @@ export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.Dur
 const chronoParsingOptions: ParsingOption = {forwardDate: true};
 
 export const DateTimeSelector = ({
-    date,
     mode = Mode.DateTimeValue,
     suggestedOptions,
     makeOptions = defaultMakeOptions,
@@ -242,6 +241,10 @@ export default DateTimeSelector;
 const Wrapper = styled.div`
     display: flex;
     flex: 1;
+    color: var(--center-channel-color);
+    font-weight 400;
+    font-size: 14px;
+    line-height: 20px;
 `;
 
 const Right = styled.div`

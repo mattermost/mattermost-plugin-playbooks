@@ -16,6 +16,7 @@ import {
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
 import {DateTimeOption} from 'src/components/datetime_selector';
+import {Mode} from '../datetime_input';
 
 import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -23,6 +24,7 @@ import ChecklistItemTitle from './title';
 import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
+import {DueDateButton} from './duedate';
 
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
@@ -143,7 +145,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     <AssignTo
                         assignee_id={props.checklistItem.assignee_id || ''}
                         editable={isEditing}
-                        withoutName={props.checklistItem.command !== '' && !isEditing}
+                        withoutName={(props.checklistItem.command !== '' || props.checklistItem.due_date > 0) && !isEditing}
                         onSelectedChange={onAssigneeChange}
                     />
                 }
@@ -158,6 +160,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         isEditing={isEditing}
                     />
                 }
+                {(props.checklistItem.due_date > 0 || isEditing) &&
+                <DueDateButton
+                    editable={isEditing}
+                    date={props.checklistItem.due_date}
+                    mode={Mode.DateTimeValue}
+                    onSelectedChange={onDueDateChange}
+                />}
             </Row>
             {isEditing &&
                 <CancelSaveButtons
@@ -324,8 +333,10 @@ const DragButton = styled.i<{isVisible: boolean}>`
 const Row = styled.div`
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
+    column-gap: 8px;
+    row-gap: 5px;
 
     margin-bottom: 8px;
     margin-left: 35px;
