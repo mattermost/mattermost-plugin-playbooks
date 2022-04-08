@@ -168,13 +168,15 @@ export const DueDateButton = ({
         />
     );
 
-    const dueUntilToday = isDueUntilToday(date);
+    const dueSoon = isDueSoon(date);
+    const overdue = isOverdue(date);
     const label = buttonLabel(date);
 
     const dueDateButton = (
         <DueDateContainer
             ref={ref}
-            dueUntilToday={dueUntilToday}
+            overdue={overdue}
+            dueSoon={dueSoon}
         >
             <DateTimeSelector
                 placeholder={
@@ -183,16 +185,16 @@ export const DueDateButton = ({
                         data-testid='due-date-info-button'
                     >
                         <CalendarIcon
-                            className={'icon-calendar-outline icon-14 btn-icon'}
-                            dueUntilToday={dueUntilToday}
+                            className={'icon-calendar-outline icon-12 btn-icon'}
+                            overdueOrDueSoon={overdue || dueSoon}
                         />
                         <DueDateTextContainer
                             editable={props.editable}
-                            dueUntilToday={dueUntilToday}
+                            overdue={overdue}
                         >
                             {label}
                         </DueDateTextContainer>
-                        {props.editable && <SelectorRightIcon className='icon-chevron-down icon-14'/>}
+                        {props.editable && <SelectorRightIcon className='icon-chevron-down icon-12'/>}
                     </PlaceholderDiv>
                 }
 
@@ -289,15 +291,24 @@ const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.Dura
     labelRHS: (<CheckIcon className={'icon icon-check'}/>),
 });
 
-const isDueUntilToday = (date?: number) => {
+const isOverdue = (date?: number) => {
+    if (!date) {
+        return false;
+    }
+
+    return date < DateTime.now().toMillis();
+};
+
+// if it is due in 12 hours
+const isDueSoon = (date?: number) => {
     if (!date) {
         return false;
     }
     const dueDate = DateTime.fromMillis(date);
     const now = DateTime.now();
-    const dueToday = now.day === dueDate.day && now.year === dueDate.year && now.month === dueDate.month;
-    const overdue = date < now.toMillis();
-    return dueToday || overdue;
+    const diff = dueDate.diff(now, ['hours']).hours;
+
+    return diff <= 12 && diff > 0;
 };
 
 const ControlComponentAnchor = styled.a`
@@ -328,14 +339,14 @@ const PlaceholderDiv = styled.div`
     white-space: nowrap;  
 `;
 
-const DueDateTextContainer = styled.div<{editable?: boolean, dueUntilToday: boolean}>`
+const DueDateTextContainer = styled.div<{editable?: boolean, overdue: boolean}>`
     font-size: 12px;
     line-height: 15px;
 
-    font-weight:  ${(props) => (props.dueUntilToday || props.editable ? '600' : '400')};
+    font-weight:  ${(props) => (props.overdue || props.editable ? '600' : '400')};
 `;
 
-const CalendarIcon = styled.div<{dueUntilToday: boolean}>`
+const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
     width: 20px;
     height: 20px;
     display: flex;
@@ -346,7 +357,7 @@ const CalendarIcon = styled.div<{dueUntilToday: boolean}>`
     color: inherit;
     pointer-events: none;
 
-    ${({dueUntilToday}) => !dueUntilToday && `
+    ${({overdueOrDueSoon}) => !overdueOrDueSoon && `
         color: rgba(var(--center-channel-color-rgb), 0.56);
     `}
 `;
@@ -355,10 +366,11 @@ const SelectorRightIcon = styled.i`
     font-weight: 400;
     font-size: 14.4px;
     line-height: 14px;
-    margin-left: 4px;
+    &:margin-left: 4px;
+    &:margin-right: 4px;
 `;
 
-const DueDateContainer = styled.div<{dueUntilToday: boolean}>`
+const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean}>`
     display: flex;  
     flex-wrap: wrap;
 
@@ -367,7 +379,7 @@ const DueDateContainer = styled.div<{dueUntilToday: boolean}>`
     background: rgba(var(--center-channel-color-rgb), 0.08);
     max-width: 100%;
 
-    ${({dueUntilToday}) => (dueUntilToday ? css`
+    ${({overdue, dueSoon}) => (overdue || dueSoon ? css`
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);
         color: var(--dnd-indicator);
     ` : css`
