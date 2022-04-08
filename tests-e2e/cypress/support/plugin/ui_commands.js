@@ -67,7 +67,7 @@ Cypress.Commands.add('addNewTaskFromRHS', (taskname) => {
     cy.findByTestId('checklist-item-textarea-title').type(taskname);
 
     // Save task
-    cy.findByTestId('button').click();
+    cy.findByTestId('checklist-item-save-button').click();
 });
 
 // Starts playbook run from the post menu
