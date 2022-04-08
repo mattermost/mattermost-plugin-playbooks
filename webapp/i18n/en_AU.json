@@ -514,5 +514,14 @@
     "9j5KzL": "Enter category name",
     "2Q5PhZ": "Prompt to run a playbook",
     "+/x2FM": "Select a playbook",
-    "+PMJAg": "Begin following for {followers, plural, =1 {one user} other {# users}}"
+    "+PMJAg": "Begin following for {followers, plural, =1 {one user} other {# users}}",
+    "zWgbGg": "Today",
+    "mLrh+0": "No due date",
+    "iMjjOH": "Next week",
+    "aEhjYg": "Outline",
+    "Ppx673": "Reports",
+    "MtrTNy": "Tomorrow",
+    "MbapTE": "{num} {num, plural, =1 {task} other {tasks}} overdue",
+    "I7+d55": "Specify date/time ('in 4 hours', '1st of May'...)",
+    "AF7+5o": "Add a due date"
 }
