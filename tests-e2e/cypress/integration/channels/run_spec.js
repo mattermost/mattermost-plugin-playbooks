@@ -68,27 +68,27 @@ describe('channels > run', () => {
         });
     });
 
-    describe('via post menu', () => {
-        it('while viewing a public channel', () => {
-            // # Visit a public channel
-            cy.visit(`/${testTeam.name}/channels/off-topic`);
+    // describe('via post menu', () => {
+    //     it('while viewing a public channel', () => {
+    //         // # Visit a public channel
+    //         cy.visit(`/${testTeam.name}/channels/off-topic`);
 
-            // * Verify that playbook run can be started from post menu
-            const playbookRunName = 'Public - ' + Date.now();
-            cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
-            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
-        });
+    //         // * Verify that playbook run can be started from post menu
+    //         const playbookRunName = 'Public - ' + Date.now();
+    //         cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
+    //         cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
+    //     });
 
-        it('while viewing a private channel', () => {
-            // # Visit a private channel
-            cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
+    //     it('while viewing a private channel', () => {
+    //         // # Visit a private channel
+    //         cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
 
-            // * Verify that playbook run can be started from post menu
-            const playbookRunName = 'Private - ' + Date.now();
-            cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
-            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
-        });
-    });
+    //         // * Verify that playbook run can be started from post menu
+    //         const playbookRunName = 'Private - ' + Date.now();
+    //         cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
+    //         cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
+    //     });
+    // });
 
     it('always as channel admin', () => {
         // # Visit a public channel
