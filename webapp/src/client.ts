@@ -340,14 +340,14 @@ export async function clientSkipChecklistItem(playbookRunID: string, checklistNu
 
 export async function clientSkipChecklist(playbookRunID: string, checklistNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/skip`, {
-        method: 'put',
+        method: 'PUT',
         body: '',
     });
 }
 
 export async function clientRestoreChecklist(playbookRunID: string, checklistNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/restore`, {
-        method: 'put',
+        method: 'PUT',
         body: '',
     });
 }

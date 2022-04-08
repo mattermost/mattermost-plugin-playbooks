@@ -58,20 +58,8 @@ const CollapsibleChecklist = ({
         };
     }
 
-    let areAllTasksSkipped = true;
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].state !== ChecklistItemState.Skip) {
-            areAllTasksSkipped = false;
-            break;
-        }
-    }
-    let isChecklistSkipped = false;
-    if (areAllTasksSkipped) {
-        isChecklistSkipped = true;
-    }
-    if (items.length === 0) {
-        isChecklistSkipped = false;
-    }
+    const areAllTasksSkipped = items.every((item) => item.state === ChecklistItemState.Skip);
+    const isChecklistSkipped = items.length > 0 && areAllTasksSkipped;
 
     let titleText = (
         <TextWithTooltipWhenEllipsis
@@ -163,7 +151,7 @@ const ProgressBackground = styled.div`
     }
 `;
 
-const ProgressLine = styled.div<{ width: number }>`
+const ProgressLine = styled.div<{width: number}>`
     position: absolute;
     width: 100%;
 

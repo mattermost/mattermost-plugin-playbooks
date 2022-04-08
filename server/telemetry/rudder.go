@@ -277,7 +277,7 @@ func (t *RudderTelemetry) RenameTask(playbookRunID, userID string, task app.Chec
 func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionSkipChecklist
-	t.track(eventTasks, properties)
+	t.track(eventChecklists, properties)
 }
 
 // RestoreChecklist tracks the restoring of a checklist by the user
@@ -285,7 +285,7 @@ func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist 
 func (t *RudderTelemetry) RestoreChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionRestoreChecklist
-	t.track(eventTasks, properties)
+	t.track(eventChecklists, properties)
 }
 
 // SkipTask tracks the skipping of a checklist item by the user
