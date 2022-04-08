@@ -145,7 +145,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     <AssignTo
                         assignee_id={props.checklistItem.assignee_id || ''}
                         editable={isEditing}
-                        withoutName={props.checklistItem.command !== '' && !isEditing}
+                        withoutName={(props.checklistItem.command !== '' || props.checklistItem.due_date > 0) && !isEditing}
                         onSelectedChange={onAssigneeChange}
                     />
                 }
