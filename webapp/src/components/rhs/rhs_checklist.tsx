@@ -124,6 +124,7 @@ const RHSChecklist = (props: Props) => {
                             onClick={() => {
                                 setAddingItem(true);
                             }}
+                            data-testid={`add-new-task-${props.checklistIndex}`}
                         >
                             <IconWrapper>
                                 <i className='icon icon-plus'/>
@@ -152,7 +153,7 @@ const ChecklistContainer = styled.div`
 
 const AddTaskLink = styled.button`
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 400;
     line-height: 20px;
     height: 44px;
     width: 100%;
@@ -169,7 +170,7 @@ const AddTaskLink = styled.button`
     color: var(--center-channel-color-64);
 
     &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--button-bg);
     }
 `;

@@ -84,6 +84,7 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
     return (<CancelSaveContainer>
         <CancelButton
             onClick={props.onCancel}
+            data-testid='checklist-item-save-button'
         >
             {formatMessage({defaultMessage: 'Cancel'})}
         </CancelButton>

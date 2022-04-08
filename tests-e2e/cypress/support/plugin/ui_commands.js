@@ -60,16 +60,14 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
 
 // Create a new task from the RHS
 Cypress.Commands.add('addNewTaskFromRHS', (taskname) => {
-    // Hover over the header to reveal the add task
-    cy.findByTestId('checklistHeader').trigger('mouseover').within(() => {
-        cy.findByTestId('addNewTask').click();
-    });
+    // Click add new task
+    cy.findByTestId('add-new-task-0').click();
 
     // Type a name
-    cy.findByTestId('nameinput').type(taskname);
+    cy.findByTestId('checklist-item-textarea-title').type(taskname);
 
-    // Submit the dialog
-    cy.findByText('Add task').click();
+    // Save task
+    cy.findByTestId('button').click();
 });
 
 // Starts playbook run from the post menu

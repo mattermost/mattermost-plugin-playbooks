@@ -38,22 +38,18 @@ interface ChecklistItemProps {
     disabled: boolean;
     collapsibleDescription: boolean;
     newItem: boolean;
-    cancelAddingItem: () => void;
+    cancelAddingItem?: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
     const [showDescription, setShowDescription] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(props.newItem);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const portal = usePortal(document.body);
-
-    if (props.newItem && !isEditing) {
-        setIsEditing(true);
-    }
 
     const [showMenu, setShowMenu] = useState(false);
 
@@ -188,12 +184,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
-                        props.cancelAddingItem();
+                        if (props.cancelAddingItem) {
+                            props.cancelAddingItem();
+                        }
                     }}
                     onSave={() => {
                         setIsEditing(false);
                         if (props.newItem) {
-                            props.cancelAddingItem();
+                            if (props.cancelAddingItem) {
+                                props.cancelAddingItem();
+                            }
                             clientAddChecklistItem(props.playbookRunId, props.checklistNum, {
                                 title: titleValue,
                                 command,
