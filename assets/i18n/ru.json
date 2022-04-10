@@ -50,5 +50,37 @@
     {
         "id": "app.command.execute.error",
         "translation": "Невозможно выполнить команду."
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Вчера"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Срок выполнения {{.Count}} дн. назад"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Сегодня"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Через {{.Count}} день",
+            "few": "Через {{.Count}} дня",
+            "many": "Через {{.Count}} дней"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "У вас есть **{{.Count}} назначенная задача, которую необходимо выполнить после сегодняшнего дня**.",
+            "few": "У вас есть **{{.Count}} назначенные задачи, которые необходимо выполнить после сегодняшнего дня**.",
+            "many": "У вас есть **{{.Count}} назначенных задач, которые необходимо выполнить после сегодняшнего дня**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Пожалуйста, используйте `/playbook todo`, чтобы увидеть все свои задачи."
     }
 ]
