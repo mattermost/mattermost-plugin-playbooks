@@ -13,7 +13,7 @@
     },
     {
         "id": "app.user.digest.tasks.heading",
-        "translation": "Ваши нерешенные задачи"
+        "translation": "Ваши назначенные задачи"
     },
     {
         "id": "app.user.digest.runs_in_progress.zero_in_progress",
@@ -82,5 +82,13 @@
     {
         "id": "app.user.digest.tasks.all_tasks_command",
         "translation": "Пожалуйста, используйте `/playbook todo`, чтобы увидеть все свои задачи."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "У вас есть {{.Count}} назначенная задача:",
+            "few": "У вас есть {{.Count}} назначенные задачи:",
+            "many": "У вас есть {{.Count}} назначенных задач:"
+        }
     }
 ]
