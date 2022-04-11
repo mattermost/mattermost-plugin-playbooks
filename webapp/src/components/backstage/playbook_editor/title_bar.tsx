@@ -170,16 +170,13 @@ const TitleBar = ({
     const [exportHref, exportFilename] = playbookExportProps(playbook);
 
     return (
-        <TopContainer
-            {...attrs}
-            id='title-row'
-        >
-            <Header>
+        <>
+            <TitleWing side='left'>
                 <LeftArrow
                     className='icon-arrow-left'
                     onClick={goToPlaybooks}
                 />
-                <DotMenu
+                {/* <DotMenu
                     dotMenuButton={TitleButton}
                     left={true}
                     icon={
@@ -232,8 +229,10 @@ const TitleBar = ({
                         data-testid={'archived-badge'}
                         status={BadgeType.Archived}
                     />
-                )}
-                <SecondaryButtonLargerRightStyled
+                )} */}
+            </TitleWing>
+            <TitleWing side='right'>
+                {/* <SecondaryButtonLargerRightStyled
                     checked={isFollowing}
                     disabled={archived}
                 >
@@ -252,7 +251,7 @@ const TitleBar = ({
                             />
                         </div>
                     </OverlayTrigger>
-                </SecondaryButtonLargerRightStyled>
+                </SecondaryButtonLargerRightStyled> */}
                 <PrimaryButtonLarger
                     onClick={runPlaybook}
                     disabled={!enableRunPlaybook}
@@ -285,10 +284,9 @@ const TitleBar = ({
                         telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.RunButton}_RunButton`}
                     />
                 )}
-            </Header>
-
+            </TitleWing>
             {modal}
-        </TopContainer>
+        </>
     );
 };
 
@@ -368,6 +366,19 @@ const Header = styled.div`
     align-items: center;
     padding: 0 32px;
     height: 100%;
+`;
+
+const TitleWing = styled.div<{side: 'left' | 'right'}>`
+    position: sticky;
+    z-index: 3;
+    top: 0;
+    grid-area: ${({side}) => `title-${side}`};
+
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: ${({side}) => (side === 'left' ? 'start' : 'end')};
+
 `;
 
 const RightMarginedIcon = styled(Icon)`

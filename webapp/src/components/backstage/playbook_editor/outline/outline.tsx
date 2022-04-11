@@ -2,16 +2,17 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React from 'react';
+import React, {Children, ReactNode, HTMLAttributes} from 'react';
+
+import {useIntl} from 'react-intl';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
-import renderActions from 'src/components/backstage/playbooks/playbook_preview_actions';
-import renderChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
-import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
-import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
+import Checklists from './section_checklists';
 
 import ScrollNavBase, {SectionID} from './scroll_nav';
+
+import Section from './section';
 
 interface Props {
     playbook: PlaybookWithChecklist;
@@ -19,14 +20,13 @@ interface Props {
     followerIds: string[];
 }
 
-/** @alpha replace/copy-pasta/unfold sections as-needed*/
-const Outline = (props: Props) => {
-    const checklists = renderChecklists({
-        id: SectionID.Checklists,
-        playbook: props.playbook,
-    });
+type Attrs = HTMLAttributes<HTMLElement>;
 
-    const actions = renderActions({
+/** @alpha replace/copy-pasta/unfold sections as-needed*/
+const Outline = ({playbook}: Props) => {
+    const {formatMessage} = useIntl();
+
+    /* const actions = renderActions({
         id: SectionID.Actions,
         playbook: props.playbook,
         followerIds: props.followerIds,
@@ -40,36 +40,65 @@ const Outline = (props: Props) => {
     const retrospective = renderRetrospective({
         id: SectionID.Retrospective,
         playbook: props.playbook,
-    });
+    }); */
 
     return (
-        <>
-            <ScrollNav
-                playbook={props.playbook}
-                runsInProgress={props.runsInProgress}
-                archived={props.playbook.delete_at !== 0}
-                showElements={{
-                    statusUpdates: statusUpdates !== null,
-                    checklists: checklists !== null,
-                    actions: actions !== null,
-                    retrospective: retrospective !== null,
-                }}
-            />
-            <Sections data-testid='preview-content'>
-                {statusUpdates}
-                {checklists}
-                {retrospective}
-                {actions}
-            </Sections>
-        </>
+        <Sections
+            playbookId={playbook.id}
+            data-testid='preview-content'
+        >
+            <Section
+                id={SectionID.Checklists}
+                title={formatMessage({defaultMessage: 'Checklists'})}
+            >
+                <Checklists playbook={playbook}/>
+            </Section>
+        </Sections>
     );
 };
 
 export const ScrollNav = styled(ScrollNavBase)`
-
 `;
 
-export const Sections = styled.div`
+type SectionItem = {id: string, title: string};
+
+type SectionsProps = {
+    playbookId: PlaybookWithChecklist['id'];
+    children: ReactNode;
+}
+
+const SectionsImpl = ({
+    playbookId,
+    children,
+    ...attrs
+}: SectionsProps & Attrs) => {
+    const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
+        if (
+            React.isValidElement(node) &&
+            node.props.id &&
+            node.props.title &&
+            node.props.children
+        ) {
+            const {id, title} = node.props;
+            result.push({id, title});
+        }
+        return result;
+    }, []);
+
+    return (
+        <>
+            <ScrollNav
+                playbookId={playbookId}
+                items={items}
+            />
+            <div {...attrs}>
+                {children}
+            </div>
+        </>
+    );
+};
+
+export const Sections = styled(SectionsImpl)`
     display: flex;
     flex-direction: column;
     flex-grow: 1;

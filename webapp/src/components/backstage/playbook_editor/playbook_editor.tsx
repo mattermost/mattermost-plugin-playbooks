@@ -15,6 +15,7 @@ import {
     useForceDocumentTitle,
     useStats,
     usePlaybook,
+    useMarkdownRenderer,
 } from 'src/hooks';
 
 import {
@@ -31,9 +32,10 @@ import {SemiBoldHeading} from 'src/styles/headings';
 
 import {HorizontalBG} from 'src/components/collapsible_checklist';
 
+import CopyLink from 'src/components/widgets/copy_link';
+
 import TitleBar from './title_bar';
 import Outline, {Sections, ScrollNav} from './outline/outline';
-import CopyLink from './copy_link';
 
 interface MatchParams {
     playbookId: string
@@ -65,9 +67,9 @@ const useFollowersMeta = (playbookId: string) => {
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
-
     const playbook = usePlaybook(playbookId);
     const stats = useStats(playbookId);
+    const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
     const {
         followerIds,
         isFollowing,
@@ -89,22 +91,23 @@ const PlaybookEditor = () => {
     return (
         <>
             <Editor>
+                <TitleHeaderBackdrop/>
                 <TitleBar
                     playbook={playbook}
                     isFollowing={isFollowing}
                     onFollowingChange={setIsFollowing}
                 />
-                <HeaderNavBackdrop/>
                 <Header>
                     <Heading>
-                        {playbook.title}
                         <CopyLink
                             id='copy-playbook-link-tooltip'
                             to={getSiteUrl() + '/playbooks/playbooks/' + playbook.id}
                             name={playbook.title}
+                            area-hidden={true}
                         />
+                        {playbook.title}
                     </Heading>
-                    <Description>{playbook.description}</Description>
+                    <Description>{renderMarkdown(playbook.description)}</Description>
                 </Header>
                 <NavBar>
                     <NavItem
@@ -156,74 +159,28 @@ const PlaybookEditor = () => {
     );
 };
 
-const frag = css`
-    /* === Responsiveness === */
-    --list: minmax(min-content, 300px);
-    --pane: minmax(min-content, auto);
-
-    display: grid;
-    overflow: hidden;
-    grid-template-areas:
-        'header header'
-        'list pane';
-
-    // 2-column
-    grid-template-columns: var(--list) var(--pane);
-    grid-template-rows: 63px 1fr;
-
-    // single column
-    @media screen and (max-width: 1020px) {
-        grid-template-areas:
-            'header header'
-            'main main';
-
-        &.thread-selected {
-            .ThreadList {
-                display: none;
-            }
-
-            .ThreadPane {
-                grid-area: main;
-
-                .Header {
-                    padding-left: 5px;
-                }
-
-                .back {
-                    display: unset;
-                }
-            }
-        }
+const Header = styled.header`
+    grid-area: header;
+    z-index: 4;
+    ${CopyLink} {
+        margin-left: -1.25em;
+        opacity: 1;
+        transition: opacity ease 0.15s;
     }
-
-    @media screen and (max-width: 768px) {
-        grid-template-rows: 0 1fr;
-    }
-
-    @media screen and (min-width: 1021px) {
-        --list: minmax(min-content, 350px);
-    }
-
-    @media screen and (min-width: 1267px) {
-        --list: minmax(min-content, 400px);
-    }
-
-    @media screen and (min-width: 1680px) {
-        --list: minmax(min-content, 500px);
-    }
- `;
-
-const Header = styled.div`
-    padding-top: 3rem;
-    min-height: 20rem;
 `;
 
 const Heading = styled.h1`
     ${SemiBoldHeading}
-    margin-bottom: 24px;
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    height: var(--bar-height);
+    display: inline-flex;
+    align-items: center;
 
-    &:not(:hover) ${CopyLink} {
-        visibility: hidden;
+    &:not(:hover) ${CopyLink}:not(:hover) {
+        opacity: 0;
     }
 `;
 
@@ -232,7 +189,6 @@ const Description = styled.p`
     font-size: 14px;
     line-height: 20px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-
 `;
 
 const NavItem = styled(NavLink)`
@@ -262,52 +218,42 @@ const NavItem = styled(NavLink)`
 `;
 
 const NavBar = styled.nav`
-    display: inline-flex;
-    height: 100%;
-    justify-self: center;
-
-    position: sticky;
-    top: 0;
-    z-index: 3;
-`;
-
-const HeaderNavBackdrop = styled.div`
+    display: flex;
+    width: 100%;
+    justify-content: center;
     background: var(--center-channel-bg);
     box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
-    grid-area: header-left/nav/nav/header-right;
+    grid-area: nav;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+`;
+
+const TitleHeaderBackdrop = styled.div`
+    background: var(--center-channel-bg);
+    grid-area: title-left/title-left/control/title-right;
 `;
 
 const Editor = styled.main`
+    min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
 
 
-    --bar-height: 66px;
+    --bar-height: 100px;
     --content-max-width: 780px;
 
     // standard-full
     grid-template:
-        'title-bar title-bar title-bar' var(--bar-height)
-        'header-left header header-right' minmax(min-content, auto)
+        'title-left header title-right' var(--bar-height)
+        '. header .' auto
+        '. control .' 40px
         'nav nav nav' var(--bar-height)
         'aside content aside-right' 1fr
         / 1fr minmax(min-content, var(--content-max-width)) 1fr
     ;
 
-    row-gap: 1rem 1rem 7rem;
-    column-gap: 3rem;
-
-    ${TitleBar} {
-        grid-area: title-bar;
-    }
-
-    ${Header} {
-        grid-area: header;
-    }
-
-    ${NavBar} {
-        grid-area: nav;
-    }
+    gap: 0 3rem;
 
     ${ScrollNav} {
         grid-area: aside;
@@ -317,7 +263,7 @@ const Editor = styled.main`
         margin-top: 9.5rem;
 
         position: sticky;
-        top: 80px;
+        top: var(--bar-height);
     }
 
 
@@ -328,6 +274,7 @@ const Editor = styled.main`
         ${HorizontalBG} {
             /* sticky checklist header */
             top: var(--bar-height);
+            z-index: 1;
         }
     }
 
@@ -339,13 +286,13 @@ const Editor = styled.main`
     // mobile
     @media screen and (max-width: 768px) {
         grid-template:
-            'title-bar'
-            'header'
-            'nav'
-            'content'
+            'title-left title-right' 40px
+            'header header'
+            'nav nav'
+            'content content'
+            / 1fr
         ;
 
-        grid-auto-columns: 1fr;
         ${Sections} {
             padding: 20px;
         }
@@ -362,10 +309,11 @@ const Editor = styled.main`
     }
 
     @media screen and (min-width: 1267px) {
+        --content-max-width: 900px;
     }
 
     @media screen and (min-width: 1680px) {
-        --content-max-width: 900px;
+        --content-max-width: 1100px;
     }
 `;
 

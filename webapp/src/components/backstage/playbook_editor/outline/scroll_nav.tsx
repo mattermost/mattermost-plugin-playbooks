@@ -5,6 +5,8 @@ import styled, {css} from 'styled-components';
 import React, {useEffect, useState, HTMLAttributes} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
+import {useLocation} from 'react-router-dom';
+
 import Icon from '@mdi/react';
 import {mdiTextBoxOutline} from '@mdi/js';
 
@@ -12,45 +14,38 @@ import {telemetryEventForPlaybook} from 'src/client';
 import {BackstageID} from 'src/components/backstage/backstage';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
-const prefix = 'playbooks-playbookPreview-';
-
 export enum SectionID {
-    Description = 'playbooks-playbookPreview-description',
-    Checklists = 'playbooks-playbookPreview-checklists',
-    Actions = 'playbooks-playbookPreview-actions',
-    StatusUpdates = 'playbooks-playbookPreview-statusUpdates',
-    Retrospective = 'playbooks-playbookPreview-retrospective',
+    Description = 'description',
+    Checklists = 'checklists',
+    Actions = 'actions',
+    StatusUpdates = 'statusUpdates',
+    Retrospective = 'retrospective',
 }
 
 interface Props {
-    playbook: PlaybookWithChecklist;
-    runsInProgress: number;
-    archived: boolean;
-    showElements: {
-        checklists: boolean,
-        actions: boolean,
-        statusUpdates: boolean,
-        retrospective: boolean,
-    };
+    playbookId: PlaybookWithChecklist['id'];
+    items: Array<{id: string; title: string;}>;
 }
+
+type ItemId = Props['items'][number]['id'];
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const ScrollNav = ({playbook, runsInProgress, archived, showElements, ...attrs}: Props & Attrs) => {
-    const {formatMessage} = useIntl();
-    const [activeId, setActiveId] = useState(SectionID.Description);
+const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
+    const [activeId, setActiveId] = useState(items?.[0].id);
+    const {hash} = useLocation();
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
 
-        let finalId : SectionID | null = null;
+        let finalId: ItemId | null = null;
         let finalPos = Number.NEGATIVE_INFINITY;
 
         // Get the section whose top border is over the middle of the window (the threshold) and closer to it.
-        Object.values(SectionID).forEach((id) => {
+        items.forEach(({id}) => {
             const top = document.getElementById(id)?.getBoundingClientRect().top || Number.POSITIVE_INFINITY;
             const pos = top - headersOffset;
 
@@ -81,9 +76,8 @@ const ScrollNav = ({playbook, runsInProgress, archived, showElements, ...attrs}:
         };
     }, [updateActiveSection]);
 
-    const scrollToSection = (id: SectionID) => {
-        const idWithoutPrefix = String(id).replace(prefix, '');
-        telemetryEventForPlaybook(playbook.id, `playbook_preview_navbar_section_${idWithoutPrefix}_clicked`);
+    const scrollToSection = (id: ItemId) => {
+        telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${id}_clicked`);
 
         if (isSectionActive(id)) {
             return;
@@ -130,11 +124,13 @@ const ScrollNav = ({playbook, runsInProgress, archived, showElements, ...attrs}:
         root.addEventListener('scroll', callback, {passive: true});
     };
 
-    const isSectionActive = (id: SectionID) => {
+    useEffect(() => {
+        setTimeout(() => scrollToSection(hash), 150);
+    }, [scrollToSection, hash]);
+
+    const isSectionActive = (id: string) => {
         return activeId === id;
     };
-
-    const Item = generateItemComponent(isSectionActive, scrollToSection);
 
     return (
         <Wrapper
@@ -149,27 +145,15 @@ const ScrollNav = ({playbook, runsInProgress, archived, showElements, ...attrs}:
                 <FormattedMessage defaultMessage='Contents'/>
             </Header>
             <Items>
-                <Item
-                    id={SectionID.StatusUpdates}
-                    title={formatMessage({defaultMessage: 'Status updates'})}
-                    show={showElements.statusUpdates}
-                />
-                <Item
-                    id={SectionID.Checklists}
-                    title={formatMessage({defaultMessage: 'Checklists'})}
-                    show={showElements.checklists}
-                />
-
-                <Item
-                    id={SectionID.Retrospective}
-                    title={formatMessage({defaultMessage: 'Retrospective'})}
-                    show={showElements.retrospective}
-                />
-                <Item
-                    id={SectionID.Actions}
-                    title={formatMessage({defaultMessage: 'Actions'})}
-                    show={showElements.actions}
-                />
+                {items.map(({id, title}) => (
+                    <Item
+                        key={id}
+                        active={isSectionActive(id)}
+                        onClick={() => scrollToSection(id)}
+                    >
+                        {title}
+                    </Item>
+                ))}
             </Items>
         </Wrapper>
     );
@@ -184,7 +168,7 @@ const Header = styled.div`
     text-transform: uppercase;
 
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 16px;
 
     color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -205,24 +189,7 @@ const Items = styled.div`
     margin-bottom: 16px;
 `;
 
-const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
-    return (props: {id: SectionID, title: string, show: boolean}) => {
-        if (!props.show) {
-            return null;
-        }
-
-        return (
-            <ItemWrapper
-                active={isSectionActive(props.id)}
-                onClick={() => scrollToSection(props.id)}
-            >
-                {props.title}
-            </ItemWrapper>
-        );
-    };
-};
-
-const ItemWrapper = styled.div<{active: boolean}>`
+const Item = styled.div<{active: boolean}>`
     display: flex;
     flex-direction: row;
     align-items: center;

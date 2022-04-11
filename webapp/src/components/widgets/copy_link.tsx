@@ -1,13 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import styled from 'styled-components';
+import React, {useState, HTMLAttributes} from 'react';
+import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {copyToClipboard} from 'src/utils';
 
-import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import {OVERLAY_DELAY} from 'src/constants';
 import Tooltip from 'src/components/widgets/tooltip';
 
@@ -22,12 +21,15 @@ type Props = {
     tooltipMessage: string;
 });
 
+type Attrs = HTMLAttributes<HTMLElement>;
+
 const CopyLink = ({
     id,
     to,
     name,
     tooltipMessage,
-}: Props) => {
+    ...attrs
+}: Props & Attrs) => {
     const {formatMessage} = useIntl();
     const [wasCopied, setWasCopied] = useState(false);
 
@@ -46,17 +48,48 @@ const CopyLink = ({
             content={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
         >
             <AutoSizeCopyIcon
-                className='icon-link-variant'
                 onClick={copyLink}
                 clicked={wasCopied}
+                {...attrs}
+                className={'icon-link-variant ' + attrs.className}
             />
         </Tooltip>
     );
 };
 
+const CopyIcon = styled.button<{clicked: boolean}>`
+    display: inline-block;
+
+    border-radius: 50%;
+    padding: 0;
+    width: 1.25em;
+    height: 1.25em;
+
+    :before {
+        margin: 0;
+        vertical-align: middle;
+    }
+
+    border: none;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+
+
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
+
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
+`;
+
 const AutoSizeCopyIcon = styled(CopyIcon)`
     font-size: inherit;
-    display: inline-block;
 `;
 
 export default styled(CopyLink)``;

@@ -3,15 +3,15 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
-import {copyToClipboard} from 'src/utils';
+
+import CopyLink from 'src/components/widgets/copy_link';
 
 import {
     Badge,
@@ -34,7 +34,7 @@ import {
     getSiteUrl,
 } from 'src/client';
 import {pluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
+import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -116,22 +116,13 @@ const LeftArrow = styled(Icon)`
     }
 `;
 
-export const CopyIcon = styled(Icon)<{clicked: boolean}>`
-    font-size: 18px;
-    margin-left: 8px;
+const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-
-    ${({clicked}) => !clicked && css`
-        &:hover {
-            background: var(--center-channel-color-08);
-            color: var(--center-channel-color-72);
-        }
-    `}
-
-    ${({clicked}) => clicked && css`
-        background: var(--button-bg-08);
-        color: var(--button-bg);
-    `}
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    line-height: 18px;
+    margin-left: 8px;
 `;
 
 const VerticalBlock = styled.div`
@@ -241,7 +232,6 @@ const PlaybookRunBackstage = () => {
     const currentRun = useRun(match.params.playbookRunId);
 
     const [following, setFollowing] = useState<string[]>([]);
-    const [runLinkCopied, setRunLinkCopied] = useState(false);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -349,36 +339,6 @@ const PlaybookRunBackstage = () => {
         followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
     }
 
-    const copyRunLink = () => {
-        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun.id);
-        setRunLinkCopied(true);
-    };
-
-    let copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to run'});
-    if (runLinkCopied) {
-        copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
-    }
-
-    const runLink = (
-        <OverlayTrigger
-            placement='bottom'
-            delay={OVERLAY_DELAY}
-            onExit={() => setRunLinkCopied(false)}
-            shouldUpdatePosition={true}
-            overlay={
-                <Tooltip id='copy-run-link-tooltip'>
-                    {copyRunLinkTooltipMessage}
-                </Tooltip>
-            }
-        >
-            <CopyIcon
-                className='icon-link-variant'
-                onClick={copyRunLink}
-                clicked={runLinkCopied}
-            />
-        </OverlayTrigger>
-    );
-
     return (
         <OuterContainer>
             <TopContainer>
@@ -391,7 +351,11 @@ const PlaybookRunBackstage = () => {
                         <TitleWithBadgeAndLink>
                             <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
-                            {runLink}
+                            <StyledCopyLink
+                                id='copy-run-link-tooltip'
+                                to={getSiteUrl() + '/playbooks/runs/' + playbookRun.id}
+                                tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
+                            />
                         </TitleWithBadgeAndLink>
                         {
                             playbook &&
