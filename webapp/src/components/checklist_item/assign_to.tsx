@@ -155,7 +155,8 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 0px;
 
         .image {
-            margin: 0px;
+            background: rgba(var(--center-channel-color-rgb),0.08);
+            margin: 2px;
         }
     }
 `;
