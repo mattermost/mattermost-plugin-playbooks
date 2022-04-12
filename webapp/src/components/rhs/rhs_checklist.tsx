@@ -71,6 +71,8 @@ const RHSChecklist = (props: Props) => {
         return true;
     };
 
+    const keys = generateKeys(props.checklist.items.map((item) => item.title));
+
     return (
         <Droppable
             droppableId={props.checklistIndex.toString()}
@@ -92,7 +94,7 @@ const RHSChecklist = (props: Props) => {
 
                             return (
                                 <DraggableChecklistItem
-                                    key={checklistItem.title}
+                                    key={keys[index]}
                                     playbookRun={props.playbookRun}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
@@ -174,5 +176,16 @@ const AddTaskLink = styled.button`
         color: var(--button-bg);
     }
 `;
+
+export const generateKeys = (arr: string[]): string[] => {
+    const keys: string[] = [];
+    const itemsMap = new Map<string, number>();
+    for (let i = 0; i < arr.length; i++) {
+        const num = itemsMap.get(arr[i]) || 0;
+        keys.push(arr[i] + String(num));
+        itemsMap.set(arr[i], num + 1);
+    }
+    return keys;
+};
 
 export default RHSChecklist;

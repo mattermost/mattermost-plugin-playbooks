@@ -188,10 +188,7 @@ export const DueDateButton = ({
                             className={'icon-calendar-outline icon-12 btn-icon'}
                             overdueOrDueSoon={overdue || dueSoon}
                         />
-                        <DueDateTextContainer
-                            editable={props.editable}
-                            overdue={overdue}
-                        >
+                        <DueDateTextContainer overdue={overdue}>
                             {label}
                         </DueDateTextContainer>
                         {props.editable && <SelectorRightIcon className='icon-chevron-down icon-12'/>}
@@ -339,11 +336,11 @@ const PlaceholderDiv = styled.div`
     white-space: nowrap;  
 `;
 
-const DueDateTextContainer = styled.div<{editable?: boolean, overdue: boolean}>`
+const DueDateTextContainer = styled.div<{overdue: boolean}>`
     font-size: 12px;
     line-height: 15px;
 
-    font-weight:  ${(props) => (props.overdue || props.editable ? '600' : '400')};
+    font-weight:  ${(props) => (props.overdue ? '600' : '400')};
 `;
 
 const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
@@ -363,11 +360,11 @@ const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
 `;
 
 const SelectorRightIcon = styled.i`
-    font-weight: 400;
-    font-size: 14.4px;
-    line-height: 14px;
-    &:margin-left: 4px;
-    &:margin-right: 4px;
+    font-size: 14px;
+    &{
+        margin-left: 4px;
+    }
+    color: var(--center-channel-color-32);
 `;
 
 const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean}>`
