@@ -5,7 +5,6 @@ import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
-    clientSetChecklistItemCommand,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {useTimeout} from 'src/hooks';
@@ -13,6 +12,7 @@ import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_toolti
 import CommandInput from 'src/components/command_input';
 
 import {CancelSaveButtons} from './inputs';
+import {DropdownArrow} from './assign_to';
 
 interface CommandProps {
     playbookRunId: string;
@@ -55,12 +55,12 @@ const Command = (props: CommandProps) => {
         >
             <CommandIcon
                 title={formatMessage({defaultMessage: 'Add slash command'})}
-                className={'icon-slash-forward icon-16 btn-icon'}
+                className={'icon-slash-forward icon-12'}
             />
             <CommandTextContainer>
                 {formatMessage({defaultMessage: 'Add slash command'})}
             </CommandTextContainer>
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
     );
 
@@ -159,7 +159,7 @@ const Run = styled.div<RunProps>`
     display: inline;
     color: var(--link-color);
     cursor: pointer;
-    margin: 2px 4px 0 0;
+    margin: 2px 4px 2px 4px;
 
     &:hover {
         text-decoration: underline;
@@ -201,11 +201,10 @@ const CommandIcon = styled.i`
 `;
 
 const CommandTextContainer = styled.div`
-    color: var(--center-channel-color);
-    font-weight: 600;
+    font-weight: 400;
     font-size: 12px;
     line-height: 15px;
-    margin-right: 8px;
+    margin-right: 4px;
 `;
 
 export default Command;

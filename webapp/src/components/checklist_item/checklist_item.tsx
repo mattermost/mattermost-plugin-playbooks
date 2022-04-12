@@ -156,28 +156,30 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     value={descValue}
                 />
             }
-            <Row>
-                {(assigneeID !== '' || isEditing) &&
-                    <AssignTo
-                        assignee_id={assigneeID || ''}
-                        editable={isEditing}
-                        withoutName={command !== '' && !isEditing}
-                        onSelectedChange={onAssigneeChange}
-                    />
-                }
-                {(command !== '' || isEditing) &&
-                    <Command
-                        checklistNum={props.checklistNum}
-                        command={command}
-                        command_last_run={props.checklistItem.command_last_run}
-                        disabled={props.disabled}
-                        itemNum={props.itemNum}
-                        playbookRunId={props.playbookRunId}
-                        isEditing={isEditing}
-                        onChangeCommand={onCommandChange}
-                    />
-                }
-            </Row>
+            {(assigneeID !== '' || command !== '' || isEditing) &&
+                <Row>
+                    {(assigneeID !== '' || isEditing) &&
+                        <AssignTo
+                            assignee_id={assigneeID || ''}
+                            editable={isEditing}
+                            withoutName={command !== '' && !isEditing}
+                            onSelectedChange={onAssigneeChange}
+                        />
+                    }
+                    {(command !== '' || isEditing) &&
+                        <Command
+                            checklistNum={props.checklistNum}
+                            command={command}
+                            command_last_run={props.checklistItem.command_last_run}
+                            disabled={props.disabled}
+                            itemNum={props.itemNum}
+                            playbookRunId={props.playbookRunId}
+                            isEditing={isEditing}
+                            onChangeCommand={onCommandChange}
+                        />
+                    }
+                </Row>
+            }
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
@@ -225,11 +227,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
 const ItemContainer = styled.div<{editing: boolean}>`
     border-radius: 4px;
-    padding-top: 4px;
-
-    :first-child {
-        padding-top: 0.4rem;
-    }
+    margin-bottom: 4px;
 
     ${({editing}) => editing && css`
         background-color: var(--button-bg-08);
@@ -246,6 +244,7 @@ export const CheckboxContainer = styled.div`
     align-items: flex-start;
     display: flex;
     position: relative;
+    padding: 8px 0px;
 
     button {
         width: 53px;
@@ -364,7 +363,6 @@ const Row = styled.div`
     flex-wrap: nowrap;
     align-items: center;
 
-    margin-bottom: 8px;
     margin-left: 35px;
     margin-top: 8px;
     padding-bottom: 8px;

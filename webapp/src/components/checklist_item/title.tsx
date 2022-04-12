@@ -87,7 +87,7 @@ const PlaceholderText = styled.span`
 `;
 
 const commonTitleStyle = css`
-    color: var(--center-channel-color-72);
+    color: var(--center-channel-color);
     border: none;
     background: none;
     font-style: normal;

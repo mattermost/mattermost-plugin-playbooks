@@ -10,7 +10,7 @@ import {DateTime} from 'luxon';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {Mode} from '../datetime_input';
-import {HoverMenuButton} from '../rhs/rhs_shared';
+import {ChecklistHoverMenuButton} from '../rhs/rhs_shared';
 
 interface Props {
     date?: number;
@@ -53,9 +53,9 @@ const DueDate = ({
             mode={mode}
             onlyPlaceholder={true}
             placeholder={
-                <HoverMenuButton
+                <ChecklistHoverMenuButton
                     title={formatMessage({defaultMessage: 'Add due date'})}
-                    className={'icon-calendar-outline icon-16 btn-icon'}
+                    className={'icon-calendar-outline icon-12 btn-icon'}
                 />
             }
             suggestedOptions={suggestedOptions}

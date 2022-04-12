@@ -135,7 +135,7 @@ const ChecklistItemDescriptionContainer = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    margin: 4px 0 0 35px;
+    margin-left: 36px;
     overflow: hidden;
 `;
 
