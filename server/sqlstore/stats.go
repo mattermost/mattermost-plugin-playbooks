@@ -64,6 +64,36 @@ func (s *StatsStore) TotalInProgressPlaybookRuns(filters *StatsFilters) int {
 	return total
 }
 
+// TotalPlaybooks returns the number of playbooks in the server
+func (s *StatsStore) TotalPlaybooks() int {
+	query := s.store.builder.
+		Select("COUNT(p.ID)").
+		From("IR_Playbook as p")
+
+	var total int
+	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
+		s.log.Warnf("Error retrieving stat total playbooks %w", err)
+		return -1
+	}
+
+	return total
+}
+
+// TotalPlaybookRuns returns the number of playbook runs in the server
+func (s *StatsStore) TotalPlaybookRuns() int {
+	query := s.store.builder.
+		Select("COUNT(i.ID)").
+		From("IR_Incident as i")
+
+	var total int
+	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
+		s.log.Warnf("Error retrieving stat total runs %w", err)
+		return -1
+	}
+
+	return total
+}
+
 func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("COUNT(DISTINCT cm.UserId)").

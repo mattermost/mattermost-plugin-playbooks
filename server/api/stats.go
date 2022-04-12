@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -36,6 +37,7 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 		licenseChecker:  licenseChecker,
 	}
 
+	router.HandleFunc("/sitestats", handler.playbookSiteStats).Methods(http.MethodGet)
 	statsRouter := router.PathPrefix("/stats").Subrouter()
 	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
 
@@ -77,6 +79,7 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	}, nil
 }
 
+// playbookStats handles the internal plugin stats
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	if !h.licenseChecker.StatsAllowed() {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
@@ -129,5 +132,30 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		MetricRollingAverage:          metricRollingAverage,
 		MetricRollingAverageChange:    metricRollingAverageChange,
 		LastXRunNames:                 lastXRunNames,
+	}, http.StatusOK)
+}
+
+type PlaybookSiteStats struct {
+	TotalPlaybooks    int `json:"total_playbooks"`
+	TotalPlaybookRuns int `json:"total_playbook_runs"`
+}
+
+// playbooSitekStats collects and send the stats used for system-console > statistics
+//
+// Response 200: PlaybookSiteStats
+// Response 403: when user has no permissions to see stats
+func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
+		// c.SetPermissionError(model.PermissionGetAnalytics)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
+		return
+	}
+
+	ReturnJSON(w, &PlaybookSiteStats{
+		TotalPlaybooks:    h.statsStore.TotalPlaybooks(),
+		TotalPlaybookRuns: h.statsStore.TotalPlaybookRuns(),
 	}, http.StatusOK)
 }
