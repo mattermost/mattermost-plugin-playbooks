@@ -109,6 +109,7 @@ var dummyPlaybookRun = &app.PlaybookRun{
 					Command:          "command",
 					CommandLastRun:   100000,
 					Description:      "description",
+					DueDate:          100000000000,
 				},
 			},
 		},
@@ -447,24 +448,25 @@ func TestPlaybookRunProperties(t *testing.T) {
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
-		"UserActualID":            dummyUserID,
-		telemetryKeyPlaybookRunID: dummyPlaybookRun.ID,
-		"HasDescription":          true,
-		"CommanderUserID":         dummyPlaybookRun.OwnerUserID,
-		"ReporterUserID":          dummyPlaybookRun.ReporterUserID,
-		"TeamID":                  dummyPlaybookRun.TeamID,
-		"ChannelID":               dummyPlaybookRun.ChannelID,
-		"CreateAt":                dummyPlaybookRun.CreateAt,
-		"EndAt":                   dummyPlaybookRun.EndAt,
-		"DeleteAt":                dummyPlaybookRun.DeleteAt, //nolint
-		"PostID":                  dummyPlaybookRun.PostID,
-		"PlaybookID":              dummyPlaybookRun.PlaybookID,
-		"NumChecklists":           2,
-		"TotalChecklistItems":     3,
-		"NumStatusPosts":          2,
-		"CurrentStatus":           dummyPlaybookRun.CurrentStatus,
-		"PreviousReminder":        dummyPlaybookRun.PreviousReminder,
-		"NumTimelineEvents":       len(dummyPlaybookRun.TimelineEvents),
+		"UserActualID":              dummyUserID,
+		telemetryKeyPlaybookRunID:   dummyPlaybookRun.ID,
+		"HasDescription":            true,
+		"CommanderUserID":           dummyPlaybookRun.OwnerUserID,
+		"ReporterUserID":            dummyPlaybookRun.ReporterUserID,
+		"TeamID":                    dummyPlaybookRun.TeamID,
+		"ChannelID":                 dummyPlaybookRun.ChannelID,
+		"CreateAt":                  dummyPlaybookRun.CreateAt,
+		"EndAt":                     dummyPlaybookRun.EndAt,
+		"DeleteAt":                  dummyPlaybookRun.DeleteAt, //nolint
+		"PostID":                    dummyPlaybookRun.PostID,
+		"PlaybookID":                dummyPlaybookRun.PlaybookID,
+		"NumChecklists":             2,
+		"TotalChecklistItems":       3,
+		"ChecklistItemsWithDueDate": 1,
+		"NumStatusPosts":            2,
+		"CurrentStatus":             dummyPlaybookRun.CurrentStatus,
+		"PreviousReminder":          dummyPlaybookRun.PreviousReminder,
+		"NumTimelineEvents":         len(dummyPlaybookRun.TimelineEvents),
 	}
 
 	require.Equal(t, expectedProperties, properties)
@@ -485,6 +487,7 @@ func TestTaskProperties(t *testing.T) {
 		"HasCommand":              true,
 		"CommandLastRun":          dummyTask.CommandLastRun,
 		"HasDescription":          true,
+		"HasDueDate":              true,
 	}
 
 	require.Equal(t, expectedProperties, properties)

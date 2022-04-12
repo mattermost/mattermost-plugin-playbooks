@@ -26,6 +26,7 @@ export enum AdminNotificationType {
     EXPORT_CHANNEL = 'start_trial_to_export_channel',
     MESSAGE_TO_PLAYBOOK_DASHBOARD = 'start_trial_to_access_playbook_dashboard',
     PLAYBOOK_METRICS = 'start_trial_to_access_metrics',
+    CHECKLIST_ITEM_DUE_DATE = 'start_trial_to_set_checklist_item_due_date',
 }
 
 export const DateTimeFormats = {

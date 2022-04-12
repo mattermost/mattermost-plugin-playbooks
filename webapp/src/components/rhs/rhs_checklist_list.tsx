@@ -217,6 +217,7 @@ const RHSChecklistList = (props: Props) => {
                     {
                         overdueTasksNum > 0 &&
                         <OverdueTasksToggle
+                            data-testid='overdue-tasks-filter'
                             toggled={checklistItemsFilter.overdueOnly}
                             onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
                         >

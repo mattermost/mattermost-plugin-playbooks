@@ -7,12 +7,14 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen, setRHSViewingPlaybookRun, setRHSViewingList} from 'src/actions';
+import {receivedTeamPlaybookRuns, setRHSOpen, setRHSViewingPlaybookRun, setRHSViewingList} from 'src/actions';
 import RHSHome from 'src/components/rhs/rhs_home';
 import {currentRHSState, inPlaybookRunChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
+
+import {fetchPlaybookRunByChannel} from 'src/client';
 
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
@@ -27,6 +29,26 @@ const RightHandSidebar = () => {
             dispatch(setRHSOpen(false));
         };
     }, [dispatch]);
+
+    useEffect(() => {
+        const checkPlaybookRun = async () => {
+            // By default, we only have the in-progress runs in the store, so when the inPlaybookRunChannel
+            // selector returned false, we still need to check if we are in a finished run
+            if (!inPlaybookRun) {
+                try {
+                    const playbookRun = await fetchPlaybookRunByChannel(currentChannelId);
+                    dispatch(receivedTeamPlaybookRuns([playbookRun]));
+                    dispatch(setRHSViewingPlaybookRun());
+                } catch (error) {
+                    if (error.status_code !== 404) {
+                        throw error;
+                    }
+                }
+            }
+        };
+
+        checkPlaybookRun();
+    }, [currentChannelId]);
 
     // Update the rhs state when the channel changes
     if (currentChannelId !== seenChannelId) {

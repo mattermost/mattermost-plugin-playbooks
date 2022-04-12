@@ -388,7 +388,7 @@
     "g0mp+I": "Wanneer je dit omzet naar een privaat playbook, blijven lidmaatschap en uitvoeringsgeschiedenis behouden. Deze verandering is permanent en kan niet ongedaan worden gemaakt. Weet je zeker dat je {playbookTitle} wilt omzetten naar een privaat playbook?",
     "SXJ98n": "Je kan de terugblikrapportage niet meer bewerken nadat je dit hebt gepubliceerd. Wil je de terugblikrapportage publiceren?",
     "R/2lqw": "Kies een sjabloon",
-    "QpUBDr": "{members, plural, =0 {Niemand} =1 {één persoon} other {# mensen}} hebben toegang tot dit playbook .",
+    "QpUBDr": "{members, plural, =0 {Niemand} =1 {één persoon} other {# mensen}} hebben toegang tot dit playbook.",
     "MJ89uW": "Omzetten naar privaat playbook",
     "HLn43R": "Toegang beheren",
     "0Vvpht": "Maak Playbook lid",
@@ -515,5 +515,14 @@
     "9j5KzL": "Categorienaam invoeren",
     "2Q5PhZ": "Verzoek om een playbook uit te voeren",
     "+PMJAg": "Begin met volgen voor {followers, plural, =1 {één gebruiker} other {# gebruikers}}",
-    "+/x2FM": "Selecteer een playbook"
+    "+/x2FM": "Selecteer een playbook",
+    "Ppx673": "Verslagen",
+    "zWgbGg": "Vandaag",
+    "mLrh+0": "Geen vervaldatum",
+    "iMjjOH": "Volgende week",
+    "aEhjYg": "Doel",
+    "MtrTNy": "Morgen",
+    "MbapTE": "{num} {num, plural, =1 {taak} other {taken}} laattijdig",
+    "I7+d55": "Geef een datum/tijd op (\"over 4 uur\", \"1 mei\"...)",
+    "AF7+5o": "Vervaldatum toevoegen"
 }

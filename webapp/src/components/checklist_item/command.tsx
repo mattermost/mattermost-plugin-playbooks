@@ -136,9 +136,6 @@ const PlaceholderDiv = styled.div`
 `;
 
 const CommandContainer = styled.div<{editing: boolean}>`
-    :not(:first-child) {
-        margin-left: 6px;
-    }
     ${({editing}) => editing && css`
         z-index: 49;
     `}
@@ -205,6 +202,7 @@ const CommandTextContainer = styled.div`
     font-size: 12px;
     line-height: 15px;
     margin-right: 4px;
+    white-space: nowrap;
 `;
 
 export default Command;

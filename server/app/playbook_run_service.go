@@ -25,6 +25,8 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+const checklistItemDescriptionCharLimit = 4000
+
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
 	PlaybookRunCreatedWSEvent = "playbook_run_created"
@@ -585,9 +587,10 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookR
 			{
 				DisplayName: "Description",
 				Name:        DialogFieldItemDescriptionKey,
-				Type:        "text",
+				Type:        "textarea",
 				Default:     "",
 				Optional:    true,
+				MaxLength:   checklistItemDescriptionCharLimit,
 			},
 		},
 		SubmitLabel:    "Add task",
