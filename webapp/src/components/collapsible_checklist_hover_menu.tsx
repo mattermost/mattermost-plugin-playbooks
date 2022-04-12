@@ -108,11 +108,11 @@ const AddNewTask = styled.button`
     }
 `;
 
-const DotMenuIcon = styled(HamburgerButton)`
+export const DotMenuIcon = styled(HamburgerButton)`
     font-size: 18px;
 `;
 
-const StyledDotMenuButton = styled(DotMenuButton)`
+export const StyledDotMenuButton = styled(DotMenuButton)`
     &:hover {
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
@@ -125,15 +125,15 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     height: 28px;
 `;
 
-const StyledDropdownMenu = styled(DropdownMenu)`
+export const StyledDropdownMenu = styled(DropdownMenu)`
     padding: 8px 0;
 `;
 
-const StyledDropdownMenuItem = styled(DropdownMenuItem)`
+export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     padding: 8px 0;
 `;
 
-const DropdownIcon = styled.i`
+export const DropdownIcon = styled.i`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     margin-right: 11px;
 `;

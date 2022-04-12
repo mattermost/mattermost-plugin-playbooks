@@ -370,6 +370,35 @@ describe('channels > rhs', () => {
                 });
             });
         });
+
+        it('when navigating directly to a finished playbook run channel and clicking on the button', () => {
+            // # Run the playbook
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // # Click the icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click({force: true});
+            });
+
+            // * Verify RHS Home shows the run details
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Run details').should('exist');
+            });
+        });
     });
 
     describe('is toggled', () => {
