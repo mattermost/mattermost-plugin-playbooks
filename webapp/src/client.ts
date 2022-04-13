@@ -339,6 +339,20 @@ export async function clientSkipChecklistItem(playbookRunID: string, checklistNu
     });
 }
 
+export async function clientSkipChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/skip`, {
+        method: 'PUT',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/restore`, {
+        method: 'PUT',
+        body: '',
+    });
+}
+
 export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
         method: 'put',

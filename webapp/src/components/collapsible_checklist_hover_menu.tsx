@@ -6,6 +6,10 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
+import {
+    clientSkipChecklist,
+    clientRestoreChecklist,
+} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -17,20 +21,24 @@ export interface Props {
     onRenameChecklist: () => void;
     onDeleteChecklist: () => void;
     dragHandleProps: DraggableProvidedDragHandleProps | undefined;
+    isChecklistSkipped: boolean;
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
     const {formatMessage} = useIntl();
 
-    return (
-        <ButtonRow>
-            {props.dragHandleProps &&
-            <Handle
-                title={formatMessage({defaultMessage: 'Drag to reorder checklist'})}
-                className={'icon icon-drag-vertical'}
-                {...props.dragHandleProps}
-            />
-            }
+    let lastComponent = (
+        <Handle
+            title={formatMessage({defaultMessage: 'Restore checklist'})}
+            className={'icon icon-refresh'}
+            onClick={(e) => {
+                e.stopPropagation();
+                clientRestoreChecklist(props.playbookRunID, props.checklistIndex);
+            }}
+        />
+    );
+    if (!props.isChecklistSkipped) {
+        lastComponent = (
             <DotMenu
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
@@ -47,7 +55,28 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-trash-can-outline icon-16'/>
                     {formatMessage({defaultMessage: 'Delete checklist'})}
                 </StyledDropdownMenuItem>
+                <StyledDropdownMenuItemRed
+                    onClick={() => {
+                        clientSkipChecklist(props.playbookRunID, props.checklistIndex);
+                    }}
+                >
+                    <DropdownIconRed className={'icon-close icon-16'}/>
+                    {formatMessage({defaultMessage: 'Skip checklist'})}
+                </StyledDropdownMenuItemRed>
             </DotMenu>
+        );
+    }
+
+    return (
+        <ButtonRow>
+            {props.dragHandleProps &&
+                <Handle
+                    title={formatMessage({defaultMessage: 'Drag to reorder checklist'})}
+                    className={'icon icon-drag-vertical'}
+                    {...props.dragHandleProps}
+                />
+            }
+            {lastComponent}
         </ButtonRow>
     );
 };
@@ -94,8 +123,23 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     padding: 8px 0;
 `;
 
+const StyledDropdownMenuItemRed = styled(DropdownMenuItem)`
+    padding: 8px 0;
+    && {
+        color: #D24B4E;
+    }
+    &&:hover {
+        color: #D24B4E;
+    }
+`;
+
 export const DropdownIcon = styled.i`
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    margin-right: 11px;
+`;
+
+const DropdownIconRed = styled.i`
+    color: #D24B4E;
     margin-right: 11px;
 `;
 
