@@ -59,6 +59,14 @@ func (t *NoopTelemetry) RemoveTask(string, string, app.ChecklistItem) {
 func (t *NoopTelemetry) RenameTask(string, string, app.ChecklistItem) {
 }
 
+// SkipChecklist does nothing.
+func (t *NoopTelemetry) SkipChecklist(string, string, app.Checklist) {
+}
+
+// RestoreChecklist does nothing.
+func (t *NoopTelemetry) RestoreChecklist(string, string, app.Checklist) {
+}
+
 // SkipTask does nothing.
 func (t *NoopTelemetry) SkipTask(string, string, app.ChecklistItem) {
 }
