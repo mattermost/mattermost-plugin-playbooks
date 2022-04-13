@@ -91,7 +91,7 @@ const Command = (props: CommandProps) => {
                 text={props.command}
                 parentRef={commandRef}
             />
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </CommandText>
     );
 

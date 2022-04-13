@@ -130,7 +130,7 @@ const TitleTextArea = styled.textarea`
     }
 `;
 
-const StrikeThrough = styled.text`
+const StrikeThrough = styled.div`
     text-decoration: line-through;
 `;
 

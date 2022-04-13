@@ -202,12 +202,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
+                        setShowMenu(false);
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
                         props.cancelAddingItem?.();
                     }}
                     onSave={() => {
+                        setShowMenu(false);
                         setIsEditing(false);
                         if (props.newItem) {
                             props.cancelAddingItem?.();
