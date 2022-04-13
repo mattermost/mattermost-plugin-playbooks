@@ -244,6 +244,9 @@ export default class Plugin {
         if (this.stylesContainer) {
             unmountComponentAtNode(this.stylesContainer);
         }
+        if (registry.unregisterSiteStatisticsHandler) {
+            registry.unregisterSiteStatisticsHandler();
+        }
     }
 }
 
