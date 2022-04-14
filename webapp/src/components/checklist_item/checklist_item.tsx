@@ -252,7 +252,7 @@ const ItemContainer = styled.div<{editing: boolean}>`
 
     ${({editing}) => !editing && css`
         &:hover{
-            background: var(--center-channel-color-08);
+            background: var(--center-channel-color-04);
         }
     `}
 `;

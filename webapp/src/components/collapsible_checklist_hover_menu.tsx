@@ -99,7 +99,7 @@ const ButtonRow = styled.div`
 `;
 
 export const DotMenuIcon = styled(HamburgerButton)`
-    font-size: 18px;
+    font-size: 14.4px;
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`

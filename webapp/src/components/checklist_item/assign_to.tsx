@@ -175,12 +175,14 @@ const AssignToTextContainer = styled.div`
 `;
 
 const AssignToIcon = styled.i`
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
     display: flex;
     align-items: center;
     text-align: center;
     flex: table;
+    color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
 const AssignToContainer = styled.div`

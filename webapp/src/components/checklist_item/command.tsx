@@ -140,6 +140,7 @@ const CommandContainer = styled.div<{editing: boolean}>`
         z-index: 49;
     `}
 
+    display: flex;
     background: var(--center-channel-color-08);
     border-radius: 54px;
     padding: 0px 4px;
@@ -189,12 +190,14 @@ const StyledSpinner = styled(Spinner)`
 `;
 
 const CommandIcon = styled.i`
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
     display: flex;
     align-items: center;
     text-align: center;
     flex: table;
+    color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
 const CommandTextContainer = styled.div`

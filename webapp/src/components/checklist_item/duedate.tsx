@@ -11,7 +11,7 @@ import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {Mode} from '../datetime_input';
-import {HoverMenuButton} from '../rhs/rhs_shared';
+import {ChecklistHoverMenuButton} from '../rhs/rhs_shared';
 import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -79,10 +79,10 @@ export const DueDateHoverMenuButton = ({
     };
 
     const hoverMenuButton = (
-        <HoverMenuButton
+        <ChecklistHoverMenuButton
             disabled={!dueDateEditAvailable}
             title={dueDateEditAvailable ? formatMessage({defaultMessage: 'Add due date'}) : ''}
-            className={'icon-calendar-outline icon-16 btn-icon'}
+            className={'icon-calendar-outline icon-12 btn-icon'}
             onClick={licenseControl}
         />
     );
