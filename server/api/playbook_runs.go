@@ -482,19 +482,18 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
-		if pb.BroadcastEnabled {
-			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
-		}
+		playbookRun.StatusUpdateBroadcastFollowersEnabled = true
+
+		playbookRun.StatusUpdateBroadcastChannelsEnabled = pb.BroadcastEnabled
+		playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 
 		playbookRun.WebhookOnCreationURLs = []string{}
 		if pb.WebhookOnCreationEnabled {
 			playbookRun.WebhookOnCreationURLs = pb.WebhookOnCreationURLs
 		}
 
-		playbookRun.WebhookOnStatusUpdateURLs = []string{}
-		if pb.WebhookOnStatusUpdateEnabled {
-			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
-		}
+		playbookRun.StatusUpdateBroadcastWebhooksEnabled = pb.WebhookOnStatusUpdateEnabled
+		playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
 
 		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
 		if pb.RetrospectiveEnabled {
