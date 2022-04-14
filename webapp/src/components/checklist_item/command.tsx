@@ -263,6 +263,7 @@ const FormContainer = styled.div`
 const CommandInputContainer = styled.div`
     margin: 16px;
     border-radius: 4px;
+    z-index: 3;
 `;
 
 const Blanket = styled.div`
