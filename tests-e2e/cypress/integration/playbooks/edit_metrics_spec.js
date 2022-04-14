@@ -119,7 +119,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('#root').findByText('Retrospective').click();
 
                 // * Verify we saved the metrics
-                verifyViewMetric(0, 'test duration', '12 days 9 hours 37 minutes per run', 'test description');
+                verifyViewMetric(0, 'test duration', '12 days, 9 hours, 37 minutes per run', 'test description');
                 verifyViewMetric(1, 'test dollars', '2 per run', 'a new description');
                 verifyViewMetric(2, 'test integer', '7777777 per run', 'test descr 3');
                 verifyViewMetric(3, 'test duration 2!!!', '2 minutes per run', 'test description 4');
@@ -157,7 +157,7 @@ describe('playbooks > edit_metrics', () => {
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
                 cy.findByRole('button', {name: 'Add'}).click();
-                verifyViewMetric(0, 'test duration', '2 days 12 hours 1 minute per run', 'test description');
+                verifyViewMetric(0, 'test duration', '2 days, 12 hours, 1 minute per run', 'test description');
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
@@ -451,7 +451,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify duration
                 addMetric('Duration', 'test duration', '0:0:0', 'test description');
-                verifyViewMetric(0, 'test duration', 'less than 1 minute per run', 'test description');
+                verifyViewMetric(0, 'test duration', '0 seconds per run', 'test description');
 
                 // # Verify it shows 0:0:0, then turn it into null.
                 cy.findAllByTestId('edit-metric').eq(0).click();
