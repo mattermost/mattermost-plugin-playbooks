@@ -3,7 +3,7 @@
 
 import styled, {css} from 'styled-components';
 import React, {useEffect, useState, HTMLAttributes} from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 
 import {useLocation} from 'react-router-dom';
 
@@ -13,14 +13,7 @@ import {mdiTextBoxOutline} from '@mdi/js';
 import {telemetryEventForPlaybook} from 'src/client';
 import {BackstageID} from 'src/components/backstage/backstage';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-
-export enum SectionID {
-    Description = 'description',
-    Checklists = 'checklists',
-    Actions = 'actions',
-    StatusUpdates = 'statusUpdates',
-    Retrospective = 'retrospective',
-}
+import {useScrollListener} from 'src/hooks';
 
 interface Props {
     playbookId: PlaybookWithChecklist['id'];
@@ -35,8 +28,8 @@ type Attrs = HTMLAttributes<HTMLElement>;
 const headersOffset = 140;
 
 const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
-    const [activeId, setActiveId] = useState(items?.[0].id);
     const {hash} = useLocation();
+    const [activeId, setActiveId] = useState(hash ?? items?.[0].id);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -60,21 +53,10 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
         }
     };
 
+    const root = document.getElementById(BackstageID);
+
     useEffect(updateActiveSection, []);
-
-    useEffect(() => {
-        const root = document.getElementById(BackstageID);
-
-        if (root === null) {
-            return () => { /* do nothing*/ };
-        }
-
-        root.addEventListener('scroll', updateActiveSection);
-
-        return () => {
-            root.removeEventListener('scroll', updateActiveSection);
-        };
-    }, [updateActiveSection]);
+    useScrollListener(root, updateActiveSection);
 
     const scrollToSection = (id: ItemId) => {
         telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${id}_clicked`);
@@ -83,7 +65,6 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
             return;
         }
 
-        const root = document.getElementById(BackstageID);
         const section = document.getElementById(id);
 
         if (!section || !root) {
@@ -123,10 +104,6 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
 
         root.addEventListener('scroll', callback, {passive: true});
     };
-
-    useEffect(() => {
-        setTimeout(() => scrollToSection(hash), 150);
-    }, [scrollToSection, hash]);
 
     const isSectionActive = (id: string) => {
         return activeId === id;

@@ -2,22 +2,24 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes} from 'react';
+import React, {Children, ReactNode, HTMLAttributes, useEffect} from 'react';
 
 import {useIntl} from 'react-intl';
+
+import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import Checklists from './section_checklists';
+import Retrospective from './section_retrospective';
 
-import ScrollNavBase, {SectionID} from './scroll_nav';
+import ScrollNavBase from './scroll_nav';
 
 import Section from './section';
 
 interface Props {
     playbook: PlaybookWithChecklist;
     runsInProgress: number;
-    followerIds: string[];
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
@@ -48,10 +50,16 @@ const Outline = ({playbook}: Props) => {
             data-testid='preview-content'
         >
             <Section
-                id={SectionID.Checklists}
+                id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
             >
                 <Checklists playbook={playbook}/>
+            </Section>
+            <Section
+                id={'retrospective'}
+                title={formatMessage({defaultMessage: 'Retrospective'})}
+            >
+                <Retrospective playbook={playbook}/>
             </Section>
         </Sections>
     );
@@ -72,6 +80,8 @@ const SectionsImpl = ({
     children,
     ...attrs
 }: SectionsProps & Attrs) => {
+    const {hash} = useLocation();
+
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -84,6 +94,10 @@ const SectionsImpl = ({
         }
         return result;
     }, []);
+
+    useEffect(() => {
+        document.getElementById(hash)?.scrollIntoView({behavior: 'smooth'});
+    }, [hash]);
 
     return (
         <>

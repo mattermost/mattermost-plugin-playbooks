@@ -19,7 +19,6 @@ import {
 } from 'src/hooks';
 
 import {
-    clientFetchPlaybookFollowers,
     getSiteUrl,
     telemetryEventForPlaybook,
 } from 'src/client';
@@ -34,34 +33,12 @@ import {HorizontalBG} from 'src/components/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
-import TitleBar from './title_bar';
 import Outline, {Sections, ScrollNav} from './outline/outline';
+import {Back} from './controls';
 
 interface MatchParams {
     playbookId: string
 }
-const useFollowersMeta = (playbookId: string) => {
-    const [followerIds, setFollowerIds] = useState<string[]>([]);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const currentUserId = useSelector(getCurrentUserId);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookId) {
-                try {
-                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
-                    setFollowerIds(fetchedFollowerIds);
-                    setIsFollowing(fetchedFollowerIds?.includes(currentUserId));
-                } catch {
-                    setIsFollowing(false);
-                }
-            }
-        };
-        fetchData();
-    }, [playbookId, currentUserId, isFollowing]);
-
-    return {followerIds, isFollowing, setIsFollowing};
-};
 
 /** @alpha this is the new home of `playbooks/playbook.tsx`*/
 const PlaybookEditor = () => {
@@ -70,11 +47,6 @@ const PlaybookEditor = () => {
     const playbook = usePlaybook(playbookId);
     const stats = useStats(playbookId);
     const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
-    const {
-        followerIds,
-        isFollowing,
-        setIsFollowing,
-    } = useFollowersMeta(playbookId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -92,11 +64,13 @@ const PlaybookEditor = () => {
         <>
             <Editor>
                 <TitleHeaderBackdrop/>
-                <TitleBar
-                    playbook={playbook}
-                    isFollowing={isFollowing}
-                    onFollowingChange={setIsFollowing}
-                />
+                <NavBackdrop/>
+                <TitleWing side='left'>
+                    <Back/>
+                </TitleWing>
+                <TitleWing side='right'>
+                    
+                </TitleWing>
                 <Header>
                     <Heading>
                         <CopyLink
@@ -137,7 +111,6 @@ const PlaybookEditor = () => {
                     >
                         <Outline
                             playbook={playbook}
-                            followerIds={followerIds}
                             runsInProgress={stats.runs_in_progress}
                         />
                     </Route>
@@ -159,9 +132,22 @@ const PlaybookEditor = () => {
     );
 };
 
+const TitleWing = styled.div<{side: 'left' | 'right'}>`
+    position: sticky;
+    z-index: 3;
+    top: 0;
+    grid-area: ${({side}) => `title-${side}`};
+
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: ${({side}) => (side === 'left' ? 'start' : 'end')};
+`;
+
 const Header = styled.header`
     grid-area: header;
     z-index: 4;
+
     ${CopyLink} {
         margin-left: -1.25em;
         opacity: 1;
@@ -221,12 +207,19 @@ const NavBar = styled.nav`
     display: flex;
     width: 100%;
     justify-content: center;
-    background: var(--center-channel-bg);
-    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
     grid-area: nav;
     position: sticky;
     top: 0;
     z-index: 2;
+`;
+
+const NavBackdrop = styled.div`
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--center-channel-bg);
+    grid-area: nav-left/nav-left/nav-right/nav-right;
+    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const TitleHeaderBackdrop = styled.div`
@@ -239,18 +232,17 @@ const Editor = styled.main`
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
 
-
-    --bar-height: 100px;
+    --bar-height: 60px;
     --content-max-width: 780px;
 
-    // standard-full
+    /* === standard-full === */
     grid-template:
-        'title-left header title-right' var(--bar-height)
-        '. header .' auto
-        '. control .' 40px
-        'nav nav nav' var(--bar-height)
-        'aside content aside-right' 1fr
-        / 1fr minmax(min-content, var(--content-max-width)) 1fr
+        'title-left title-left . . title-right' var(--bar-height)
+        '. header header header .'
+        '. control control control .' 40px
+        'nav-left nav-left nav nav-right nav-right' var(--bar-height)
+        'aside content content content .' 1fr
+        / 1fr 1fr minmax(min-content, auto) 1fr 1fr;
     ;
 
     gap: 0 3rem;
@@ -260,7 +252,7 @@ const Editor = styled.main`
         align-self: start;
         justify-self: end;
 
-        margin-top: 9.5rem;
+        margin-top: 11.5rem;
 
         position: sticky;
         top: var(--bar-height);
@@ -283,18 +275,36 @@ const Editor = styled.main`
         grid-area: aside/aside/aside-right/aside-right;
     }
 
-    // mobile
+    /* === scrolling, condense header/title === */
+    .is-scrolling & {
+
+    }
+
+    /* === mobile === */
     @media screen and (max-width: 768px) {
+
+        --bar-height: 50px;
+
         grid-template:
-            'title-left title-right' 40px
+            'title-left title-right' var(--bar-height)
             'header header'
             'nav nav'
             'content content'
             / 1fr
         ;
 
+        ${Header} {
+            padding: 20px;
+        }
+
+        ${NavBar} {
+            top: var(--bar-height);
+        }
+
         ${Sections} {
             padding: 20px;
+            padding-top: 0;
+            margin: 10px;
         }
 
         ${ScrollNav} {

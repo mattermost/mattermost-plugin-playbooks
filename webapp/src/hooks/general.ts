@@ -5,6 +5,7 @@ import {
     useRef,
     useState,
     useMemo,
+    UIEventHandler,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
@@ -603,4 +604,15 @@ export const usePortal = (parent: HTMLElement) => {
     }, [parent, portal]);
 
     return portal;
+};
+
+export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
+    useEffect(() => {
+        if (el === null) {
+            return () => { /* do nothing*/ };
+        }
+
+        el.addEventListener('scroll', listener);
+        return () => el.removeEventListener('scroll', listener);
+    }, [el, listener]);
 };

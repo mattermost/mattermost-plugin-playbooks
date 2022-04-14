@@ -1,19 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
+import {useScroll} from 'react-use';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+
+import classNames from 'classnames';
 
 import Playbook from 'src/components/backstage/playbooks/playbook';
 import {promptForFeedback} from 'src/client';
@@ -86,6 +89,9 @@ const BackstageBody = styled.div`
 
 const Backstage = () => {
     const {formatMessage} = useIntl();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const {y} = useScroll(containerRef);
 
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
@@ -112,7 +118,11 @@ const Backstage = () => {
     const match = useRouteMatch();
 
     return (
-        <BackstageContainer id={BackstageID}>
+        <BackstageContainer
+            ref={containerRef}
+            id={BackstageID}
+            className={classNames({'is-scrolling': y > 80})}
+        >
             <ToastProvider>
                 <Switch>
                     <Route path={`${match.url}/error`}/>

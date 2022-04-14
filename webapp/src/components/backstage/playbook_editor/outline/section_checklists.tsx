@@ -1,17 +1,15 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
-// See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {Checklist, ChecklistItem, PlaybookWithChecklist} from 'src/types/playbook';
-
-import {ChecklistItemDetails} from 'src/components/checklist_item';
+import {Checklist, ChecklistItem as ChecklistItemType, PlaybookWithChecklist} from 'src/types/playbook';
+import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import CollapsibleChecklist, {TitleHelpTextWrapper} from 'src/components/collapsible_checklist';
+
 interface Props {
     playbook: PlaybookWithChecklist;
 }
@@ -52,9 +50,9 @@ const SectionChecklists = (props: Props) => {
                     disabledOrRunID={true}
                 >
                     <ChecklistContainer className='checklist'>
-                        {checklist.items.map((checklistItem: ChecklistItem, index: number) => {
+                        {checklist.items.map((checklistItem: ChecklistItemType, index: number) => {
                             return (
-                                <ChecklistItemDetails
+                                <ChecklistItem
                                     key={checklist.title + checklistItem.title}
                                     checklistItem={checklistItem}
                                     checklistNum={checklistIndex}
