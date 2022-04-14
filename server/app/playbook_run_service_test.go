@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -1305,4 +1307,327 @@ func TestMultipleWebhooks(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestDMTodoDigestToUser(t *testing.T) {
+	controller := gomock.NewController(t)
+	pluginAPI := &plugintest.API{}
+	client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+	store := mock_app.NewMockPlaybookRunStore(controller)
+	logger := mock_bot.NewMockLogger(controller)
+	configService := mock_config.NewMockService(controller)
+	telemetryService := &telemetry.NoopTelemetry{}
+	scheduler := mock_app.NewMockJobOnceScheduler(controller)
+	playbookService := mock_app.NewMockPlaybookService(controller)
+	channelActionService := mock_app.NewMockChannelActionService(controller)
+	licenseChecker := mock_app.NewMockLicenseChecker(controller)
+	mattermostConfig := &model.Config{}
+	mattermostConfig.SetDefaults()
+	pluginAPI.On("GetConfig").Return(mattermostConfig)
+	user := &model.User{Id: "testUserID", Username: "testUsername", Locale: "en"}
+	store.EXPECT().GetOverdueUpdateRuns(user.Id).Return(nil, nil).Times(10)
+	pluginAPI.On("GetUser", "testUserID").Return(user, nil).Times(10)
+	store.EXPECT().GetParticipatingRuns(user.Id).Return(nil, nil).Times(10)
+
+	// get path to the project root folder
+	root, _ := filepath.Abs("../../")
+	// init i18n, we need it to extract translations
+	err := i18n.TranslationsPreInit(filepath.Join(root, "/assets/i18n"))
+	require.NoError(t, err)
+
+	day := time.Hour.Milliseconds() * 24
+
+	t.Run("digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
+		expected := "##### Your assigned tasks\n" +
+			"You have 10 assigned tasks that are now due:\n\n" +
+			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +
+			"  - [ ] list1: task1\n" +
+			"  - [ ] list1: task2\n" +
+			"  - [ ] list1: task3\n" +
+			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
+			"  - [ ] list2: task1\n" +
+			"  - [ ] list2: task2 **`Due today`**\n" +
+			"[name3](/team3/channels/channel3?telem_action=todo_assignedtask_clicked&telem_run_id=3&forceRHSOpen)\n" +
+			"  - [ ] list3: task1 **`Due yesterday`**\n" +
+			"  - [ ] list3: task2 **`Due 2 days ago`**\n" +
+			"  - [ ] list3: task3 **`Due 5 days ago`**\n" +
+			"[name4](/team4/channels/channel4?telem_action=todo_assignedtask_clicked&telem_run_id=4&forceRHSOpen)\n" +
+			"  - [ ] list4: task2\n" +
+			"  - [ ] list4: task3\n" +
+			":information_source: You have **2 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
+
+		now := model.GetMillis()
+		assignedRuns := []app.AssignedRun{
+			{
+				RunLink: createRunLink("1"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list1", "task1"),
+					createChecklistItem(0, "list1", "task2"),
+					createChecklistItem(0, "list1", "task3")},
+			},
+			{
+				RunLink: createRunLink("2"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list2", "task1"),
+					createChecklistItem(now, "list2", "task2"),      // due today
+					createChecklistItem(now+day, "list2", "task3")}, // due tomorrow
+			},
+			{
+				RunLink: createRunLink("3"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now-day, "list3", "task1"),    // due yesterday
+					createChecklistItem(now-day*2, "list3", "task2"),  // due two days ago
+					createChecklistItem(now-day*5, "list3", "task3")}, // due five days ago
+			},
+			{
+				RunLink: createRunLink("4"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now+day*3, "list4", "task1"), // due in 3 days
+					createChecklistItem(0, "list4", "task2"),
+					createChecklistItem(0, "list4", "task3")},
+			},
+		}
+
+		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
+		var digestPost *model.Post
+		poster := mock_bot.NewMockPoster(controller)
+		poster.EXPECT().DM(user.Id, gomock.Any()).DoAndReturn(
+			func(userID string, post *model.Post) interface{} {
+				digestPost = post
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err = s.DMTodoDigestToUser(user.Id, false)
+		require.NoError(t, err)
+		require.Equal(t, expected, digestPost.Message)
+	})
+
+	t.Run("digest message with no tasks", func(t *testing.T) {
+		assignedRuns := []app.AssignedRun{}
+
+		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
+		var dmCalled bool
+		poster := mock_bot.NewMockPoster(controller)
+		poster.EXPECT().DM(user.Id, gomock.Any()).DoAndReturn(
+			func(userID string, post *model.Post) interface{} {
+				dmCalled = true
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err = s.DMTodoDigestToUser(user.Id, false)
+		require.NoError(t, err)
+		require.Equal(t, false, dmCalled)
+	})
+
+	t.Run("digest message with tasks no due date set", func(t *testing.T) {
+		expected := "##### Your assigned tasks\n" +
+			"You have 5 assigned tasks that are now due:\n\n" +
+			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +
+			"  - [ ] list1: task1\n" +
+			"  - [ ] list1: task2\n" +
+			"  - [ ] list1: task3\n" +
+			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
+			"  - [ ] list2: task1\n" +
+			"  - [ ] list2: task2\n"
+
+		assignedRuns := []app.AssignedRun{
+			{
+				RunLink: createRunLink("1"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list1", "task1"),
+					createChecklistItem(0, "list1", "task2"),
+					createChecklistItem(0, "list1", "task3")},
+			},
+			{
+				RunLink: createRunLink("2"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list2", "task1"),
+					createChecklistItem(0, "list2", "task2"),
+				},
+			},
+		}
+
+		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
+		var digestPost *model.Post
+		poster := mock_bot.NewMockPoster(controller)
+		// catch post object passed to DM function to check text
+		poster.EXPECT().DM(user.Id, gomock.Any()).DoAndReturn(
+			func(userID string, post *model.Post) interface{} {
+				digestPost = post
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err = s.DMTodoDigestToUser(user.Id, false)
+		require.NoError(t, err)
+		require.Equal(t, expected, digestPost.Message)
+	})
+
+	t.Run("digest message with tasks due after today", func(t *testing.T) {
+		expected := "##### Your assigned tasks\n" +
+			":information_source: You have **3 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
+
+		now := model.GetMillis()
+		assignedRuns := []app.AssignedRun{
+			{
+				RunLink: createRunLink("1"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now+day*3, "list1", "task1"),
+					createChecklistItem(now+day*2, "list1", "task2"),
+				},
+			},
+			{
+				RunLink: createRunLink("2"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now+day+1, "list2", "task2"),
+				},
+			},
+		}
+
+		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
+		var digestPost *model.Post
+		poster := mock_bot.NewMockPoster(controller)
+		poster.EXPECT().DM(user.Id, gomock.Any()).DoAndReturn(
+			func(userID string, post *model.Post) interface{} {
+				digestPost = post
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err = s.DMTodoDigestToUser(user.Id, false)
+		require.NoError(t, err)
+		require.Equal(t, expected, digestPost.Message)
+	})
+}
+
+func TestEphemeralPostTodoDigestToUser(t *testing.T) {
+	controller := gomock.NewController(t)
+	pluginAPI := &plugintest.API{}
+	client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+	store := mock_app.NewMockPlaybookRunStore(controller)
+	logger := mock_bot.NewMockLogger(controller)
+	configService := mock_config.NewMockService(controller)
+	telemetryService := &telemetry.NoopTelemetry{}
+	scheduler := mock_app.NewMockJobOnceScheduler(controller)
+	playbookService := mock_app.NewMockPlaybookService(controller)
+	channelActionService := mock_app.NewMockChannelActionService(controller)
+	licenseChecker := mock_app.NewMockLicenseChecker(controller)
+	mattermostConfig := &model.Config{}
+	mattermostConfig.SetDefaults()
+	pluginAPI.On("GetConfig").Return(mattermostConfig)
+
+	defaultTimezone := make(map[string]string)
+	defaultTimezone["useAutomaticTimezone"] = "true"
+	defaultTimezone["automaticTimezone"] = "Asia/Tbilisi"
+	defaultTimezone["manualTimezone"] = ""
+
+	user := &model.User{Id: "testUserID", Username: "testUsername", Locale: "en"}
+	store.EXPECT().GetOverdueUpdateRuns(user.Id).Return(nil, nil).Times(10)
+	pluginAPI.On("GetUser", "testUserID").Return(user, nil).Times(10)
+	store.EXPECT().GetParticipatingRuns(user.Id).Return(nil, nil).Times(10)
+
+	// get path to the project root folder
+	root, _ := filepath.Abs("../../")
+
+	err := i18n.TranslationsPreInit(filepath.Join(root, "/assets/i18n"))
+	require.NoError(t, err)
+	day := time.Hour.Milliseconds() * 24
+
+	t.Run("todo command message with tasks due today, after/before today and no due date", func(t *testing.T) {
+		expected := "##### Your assigned tasks\n" +
+			"You have 12 total assigned tasks:\n\n" +
+			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +
+			"  - [ ] list1: task1\n" +
+			"  - [ ] list1: task2\n" +
+			"  - [ ] list1: task3\n" +
+			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
+			"  - [ ] list2: task1\n" +
+			"  - [ ] list2: task2 **`Due today`**\n" +
+			"  - [ ] list2: task3 `Due in 1 day`\n" +
+			"[name3](/team3/channels/channel3?telem_action=todo_assignedtask_clicked&telem_run_id=3&forceRHSOpen)\n" +
+			"  - [ ] list3: task1 **`Due yesterday`**\n" +
+			"  - [ ] list3: task2 **`Due 2 days ago`**\n" +
+			"  - [ ] list3: task3 **`Due 5 days ago`**\n" +
+			"[name4](/team4/channels/channel4?telem_action=todo_assignedtask_clicked&telem_run_id=4&forceRHSOpen)\n" +
+			"  - [ ] list4: task1 `Due in 3 days`\n" +
+			"  - [ ] list4: task2 `Due in 1 day`\n" +
+			"  - [ ] list4: task3\n"
+
+		now := model.GetMillis()
+		assignedRuns := []app.AssignedRun{
+			{
+				RunLink: createRunLink("1"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list1", "task1"),
+					createChecklistItem(0, "list1", "task2"),
+					createChecklistItem(0, "list1", "task3")},
+			},
+			{
+				RunLink: createRunLink("2"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(0, "list2", "task1"),
+					createChecklistItem(now, "list2", "task2"),      // due today
+					createChecklistItem(now+day, "list2", "task3")}, // due tomorrow
+			},
+			{
+				RunLink: createRunLink("3"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now-day, "list3", "task1"),    // due yesterday
+					createChecklistItem(now-day*2, "list3", "task2"),  // due two days ago
+					createChecklistItem(now-day*5, "list3", "task3")}, // due five days ago
+			},
+			{
+				RunLink: createRunLink("4"),
+				Tasks: []app.AssignedTask{
+					createChecklistItem(now+day*3, "list4", "task1"), // due in 3 days
+					createChecklistItem(now+day, "list4", "task2"),   // due in 1 day
+					createChecklistItem(0, "list4", "task3")},
+			},
+		}
+
+		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
+		var digestPost *model.Post
+		poster := mock_bot.NewMockPoster(controller)
+		poster.EXPECT().EphemeralPost(user.Id, "", gomock.Any()).DoAndReturn(
+			func(userID string, channelID string, post *model.Post) interface{} {
+				digestPost = post
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err = s.EphemeralPostTodoDigestToUser(user.Id, "", true)
+		require.NoError(t, err)
+		require.Contains(t, digestPost.Message, expected)
+	})
+}
+
+func createChecklistItem(dueDate int64, checklistTitle, itemTitle string) app.AssignedTask {
+	return app.AssignedTask{
+		ChecklistTitle: checklistTitle,
+		ChecklistItem: app.ChecklistItem{
+			Title:   itemTitle,
+			DueDate: dueDate,
+		},
+	}
+}
+
+func createRunLink(id string) app.RunLink {
+	return app.RunLink{
+		PlaybookRunID:      id,
+		TeamName:           "team" + id,
+		ChannelName:        "channel" + id,
+		ChannelDisplayName: "name" + id,
+	}
 }

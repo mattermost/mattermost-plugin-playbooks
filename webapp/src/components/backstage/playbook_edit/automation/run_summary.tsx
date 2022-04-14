@@ -29,7 +29,7 @@ const RunSummary = ({enabled, onToggle, summary, onSummaryChanged}: Props) => {
                     isChecked={enabled}
                     onChange={onToggle}
                 />
-                <FormattedMessage defaultMessage={'Update the run Summary'}/>
+                <FormattedMessage defaultMessage={'Update the run summary'}/>
             </AutomationTitle>
             <TextboxWrapper>
                 <StyledMarkdownTextbox

@@ -21,6 +21,7 @@ type LicenseChecker interface {
 	RetrospectiveAllowed() bool
 	TimelineAllowed() bool
 	StatsAllowed() bool
+	ChecklistItemDueDateAllowed() bool
 }
 
 type PermissionsService struct {

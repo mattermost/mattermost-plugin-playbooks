@@ -367,6 +367,12 @@ export function useAllowPrivatePlaybooks() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowSetTaskDueDate returns whether the server is licensed for
+// setting / editing checklist item due date
+export function useAllowSetTaskDueDate() {
+    return useSelector(isE10LicensedOrDevelopment);
+}
+
 // useAllowMakePlaybookPrivate returns whether the server is licenced for
 // converting public playbooks to private
 export function useAllowMakePlaybookPrivate() {
@@ -580,4 +586,15 @@ export const usePrevious = (value: any) => {
     });
 
     return ref.current;
+};
+
+// Create a portal to render while dragging
+export const usePortal = (parent: HTMLElement) => {
+    const [portal] = useState(document.createElement('div'));
+
+    useEffect(() => {
+        parent.appendChild(portal);
+    }, [parent, portal]);
+
+    return portal;
 };

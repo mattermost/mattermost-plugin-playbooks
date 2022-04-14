@@ -42,6 +42,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 per_page: 0,
                 team_id: currentTeam.id,
                 participant_id: currentUserId,
+                statuses: [PlaybookRunStatus.InProgress],
             });
             store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }

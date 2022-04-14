@@ -481,17 +481,29 @@ type PlaybookRunService interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// SetCommandToChecklistItem sets command to checklist item
+	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
+
 	// SetDueDate sets absolute due date timestamp for the specified checklist item
 	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
 
+	// DuplicateChecklistItem duplicates the checklist item.
+	DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error
+
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(playbookRunID, userID string, checklistNumber int, checklistItem ChecklistItem) error
 
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
+	// SkipChecklist skips a checklist
+	SkipChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// RestoreChecklist restores a skipped checklist
+	RestoreChecklist(playbookRunID, userID string, checklistNumber int) error
 
 	// SkipChecklistItem removes an item from the specified checklist
 	SkipChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
@@ -729,6 +741,12 @@ type PlaybookRunTelemetry interface {
 
 	// RemoveTask tracks the removal of a checklist item.
 	RemoveTask(playbookRunID, userID string, task ChecklistItem)
+
+	// SkipChecklist tracks the skipping of a checklist.
+	SkipChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RestoreChecklist tracks the restoring of a checklist.
+	RestoreChecklist(playbookRunID, userID string, checklist Checklist)
 
 	// SkipTask tracks the skipping of a checklist item.
 	SkipTask(playbookRunID, userID string, task ChecklistItem)

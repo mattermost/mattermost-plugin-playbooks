@@ -17,12 +17,15 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
+
+const checklistItemDescriptionCharLimit = 4000
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -584,9 +587,10 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookR
 			{
 				DisplayName: "Description",
 				Name:        DialogFieldItemDescriptionKey,
-				Type:        "text",
+				Type:        "textarea",
 				Default:     "",
 				Optional:    true,
+				MaxLength:   checklistItemDescriptionCharLimit,
 			},
 		},
 		SubmitLabel:    "Add task",
@@ -1354,6 +1358,28 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
+// SetCommandToChecklistItem sets command to checklist item
+func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
+	return nil
+}
+
 // SetDueDate sets absolute due date timestamp for the specified checklist item
 func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
@@ -1441,6 +1467,31 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	return cmdResponse.TriggerId, nil
+}
+
+func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	checklistItem.ID = ""
+
+	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
+
+	return nil
 }
 
 // AddChecklist adds a checklist to the specified run
@@ -1549,6 +1600,53 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	return nil
 }
 
+// SkipChecklist skips the checklist
+func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
+	}
+
+	checklist := playbookRunToModify.Checklists[checklistNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.SkipChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
+// RestoreChecklist restores the skipped checklist
+func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
+	}
+
+	checklist := playbookRunToModify.Checklists[checklistNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.RestoreChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
 // SkipChecklistItem skips the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
@@ -1598,10 +1696,10 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	if err != nil {
 		return err
 	}
-
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
+
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1756,7 +1854,14 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	if err != nil {
 		return nil, err
 	}
-	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, user.Locale)
+
+	// get user timezone
+	timezone, err := timeutils.GetUserTimezone(user)
+	if err != nil {
+		return nil, err
+	}
+
+	part2 := buildAssignedTaskMessageSummary(runsAssigned, user.Locale, timezone, !force)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
@@ -2625,31 +2730,92 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, locale string) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyDueUntilToday bool) string {
+	var msg strings.Builder
+
 	T := i18n.GetUserTranslations(locale)
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
-	msg := "##### " + T("app.user.digest.tasks.heading") + "\n"
+	msg.WriteString("##### ")
+	msg.WriteString(T("app.user.digest.tasks.heading"))
+	msg.WriteString("\n")
 
 	if total == 0 {
-		return msg + T("app.user.digest.tasks.zero_outstanding") + "\n"
+		msg.WriteString(T("app.user.digest.tasks.zero_assigned"))
+		msg.WriteString("\n")
+		return msg.String()
 	}
 
-	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
+	var tasksNoDueDate, tasksDoAfterToday int
+	currentTime := timeutils.GetTimeForMillis(model.GetMillis()).In(timezone)
+	yesterday := currentTime.Add(-24 * time.Hour)
 
+	var runsInfo strings.Builder
 	for _, run := range runs {
-		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
+		var tasksInfo strings.Builder
 
 		for _, task := range run.Tasks {
-			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+			// no due date
+			if task.ChecklistItem.DueDate == 0 {
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
+				tasksNoDueDate++
+				continue
+			}
+			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
+			// due today
+			if timeutils.IsSameDay(dueTime, currentTime) {
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today")))
+				continue
+			}
+			// due yesterday
+			if timeutils.IsSameDay(dueTime, yesterday) {
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday")))
+				continue
+			}
+			// due before yesterday
+			if dueTime.Before(currentTime) {
+				days := timeutils.GetDaysDiff(dueTime, currentTime)
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days)))
+				continue
+			}
+			// due after today
+			if !onlyDueUntilToday {
+				days := timeutils.GetDaysDiff(currentTime, dueTime)
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
+			}
+			tasksDoAfterToday++
+		}
+
+		// omit run's title if tasks info is empty
+		if tasksInfo.String() != "" {
+			runsInfo.WriteString(fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
+				run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID))
+			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
 
-	return msg
+	// omit assigned tasks header if runs info is empty
+	if runsInfo.String() != "" {
+		if onlyDueUntilToday {
+			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
+		} else {
+			msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
+		}
+		msg.WriteString("\n\n")
+		msg.WriteString(runsInfo.String())
+	}
+
+	// add summary info for tasks without a due date or due date after today
+	if tasksDoAfterToday > 0 && onlyDueUntilToday {
+		msg.WriteString(":information_source: ")
+		msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
+		msg.WriteString(" ")
+		msg.WriteString(T("app.user.digest.tasks.all_tasks_command"))
+	}
+	return msg.String()
 }
 
 func buildRunsInProgressMessage(runs []RunLink, locale string) string {

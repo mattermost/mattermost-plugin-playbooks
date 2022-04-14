@@ -520,5 +520,14 @@
     "dCtjdj": "Bereit dein Playbook zu starten?",
     "Z3ybv/": "Kanal zu einer Seitenleisten-Kategorie des Benutzers hinzufügen",
     "9j5KzL": "Kategorienamen eingeben",
-    "+PMJAg": "Starte folgendes für {followers, plural, =1 {einen Benutzer} other {# Benutzer}}"
+    "+PMJAg": "Starte folgendes für {followers, plural, =1 {einen Benutzer} other {# Benutzer}}",
+    "aEhjYg": "Übersicht",
+    "Ppx673": "Berichte",
+    "zWgbGg": "Heute",
+    "mLrh+0": "Kein Fälligkeitsdatum",
+    "iMjjOH": "Nächste Woche",
+    "MtrTNy": "Morgen",
+    "I7+d55": "Definiere Datum/Zeit (\"in 4 Stunden\",\"1. Mai\"...)",
+    "AF7+5o": "Füge Fälligkeitsdatum hinzu",
+    "MbapTE": "{num} {num, plural, =1 {Aufgabe} other {Aufgaben}} überfällig"
 }

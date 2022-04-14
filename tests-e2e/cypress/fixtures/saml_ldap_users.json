@@ -2,7 +2,7 @@
     "user1": {
         "username": "e2etest.one",
         "password": "Password1",
-        "email": "e2etest.one@mmtest.com",
+        "email": "e2etest.one@example.com",
         "firstname": "TestSaml",
         "lastname": "OneSaml",
         "ldapfirstname": "TestLDAP",
@@ -12,7 +12,7 @@
     "user2": {
         "username": "e2etest.two",
         "password": "Password1",
-        "email": "e2etest.two@mmtest.com",
+        "email": "e2etest.two@example.com",
         "firstname": "TestSaml",
         "lastname": "TwoSaml",
         "ldapfirstname": "TestLDAP",
@@ -22,7 +22,7 @@
     "user3": {
         "username": "e2etest.three.saml",
         "password": "Password1",
-        "email": "e2etest.three@mmtest.com",
+        "email": "e2etest.three@example.com",
         "firstname": "FirstSaml",
         "lastname": "ThreeSaml",
         "ldapfirstname": "TestLDAP",
@@ -32,7 +32,7 @@
     "user4": {
         "username": "e2etest.four",
         "password": "Password1",
-        "email": "e2etest.four@mmtest.com",
+        "email": "e2etest.four@example.com",
         "firstname": "TestSaml",
         "lastname": "FourSaml",
         "ldapfirstname": "TestLDAP",

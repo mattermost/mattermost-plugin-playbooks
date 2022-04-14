@@ -34,18 +34,55 @@
     "translation": "You have 0 runs currently in progress."
   },
   {
-    "id": "app.user.digest.tasks.heading",
-    "translation": "Your Outstanding Tasks"
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Please use `/playbook todo` to see all your tasks."
   },
   {
-    "id": "app.user.digest.tasks.num_outstanding",
+    "id": "app.user.digest.tasks.due_after_today",
     "translation": {
-      "one": "You have {{.Count}} outstanding task:",
-      "other": "You have {{.Count}} total outstanding tasks:"
+      "one": "You have **{{.Count}} assigned task due after today**.",
+      "other": "You have **{{.Count}} assigned tasks due after today**."
     }
   },
   {
-    "id": "app.user.digest.tasks.zero_outstanding",
-    "translation": "You have 0 outstanding tasks."
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Due in {{.Count}} day",
+      "other": "Due in {{.Count}} days"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Due today"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Due {{.Count}} days ago"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Due yesterday"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Your assigned tasks"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "You have {{.Count}} assigned task:",
+      "other": "You have {{.Count}} total assigned tasks:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "You have {{.Count}} assigned task that is now due:",
+      "other": "You have {{.Count}} assigned tasks that are now due:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "You have 0 assigned tasks."
   }
 ]

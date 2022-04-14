@@ -48,11 +48,13 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
-	eventChecklists       = "checklists"
-	actionAddChecklist    = "add_checklist"
-	actionRemoveChecklist = "remove_checklist"
-	actionRenameChecklist = "rename_checklist"
-	actionMoveChecklist   = "move_checklist"
+	eventChecklists        = "checklists"
+	actionAddChecklist     = "add_checklist"
+	actionRemoveChecklist  = "remove_checklist"
+	actionRenameChecklist  = "rename_checklist"
+	actionMoveChecklist    = "move_checklist"
+	actionSkipChecklist    = "skip_checklist"
+	actionRestoreChecklist = "restore_checklist"
 
 	eventPlaybook      = "playbook"
 	actionUpdate       = "update"
@@ -128,31 +130,44 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 	})
 }
 
+func tasksWithDueDate(list app.Checklist) int {
+	count := 0
+	for _, item := range list.Items {
+		if item.DueDate > 0 {
+			count++
+		}
+	}
+	return count
+}
+
 func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[string]interface{} {
 	totalChecklistItems := 0
+	itemsWithDueDate := 0
 	for _, checklist := range playbookRun.Checklists {
 		totalChecklistItems += len(checklist.Items)
+		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
 	return map[string]interface{}{
-		"UserActualID":            userID,
-		telemetryKeyPlaybookRunID: playbookRun.ID,
-		"HasDescription":          playbookRun.Summary != "",
-		"CommanderUserID":         playbookRun.OwnerUserID,
-		"ReporterUserID":          playbookRun.ReporterUserID,
-		"TeamID":                  playbookRun.TeamID,
-		"ChannelID":               playbookRun.ChannelID,
-		"CreateAt":                playbookRun.CreateAt,
-		"EndAt":                   playbookRun.EndAt,
-		"DeleteAt":                playbookRun.DeleteAt, //nolint
-		"PostID":                  playbookRun.PostID,
-		"PlaybookID":              playbookRun.PlaybookID,
-		"NumChecklists":           len(playbookRun.Checklists),
-		"TotalChecklistItems":     totalChecklistItems,
-		"NumStatusPosts":          len(playbookRun.StatusPosts),
-		"CurrentStatus":           playbookRun.CurrentStatus,
-		"PreviousReminder":        playbookRun.PreviousReminder,
-		"NumTimelineEvents":       len(playbookRun.TimelineEvents),
+		"UserActualID":              userID,
+		telemetryKeyPlaybookRunID:   playbookRun.ID,
+		"HasDescription":            playbookRun.Summary != "",
+		"CommanderUserID":           playbookRun.OwnerUserID,
+		"ReporterUserID":            playbookRun.ReporterUserID,
+		"TeamID":                    playbookRun.TeamID,
+		"ChannelID":                 playbookRun.ChannelID,
+		"CreateAt":                  playbookRun.CreateAt,
+		"EndAt":                     playbookRun.EndAt,
+		"DeleteAt":                  playbookRun.DeleteAt, //nolint
+		"PostID":                    playbookRun.PostID,
+		"PlaybookID":                playbookRun.PlaybookID,
+		"NumChecklists":             len(playbookRun.Checklists),
+		"TotalChecklistItems":       totalChecklistItems,
+		"ChecklistItemsWithDueDate": itemsWithDueDate,
+		"NumStatusPosts":            len(playbookRun.StatusPosts),
+		"CurrentStatus":             playbookRun.CurrentStatus,
+		"PreviousReminder":          playbookRun.PreviousReminder,
+		"NumTimelineEvents":         len(playbookRun.TimelineEvents),
 	}
 }
 
@@ -243,6 +258,7 @@ func taskProperties(playbookRunID, userID string, task app.ChecklistItem) map[st
 		"HasCommand":              task.Command != "",
 		"CommandLastRun":          task.CommandLastRun,
 		"HasDescription":          task.Description != "",
+		"HasDueDate":              task.DueDate > 0,
 	}
 }
 
@@ -268,6 +284,22 @@ func (t *RudderTelemetry) RenameTask(playbookRunID, userID string, task app.Chec
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRenameTask
 	t.track(eventTasks, properties)
+}
+
+// SkipChecklist tracks the skipping of a checklist by the user
+// identified by userID in the given playbook run.
+func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionSkipChecklist
+	t.track(eventChecklists, properties)
+}
+
+// RestoreChecklist tracks the restoring of a checklist by the user
+// identified by userID in the given playbook run.
+func (t *RudderTelemetry) RestoreChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionRestoreChecklist
+	t.track(eventChecklists, properties)
 }
 
 // SkipTask tracks the skipping of a checklist item by the user

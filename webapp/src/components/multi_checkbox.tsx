@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
-import {CheckboxContainer} from 'src/components/checklist_item';
+import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';
 
 const IconWrapper = styled.div`
     display: inline-flex;

@@ -15,7 +15,6 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
-import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
@@ -171,7 +170,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         canCreatePlaybooks={canCreatePlaybooks}
                         scrollToNext={scrollToTemplates}
                     />
-                    <NoContentPlaybookSvg/>
                 </>
             );
         }
