@@ -32,6 +32,7 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
+    ChecklistItem,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
@@ -338,6 +339,20 @@ export async function clientSkipChecklistItem(playbookRunID: string, checklistNu
     });
 }
 
+export async function clientSkipChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/skip`, {
+        method: 'PUT',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/restore`, {
+        method: 'PUT',
+        body: '',
+    });
+}
+
 export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
         method: 'put',
@@ -358,6 +373,14 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
             command: itemUpdate.command,
             description: itemUpdate.description,
         }));
+
+    return data;
+}
+
+export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, item: ChecklistItem) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
+        JSON.stringify(item)
+    );
 
     return data;
 }

@@ -67,6 +67,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                                     dragging={false}
                                     disabled={true}
                                     collapsibleDescription={false}
+                                    newItem={false}
                                 />
                             );
                         })}

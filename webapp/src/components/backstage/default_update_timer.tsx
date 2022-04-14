@@ -4,10 +4,6 @@
 import React, {useMemo} from 'react';
 import {useIntl} from 'react-intl';
 
-import {Duration} from 'luxon';
-
-import {formatDuration} from '../formatted_duration';
-
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
@@ -16,7 +12,7 @@ import {
 
 import {
     useDateTimeInput,
-    makeOption,
+    useMakeOption,
     ms,
     Mode,
     Option,
@@ -28,28 +24,20 @@ interface Props {
     disabled?: boolean;
 }
 
-const optionFromSeconds = (seconds: number) => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: formatDuration(duration, 'long'),
-        value: duration,
-    };
-};
-
 const DefaultUpdateTimer = (props: Props) => {
     const {formatMessage} = useIntl();
+    const makeOption = useMakeOption(Mode.DurationValue);
 
     const defaults = useMemo(() => {
         const options = [
-            makeOption('60 minutes', Mode.DurationValue),
-            makeOption('24 hours', Mode.DurationValue),
-            makeOption('7 days', Mode.DurationValue),
+            makeOption({hours: 1}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
         ];
 
         let value: Option | undefined;
         if (props.seconds) {
-            value = optionFromSeconds(props.seconds);
+            value = makeOption({seconds: props.seconds});
 
             const matched = options.find((o) => value && ms(o.value) === ms(value.value));
             if (matched) {

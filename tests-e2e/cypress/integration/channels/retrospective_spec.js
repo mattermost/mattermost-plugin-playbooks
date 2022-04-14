@@ -106,10 +106,10 @@ describe('runs > retrospective', () => {
                 // * Verify channel retro post content
                 cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
                 cy.getStyledComponent('MetricInfo').should('have.length', 4);
-                cy.getStyledComponent('MetricInfo').eq(0).contains('11 hours 10 minutes');
+                cy.getStyledComponent('MetricInfo').eq(0).contains('11 hours, 10 minutes');
                 cy.getStyledComponent('MetricInfo').eq(1).contains('560');
                 cy.getStyledComponent('MetricInfo').eq(2).contains('12');
-                cy.getStyledComponent('MetricInfo').eq(3).contains('14 days 59 minutes');
+                cy.getStyledComponent('MetricInfo').eq(3).contains('14 days, 59 minutes');
             });
 
             it('retrospective with 3 key metrics', () => {
@@ -139,7 +139,7 @@ describe('runs > retrospective', () => {
                     cy.getStyledComponent('MetricInfo').should('have.length', 3);
                     cy.getStyledComponent('MetricInfo').eq(0).contains('43');
                     cy.getStyledComponent('MetricInfo').eq(1).contains('121');
-                    cy.getStyledComponent('MetricInfo').eq(2).contains('11 days 2 minutes');
+                    cy.getStyledComponent('MetricInfo').eq(2).contains('11 days, 2 minutes');
                 });
             });
 
@@ -168,7 +168,7 @@ describe('runs > retrospective', () => {
                     cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
                     cy.getStyledComponent('MetricInfo').should('have.length', 2);
                     cy.getStyledComponent('MetricInfo').eq(0).contains('0');
-                    cy.getStyledComponent('MetricInfo').eq(1).contains('4 hours 2 minutes');
+                    cy.getStyledComponent('MetricInfo').eq(1).contains('4 hours, 2 minutes');
                 });
             });
 
@@ -195,7 +195,7 @@ describe('runs > retrospective', () => {
                     // * Verify channel retro post content
                     cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
                     cy.getStyledComponent('MetricInfo').should('have.length', 1);
-                    cy.getStyledComponent('MetricInfo').eq(0).contains('less than 1 minute');
+                    cy.getStyledComponent('MetricInfo').eq(0).contains('0 seconds');
                 });
             });
 

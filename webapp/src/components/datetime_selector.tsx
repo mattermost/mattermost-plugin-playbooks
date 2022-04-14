@@ -6,8 +6,6 @@ import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {parse, ParsingOption} from 'chrono-node';
-
 import {DateTime, Duration} from 'luxon';
 import debounce from 'debounce';
 
@@ -16,7 +14,8 @@ import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
 
-import {defaultMakeOptions, infer, Mode, Option} from './datetime_input';
+import {defaultMakeOptions, Option} from './datetime_input';
+import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
 import {formatDuration} from './formatted_duration';
 
@@ -24,20 +23,15 @@ interface ActionObj {
     action: ActionTypes;
 }
 
-export type DateTimeOption = {
-    value: DateTime | Duration | null;
-    label?: string | JSX.Element | null;
-    mode?: Mode.DateTimeValue | Mode.DurationValue;
-    labelRHS?: JSX.Element;
-}
+export type DateTimeOption = Option & {labelRHS?: JSX.Element;}
 
 type Props = {
-    testId?: string
-    date?:number
+    testId?: string;
+    date?: number;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
     placeholder: React.ReactNode;
     onlyPlaceholder?: boolean;
-    suggestedOptions: DateTimeOption[]
+    suggestedOptions: DateTimeOption[];
     customControl?: (props: ControlProps<DateTimeOption, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
@@ -50,7 +44,6 @@ type Props = {
         durationResults: Duration[],
         mode: Mode,
     ) => Option[] | null;
-
 }
 
 export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
@@ -58,15 +51,13 @@ export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.Dur
     mode,
 });
 
-const chronoParsingOptions: ParsingOption = {forwardDate: true};
-
 export const DateTimeSelector = ({
     mode = Mode.DateTimeValue,
     suggestedOptions,
     makeOptions = defaultMakeOptions,
     ...props
 }: Props) => {
-    const {formatMessage} = useIntl();
+    const {locale, formatMessage} = useIntl();
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -139,15 +130,10 @@ export const DateTimeSelector = ({
     );
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        // eslint-disable-next-line no-undefined
-        const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(query, Mode.DurationValue);
-        let optionsNew;
-        if (makeOptions) {
-            optionsNew = makeOptions(query, datetimes, duration ? [duration] : [], mode) as DateTimeOption[];
-        }
+        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
+        const duration = parse(locale, query, Mode.DurationValue);
 
-        setOptionsDateTime(optionsNew || suggestedOptions);
+        setOptionsDateTime(makeOptions?.(query, datetimes, duration ? [duration] : [], mode) ?? suggestedOptions);
     }, 150), [makeOptions, suggestedOptions, mode]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
