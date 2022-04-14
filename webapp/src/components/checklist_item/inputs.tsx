@@ -101,6 +101,7 @@ const CancelSaveContainer = styled.div`
     text-align: right;
     padding: 8px;
     z-index: 2;
+    white-space: nowrap;
 `;
 
 const CancelButton = styled(SecondaryButton)`

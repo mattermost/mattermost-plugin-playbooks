@@ -408,6 +408,13 @@ export async function clientRemoveChecklist(playbookRunID: string, checklistNum:
     return data;
 }
 
+export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
+        method: 'post',
+        body: '',
+    });
+}
+
 export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
     const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/rename`,
         JSON.stringify({

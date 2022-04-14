@@ -5,13 +5,15 @@ import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
+import {
+    clientRenameChecklist,
+} from 'src/client';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import HoverMenu from 'src/components/collapsible_checklist_hover_menu';
-import RenameChecklistDialog from 'src/components/rhs/rhs_checklists_rename_dialog';
-import DeleteChecklistDialog from 'src/components/rhs/rhs_checklists_delete_dialog';
+import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
 
 export interface Props {
     title: string;
@@ -40,8 +42,8 @@ const CollapsibleChecklist = ({
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
-    const [showRenameDialog, setShowRenameDialog] = useState(false);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [newChecklistTitle, setNewChecklistTitle] = useState(title);
 
     const icon = collapsed ? 'icon-chevron-right' : 'icon-chevron-down';
     const [completed, total] = tasksCompleted(items);
@@ -72,6 +74,29 @@ const CollapsibleChecklist = ({
         titleText = (<StrikeThrough>{title}</StrikeThrough>);
     }
 
+    let titleComp = (
+        <Title ref={titleRef}>
+            {titleText}
+        </Title>
+    );
+    if (isRenaming) {
+        titleComp = (
+            <ChecklistInputComponent
+                title={newChecklistTitle}
+                setTitle={setNewChecklistTitle}
+                onCancel={() => {
+                    setIsRenaming(false);
+                    setNewChecklistTitle(title);
+                }}
+                onSave={() => {
+                    clientRenameChecklist(playbookRunID, index, newChecklistTitle);
+                    setTimeout(() => setNewChecklistTitle(''), 300);
+                    setIsRenaming(false);
+                }}
+            />
+        );
+    }
+
     return (
         <Border {...borderProps}>
             <HorizontalBG
@@ -80,30 +105,27 @@ const CollapsibleChecklist = ({
             >
                 <Horizontal
                     data-testid={'checklistHeader'}
-                    onClick={() => setCollapsed(!collapsed)}
+                    onClick={() => !isRenaming && setCollapsed(!collapsed)}
                     onMouseEnter={() => setShowMenu(true)}
                     onMouseLeave={() => setShowMenu(false)}
                 >
                     <Icon className={icon}/>
-                    <Title ref={titleRef}>
-                        {titleText}
-                    </Title>
-                    {titleHelpText || (
+                    {titleComp}
+                    {!isRenaming && (titleHelpText || (
                         <TitleHelpTextWrapper>
                             <FormattedMessage
                                 defaultMessage='{completed, number} / {total, number} done'
                                 values={{completed, total}}
                             />
                         </TitleHelpTextWrapper>
-                    )}
+                    ))}
                     {
-                        showMenu && !disabled &&
+                        !isRenaming && showMenu && !disabled &&
                         <HoverMenu
                             playbookRunID={playbookRunID}
                             checklistIndex={index}
                             checklistTitle={title}
-                            onRenameChecklist={() => setShowRenameDialog(true)}
-                            onDeleteChecklist={() => setShowDeleteDialog(true)}
+                            onRenameChecklist={() => setIsRenaming(true)}
                             dragHandleProps={draggableProvided?.dragHandleProps}
                             isChecklistSkipped={isChecklistSkipped}
                         />
@@ -114,19 +136,6 @@ const CollapsibleChecklist = ({
                 </ProgressBackground>
             </HorizontalBG>
             {!collapsed && children}
-            <RenameChecklistDialog
-                playbookRunID={playbookRunID}
-                checklistNumber={index}
-                show={showRenameDialog}
-                onHide={() => setShowRenameDialog(false)}
-                initialTitle={title}
-            />
-            <DeleteChecklistDialog
-                playbookRunID={playbookRunID}
-                checklistIndex={index}
-                show={showDeleteDialog}
-                onHide={() => setShowDeleteDialog(false)}
-            />
         </Border>
     );
 };
@@ -240,3 +249,55 @@ const tasksCompleted = (items: ChecklistItem[]) => {
 
 export default CollapsibleChecklist;
 
+interface ChecklistInputProps {
+    onCancel: () => void;
+    onSave: () => void;
+    title: string;
+    setTitle: (title: string) => void;
+}
+
+export const ChecklistInputComponent = (props: ChecklistInputProps) => {
+    const {formatMessage} = useIntl();
+
+    return (
+        <>
+            <ChecklistInput
+                type={'text'}
+                data-testid={'checklist-title-input'}
+                onChange={(e) => props.setTitle(e.target.value)}
+                value={props.title}
+                autoFocus={true}
+                onFocus={(e) => {
+                    const val = e.target.value;
+                    e.target.value = '';
+                    e.target.value = val;
+                }}
+                placeholder={formatMessage({defaultMessage: 'Add checklist name'})}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        props.onSave();
+                    } else if (e.key === 'Escape') {
+                        props.onCancel();
+                    }
+                }}
+            />
+            <CancelSaveButtons
+                onCancel={props.onCancel}
+                onSave={props.onSave}
+            />
+        </>
+    );
+};
+
+const ChecklistInput = styled.input`
+    height: 32px;
+    background: var(--center-channel-bg);
+    border: 1px solid var(--center-channel-color-16);
+    box-sizing: border-box;
+    border-radius: 4px;
+    width: 100%;
+
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 44px;
+`;
