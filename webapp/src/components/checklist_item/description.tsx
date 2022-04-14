@@ -53,7 +53,7 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
                     onChange={(e) => {
                         props.onEdit(e.target.value);
                     }}
-                    autoFocus={true}
+                    autoFocus={props.value !== ''}
                     onFocus={(e) => {
                         const val = e.target.value;
                         e.target.value = '';
@@ -90,13 +90,14 @@ const commonDescriptionStyle = css`
     font-size: 12px;
     line-height: 16px;
     color: var(--center-channel-color-72);
+    height: 16px;
 
     :hover {
         cursor: text;
     }
 
     p {
-        white - space: pre-wrap;
+        white-space: pre-wrap;
     }
 `;
 
@@ -104,7 +105,7 @@ const RenderedDescription = styled.div`
     ${commonDescriptionStyle}
 
     p:last-child {
-        margin - bottom: 0;
+        margin-bottom: 0;
     }
 `;
 
@@ -123,7 +124,7 @@ const DescriptionTextArea = styled.textarea`
     background: none;
 
     &:focus {
-        box - shadow: none;
+        box-shadow: none;
     }
 `;
 
@@ -134,8 +135,7 @@ const ChecklistItemDescriptionContainer = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
-    margin: 4px 0 0 35px;
+    margin-left: 36px;
     overflow: hidden;
 `;
 

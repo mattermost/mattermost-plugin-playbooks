@@ -14,6 +14,8 @@ interface Props {
     checklistIndex: number;
     item: ChecklistItemType;
     itemIndex: number;
+    newItem: boolean;
+    cancelAddingItem: () => void;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -38,6 +40,8 @@ const DraggableChecklistItem = (props: Props) => {
                     dragging={snapshot.isDragging}
                     disabled={finished}
                     collapsibleDescription={true}
+                    newItem={props.newItem}
+                    cancelAddingItem={props.cancelAddingItem}
                 />
             )}
         </Draggable>
