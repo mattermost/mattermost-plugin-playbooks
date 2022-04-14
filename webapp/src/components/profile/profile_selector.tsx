@@ -50,6 +50,7 @@ interface Props {
     showOnRight?: boolean;
     className?: string;
     selectWithoutName?: boolean;
+    customDropdownArrow?: React.ReactNode;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -196,6 +197,10 @@ export default function ProfileSelector(props: Props) {
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
     }, [rect, userOptions.length]);
 
+    const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
+        <i className={'icon-chevron-down icon--small ml-2'}/>
+    );
+
     let target;
     if (props.selectedUserId) {
         target = (
@@ -206,6 +211,7 @@ export default function ProfileSelector(props: Props) {
                 withoutName={props.selectWithoutName}
                 profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
+                customDropdownArrow={props.customDropdownArrow}
             />
         );
     } else if (props.placeholderButtonClass) {
@@ -219,7 +225,7 @@ export default function ProfileSelector(props: Props) {
                 className={props.placeholderButtonClass}
             >
                 {props.placeholder}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                {dropdownArrow}
             </button>
         );
     } else {
@@ -233,7 +239,7 @@ export default function ProfileSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                {dropdownArrow}
             </PlaybookRunFilterButton>
         );
     }

@@ -1,15 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import {useDispatch} from 'react-redux';
+import React from 'react';
 import styled from 'styled-components';
-
 import {useIntl} from 'react-intl';
-
 import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
-import {addNewTask} from 'src/actions';
 import {
     clientSkipChecklist,
     clientRestoreChecklist,
@@ -29,7 +25,6 @@ export interface Props {
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
-    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
     let lastComponent = (
@@ -44,43 +39,31 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
     );
     if (!props.isChecklistSkipped) {
         lastComponent = (
-            <>
-                <AddNewTask
-                    data-testid={'addNewTask'}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        dispatch(addNewTask(props.checklistIndex));
+            <DotMenu
+                icon={<DotMenuIcon/>}
+                dotMenuButton={StyledDotMenuButton}
+                dropdownMenu={StyledDropdownMenu}
+                topPx={15}
+                leftPx={-189}
+                title={formatMessage({defaultMessage: 'More'})}
+            >
+                <StyledDropdownMenuItem onClick={props.onRenameChecklist}>
+                    <DropdownIcon className='icon-pencil-outline icon-16'/>
+                    {formatMessage({defaultMessage: 'Rename checklist'})}
+                </StyledDropdownMenuItem>
+                <StyledDropdownMenuItem onClick={props.onDeleteChecklist}>
+                    <DropdownIcon className='icon-trash-can-outline icon-16'/>
+                    {formatMessage({defaultMessage: 'Delete checklist'})}
+                </StyledDropdownMenuItem>
+                <StyledDropdownMenuItemRed
+                    onClick={() => {
+                        clientSkipChecklist(props.playbookRunID, props.checklistIndex);
                     }}
                 >
-                    <i className='icon-18 icon-plus'/>
-                    {formatMessage({defaultMessage: 'Task'})}
-                </AddNewTask>
-                <DotMenu
-                    icon={<DotMenuIcon/>}
-                    dotMenuButton={StyledDotMenuButton}
-                    dropdownMenu={StyledDropdownMenu}
-                    topPx={15}
-                    leftPx={-189}
-                    title={formatMessage({defaultMessage: 'More'})}
-                >
-                    <StyledDropdownMenuItem onClick={props.onRenameChecklist}>
-                        <DropdownIcon className='icon-pencil-outline icon-16'/>
-                        {formatMessage({defaultMessage: 'Rename checklist'})}
-                    </StyledDropdownMenuItem>
-                    <StyledDropdownMenuItem onClick={props.onDeleteChecklist}>
-                        <DropdownIcon className='icon-trash-can-outline icon-16'/>
-                        {formatMessage({defaultMessage: 'Delete checklist'})}
-                    </StyledDropdownMenuItem>
-                    <StyledDropdownMenuItemRed
-                        onClick={() => {
-                            clientSkipChecklist(props.playbookRunID, props.checklistIndex);
-                        }}
-                    >
-                        <DropdownIconRed className={'icon-close icon-16'}/>
-                        {formatMessage({defaultMessage: 'Skip checklist'})}
-                    </StyledDropdownMenuItemRed>
-                </DotMenu>
-            </>
+                    <DropdownIconRed className={'icon-close icon-16'}/>
+                    {formatMessage({defaultMessage: 'Skip checklist'})}
+                </StyledDropdownMenuItemRed>
+            </DotMenu>
         );
     }
 
@@ -115,32 +98,8 @@ const ButtonRow = styled.div`
     margin-right: 8px;
 `;
 
-const AddNewTask = styled.button`
-    margin: 0 8px 0 auto;
-    padding: 0 8px 0 0;
-    border-radius: 4px;
-    border: 0;
-
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 32px;
-    white-space: nowrap;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: transparent;
-
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08)
-    }
-
-    &:active {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-    }
-`;
-
 export const DotMenuIcon = styled(HamburgerButton)`
-    font-size: 18px;
+    font-size: 14.4px;
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`

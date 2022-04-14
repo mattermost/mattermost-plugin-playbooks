@@ -62,8 +62,7 @@ const ChecklistItemDescription = styled.div<{height: string}>`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
-    margin: 4px 0 0 35px;
+    margin-left: 36px;
 
     // Fix default markdown styling in the paragraphs
     p {
@@ -90,6 +89,7 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
         </CancelButton>
         <SaveButton
             onClick={props.onSave}
+            data-testid='checklist-item-save-button'
         >
             {formatMessage({defaultMessage: 'Save'})}
         </SaveButton>
