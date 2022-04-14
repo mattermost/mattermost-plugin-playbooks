@@ -145,6 +145,10 @@ const CommandContainer = styled.div<{editing: boolean}>`
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+    }
 `;
 
 interface RunProps {
