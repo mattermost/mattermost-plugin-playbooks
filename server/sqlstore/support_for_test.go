@@ -65,9 +65,6 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
-	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
-	require.NoError(t, err)
-
 	setupChannelsTable(t, db)
 	setupPostsTable(t, db)
 	setupBotsTable(t, db)
@@ -78,10 +75,8 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupRolesTable(t, db)
 	setupSchemesTable(t, db)
 
-	if currentSchemaVersion.LT(LatestVersion()) {
-		err = sqlStore.Migrate(currentSchemaVersion)
-		require.NoError(t, err)
-	}
+	err := sqlStore.RunMigrations()
+	require.NoError(t, err)
 
 	return logger, sqlStore
 }
