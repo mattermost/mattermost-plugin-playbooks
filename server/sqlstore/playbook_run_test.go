@@ -888,6 +888,7 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 			run := NewBuilder(t).
 				WithCreateAt(now - int64(i*1000)).
 				WithCurrentStatus(status).
+				WithStatusUpdateEnabled(true).
 				WithUpdateOverdueBy(time.Duration(overdue) * 2 * time.Minute * time.Duration(i+1)).
 				ToPlaybookRun()
 
