@@ -373,7 +373,7 @@ const ChecklistsContainer = styled.div`
 
 const HoverRow = styled(HoverMenu)`
     top: 6px;
-    right: 15px;
+    right: 0px;
 `;
 
 const ExpandHoverButton = styled(HoverMenuButton)`

@@ -18,7 +18,7 @@ interface Props {
     userId: string;
     classNames?: Record<string, boolean>;
     className?: string;
-    extra?: JSX.Element;
+    extra?: React.ReactNode;
     withoutProfilePic?: boolean;
     withoutName?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
@@ -55,6 +55,10 @@ const ProfileName = styled.div`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-height: 18px;
+    display: flex;
+    align-items: center;
+    
 
     .description {
         color: rgba(var(--center-channel-color-rgb), 0.56);

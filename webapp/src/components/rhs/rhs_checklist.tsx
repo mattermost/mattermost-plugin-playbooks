@@ -1,22 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {DateTime} from 'luxon';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-import {addNewTask} from 'src/actions';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     Checklist,
     ChecklistItem,
     ChecklistItemsFilter,
     ChecklistItemState,
+    emptyChecklistItem,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
@@ -32,10 +32,10 @@ interface Props {
 }
 
 const RHSChecklist = (props: Props) => {
-    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
+    const [addingItem, setAddingItem] = useState(false);
 
     const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, myId: string) => {
         if (filter.all) {
@@ -71,36 +71,7 @@ const RHSChecklist = (props: Props) => {
         return true;
     };
 
-    const visibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
-        return list.items.some((item) => showItem(item, filter, myId));
-    };
-
-    if (!visibleTasks(props.checklist, checklistItemsFilter, myUser.id)) {
-        return (
-            <Droppable
-                droppableId={props.checklistIndex.toString()}
-                direction='vertical'
-                type='checklist-item'
-            >
-                {(droppableProvided: DroppableProvided) => (
-                    <EmptyChecklistContainer
-                        ref={droppableProvided.innerRef}
-                        {...droppableProvided.droppableProps}
-                        className='checklist'
-                    >
-                        <AddTaskLink
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                dispatch(addNewTask(props.checklistIndex));
-                            }}
-                        >
-                            {formatMessage({defaultMessage: '+ Add task'})}
-                        </AddTaskLink>
-                    </EmptyChecklistContainer>
-                )}
-            </Droppable>
-        );
-    }
+    const keys = generateKeys(props.checklist.items.map((item) => item.title));
 
     return (
         <Droppable
@@ -123,42 +94,98 @@ const RHSChecklist = (props: Props) => {
 
                             return (
                                 <DraggableChecklistItem
-                                    key={checklistItem.title}
+                                    key={keys[index]}
                                     playbookRun={props.playbookRun}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
+                                    newItem={false}
+                                    cancelAddingItem={() => {
+                                        setAddingItem(false);
+                                    }}
                                 />
                             );
                         })}
+                        {addingItem &&
+                            <DraggableChecklistItem
+                                key={'new_checklist_item'}
+                                playbookRun={props.playbookRun}
+                                checklistIndex={props.checklistIndex}
+                                item={emptyChecklistItem()}
+                                itemIndex={-1}
+                                newItem={true}
+                                cancelAddingItem={() => {
+                                    setAddingItem(false);
+                                }}
+                            />
+                        }
                         {droppableProvided.placeholder}
                     </div>
+                    {props.playbookRun.current_status !== PlaybookRunStatus.Finished &&
+                        <AddTaskLink
+                            onClick={() => {
+                                setAddingItem(true);
+                            }}
+                            data-testid={`add-new-task-${props.checklistIndex}`}
+                        >
+                            <IconWrapper>
+                                <i className='icon icon-plus'/>
+                            </IconWrapper>
+                            {formatMessage({defaultMessage: 'Add a task'})}
+                        </AddTaskLink>
+                    }
                 </ChecklistContainer>
             )}
         </Droppable>
     );
 };
 
+const IconWrapper = styled.div`
+    padding: 3px 0 0 1px;
+    margin: 0;
+`;
+
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     border-radius: 0 0 4px 4px;
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
-    padding: 16px 0px;
-`;
-
-const EmptyChecklistContainer = styled(ChecklistContainer)`
-    padding: 12px 0px;
+    padding: 8px 0px;
 `;
 
 const AddTaskLink = styled.button`
-    font-size: 12px;
-    font-weight: 600;
-
-    color: var(--button-bg);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    height: 44px;
+    width: 100%;
 
     background: none;
     border: none;
+
+    border-radius: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+
+    color: var(--center-channel-color-64);
+
+    &:hover {
+        background-color: var(--button-bg-08);
+        color: var(--button-bg);
+    }
 `;
+
+export const generateKeys = (arr: string[]): string[] => {
+    const keys: string[] = [];
+    const itemsMap = new Map<string, number>();
+    for (let i = 0; i < arr.length; i++) {
+        const num = itemsMap.get(arr[i]) || 0;
+        keys.push(arr[i] + String(num));
+        itemsMap.set(arr[i], num + 1);
+    }
+    return keys;
+};
 
 export default RHSChecklist;

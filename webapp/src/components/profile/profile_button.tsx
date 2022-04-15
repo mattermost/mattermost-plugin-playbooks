@@ -12,11 +12,15 @@ interface Props {
     withoutProfilePic?: boolean;
     withoutName?: boolean;
     profileButtonClass?: string;
+    customDropdownArrow?: React.ReactNode;
     onClick: () => void;
 }
 
 export default function ProfileButton(props: Props) {
-    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-1 mr-2'/> : <></>;
+    const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
+        <i className='icon-chevron-down ml-1 mr-2'/>
+    );
+    const downChevron = props.enableEdit ? dropdownArrow : <></>;
 
     const formatName = (preferredName: string, userName: string) => {
         let name = preferredName;

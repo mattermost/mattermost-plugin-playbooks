@@ -15,7 +15,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import {
     useDateTimeInput,
-    makeOption,
+    useMakeOption,
     ms,
     Mode,
     Option,
@@ -235,34 +235,28 @@ const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     return null;
 };
 
-export const optionFromSeconds = (seconds: number) => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: `in ${formatDuration(duration, 'long')}`,
-        value: duration,
-    };
-};
-
 export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
+    const {locale} = useIntl();
+    const makeOption = useMakeOption(Mode.DurationValue);
+
     const defaults = useMemo(() => {
         const options = [
-            makeOption('in 60 minutes', Mode.DurationValue),
-            makeOption('in 24 hours', Mode.DurationValue),
-            makeOption('in 7 days', Mode.DurationValue),
+            makeOption({hours: 1}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
         ];
 
         let value: Option | undefined;
         if (preselectedValue) {
-            value = optionFromSeconds(preselectedValue);
+            value = makeOption({seconds: preselectedValue});
         }
         if (run) {
             if (!value && run.previous_reminder) {
-                value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
+                value = makeOption({seconds: nearest(run.previous_reminder * 1e-9, 60)});
             }
 
             if (run.reminder_timer_default_seconds) {
-                const defaultReminderOption = optionFromSeconds(run.reminder_timer_default_seconds);
+                const defaultReminderOption = makeOption({seconds: run.reminder_timer_default_seconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
@@ -287,7 +281,7 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [run, preselectedValue]);
+    }, [run, preselectedValue, locale]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,

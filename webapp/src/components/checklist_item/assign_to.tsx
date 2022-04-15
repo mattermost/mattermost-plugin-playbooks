@@ -6,7 +6,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
-import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
     assignee_id: string;
@@ -34,9 +34,9 @@ const AssignTo = (props: AssignedToProps) => {
                 selectedUserId={props.assignee_id}
                 onlyPlaceholder={true}
                 placeholder={
-                    <HoverMenuButton
+                    <ChecklistHoverMenuButton
                         title={formatMessage({defaultMessage: 'Assign'})}
-                        className={'icon-account-plus-outline icon-16 btn-icon'}
+                        className={'icon-account-plus-outline icon-12 btn-icon'}
                     />
                 }
                 enableEdit={true}
@@ -59,6 +59,10 @@ const AssignTo = (props: AssignedToProps) => {
         );
     }
 
+    const dropdownArrow = (
+        <DropdownArrow className={'icon-chevron-down icon--small ml-1'}/>
+    );
+
     return (
         <AssignToContainer>
             <StyledProfileSelector
@@ -68,7 +72,7 @@ const AssignTo = (props: AssignedToProps) => {
                     <PlaceholderDiv>
                         <AssignToIcon
                             title={formatMessage({defaultMessage: 'Assign to...'})}
-                            className={'icon-account-plus-outline icon-16 btn-icon'}
+                            className={'icon-account-plus-outline icon-12'}
                         />
                         <AssignToTextContainer>
                             {formatMessage({defaultMessage: 'Assign to...'})}
@@ -92,6 +96,7 @@ const AssignTo = (props: AssignedToProps) => {
                     onCustomReset: resetAssignee,
                 }}
                 selectWithoutName={props.withoutName}
+                customDropdownArrow={dropdownArrow}
             />
         </AssignToContainer>
     );
@@ -150,7 +155,8 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 0px;
 
         .image {
-            margin: 0px;
+            background: rgba(var(--center-channel-color-rgb),0.08);
+            margin: 2px;
         }
     }
 `;
@@ -163,18 +169,20 @@ const PlaceholderDiv = styled.div`
 
 const AssignToTextContainer = styled.div`
     color: var(--center-channel-color);
-    font-weight: 600;
+    font-weight: 400;
     font-size: 12px;
     line-height: 15px;
 `;
 
 const AssignToIcon = styled.i`
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
     display: flex;
     align-items: center;
     text-align: center;
     flex: table;
+    color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
 const AssignToContainer = styled.div`
@@ -191,4 +199,8 @@ const ControlComponentAnchor = styled.a`
     font-size: 12px;
     position: relative;
     top: -4px;
+`;
+
+export const DropdownArrow = styled.i`
+    color: var(--center-channel-color-32);
 `;
