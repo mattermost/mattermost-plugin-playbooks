@@ -5,7 +5,10 @@ import styled, {css} from 'styled-components';
 import React from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
-import {useIntl, FormattedMessage} from 'react-intl';
+import {useIntl, FormattedMessage, FormattedNumber} from 'react-intl';
+
+import Icon from '@mdi/react';
+import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -93,6 +96,13 @@ const PlaybookEditor = () => {
                             </Controls.MetaItem>
                         )}
                         <Controls.Members playbook={playbook}/>
+                        <Controls.MetaItem>
+                            <Icon
+                                path={mdiClipboardPlayMultipleOutline}
+                                size={1.25}
+                            />
+                            <FormattedNumber value={stats.runs_in_progress}/>
+                        </Controls.MetaItem>
                         <Controls.AutoFollowToggle playbook={playbook}/>
                     </ControlBar>
                     <Description>{renderMarkdown(playbook.description)}</Description>
@@ -147,7 +157,6 @@ const PlaybookEditor = () => {
 };
 
 const ControlBar = styled.div`
-    grid-area: control;
     padding-bottom: 1rem;
     display: flex;
 `;
@@ -195,7 +204,7 @@ const Heading = styled.h1`
     line-height: 40px;
     color: var(--center-channel-color);
 
-    height: var(--bar-height);
+    min-height: var(--bar-height);
     display: inline-flex;
     align-items: center;
     margin: 0;

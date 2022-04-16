@@ -347,36 +347,6 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{ch
     `}
 `;
 
-const TopContainer = styled.div`
-    position: sticky;
-    z-index: 2;
-    top: 0;
-    background: var(--center-channel-bg);
-    width: 100%;
-    height: 100%;
-    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
-`;
-
-const Header = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0 32px;
-    height: 100%;
-`;
-
-const TitleWing = styled.div<{side: 'left' | 'right'}>`
-    position: sticky;
-    z-index: 3;
-    top: 0;
-    grid-area: ${({side}) => `title-${side}`};
-
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: ${({side}) => (side === 'left' ? 'start' : 'end')};
-
-`;
-
 const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
@@ -430,4 +400,9 @@ export const MetaItem = styled(PillBox)`
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     padding-left: 2px;
+    background: transparent;
+
+    svg {
+        margin-right: 4px;
+    }
 `;
