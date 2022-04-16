@@ -2,7 +2,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
-import React, {ComponentProps, useState} from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -11,7 +11,7 @@ import styled from 'styled-components';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {useEditPlaybook, useHasPlaybookPermission, useAllowMakePlaybookPrivate} from 'src/hooks';
-import {Playbook, PlaybookMember} from 'src/types/playbook';
+import {Playbook, PlaybookMember, PlaybookWithChecklist} from 'src/types/playbook';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
@@ -23,6 +23,7 @@ const ID = 'playbooks_access';
 
 type Props = {
     playbookId: string
+    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makePlaybookAccessModalDefinition = (props: Props) => ({
@@ -65,6 +66,7 @@ const BlueArrow = styled.i`
 
 const PlaybookAccessModal = ({
     playbookId,
+    onPlaybookChange,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -87,6 +89,12 @@ const PlaybookAccessModal = ({
             });
         }
     };
+
+    useEffect(() => {
+        if (playbook) {
+            onPlaybookChange?.(playbook);
+        }
+    }, [playbook, onPlaybookChange]);
 
     const onRemoveUser = (userId: string) => {
         if (!playbook) {
