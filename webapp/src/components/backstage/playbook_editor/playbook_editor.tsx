@@ -2,13 +2,10 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import React from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -34,7 +31,7 @@ import {HorizontalBG} from 'src/components/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
-import {Back} from './controls';
+import * as Controls from './controls';
 
 interface MatchParams {
     playbookId: string
@@ -66,10 +63,15 @@ const PlaybookEditor = () => {
                 <TitleHeaderBackdrop/>
                 <NavBackdrop/>
                 <TitleWing side='left'>
-                    <Back/>
+                    <Controls.Back/>
+                    <Controls.TitleMenu playbook={playbook}>
+                        <Title>
+                            {playbook.title}
+                        </Title>
+                    </Controls.TitleMenu>
                 </TitleWing>
                 <TitleWing side='right'>
-                    
+                    <Controls.RunPlaybook playbook={playbook}/>
                 </TitleWing>
                 <Header>
                     <Heading>
@@ -79,8 +81,20 @@ const PlaybookEditor = () => {
                             name={playbook.title}
                             area-hidden={true}
                         />
-                        {playbook.title}
+                        <Controls.TitleMenu playbook={playbook}>
+                            {playbook.title}
+                        </Controls.TitleMenu>
                     </Heading>
+                    <ControlBar>
+                        {playbook.public === false && (
+                            <Controls.MetaItem>
+                                <i className={'icon icon-lock-outline'}/>
+                                <FormattedMessage defaultMessage='Private'/>
+                            </Controls.MetaItem>
+                        )}
+                        <Controls.Members playbook={playbook}/>
+                        <Controls.AutoFollowToggle playbook={playbook}/>
+                    </ControlBar>
                     <Description>{renderMarkdown(playbook.description)}</Description>
                 </Header>
                 <NavBar>
@@ -132,6 +146,12 @@ const PlaybookEditor = () => {
     );
 };
 
+const ControlBar = styled.div`
+    grid-area: control;
+    padding-bottom: 1rem;
+    display: flex;
+`;
+
 const TitleWing = styled.div<{side: 'left' | 'right'}>`
     position: sticky;
     z-index: 3;
@@ -155,19 +175,49 @@ const Header = styled.header`
     }
 `;
 
+const titleMenuOverrides = css`
+    ${Controls.TitleMenu} {
+        margin: 0;
+        color: var(--center-channel-color);
+        &:hover,
+        &:focus {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+            text-decoration: none;
+        }
+    }
+`;
+
 const Heading = styled.h1`
     ${SemiBoldHeading}
+    letter-spacing: -0.01em;
     font-size: 32px;
     line-height: 40px;
-    letter-spacing: -0.01em;
-    margin: 0;
+    color: var(--center-channel-color);
+
     height: var(--bar-height);
     display: inline-flex;
     align-items: center;
+    margin: 0;
 
     &:not(:hover) ${CopyLink}:not(:hover) {
         opacity: 0;
     }
+    ${titleMenuOverrides}
+`;
+
+const Title = styled.h1`
+    ${SemiBoldHeading}
+    letter-spacing: -0.01em;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+
+    height: 24px;
+    margin: 0;
+    margin-left: 8px;
+
+    ${titleMenuOverrides}
 `;
 
 const Description = styled.p`
@@ -216,7 +266,7 @@ const NavBar = styled.nav`
 const NavBackdrop = styled.div`
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
     background: var(--center-channel-bg);
     grid-area: nav-left/nav-left/nav-right/nav-right;
     box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
@@ -237,9 +287,9 @@ const Editor = styled.main`
 
     /* === standard-full === */
     grid-template:
-        'title-left title-left . . title-right' var(--bar-height)
+        'title-left title-left . title-right title-right' var(--bar-height)
         '. header header header .'
-        '. control control control .' 40px
+        '. control control control .'
         'nav-left nav-left nav nav-right nav-right' var(--bar-height)
         'aside content content content .' 1fr
         / 1fr 1fr minmax(min-content, auto) 1fr 1fr;
@@ -247,12 +297,18 @@ const Editor = styled.main`
 
     gap: 0 3rem;
 
+    ${Header} ${Controls.TitleMenu} {
+        i.icon {
+            font-size: 3.5rem;
+        }
+    }
+
     ${ScrollNav} {
         grid-area: aside;
         align-self: start;
         justify-self: end;
 
-        margin-top: 11.5rem;
+        margin-top: 10rem;
 
         position: sticky;
         top: var(--bar-height);
@@ -275,9 +331,24 @@ const Editor = styled.main`
         grid-area: aside/aside/aside-right/aside-right;
     }
 
+    ${TitleWing} {
+        ${Controls.TitleMenu} {
+            display: none;
+        }
+    }
     /* === scrolling, condense header/title === */
     .is-scrolling & {
-
+        ${TitleWing} {
+            ${Controls.TitleMenu} {
+                display: inline-flex;
+                margin-left: 8px;
+            }
+        }
+        ${Controls.Back} {
+            span {
+                display: none;
+            }
+        }
     }
 
     /* === mobile === */
@@ -288,17 +359,30 @@ const Editor = styled.main`
         grid-template:
             'title-left title-right' var(--bar-height)
             'header header'
+            'control control'
             'nav nav'
             'content content'
             / 1fr
         ;
 
+        ${Controls.Back} {
+            span {
+                display: none;
+            }
+        }
+
         ${Header} {
             padding: 20px;
         }
 
-        ${NavBar} {
-            top: var(--bar-height);
+        ${NavBar},
+        ${TitleWing} {
+            position: unset;
+        }
+
+        ${NavBackdrop} {
+            position: unset;
+            grid-area: nav;
         }
 
         ${Sections} {
@@ -310,9 +394,15 @@ const Editor = styled.main`
         ${ScrollNav} {
             display: none;
         }
+
+        ${HorizontalBG} {
+            /* non-sticky checklist header */
+            position: unset;
+        }
     }
 
-    @media screen and (max-width: 768px) {
+    @media screen and (max-width: 1021px) {
+        gap: 0;
     }
 
     @media screen and (min-width: 1021px) {

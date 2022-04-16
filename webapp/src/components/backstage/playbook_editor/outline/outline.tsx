@@ -10,8 +10,10 @@ import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
+import StatusUpdates from './section_status_updates';
 import Checklists from './section_checklists';
 import Retrospective from './section_retrospective';
+import Actions from './section_actions';
 
 import ScrollNavBase from './scroll_nav';
 
@@ -28,27 +30,17 @@ type Attrs = HTMLAttributes<HTMLElement>;
 const Outline = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
 
-    /* const actions = renderActions({
-        id: SectionID.Actions,
-        playbook: props.playbook,
-        followerIds: props.followerIds,
-    });
-
-    const statusUpdates = renderStatusUpdates({
-        id: SectionID.StatusUpdates,
-        playbook: props.playbook,
-    });
-
-    const retrospective = renderRetrospective({
-        id: SectionID.Retrospective,
-        playbook: props.playbook,
-    }); */
-
     return (
         <Sections
             playbookId={playbook.id}
             data-testid='preview-content'
         >
+            <Section
+                id={'status-updates'}
+                title={formatMessage({defaultMessage: 'Status Updates'})}
+            >
+                <StatusUpdates playbook={playbook}/>
+            </Section>
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
@@ -60,6 +52,12 @@ const Outline = ({playbook}: Props) => {
                 title={formatMessage({defaultMessage: 'Retrospective'})}
             >
                 <Retrospective playbook={playbook}/>
+            </Section>
+            <Section
+                id={'actions'}
+                title={formatMessage({defaultMessage: 'Actions'})}
+            >
+                <Actions playbook={playbook}/>
             </Section>
         </Sections>
     );
@@ -96,7 +94,7 @@ const SectionsImpl = ({
     }, []);
 
     useEffect(() => {
-        document.getElementById(hash)?.scrollIntoView({behavior: 'smooth'});
+        // TODO implement scroll-to-section based on hash
     }, [hash]);
 
     return (

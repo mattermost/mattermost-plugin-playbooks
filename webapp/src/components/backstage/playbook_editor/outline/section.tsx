@@ -44,6 +44,7 @@ const Title = styled.h3`
     font-weight: 600;
     line-height: 28px;
 
+    margin-top: 0;
     margin-bottom: 16px;
 
     ${CopyLink} {

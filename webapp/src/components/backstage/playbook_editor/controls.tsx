@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {HTMLAttributes, useEffect, useState} from 'react';
+import React, {HTMLAttributes, PropsWithChildren, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
@@ -47,23 +47,55 @@ import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
+import {PillBox} from 'src/components/widgets/pill';
 
-type ControlProps = {
-    playbook: PlaybookWithChecklist;
-};
+type ControlProps = {playbook: PlaybookWithChecklist;};
 
-const ArrowLeft = styled.i.attrs({className: 'icon-arrow-left'})`
+type StyledProps = {className?: string;};
 
+const StyledLink = styled(Link)`
+    a&& {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        border-radius: 4px;
+        height: 36px;
+        padding: 0 8px;
+
+
+        &:hover,
+        &:focus {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+            text-decoration: none;
+        }
+    }
+
+    span {
+        padding-right: 8px;
+    }
+
+    i {
+        font-size: 18px;
+    }
 `;
 
-export const Back = () => {
+export const Back = styled((props: StyledProps) => {
     return (
-        <Link to={pluginUrl('/playbooks')}>
-            <ArrowLeft/>
+        <StyledLink
+            {...props}
+            to={pluginUrl('/playbooks')}
+        >
+            <i className='icon-arrow-left'/>
             <FormattedMessage defaultMessage='Back'/>
-        </Link>
+        </StyledLink>
     );
-};
+})`
+
+`;
 
 export const Members = ({playbook: {id, members}}: ControlProps) => {
     const dispatch = useDispatch();
@@ -211,7 +243,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     );
 };
 
-export const TitleMenu = ({playbook}: ControlProps) => {
+export const TitleMenu = styled(({playbook, children, className}: PropsWithChildren<ControlProps> & {className?: string;}) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
@@ -228,11 +260,11 @@ export const TitleMenu = ({playbook}: ControlProps) => {
     return (
         <DotMenu
             dotMenuButton={TitleButton}
+            className={className}
             left={true}
             icon={
                 <>
-                    <i className={classNames('icon', playbook.public ? 'icon-globe' : 'icon-lock-outline')}/>
-                    <Title>{playbook.title}</Title>
+                    {children}
                     <i className={'icon icon-chevron-down'}/>
                 </>
             }
@@ -272,16 +304,8 @@ export const TitleMenu = ({playbook}: ControlProps) => {
             {modal}
         </DotMenu>
     );
-};
+})`
 
-const Title = styled.div`
-    ${RegularHeading}
-    font-size: 20px;
-    line-height: 28px;
-    height: 28px;
-    color: var(--center-channel-color);
-    margin-left: 6px;
-    margin-right: 6px;
 `;
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
@@ -301,15 +325,20 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 `;
 
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{checked: boolean}>`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+    border: none;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+
+    padding: 0px 3px;
+    height: 24px;
+    margin: 0;
+
 
     &:hover:enabled {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${({checked}) => checked && css`
-        border: 1px solid var(--button-bg);
+        border: none;
         color: var(--button-bg);
 
         &:hover:enabled {
@@ -354,14 +383,15 @@ const RightMarginedIcon = styled(Icon)`
 
 const MembersIcon = styled.div`
     display: inline-block;
-    font-size: 12px;
-    border-radius: 4px;
-    padding: 0 8px;
+    font-size: 14px;
+    line-height: 24px;
     font-weight: 600;
-    margin: 2px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    height: 28px;
-    line-height: 28px;
+    border-radius: 4px;
+    padding: 0px 8px;
+    margin: 0;
+    margin-right: 4px;
+    color: rgba(var(--center-channel-color-rgb),0.56);
+    height: 24px;
     cursor: pointer;
 
     &:hover {
@@ -385,4 +415,19 @@ const TitleButton = styled.div`
 
 const RedText = styled.div`
     color: var(--error-text);
+`;
+
+export const MetaItem = styled(PillBox)`
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 14px;
+    height: 24px;
+    padding: 3px 6px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    padding-left: 2px;
 `;
