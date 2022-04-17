@@ -617,7 +617,21 @@ func (mr *MockPlaybookRunServiceMockRecorder) RenameChecklist(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklist", reflect.TypeOf((*MockPlaybookRunService)(nil).RenameChecklist), arg0, arg1, arg2, arg3)
 }
 
-// RestoreChecklist mocks base method
+// ResetReminder mocks base method.
+func (m *MockPlaybookRunService) ResetReminder(arg0 string, arg1 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetReminder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetReminder indicates an expected call of ResetReminder
+func (mr *MockPlaybookRunServiceMockRecorder) ResetReminder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminder), arg0, arg1)
+}
+
+// RestoreChecklist mocks base method.
 func (m *MockPlaybookRunService) RestoreChecklist(arg0, arg1 string, arg2 int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreChecklist", arg0, arg1, arg2)

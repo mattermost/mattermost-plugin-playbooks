@@ -957,7 +957,7 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err = h.playbookRunService.SetNewReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
+	if err = h.playbookRunService.ResetReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
 		err = errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID)
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
 		return

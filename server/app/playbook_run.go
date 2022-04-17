@@ -277,6 +277,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 )
 
 type TimelineEvent struct {
@@ -299,7 +300,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", "canceled_retrospective" or "status_update_snoozed".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -552,6 +553,10 @@ type PlaybookRunService interface {
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
 	SetNewReminder(playbookRunID string, newReminder time.Duration) error
+
+	// ResetReminder records an event for snoozing a reminder, then calls SetNewReminder to create
+	// the next reminder
+	ResetReminder(playbookRunID string, newReminder time.Duration) error
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
