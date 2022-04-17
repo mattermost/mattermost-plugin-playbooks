@@ -168,10 +168,11 @@ func (s *PlaybookRunServiceImpl) ResetReminder(playbookRunID string, newReminder
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
+	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunToModify.ID,
-		CreateAt:      time.Now().UnixMilli(),
-		EventAt:       time.Now().UnixMilli(),
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
 		EventType:     StatusUpdateSnoozed,
 		SubjectUserID: playbookRunToModify.ReporterUserID,
 	}
