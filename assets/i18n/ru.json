@@ -13,7 +13,7 @@
     },
     {
         "id": "app.user.digest.tasks.heading",
-        "translation": "Ваши нерешенные задачи"
+        "translation": "Ваши назначенные задачи"
     },
     {
         "id": "app.user.digest.runs_in_progress.zero_in_progress",
@@ -50,5 +50,57 @@
     {
         "id": "app.command.execute.error",
         "translation": "Невозможно выполнить команду."
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Вчера"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Срок выполнения {{.Count}} дн. назад"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Сегодня"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Через {{.Count}} день",
+            "few": "Через {{.Count}} дня",
+            "many": "Через {{.Count}} дней"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "У вас есть **{{.Count}} назначенная задача, которую необходимо выполнить после сегодняшнего дня**.",
+            "few": "У вас есть **{{.Count}} назначенные задачи, которые необходимо выполнить после сегодняшнего дня**.",
+            "many": "У вас есть **{{.Count}} назначенных задач, которые необходимо выполнить после сегодняшнего дня**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Пожалуйста, используйте `/playbook todo`, чтобы увидеть все свои задачи."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "У вас есть {{.Count}} назначенная задача:",
+            "few": "У вас есть {{.Count}} назначенные задачи:",
+            "many": "У вас есть {{.Count}} назначенных задач:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "У вас есть {{.Count}} назначенная задача, которая должна быть выполнена сейчас:",
+            "few": "У вас есть {{.Count}} назначенные задачи, которые должны быть выполнены сейчас:",
+            "many": "У вас есть {{.Count}} назначенных задач, которые должны быть выполнены сейчас:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.zero_assigned",
+        "translation": "У вас нет назначенных задач."
     }
 ]
