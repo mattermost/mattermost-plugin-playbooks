@@ -833,6 +833,72 @@ func TestRestorePlaybookRun(t *testing.T) {
 	})
 }
 
+func TestSetStatusUpdateBroadcastSettings(t *testing.T) {
+	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		store := mock_app.NewMockPlaybookRunStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
+		licenseChecker := mock_app.NewMockLicenseChecker(controller)
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+
+		playbookRun := &app.PlaybookRun{
+			ID:                                    "01",
+			Name:                                  "###",
+			StatusUpdateBroadcastChannelsEnabled:  true,
+			StatusUpdateBroadcastFollowersEnabled: false,
+			StatusUpdateBroadcastWebhooksEnabled:  true,
+			BroadcastChannelIDs:                   []string{"1", "2"},
+			WebhookOnStatusUpdateURLs:             []string{"url1", "url2"},
+		}
+		settings := app.StatusUpdateBroadcastSettings{
+			StatusUpdateBroadcastChannelsEnabled:  false,
+			StatusUpdateBroadcastFollowersEnabled: true,
+			StatusUpdateBroadcastWebhooksEnabled:  false,
+			BroadcastChannelIDs:                   []string{"1*", "2*"},
+			WebhookOnStatusUpdateURLs:             []string{"url1*", "url2*"},
+			Followers:                             []string{"id1", "id2"},
+		}
+
+		store.EXPECT().GetPlaybookRun(playbookRun.ID).Return(playbookRun, nil)
+		var updatedRun *app.PlaybookRun
+		store.EXPECT().UpdatePlaybookRun(gomock.Any()).DoAndReturn(
+			func(playbookRun *app.PlaybookRun) interface{} {
+				updatedRun = playbookRun
+				return nil
+			},
+		)
+		var updatedFollowers []string
+		store.EXPECT().UpdateFollowers(playbookRun.ID, settings.Followers).DoAndReturn(
+			func(playbookRunID string, followers []string) interface{} {
+				updatedFollowers = followers
+				return nil
+			},
+		)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+
+		err := s.SetStatusUpdateBroadcastSettings(playbookRun.ID, settings)
+		require.NoError(t, err)
+		require.Equal(t, updatedRun.StatusUpdateBroadcastChannelsEnabled, settings.StatusUpdateBroadcastChannelsEnabled)
+		require.Equal(t, updatedRun.StatusUpdateBroadcastFollowersEnabled, settings.StatusUpdateBroadcastFollowersEnabled)
+		require.Equal(t, updatedRun.StatusUpdateBroadcastWebhooksEnabled, settings.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, updatedRun.BroadcastChannelIDs, settings.BroadcastChannelIDs)
+		require.Equal(t, updatedRun.WebhookOnStatusUpdateURLs, settings.WebhookOnStatusUpdateURLs)
+		require.Equal(t, updatedFollowers, settings.Followers)
+	})
+}
+
 func TestUpdateStatusWebhookFailure(t *testing.T) {
 	controller := gomock.NewController(t)
 	pluginAPI := &plugintest.API{}

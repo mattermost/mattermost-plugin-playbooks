@@ -1029,6 +1029,30 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
+// SetStatusUpdateBroadcastSettings updates status update broadcast settings
+func (s *PlaybookRunServiceImpl) SetStatusUpdateBroadcastSettings(playbookRunID string, settings StatusUpdateBroadcastSettings) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.BroadcastChannelIDs = settings.BroadcastChannelIDs
+	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
+	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
+	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
+	playbookRunToModify.StatusUpdateBroadcastFollowersEnabled = settings.StatusUpdateBroadcastFollowersEnabled
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	if err = s.store.UpdateFollowers(playbookRunToModify.ID, settings.Followers); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run's followers")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRun.ID)
 

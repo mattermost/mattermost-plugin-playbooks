@@ -427,6 +427,18 @@ type AssignedTask struct {
 	ChecklistItem
 }
 
+// StatusUpdateBroadcastSettings represents info where to broadcast status updates.
+// Front uses this struct to update settings.
+type StatusUpdateBroadcastSettings struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	Followers                 []string `json:"followers"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled  bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastFollowersEnabled bool `json:"status_update_broadcast_followers_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled  bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -616,6 +628,9 @@ type PlaybookRunService interface {
 
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
+
+	// SetStatusUpdateBroadcastSettings updates status update broadcast settings
+	SetStatusUpdateBroadcastSettings(playbookRunID string, settings StatusUpdateBroadcastSettings) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -692,6 +707,9 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// UpdateFollowers updates run followers list, after call run will have only followers listed in the `followers` array
+	UpdateFollowers(playbookRunID string, followers []string) error
 
 	// GetRunsActiveTotal returns number of active runs
 	GetRunsActiveTotal() (int64, error)

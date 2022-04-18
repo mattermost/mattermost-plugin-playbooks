@@ -903,30 +903,30 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 			require.Equal(t, int64(0), actual)
 		})
 
-		// add finished runs with overdue reminders
-		createRuns(store, playbookRunStore, 7, app.StatusFinished, 1)
-		// add active runs without reminders
-		createRuns(store, playbookRunStore, 5, app.StatusInProgress, 0)
-
 		t.Run("zero active runs with overdue, few finished runs with overdue", func(t *testing.T) {
+			// add finished runs with overdue reminders
+			createRuns(store, playbookRunStore, 7, app.StatusFinished, 1)
+			// add active runs without reminders
+			createRuns(store, playbookRunStore, 5, app.StatusInProgress, 0)
+
 			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(0), actual)
 		})
 
-		// add active runs with overdue
-		createRuns(store, playbookRunStore, 9, app.StatusInProgress, 1)
-
 		t.Run("few active runs with overdue", func(t *testing.T) {
+			// add active runs with overdue
+			createRuns(store, playbookRunStore, 9, app.StatusInProgress, 1)
+
 			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(9), actual)
 		})
 
-		// add active runs with due reminder
-		createRuns(store, playbookRunStore, 4, app.StatusInProgress, -1)
-
 		t.Run("few active runs with due reminder", func(t *testing.T) {
+			// add active runs with due reminder
+			createRuns(store, playbookRunStore, 4, app.StatusInProgress, -1)
+
 			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(9), actual)
@@ -975,28 +975,28 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 			require.Equal(t, int64(0), actual)
 		})
 
-		// add active runs with enabled/disabled retro
-		createRuns(store, playbookRunStore, 5, app.StatusInProgress, true, 60, 0, false)
-		createRuns(store, playbookRunStore, 2, app.StatusInProgress, false, 0, 0, false)
-		// add active runs with published retro
-		createRuns(store, playbookRunStore, 6, app.StatusInProgress, true, 60, 100000000, false)
-
 		t.Run("zero finished runs, few active runs", func(t *testing.T) {
+			// add active runs with enabled/disabled retro
+			createRuns(store, playbookRunStore, 5, app.StatusInProgress, true, 60, 0, false)
+			createRuns(store, playbookRunStore, 2, app.StatusInProgress, false, 0, 0, false)
+			// add active runs with published retro
+			createRuns(store, playbookRunStore, 6, app.StatusInProgress, true, 60, 100000000, false)
+
 			actual, err := playbookRunStore.GetOverdueRetroRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(0), actual)
 		})
 
-		// add finished runs with enabled/disabled retro
-		createRuns(store, playbookRunStore, 3, app.StatusFinished, true, 60, 0, false)
-		createRuns(store, playbookRunStore, 4, app.StatusFinished, false, 60, 0, false)
-		// add finished runs with published/canceled retro
-		createRuns(store, playbookRunStore, 7, app.StatusFinished, true, 60, 100000000, false)
-		createRuns(store, playbookRunStore, 8, app.StatusFinished, true, 60, 100000000, true)
-		// add finished runs without retro and without reminder
-		createRuns(store, playbookRunStore, 2, app.StatusFinished, true, 60, 100000000, false)
-
 		t.Run("few finished runs, few active runs", func(t *testing.T) {
+			// add finished runs with enabled/disabled retro
+			createRuns(store, playbookRunStore, 3, app.StatusFinished, true, 60, 0, false)
+			createRuns(store, playbookRunStore, 4, app.StatusFinished, false, 60, 0, false)
+			// add finished runs with published/canceled retro
+			createRuns(store, playbookRunStore, 7, app.StatusFinished, true, 60, 100000000, false)
+			createRuns(store, playbookRunStore, 8, app.StatusFinished, true, 60, 100000000, true)
+			// add finished runs without retro and without reminder
+			createRuns(store, playbookRunStore, 2, app.StatusFinished, true, 60, 100000000, false)
+
 			actual, err := playbookRunStore.GetOverdueRetroRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(3), actual)
@@ -1006,9 +1006,7 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 
 func TestGetFollowersActiveTotal(t *testing.T) {
 	createRuns := func(
-		store *SQLStore,
 		playbookRunStore app.PlaybookRunStore,
-		playbookID string,
 		followers []string,
 		teamID string,
 		num int,
@@ -1018,7 +1016,6 @@ func TestGetFollowersActiveTotal(t *testing.T) {
 		for i := 0; i < num; i++ {
 			run := NewBuilder(t).
 				WithCurrentStatus(status).
-				WithPlaybookID(playbookID).
 				WithTeamID(teamID).
 				ToPlaybookRun()
 
@@ -1028,7 +1025,6 @@ func TestGetFollowersActiveTotal(t *testing.T) {
 				err = playbookRunStore.Follow(returned.ID, f)
 				require.NoError(t, err)
 			}
-			createPlaybookRunChannel(t, store, returned)
 		}
 	}
 
@@ -1040,62 +1036,31 @@ func TestGetFollowersActiveTotal(t *testing.T) {
 		ID:   model.NewId(),
 		Name: "bob",
 	}
-
-	playbook1 := NewPBBuilder().
-		WithTitle("playbook 1").
-		ToPlaybook()
-	playbook2 := NewPBBuilder().
-		WithTitle("playbook 2").
-		ToPlaybook()
-
-	users := []userInfo{alice, bob}
+	followers := []string{alice.ID, bob.ID}
 	teamID := model.NewId()
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		playbookStore := setupPlaybookStore(t, db)
-		_, store := setupSQLStore(t, db)
 		setupChannelsTable(t, db)
 		setupTeamMembersTable(t, db)
 
-		addUsers(t, store, users)
-		addUsersToTeam(t, store, users, teamID)
-
-		// create playbook with two folllowers
-		playbook1ID, err := playbookStore.Create(playbook1)
-		require.NoError(t, err)
-		err = playbookStore.AutoFollow(playbook1ID, alice.ID)
-		require.NoError(t, err)
-		err = playbookStore.AutoFollow(playbook1ID, bob.ID)
-		require.NoError(t, err)
-		followers1, err := playbookStore.GetAutoFollows(playbook1ID)
-		require.NoError(t, err)
-
-		// create playbook with one follower
-		playbook2ID, err := playbookStore.Create(playbook2)
-		require.NoError(t, err)
-		err = playbookStore.AutoFollow(playbook2ID, alice.ID)
-		require.NoError(t, err)
-		followers2, err := playbookStore.GetAutoFollows(playbook2ID)
-		require.NoError(t, err)
-
-		// create active runs without followers
-		createRuns(store, playbookRunStore, "", nil, teamID, 2, app.StatusInProgress)
-		// create finished runs with followers
-		createRuns(store, playbookRunStore, playbook1ID, followers1, teamID, 3, app.StatusFinished)
-
 		t.Run("zero active followers", func(t *testing.T) {
+			// create active runs without followers
+			createRuns(playbookRunStore, nil, teamID, 2, app.StatusInProgress)
+			// create finished runs with followers
+			createRuns(playbookRunStore, followers, teamID, 3, app.StatusFinished)
+
 			actual, err := playbookRunStore.GetFollowersActiveTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(0), actual)
 		})
 
-		// create active runs based on playbooks that have autofollowers
-		createRuns(store, playbookRunStore, playbook1ID, followers1, teamID, 3, app.StatusInProgress)
-		createRuns(store, playbookRunStore, playbook2ID, followers2, teamID, 2, app.StatusInProgress)
-
 		t.Run("runs with active followers", func(t *testing.T) {
+			// create active runs with followers
+			createRuns(playbookRunStore, followers, teamID, 3, app.StatusInProgress)
+			createRuns(playbookRunStore, followers[:1], teamID, 2, app.StatusInProgress)
+
 			expected := 2*3 + 1*2
 			actual, err := playbookRunStore.GetFollowersActiveTotal()
 			require.NoError(t, err)
@@ -1181,27 +1146,61 @@ func TestGetParticipantsActiveTotal(t *testing.T) {
 		playbook2ID, err := playbookStore.Create(playbook2)
 		require.NoError(t, err)
 
-		// create active runs without participants
-		createRuns(store, playbookRunStore, "", nil, team1ID, 2, app.StatusInProgress)
-		// create finished runs with participants
-		createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusFinished)
-
 		t.Run("zero active participants", func(t *testing.T) {
+			// create active runs without participants
+			createRuns(store, playbookRunStore, "", nil, team1ID, 2, app.StatusInProgress)
+			// create finished runs with participants
+			createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusFinished)
+
 			actual, err := playbookRunStore.GetParticipantsActiveTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(0), actual)
 		})
 
-		// create active runs with participants
-		createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusInProgress)
-		createRuns(store, playbookRunStore, playbook2ID, []userInfo{tom, bob}, team2ID, 5, app.StatusInProgress)
-
 		t.Run("runs with active participants", func(t *testing.T) {
+			// create active runs with participants
+			createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusInProgress)
+			createRuns(store, playbookRunStore, playbook2ID, []userInfo{tom, bob}, team2ID, 5, app.StatusInProgress)
+
 			expected := 2*3 + 2*5 // ignore bots
 			actual, err := playbookRunStore.GetParticipantsActiveTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(expected), actual)
 		})
+	}
+}
+
+func TestUpdateFollowers(t *testing.T) {
+	followersOld := []string{"1", "2", "3"}
+	followersNew := []string{"1", "5", "4"}
+
+	teamID := model.NewId()
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupChannelsTable(t, db)
+		setupTeamMembersTable(t, db)
+
+		run := NewBuilder(t).
+			WithCurrentStatus(app.StatusInProgress).
+			WithTeamID(teamID).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		// add run followers
+		for _, f := range followersOld {
+			err = playbookRunStore.Follow(returned.ID, f)
+			require.NoError(t, err)
+		}
+
+		err = playbookRunStore.UpdateFollowers(returned.ID, followersNew)
+		require.NoError(t, err)
+		followers, err := playbookRunStore.GetFollowers(returned.ID)
+		require.NoError(t, err)
+		sort.Strings(followers)
+		require.Equal(t, []string{"1", "4", "5"}, followers)
 	}
 }
 

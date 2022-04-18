@@ -87,6 +87,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update-broadcast-settings", handler.updateStatusBroadcastSettings).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -820,6 +821,22 @@ func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateStatusBroadcastSettings modifies status update broadcast settings.
+func (h *PlaybookRunHandler) updateStatusBroadcastSettings(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	var params app.StatusUpdateBroadcastSettings
+
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal status update broadcast settings params state", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetStatusUpdateBroadcastSettings(playbookRunID, params); err != nil {
+		h.HandleError(w, err)
+		return
+	}
 }
 
 // updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
