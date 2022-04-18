@@ -112,7 +112,7 @@ describe('playbook tour points', () => {
             cy.findByRole('button', {name: /let me explore/i}).click();
 
             // * Verify the first step is _not_ shown
-            cy.contains('See who is involved').should('not.be.visible');
+            cy.contains('See who is involved').should('not.exist');
         });
     });
 });
