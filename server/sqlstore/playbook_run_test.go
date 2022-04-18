@@ -677,6 +677,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithChannel(&channel01).
 			WithTeamID(team1.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
+			WithStatusUpdateEnabled(true).
 			WithUpdateOverdueBy(2 * time.Minute).
 			WithOwnerUserID(userID).
 			ToPlaybookRun()
@@ -696,6 +697,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithName("inc02 - this is the playbook name for channel 02").
 			WithChannel(&channel02).
 			WithTeamID(team2.Id).
+			WithStatusUpdateEnabled(true).
 			WithUpdateOverdueBy(1 * time.Minute).
 			WithOwnerUserID(userID).
 			WithChecklists([]int{1, 2, 3, 4}).
@@ -708,6 +710,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithName("inc03 - this is the playbook name for channel 03").
 			WithChannel(&channel03).
 			WithTeamID(team1.Id).
+			WithStatusUpdateEnabled(true).
 			WithUpdateOverdueBy(-2 * time.Minute).
 			WithOwnerUserID(userID).
 			WithChecklists([]int{1, 2, 3, 4}).
@@ -720,6 +723,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithChannel(&channel04).
 			WithTeamID(team1.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
+			WithStatusUpdateEnabled(true).
 			WithUpdateOverdueBy(2 * time.Minute).
 			WithOwnerUserID(userID).
 			WithCurrentStatus(app.StatusFinished).
@@ -742,6 +746,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithChannel(&channel06).
 			WithTeamID(team1.Id).
 			WithOwnerUserID(otherCommanderUserID).
+			WithStatusUpdateEnabled(true).
 			WithUpdateOverdueBy(2 * time.Minute).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
@@ -883,6 +888,7 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 			run := NewBuilder(t).
 				WithCreateAt(now - int64(i*1000)).
 				WithCurrentStatus(status).
+				WithStatusUpdateEnabled(true).
 				WithUpdateOverdueBy(time.Duration(overdue) * 2 * time.Minute * time.Duration(i+1)).
 				ToPlaybookRun()
 
@@ -1336,6 +1342,12 @@ func (ib *PlaybookRunBuilder) WithChannel(channel *model.Channel) *PlaybookRunBu
 
 func (ib *PlaybookRunBuilder) WithPlaybookID(id string) *PlaybookRunBuilder {
 	ib.playbookRun.PlaybookID = id
+
+	return ib
+}
+
+func (ib *PlaybookRunBuilder) WithStatusUpdateEnabled(isEnabled bool) *PlaybookRunBuilder {
+	ib.playbookRun.StatusUpdateEnabled = isEnabled
 
 	return ib
 }
