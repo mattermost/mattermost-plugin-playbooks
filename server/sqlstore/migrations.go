@@ -1983,7 +1983,7 @@ var migrations = []Migration{
 				Where(sq.NotEq{"ConcatenatedBroadcastChannelIDs": ""})
 
 			if _, err := sqlStore.execBuilder(e, channelsBroadcast); err != nil {
-				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastChannelsEnabled field")
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastChannelsEnabled column")
 			}
 
 			// enable webhooks broadcast where webhooks list is not empty
@@ -1993,7 +1993,7 @@ var migrations = []Migration{
 				Where(sq.NotEq{"ConcatenatedWebhookOnStatusUpdateURLs": ""})
 
 			if _, err := sqlStore.execBuilder(e, webhooksBroadcast); err != nil {
-				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastWebhooksEnabled field")
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastWebhooksEnabled column")
 			}
 
 			return nil
