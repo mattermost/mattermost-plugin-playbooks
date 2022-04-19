@@ -338,7 +338,11 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
-    white-space: nowrap;  
+    white-space: nowrap;
+
+    &:hover {
+        cursor: pointer;
+    }
 `;
 
 const DueDateTextContainer = styled.div<{overdue: boolean}>`

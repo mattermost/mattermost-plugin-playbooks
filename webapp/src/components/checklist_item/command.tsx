@@ -133,6 +133,10 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
+
+    &:hover {
+        cursor: pointer;
+    }
 `;
 
 const CommandContainer = styled.div<{editing: boolean}>`
@@ -186,6 +190,10 @@ const CommandText = styled.div`
     padding: 2px 4px;
     border-radius: 4px;
     font-size: 12px;
+
+    :hover {
+        cursor: pointer;
+    }
 `;
 
 const StyledSpinner = styled(Spinner)`
