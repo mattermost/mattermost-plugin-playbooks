@@ -147,6 +147,7 @@ const StrikeThrough = styled.text`
 const Border = styled.div`
     margin-bottom: 12px;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    border-radius: 4px;
 `;
 
 const ProgressBackground = styled.div`
@@ -300,4 +301,9 @@ const ChecklistInput = styled.input`
     font-weight: 600;
     font-size: 14px;
     line-height: 44px;
+
+    ::placeholder {
+        font-weight: 400;
+        font-style: italic;
+    }
 `;

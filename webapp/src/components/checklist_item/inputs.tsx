@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => void;
@@ -102,18 +102,19 @@ const CancelSaveContainer = styled.div`
     padding: 8px;
     z-index: 2;
     white-space: nowrap;
+    font-size: 12px;
 `;
 
-const CancelButton = styled(SecondaryButton)`
+const CancelButton = styled(TertiaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin: 0px 2px;
     border-radius: 4px;
 `;
 
 const SaveButton = styled(PrimaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin: 0px 2px;
     border-radius: 4px;
 `;

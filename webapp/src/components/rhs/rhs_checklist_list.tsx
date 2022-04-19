@@ -371,18 +371,17 @@ const AddChecklistLink = styled.button`
     background: none;
     border: none;
 
-    border-radius: 8px;
+    border-radius: 4px;
     border: 1px dashed;
     display: flex;
     flex-direction: row;
     align-items: center;
     cursor: pointer;
 
-    color: var(--center-channel-color-64);
-
+    color: var(--center-channel-color-16);
 
     &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        background-color: var(--button-bg-08);
         color: var(--button-bg);
     }
 `;
