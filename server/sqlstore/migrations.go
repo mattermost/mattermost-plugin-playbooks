@@ -1950,4 +1950,53 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.51.0"),
+		toVersion:   semver.MustParse("0.52.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastFollowersEnabled to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastFollowersEnabled to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
+				}
+			}
+
+			// enable channels broadcast where channels ids list is not empty
+			channelsBroadcast := sqlStore.builder.
+				Update("IR_Incident").
+				Set("StatusUpdateBroadcastChannelsEnabled", true).
+				Where(sq.NotEq{"ConcatenatedBroadcastChannelIDs": ""})
+
+			if _, err := sqlStore.execBuilder(e, channelsBroadcast); err != nil {
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastChannelsEnabled column")
+			}
+
+			// enable webhooks broadcast where webhooks list is not empty
+			webhooksBroadcast := sqlStore.builder.
+				Update("IR_Incident").
+				Set("StatusUpdateBroadcastWebhooksEnabled", true).
+				Where(sq.NotEq{"ConcatenatedWebhookOnStatusUpdateURLs": ""})
+
+			if _, err := sqlStore.execBuilder(e, webhooksBroadcast); err != nil {
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastWebhooksEnabled column")
+			}
+
+			return nil
+		},
+	},
 }
