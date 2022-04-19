@@ -378,7 +378,8 @@ const AddChecklistLink = styled.button`
     align-items: center;
     cursor: pointer;
 
-    color: var(--center-channel-color-16);
+    border-color: var(--center-channel-color-16);
+    color: var(--center-channel-color-64);
 
     &:hover {
         background-color: var(--button-bg-08);

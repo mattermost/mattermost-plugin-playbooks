@@ -81,19 +81,20 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
     const {formatMessage} = useIntl();
 
-    return (<CancelSaveContainer>
-        <CancelButton
-            onClick={props.onCancel}
-        >
-            {formatMessage({defaultMessage: 'Cancel'})}
-        </CancelButton>
-        <SaveButton
-            onClick={props.onSave}
-            data-testid='checklist-item-save-button'
-        >
-            {formatMessage({defaultMessage: 'Save'})}
-        </SaveButton>
-    </CancelSaveContainer>
+    return (
+        <CancelSaveContainer>
+            <CancelButton
+                onClick={props.onCancel}
+            >
+                {formatMessage({defaultMessage: 'Cancel'})}
+            </CancelButton>
+            <SaveButton
+                onClick={props.onSave}
+                data-testid='checklist-item-save-button'
+            >
+                {formatMessage({defaultMessage: 'Save'})}
+            </SaveButton>
+        </CancelSaveContainer>
     );
 };
 
@@ -102,7 +103,6 @@ const CancelSaveContainer = styled.div`
     padding: 8px;
     z-index: 2;
     white-space: nowrap;
-    font-size: 12px;
 `;
 
 const CancelButton = styled(TertiaryButton)`
@@ -110,6 +110,7 @@ const CancelButton = styled(TertiaryButton)`
     padding: 10px 16px;
     margin: 0px 2px;
     border-radius: 4px;
+    font-size: 12px;
 `;
 
 const SaveButton = styled(PrimaryButton)`
@@ -117,4 +118,5 @@ const SaveButton = styled(PrimaryButton)`
     padding: 10px 16px;
     margin: 0px 2px;
     border-radius: 4px;
+    font-size: 12px;
 `;
