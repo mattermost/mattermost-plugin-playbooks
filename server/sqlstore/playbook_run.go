@@ -1121,6 +1121,7 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
 		Where(sq.Eq{"i.CommanderUserId": userID}).
+		Where(sq.Eq{"i.StatusUpdateEnabled": true}).
 		Where(membershipClause).
 		OrderBy("ChannelDisplayName")
 
@@ -1239,6 +1240,7 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 		Select("COUNT(*)").
 		From("IR_Incident").
 		Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+		Where(sq.Eq{"StatusUpdateEnabled": true}).
 		Where(sq.NotEq{"PreviousReminder": 0})
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
