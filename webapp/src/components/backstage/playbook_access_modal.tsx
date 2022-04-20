@@ -2,7 +2,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
-import React, {ComponentProps, useEffect, useState} from 'react';
+import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -79,29 +79,31 @@ const PlaybookAccessModal = ({
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
 
+    const onChange = (update: Partial<PlaybookWithChecklist>) => {
+        if (playbook) {
+            const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
+            updatePlaybook(updatedPlaybook);
+            onPlaybookChange?.(updatedPlaybook);
+        }
+    };
+
     const onAddMember = (member: PlaybookMember) => {
         if (!playbook) {
             return;
         }
         if (!playbook.members.find((elem: PlaybookMember) => elem.user_id === member.user_id)) {
-            updatePlaybook({
+            onChange({
                 members: [...playbook.members, member],
             });
         }
     };
-
-    useEffect(() => {
-        if (playbook) {
-            onPlaybookChange?.(playbook);
-        }
-    }, [playbook, onPlaybookChange]);
 
     const onRemoveUser = (userId: string) => {
         if (!playbook) {
             return;
         }
         const idx = playbook.members.findIndex((elem: PlaybookMember) => elem.user_id === userId);
-        updatePlaybook({
+        onChange({
             members: [...playbook.members.slice(0, idx), ...playbook.members.slice(idx + 1)],
         });
     };
@@ -113,13 +115,13 @@ const PlaybookAccessModal = ({
         const idx = playbook.members.findIndex((elem: PlaybookMember) => elem.user_id === userId);
         const member = {...playbook.members[idx]};
         member.roles = roles;
-        updatePlaybook({
+        onChange({
             members: [...playbook.members.slice(0, idx), ...playbook.members.slice(idx + 1), member],
         });
     };
 
     const modifyPublic = (pub: boolean) => {
-        updatePlaybook({
+        onChange({
             public: pub,
         });
     };
