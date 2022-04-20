@@ -18,8 +18,8 @@ import Icon from '@mdi/react';
 import cloneDeep from 'lodash';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
-import {hideActionsModal} from 'src/actions';
-import {isActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
+import {hideChannelActionsModal} from 'src/actions';
+import {isChannelActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
 import GenericModal, {ModalSubheading, DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
@@ -63,7 +63,7 @@ const defaultActions: ActionsByTrigger = {
 const ActionsModal = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const show = useSelector(isActionsModalVisible);
+    const show = useSelector(isChannelActionsModalVisible);
     const channelID = useSelector(getCurrentChannelId);
     const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
     const isSysAdmin = useSelector(isCurrentUserAdmin);
@@ -115,7 +115,7 @@ const ActionsModal = () => {
     const onHide = () => {
         // Restore the state to the original actions
         setCurrentActions({...defaultActions, ...originalActions});
-        dispatch(hideActionsModal());
+        dispatch(hideChannelActionsModal());
     };
 
     const onSave = () => {
@@ -145,7 +145,7 @@ const ActionsModal = () => {
             setOriginalActions(newActions);
         });
 
-        dispatch(hideActionsModal());
+        dispatch(hideChannelActionsModal());
     };
 
     const onUpdateAction = (newAction: ChannelAction) => {

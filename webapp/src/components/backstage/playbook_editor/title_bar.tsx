@@ -42,7 +42,7 @@ import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {copyToClipboard} from 'src/utils';
 
-import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
+import {HeaderIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
@@ -189,7 +189,7 @@ const TitleBar = ({
                 </Tooltip>
             }
         >
-            <CopyIcon
+            <HeaderIcon
                 className='icon-link-variant'
                 onClick={copyPlaybookLink}
                 clicked={playbookLinkCopied}
