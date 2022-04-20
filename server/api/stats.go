@@ -143,13 +143,13 @@ type PlaybookSiteStats struct {
 // playbooSitekStats collects and send the stats used for system-console > statistics
 //
 // Response 200: PlaybookSiteStats
+// Response 401: when user is not authenticated
 // Response 403: when user has no permissions to see stats
 func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request) {
-
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// user must have right to access analytics
 	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
-		// c.SetPermissionError(model.PermissionGetAnalytics)
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
 		return
 	}

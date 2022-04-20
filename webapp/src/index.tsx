@@ -12,8 +12,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
-
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
+import {FormattedMessage} from 'react-intl';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -132,20 +132,18 @@ export default class Plugin {
         }
 
         // Site statistics handler
-        if (registry.registerSiteStatistics) {
-            registry.registerSiteStatistics(async () => {
+        if (registry.registerSiteStatisticsHandler) {
+            registry.registerSiteStatisticsHandler(async () => {
                 const siteStats = await fetchSiteStats();
                 return {
-
-                    // TODO i18n?
                     playbook_count: {
-                        name: 'Playbook count',
+                        name: <FormattedMessage defaultMessage={'Total Playbooks'}/>,
                         id: 'total_playbooks',
                         icon: 'fa-book',
                         value: siteStats?.total_playbooks,
                     },
                     playbook_run_count: {
-                        name: 'Playbook runs count',
+                        name: <FormattedMessage defaultMessage={'Total Playbook Runs'}/>,
                         id: 'total_playbook_runs',
                         icon: 'fa-list-alt',
                         value: siteStats?.total_playbook_runs,
@@ -243,9 +241,6 @@ export default class Plugin {
         }
         if (this.stylesContainer) {
             unmountComponentAtNode(this.stylesContainer);
-        }
-        if (registry.unregisterSiteStatisticsHandler) {
-            registry.unregisterSiteStatisticsHandler();
         }
     }
 }
