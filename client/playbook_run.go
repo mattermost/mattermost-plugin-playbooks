@@ -8,30 +8,34 @@ const Me = "me"
 
 // PlaybookRun represents a playbook run.
 type PlaybookRun struct {
-	ID                       string          `json:"id"`
-	Name                     string          `json:"name"`
-	Description              string          `json:"description"`
-	OwnerUserID              string          `json:"owner_user_id"`
-	ReporterUserID           string          `json:"reporter_user_id"`
-	TeamID                   string          `json:"team_id"`
-	ChannelID                string          `json:"channel_id"`
-	CreateAt                 int64           `json:"create_at"`
-	EndAt                    int64           `json:"end_at"`
-	DeleteAt                 int64           `json:"delete_at"`
-	ActiveStage              int             `json:"active_stage"`
-	ActiveStageTitle         string          `json:"active_stage_title"`
-	PostID                   string          `json:"post_id"`
-	PlaybookID               string          `json:"playbook_id"`
-	Checklists               []Checklist     `json:"checklists"`
-	StatusPosts              []StatusPost    `json:"status_posts"`
-	ReminderPostID           string          `json:"reminder_post_id"`
-	PreviousReminder         time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID       string          `json:"broadcast_channel_id"`
-	ReminderMessageTemplate  string          `json:"reminder_message_template"`
-	InvitedUserIDs           []string        `json:"invited_user_ids"`
-	InvitedGroupIDs          []string        `json:"invited_group_ids"`
-	TimelineEvents           []TimelineEvent `json:"timeline_events"`
-	CategorizeChannelEnabled bool            `json:"categorize_channel_enabled"`
+	ID                                   string          `json:"id"`
+	Name                                 string          `json:"name"`
+	Description                          string          `json:"description"`
+	OwnerUserID                          string          `json:"owner_user_id"`
+	ReporterUserID                       string          `json:"reporter_user_id"`
+	TeamID                               string          `json:"team_id"`
+	ChannelID                            string          `json:"channel_id"`
+	CreateAt                             int64           `json:"create_at"`
+	EndAt                                int64           `json:"end_at"`
+	DeleteAt                             int64           `json:"delete_at"`
+	ActiveStage                          int             `json:"active_stage"`
+	ActiveStageTitle                     string          `json:"active_stage_title"`
+	PostID                               string          `json:"post_id"`
+	PlaybookID                           string          `json:"playbook_id"`
+	Checklists                           []Checklist     `json:"checklists"`
+	StatusPosts                          []StatusPost    `json:"status_posts"`
+	ReminderPostID                       string          `json:"reminder_post_id"`
+	PreviousReminder                     time.Duration   `json:"previous_reminder"`
+	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
+	BroadcastChannelIDs                  []string        `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs            []string        `json:"webhook_on_status_update_urls"`
+	StatusUpdateBroadcastChannelsEnabled bool            `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool            `json:"status_update_broadcast_webhooks_enabled"`
+	ReminderMessageTemplate              string          `json:"reminder_message_template"`
+	InvitedUserIDs                       []string        `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
+	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
+	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -88,6 +92,15 @@ type PlaybookRunCreateOptions struct {
 	Description string `json:"description"`
 	PostID      string `json:"post_id"`
 	PlaybookID  string `json:"playbook_id"`
+}
+
+// RunAction represents the run action settings. Frontend passes this struct to update settings.
+type RunAction struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
 }
 
 // Sort enumerates the available fields we can sort on.
