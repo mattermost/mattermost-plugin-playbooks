@@ -1186,7 +1186,7 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
-// UpdateFollowers replaces existing followers list to passed list
+// UpdateFollowers replaces the run's existing followers list with a new one(followers array)
 func (s *playbookRunStore) UpdateFollowers(playbookRunID string, followers []string) error {
 	tx, err := s.store.db.Beginx()
 	if err != nil {

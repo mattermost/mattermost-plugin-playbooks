@@ -745,18 +745,18 @@ func (mr *MockPlaybookRunServiceMockRecorder) SetReminder(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).SetReminder), arg0, arg1)
 }
 
-// SetStatusUpdateBroadcastSettings mocks base method.
-func (m *MockPlaybookRunService) SetStatusUpdateBroadcastSettings(arg0 string, arg1 app.StatusUpdateBroadcastSettings) error {
+// SetRunActions mocks base method.
+func (m *MockPlaybookRunService) SetRunActions(arg0 string, arg1 app.RunAction) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetStatusUpdateBroadcastSettings", arg0, arg1)
+	ret := m.ctrl.Call(m, "SetRunActions", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetStatusUpdateBroadcastSettings indicates an expected call of SetStatusUpdateBroadcastSettings.
-func (mr *MockPlaybookRunServiceMockRecorder) SetStatusUpdateBroadcastSettings(arg0, arg1 interface{}) *gomock.Call {
+// SetRunActions indicates an expected call of SetRunActions.
+func (mr *MockPlaybookRunServiceMockRecorder) SetRunActions(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStatusUpdateBroadcastSettings", reflect.TypeOf((*MockPlaybookRunService)(nil).SetStatusUpdateBroadcastSettings), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRunActions", reflect.TypeOf((*MockPlaybookRunService)(nil).SetRunActions), arg0, arg1)
 }
 
 // SkipChecklist mocks base method.

@@ -1200,7 +1200,8 @@ func TestUpdateFollowers(t *testing.T) {
 		followers, err := playbookRunStore.GetFollowers(returned.ID)
 		require.NoError(t, err)
 		sort.Strings(followers)
-		require.Equal(t, []string{"1", "4", "5"}, followers)
+		sort.Strings(followersNew)
+		require.Equal(t, followersNew, followers)
 	}
 }
 

@@ -834,7 +834,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 }
 
 func TestSetStatusUpdateBroadcastSettings(t *testing.T) {
-	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
+	t.Run("update run actions settings", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
 		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
@@ -861,7 +861,7 @@ func TestSetStatusUpdateBroadcastSettings(t *testing.T) {
 			BroadcastChannelIDs:                   []string{"1", "2"},
 			WebhookOnStatusUpdateURLs:             []string{"url1", "url2"},
 		}
-		settings := app.StatusUpdateBroadcastSettings{
+		settings := app.RunAction{
 			StatusUpdateBroadcastChannelsEnabled:  false,
 			StatusUpdateBroadcastFollowersEnabled: true,
 			StatusUpdateBroadcastWebhooksEnabled:  false,
@@ -888,7 +888,7 @@ func TestSetStatusUpdateBroadcastSettings(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-		err := s.SetStatusUpdateBroadcastSettings(playbookRun.ID, settings)
+		err := s.SetRunActions(playbookRun.ID, settings)
 		require.NoError(t, err)
 		require.Equal(t, updatedRun.StatusUpdateBroadcastChannelsEnabled, settings.StatusUpdateBroadcastChannelsEnabled)
 		require.Equal(t, updatedRun.StatusUpdateBroadcastFollowersEnabled, settings.StatusUpdateBroadcastFollowersEnabled)
