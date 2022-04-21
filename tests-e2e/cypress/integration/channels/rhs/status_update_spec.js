@@ -138,7 +138,7 @@ describe('channels > rhs > status update', () => {
 
         it('confirms finishing the run, and remembers changes and reminder when canceled', () => {
             const updateMessage = 'This is the update text to test with.';
-            const reminderTime = 'in 24 hours';
+            const reminderTime = '1 day';
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
@@ -250,7 +250,7 @@ describe('channels > rhs > status update', () => {
             cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 60 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '1 hour');
                 });
             });
         });
@@ -269,7 +269,7 @@ describe('channels > rhs > status update', () => {
             cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 15 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '15 minutes');
                 });
             });
         });
@@ -288,7 +288,7 @@ describe('channels > rhs > status update', () => {
             cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 1 hour 30 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '1 hour, 30 minutes');
                 });
             });
         });
@@ -307,7 +307,7 @@ describe('channels > rhs > status update', () => {
             cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 7 days');
+                    cy.get('[class$=singleValue]').should('have.text', '7 days');
                 });
             });
         });

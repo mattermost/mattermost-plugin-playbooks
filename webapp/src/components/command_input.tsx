@@ -78,10 +78,15 @@ const CommandInput = (props: CommandInputProps) => {
                     inputComponent={BaseInput}
                     createMessage={formatMessage({defaultMessage: 'Slash Command'})}
                     onKeyDown={(e: KeyboardEvent) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
+                        if (e.key === 'Escape') {
                             if (textboxRef.current) {
                                 // @ts-ignore
                                 textboxRef.current.blur();
+                            }
+                        } else if (e.key === 'Enter') {
+                            if (e.target) {
+                                const input = e.target as HTMLInputElement;
+                                setCommand(input.value);
                             }
                         }
                     }}

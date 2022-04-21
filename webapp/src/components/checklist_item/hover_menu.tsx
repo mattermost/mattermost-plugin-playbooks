@@ -5,7 +5,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon} from 'src/components/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
-import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
@@ -62,20 +62,20 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 mode={Mode.DateTimeValue}
                 onSelectedChange={props.onDueDateChange}
             />
-            <HoverMenuButton
+            <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
                 title={formatMessage({defaultMessage: 'Edit'})}
-                className={'icon-pencil-outline icon-16 btn-icon'}
+                className={'icon-pencil-outline icon-12 btn-icon'}
                 onClick={() => {
                     props.onEdit();
                 }}
             />
             <DotMenu
                 icon={<DotMenuIcon/>}
-                dotMenuButton={StyledDotMenuButton}
+                dotMenuButton={DotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
                 topPx={15}
-                leftPx={-189}
+                leftPx={-161}
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
@@ -111,20 +111,26 @@ const ChecklistItemHoverMenu = (props: Props) => {
 
 const HoverMenu = styled.div`
     display: flex;
-    padding: 2px;
+    align-items: center;
+    padding: 0px 8px;
     position: absolute;
     height: 32px;
     right: 1px;
-    top: -4px;
+    top: 2px;
     border: 1px solid var(--center-channel-color-08);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     background: var(--center-channel-bg);
 `;
 
-const ToggleDescriptionButton = styled(HoverMenuButton) <{showDescription: boolean}>`
+const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
     transition: all 0.2s linear;
     transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+`;
+
+const DotMenuButton = styled(StyledDotMenuButton)`
+    width: 24px;
+    height: 24px;
 `;
 
 export default ChecklistItemHoverMenu;
