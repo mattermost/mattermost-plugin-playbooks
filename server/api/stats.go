@@ -140,7 +140,7 @@ type PlaybookSiteStats struct {
 	TotalPlaybookRuns int `json:"total_playbook_runs"`
 }
 
-// playbooSitekStats collects and send the stats used for system-console > statistics
+// playbooSitekStats collects and sends the stats used for system-console > statistics
 //
 // Response 200: PlaybookSiteStats
 // Response 401: when user is not authenticated
