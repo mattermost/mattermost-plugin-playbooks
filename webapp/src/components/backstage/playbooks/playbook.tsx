@@ -278,7 +278,7 @@ const Playbook = () => {
                         }
                     >
                         <DropdownMenuItem
-                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id, setPlaybook))}
                         >
                             <FormattedMessage defaultMessage='Manage access'/>
                         </DropdownMenuItem>
@@ -311,7 +311,7 @@ const Playbook = () => {
                         }
                     </DotMenu>
                     <MembersIcon
-                        onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                        onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id, setPlaybook))}
                     >
                         <i className={'icon icon-account-multiple-outline'}/>
                         {playbook.members.length}
