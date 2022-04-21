@@ -628,8 +628,8 @@ type PlaybookRunService interface {
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
 
-	// SetRunActions updates status update broadcast settings
-	SetRunActions(playbookRunID string, settings RunAction) error
+	// UpdateRunActions updates status update broadcast settings
+	UpdateRunActions(playbookRunID string, settings RunAction) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

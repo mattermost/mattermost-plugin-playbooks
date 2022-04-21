@@ -1029,8 +1029,8 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
-// SetRunActions updates status update broadcast settings
-func (s *PlaybookRunServiceImpl) SetRunActions(playbookRunID string, settings RunAction) error {
+// UpdateRunActions updates status update broadcast settings
+func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings RunAction) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err

@@ -87,7 +87,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateActions).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -823,8 +823,8 @@ func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
-// updateActions modifies status update broadcast settings.
-func (h *PlaybookRunHandler) updateActions(w http.ResponseWriter, r *http.Request) {
+// updateRunActions modifies status update broadcast settings.
+func (h *PlaybookRunHandler) updateRunActions(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	var params app.RunAction
 
@@ -833,7 +833,7 @@ func (h *PlaybookRunHandler) updateActions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := h.playbookRunService.SetRunActions(playbookRunID, params); err != nil {
+	if err := h.playbookRunService.UpdateRunActions(playbookRunID, params); err != nil {
 		h.HandleError(w, err)
 		return
 	}

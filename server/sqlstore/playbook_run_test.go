@@ -1183,31 +1183,33 @@ func TestUpdateFollowers(t *testing.T) {
 	teamID := model.NewId()
 
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		playbookRunStore := setupPlaybookRunStore(t, db)
-		setupChannelsTable(t, db)
-		setupTeamMembersTable(t, db)
+		t.Run(fmt.Sprintf("TestUpdateFollowers [%s]", driverName), func(t *testing.T) {
+			db := setupTestDB(t, driverName)
+			playbookRunStore := setupPlaybookRunStore(t, db)
+			setupChannelsTable(t, db)
+			setupTeamMembersTable(t, db)
 
-		run := NewBuilder(t).
-			WithCurrentStatus(app.StatusInProgress).
-			WithTeamID(teamID).
-			ToPlaybookRun()
+			run := NewBuilder(t).
+				WithCurrentStatus(app.StatusInProgress).
+				WithTeamID(teamID).
+				ToPlaybookRun()
 
-		returned, err := playbookRunStore.CreatePlaybookRun(run)
-		require.NoError(t, err)
-		// add run followers
-		for _, f := range followersOld {
-			err = playbookRunStore.Follow(returned.ID, f)
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
 			require.NoError(t, err)
-		}
+			// add run followers
+			for _, f := range followersOld {
+				err = playbookRunStore.Follow(returned.ID, f)
+				require.NoError(t, err)
+			}
 
-		err = playbookRunStore.UpdateFollowers(returned.ID, followersNew)
-		require.NoError(t, err)
-		followers, err := playbookRunStore.GetFollowers(returned.ID)
-		require.NoError(t, err)
-		sort.Strings(followers)
-		sort.Strings(followersNew)
-		require.Equal(t, followersNew, followers)
+			err = playbookRunStore.UpdateFollowers(returned.ID, followersNew)
+			require.NoError(t, err)
+			followers, err := playbookRunStore.GetFollowers(returned.ID)
+			require.NoError(t, err)
+			sort.Strings(followers)
+			sort.Strings(followersNew)
+			require.Equal(t, followersNew, followers)
+		})
 	}
 }
 
