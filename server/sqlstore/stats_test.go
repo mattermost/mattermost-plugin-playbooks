@@ -354,7 +354,7 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		addUsersToChannels(t, store, []userInfo{john}, []string{channel01.Id})
 		makeAdmin(t, store, bob)
 
-		// crete run with different statuses, channels, teams and playbooks
+		// create run with different statuses, channels, teams and playbooks
 		run01 := *NewBuilder(nil).
 			WithName("pr 1 - team1-channel1-inprogress").
 			WithChannel(&channel01).
