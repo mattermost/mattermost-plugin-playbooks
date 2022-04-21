@@ -440,6 +440,7 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
     });
 }
 
+// fetchSiteStats collect the stats we want to expose in system console
 export async function fetchSiteStats(): Promise<SiteStats | null> {
     const data = await doGet(`${apiUrl}/sitestats`);
     if (!data) {

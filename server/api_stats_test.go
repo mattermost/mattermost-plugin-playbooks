@@ -28,6 +28,19 @@ func TestGetSiteStats(t *testing.T) {
 			assert.Equal(t, 4, stats.TotalPlaybooks)
 		})
 
+		t.Run("get stats for basic server", func(t *testing.T) {
+
+			e.CreateBasicPlaybook()
+			e.CreateBasicRun()
+			e.CreateBasicRun()
+
+			stats, err := e.PlaybooksAdminClient.Stats.GetSiteStats(context.Background())
+			require.NoError(t, err)
+			assert.NotEmpty(t, stats)
+			assert.Equal(t, 3, stats.TotalPlaybookRuns)
+			assert.Equal(t, 6, stats.TotalPlaybooks)
+		})
+
 	})
 
 }

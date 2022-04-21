@@ -139,13 +139,13 @@ export default class Plugin {
                     playbook_count: {
                         name: <FormattedMessage defaultMessage={'Total Playbooks'}/>,
                         id: 'total_playbooks',
-                        icon: 'fa-book',
+                        icon: 'fa-book', // font-awesome-4.7.0 handler
                         value: siteStats?.total_playbooks,
                     },
                     playbook_run_count: {
                         name: <FormattedMessage defaultMessage={'Total Playbook Runs'}/>,
                         id: 'total_playbook_runs',
-                        icon: 'fa-list-alt',
+                        icon: 'fa-list-alt', // font-awesome-4.7.0 handler
                         value: siteStats?.total_playbook_runs,
                     },
                 };

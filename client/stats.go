@@ -10,12 +10,13 @@ type StatsService struct {
 	client *Client
 }
 
+// PlaybookSiteStats holds the data that we want to expose in system console
 type PlaybookSiteStats struct {
 	TotalPlaybooks    int `json:"total_playbooks"`
 	TotalPlaybookRuns int `json:"total_playbook_runs"`
 }
 
-// Get the configured settings.
+// Get the stats that should be displayed in system console.
 func (s *StatsService) GetSiteStats(ctx context.Context) (*PlaybookSiteStats, error) {
 	statsURL := "sitestats"
 	req, err := s.client.newRequest(http.MethodGet, statsURL, nil)
