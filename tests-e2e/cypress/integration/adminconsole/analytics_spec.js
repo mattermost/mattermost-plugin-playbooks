@@ -35,8 +35,8 @@ describe('admin console > site statistics', () => {
 
             // # Go to admin console > site statistics
             cy.visit('/admin_console/reporting/system_analytics');
-            cy.findByTestId('playbooks.playbook_count').should('not.empty');
-            cy.findByTestId('playbooks.playbook_run_count').should('not.empty');
+            cy.findByTestId('playbooks.playbook_count').should('exist');
+            cy.findByTestId('playbooks.playbook_run_count').should('exist');
         });
 
         it('playbook counter increases after creating a playbook', () => {
