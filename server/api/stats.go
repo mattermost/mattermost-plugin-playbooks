@@ -153,9 +153,16 @@ func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request)
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
 		return
 	}
-
+	totalPlaybooks, err := h.statsStore.TotalPlaybooks()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
+	totalRuns, err := h.statsStore.TotalPlaybooks()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
 	ReturnJSON(w, &PlaybookSiteStats{
-		TotalPlaybooks:    h.statsStore.TotalPlaybooks(),
-		TotalPlaybookRuns: h.statsStore.TotalPlaybookRuns(),
+		TotalPlaybooks:    totalPlaybooks,
+		TotalPlaybookRuns: totalRuns,
 	}, http.StatusOK)
 }

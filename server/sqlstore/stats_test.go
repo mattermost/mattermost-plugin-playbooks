@@ -417,7 +417,8 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		}
 
 		t.Run(driverName+" Active Participants", func(t *testing.T) {
-			result := statsStore.TotalPlaybookRuns()
+			result, err := statsStore.TotalPlaybookRuns()
+			assert.NoError(t, err)
 			assert.Equal(t, 6, result)
 		})
 	}
@@ -496,7 +497,8 @@ func TestTotalPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Run(driverName+" Active Participants", func(t *testing.T) {
-			result := statsStore.TotalPlaybooks()
+			result, err := statsStore.TotalPlaybooks()
+			assert.NoError(t, err)
 			assert.Equal(t, 2, result)
 		})
 	}
