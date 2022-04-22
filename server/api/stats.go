@@ -157,7 +157,7 @@ func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		h.log.Warnf("playbookSiteStats failed: %w", err)
 	}
-	totalRuns, err := h.statsStore.TotalPlaybooks()
+	totalRuns, err := h.statsStore.TotalPlaybookRuns()
 	if err != nil {
 		h.log.Warnf("playbookSiteStats failed: %w", err)
 	}

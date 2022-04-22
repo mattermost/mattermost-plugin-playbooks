@@ -24,8 +24,8 @@ func TestGetSiteStats(t *testing.T) {
 			stats, err := e.PlaybooksAdminClient.Stats.GetSiteStats(context.Background())
 			require.NoError(t, err)
 			assert.NotEmpty(t, stats)
-			assert.Equal(t, 1, stats.TotalPlaybookRuns)
 			assert.Equal(t, 4, stats.TotalPlaybooks)
+			assert.Equal(t, 1, stats.TotalPlaybookRuns)
 		})
 
 		t.Run("add extra playbooks/runs and get stats again", func(t *testing.T) {
@@ -36,8 +36,8 @@ func TestGetSiteStats(t *testing.T) {
 			stats, err := e.PlaybooksAdminClient.Stats.GetSiteStats(context.Background())
 			require.NoError(t, err)
 			assert.NotEmpty(t, stats)
-			assert.Equal(t, 3, stats.TotalPlaybookRuns)
 			assert.Equal(t, 6, stats.TotalPlaybooks)
+			assert.Equal(t, 3, stats.TotalPlaybookRuns)
 		})
 	})
 }
