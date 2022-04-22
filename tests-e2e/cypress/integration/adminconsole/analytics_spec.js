@@ -68,7 +68,7 @@ describe('admin console > site statistics', () => {
             });
         });
 
-        it('run counter increases after creating a playbook', () => {
+        it('run counter increases after creating a run', () => {
             cy.apiLogin(testSysadmin);
             let counter;
 
