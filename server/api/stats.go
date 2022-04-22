@@ -37,8 +37,8 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 		licenseChecker:  licenseChecker,
 	}
 
-	router.HandleFunc("/sitestats", handler.playbookSiteStats).Methods(http.MethodGet)
 	statsRouter := router.PathPrefix("/stats").Subrouter()
+	statsRouter.HandleFunc("/site", handler.playbookSiteStats).Methods(http.MethodGet)
 	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
 
 	return handler

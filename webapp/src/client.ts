@@ -451,7 +451,7 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
 
 // fetchSiteStats collect the stats we want to expose in system console
 export async function fetchSiteStats(): Promise<SiteStats | null> {
-    const data = await doGet(`${apiUrl}/sitestats`);
+    const data = await doGet(`${apiUrl}/stats/site`);
     if (!data) {
         return null;
     }

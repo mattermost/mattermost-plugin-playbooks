@@ -28,8 +28,7 @@ func TestGetSiteStats(t *testing.T) {
 			assert.Equal(t, 4, stats.TotalPlaybooks)
 		})
 
-		t.Run("get stats for basic server", func(t *testing.T) {
-
+		t.Run("add extra playbooks/runs and get stats again", func(t *testing.T) {
 			e.CreateBasicPlaybook()
 			e.CreateBasicRun()
 			e.CreateBasicRun()
@@ -40,7 +39,5 @@ func TestGetSiteStats(t *testing.T) {
 			assert.Equal(t, 3, stats.TotalPlaybookRuns)
 			assert.Equal(t, 6, stats.TotalPlaybooks)
 		})
-
 	})
-
 }
