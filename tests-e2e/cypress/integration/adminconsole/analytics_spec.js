@@ -92,7 +92,7 @@ describe('admin console > site statistics', () => {
                     // # Go to admin console > site statistics
                     cy.visit('/admin_console/reporting/system_analytics');
 
-                    // * Run Counter has been increased by 1
+                    // * Verify that the Run Counter has been increased by 1
                     cy.findByTestId('playbooks.playbook_run_count').contains(String(counter + 1));
                 });
             });
