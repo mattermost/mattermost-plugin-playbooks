@@ -35,6 +35,8 @@ describe('admin console > site statistics', () => {
 
             // # Go to admin console > site statistics
             cy.visit('/admin_console/reporting/system_analytics');
+
+            // * Check that the playbook and run counters are visible
             cy.findByTestId('playbooks.playbook_count').should('exist');
             cy.findByTestId('playbooks.playbook_run_count').should('exist');
         });
