@@ -62,7 +62,7 @@ describe('admin console > site statistics', () => {
                     // # Go to admin console > site statistics
                     cy.visit('/admin_console/reporting/system_analytics');
 
-                    // * Playbook Counter has been increased by 1
+                    // * Verify that the Playbook Counter has been increased by 1
                     cy.findByTestId('playbooks.playbook_count').contains(String(counter + 1));
                 });
             });
