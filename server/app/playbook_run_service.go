@@ -1040,14 +1040,9 @@ func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings
 	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
 	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
 	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
-	playbookRunToModify.StatusUpdateBroadcastFollowersEnabled = settings.StatusUpdateBroadcastFollowersEnabled
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
-	}
-
-	if err = s.store.UpdateFollowers(playbookRunToModify.ID, settings.Followers); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run's followers")
 	}
 
 	return nil

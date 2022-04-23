@@ -234,7 +234,7 @@ func (s *PlaybookRunService) MoveChecklistItem(ctx context.Context, playbookRunI
 	return err
 }
 
-// UpdateRunActions updates run actions settings, e.i. status update broadcast settings
+// UpdateRunActions updates run actions settings, i.e. status update broadcast settings
 func (s *PlaybookRunService) UpdateRunActions(ctx context.Context, playbookRunID string, settings RunAction) error {
 	createURL := fmt.Sprintf("runs/%s/actions", playbookRunID)
 	req, err := s.client.newRequest(http.MethodPut, createURL, settings)

@@ -430,12 +430,10 @@ type AssignedTask struct {
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
 type RunAction struct {
 	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
-	Followers                 []string `json:"followers"`
 	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
 
-	StatusUpdateBroadcastChannelsEnabled  bool `json:"status_update_broadcast_channels_enabled"`
-	StatusUpdateBroadcastFollowersEnabled bool `json:"status_update_broadcast_followers_enabled"`
-	StatusUpdateBroadcastWebhooksEnabled  bool `json:"status_update_broadcast_webhooks_enabled"`
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
 }
 
 // PlaybookRunService is the playbook run service interface.
@@ -706,9 +704,6 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
-
-	// UpdateFollowers replaces the run's existing followers list with a new one(followers array)
-	UpdateFollowers(playbookRunID string, followers []string) error
 
 	// GetRunsActiveTotal returns number of active runs
 	GetRunsActiveTotal() (int64, error)

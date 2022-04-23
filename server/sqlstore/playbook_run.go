@@ -1140,23 +1140,23 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 }
 
 func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
-	return s.followHelper(s.store.db, playbookRunID, userID, true)
+	return s.followHelper(playbookRunID, userID, true)
 }
 
 func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
-	return s.followHelper(s.store.db, playbookRunID, userID, false)
+	return s.followHelper(playbookRunID, userID, false)
 }
 
-func (s *playbookRunStore) followHelper(q queryExecer, playbookRunID, userID string, value bool) error {
+func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
 	var err error
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
-		_, err = s.store.execBuilder(q, sq.
+		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
 			Values(playbookRunID, userID, value).
 			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
 	} else {
-		_, err = s.store.execBuilder(q, sq.
+		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
 			Values(playbookRunID, userID, value).
@@ -1185,37 +1185,6 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	}
 
 	return followers, nil
-}
-
-// UpdateFollowers replaces the run's existing followers list with a new one(followers array)
-func (s *playbookRunStore) UpdateFollowers(playbookRunID string, followers []string) error {
-	tx, err := s.store.db.Beginx()
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
-	}
-	defer s.store.finalizeTransaction(tx)
-
-	// first unfollow all followers for the playbook run
-	updateQuery := s.queryBuilder.Update("IR_Run_Participants").
-		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"IncidentID": playbookRunID}}).
-		Set("IsFollower", false)
-
-	_, err = s.store.execBuilder(tx, updateQuery)
-	if err != nil {
-		return errors.Wrapf(err, "unable to execute the update query")
-	}
-
-	// make all users from the followers array follow the run
-	for _, userID := range followers {
-		if err = s.followHelper(tx, playbookRunID, userID, true); err != nil {
-			return errors.Wrap(err, "could not upsert follower")
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
-	}
-	return nil
 }
 
 // Get number of active runs.

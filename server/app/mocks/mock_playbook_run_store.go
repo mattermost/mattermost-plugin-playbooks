@@ -403,20 +403,6 @@ func (mr *MockPlaybookRunStoreMockRecorder) Unfollow(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockPlaybookRunStore)(nil).Unfollow), arg0, arg1)
 }
 
-// UpdateFollowers mocks base method.
-func (m *MockPlaybookRunStore) UpdateFollowers(arg0 string, arg1 []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateFollowers", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateFollowers indicates an expected call of UpdateFollowers.
-func (mr *MockPlaybookRunStoreMockRecorder) UpdateFollowers(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFollowers", reflect.TypeOf((*MockPlaybookRunStore)(nil).UpdateFollowers), arg0, arg1)
-}
-
 // UpdatePlaybookRun mocks base method.
 func (m *MockPlaybookRunStore) UpdatePlaybookRun(arg0 *app.PlaybookRun) error {
 	m.ctrl.T.Helper()
