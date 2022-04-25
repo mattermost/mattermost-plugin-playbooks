@@ -133,6 +133,10 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
+
+    &:hover {
+        cursor: pointer;
+    }
 `;
 
 const CommandContainer = styled.div<{editing: boolean}>`
@@ -145,6 +149,10 @@ const CommandContainer = styled.div<{editing: boolean}>`
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+    }
 `;
 
 interface RunProps {
@@ -182,6 +190,10 @@ const CommandText = styled.div`
     padding: 2px 4px;
     border-radius: 4px;
     font-size: 12px;
+
+    :hover {
+        cursor: pointer;
+    }
 `;
 
 const StyledSpinner = styled(Spinner)`
@@ -263,6 +275,7 @@ const FormContainer = styled.div`
 const CommandInputContainer = styled.div`
     margin: 16px;
     border-radius: 4px;
+    z-index: 3;
 `;
 
 const Blanket = styled.div`

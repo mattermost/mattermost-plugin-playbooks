@@ -131,6 +131,18 @@ type PlaybookRun struct {
 	// whole playbook run as payload every time the status of the playbook run is updated.
 	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
 
+	// StatusUpdateBroadcastChannelsEnabled is true if the channels broadcast action is enabled for
+	// the run status update event, false otherwise.
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+
+	// StatusUpdateBroadcastFollowersEnabled is true if the followers broadcast action is enabled for
+	// the run status update event, false otherwise.
+	StatusUpdateBroadcastFollowersEnabled bool `json:"status_update_broadcast_followers_enabled"`
+
+	// StatusUpdateBroadcastWebhooksEnabled is true if the webhooks broadcast action is enabled for
+	// the run status update event, false otherwise.
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+
 	// Retrospective is a string containing the currently saved retrospective.
 	// If RetrospectivePublishedAt is different than 0, this is the final published retrospective.
 	Retrospective string `json:"retrospective"`
@@ -415,6 +427,15 @@ type AssignedTask struct {
 	ChecklistItem
 }
 
+// RunAction represents the run action settings. Frontend passes this struct to update settings.
+type RunAction struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -604,6 +625,9 @@ type PlaybookRunService interface {
 
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
+
+	// UpdateRunActions updates status update broadcast settings
+	UpdateRunActions(playbookRunID string, settings RunAction) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
