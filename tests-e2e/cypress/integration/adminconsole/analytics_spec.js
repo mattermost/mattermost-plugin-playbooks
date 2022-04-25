@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('admin console > site statistics', () => {
+describe('admin console', () => {
     let testUser;
     let testTeam;
     let testPlaybook;
@@ -29,10 +29,13 @@ describe('admin console > site statistics', () => {
         });
     });
 
+    beforeEach(() => {
+        // # Login as testSysddmin
+        cy.apiLogin(testSysadmin);
+    });
+
     describe('site statistics', () => {
         it('playbooks and runs counters are visible', () => {
-            cy.apiLogin(testSysadmin);
-
             // # Go to admin console > site statistics
             cy.visit('/admin_console/reporting/system_analytics');
 
@@ -42,7 +45,6 @@ describe('admin console > site statistics', () => {
         });
 
         it('playbook counter increases after creating a playbook', () => {
-            cy.apiLogin(testSysadmin);
             let counter;
 
             // # Go to admin console > site statistics
@@ -71,7 +73,6 @@ describe('admin console > site statistics', () => {
         });
 
         it('run counter increases after creating a run', () => {
-            cy.apiLogin(testSysadmin);
             let counter;
 
             // # Go to admin console > site statistics
