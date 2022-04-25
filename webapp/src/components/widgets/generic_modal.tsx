@@ -12,7 +12,7 @@ import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/a
 type Props = {
     className?: string;
     onHide: () => void;
-    modalHeaderText: React.ReactNode;
+    modalHeaderText?: React.ReactNode;
     show?: boolean;
     showCancel?: boolean;
     handleCancel?: (() => void) | null;
@@ -136,7 +136,9 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    {this.props.modalHeaderText && (
+                        <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    )}
                 </Header>
                 <form>
                     <Modal.Body>{this.props.children}</Modal.Body>
