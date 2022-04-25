@@ -427,6 +427,15 @@ type AssignedTask struct {
 	ChecklistItem
 }
 
+// RunAction represents the run action settings. Frontend passes this struct to update settings.
+type RunAction struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -616,6 +625,9 @@ type PlaybookRunService interface {
 
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
+
+	// UpdateRunActions updates status update broadcast settings
+	UpdateRunActions(playbookRunID string, settings RunAction) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
