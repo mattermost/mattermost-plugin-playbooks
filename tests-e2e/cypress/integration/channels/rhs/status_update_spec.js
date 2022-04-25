@@ -205,37 +205,90 @@ describe('channels > rhs > status update', () => {
                 cy.findByText('marked this run as finished.').should('exist');
             });
         });
-    });
 
-    describe('shows the last update in update message', () => {
-        it('shows the default when we have not made an update before', () => {
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
+        describe('prevents user from losing changes', () => {
+            it('go back and save', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
 
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the first message is there.
-                cy.findByTestId('update_run_status_textbox').within(() => {
-                    cy.findByText(defaultReminderMessage).should('exist');
+                // # Get dialog modal.
+                cy.get('#playbooks_update_run_status_dialog').within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click cancel
+                    cy.findByTestId('modal-cancel-button').click();
                 });
+
+                // * Go back from unsaved changes modal
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // # Submit the dialog.
+                cy.get('#playbooks_update_run_status_dialog').within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.get('#playbooks_update_run_status_dialog').should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('discard explicitily', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.get('#playbooks_update_run_status_dialog').within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click cancel
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // * Discard explicitily from unsaved changes
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.get('#playbooks_update_run_status_dialog').should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
             });
         });
 
-        it('when we have made a previous update', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
+        describe('shows the last update in update message', () => {
+            it('shows the default when we have not made an update before', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
 
-            // # Create a first status update
-            cy.updateStatus(firstMessage);
+                // # Get the dialog modal.
+                cy.get('.GenericModal').within(() => {
+                    // * Verify the first message is there.
+                    cy.findByTestId('update_run_status_textbox').within(() => {
+                        cy.findByText(defaultReminderMessage).should('exist');
+                    });
+                });
+            });
 
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
+            it('when we have made a previous update', () => {
+                const now = Date.now();
+                const firstMessage = 'Update - ' + now;
 
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the first message is there.
-                cy.findByTestId('update_run_status_textbox').within(() => {
-                    cy.findByText(firstMessage).should('exist');
+                // # Create a first status update
+                cy.updateStatus(firstMessage);
+
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get the dialog modal.
+                cy.get('.GenericModal').within(() => {
+                    // * Verify the first message is there.
+                    cy.findByTestId('update_run_status_textbox').within(() => {
+                        cy.findByText(firstMessage).should('exist');
+                    });
                 });
             });
         });
