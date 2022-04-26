@@ -7,7 +7,7 @@ import React from 'react';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import renderActions from 'src/components/backstage/playbooks/playbook_preview_actions';
-import renderChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
+import renderChecklists from 'src/components/backstage/playbook_editor/checklists';
 import renderDescription from 'src/components/backstage/playbooks/playbook_preview_description';
 import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';

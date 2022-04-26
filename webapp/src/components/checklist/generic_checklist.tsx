@@ -17,7 +17,6 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
     emptyChecklistItem,
-    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
@@ -28,12 +27,12 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
-    playbook?: PlaybookWithChecklist;
     checklist: Checklist;
     checklistIndex: number;
+    onUpdateChecklist: (newChecklist: Checklist) => void;
 }
 
-const RHSChecklist = (props: Props) => {
+const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
     const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
@@ -73,6 +72,39 @@ const RHSChecklist = (props: Props) => {
         return true;
     };
 
+    const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems[index] = newItem;
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onAddChecklistItem = (newItem: ChecklistItem) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems.push(newItem);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onDuplicateChecklistItem = (index: number) => {
+        const newChecklistItems = [...props.checklist.items];
+        const duplicate = {...newChecklistItems[index]};
+        newChecklistItems.push(duplicate);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onDeleteChecklistItem = (index: number) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems.splice(index, 1);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
     const keys = generateKeys(props.checklist.items.map((item) => item.title));
 
     return (
@@ -105,6 +137,9 @@ const RHSChecklist = (props: Props) => {
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
+                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                                    onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                 />
                             );
                         })}
@@ -119,6 +154,7 @@ const RHSChecklist = (props: Props) => {
                                 cancelAddingItem={() => {
                                     setAddingItem(false);
                                 }}
+                                onAddChecklistItem={onAddChecklistItem}
                             />
                         }
                         {droppableProvided.placeholder}
@@ -190,4 +226,4 @@ export const generateKeys = (arr: string[]): string[] => {
     return keys;
 };
 
-export default RHSChecklist;
+export default GenericChecklist;

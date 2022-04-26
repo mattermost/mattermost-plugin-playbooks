@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon} from 'src/components/collapsible_checklist_hover_menu';
+import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon, StyledDropdownMenuItemRed, DropdownIconRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
@@ -20,7 +20,7 @@ import AssignTo from './assign_to';
 import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
-    playbookRunId: string;
+    playbookRunId?: string;
     checklistNum: number;
     itemNum: number;
     isSkipped: boolean;
@@ -34,6 +34,8 @@ export interface Props {
     onAssigneeChange: (userType?: string, user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
+    onDuplicateChecklistItem?: () => void;
+    onDeleteChecklistItem?: () => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -80,30 +82,44 @@ const ChecklistItemHoverMenu = (props: Props) => {
             >
                 <StyledDropdownMenuItem
                     onClick={() => {
-                        clientDuplicateChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                        if (props.playbookRunId) {
+                            clientDuplicateChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                        } else {
+                            props.onDuplicateChecklistItem?.();
+                        }
                     }}
                 >
                     <DropdownIcon className='icon-content-copy icon-16'/>
                     {formatMessage({defaultMessage: 'Duplicate task'})}
                 </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem
-                    onClick={() => {
-                        if (props.isSkipped) {
-                            clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                            if (props.onChange) {
-                                props.onChange(ChecklistItemState.Open);
+                {props.playbookRunId !== undefined &&
+                    <StyledDropdownMenuItem
+                        onClick={() => {
+                            if (props.isSkipped) {
+                                clientRestoreChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
+                                if (props.onChange) {
+                                    props.onChange(ChecklistItemState.Open);
+                                }
+                            } else {
+                                clientSkipChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
+                                if (props.onChange) {
+                                    props.onChange(ChecklistItemState.Skip);
+                                }
                             }
-                        } else {
-                            clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                            if (props.onChange) {
-                                props.onChange(ChecklistItemState.Skip);
-                            }
-                        }
-                    }}
-                >
-                    <DropdownIcon className={props.isSkipped ? 'icon-refresh icon-16 btn-icon' : 'icon-close icon-16 btn-icon'}/>
-                    {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
-                </StyledDropdownMenuItem>
+                        }}
+                    >
+                        <DropdownIcon className={props.isSkipped ? 'icon-refresh icon-16 btn-icon' : 'icon-close icon-16 btn-icon'}/>
+                        {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunId === undefined &&
+                    <StyledDropdownMenuItemRed
+                        onClick={() => props.onDeleteChecklistItem?.()}
+                    >
+                        <DropdownIconRed className={'icon-close icon-16'}/>
+                        {formatMessage({defaultMessage: 'Delete task'})}
+                    </StyledDropdownMenuItemRed>
+                }
             </DotMenu>
         </HoverMenu>
     );
