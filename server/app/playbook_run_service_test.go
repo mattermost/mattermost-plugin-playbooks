@@ -471,19 +471,18 @@ func TestUpdateStatus(t *testing.T) {
 		follower1ID := "follower1ID"
 		follower2ID := "follower2ID"
 		playbookRun := &app.PlaybookRun{
-			ID:                                    playbookRunID,
-			Name:                                  "Name",
-			TeamID:                                teamID,
-			ChannelID:                             homeChannelID,
-			BroadcastChannelIDs:                   []string{broadcastChannelID1, broadcastChannelID2},
-			StatusUpdateBroadcastChannelsEnabled:  true,
-			OwnerUserID:                           "user_id",
-			ReporterUserID:                        "user_id",
-			CurrentStatus:                         app.StatusInProgress,
-			CreateAt:                              1620018358404,
-			WebhookOnStatusUpdateURLs:             []string{server.URL},
-			StatusUpdateBroadcastWebhooksEnabled:  true,
-			StatusUpdateBroadcastFollowersEnabled: true,
+			ID:                                   playbookRunID,
+			Name:                                 "Name",
+			TeamID:                               teamID,
+			ChannelID:                            homeChannelID,
+			BroadcastChannelIDs:                  []string{broadcastChannelID1, broadcastChannelID2},
+			StatusUpdateBroadcastChannelsEnabled: true,
+			OwnerUserID:                          "user_id",
+			ReporterUserID:                       "user_id",
+			CurrentStatus:                        app.StatusInProgress,
+			CreateAt:                             1620018358404,
+			WebhookOnStatusUpdateURLs:            []string{server.URL},
+			StatusUpdateBroadcastWebhooksEnabled: true,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
@@ -633,19 +632,18 @@ func TestUpdateStatus(t *testing.T) {
 		follower1ID := "follower1ID"
 		follower2ID := "follower2ID"
 		playbookRun := &app.PlaybookRun{
-			ID:                                    playbookRunID,
-			Name:                                  "Name",
-			TeamID:                                teamID,
-			ChannelID:                             homeChannelID,
-			BroadcastChannelIDs:                   []string{broadcastChannelID1, broadcastChannelID2},
-			StatusUpdateBroadcastChannelsEnabled:  false,
-			OwnerUserID:                           "user_id",
-			ReporterUserID:                        "user_id",
-			CurrentStatus:                         app.StatusInProgress,
-			CreateAt:                              1620018358404,
-			WebhookOnStatusUpdateURLs:             []string{server.URL},
-			StatusUpdateBroadcastWebhooksEnabled:  false,
-			StatusUpdateBroadcastFollowersEnabled: false,
+			ID:                                   playbookRunID,
+			Name:                                 "Name",
+			TeamID:                               teamID,
+			ChannelID:                            homeChannelID,
+			BroadcastChannelIDs:                  []string{broadcastChannelID1, broadcastChannelID2},
+			StatusUpdateBroadcastChannelsEnabled: false,
+			OwnerUserID:                          "user_id",
+			ReporterUserID:                       "user_id",
+			CurrentStatus:                        app.StatusInProgress,
+			CreateAt:                             1620018358404,
+			WebhookOnStatusUpdateURLs:            []string{server.URL},
+			StatusUpdateBroadcastWebhooksEnabled: false,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
@@ -735,8 +733,8 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, broadcastChannel1)
 		require.False(t, broadcastChannel2)
-		require.False(t, broadcastFollower1)
-		require.False(t, broadcastFollower2)
+		require.True(t, broadcastFollower1)
+		require.True(t, broadcastFollower2)
 
 		select {
 		case <-webhookChan:

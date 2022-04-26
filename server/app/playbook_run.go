@@ -135,10 +135,6 @@ type PlaybookRun struct {
 	// the run status update event, false otherwise.
 	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
 
-	// StatusUpdateBroadcastFollowersEnabled is true if the followers broadcast action is enabled for
-	// the run status update event, false otherwise.
-	StatusUpdateBroadcastFollowersEnabled bool `json:"status_update_broadcast_followers_enabled"`
-
 	// StatusUpdateBroadcastWebhooksEnabled is true if the webhooks broadcast action is enabled for
 	// the run status update event, false otherwise.
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`

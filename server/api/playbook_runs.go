@@ -486,8 +486,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
-		playbookRun.StatusUpdateBroadcastFollowersEnabled = true
-
 		playbookRun.StatusUpdateBroadcastChannelsEnabled = pb.BroadcastEnabled
 		playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 
