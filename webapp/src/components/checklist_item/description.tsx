@@ -25,7 +25,7 @@ interface DescriptionProps {
 
 const ChecklistItemDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
-    const placeholder = formatMessage({defaultMessage: 'Add a description(optional)'});
+    const placeholder = formatMessage({defaultMessage: 'Add a description (optional)'});
 
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);

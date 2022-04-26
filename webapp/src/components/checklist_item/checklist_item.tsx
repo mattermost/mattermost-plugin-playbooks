@@ -104,6 +104,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, newCommand);
     };
 
+    const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
+
     const content = (
         <ItemContainer
             ref={props.draggableProvided?.innerRef}
@@ -189,7 +191,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             onChangeCommand={onCommandChange}
                         />
                     }
-                    {(dueDate > 0 || isEditing) &&
+                    {((dueDate > 0 && isTaskOpenOrInProgress) || isEditing) &&
                         <DueDateButton
                             editable={isEditing}
                             date={dueDate}

@@ -413,7 +413,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
 
-		s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
+		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
+			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
+		}
 
 		// dm to users who are auto-following the playbook
 		telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_started_dm&telem_run_id=%s", playbookRun.ID)
@@ -789,9 +791,13 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. there is now inconsistent state")
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
+	}
 
-	s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
+	if playbookRunToModify.StatusUpdateBroadcastFollowersEnabled {
+		s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
+	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	if err = s.SetNewReminder(playbookRunID, options.Reminder); err != nil {
@@ -817,7 +823,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return err
 	}
 
-	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
@@ -903,10 +909,14 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
+	}
 
-	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-	s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
+	if playbookRunToModify.StatusUpdateBroadcastFollowersEnabled {
+		runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
+		s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
+	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
@@ -952,7 +962,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return err
 	}
 
-	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
@@ -989,7 +999,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
+	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
+	}
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
@@ -1010,8 +1022,27 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return err
 	}
 
-	if len(playbookRunToRestore.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
+	}
+
+	return nil
+}
+
+// UpdateRunActions updates status update broadcast settings
+func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings RunAction) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.BroadcastChannelIDs = settings.BroadcastChannelIDs
+	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
+	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
+	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	return nil
@@ -2485,8 +2516,9 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
 	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
-	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
-
+	if playbookRunToPublish.StatusUpdateBroadcastFollowersEnabled {
+		s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
+	}
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      now,
