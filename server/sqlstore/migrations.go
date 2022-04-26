@@ -1967,7 +1967,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
 				}
 				if err := dropColumnMySQL(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
-					return errors.Wrapf(err, "failed droping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
 				}
 				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
@@ -1977,7 +1977,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
 				}
 				if err := dropColumnPG(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
-					return errors.Wrapf(err, "failed droping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
 				}
 				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
