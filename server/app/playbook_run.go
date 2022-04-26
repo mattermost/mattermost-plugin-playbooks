@@ -520,6 +520,9 @@ type PlaybookRunService interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
+	// DuplicateChecklist duplicates a checklist
+	DuplicateChecklist(playbookRunID, userID string, checklistNumber int) error
+
 	// SkipChecklist skips a checklist
 	SkipChecklist(playbookRunID, userID string, checklistNumber int) error
 

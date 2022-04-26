@@ -1540,13 +1540,32 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.New("user does not have permission to modify playbook run")
 	}
 
-	playbookRunToModify.Checklists = append([]Checklist{checklist}, playbookRunToModify.Checklists...)
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
 	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
+// DuplicateChecklist duplicates a checklist
+func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, duplicate)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
 }

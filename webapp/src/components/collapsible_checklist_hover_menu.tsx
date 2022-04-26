@@ -9,6 +9,7 @@ import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 import {
     clientSkipChecklist,
     clientRestoreChecklist,
+    clientDuplicateChecklist,
 } from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
@@ -19,7 +20,6 @@ export interface Props {
     checklistIndex: number;
     checklistTitle: string;
     onRenameChecklist: () => void;
-    onDeleteChecklist: () => void;
     dragHandleProps: DraggableProvidedDragHandleProps | undefined;
     isChecklistSkipped: boolean;
 }
@@ -51,9 +51,13 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-pencil-outline icon-16'/>
                     {formatMessage({defaultMessage: 'Rename checklist'})}
                 </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem onClick={props.onDeleteChecklist}>
-                    <DropdownIcon className='icon-trash-can-outline icon-16'/>
-                    {formatMessage({defaultMessage: 'Delete checklist'})}
+                <StyledDropdownMenuItem
+                    onClick={() => {
+                        clientDuplicateChecklist(props.playbookRunID, props.checklistIndex);
+                    }}
+                >
+                    <DropdownIcon className='icon-content-copy icon-16'/>
+                    {formatMessage({defaultMessage: 'Duplicate checklist'})}
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItemRed
                     onClick={() => {
