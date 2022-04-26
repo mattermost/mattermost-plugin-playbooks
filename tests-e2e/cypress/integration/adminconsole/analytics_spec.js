@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+const {onlyOn} = require('@cypress/skip-test');
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -36,6 +38,8 @@ describe('admin console', () => {
 
     describe('site statistics', () => {
         it('playbooks and runs counters are visible', () => {
+            onlyOn(Cypress.env('serverEdition') !== 'Cloud');
+
             // # Go to admin console > site statistics
             cy.visit('/admin_console/reporting/system_analytics');
 
@@ -45,6 +49,7 @@ describe('admin console', () => {
         });
 
         it('playbook counter increases after creating a playbook', () => {
+            onlyOn(Cypress.env('serverEdition') !== 'Cloud');
             let counter;
 
             // # Go to admin console > site statistics
@@ -73,6 +78,7 @@ describe('admin console', () => {
         });
 
         it('run counter increases after creating a run', () => {
+            onlyOn(Cypress.env('serverEdition') !== 'Cloud');
             let counter;
 
             // # Go to admin console > site statistics
