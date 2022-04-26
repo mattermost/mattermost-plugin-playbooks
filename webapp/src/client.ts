@@ -36,7 +36,7 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -454,6 +454,15 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
         method: 'delete',
         body: '',
     });
+}
+
+// fetchSiteStats collect the stats we want to expose in system console
+export async function fetchSiteStats(): Promise<SiteStats | null> {
+    const data = await doGet(`${apiUrl}/stats/site`);
+    if (!data) {
+        return null;
+    }
+    return data as SiteStats;
 }
 
 export async function fetchStats(teamID: string): Promise<Stats | null> {
