@@ -225,8 +225,6 @@ const UpdateRunStatusModal = ({
                 confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
                 handleCancel={() => true}
                 {...modalProps}
-
-                // handleCancel={onTentativeHide}
                 onHide={onTentativeHide}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
