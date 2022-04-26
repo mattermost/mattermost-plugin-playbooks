@@ -396,7 +396,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
         });
 
-        it.only('filter overdue automatically disappear', () => {
+        it('filter overdue automatically disappear if we check all overdue items', () => {
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
 
@@ -430,10 +430,16 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
 
             // # Cancel filter overdue tasks
-            // cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+            cy.findAllByTestId('checkbox-item-container').within(() => {
+                // check the overdue task
+                cy.get('input').click();
+            });
+
+            // * Verify there is no filter
+            cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
 
             // * Verify if filter was canceled
-            // cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
         });
     });
 });
