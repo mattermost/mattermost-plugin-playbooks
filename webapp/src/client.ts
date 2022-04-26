@@ -408,7 +408,7 @@ export async function clientRemoveChecklist(playbookRunID: string, checklistNum:
     return data;
 }
 
-export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number) {
+export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
         method: 'post',
         body: '',

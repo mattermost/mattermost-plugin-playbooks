@@ -97,6 +97,42 @@ const CollapsibleChecklist = ({
         );
     }
 
+    const renderTitleHelpText = () => {
+        if (isRenaming) {
+            return null;
+        }
+        if (titleHelpText) {
+            return titleHelpText;
+        }
+        return (
+            <TitleHelpTextWrapper>
+                <FormattedMessage
+                    defaultMessage='{completed, number} / {total, number} done'
+                    values={{completed, total}}
+                />
+            </TitleHelpTextWrapper>
+        );
+    };
+
+    const renderHoverMenu = () => {
+        if (isRenaming || disabled) {
+            return null;
+        }
+        if (!showMenu) {
+            return null;
+        }
+        return (
+            <HoverMenu
+                playbookRunID={playbookRunID}
+                checklistIndex={index}
+                checklistTitle={title}
+                onRenameChecklist={() => setIsRenaming(true)}
+                dragHandleProps={draggableProvided?.dragHandleProps}
+                isChecklistSkipped={isChecklistSkipped}
+            />
+        );
+    };
+
     return (
         <Border {...borderProps}>
             <HorizontalBG
@@ -111,25 +147,8 @@ const CollapsibleChecklist = ({
                 >
                     <Icon className={icon}/>
                     {titleComp}
-                    {!isRenaming && (titleHelpText || (
-                        <TitleHelpTextWrapper>
-                            <FormattedMessage
-                                defaultMessage='{completed, number} / {total, number} done'
-                                values={{completed, total}}
-                            />
-                        </TitleHelpTextWrapper>
-                    ))}
-                    {
-                        !isRenaming && showMenu && !disabled &&
-                        <HoverMenu
-                            playbookRunID={playbookRunID}
-                            checklistIndex={index}
-                            checklistTitle={title}
-                            onRenameChecklist={() => setIsRenaming(true)}
-                            dragHandleProps={draggableProvided?.dragHandleProps}
-                            isChecklistSkipped={isChecklistSkipped}
-                        />
-                    }
+                    {renderTitleHelpText()}
+                    {renderHoverMenu()}
                 </Horizontal>
                 <ProgressBackground>
                     <ProgressLine width={percentage}/>
