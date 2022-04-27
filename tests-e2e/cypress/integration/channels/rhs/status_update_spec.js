@@ -64,7 +64,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // # Type the invalid data
                 cy.findByTestId('update_run_status_textbox').clear().type(' {enter} {enter}  ');
 
@@ -79,7 +79,7 @@ describe('channels > rhs > status update', () => {
             });
 
             // * Verify that the Post update dialog has gone.
-            cy.get('.GenericModal').should('not.exist');
+            cy.findByRole('dialog', {name: /post update/i}).should('not.exist');
         });
 
         it('lets users with no access to the playbook post an update', () => {
@@ -118,7 +118,7 @@ describe('channels > rhs > status update', () => {
                 cy.executeSlashCommand('/playbook update');
 
                 // # Get dialog modal.
-                cy.get('.GenericModal').within(() => {
+                cy.findByRole('dialog', {name: /post update/i}).within(() => {
                     // # Enter valid data
                     cy.findByTestId('update_run_status_textbox').type(updateMessage);
 
@@ -127,7 +127,7 @@ describe('channels > rhs > status update', () => {
                 });
 
                 // * Verify that the Post update dialog has gone.
-                cy.get('.GenericModal').should('not.exist');
+                cy.findByRole('dialog', {name: /post update/i}).should('not.exist');
 
                 // * Verify that the status update was posted.
                 cy.getLastPost().within(() => {
@@ -144,7 +144,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the first message is there.
                 cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(defaultReminderMessage).should('exist');
@@ -171,7 +171,7 @@ describe('channels > rhs > status update', () => {
             cy.get('#cancelModalButton').click({force: true});
 
             // * Verify post update has the same information
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the message was remembered
                 cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(updateMessage).should('exist');
@@ -196,12 +196,12 @@ describe('channels > rhs > status update', () => {
             cy.get('#confirmModalButton').click({force: true});
 
             // * Verify the status update was posted.
-            cy.uiGetNthPost(-3).within(() => {
+            cy.getStyledComponent('CustomPostContent').within(() => {
                 cy.findByText(updateMessage).should('exist');
             });
 
             // * Verify the run was finished.
-            cy.uiGetNthPost(-2).within(() => {
+            cy.getLastPost().within(() => {
                 cy.findByText('marked this run as finished.').should('exist');
             });
         });
@@ -265,7 +265,7 @@ describe('channels > rhs > status update', () => {
                 cy.executeSlashCommand('/playbook update');
 
                 // # Get the dialog modal.
-                cy.get('.GenericModal').within(() => {
+                cy.findByRole('dialog', {name: /post update/i}).within(() => {
                     // * Verify the first message is there.
                     cy.findByTestId('update_run_status_textbox').within(() => {
                         cy.findByText(defaultReminderMessage).should('exist');
@@ -284,7 +284,7 @@ describe('channels > rhs > status update', () => {
                 cy.executeSlashCommand('/playbook update');
 
                 // # Get the dialog modal.
-                cy.get('.GenericModal').within(() => {
+                cy.findByRole('dialog', {name: /post update/i}).within(() => {
                     // * Verify the first message is there.
                     cy.findByTestId('update_run_status_textbox').within(() => {
                         cy.findByText(firstMessage).should('exist');
@@ -300,7 +300,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', '1 hour');
@@ -319,7 +319,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', '15 minutes');
@@ -338,7 +338,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', '1 hour, 30 minutes');
@@ -357,7 +357,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.findByRole('dialog', {name: /post update/i}).within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', '7 days');
