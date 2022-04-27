@@ -2,16 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-
 import styled, {css} from 'styled-components';
-
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
-import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 interface Props {
     enabled: boolean;
-    onToggle: () => void;
-    textOnToggle: string;
     placeholderText: string;
     errorText: string;
     input: string;
@@ -22,9 +16,10 @@ interface Props {
     rows?: number;
     maxRows?: number;
     maxErrorText?: string;
+    resize?: 'horizontal' | 'vertical' | 'none';
 }
 
-export const PatternedTextArea = (props: Props) => {
+const PatternedTextArea = (props: Props) => {
     const [invalid, setInvalid] = useState<boolean>(false);
     const [errorText, setErrorText] = useState<string>(props.errorText);
     const handleOnBlur = (urls: string) => {
@@ -51,31 +46,23 @@ export const PatternedTextArea = (props: Props) => {
     };
 
     return (
-        <AutomationHeader>
-            <AutomationTitle>
-                <Toggle
-                    isChecked={props.enabled}
-                    onChange={props.onToggle}
-                />
-                <div>{props.textOnToggle}</div>
-            </AutomationTitle>
-            <SelectorWrapper>
-                <TextArea
-                    disabled={!props.enabled}
-                    required={true}
-                    rows={props.rows}
-                    value={props.enabled ? props.input : ''}
-                    onChange={(e) => props.onChange(e.target.value)}
-                    onBlur={(e) => handleOnBlur(e.target.value)}
-                    placeholder={props.placeholderText}
-                    maxLength={props.maxLength}
-                    invalid={invalid}
-                />
-                <ErrorMessage>
-                    {errorText}
-                </ErrorMessage>
-            </SelectorWrapper>
-        </AutomationHeader>
+        <>
+            <TextArea
+                disabled={!props.enabled}
+                required={true}
+                rows={props.rows}
+                value={props.enabled ? props.input : ''}
+                onChange={(e) => props.onChange(e.target.value)}
+                onBlur={(e) => handleOnBlur(e.target.value)}
+                placeholder={props.placeholderText}
+                maxLength={props.maxLength}
+                invalid={invalid}
+                resize={props.resize}
+            />
+            <ErrorMessage>
+                {errorText}
+            </ErrorMessage>
+        </>
     );
 };
 
@@ -95,6 +82,7 @@ const ErrorMessage = styled.div`
 interface TextAreaProps {
     disabled: boolean;
     invalid: boolean;
+    resize?: Props['resize'];
 }
 
 const TextArea = styled.textarea<TextAreaProps>`
@@ -112,9 +100,8 @@ const TextArea = styled.textarea<TextAreaProps>`
     border: none;
     box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     font-size: 14px;
-    padding-left: 16px;
-    padding-right: 16px;
-    resize: ${(props) => props.disabled && 'none'};
+    padding: 10px 16px;
+    resize: ${(props) => (props.disabled && 'none') || props.resize || 'none'};
 
     ${(props) => props.invalid && !props.disabled && props.value && css`
         :not(:focus) {
@@ -125,3 +112,5 @@ const TextArea = styled.textarea<TextAreaProps>`
         }
     `}
 `;
+
+export default PatternedTextArea;
