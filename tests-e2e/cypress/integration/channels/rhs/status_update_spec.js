@@ -5,8 +5,7 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
-
-import * as TIMEOUTS from '../../fixtures/timeouts';
+import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('channels > rhs > status update', () => {
     const defaultReminderMessage = '# Default reminder message';
