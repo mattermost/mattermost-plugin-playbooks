@@ -13,6 +13,7 @@ func TestGetSiteStats(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
+	t.Skip()
 	t.Run("get sites stats", func(t *testing.T) {
 		t.Run("unauthenticated", func(t *testing.T) {
 			stats, err := e.UnauthenticatedPlaybooksClient.Stats.GetSiteStats(context.Background())
