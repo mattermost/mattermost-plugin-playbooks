@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import * as TIMEOUTS from '../../fixtures/timeouts';
+
 describe('channels > rhs > status update', () => {
     const defaultReminderMessage = '# Default reminder message';
     let testTeam;
@@ -225,6 +227,10 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').within(() => {
                     cy.findByTestId('modal-cancel-button').click();
                 });
+
+                // # Delay in between the modal switch to ensure the
+                // # animation has fully happened
+                cy.wait(TIMEOUTS.TWO_SEC);
 
                 // # Submit the dialog.
                 cy.getStatusUpdateDialog().within(() => {
