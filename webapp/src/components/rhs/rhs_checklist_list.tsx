@@ -98,7 +98,7 @@ const RHSChecklistList = (props: Props) => {
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
 
-    // Hide overdueOnly filter if there are no overdue tasks anymore
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
     if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
         dispatch(setChecklistItemsFilter(channelId, {
             ...checklistItemsFilter,
