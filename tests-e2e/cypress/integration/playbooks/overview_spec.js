@@ -15,7 +15,8 @@ describe('playbooks > overview', () => {
     let testPublicPlaybook;
     let testPrivateOnlyMinePlaybook;
     let testPrivateSharedPlaybook;
-    let testPublicPlaybookOnOtherTeam;
+    let testPlaybookOnTeamForSwitching;
+    let testPlaybookOnOtherTeamForSwitching;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -68,13 +69,24 @@ describe('playbooks > overview', () => {
                         testPrivateSharedPlaybook = playbook;
                     });
 
+                    // # Create a public playbook
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Switch A',
+                        memberIDs: [],
+                        retrospectiveTemplate: 'Retro template text',
+                        retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
+                    }).then((playbook) => {
+                        testPlaybookOnTeamForSwitching = playbook;
+                    });
+
                     // # Create a public playbook on another team
                     cy.apiCreatePlaybook({
                         teamId: testOtherTeam.id,
-                        title: 'Other Team',
+                        title: 'Switch B',
                         memberIDs: [],
                     }).then((playbook) => {
-                        testPublicPlaybookOnOtherTeam = playbook;
+                        testPlaybookOnOtherTeamForSwitching = playbook;
                     });
                 });
             });
@@ -108,7 +120,7 @@ describe('playbooks > overview', () => {
 
                 // Click through to open the playbook
                 cy.findByTestId('playbooksLHSButton').click({force: true});
-                cy.get('[placeholder="Search for a playbook"]').type(testPublicPlaybook.title);
+                cy.get('[placeholder="Search for a playbook"]').type(testPlaybookOnTeamForSwitching.title);
                 cy.findByTestId('playbook-title').click({force: true});
 
                 // # Click Run Playbook
@@ -120,25 +132,25 @@ describe('playbooks > overview', () => {
                 });
         };
 
-        it('for testPublicPlaybook from its own team', () => {
-            openAndRunPlaybook(testTeam, testPublicPlaybook);
+        it('for testPlaybookOnTeamForSwitching from its own team', () => {
+            openAndRunPlaybook(testTeam, testPlaybookOnTeamForSwitching);
         });
 
-        it('for testPublicPlaybook from another team', () => {
-            openAndRunPlaybook(testOtherTeam, testPublicPlaybook);
+        it('for testPlaybookOnTeamForSwitching from another team', () => {
+            openAndRunPlaybook(testOtherTeam, testPlaybookOnTeamForSwitching);
         });
 
-        it('for testPublicPlaybookOnOtherTeam from its own team', () => {
-            openAndRunPlaybook(testTeam, testPublicPlaybookOnOtherTeam);
+        it('for testPlaybookOnOtherTeamForSwitching from its own team', () => {
+            openAndRunPlaybook(testTeam, testPlaybookOnOtherTeamForSwitching);
         });
 
-        it('for testPublicPlaybookOnOtherTeamOnOtherTeam from another team', () => {
-            openAndRunPlaybook(testOtherTeam, testPublicPlaybookOnOtherTeam);
+        it('for testPlaybookOnOtherTeamForSwitchingOnOtherTeam from another team', () => {
+            openAndRunPlaybook(testOtherTeam, testPlaybookOnOtherTeamForSwitching);
         });
 
         it('on direct navigation to a playbook', () => {
             // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+            cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
 
             // # Click Run Playbook
             cy.findByTestId('run-playbook').click({force: true});
