@@ -429,7 +429,7 @@ describe('channels > rhs > checklist', () => {
             // * Verify if filter works
             cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
 
-            // # Cancel filter overdue tasks
+            // # Mark a task as completed
             cy.findAllByTestId('checkbox-item-container').within(() => {
                 // check the overdue task
                 cy.get('input').click();
