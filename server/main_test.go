@@ -104,7 +104,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 
 	sqlSettings := storetest.MakeSqlSettings(driverName, false)
-	x := 10
+	x := 8
 	sqlSettings.MaxIdleConns = &x
 	sqlSettings.MaxOpenConns = &x
 	// Directories for plugin stuff
