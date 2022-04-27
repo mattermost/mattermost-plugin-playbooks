@@ -2,11 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -34,7 +33,7 @@ import {
     getSiteUrl,
 } from 'src/client';
 import {pluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
+import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -120,7 +119,7 @@ const LeftArrow = styled(Icon)`
     }
 `;
 
-export const CopyIcon = styled(Icon)<{clicked: boolean}>`
+export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
     font-size: 18px;
     margin-left: 8px;
     border-radius: 4px;
@@ -235,6 +234,7 @@ const FollowingButton = styled(Button)`
 `;
 
 const PlaybookRunBackstage = () => {
+    const dispatch = useDispatch();
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
@@ -363,24 +363,35 @@ const PlaybookRunBackstage = () => {
         copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
     }
 
+    const runActionsButton = (
+        <Tooltip
+            id={'run-actions-button-tooltip'}
+            placement={'bottom'}
+            shouldUpdatePosition={true}
+            content={formatMessage({defaultMessage: 'Open Run Actions modal'})}
+        >
+            <HeaderIcon
+                className='icon-palette-outline'
+                onClick={() => dispatch(showRunActionsModal())}
+                clicked={false}
+            />
+        </Tooltip>
+    );
+
     const runLink = (
-        <OverlayTrigger
-            placement='bottom'
-            delay={OVERLAY_DELAY}
+        <Tooltip
+            id={'copy-run-link-tooltip'}
+            placement={'bottom'}
             onExit={() => setRunLinkCopied(false)}
             shouldUpdatePosition={true}
-            overlay={
-                <Tooltip id='copy-run-link-tooltip'>
-                    {copyRunLinkTooltipMessage}
-                </Tooltip>
-            }
+            content={copyRunLinkTooltipMessage}
         >
-            <CopyIcon
+            <HeaderIcon
                 className='icon-link-variant'
                 onClick={copyRunLink}
                 clicked={runLinkCopied}
             />
-        </OverlayTrigger>
+        </Tooltip>
     );
 
     return (
@@ -395,6 +406,7 @@ const PlaybookRunBackstage = () => {
                         <TitleWithBadgeAndLink>
                             <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                            {runActionsButton}
                             {runLink}
                         </TitleWithBadgeAndLink>
                         {
