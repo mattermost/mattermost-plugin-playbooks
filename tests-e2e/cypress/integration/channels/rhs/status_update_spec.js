@@ -30,6 +30,7 @@ describe('channels > rhs > status update', () => {
                 broadcastChannelId: testChannel.id,
                 reminderTimerDefaultSeconds: 3600,
                 reminderMessageTemplate: defaultReminderMessage,
+                retrospectiveEnabled: false,
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
