@@ -34,7 +34,7 @@ import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
-import ActionsModal from 'src/components/actions_modal';
+import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
     setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
 } from 'src/actions';
@@ -122,7 +122,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
-        registry.registerRootComponent(ActionsModal);
+        registry.registerRootComponent(ChannelActionsModal);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {

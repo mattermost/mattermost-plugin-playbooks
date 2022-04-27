@@ -22,7 +22,7 @@ export enum ChannelTriggerType {
     KeywordsPosted = 'keywords',
 }
 
-type PayloadType =
+export type PayloadType =
     | WelcomeMessageActionPayload
     | PromptRunPlaybookFromKeywordsPayload
     | CategorizeChannelPayload;
