@@ -13,45 +13,48 @@ import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideChannelActionsModal} from 'src/actions';
 import {isChannelActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
 import Action from 'src/components/actions_modal_action';
-import Trigger from 'src/components/actions_modal_trigger';
-import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType, equalActionType} from 'src/types/channel_actions';
+import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
+import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType, equalActionType, WelcomeMessageActionPayload, CategorizeChannelPayload, PromptRunPlaybookFromKeywordsPayload, PayloadType} from 'src/types/channel_actions';
 
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
+import {CategorizeChannelChildren, RunPlaybookChildren, WelcomeActionChildren} from 'src/components/actions_modal_action_children';
 
-const defaultActions: ActionsByTrigger = {
-    [ChannelTriggerType.NewMemberJoins]: [
-        {
-            channel_id: '',
-            enabled: false,
-            action_type: ChannelActionType.WelcomeMessage,
-            trigger_type: ChannelTriggerType.NewMemberJoins,
-            payload: {
-                message: '',
-            },
-        },
-        {
-            channel_id: '',
-            enabled: false,
-            action_type: ChannelActionType.CategorizeChannel,
-            trigger_type: ChannelTriggerType.NewMemberJoins,
-            payload: {
-                category_name: '',
-            },
-        },
-    ],
-    [ChannelTriggerType.KeywordsPosted]: [
-        {
-            channel_id: '',
-            enabled: false,
-            action_type: ChannelActionType.PromptRunPlaybook,
-            trigger_type: ChannelTriggerType.KeywordsPosted,
-            payload: {
-                keywords: [],
-                playbook_id: '',
-            },
-        },
-    ],
-};
+interface ActionState<T extends PayloadType> {
+    id: string | undefined,
+    enabled: boolean,
+    payload: T,
+}
+
+function useActionState<T extends PayloadType>(originalState: ActionState<T>) {
+    const [actionState, setActionState] = useState(originalState);
+
+    // Initial state used to reset to original values when the changes are not saved
+    const [initialPayload, setInitialPayload] = useState(originalState.payload);
+    const [initialEnabled, setInitialEnabled] = useState(originalState.enabled);
+
+    // Reset the current state to its initial value
+    const reset = () => {
+        setActionState({
+            ...actionState,
+            enabled: initialEnabled,
+            payload: initialPayload,
+        });
+    };
+
+    // Overwrite the initial values with the current state
+    const overwrite = () => {
+        setInitialEnabled(actionState.enabled);
+        setInitialPayload(actionState.payload);
+    };
+
+    const init = (initState: ActionState<T>) => {
+        setActionState(initState);
+        setInitialEnabled(initState.enabled);
+        setInitialPayload(initState.payload);
+    };
+
+    return [actionState, setActionState, init, reset, overwrite] as const;
+}
 
 const ChannelActionsModal = () => {
     const {formatMessage} = useIntl();
@@ -61,43 +64,29 @@ const ChannelActionsModal = () => {
     const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
     const isSysAdmin = useSelector(isCurrentUserAdmin);
 
-    const editable = isChannelAdmin || isSysAdmin;
+    const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState({id: undefined, enabled: false, payload: {message: ''}});
+    const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState({id: undefined, enabled: false, payload: {category_name: ''}});
+    const [prompt, setPrompt, promptInit, promptReset, promptOverwrite] = useActionState({id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}});
 
-    const [actionsChanged, setActionsChanged] = useState(false);
-    const [originalActions, setOriginalActions] = useState({} as ActionsByTrigger);
-    const [currentActions, setCurrentActions] = useState(defaultActions);
+    const editable = isChannelAdmin || isSysAdmin;
 
     useEffect(() => {
         const getActions = async (id: string) => {
             const fetchedActions = await fetchChannelActions(id);
 
-            const record = {} as ActionsByTrigger;
             fetchedActions.forEach((action) => {
-                const array = record[action.trigger_type];
-                if (array) {
-                    record[action.trigger_type].push(action);
-                } else {
-                    record[action.trigger_type] = [action];
+                switch (action.action_type) {
+                case ChannelActionType.WelcomeMessage:
+                    welcomeMsgInit({id: action.id, enabled: action.enabled, payload: action.payload as WelcomeMessageActionPayload});
+                    break;
+                case ChannelActionType.CategorizeChannel:
+                    categorizationInit({id: action.id, enabled: action.enabled, payload: action.payload as CategorizeChannelPayload});
+                    break;
+                case ChannelActionType.PromptRunPlaybook:
+                    promptInit({id: action.id, enabled: action.enabled, payload: action.payload as PromptRunPlaybookFromKeywordsPayload});
+                    break;
                 }
             });
-
-            // Merge the fetched actions with the default ones
-            Object.entries(record).forEach(([triggerString, actionsInRecord]) => {
-                const trigger = triggerString as ChannelTriggerType;
-                const finalActions = [] as ChannelAction[];
-                defaultActions[trigger].forEach((defaultAction: ChannelAction) => {
-                    const actionFetched = actionsInRecord.find((actionInRecord) => equalActionType(actionInRecord, defaultAction));
-                    if (actionFetched) {
-                        finalActions.push(actionFetched);
-                    } else {
-                        finalActions.push(defaultAction);
-                    }
-                });
-                record[trigger] = finalActions;
-            });
-
-            setOriginalActions(record);
-            setCurrentActions({...defaultActions, ...record});
         };
 
         if (channelID) {
@@ -106,55 +95,42 @@ const ChannelActionsModal = () => {
     }, [channelID]);
 
     const onHide = () => {
-        // Restore the state to the original actions
-        setCurrentActions({...defaultActions, ...originalActions});
+        welcomeMsgReset();
+        promptReset();
+        categorizationReset();
+
         dispatch(hideChannelActionsModal());
     };
 
     const onSave = () => {
-        if (!actionsChanged) {
-            return;
-        }
+        const welcomeMessageAction = {
+            ...welcomeMsg,
+            channel_id: channelID,
+            action_type: ChannelActionType.WelcomeMessage,
+            trigger_type: ChannelTriggerType.NewMemberJoins,
+        };
+        saveChannelAction(welcomeMessageAction).then((id) => setWelcomeMsg({...welcomeMsg, id}));
+        welcomeMsgOverwrite();
 
-        const newActions = cloneDeep(currentActions).value();
-        const saveActionPromises = [] as Promise<void>[];
+        const categorizeChannelAction = {
+            ...categorization,
+            channel_id: channelID,
+            action_type: ChannelActionType.CategorizeChannel,
+            trigger_type: ChannelTriggerType.NewMemberJoins,
+        };
+        saveChannelAction(categorizeChannelAction).then((id) => setCategorization({...categorization, id}));
+        categorizationOverwrite();
 
-        Object.values(newActions).forEach((actions) => {
-            actions.forEach((action) => {
-                action.channel_id = channelID;
-                const promise = saveChannelAction(action).then((newID) => {
-                    if (!action.id) {
-                        action.id = newID;
-                    }
-                });
-                saveActionPromises.push(promise);
-            });
-        });
-
-        // Wait until all save calls have ended (successfully or not)
-        // before setting both the current and original actions
-        Promise.allSettled(saveActionPromises).then(() => {
-            setCurrentActions(newActions);
-            setOriginalActions(newActions);
-        });
+        const promptRunPlaybookAction = {
+            ...prompt,
+            channel_id: channelID,
+            action_type: ChannelActionType.PromptRunPlaybook,
+            trigger_type: ChannelTriggerType.KeywordsPosted,
+        };
+        saveChannelAction(promptRunPlaybookAction).then((id) => setPrompt({...prompt, id}));
+        promptOverwrite();
 
         dispatch(hideChannelActionsModal());
-    };
-
-    const onUpdateAction = (newAction: ChannelAction) => {
-        setActionsChanged(true);
-
-        setCurrentActions((prevActions: ActionsByTrigger) => {
-            // TODO: Change this deep cloning
-            const newActions = JSON.parse(JSON.stringify(prevActions));
-
-            const idx = prevActions[newAction.trigger_type]?.findIndex((action) => action.action_type === newAction.action_type);
-            if (idx !== null) {
-                newActions[newAction.trigger_type][idx] = newAction;
-            }
-
-            return newActions;
-        });
     };
 
     return (
@@ -168,26 +144,61 @@ const ChannelActionsModal = () => {
             onSave={onSave}
         >
             <TriggersContainer>
-                {Object.entries(currentActions).map(([trigger, actions]) => (
-                    <Trigger
-                        key={trigger}
-                        editable={editable}
-                        triggerType={trigger as ChannelTriggerType}
-                        actions={actions}
-                        onUpdate={onUpdateAction}
-                    >
-                        <ActionsContainer>
-                            {actions.map((action) => (
-                                <Action
-                                    key={action.id}
-                                    action={action}
-                                    editable={editable}
-                                    onUpdate={onUpdateAction}
-                                />
-                            ))}
-                        </ActionsContainer>
-                    </Trigger>
-                ))}
+                <Trigger
+                    title={formatMessage({defaultMessage: 'When a user joins the channel'})}
+                >
+                    <ActionsContainer>
+                        <Action
+                            enabled={welcomeMsg.enabled}
+                            title={formatMessage({defaultMessage: 'Send a temporary welcome message to the user'})}
+                            editable={editable}
+                            onToggle={() => setWelcomeMsg({...welcomeMsg, enabled: !welcomeMsg.enabled})}
+                        >
+                            <WelcomeActionChildren
+                                message={welcomeMsg.payload.message}
+                                onUpdate={(msg) => setWelcomeMsg({...welcomeMsg, payload: {message: msg}})}
+                                editable={editable}
+                            />
+                        </Action>
+                        <Action
+                            enabled={categorization.enabled}
+                            title={formatMessage({defaultMessage: 'Add the channel to a sidebar category for the user'})}
+                            editable={editable}
+                            onToggle={() => setCategorization({...categorization, enabled: !categorization.enabled})}
+                        >
+                            <CategorizeChannelChildren
+                                categoryName={categorization.payload.category_name}
+                                onUpdate={(name) => setCategorization({...categorization, payload: {category_name: name}})}
+                                editable={editable}
+                            />
+                        </Action>
+                    </ActionsContainer>
+                </Trigger>
+                <Trigger
+                    title={formatMessage({defaultMessage: 'When a message with these keywords is posted'})}
+                    triggerModifier={(
+                        <TriggerKeywords
+                            editable={editable}
+                            keywords={prompt.payload.keywords}
+                            onUpdate={(newKeywords) => setPrompt({...prompt, payload: {...prompt.payload, keywords: newKeywords}})}
+                        />
+                    )}
+                >
+                    <ActionsContainer>
+                        <Action
+                            enabled={prompt.enabled}
+                            title={formatMessage({defaultMessage: 'Prompt to run a playbook'})}
+                            editable={editable}
+                            onToggle={() => setPrompt({...prompt, enabled: !prompt.enabled})}
+                        >
+                            <RunPlaybookChildren
+                                playbookId={prompt.payload.playbook_id}
+                                onUpdate={(newId) => setPrompt({...prompt, payload: {...prompt.payload, playbook_id: newId}})}
+                                editable={editable}
+                            />
+                        </Action>
+                    </ActionsContainer>
+                </Trigger>
             </TriggersContainer>
         </ActionsModal>
     );
