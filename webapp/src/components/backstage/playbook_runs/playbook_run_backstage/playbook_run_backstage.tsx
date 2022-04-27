@@ -42,6 +42,10 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 import {BadgeType} from 'src/components/backstage/status_badge';
+import Tooltip from 'src/components/widgets/tooltip';
+import RunActionsModal from 'src/components/run_actions_modal';
+
+import {showRunActionsModal} from 'src/actions';
 
 declare module 'react-bootstrap/esm/OverlayTrigger' {
     interface OverlayTriggerProps {
@@ -452,6 +456,7 @@ const PlaybookRunBackstage = () => {
                     </Switch>
                 </InnerContainer>
             </BottomContainer>
+            <RunActionsModal playbookRun={playbookRun}/>
         </OuterContainer>
     );
 };

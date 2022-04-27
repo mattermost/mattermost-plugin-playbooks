@@ -37,6 +37,7 @@ import {
     SHOW_CHANNEL_ACTIONS_MODAL,
     HIDE_CHANNEL_ACTIONS_MODAL,
     ShowRunActionsModal,
+    HideRunActionsModal,
     SHOW_RUN_ACTIONS_MODAL,
     HIDE_RUN_ACTIONS_MODAL,
     SetHasViewedChannel,
@@ -216,7 +217,7 @@ const channelActionsModalVisibility = (state = false, action: ShowChannelActions
     }
 };
 
-const runActionsModalVisibility = (state = false, action: ShowRunActionsModal) => {
+const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | HideRunActionsModal) => {
     switch (action.type) {
     case SHOW_RUN_ACTIONS_MODAL:
         return true;
