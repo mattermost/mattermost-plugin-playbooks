@@ -167,6 +167,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	// Cleanup to run after test is complete
 	t.Cleanup(func() {
 		server.Shutdown()
+		storetest.CleanupSqlSettings(sqlSettings)
 	})
 
 	ap := sapp.New(sapp.ServerConnector(server.Channels()))
@@ -458,7 +459,6 @@ func (e *TestEnvironment) CreateBasic() {
 
 // TestTestFramework If this is failing you know the break is not exclusively in your test.
 func TestTestFramework(t *testing.T) {
-	t.Skip()
 	e := Setup(t)
 	e.CreateBasic()
 }
