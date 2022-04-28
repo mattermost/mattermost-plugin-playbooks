@@ -134,7 +134,7 @@ export async function postStatusUpdate(
     }
 }
 
-export async function fetchPlaybookRunMetadata(id: string) {
+export async function fetchPlaybookRunMetadata(id: string): Promise<Metadata> {
     const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
@@ -144,7 +144,7 @@ export async function fetchPlaybookRunMetadata(id: string) {
         }
     }
 
-    return data as Metadata;
+    return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {

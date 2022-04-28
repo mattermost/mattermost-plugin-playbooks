@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useMemo, useState} from 'react';
+import React, {ComponentProps, useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -20,12 +20,11 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
-import {usePost, useRun} from 'src/hooks';
+import {usePost, useRun, useFormattedUsernames} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
-import {postStatusUpdate} from 'src/client';
-import {formatDuration} from '../formatted_duration';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {fetchPlaybookRunMetadata, postStatusUpdate} from 'src/client';
+import {Metadata, PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
@@ -63,7 +62,7 @@ const UpdateRunStatusModal = ({
     ...modalProps
 }: Props) => {
     const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
+    const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const run = useRun(playbookRunId);
 
@@ -82,6 +81,14 @@ const UpdateRunStatusModal = ({
     if (!reminder || reminder === 0) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
+    const [runMetadata, setRunMetadata] = useState({} as Metadata);
+    useEffect(() => {
+        const getMetadata = async () => {
+            const metadata = await fetchPlaybookRunMetadata(playbookRunId);
+            setRunMetadata(metadata);
+        };
+        getMetadata();
+    }, [playbookRunId]);
 
     const broadcastChannelNames = useSelector((state: GlobalState) => {
         return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
@@ -93,6 +100,20 @@ const UpdateRunStatusModal = ({
             return result;
         }, [])?.join(', ');
     });
+
+    const followerNames = useFormattedUsernames(runMetadata?.followers?.slice(0, 6));
+    const followersNum = runMetadata?.followers?.length || 0;
+    const followerTooltip = () => {
+        if (followersNum > 6) {
+            return formatMessage({defaultMessage: '{text} and {rest} others'}, {
+                text: followerNames.join(', '),
+                rest: followersNum - 6,
+            });
+        } else if (followersNum > 0) {
+            return formatList(followerNames, {type: 'conjunction'});
+        }
+        return '';
+    };
 
     const outstanding = outstandingTasks(run?.checklists || []);
     let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
@@ -137,27 +158,37 @@ const UpdateRunStatusModal = ({
         <FormContainer>
             <Description>
                 {formatMessage({
-                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.',
+                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcasted to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}} {hasFollowers, select, true { and <FollowersTooltip>{followersChannelCount, plural, =1 {direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
                 }, {
                     OverviewLink: (...chunks) => (
                         <Link
                             target='_blank'
                             rel='noopener noreferrer'
-                            to={pluginUrl(`/runs/${playbookRunId}`)}
+                            to={pluginUrl(`/runs/${playbookRunId}/overview`)}
                         >
                             {chunks}
                         </Link>
                     ),
                     ChannelsTooltip: (...chunks) => (
                         <Tooltip
-                            id={`${ID}_broadcast_tooltip`}
+                            id={`${ID}_broadcast_channels_tooltip`}
                             content={broadcastChannelNames}
+                        >
+                            <span tabIndex={0}>{chunks}</span>
+                        </Tooltip>
+                    ),
+                    FollowersTooltip: (...chunks) => (
+                        <Tooltip
+                            id={`${ID}_broadcast_followers_tooltip`}
+                            content={followerTooltip()}
                         >
                             <span tabIndex={0}>{chunks}</span>
                         </Tooltip>
                     ),
                     hasBroadcast: Boolean(run?.broadcast_channel_ids?.length).toString(),
                     broadcastChannelCount: run?.broadcast_channel_ids.length ?? 0,
+                    hasFollowers: Boolean(runMetadata?.followers?.length).toString(),
+                    followersChannelCount: runMetadata?.followers?.length ?? 0,
                 })}
             </Description>
             <Label>
