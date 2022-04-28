@@ -136,7 +136,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    {this.props.modalHeaderText && (
+                    {Boolean(this.props.modalHeaderText) && (
                         <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
                     )}
                 </Header>
