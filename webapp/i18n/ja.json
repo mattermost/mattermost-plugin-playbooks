@@ -333,7 +333,7 @@
     "eLeFE2": "名前と説明を編集する",
     "dvhvum": "(オプション）このプレイブックがどのような場合に使われるべきか記述します",
     "djALPR": "{activeRuns, number} {activeRuns, plural, one {実行} other {実行}} が進行中",
-    "dSC1YD": "タスクをスキップする",
+    "dSC1YD": "タスクをスキップ",
     "d4g2r8": "削除済み: {timestamp}",
     "cp7KUI": "プレイブック",
     "cPIKU2": "フォロー中",
@@ -546,5 +546,5 @@
     "9trZXa": "チーム内の誰でも閲覧可能",
     "7P5T3W": "チェックリストを復元",
     "g9pEhE": "期限",
-    "lyXljU": "重複したタスク"
+    "lyXljU": "タスクを複製"
 }
