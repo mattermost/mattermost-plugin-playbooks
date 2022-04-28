@@ -2843,16 +2843,21 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 		}
 	}
 
-	// omit assigned tasks header if runs info is empty
-	if runsInfo.String() != "" {
-		if onlyDueUntilToday {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
-		} else {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
-		}
-		msg.WriteString("\n\n")
-		msg.WriteString(runsInfo.String())
+	// if there are only tasks that are due after today and we need to show only tasks due now, skip a message
+	if onlyDueUntilToday && tasksDoAfterToday == total {
+		return ""
 	}
+
+	// add title
+	if onlyDueUntilToday {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
+	} else {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
+	}
+
+	// add info about tasks
+	msg.WriteString("\n\n")
+	msg.WriteString(runsInfo.String())
 
 	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyDueUntilToday {
