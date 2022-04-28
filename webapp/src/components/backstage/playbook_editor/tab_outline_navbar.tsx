@@ -167,7 +167,7 @@ const TabOutlineNavbar = ({playbook, runsInProgress, archived, showElements}: Pr
                     <Item
                         id={SectionID.Description}
                         iconName={'information-outline'}
-                        title={formatMessage({defaultMessage: 'Description'})}
+                        title={formatMessage({defaultMessage: 'Summary'})}
                         show={showElements.description}
                     />
                     <Item
