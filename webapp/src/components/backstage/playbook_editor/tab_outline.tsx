@@ -11,6 +11,7 @@ import renderChecklists from 'src/components/backstage/playbooks/playbook_previe
 import renderDescription from 'src/components/backstage/playbooks/playbook_preview_description';
 import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
+import renderSummary from 'src/components/backstage/playbook_editor/summary';
 import {HorizontalBG} from 'src/components/collapsible_checklist';
 
 import Navbar, {SectionID} from './tab_outline_navbar';
@@ -23,7 +24,7 @@ interface Props {
 
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
 const Outline = (props: Props) => {
-    const description = renderDescription({
+    const description = renderSummary({
         id: SectionID.Description,
         playbook: props.playbook,
     });
