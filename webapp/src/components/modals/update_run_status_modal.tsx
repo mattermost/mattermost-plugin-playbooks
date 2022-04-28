@@ -261,7 +261,7 @@ const UpdateRunStatusModal = ({
                 navigate={(path) => WebappUtils.browserHistory.push(path)}
                 shouldBlockNavigation={(newLoc) => {
                     // This code will be enabled to prevent user from leave without saving
-                    // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148
+                    // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148 merge
                     // In the meantime, it close the modal when navigating to run overview
                     // if (location.pathname !== newLoc.pathname && pendingChanges) {
                     // return true;
