@@ -23,7 +23,7 @@ const Summary = (props: Props) => {
             return;
         }
         const newPlaybook = {...props.playbook};
-        newPlaybook.description = summary;
+        newPlaybook.run_summary_template = summary;
         setPlaybook(newPlaybook);
         savePlaybook(newPlaybook);
     };
@@ -35,7 +35,7 @@ const Summary = (props: Props) => {
         >
             <TextEdit
                 placeholder={formatMessage({defaultMessage: 'Add run summary template...'})}
-                value={playbook.description}
+                value={playbook.run_summary_template}
                 onSave={updateSummaryForPlaybook}
             />
         </Section>
