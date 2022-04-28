@@ -34,8 +34,13 @@ import {modals} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 const ID = 'playbooks_update_run_status_dialog';
+const NAMES_ON_TOOLTIP = 5;
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 type Props = {
     playbookRunId: string;
@@ -98,21 +103,15 @@ const UpdateRunStatusModal = ({
                 result.push(displayName);
             }
             return result;
-        }, [])?.join(', ');
-    });
+        }, []);
+    })?.slice(0, NAMES_ON_TOOLTIP) || [];
+    const followerNames = useFormattedUsernames(runMetadata?.followers?.slice(0, NAMES_ON_TOOLTIP));
 
-    const followerNames = useFormattedUsernames(runMetadata?.followers?.slice(0, 6));
-    const followersNum = runMetadata?.followers?.length || 0;
-    const followerTooltip = () => {
-        if (followersNum > 6) {
-            return formatMessage({defaultMessage: '{text} and {rest} others'}, {
-                text: followerNames.join(', '),
-                rest: followersNum - 6,
-            });
-        } else if (followersNum > 0) {
-            return formatList(followerNames, {type: 'conjunction'});
-        }
-        return '';
+    const generateTooltipText = (names: string[], total: number) => {
+        return total ? formatMessage({defaultMessage: '{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}'}, {
+            text: total > NAMES_ON_TOOLTIP ? names.join(', ') : formatList(names, {type: 'conjunction'}),
+            rest: total > NAMES_ON_TOOLTIP ? total - NAMES_ON_TOOLTIP : 0,
+        }) : '';
     };
 
     const outstanding = outstandingTasks(run?.checklists || []);
@@ -154,43 +153,53 @@ const UpdateRunStatusModal = ({
         }
     };
 
+    const description = () => {
+        const broadcastChannelCount = run?.broadcast_channel_ids.length ?? 0;
+        const followersChannelCount = runMetadata?.followers?.length ?? 0;
+
+        const OverviewLink = (...chunks: string[]) => (
+            <Link to={pluginUrl(`/runs/${playbookRunId}/overview`)}>
+                {chunks}
+            </Link>
+        );
+
+        if ((broadcastChannelCount + followersChannelCount) === 0) {
+            return formatMessage({
+                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink> and broadcasted to <OverviewLink>0 channels</OverviewLink>',
+            }, {OverviewLink});
+        }
+
+        return formatMessage({
+            defaultMessage: 'This update will be broadcasted to {hasBroadcast, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<OverviewLink><FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip></OverviewLink>} other {}}.',
+        }, {
+            OverviewLink,
+            ChannelsTooltip: (...chunks) => (
+                <Tooltip
+                    id={`${ID}_broadcast_channels_tooltip`}
+                    content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
+                >
+                    <span tabIndex={0}>{chunks}</span>
+                </Tooltip>
+            ),
+            FollowersTooltip: (...chunks) => (
+                <Tooltip
+                    id={`${ID}_broadcast_followers_tooltip`}
+                    content={generateTooltipText(followerNames, followersChannelCount)}
+                >
+                    <span tabIndex={0}>{chunks}</span>
+                </Tooltip>
+            ),
+            hasFollowersAndChannels: Boolean(broadcastChannelCount && followersChannelCount).toString(),
+            hasBroadcast: Boolean(broadcastChannelCount).toString(),
+            hasFollowers: Boolean(followersChannelCount).toString(),
+            broadcastChannelCount,
+            followersChannelCount,
+        });
+    };
+
     const form = (
         <FormContainer>
-            <Description>
-                {formatMessage({
-                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcasted to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}} {hasFollowers, select, true { and <FollowersTooltip>{followersChannelCount, plural, =1 {direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
-                }, {
-                    OverviewLink: (...chunks) => (
-                        <Link
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            to={pluginUrl(`/runs/${playbookRunId}/overview`)}
-                        >
-                            {chunks}
-                        </Link>
-                    ),
-                    ChannelsTooltip: (...chunks) => (
-                        <Tooltip
-                            id={`${ID}_broadcast_channels_tooltip`}
-                            content={broadcastChannelNames}
-                        >
-                            <span tabIndex={0}>{chunks}</span>
-                        </Tooltip>
-                    ),
-                    FollowersTooltip: (...chunks) => (
-                        <Tooltip
-                            id={`${ID}_broadcast_followers_tooltip`}
-                            content={followerTooltip()}
-                        >
-                            <span tabIndex={0}>{chunks}</span>
-                        </Tooltip>
-                    ),
-                    hasBroadcast: Boolean(run?.broadcast_channel_ids?.length).toString(),
-                    broadcastChannelCount: run?.broadcast_channel_ids.length ?? 0,
-                    hasFollowers: Boolean(runMetadata?.followers?.length).toString(),
-                    followersChannelCount: runMetadata?.followers?.length ?? 0,
-                })}
-            </Description>
+            <Description>{description()}</Description>
             <Label>
                 {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
@@ -231,22 +240,37 @@ const UpdateRunStatusModal = ({
     );
 
     return (
-        <GenericModal
-            show={showModal}
-            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
-            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
-            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
-            handleCancel={() => true}
-            handleConfirm={hasPermission ? onSubmit : null}
-            autoCloseOnConfirmButton={false}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
-            {...modalProps}
-            id={ID}
-            footer={footer}
-            components={{FooterContainer}}
-        >
-            {hasPermission ? form : warning}
-        </GenericModal>
+        <>
+            <GenericModal
+                show={showModal}
+                modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+                cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+                confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
+                handleCancel={() => true}
+                handleConfirm={hasPermission ? onSubmit : null}
+                autoCloseOnConfirmButton={false}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
+                {...modalProps}
+                id={ID}
+                footer={footer}
+                components={{FooterContainer}}
+            >
+                {hasPermission ? form : warning}
+            </GenericModal>
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={(newLoc) => {
+                    // This code will be enabled to prevent user from leave without saving
+                    // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148
+                    // In the meantime, it close the modal when navigating to run overview
+                    // if (location.pathname !== newLoc.pathname && pendingChanges) {
+                    // return true;
+                    // }
+                    modalProps.onHide?.();
+                    return false;
+                }}
+            />
+        </>
     );
 };
 
