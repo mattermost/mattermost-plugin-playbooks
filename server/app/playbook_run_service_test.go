@@ -471,19 +471,18 @@ func TestUpdateStatus(t *testing.T) {
 		follower1ID := "follower1ID"
 		follower2ID := "follower2ID"
 		playbookRun := &app.PlaybookRun{
-			ID:                                    playbookRunID,
-			Name:                                  "Name",
-			TeamID:                                teamID,
-			ChannelID:                             homeChannelID,
-			BroadcastChannelIDs:                   []string{broadcastChannelID1, broadcastChannelID2},
-			StatusUpdateBroadcastChannelsEnabled:  true,
-			OwnerUserID:                           "user_id",
-			ReporterUserID:                        "user_id",
-			CurrentStatus:                         app.StatusInProgress,
-			CreateAt:                              1620018358404,
-			WebhookOnStatusUpdateURLs:             []string{server.URL},
-			StatusUpdateBroadcastWebhooksEnabled:  true,
-			StatusUpdateBroadcastFollowersEnabled: true,
+			ID:                                   playbookRunID,
+			Name:                                 "Name",
+			TeamID:                               teamID,
+			ChannelID:                            homeChannelID,
+			BroadcastChannelIDs:                  []string{broadcastChannelID1, broadcastChannelID2},
+			StatusUpdateBroadcastChannelsEnabled: true,
+			OwnerUserID:                          "user_id",
+			ReporterUserID:                       "user_id",
+			CurrentStatus:                        app.StatusInProgress,
+			CreateAt:                             1620018358404,
+			WebhookOnStatusUpdateURLs:            []string{server.URL},
+			StatusUpdateBroadcastWebhooksEnabled: true,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
@@ -633,19 +632,18 @@ func TestUpdateStatus(t *testing.T) {
 		follower1ID := "follower1ID"
 		follower2ID := "follower2ID"
 		playbookRun := &app.PlaybookRun{
-			ID:                                    playbookRunID,
-			Name:                                  "Name",
-			TeamID:                                teamID,
-			ChannelID:                             homeChannelID,
-			BroadcastChannelIDs:                   []string{broadcastChannelID1, broadcastChannelID2},
-			StatusUpdateBroadcastChannelsEnabled:  false,
-			OwnerUserID:                           "user_id",
-			ReporterUserID:                        "user_id",
-			CurrentStatus:                         app.StatusInProgress,
-			CreateAt:                              1620018358404,
-			WebhookOnStatusUpdateURLs:             []string{server.URL},
-			StatusUpdateBroadcastWebhooksEnabled:  false,
-			StatusUpdateBroadcastFollowersEnabled: false,
+			ID:                                   playbookRunID,
+			Name:                                 "Name",
+			TeamID:                               teamID,
+			ChannelID:                            homeChannelID,
+			BroadcastChannelIDs:                  []string{broadcastChannelID1, broadcastChannelID2},
+			StatusUpdateBroadcastChannelsEnabled: false,
+			OwnerUserID:                          "user_id",
+			ReporterUserID:                       "user_id",
+			CurrentStatus:                        app.StatusInProgress,
+			CreateAt:                             1620018358404,
+			WebhookOnStatusUpdateURLs:            []string{server.URL},
+			StatusUpdateBroadcastWebhooksEnabled: false,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
@@ -735,8 +733,8 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, broadcastChannel1)
 		require.False(t, broadcastChannel2)
-		require.False(t, broadcastFollower1)
-		require.False(t, broadcastFollower2)
+		require.True(t, broadcastFollower1)
+		require.True(t, broadcastFollower2)
 
 		select {
 		case <-webhookChan:
@@ -1700,10 +1698,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		require.Equal(t, expected, digestPost.Message)
 	})
 
-	t.Run("digest message with tasks due after today", func(t *testing.T) {
-		expected := "##### Your assigned tasks\n" +
-			":information_source: You have **3 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
-
+	t.Run("no digest message. only tasks due after today", func(t *testing.T) {
 		now := model.GetMillis()
 		assignedRuns := []app.AssignedRun{
 			{
@@ -1735,7 +1730,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
-		require.Equal(t, expected, digestPost.Message)
+		require.Nil(t, digestPost)
 	})
 }
 

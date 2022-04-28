@@ -1954,12 +1954,20 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.51.0"),
 		toVersion:   semver.MustParse("0.52.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// moved migration code to the next version to remove an unnecessary column
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.52.0"),
+		toVersion:   semver.MustParse("0.53.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
 				}
-				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastFollowersEnabled to table IR_Incident")
+				if err := dropColumnMySQL(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
 				}
 				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
@@ -1968,8 +1976,8 @@ var migrations = []Migration{
 				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
 				}
-				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastFollowersEnabled to table IR_Incident")
+				if err := dropColumnPG(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
 				}
 				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")

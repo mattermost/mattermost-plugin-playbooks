@@ -104,6 +104,7 @@ func NewPlaybookRunHandler(
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
 	checklistRouter.HandleFunc("/skip", handler.checklistSkip).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/restore", handler.checklistRestore).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/duplicate", handler.duplicateChecklist).Methods(http.MethodPost)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
@@ -484,8 +485,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if pb.DefaultOwnerEnabled {
 			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
 		}
-
-		playbookRun.StatusUpdateBroadcastFollowersEnabled = true
 
 		playbookRun.StatusUpdateBroadcastChannelsEnabled = pb.BroadcastEnabled
 		playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
@@ -1317,6 +1316,24 @@ func (h *PlaybookRunHandler) removeChecklist(w http.ResponseWriter, r *http.Requ
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.RemoveChecklist(id, userID, checklistNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *PlaybookRunHandler) duplicateChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.DuplicateChecklist(playbookRunID, userID, checklistNum); err != nil {
 		h.HandleError(w, err)
 		return
 	}

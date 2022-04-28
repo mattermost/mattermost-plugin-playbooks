@@ -795,9 +795,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
 	}
 
-	if playbookRunToModify.StatusUpdateBroadcastFollowersEnabled {
-		s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
-	}
+	s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	if err = s.SetNewReminder(playbookRunID, options.Reminder); err != nil {
@@ -913,10 +911,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
 	}
 
-	if playbookRunToModify.StatusUpdateBroadcastFollowersEnabled {
-		runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-		s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
-	}
+	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
+	s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
@@ -1540,13 +1536,32 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.New("user does not have permission to modify playbook run")
 	}
 
-	playbookRunToModify.Checklists = append([]Checklist{checklist}, playbookRunToModify.Checklists...)
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
 	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
+// DuplicateChecklist duplicates a checklist
+func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, duplicate)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
 }
@@ -2497,9 +2512,8 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
 	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
-	if playbookRunToPublish.StatusUpdateBroadcastFollowersEnabled {
-		s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
-	}
+	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
+
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      now,
@@ -2829,16 +2843,21 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 		}
 	}
 
-	// omit assigned tasks header if runs info is empty
-	if runsInfo.String() != "" {
-		if onlyDueUntilToday {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
-		} else {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
-		}
-		msg.WriteString("\n\n")
-		msg.WriteString(runsInfo.String())
+	// if there are only tasks that are due after today and we need to show only tasks due now, skip a message
+	if onlyDueUntilToday && tasksDoAfterToday == total {
+		return ""
 	}
+
+	// add title
+	if onlyDueUntilToday {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
+	} else {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
+	}
+
+	// add info about tasks
+	msg.WriteString("\n\n")
+	msg.WriteString(runsInfo.String())
 
 	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyDueUntilToday {

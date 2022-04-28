@@ -123,7 +123,9 @@ before(() => {
 
         switch (Cypress.env('serverEdition')) {
         case 'Cloud':
-            cy.apiRequireLicenseForFeature('Cloud');
+            // adjust this once installing different licenses
+            // is better supported in our CI setup
+            // cy.apiRequireLicenseForFeature('Cloud');
             break;
         case 'E20':
             cy.apiRequireLicense();
