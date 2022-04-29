@@ -29,6 +29,7 @@ interface Props {
     playbookRun: PlaybookRun;
     checklist: Checklist;
     checklistIndex: number;
+    menuEnabled: boolean;
 }
 
 const RHSChecklist = (props: Props) => {
@@ -100,6 +101,7 @@ const RHSChecklist = (props: Props) => {
                                     item={checklistItem}
                                     itemIndex={index}
                                     newItem={false}
+                                    menuEnabled={props.menuEnabled}
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
@@ -114,6 +116,7 @@ const RHSChecklist = (props: Props) => {
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
                                 newItem={true}
+                                menuEnabled={props.menuEnabled}
                                 cancelAddingItem={() => {
                                     setAddingItem(false);
                                 }}
