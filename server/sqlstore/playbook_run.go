@@ -185,7 +185,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastFollowersEnabled", "StatusUpdateBroadcastWebhooksEnabled",
+			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
 			"COALESCE(CategoryName, '') CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -460,7 +460,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
 			"CategoryName":                          rawPlaybookRun.CategoryName,
 			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastFollowersEnabled": rawPlaybookRun.StatusUpdateBroadcastFollowersEnabled,
 			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
@@ -518,7 +517,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
 			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastFollowersEnabled": rawPlaybookRun.StatusUpdateBroadcastFollowersEnabled,
 			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
