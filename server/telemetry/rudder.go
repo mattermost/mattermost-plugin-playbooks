@@ -77,6 +77,10 @@ const (
 
 	eventChannelAction     = "channel_action"
 	actionRunChannelAction = "run_channel_action"
+
+	eventRunAction         = "run_action_event"
+	actionRunAction        = "run_action"
+	actionRunActionsUpdate = "run_actions_update"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -149,25 +153,27 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 	}
 
 	return map[string]interface{}{
-		"UserActualID":              userID,
-		telemetryKeyPlaybookRunID:   playbookRun.ID,
-		"HasDescription":            playbookRun.Summary != "",
-		"CommanderUserID":           playbookRun.OwnerUserID,
-		"ReporterUserID":            playbookRun.ReporterUserID,
-		"TeamID":                    playbookRun.TeamID,
-		"ChannelID":                 playbookRun.ChannelID,
-		"CreateAt":                  playbookRun.CreateAt,
-		"EndAt":                     playbookRun.EndAt,
-		"DeleteAt":                  playbookRun.DeleteAt, //nolint
-		"PostID":                    playbookRun.PostID,
-		"PlaybookID":                playbookRun.PlaybookID,
-		"NumChecklists":             len(playbookRun.Checklists),
-		"TotalChecklistItems":       totalChecklistItems,
-		"ChecklistItemsWithDueDate": itemsWithDueDate,
-		"NumStatusPosts":            len(playbookRun.StatusPosts),
-		"CurrentStatus":             playbookRun.CurrentStatus,
-		"PreviousReminder":          playbookRun.PreviousReminder,
-		"NumTimelineEvents":         len(playbookRun.TimelineEvents),
+		"UserActualID":                         userID,
+		telemetryKeyPlaybookRunID:              playbookRun.ID,
+		"HasDescription":                       playbookRun.Summary != "",
+		"CommanderUserID":                      playbookRun.OwnerUserID,
+		"ReporterUserID":                       playbookRun.ReporterUserID,
+		"TeamID":                               playbookRun.TeamID,
+		"ChannelID":                            playbookRun.ChannelID,
+		"CreateAt":                             playbookRun.CreateAt,
+		"EndAt":                                playbookRun.EndAt,
+		"DeleteAt":                             playbookRun.DeleteAt, //nolint
+		"PostID":                               playbookRun.PostID,
+		"PlaybookID":                           playbookRun.PlaybookID,
+		"NumChecklists":                        len(playbookRun.Checklists),
+		"TotalChecklistItems":                  totalChecklistItems,
+		"ChecklistItemsWithDueDate":            itemsWithDueDate,
+		"NumStatusPosts":                       len(playbookRun.StatusPosts),
+		"CurrentStatus":                        playbookRun.CurrentStatus,
+		"PreviousReminder":                     playbookRun.PreviousReminder,
+		"NumTimelineEvents":                    len(playbookRun.TimelineEvents),
+		"StatusUpdateBroadcastChannelsEnabled": playbookRun.StatusUpdateBroadcastChannelsEnabled,
+		"StatusUpdateBroadcastWebhooksEnabled": playbookRun.StatusUpdateBroadcastWebhooksEnabled,
 	}
 }
 
@@ -597,4 +603,26 @@ func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, user
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionRunChannelAction
 	t.track(eventChannelAction, properties)
+}
+
+func runActionProperties(triggerType, actionType, userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+		"ActionType":   actionType,
+		"TriggerType":  triggerType,
+	}
+}
+
+// RunAction tracks the run actions, i.e., status broadcast action
+func (t *RudderTelemetry) RunAction(triggerType, actionType, userID string) {
+	properties := runActionProperties(triggerType, actionType, userID)
+	properties["Action"] = actionRunAction
+	t.track(eventRunAction, properties)
+}
+
+// UpdateRunActions tracks actions settings update
+func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionRunActionsUpdate
+	t.track(eventRunAction, properties)
 }

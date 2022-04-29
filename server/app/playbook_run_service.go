@@ -415,6 +415,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
 			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
+			s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, userID)
 		}
 
 		// dm to users who are auto-following the playbook
@@ -793,6 +794,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, userID)
 	}
 
 	s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
@@ -823,6 +825,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, userID)
 	}
 
 	return nil
@@ -909,6 +912,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, userID)
 	}
 
 	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
@@ -960,6 +964,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, userID)
 	}
 
 	return nil
@@ -997,6 +1002,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, userID)
 	}
 
 	event := &TimelineEvent{
@@ -1020,13 +1026,14 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
+		s.telemetry.RunAction(TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, userID)
 	}
 
 	return nil
 }
 
 // UpdateRunActions updates status update broadcast settings
-func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings RunAction) error {
+func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID, userID string, settings RunAction) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err
@@ -1041,6 +1048,7 @@ func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
+	s.telemetry.UpdateRunActions(playbookRunToModify, userID)
 	return nil
 }
 

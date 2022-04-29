@@ -432,6 +432,13 @@ type RunAction struct {
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
 }
 
+const (
+	ActionTypeBroadcastChannels = "broadcast_to_channels"
+	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
+
+	TriggerTypeStatusUpdatePosted = "status_update_posted"
+)
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -626,7 +633,7 @@ type PlaybookRunService interface {
 	RestorePlaybookRun(playbookRunID, userID string) error
 
 	// UpdateRunActions updates status update broadcast settings
-	UpdateRunActions(playbookRunID string, settings RunAction) error
+	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -810,6 +817,12 @@ type PlaybookRunTelemetry interface {
 
 	// Unfollow tracks userID following a playbook run.
 	Unfollow(playbookRun *PlaybookRun, userID string)
+
+	// RunAction tracks the run actions, i.e., status broadcast action
+	RunAction(triggerType, actionType, userID string)
+
+	// UpdateRunActions tracks actions settings update
+	UpdateRunActions(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {
