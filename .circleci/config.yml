@@ -256,6 +256,7 @@ jobs:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:10.17
+        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -274,6 +275,7 @@ jobs:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:11.13
+        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -292,6 +294,7 @@ jobs:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:12.9
+        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -311,6 +314,7 @@ jobs:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:14.1
+        command: "postgres -N 200"
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
