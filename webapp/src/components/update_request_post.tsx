@@ -139,21 +139,14 @@ export const UpdateRequestPost = (props: Props) => {
     );
 };
 
-const PostUpdateButtonCommon = css`
-    justify-content: center;
-    flex: 1;
-    max-width: 135px;
-    margin: 4px;
-`;
-
 const SelectWrapper = styled(StyledSelect)`
     margin: 4px;
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    ${PostUpdateButtonCommon} {
-    }
-
+    justify-content: center;
+    flex: 1;
+    margin: 4px;
     white-space: nowrap;
 `;
 
