@@ -10,7 +10,6 @@ describe('runs > actions', () => {
     let testTeam;
     let testSysadmin;
     let testUser;
-    let testChannel;
     let testPlaybook;
     let testRun;
 
@@ -24,15 +23,6 @@ describe('runs > actions', () => {
                 cy.apiAddUserToTeam(team.id, resp.user.id);
             });
 
-            cy.apiCreateChannel(
-                testTeam.id,
-                'action-channel',
-                'Action Channel',
-                'O'
-            ).then(({channel}) => {
-                testChannel = channel;
-            });
-
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',
@@ -43,16 +33,18 @@ describe('runs > actions', () => {
     });
 
     beforeEach(() => {
+        const now = Date.now()
+        const runName = 'Playbook Run ' + now;
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPlaybook.id,
-            playbookRunName: 'Playbook Run',
+            playbookRunName: runName,
             ownerUserId: testSysadmin.id,
         }).then((run) => {
             testRun = run;
 
             // # Navigate to the run page
-            cy.visit(`/${testTeam.name}/channels/playbook-run`);
+            cy.visit(`/${testTeam.name}/channels/playbook-run-${now}`);
             cy.findByRole('button', {name: /Run details/i}).click({force: true});
         });
     });
@@ -97,44 +89,51 @@ describe('runs > actions', () => {
         });
 
         it('honours the settings from the playbook', () => {
-            // # Create a different playbook with both settings enabled and populated with data,
-            // # and then start a run from it
-            const broadcastChannelIds = [testChannel.id];
-            const webhookOnStatusUpdateURLs = ['https://one.com', 'https://two.com'];
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Playbook' + Date.now(),
-                broadcastEnabled: true,
-                broadcastChannelIds,
-                webhookOnStatusUpdateEnabled: true,
-                webhookOnStatusUpdateURLs,
-            }).then((playbook) => {
-                cy.apiRunPlaybook({
+            cy.apiCreateChannel(
+                testTeam.id,
+                'action-channel',
+                'Action Channel',
+                'O'
+            ).then(({channel}) => {
+                // # Create a different playbook with both settings enabled and populated with data,
+                // # and then start a run from it
+                const broadcastChannelIds = [channel.id];
+                const webhookOnStatusUpdateURLs = ['https://one.com', 'https://two.com'];
+                cy.apiCreatePlaybook({
                     teamId: testTeam.id,
-                    playbookId: playbook.id,
-                    playbookRunName: 'Run with actions preconfigured',
-                    ownerUserId: testUser.id,
+                    title: 'Playbook' + Date.now(),
+                    broadcastEnabled: true,
+                    broadcastChannelIds,
+                    webhookOnStatusUpdateEnabled: true,
+                    webhookOnStatusUpdateURLs,
+                }).then((playbook) => {
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: playbook.id,
+                        playbookRunName: 'Run with actions preconfigured',
+                        ownerUserId: testUser.id,
+                    });
                 });
-            });
 
-            // # Navigate to the run page
-            cy.visit(`/${testTeam.name}/channels/run-with-actions-preconfigured`);
-            cy.findByRole('button', {name: /Run details/i}).click({force: true});
+                // # Navigate to the run page
+                cy.visit(`/${testTeam.name}/channels/run-with-actions-preconfigured`);
+                cy.findByRole('button', {name: /Run details/i}).click({force: true});
 
-            // # Open the run actions modal
-            openRunActionsModal();
+                // # Open the run actions modal
+                openRunActionsModal();
 
-            // * Verify that the broadcast-to-channels toggle is checked
-            cy.findByText('Broadcast update to selected channels').parent().within(() => {
-                cy.get('input').should('be.checked');
-            });
+                // * Verify that the broadcast-to-channels toggle is checked
+                cy.findByText('Broadcast update to selected channels').parent().within(() => {
+                    cy.get('input').should('be.checked');
+                });
 
-            // * Verify that the channel is in the selector
-            cy.findByText(testChannel.display_name);
+                // * Verify that the channel is in the selector
+                cy.findByText(channel.display_name);
 
-            // * Verify that the send-webhooks toggle is checked
-            cy.findByText('Send outgoing webhook').parent().within(() => {
-                cy.get('input').should('be.checked');
+                // * Verify that the send-webhooks toggle is checked
+                cy.findByText('Send outgoing webhook').parent().within(() => {
+                    cy.get('input').should('be.checked');
+                });
             });
         });
     });
