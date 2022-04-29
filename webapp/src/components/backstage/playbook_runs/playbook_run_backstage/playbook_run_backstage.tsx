@@ -374,6 +374,7 @@ const PlaybookRunBackstage = () => {
                 className='icon-palette-outline'
                 onClick={() => dispatch(showRunActionsModal())}
                 clicked={false}
+                aria-label={formatMessage({defaultMessage: 'Open Run Actions modal'})}
             />
         </Tooltip>
     );
