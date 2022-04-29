@@ -259,6 +259,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
+          POSTGRES_INITDB_ARGS: --max_connections=300
       - image: cimg/mysql:5.7
         environment:
           MYSQL_ROOT_PASSWORD: mostest
@@ -277,6 +278,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
+          POSTGRES_INITDB_ARGS: --max_connections=300
       - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
@@ -295,6 +297,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
+          POSTGRES_INITDB_ARGS: --max_connections=300
       - image: cimg/mariadb:10.6
         environment:
           MARIADB_ROOT_PASSWORD: mostest
@@ -315,6 +318,7 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
+          POSTGRES_INITDB_ARGS: --max_connections=300
       - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
