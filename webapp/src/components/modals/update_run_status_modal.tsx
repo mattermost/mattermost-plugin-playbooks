@@ -190,7 +190,7 @@ const UpdateRunStatusModal = ({
                 </Tooltip>
             ),
             hasFollowersAndChannels: Boolean(broadcastChannelCount && followersChannelCount).toString(),
-            hasBroadcast: Boolean(broadcastChannelCount).toString(),
+            hasChannels: Boolean(broadcastChannelCount).toString(),
             hasFollowers: Boolean(followersChannelCount).toString(),
             broadcastChannelCount,
             followersChannelCount,
