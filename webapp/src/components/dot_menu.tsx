@@ -87,6 +87,7 @@ interface DotMenuProps {
     dropdownMenu?: typeof DropdownMenu;
     title?: string;
     disabled?: boolean;
+    className?: string;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -125,6 +126,7 @@ const DotMenu = (props: DotMenuProps) => {
                 }
             }}
             tabIndex={0}
+            className={props.className}
             role={'button'}
             disabled={props.disabled || false}
         >

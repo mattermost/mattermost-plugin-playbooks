@@ -5,6 +5,7 @@ import {
     useRef,
     useState,
     useMemo,
+    UIEventHandler,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
@@ -52,6 +53,7 @@ import {
     isCurrentUserAdmin,
     myPlaybookRunsByTeam,
 } from '../selectors';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -551,8 +553,8 @@ export const usePlaybookName = (playbookId: string) => {
     return playbookName;
 };
 
-export const useDefaultMarkdownOptions = (team: Team) => {
-    const channelNamesMap = useSelector((state: GlobalState) => getChannelsNameMapInTeam(state, team.id));
+export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
+    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id));
 
     return {
         atMentions: true,
@@ -566,6 +568,11 @@ export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
     const team = useSelector((state: GlobalState) => getTeam(state, teamId));
 
     return useDefaultMarkdownOptions(team);
+};
+
+export const useMarkdownRenderer = (teamId: string | undefined) => {
+    const markdownOptions = useDefaultMarkdownOptions(teamId);
+    return (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 };
 
 export const useStats = (playbookId: string) => {
@@ -609,4 +616,15 @@ export const usePortal = (parent: HTMLElement) => {
     }, [parent, portal]);
 
     return portal;
+};
+
+export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
+    useEffect(() => {
+        if (el === null) {
+            return () => { /* do nothing*/ };
+        }
+
+        el.addEventListener('scroll', listener);
+        return () => el.removeEventListener('scroll', listener);
+    }, [el, listener]);
 };
