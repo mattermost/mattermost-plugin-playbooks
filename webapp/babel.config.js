@@ -30,6 +30,7 @@ const config = {
         '@babel/proposal-object-rest-spread',
         '@babel/plugin-proposal-optional-chaining',
         'babel-plugin-typescript-to-proptypes',
+        'babel-plugin-add-react-displayname',
         [
             'babel-plugin-styled-components',
             {

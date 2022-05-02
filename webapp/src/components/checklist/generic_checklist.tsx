@@ -27,6 +27,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
+    menuEnabled: boolean;
     checklist: Checklist;
     checklistIndex: number;
     onUpdateChecklist: (newChecklist: Checklist) => void;
@@ -130,6 +131,7 @@ const GenericChecklist = (props: Props) => {
                                 <DraggableChecklistItem
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
+                                    menuEnabled={props.menuEnabled}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
@@ -147,6 +149,7 @@ const GenericChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
+                                menuEnabled={props.menuEnabled}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}

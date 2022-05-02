@@ -65,6 +65,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                                     playbookRunId={''}
                                     dragging={false}
                                     disabled={true}
+                                    menuEnabled={true}
                                     collapsibleDescription={false}
                                     newItem={false}
                                 />

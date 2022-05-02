@@ -78,6 +78,7 @@ const ChecklistList = (props: Props) => {
     const [newChecklistName, setNewChecklistName] = useState('');
 
     const [playbook, setPlaybook] = useState(props.playbook);
+    const [menuEnabled, setMenuEnabled] = useState(true);
     const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
@@ -119,6 +120,11 @@ const ChecklistList = (props: Props) => {
         const newChecklists = [...checklists];
         newChecklists[index] = {...newChecklist};
         updateChecklistsForPlaybook(newChecklists);
+    };
+
+    const onDragStart = () => {
+        // block hover menu on checklists
+        setMenuEnabled(false);
     };
 
     const onDragEnd = (result: DropResult) => {
@@ -180,6 +186,9 @@ const ChecklistList = (props: Props) => {
             if (props.playbookRun) {
                 clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
+
+            // allow again to see hover menu
+            setMenuEnabled(true);
         }
 
         // Move a whole checklist
@@ -265,7 +274,10 @@ const ChecklistList = (props: Props) => {
 
     return (
         <>
-            <DragDropContext onDragEnd={onDragEnd}>
+            <DragDropContext
+                onDragEnd={onDragEnd}
+                onDragStart={onDragStart}
+            >
                 <Droppable
                     droppableId={'all-checklists'}
                     direction={'vertical'}
@@ -311,6 +323,7 @@ const ChecklistList = (props: Props) => {
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
+                                                    menuEnabled={menuEnabled}
                                                 />
                                             </CollapsibleChecklist>
                                         );

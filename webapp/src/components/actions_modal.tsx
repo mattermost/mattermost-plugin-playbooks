@@ -216,9 +216,9 @@ const ActionsModal = () => {
                             onUpdate={onUpdateAction}
                         >
                             <ActionsContainer>
-                                {actions.map((action) => (
+                                {actions.map((action, i) => (
                                     <Action
-                                        key={action.id}
+                                        key={action.id || i}
                                         action={action}
                                         editable={editable}
                                         onUpdate={onUpdateAction}
