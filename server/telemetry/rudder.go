@@ -78,9 +78,9 @@ const (
 	eventChannelAction     = "channel_action"
 	actionRunChannelAction = "run_channel_action"
 
-	eventRunAction         = "run_action_event"
-	actionRunAction        = "run_action"
-	actionRunActionsUpdate = "run_actions_update"
+	eventRunAction         = "playbookrun_action"
+	actionRunAction        = "run_playbookrun_action"
+	actionRunActionsUpdate = "update_playbookrun_actions"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
