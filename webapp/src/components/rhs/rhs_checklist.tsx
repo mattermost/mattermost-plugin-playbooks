@@ -166,7 +166,6 @@ const AddTaskLink = styled.button`
     background: none;
     border: none;
 
-    border-radius: 8px;
     display: flex;
     flex-direction: row;
     align-items: center;

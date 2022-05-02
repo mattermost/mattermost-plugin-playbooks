@@ -246,7 +246,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 };
 
 const ItemContainer = styled.div<{editing: boolean}>`
-    border-radius: 4px;
     margin-bottom: 4px;
     padding: 8px 0px;
 
