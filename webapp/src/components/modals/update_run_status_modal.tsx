@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useMemo, useState} from 'react';
+import React, {ComponentProps, useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -20,23 +20,25 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
-import {usePost, useRun} from 'src/hooks';
+
+import {usePost, useRun, useFormattedUsernames} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
-import {postStatusUpdate} from 'src/client';
-import {formatDuration} from '../formatted_duration';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {fetchPlaybookRunMetadata, postStatusUpdate} from 'src/client';
+import {Metadata, PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {modals} from 'src/webapp_globals';
+import {modals, browserHistory} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 const ID = 'playbooks_update_run_status_dialog';
+const NAMES_ON_TOOLTIP = 5;
 
 type Props = {
     playbookRunId: string;
@@ -63,7 +65,7 @@ const UpdateRunStatusModal = ({
     ...modalProps
 }: Props) => {
     const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
+    const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const run = useRun(playbookRunId);
 
@@ -82,6 +84,14 @@ const UpdateRunStatusModal = ({
     if (!reminder || reminder === 0) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
+    const [runMetadata, setRunMetadata] = useState({} as Metadata);
+    useEffect(() => {
+        const getMetadata = async () => {
+            const metadata = await fetchPlaybookRunMetadata(playbookRunId);
+            setRunMetadata(metadata);
+        };
+        getMetadata();
+    }, [playbookRunId]);
 
     const broadcastChannelNames = useSelector((state: GlobalState) => {
         return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
@@ -91,8 +101,16 @@ const UpdateRunStatusModal = ({
                 result.push(displayName);
             }
             return result;
-        }, [])?.join(', ');
-    });
+        }, []);
+    })?.slice(0, NAMES_ON_TOOLTIP) || [];
+    const followerNames = useFormattedUsernames(runMetadata?.followers?.slice(0, NAMES_ON_TOOLTIP));
+
+    const generateTooltipText = (names: string[], total: number) => {
+        return total ? formatMessage({defaultMessage: '{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}'}, {
+            text: total > NAMES_ON_TOOLTIP ? names.join(', ') : formatList(names, {type: 'conjunction'}),
+            rest: total > NAMES_ON_TOOLTIP ? total - NAMES_ON_TOOLTIP : 0,
+        }) : '';
+    };
 
     const outstanding = outstandingTasks(run?.checklists || []);
     let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
@@ -133,33 +151,56 @@ const UpdateRunStatusModal = ({
         }
     };
 
+    const description = () => {
+        let broadcastChannelCount = 0;
+        if (run?.status_update_broadcast_enabled) {
+            broadcastChannelCount = run.broadcast_channel_ids.length ?? 0;
+        }
+        const followersChannelCount = runMetadata?.followers?.length ?? 0;
+
+        const OverviewLink = (...chunks: string[]) => (
+            <Link to={pluginUrl(`/runs/${playbookRunId}/overview`)}>
+                {chunks}
+            </Link>
+        );
+
+        if ((broadcastChannelCount + followersChannelCount) === 0) {
+            return formatMessage({
+                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink> and broadcasted to <OverviewLink>0 channels</OverviewLink>',
+            }, {OverviewLink});
+        }
+
+        return formatMessage({
+            defaultMessage: 'This update will be broadcasted to {hasBroadcast, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<OverviewLink><FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip></OverviewLink>} other {}}.',
+        }, {
+            OverviewLink,
+            ChannelsTooltip: (...chunks) => (
+                <Tooltip
+                    id={`${ID}_broadcast_channels_tooltip`}
+                    content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
+                >
+                    <span tabIndex={0}>{chunks}</span>
+                </Tooltip>
+            ),
+            FollowersTooltip: (...chunks) => (
+                <Tooltip
+                    id={`${ID}_broadcast_followers_tooltip`}
+                    content={generateTooltipText(followerNames, followersChannelCount)}
+                >
+                    <span tabIndex={0}>{chunks}</span>
+                </Tooltip>
+            ),
+            hasFollowersAndChannels: Boolean(broadcastChannelCount && followersChannelCount).toString(),
+            hasChannels: Boolean(broadcastChannelCount).toString(),
+            hasFollowers: Boolean(followersChannelCount).toString(),
+            broadcastChannelCount,
+            followersChannelCount,
+        });
+    };
+
     const form = (
         <FormContainer>
-            <Description>
-                {formatMessage({
-                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.',
-                }, {
-                    OverviewLink: (...chunks) => (
-                        <Link
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            to={pluginUrl(`/runs/${playbookRunId}`)}
-                        >
-                            {chunks}
-                        </Link>
-                    ),
-                    ChannelsTooltip: (...chunks) => (
-                        <Tooltip
-                            id={`${ID}_broadcast_tooltip`}
-                            content={broadcastChannelNames}
-                        >
-                            <span tabIndex={0}>{chunks}</span>
-                        </Tooltip>
-                    ),
-                    hasBroadcast: Boolean(run?.broadcast_channel_ids?.length).toString(),
-                    broadcastChannelCount: run?.broadcast_channel_ids.length ?? 0,
-                })}
-            </Description>
+            <Description>{description()}</Description>
             <Label>
                 {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
@@ -200,22 +241,37 @@ const UpdateRunStatusModal = ({
     );
 
     return (
-        <GenericModal
-            show={showModal}
-            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
-            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
-            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
-            handleCancel={() => true}
-            handleConfirm={hasPermission ? onSubmit : null}
-            autoCloseOnConfirmButton={false}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
-            {...modalProps}
-            id={ID}
-            footer={footer}
-            components={{FooterContainer}}
-        >
-            {hasPermission ? form : warning}
-        </GenericModal>
+        <>
+            <GenericModal
+                show={showModal}
+                modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+                cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+                confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
+                handleCancel={() => true}
+                handleConfirm={hasPermission ? onSubmit : null}
+                autoCloseOnConfirmButton={false}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
+                {...modalProps}
+                id={ID}
+                footer={footer}
+                components={{FooterContainer}}
+            >
+                {hasPermission ? form : warning}
+            </GenericModal>
+            <RouteLeavingGuard
+                navigate={(path) => browserHistory.push(path)}
+                shouldBlockNavigation={(newLoc) => {
+                    // This code will be enabled to prevent user from leave without saving
+                    // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148 merge
+                    // In the meantime, it close the modal when navigating to run overview
+                    // if (location.pathname !== newLoc.pathname && pendingChanges) {
+                    // return true;
+                    // }
+                    modalProps.onHide?.();
+                    return false;
+                }}
+            />
+        </>
     );
 };
 
