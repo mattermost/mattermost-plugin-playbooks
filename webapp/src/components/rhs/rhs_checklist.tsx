@@ -160,7 +160,7 @@ const AddTaskLink = styled.button`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    height: 44px;
+    height: 36px;
     width: 100%;
 
     background: none;
