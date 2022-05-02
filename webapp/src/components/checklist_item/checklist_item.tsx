@@ -34,6 +34,7 @@ interface ChecklistItemProps {
     itemNum: number;
     channelId: string;
     playbookRunId: string;
+    menuEnabled: boolean;
     onChange?: (item: ChecklistItemState) => void;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -116,7 +117,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             editing={isEditing}
         >
             <CheckboxContainer>
-                {showMenu && !props.disabled &&
+                {showMenu && !props.disabled && props.menuEnabled &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         checklistNum={props.checklistNum}
@@ -367,9 +368,9 @@ const ChecklistItemTitleWrapper = styled.div`
 const DragButton = styled.i<{isVisible: boolean}>`
     cursor: pointer;
     width: 4px;
-    margin-right: 4px; 
-    margin-left: 4px;  
-    margin-top: 1px; 
+    margin-right: 4px;
+    margin-left: 4px;
+    margin-top: 1px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     ${({isVisible}) => !isVisible && `
         visibility: hidden
