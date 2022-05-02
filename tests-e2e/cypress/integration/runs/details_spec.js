@@ -131,10 +131,9 @@ describe('runs > details', () => {
                     ownerUserId: testUser.id,
                 });
             }).then((run) => {
-                playbookRun = run
-            })
+                playbookRun = run;
+            });
         });
-
 
         it('should show that status updates were disabled', () => {
             // # Visit the playbook run preview
@@ -167,10 +166,9 @@ describe('runs > details', () => {
                     ownerUserId: testUser.id,
                 });
             }).then((run) => {
-                playbookRun = run
-            })
+                playbookRun = run;
+            });
         });
-
 
         it('should show the retrospectives were disabled message', () => {
             // # Visit the playbook run preview
