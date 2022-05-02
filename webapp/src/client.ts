@@ -134,8 +134,8 @@ export async function postStatusUpdate(
     }
 }
 
-export async function fetchPlaybookRunMetadata(id: string): Promise<Metadata> {
-    const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
+export async function fetchPlaybookRunMetadata(id: string) {
+    const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
         if (!isMetadata(data)) {

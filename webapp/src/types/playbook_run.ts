@@ -25,6 +25,9 @@ export interface PlaybookRun {
     reminder_timer_default_seconds: number;
     status_update_enabled: boolean;
 
+    /** Whether run updates should be broadcasted to channels */
+    status_update_broadcast_enabled: boolean;
+
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
     broadcast_channel_ids: string[];

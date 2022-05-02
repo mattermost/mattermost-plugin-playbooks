@@ -20,6 +20,7 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
+
 import {usePost, useRun, useFormattedUsernames} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
@@ -30,7 +31,7 @@ import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {modals} from 'src/webapp_globals';
+import {modals, browserHistory} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
@@ -38,9 +39,6 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
-
-// @ts-ignore
-const WebappUtils = window.WebappUtils;
 
 type Props = {
     playbookRunId: string;
@@ -154,7 +152,10 @@ const UpdateRunStatusModal = ({
     };
 
     const description = () => {
-        const broadcastChannelCount = run?.broadcast_channel_ids.length ?? 0;
+        let broadcastChannelCount = 0;
+        if (run?.status_update_broadcast_enabled) {
+            broadcastChannelCount = run.broadcast_channel_ids.length ?? 0;
+        }
         const followersChannelCount = runMetadata?.followers?.length ?? 0;
 
         const OverviewLink = (...chunks: string[]) => (
@@ -258,7 +259,7 @@ const UpdateRunStatusModal = ({
                 {hasPermission ? form : warning}
             </GenericModal>
             <RouteLeavingGuard
-                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                navigate={(path) => browserHistory.push(path)}
                 shouldBlockNavigation={(newLoc) => {
                     // This code will be enabled to prevent user from leave without saving
                     // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148 merge
