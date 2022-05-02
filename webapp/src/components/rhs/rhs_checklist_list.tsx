@@ -100,6 +100,14 @@ const RHSChecklistList = (props: Props) => {
     const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
     const [menuEnabled, setMenuEnabled] = useState(true);
 
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
+    if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
+        dispatch(setChecklistItemsFilter(channelId, {
+            ...checklistItemsFilter,
+            overdueOnly: false,
+        }));
+    }
+
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
 
