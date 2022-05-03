@@ -162,6 +162,7 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 	return nil
 }
 
+// ResetReminder creates a timeline event for a reminder being reset and then creates a new reminder
 func (s *PlaybookRunServiceImpl) ResetReminder(playbookRunID string, newReminder time.Duration) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
