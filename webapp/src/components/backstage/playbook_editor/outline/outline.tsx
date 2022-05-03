@@ -5,11 +5,6 @@ import styled from 'styled-components';
 import React, {Children, ReactNode, HTMLAttributes, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 
-import {selectTeam} from 'mattermost-redux/actions/teams';
-import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
-import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
-import {useDispatch} from 'react-redux';
-
 import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -33,18 +28,6 @@ type Attrs = HTMLAttributes<HTMLElement>;
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
 const Outline = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        const teamId = playbook.team_id;
-        if (!teamId) {
-            return;
-        }
-
-        dispatch(selectTeam(teamId));
-        dispatch(fetchMyChannelsAndMembers(teamId));
-        dispatch(fetchMyCategories(teamId));
-    }, [dispatch, playbook.team_id]);
 
     return (
         <Sections
