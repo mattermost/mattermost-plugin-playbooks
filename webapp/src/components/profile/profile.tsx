@@ -58,7 +58,7 @@ const ProfileName = styled.div`
     min-height: 18px;
     display: flex;
     align-items: center;
-    
+    padding-right: 4px;
 
     .description {
         color: rgba(var(--center-channel-color-rgb), 0.56);
