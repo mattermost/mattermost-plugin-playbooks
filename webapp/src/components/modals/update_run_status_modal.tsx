@@ -33,10 +33,11 @@ import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {modals} from 'src/webapp_globals';
+import {modals, browserHistory} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
-import {openUpdateRunStatusModal} from 'src/actions';
+import {openUpdateRunStatusModal/*, showRunActionsModal*/} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -200,7 +201,7 @@ const UpdateRunStatusModal = ({
                     id={`${ID}_broadcast_channels_tooltip`}
                     content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
                 >
-                    <span tabIndex={0}>{chunks}</span>
+                    <TooltipContent tabIndex={0}>{chunks}</TooltipContent>
                 </Tooltip>
             ),
             FollowersTooltip: (...chunks) => (
@@ -208,7 +209,7 @@ const UpdateRunStatusModal = ({
                     id={`${ID}_broadcast_followers_tooltip`}
                     content={generateTooltipText(followerNames, followersChannelCount)}
                 >
-                    <span tabIndex={0}>{chunks}</span>
+                    <TooltipContent tabIndex={1}>{chunks}</TooltipContent>
                 </Tooltip>
             ),
             hasFollowersAndChannels: Boolean(broadcastChannelCount && followersChannelCount).toString(),
@@ -285,6 +286,23 @@ const UpdateRunStatusModal = ({
                 onConfirm={onActualHide}
                 onCancel={() => setShowUnsaved(false)}
             />
+            <RouteLeavingGuard
+                navigate={(path) => {
+                    modalProps.onHide?.();
+
+                    // Uncomment once https://github.com/mattermost/mattermost-plugin-playbooks/pull/1153 is merged
+                    // dispatch(showRunActionsModal());
+                    browserHistory.push(path);
+                }}
+                shouldBlockNavigation={(newLoc) => {
+                    if (location.pathname !== newLoc.pathname && pendingChanges) {
+                        return true;
+                    }
+                    modalProps.onHide?.();
+                    return false;
+                }}
+            />
+
         </>
     );
 };
@@ -393,6 +411,10 @@ const FormContainer = styled.div`
             font-weight: bold;
         }
     }
+`;
+
+const TooltipContent = styled.span`
+    cursor: pointer;
 `;
 
 const WarningBlock = styled.div`
