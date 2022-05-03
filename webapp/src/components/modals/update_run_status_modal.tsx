@@ -33,11 +33,10 @@ import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {modals, browserHistory} from 'src/webapp_globals';
+import {modals} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
-import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -91,7 +90,9 @@ const UpdateRunStatusModal = ({
     useEffect(() => {
         const getMetadata = async () => {
             const metadata = await fetchPlaybookRunMetadata(playbookRunId);
-            setRunMetadata(metadata);
+            if (metadata) {
+                setRunMetadata(metadata);
+            }
         };
         getMetadata();
     }, [playbookRunId]);
@@ -123,11 +124,13 @@ const UpdateRunStatusModal = ({
             {outstanding});
     }
 
+    const pendingChanges = !(providedMessage === message || message === defaultMessage || message === '');
+
     const onTentativeHide = () => {
-        if (providedMessage === message || message === defaultMessage || message === '') {
-            onActualHide();
-        } else {
+        if (pendingChanges) {
             setShowUnsaved(true);
+        } else {
+            onActualHide();
         }
     };
 
@@ -171,8 +174,8 @@ const UpdateRunStatusModal = ({
 
     const description = () => {
         let broadcastChannelCount = 0;
-        if (run?.status_update_broadcast_enabled) {
-            broadcastChannelCount = run.broadcast_channel_ids.length ?? 0;
+        if (run?.status_update_broadcast_channels_enabled) {
+            broadcastChannelCount = run?.broadcast_channel_ids.length ?? 0;
         }
         const followersChannelCount = runMetadata?.followers?.length ?? 0;
 
@@ -184,12 +187,12 @@ const UpdateRunStatusModal = ({
 
         if ((broadcastChannelCount + followersChannelCount) === 0) {
             return formatMessage({
-                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink> and broadcasted to <OverviewLink>0 channels</OverviewLink>',
+                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink>',
             }, {OverviewLink});
         }
 
         return formatMessage({
-            defaultMessage: 'This update will be broadcasted to {hasBroadcast, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<OverviewLink><FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip></OverviewLink>} other {}}.',
+            defaultMessage: 'This update will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
         }, {
             OverviewLink,
             ChannelsTooltip: (...chunks) => (
