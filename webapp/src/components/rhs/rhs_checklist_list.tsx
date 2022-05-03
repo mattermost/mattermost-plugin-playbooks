@@ -54,6 +54,14 @@ const RHSChecklistList = (props: Props) => {
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(checklists);
 
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
+    if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
+        dispatch(setChecklistItemsFilter(channelId, {
+            ...checklistItemsFilter,
+            overdueOnly: false,
+        }));
+    }
+
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
 

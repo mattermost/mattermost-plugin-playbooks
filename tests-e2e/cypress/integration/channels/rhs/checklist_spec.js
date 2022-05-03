@@ -368,5 +368,51 @@ describe('channels > rhs > checklist', () => {
             // * Verify if filter was canceled
             cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
         });
+
+        it('filter overdue automatically disappear if we check all overdue items', () => {
+            // # Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
+
+            // # Click the edit button
+            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
+
+            cy.findAllByTestId('due-date-info-button').eq(0).click();
+
+            // # Enter due 1 min ago
+            cy.get('.playbook-run-user-select__value-container').type('1 min ago')
+                .wait(HALF_SEC)
+                .trigger('keydown', {
+                    key: 'Enter',
+                });
+
+            // * Verify if Due 1 minute ago info is added
+            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
+                cy.findByText('1 minute ago').should('exist');
+                cy.findByText('Due').should('exist');
+            });
+
+            // * Verify if overdue tasks info was added
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
+                cy.findByText('1 task overdue').should('exist');
+            });
+
+            // # Filter overdue tasks
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+
+            // * Verify if filter works
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
+
+            // # Mark a task as completed
+            cy.findAllByTestId('checkbox-item-container').within(() => {
+                // check the overdue task
+                cy.get('input').click();
+            });
+
+            // * Verify there is no filter
+            cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
+
+            // * Verify if filter was canceled
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+        });
     });
 });

@@ -13,6 +13,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
+import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
+
 import {
     useDateTimeInput,
     useMakeOption,
@@ -24,7 +26,6 @@ import {usePost, useRun} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
-import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -74,6 +75,7 @@ const UpdateRunStatusModal = ({
     }
 
     const [showModal, setShowModal] = useState(true);
+    const [showUnsaved, setShowUnsaved] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
@@ -102,6 +104,21 @@ const UpdateRunStatusModal = ({
             {outstanding});
     }
 
+    const onTentativeHide = () => {
+        if (providedMessage === message || message === defaultMessage || message === '') {
+            onActualHide();
+        } else {
+            setShowUnsaved(true);
+        }
+    };
+
+    const onActualHide = () => {
+        modalProps.onHide?.();
+        setTimeout(() => {
+            setShowUnsaved(false);
+        }, 300);
+    };
+
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
             postStatusUpdate(
@@ -109,13 +126,13 @@ const UpdateRunStatusModal = ({
                 {message, reminder, finishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
             );
-            setShowModal(false);
+            onActualHide();
         }
     };
 
     const onSubmit = () => {
         if (finishRun) {
-            setShowModal(false);
+            onActualHide();
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
                 show: true,
@@ -200,22 +217,30 @@ const UpdateRunStatusModal = ({
     );
 
     return (
-        <GenericModal
-            show={showModal}
-            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
-            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
-            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
-            handleCancel={() => true}
-            handleConfirm={hasPermission ? onSubmit : null}
-            autoCloseOnConfirmButton={false}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
-            {...modalProps}
-            id={ID}
-            footer={footer}
-            components={{FooterContainer}}
-        >
-            {hasPermission ? form : warning}
-        </GenericModal>
+        <>
+            <GenericModal
+                show={showModal && !showUnsaved}
+                modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+                cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+                confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
+                handleCancel={() => true}
+                {...modalProps}
+                onHide={onTentativeHide}
+                handleConfirm={hasPermission ? onSubmit : null}
+                autoCloseOnConfirmButton={false}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
+                id={ID}
+                footer={footer}
+                components={{FooterContainer}}
+            >
+                {hasPermission ? form : warning}
+            </GenericModal>
+            <UnsavedChangesModal
+                show={showUnsaved}
+                onConfirm={onActualHide}
+                onCancel={() => setShowUnsaved(false)}
+            />
+        </>
     );
 };
 
