@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes, useEffect} from 'react';
+import React, {Children, ReactNode, HTMLAttributes, useEffect, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
 import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import TextEdit from 'src/components/text_edit';
+import {savePlaybook} from 'src/client';
 
 import StatusUpdates from './section_status_updates';
 import Checklists from './section_checklists';
@@ -27,14 +29,35 @@ interface Props {
 type Attrs = HTMLAttributes<HTMLElement>;
 
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
-const Outline = ({playbook}: Props) => {
+const Outline = (props: Props) => {
     const {formatMessage} = useIntl();
+    const [playbook, setPlaybook] = useState(props.playbook);
+
+    const updateSummaryForPlaybook = (summary: string) => {
+        if (!playbook) {
+            return;
+        }
+        const newPlaybook = {...props.playbook};
+        newPlaybook.run_summary_template = summary;
+        setPlaybook(newPlaybook);
+        savePlaybook(newPlaybook);
+    };
 
     return (
         <Sections
             playbookId={playbook.id}
             data-testid='preview-content'
         >
+            <Section
+                id={'summary'}
+                title={formatMessage({defaultMessage: 'Summary'})}
+            >
+                <TextEdit
+                    placeholder={formatMessage({defaultMessage: 'Add run summary template...'})}
+                    value={playbook.run_summary_template}
+                    onSave={updateSummaryForPlaybook}
+                />
+            </Section>
             <Section
                 id={'status-updates'}
                 title={formatMessage({defaultMessage: 'Status Updates'})}

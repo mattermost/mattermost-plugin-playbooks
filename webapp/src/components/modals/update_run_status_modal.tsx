@@ -13,6 +13,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
+import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
+
 import {
     useDateTimeInput,
     useMakeOption,
@@ -76,6 +78,7 @@ const UpdateRunStatusModal = ({
     }
 
     const [showModal, setShowModal] = useState(true);
+    const [showUnsaved, setShowUnsaved] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
@@ -120,6 +123,21 @@ const UpdateRunStatusModal = ({
             {outstanding});
     }
 
+    const onTentativeHide = () => {
+        if (providedMessage === message || message === defaultMessage || message === '') {
+            onActualHide();
+        } else {
+            setShowUnsaved(true);
+        }
+    };
+
+    const onActualHide = () => {
+        modalProps.onHide?.();
+        setTimeout(() => {
+            setShowUnsaved(false);
+        }, 300);
+    };
+
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
             postStatusUpdate(
@@ -127,13 +145,13 @@ const UpdateRunStatusModal = ({
                 {message, reminder, finishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
             );
-            setShowModal(false);
+            onActualHide();
         }
     };
 
     const onSubmit = () => {
         if (finishRun) {
-            setShowModal(false);
+            onActualHide();
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
                 show: true,
@@ -243,33 +261,26 @@ const UpdateRunStatusModal = ({
     return (
         <>
             <GenericModal
-                show={showModal}
+                show={showModal && !showUnsaved}
                 modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
                 cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
                 confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
                 handleCancel={() => true}
+                {...modalProps}
+                onHide={onTentativeHide}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
                 isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
-                {...modalProps}
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}
             >
                 {hasPermission ? form : warning}
             </GenericModal>
-            <RouteLeavingGuard
-                navigate={(path) => browserHistory.push(path)}
-                shouldBlockNavigation={(newLoc) => {
-                    // This code will be enabled to prevent user from leave without saving
-                    // after https://github.com/mattermost/mattermost-plugin-playbooks/pull/1148 merge
-                    // In the meantime, it close the modal when navigating to run overview
-                    // if (location.pathname !== newLoc.pathname && pendingChanges) {
-                    // return true;
-                    // }
-                    modalProps.onHide?.();
-                    return false;
-                }}
+            <UnsavedChangesModal
+                show={showUnsaved}
+                onConfirm={onActualHide}
+                onCancel={() => setShowUnsaved(false)}
             />
         </>
     );
