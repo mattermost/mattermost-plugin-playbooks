@@ -965,6 +965,7 @@ func TestChecklistManagement(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func TestRunActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1227,4 +1228,29 @@ func TestRequestUpdate(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+=======
+func TestReminderReset(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("reminder reset - event created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 100,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		statusSnoozed := make([]client.TimelineEvent, 0)
+		for _, te := range pb.TimelineEvents {
+			if te.EventType == "status_update_snoozed" {
+				statusSnoozed = append(statusSnoozed, te)
+			}
+		}
+
+		require.Len(t, statusSnoozed, 1)
+	})
+>>>>>>> ac28796b (Add test for reminder reset)
 }

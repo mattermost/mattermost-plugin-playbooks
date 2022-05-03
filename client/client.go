@@ -44,8 +44,13 @@ type Client struct {
 	Settings *SettingsService
 	// Actions is a collection of methods used to interact with actions.
 	Actions *ActionsService
+<<<<<<< HEAD
 	// Stats is a collection of methods used to interact with stats.
 	Stats *StatsService
+=======
+	// Reminders is a collection of methods used to interact with reminders.
+	Reminders *RemindersService
+>>>>>>> ac28796b (Add test for reminder reset)
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -70,7 +75,11 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.Playbooks = &PlaybooksService{c}
 	c.Settings = &SettingsService{c}
 	c.Actions = &ActionsService{c}
+<<<<<<< HEAD
 	c.Stats = &StatsService{c}
+=======
+	c.Reminders = &RemindersService{c}
+>>>>>>> ac28796b (Add test for reminder reset)
 	return c, nil
 }
 
