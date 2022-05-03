@@ -64,7 +64,7 @@ const SectionChecklists = (props: Props) => {
                                     menuEnabled={true}
                                     collapsibleDescription={false}
                                     newItem={false}
-                                    menuEnabled={true}
+
                                 />
                             );
                         })}

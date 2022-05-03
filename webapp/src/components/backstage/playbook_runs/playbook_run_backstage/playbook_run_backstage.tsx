@@ -247,7 +247,9 @@ const PlaybookRunBackstage = () => {
         } else {
             Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
                 setPlaybookRun(playbookRunResult);
-                setPlaybookRunMetadata(playbookRunMetadataResult);
+                if (playbookRunMetadataResult) {
+                    setPlaybookRunMetadata(playbookRunMetadataResult);
+                }
                 setFetchingState(FetchingStateType.fetched);
                 setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
             }).catch(() => {
