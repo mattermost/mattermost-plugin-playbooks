@@ -5,7 +5,6 @@ import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
-    clientSetChecklistItemCommand,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {useTimeout} from 'src/hooks';
@@ -13,6 +12,7 @@ import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_toolti
 import CommandInput from 'src/components/command_input';
 
 import {CancelSaveButtons} from './inputs';
+import {DropdownArrow} from './assign_to';
 
 interface CommandProps {
     playbookRunId: string;
@@ -23,6 +23,8 @@ interface CommandProps {
     command_last_run: number;
     command: string;
     isEditing: boolean;
+
+    onChangeCommand: (newCommand: string) => void;
 }
 
 const RunningTimeout = 1000;
@@ -53,12 +55,12 @@ const Command = (props: CommandProps) => {
         >
             <CommandIcon
                 title={formatMessage({defaultMessage: 'Add slash command'})}
-                className={'icon-slash-forward icon-16 btn-icon'}
+                className={'icon-slash-forward icon-12'}
             />
             <CommandTextContainer>
                 {formatMessage({defaultMessage: 'Add slash command'})}
             </CommandTextContainer>
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
     );
 
@@ -89,16 +91,14 @@ const Command = (props: CommandProps) => {
                 text={props.command}
                 parentRef={commandRef}
             />
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </CommandText>
     );
 
     const commandDropdown = (
         <EditCommandDropdown
-            playbookRunId={props.playbookRunId}
-            checklistNum={props.checklistNum}
-            itemNum={props.itemNum}
             onDone={() => setCommandOpen(false)}
+            onChangeCommand={props.onChangeCommand}
             taskCommand={props.command}
             grabFocus={wasOpened}
         />
@@ -133,6 +133,10 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
+
+    &:hover {
+        cursor: pointer;
+    }
 `;
 
 const CommandContainer = styled.div<{editing: boolean}>`
@@ -140,10 +144,15 @@ const CommandContainer = styled.div<{editing: boolean}>`
         z-index: 49;
     `}
 
+    display: flex;
     background: var(--center-channel-color-08);
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+    }
 `;
 
 interface RunProps {
@@ -156,7 +165,7 @@ const Run = styled.div<RunProps>`
     display: inline;
     color: var(--link-color);
     cursor: pointer;
-    margin: 2px 4px 0 0;
+    margin: 2px 4px 2px 4px;
 
     &:hover {
         text-decoration: underline;
@@ -181,6 +190,10 @@ const CommandText = styled.div`
     padding: 2px 4px;
     border-radius: 4px;
     font-size: 12px;
+
+    :hover {
+        cursor: pointer;
+    }
 `;
 
 const StyledSpinner = styled(Spinner)`
@@ -189,20 +202,21 @@ const StyledSpinner = styled(Spinner)`
 `;
 
 const CommandIcon = styled.i`
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
     display: flex;
     align-items: center;
     text-align: center;
     flex: table;
+    color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
 const CommandTextContainer = styled.div`
-    color: var(--center-channel-color);
-    font-weight: 600;
+    font-weight: 400;
     font-size: 12px;
     line-height: 15px;
-    margin-right: 8px;
+    margin-right: 4px;
     white-space: nowrap;
 `;
 
@@ -210,9 +224,7 @@ export default Command;
 
 interface EditCommandDropdownProps {
     onDone: () => void;
-    checklistNum: number;
-    playbookRunId: string;
-    itemNum: number;
+    onChangeCommand: (newCommand: string) => void;
     taskCommand: string;
     grabFocus: boolean;
 }
@@ -233,8 +245,8 @@ const EditCommandDropdown = (props: EditCommandDropdownProps) => {
             <CancelSaveButtons
                 onCancel={props.onDone}
                 onSave={() => {
-                    clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, command);
                     props.onDone();
+                    props.onChangeCommand(command);
                 }}
             />
             <Blanket onClick={props.onDone}/>
@@ -263,6 +275,7 @@ const FormContainer = styled.div`
 const CommandInputContainer = styled.div`
     margin: 16px;
     border-radius: 4px;
+    z-index: 3;
 `;
 
 const Blanket = styled.div`

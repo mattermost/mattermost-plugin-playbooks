@@ -6,7 +6,6 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {components, ContainerProps} from 'react-select';
-import {Duration} from 'luxon';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -21,25 +20,15 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
 import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
-import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
+import {useMakeOption, Mode, ms, Option} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {formatDuration} from 'src/components/formatted_duration';
 
 interface Props {
     post: Post;
 }
-
-const optionFromSeconds = (seconds: number): Option => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: `for ${formatDuration(duration, 'long')}`,
-        value: duration,
-    };
-};
 
 export const UpdateRequestPost = (props: Props) => {
     const dispatch = useDispatch();
@@ -60,14 +49,16 @@ export const UpdateRequestPost = (props: Props) => {
         setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
     }, [rect]);
 
+    const makeOption = useMakeOption(Mode.DurationValue);
+
     if (!playbookRun) {
         return null;
     }
 
     const options = [
-        makeOption('for 60 minutes', Mode.DurationValue),
-        makeOption('for 24 hours', Mode.DurationValue),
-        makeOption('for 7 days', Mode.DurationValue),
+        makeOption({minutes: 60}),
+        makeOption({hours: 24}),
+        makeOption({days: 7}),
     ];
     const pushIfNotIn = (option: Option) => {
         if (!options.find((o) => ms(option.value) === ms(o.value))) {
@@ -76,10 +67,10 @@ export const UpdateRequestPost = (props: Props) => {
         }
     };
     if (playbookRun.previous_reminder) {
-        pushIfNotIn(optionFromSeconds(nearest(playbookRun.previous_reminder * 1e-9, 1)));
+        pushIfNotIn(makeOption({seconds: nearest(playbookRun.previous_reminder * 1e-9, 1)}));
     }
     if (playbookRun.reminder_timer_default_seconds) {
-        pushIfNotIn(optionFromSeconds(playbookRun.reminder_timer_default_seconds));
+        pushIfNotIn(makeOption({seconds: playbookRun.reminder_timer_default_seconds}));
     }
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
@@ -126,7 +117,7 @@ export const UpdateRequestPost = (props: Props) => {
                         IndicatorSeparator: () => null,
                         SelectContainer,
                     }}
-                    placeholder={formatMessage({defaultMessage: 'Snooze'})}
+                    placeholder={formatMessage({defaultMessage: 'Snooze for…'})}
                     options={options}
                     onChange={snoozeFor}
                     menuPortalTarget={document.body}
@@ -148,21 +139,14 @@ export const UpdateRequestPost = (props: Props) => {
     );
 };
 
-const PostUpdateButtonCommon = css`
-    justify-content: center;
-    flex: 1;
-    max-width: 135px;
-    margin: 4px;
-`;
-
 const SelectWrapper = styled(StyledSelect)`
     margin: 4px;
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    ${PostUpdateButtonCommon} {
-    }
-
+    justify-content: center;
+    flex: 1;
+    margin: 4px;
     white-space: nowrap;
 `;
 

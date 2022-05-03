@@ -466,16 +466,15 @@ func TestChecklistManagement(t *testing.T) {
 	t.Run("checklist removal - success: still some checklists", func(t *testing.T) {
 		run := createNewRunWithNoChecklists(t)
 
-		// Create two valid checklists -- the first call to CreateChecklist will be the last checklist,
-		// as CreateChecklist prepends the checklist
+		// Create two valid checklists
 		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
-			Title: "Second checklist",
+			Title: "First checklist",
 			Items: []client.ChecklistItem{},
 		})
 		require.NoError(t, err)
 
 		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
-			Title: "First checklist",
+			Title: "Second checklist",
 			Items: []client.ChecklistItem{},
 		})
 		require.NoError(t, err)
@@ -644,21 +643,21 @@ func TestChecklistManagement(t *testing.T) {
 		},
 		{
 			"Multiple checklists - move from one to another",
-			[][]string{{"00", "01", "02"}, {"10", "11", "12"}},
+			[][]string{{"10", "11", "12"}, {"00", "01", "02"}},
 			0, 1, 1, 0,
 			[][]string{{"00", "02"}, {"01", "10", "11", "12"}},
 			nil,
 		},
 		{
 			"Multiple checklists - move to an empty checklist",
-			[][]string{{"00", "01"}, {}},
+			[][]string{{}, {"00", "01"}},
 			0, 0, 1, 0,
 			[][]string{{"01"}, {"00"}},
 			nil,
 		},
 		{
 			"Multiple checklists - leave the original checklist empty",
-			[][]string{{"00"}, {"10"}},
+			[][]string{{"10"}, {"00"}},
 			0, 0, 1, 1,
 			[][]string{{}, {"10", "00"}},
 			nil,
@@ -786,84 +785,84 @@ func TestChecklistManagement(t *testing.T) {
 		},
 		{
 			"Swap two checklists, moving the first one",
-			[]string{"0", "1"},
+			[]string{"1", "0"},
 			0, 1,
 			[]string{"1", "0"},
 			nil,
 		},
 		{
 			"Swap two checklists, moving the second one",
-			[]string{"0", "1"},
+			[]string{"1", "0"},
 			1, 0,
 			[]string{"1", "0"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - first to second ",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 1,
 			[]string{"1", "0", "2"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - first to third",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 2,
 			[]string{"1", "2", "0"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - second to first",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			1, 0,
 			[]string{"1", "0", "2"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - second to third",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			1, 2,
 			[]string{"0", "2", "1"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - third to first",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			2, 0,
 			[]string{"2", "0", "1"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - third to second",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			2, 1,
 			[]string{"0", "2", "1"},
 			nil,
 		},
 		{
 			"Wrong destination index - greater than length of list",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 5,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong destination index - negative",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, -5,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong source index - greater than length of list",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			5, 0,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong source index - negative",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			-5, 0,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
@@ -903,6 +902,49 @@ func TestChecklistManagement(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRunActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("actions set settings", func(t *testing.T) {
+		settings := client.RunAction{
+			StatusUpdateBroadcastChannelsEnabled: true,
+			StatusUpdateBroadcastWebhooksEnabled: true,
+			BroadcastChannelIDs:                  []string{"chn1", "chn2"},
+			WebhookOnStatusUpdateURLs:            []string{"url1", "url2"},
+		}
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
+		assert.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
+		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
+	})
+
+	t.Run("actions update settings", func(t *testing.T) {
+		settings := client.RunAction{
+			StatusUpdateBroadcastChannelsEnabled: false,
+			StatusUpdateBroadcastWebhooksEnabled: false,
+			BroadcastChannelIDs:                  []string{"chn1", "chn3"},
+			WebhookOnStatusUpdateURLs:            []string{"url3", "url4"},
+		}
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
+		assert.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
+		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
+	})
 }
 
 func TestReminderReset(t *testing.T) {

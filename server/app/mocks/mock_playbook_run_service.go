@@ -148,6 +148,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) DMTodoDigestToUser(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DMTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).DMTodoDigestToUser), arg0, arg1)
 }
 
+// DuplicateChecklist mocks base method
+func (m *MockPlaybookRunService) DuplicateChecklist(arg0, arg1 string, arg2 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DuplicateChecklist", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DuplicateChecklist indicates an expected call of DuplicateChecklist
+func (mr *MockPlaybookRunServiceMockRecorder) DuplicateChecklist(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateChecklist", reflect.TypeOf((*MockPlaybookRunService)(nil).DuplicateChecklist), arg0, arg1, arg2)
+}
+
 // DuplicateChecklistItem mocks base method
 func (m *MockPlaybookRunService) DuplicateChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
 	m.ctrl.T.Helper()
@@ -840,6 +854,20 @@ func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1 string, arg2 app
 func (mr *MockPlaybookRunServiceMockRecorder) UpdateRetrospective(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRetrospective", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateRetrospective), arg0, arg1, arg2)
+}
+
+// UpdateRunActions mocks base method
+func (m *MockPlaybookRunService) UpdateRunActions(arg0 string, arg1 app.RunAction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRunActions", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRunActions indicates an expected call of UpdateRunActions
+func (mr *MockPlaybookRunServiceMockRecorder) UpdateRunActions(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunActions", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateRunActions), arg0, arg1)
 }
 
 // UpdateStatus mocks base method

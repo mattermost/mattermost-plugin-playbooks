@@ -11,7 +11,7 @@ import styled from 'styled-components';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {useEditPlaybook, useHasPlaybookPermission, useAllowMakePlaybookPrivate} from 'src/hooks';
-import {Playbook, PlaybookMember} from 'src/types/playbook';
+import {Playbook, PlaybookMember, PlaybookWithChecklist} from 'src/types/playbook';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
@@ -23,6 +23,7 @@ const ID = 'playbooks_access';
 
 type Props = {
     playbookId: string
+    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makePlaybookAccessModalDefinition = (props: Props) => ({
@@ -65,6 +66,7 @@ const BlueArrow = styled.i`
 
 const PlaybookAccessModal = ({
     playbookId,
+    onPlaybookChange,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -77,12 +79,20 @@ const PlaybookAccessModal = ({
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
 
+    const onChange = (update: Partial<PlaybookWithChecklist>) => {
+        if (playbook) {
+            const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
+            updatePlaybook(updatedPlaybook);
+            onPlaybookChange?.(updatedPlaybook);
+        }
+    };
+
     const onAddMember = (member: PlaybookMember) => {
         if (!playbook) {
             return;
         }
         if (!playbook.members.find((elem: PlaybookMember) => elem.user_id === member.user_id)) {
-            updatePlaybook({
+            onChange({
                 members: [...playbook.members, member],
             });
         }
@@ -93,7 +103,7 @@ const PlaybookAccessModal = ({
             return;
         }
         const idx = playbook.members.findIndex((elem: PlaybookMember) => elem.user_id === userId);
-        updatePlaybook({
+        onChange({
             members: [...playbook.members.slice(0, idx), ...playbook.members.slice(idx + 1)],
         });
     };
@@ -105,13 +115,13 @@ const PlaybookAccessModal = ({
         const idx = playbook.members.findIndex((elem: PlaybookMember) => elem.user_id === userId);
         const member = {...playbook.members[idx]};
         member.roles = roles;
-        updatePlaybook({
+        onChange({
             members: [...playbook.members.slice(0, idx), ...playbook.members.slice(idx + 1), member],
         });
     };
 
     const modifyPublic = (pub: boolean) => {
-        updatePlaybook({
+        onChange({
             public: pub,
         });
     };

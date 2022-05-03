@@ -117,10 +117,7 @@ const Row = (props: Props) => {
                     status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
-                    <FormattedDuration
-                        from={findLastUpdatedWithDefault(props.playbookRun)}
-                        ago={true}
-                    />
+                    {DateTime.fromMillis(findLastUpdatedWithDefault(props.playbookRun)).toRelative()}
                 </SmallText>
             </div>
             <div

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {HTMLAttributes, useEffect} from 'react';
 import styled from 'styled-components';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -27,7 +27,13 @@ interface Props {
     stats: PlaybookStats;
 }
 
-const PlaybookKeyMetrics = ({playbook, stats}: Props) => {
+type Attrs = HTMLAttributes<HTMLElement>;
+
+const PlaybookKeyMetrics = ({
+    playbook,
+    stats,
+    ...attrs
+}: Props & Attrs) => {
     const allowStatsView = useAllowPlaybookAndRunMetrics();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
@@ -37,31 +43,19 @@ const PlaybookKeyMetrics = ({playbook, stats}: Props) => {
         });
     }, [playbook.id, setFetchParams]);
 
+    let content;
+
     if (!allowStatsView) {
-        return (
-            <OuterContainer>
-                <InnerContainer>
-                    <PlaceholderRow>
-                        <UpgradeKeyMetricsPlaceholder/>
-                    </PlaceholderRow>
-                </InnerContainer>
-            </OuterContainer>
+        content = (
+            <PlaceholderRow>
+                <UpgradeKeyMetricsPlaceholder/>
+            </PlaceholderRow>
         );
-    }
-
-    if (playbook.metrics.length === 0) {
-        return (
-            <OuterContainer>
-                <InnerContainer>
-                    <NoMetricsPlaceholder/>
-                </InnerContainer>
-            </OuterContainer>
-        );
-    }
-
-    return (
-        <OuterContainer>
-            <InnerContainer>
+    } else if (playbook.metrics.length === 0) {
+        content = <NoMetricsPlaceholder/>;
+    } else {
+        content = (
+            <>
                 <MetricsStatsView
                     playbook={playbook}
                     stats={stats}
@@ -75,6 +69,14 @@ const PlaybookKeyMetrics = ({playbook, stats}: Props) => {
                         setFetchParams={setFetchParams}
                     />
                 </RunListContainer>
+            </>
+        );
+    }
+
+    return (
+        <OuterContainer {...attrs}>
+            <InnerContainer>
+                {content}
             </InnerContainer>
         </OuterContainer>
     );
@@ -107,4 +109,4 @@ const RunListContainer = styled.div`
     }
 `;
 
-export default PlaybookKeyMetrics;
+export default styled(PlaybookKeyMetrics)``;

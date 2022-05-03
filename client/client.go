@@ -44,6 +44,8 @@ type Client struct {
 	Settings *SettingsService
 	// Actions is a collection of methods used to interact with actions.
 	Actions *ActionsService
+	// Stats is a collection of methods used to interact with stats.
+	Stats *StatsService
 	// Reminders is a collection of methods used to interact with reminders.
 	Reminders *RemindersService
 }
@@ -70,6 +72,7 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.Playbooks = &PlaybooksService{c}
 	c.Settings = &SettingsService{c}
 	c.Actions = &ActionsService{c}
+	c.Stats = &StatsService{c}
 	c.Reminders = &RemindersService{c}
 	return c, nil
 }

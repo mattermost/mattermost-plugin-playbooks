@@ -32,10 +32,11 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
+    ChecklistItem,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -376,6 +377,14 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
     return data;
 }
 
+export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, item: ChecklistItem) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
+        JSON.stringify(item)
+    );
+
+    return data;
+}
+
 export async function clientSetChecklistItemCommand(playbookRunID: string, checklistNum: number, itemNum: number, command: string) {
     const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/command`,
         JSON.stringify({
@@ -397,6 +406,13 @@ export async function clientRemoveChecklist(playbookRunID: string, checklistNum:
     const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
 
     return data;
+}
+
+export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
+        method: 'post',
+        body: '',
+    });
 }
 
 export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
@@ -438,6 +454,15 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
         method: 'delete',
         body: '',
     });
+}
+
+// fetchSiteStats collect the stats we want to expose in system console
+export async function fetchSiteStats(): Promise<SiteStats | null> {
+    const data = await doGet(`${apiUrl}/stats/site`);
+    if (!data) {
+        return null;
+    }
+    return data as SiteStats;
 }
 
 export async function fetchStats(teamID: string): Promise<Stats | null> {

@@ -413,7 +413,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
 
-		s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
+		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
+			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
+		}
 
 		// dm to users who are auto-following the playbook
 		telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_started_dm&telem_run_id=%s", playbookRun.ID)
@@ -789,7 +791,9 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. there is now inconsistent state")
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
+	}
 
 	s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
 
@@ -817,7 +821,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return err
 	}
 
-	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
@@ -903,7 +907,9 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
+	}
 
 	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
 	s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
@@ -952,7 +958,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return err
 	}
 
-	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
@@ -989,7 +995,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
+	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
+	}
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
@@ -1010,8 +1018,27 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return err
 	}
 
-	if len(playbookRunToRestore.WebhookOnStatusUpdateURLs) != 0 {
+	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
 		s.sendWebhooksOnUpdateStatus(playbookRunID)
+	}
+
+	return nil
+}
+
+// UpdateRunActions updates status update broadcast settings
+func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings RunAction) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.BroadcastChannelIDs = settings.BroadcastChannelIDs
+	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
+	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
+	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	return nil
@@ -1509,13 +1536,32 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.New("user does not have permission to modify playbook run")
 	}
 
-	playbookRunToModify.Checklists = append([]Checklist{checklist}, playbookRunToModify.Checklists...)
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
 	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
+// DuplicateChecklist duplicates a checklist
+func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, duplicate)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
 }
@@ -2797,16 +2843,21 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 		}
 	}
 
-	// omit assigned tasks header if runs info is empty
-	if runsInfo.String() != "" {
-		if onlyDueUntilToday {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
-		} else {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
-		}
-		msg.WriteString("\n\n")
-		msg.WriteString(runsInfo.String())
+	// if there are only tasks that are due after today and we need to show only tasks due now, skip a message
+	if onlyDueUntilToday && tasksDoAfterToday == total {
+		return ""
 	}
+
+	// add title
+	if onlyDueUntilToday {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
+	} else {
+		msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
+	}
+
+	// add info about tasks
+	msg.WriteString("\n\n")
+	msg.WriteString(runsInfo.String())
 
 	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyDueUntilToday {

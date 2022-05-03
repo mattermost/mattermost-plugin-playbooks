@@ -5,6 +5,7 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
+import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('channels > rhs > status update', () => {
     const defaultReminderMessage = '# Default reminder message';
@@ -30,6 +31,7 @@ describe('channels > rhs > status update', () => {
                 broadcastChannelId: testChannel.id,
                 reminderTimerDefaultSeconds: 3600,
                 reminderMessageTemplate: defaultReminderMessage,
+                retrospectiveEnabled: false,
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
@@ -64,7 +66,7 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // # Type the invalid data
                 cy.findByTestId('update_run_status_textbox').clear().type(' {enter} {enter}  ');
 
@@ -79,7 +81,7 @@ describe('channels > rhs > status update', () => {
             });
 
             // * Verify that the Post update dialog has gone.
-            cy.get('.GenericModal').should('not.exist');
+            cy.getStatusUpdateDialog().should('not.exist');
         });
 
         it('lets users with no access to the playbook post an update', () => {
@@ -118,7 +120,7 @@ describe('channels > rhs > status update', () => {
                 cy.executeSlashCommand('/playbook update');
 
                 // # Get dialog modal.
-                cy.get('.GenericModal').within(() => {
+                cy.getStatusUpdateDialog().within(() => {
                     // # Enter valid data
                     cy.findByTestId('update_run_status_textbox').type(updateMessage);
 
@@ -127,7 +129,7 @@ describe('channels > rhs > status update', () => {
                 });
 
                 // * Verify that the Post update dialog has gone.
-                cy.get('.GenericModal').should('not.exist');
+                cy.getStatusUpdateDialog().should('not.exist');
 
                 // * Verify that the status update was posted.
                 cy.getLastPost().within(() => {
@@ -138,13 +140,13 @@ describe('channels > rhs > status update', () => {
 
         it('confirms finishing the run, and remembers changes and reminder when canceled', () => {
             const updateMessage = 'This is the update text to test with.';
-            const reminderTime = 'in 24 hours';
+            const reminderTime = '1 day';
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the first message is there.
                 cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(defaultReminderMessage).should('exist');
@@ -171,7 +173,7 @@ describe('channels > rhs > status update', () => {
             cy.get('#cancelModalButton').click({force: true});
 
             // * Verify post update has the same information
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the message was remembered
                 cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(updateMessage).should('exist');
@@ -196,46 +198,103 @@ describe('channels > rhs > status update', () => {
             cy.get('#confirmModalButton').click({force: true});
 
             // * Verify the status update was posted.
-            cy.uiGetNthPost(-3).within(() => {
+            cy.getStyledComponent('CustomPostContent').within(() => {
                 cy.findByText(updateMessage).should('exist');
             });
 
             // * Verify the run was finished.
-            cy.uiGetNthPost(-2).within(() => {
+            cy.getLastPost().within(() => {
                 cy.findByText('marked this run as finished.').should('exist');
             });
         });
-    });
 
-    describe('shows the last update in update message', () => {
-        it('shows the default when we have not made an update before', () => {
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
+        describe('prevents user from losing changes', () => {
+            it('go back and save', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
 
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the first message is there.
-                cy.findByTestId('update_run_status_textbox').within(() => {
-                    cy.findByText(defaultReminderMessage).should('exist');
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click cancel
+                    cy.findByTestId('modal-cancel-button').click();
                 });
+
+                // * Go back from unsaved changes modal
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // # Delay in between the modal switch to ensure the
+                // # animation has fully happened
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # Submit the dialog.
+                cy.getStatusUpdateDialog().within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('discard explicitily', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click cancel
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // * Discard explicitily from unsaved changes
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
             });
         });
 
-        it('when we have made a previous update', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
+        describe('shows the last update in update message', () => {
+            it('shows the default when we have not made an update before', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
 
-            // # Create a first status update
-            cy.updateStatus(firstMessage);
+                // # Get the dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // * Verify the first message is there.
+                    cy.findByTestId('update_run_status_textbox').within(() => {
+                        cy.findByText(defaultReminderMessage).should('exist');
+                    });
+                });
+            });
 
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
+            it('when we have made a previous update', () => {
+                const now = Date.now();
+                const firstMessage = 'Update - ' + now;
 
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the first message is there.
-                cy.findByTestId('update_run_status_textbox').within(() => {
-                    cy.findByText(firstMessage).should('exist');
+                // # Create a first status update
+                cy.updateStatus(firstMessage);
+
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get the dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // * Verify the first message is there.
+                    cy.findByTestId('update_run_status_textbox').within(() => {
+                        cy.findByText(firstMessage).should('exist');
+                    });
                 });
             });
         });
@@ -247,10 +306,10 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 60 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '1 hour');
                 });
             });
         });
@@ -266,10 +325,10 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 15 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '15 minutes');
                 });
             });
         });
@@ -285,10 +344,10 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 1 hour 30 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '1 hour, 30 minutes');
                 });
             });
         });
@@ -304,10 +363,10 @@ describe('channels > rhs > status update', () => {
             cy.executeSlashCommand('/playbook update');
 
             // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
+            cy.getStatusUpdateDialog().within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', 'in 7 days');
+                    cy.get('[class$=singleValue]').should('have.text', '7 days');
                 });
             });
         });

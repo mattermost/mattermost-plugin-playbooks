@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => void;
@@ -62,8 +62,7 @@ const ChecklistItemDescription = styled.div<{height: string}>`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
-    margin: 4px 0 0 35px;
+    margin-left: 36px;
 
     // Fix default markdown styling in the paragraphs
     p {
@@ -82,18 +81,20 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
     const {formatMessage} = useIntl();
 
-    return (<CancelSaveContainer>
-        <CancelButton
-            onClick={props.onCancel}
-        >
-            {formatMessage({defaultMessage: 'Cancel'})}
-        </CancelButton>
-        <SaveButton
-            onClick={props.onSave}
-        >
-            {formatMessage({defaultMessage: 'Save'})}
-        </SaveButton>
-    </CancelSaveContainer>
+    return (
+        <CancelSaveContainer>
+            <CancelButton
+                onClick={props.onCancel}
+            >
+                {formatMessage({defaultMessage: 'Cancel'})}
+            </CancelButton>
+            <SaveButton
+                onClick={props.onSave}
+                data-testid='checklist-item-save-button'
+            >
+                {formatMessage({defaultMessage: 'Save'})}
+            </SaveButton>
+        </CancelSaveContainer>
     );
 };
 
@@ -101,18 +102,21 @@ const CancelSaveContainer = styled.div`
     text-align: right;
     padding: 8px;
     z-index: 2;
+    white-space: nowrap;
 `;
 
-const CancelButton = styled(SecondaryButton)`
+const CancelButton = styled(TertiaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin: 0px 2px;
     border-radius: 4px;
+    font-size: 12px;
 `;
 
 const SaveButton = styled(PrimaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin: 0px 2px;
     border-radius: 4px;
+    font-size: 12px;
 `;

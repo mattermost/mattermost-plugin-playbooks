@@ -9,54 +9,85 @@ import {stubClipboard} from '../../utils';
 
 describe('playbooks > overview', () => {
     let testTeam;
+    let testOtherTeam;
     let testUser;
     let testUserFollower;
     let testPublicPlaybook;
     let testPrivateOnlyMinePlaybook;
     let testPrivateSharedPlaybook;
+    let testPlaybookOnTeamForSwitching;
+    let testPlaybookOnOtherTeamForSwitching;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-            // # Create a dedicated run follower
-            cy.apiCreateUser().then(({user: createdUser}) => {
-                testUserFollower = createdUser;
-                cy.apiAddUserToTeam(testTeam.id, createdUser.id);
-            });
 
-            // # Create another user
-            cy.apiCreateUser().then(({user: anotherUser}) => {
-                // # Login as testUser
-                cy.apiLogin(testUser);
+            // # Create another team
+            cy.apiCreateTeam('second-team', 'Second Team').then(({team: createdTeam}) => {
+                testOtherTeam = createdTeam;
+                cy.apiAddUserToTeam(testOtherTeam.id, testUser.id);
 
-                // # Create a public playbook
-                cy.apiCreatePlaybook({
-                    teamId: testTeam.id,
-                    title: 'Public Playbook',
-                    memberIDs: [],
-                    retrospectiveTemplate: 'Retro template text',
-                    retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
-                }).then((playbook) => {
-                    testPublicPlaybook = playbook;
+                // # Create a dedicated run follower
+                cy.apiCreateUser().then(({user: createdUser}) => {
+                    testUserFollower = createdUser;
+                    cy.apiAddUserToTeam(testTeam.id, createdUser.id);
+                    cy.apiAddUserToTeam(testOtherTeam.id, createdUser.id);
                 });
 
-                // # Create a private playbook with only the current user
-                cy.apiCreatePlaybook({
-                    teamId: testTeam.id,
-                    title: 'Private Only Mine Playbook',
-                    memberIDs: [testUser.id],
-                }).then((playbook) => {
-                    testPrivateOnlyMinePlaybook = playbook;
-                });
+                // # Create another user
+                cy.apiCreateUser().then(({user: anotherUser}) => {
+                    // # Login as testUser
+                    cy.apiLogin(testUser);
 
-                // # Create a private playbook with multiple users
-                cy.apiCreatePlaybook({
-                    teamId: testTeam.id,
-                    title: 'Private Shared Playbook',
-                    memberIDs: [testUser.id, anotherUser.id],
-                }).then((playbook) => {
-                    testPrivateSharedPlaybook = playbook;
+                    // # Create a public playbook
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Public Playbook',
+                        memberIDs: [],
+                        retrospectiveTemplate: 'Retro template text',
+                        retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
+                    }).then((playbook) => {
+                        testPublicPlaybook = playbook;
+                    });
+
+                    // # Create a private playbook with only the current user
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Private Only Mine Playbook',
+                        memberIDs: [testUser.id],
+                    }).then((playbook) => {
+                        testPrivateOnlyMinePlaybook = playbook;
+                    });
+
+                    // # Create a private playbook with multiple users
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Private Shared Playbook',
+                        memberIDs: [testUser.id, anotherUser.id],
+                    }).then((playbook) => {
+                        testPrivateSharedPlaybook = playbook;
+                    });
+
+                    // # Create a public playbook
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Switch A',
+                        memberIDs: [],
+                        retrospectiveTemplate: 'Retro template text',
+                        retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
+                    }).then((playbook) => {
+                        testPlaybookOnTeamForSwitching = playbook;
+                    });
+
+                    // # Create a public playbook on another team
+                    cy.apiCreatePlaybook({
+                        teamId: testOtherTeam.id,
+                        title: 'Switch B',
+                        memberIDs: [],
+                    }).then((playbook) => {
+                        testPlaybookOnOtherTeamForSwitching = playbook;
+                    });
                 });
             });
         });
@@ -78,16 +109,56 @@ describe('playbooks > overview', () => {
         cy.url().should('include', '/playbooks/error?type=playbooks');
     });
 
-    it('should switch to channels and prompt to run when clicking run', () => {
-        // # Navigate directly to the playbook
-        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+    describe('should switch to channels and prompt to run when clicking run', () => {
+        const openAndRunPlaybook = (team, playbook) => {
+                // # Navigate directly to town square on the team
+                cy.visit(`${team.name}/channels/town-square`)
 
-        // # Click Run Playbook
-        cy.findByTestId('run-playbook').click({force: true});
+                // # Open Playbooks
+                cy.get('[aria-label="Select to open product switch menu."]').click({force: true});
+                cy.get('a[href="/playbooks"]').click({force: true});
 
-        // * Verify the playbook run creation dialog has opened
-        cy.get('#interactiveDialogModal').should('exist').within(() => {
-            cy.findByText('Start run').should('exist');
+                // Click through to open the playbook
+                cy.findByTestId('playbooksLHSButton').click({force: true});
+                cy.get('[placeholder="Search for a playbook"]').type(testPlaybookOnTeamForSwitching.title);
+                cy.findByTestId('playbook-title').click({force: true});
+
+                // # Click Run Playbook
+                cy.findByTestId('run-playbook').click({force: true});
+
+                // * Verify the playbook run creation dialog has opened
+                cy.get('#interactiveDialogModal').should('exist').within(() => {
+                    cy.findByText('Start run').should('exist');
+                });
+        };
+
+        it('for testPlaybookOnTeamForSwitching from its own team', () => {
+            openAndRunPlaybook(testTeam, testPlaybookOnTeamForSwitching);
+        });
+
+        it('for testPlaybookOnTeamForSwitching from another team', () => {
+            openAndRunPlaybook(testOtherTeam, testPlaybookOnTeamForSwitching);
+        });
+
+        it('for testPlaybookOnOtherTeamForSwitching from its own team', () => {
+            openAndRunPlaybook(testTeam, testPlaybookOnOtherTeamForSwitching);
+        });
+
+        it('for testPlaybookOnOtherTeamForSwitchingOnOtherTeam from another team', () => {
+            openAndRunPlaybook(testOtherTeam, testPlaybookOnOtherTeamForSwitching);
+        });
+
+        it('on direct navigation to a playbook', () => {
+            // # Navigate directly to the playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
+
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click({force: true});
+
+            // * Verify the playbook run creation dialog has opened
+            cy.get('#interactiveDialogModal').should('exist').within(() => {
+                cy.findByText('Start run').should('exist');
+            });
         });
     });
 

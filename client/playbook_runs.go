@@ -233,3 +233,19 @@ func (s *PlaybookRunService) MoveChecklistItem(ctx context.Context, playbookRunI
 	_, err = s.client.do(ctx, req, nil)
 	return err
 }
+
+// UpdateRunActions updates run actions settings, i.e. status update broadcast settings
+func (s *PlaybookRunService) UpdateRunActions(ctx context.Context, playbookRunID string, settings RunAction) error {
+	createURL := fmt.Sprintf("runs/%s/actions", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPut, createURL, settings)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}

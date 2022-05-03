@@ -22,6 +22,8 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 
+import {usePortal} from 'src/hooks';
+
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     finishRun,
@@ -35,13 +37,15 @@ import {
     Checklist,
     ChecklistItemsFilter,
     ChecklistItemState,
+    ChecklistItem,
 } from 'src/types/playbook';
 import {
     clientMoveChecklist,
     clientMoveChecklistItem,
     telemetryEventForPlaybookRun,
+    clientAddChecklist,
 } from 'src/client';
-import CollapsibleChecklist from 'src/components/collapsible_checklist';
+import CollapsibleChecklist, {ChecklistInputComponent} from 'src/components/collapsible_checklist';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {
     currentChecklistAllCollapsed,
@@ -52,18 +56,13 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
-import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
-import RHSChecklist from 'src/components/rhs/rhs_checklist';
+import RHSChecklist, {generateKeys} from 'src/components/rhs/rhs_checklist';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
-
-// Create a portal for the checklist to render while dragging
-const portal: HTMLElement = document.createElement('div');
-document.body.appendChild(portal);
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -80,7 +79,6 @@ const RHSChecklistList = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
-    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
         [],
@@ -90,6 +88,9 @@ const RHSChecklistList = (props: Props) => {
         RunDetailsTutorialSteps.Checklists,
         TutorialTourCategories.RUN_DETAILS
     );
+    const portal = usePortal(document.body);
+    const [addingChecklist, setAddingChecklist] = useState(false);
+    const [newChecklistName, setNewChecklistName] = useState('');
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -97,6 +98,15 @@ const RHSChecklistList = (props: Props) => {
     const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
+    const [menuEnabled, setMenuEnabled] = useState(true);
+
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
+    if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
+        dispatch(setChecklistItemsFilter(channelId, {
+            ...checklistItemsFilter,
+            overdueOnly: false,
+        }));
+    }
 
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
@@ -112,6 +122,11 @@ const RHSChecklistList = (props: Props) => {
             ...checklistItemsFilter,
             [value]: checked,
         }));
+    };
+
+    const onDragStart = () => {
+        // block hover menu on checklists
+        setMenuEnabled(false);
     };
 
     const onDragEnd = (result: DropResult) => {
@@ -171,6 +186,9 @@ const RHSChecklistList = (props: Props) => {
 
             // Persist the new data in the server
             clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
+
+            // allow again to see hover menu
+            setMenuEnabled(true);
         }
 
         // Move a whole checklist
@@ -205,6 +223,44 @@ const RHSChecklistList = (props: Props) => {
         }));
     };
 
+    let addChecklist = (
+        <AddChecklistLink
+            onClick={(e) => {
+                e.stopPropagation();
+                setAddingChecklist(true);
+            }}
+            data-testId={'add-a-checklist-button'}
+        >
+            <IconWrapper>
+                <i className='icon icon-plus'/>
+            </IconWrapper>
+            {formatMessage({defaultMessage: 'Add a checklist'})}
+        </AddChecklistLink>
+    );
+
+    if (addingChecklist) {
+        addChecklist = (
+            <NewChecklist>
+                <Icon className={'icon-chevron-down'}/>
+                <ChecklistInputComponent
+                    title={newChecklistName}
+                    setTitle={setNewChecklistName}
+                    onCancel={() => {
+                        setAddingChecklist(false);
+                        setNewChecklistName('');
+                    }}
+                    onSave={() => {
+                        clientAddChecklist(props.playbookRun.id, {title: newChecklistName, items: [] as ChecklistItem[]});
+                        setTimeout(() => setNewChecklistName(''), 300);
+                        setAddingChecklist(false);
+                    }}
+                />
+            </NewChecklist>
+        );
+    }
+
+    const keys = generateKeys(checklists.map((checklist) => checklist.title));
+
     return (
         <InnerContainer
             id='pb-checklists-inner-container'
@@ -232,11 +288,6 @@ const RHSChecklistList = (props: Props) => {
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                                 onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
                             />
-                            <HoverMenuButton
-                                title={formatMessage({defaultMessage: 'Add checklist'})}
-                                className={'icon-plus icon-16 btn-icon'}
-                                onClick={() => setShowAddChecklistDialog(true)}
-                            />
                             <MultiCheckbox
                                 options={filterOptions}
                                 onselect={selectOption}
@@ -251,7 +302,10 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            <DragDropContext onDragEnd={onDragEnd}>
+            <DragDropContext
+                onDragEnd={onDragEnd}
+                onDragStart={onDragStart}
+            >
                 <Droppable
                     droppableId={'all-checklists'}
                     direction={'vertical'}
@@ -264,7 +318,7 @@ const RHSChecklistList = (props: Props) => {
                         >
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                                 <Draggable
-                                    key={checklist.title}
+                                    key={keys[checklistIndex]}
                                     draggableId={checklist.title + checklistIndex}
                                     index={checklistIndex}
                                 >
@@ -284,6 +338,7 @@ const RHSChecklistList = (props: Props) => {
                                                     playbookRun={props.playbookRun}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
+                                                    menuEnabled={menuEnabled}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -300,6 +355,7 @@ const RHSChecklistList = (props: Props) => {
                         </ChecklistsContainer>
                     )}
                 </Droppable>
+                {!finished && addChecklist}
             </DragDropContext>
             {
                 active &&
@@ -307,11 +363,6 @@ const RHSChecklistList = (props: Props) => {
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
-            <AddChecklistDialog
-                playbookRunID={props.playbookRun.id}
-                show={showAddChecklistDialog}
-                onHide={() => setShowAddChecklistDialog(false)}
-            />
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
@@ -331,6 +382,52 @@ const RHSChecklistList = (props: Props) => {
         </InnerContainer>
     );
 };
+
+const AddChecklistLink = styled.button`
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    height: 44px;
+
+    background: none;
+    border: none;
+
+    border-radius: 4px;
+    border: 1px dashed;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+
+    border-color: var(--center-channel-color-16);
+    color: var(--center-channel-color-64);
+
+    &:hover {
+        background-color: var(--button-bg-08);
+        color: var(--button-bg);
+    }
+`;
+
+const NewChecklist = styled.div`
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    z-index: 1;
+    position: sticky;
+    top: 48px; // height of rhs_checklists MainTitle
+    border-radius: 4px 4px 0px 0px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
+
+const Icon = styled.i`
+    position: relative;
+    top: 2px;
+    margin: 0 0 0 6px;
+
+    font-size: 18px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
 
 const InnerContainer = styled.div`
     position: relative;
@@ -373,7 +470,7 @@ const ChecklistsContainer = styled.div`
 
 const HoverRow = styled(HoverMenu)`
     top: 6px;
-    right: 15px;
+    right: 0px;
 `;
 
 const ExpandHoverButton = styled(HoverMenuButton)`

@@ -46,8 +46,6 @@ describe('channels > run dialog', () => {
     beforeEach(() => {
         // # Login as testUser
         cy.apiLogin(testUser);
-
-
     });
 
     describe('displays interactive post', () => {
@@ -67,14 +65,14 @@ describe('channels > run dialog', () => {
 
             cy.getLastPost().then((element) => {
                 // # Verify the expected message text
-                cy.get(element).contains(`@${testUser.username}, please provide a status update.`)
+                cy.get(element).contains(`@${testUser.username}, please provide a status update.`);
 
                 // # Verify interactive message button to post an update
                 cy.get(element).find('button').contains('Post update');
             });
         });
 
-        it('in threads view', () => {
+        it('in threads view', {retries: {runMode: 3}}, () => {
             // # Navigate to the application
             cy.visit(`${testTeam.name}/channels/test-run`);
 
@@ -100,13 +98,13 @@ describe('channels > run dialog', () => {
                 cy.get('#sidebarItem_threads').click();
 
                 // # Verify the expected text in the list view
-                cy.get('.ThreadItem').first().contains(`@${testUser.username}, please provide a status update.`)
+                cy.get('.ThreadItem').first().contains(`@${testUser.username}, please provide a status update.`);
 
                 // # Click to open details
                 cy.get('.ThreadItem').first().click();
 
                 // # Verify post still rendered
-                cy.get(`#rhsPost_${lastPostId}`).contains(`@${testUser.username}, please provide a status update.`)
+                cy.get(`#rhsPost_${lastPostId}`).contains(`@${testUser.username}, please provide a status update.`);
 
                 // # Verify interactive message button to post an update
                 cy.get(`#rhsPost_${lastPostId}`).find('button').contains('Post update');

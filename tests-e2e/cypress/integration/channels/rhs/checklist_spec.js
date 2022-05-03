@@ -249,15 +249,13 @@ describe('channels > rhs > checklist', () => {
         it('creates a new checklist', () => {
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
-                cy.findByText('Checklists').trigger('mouseover').within(() => {
-                    cy.findByTitle('Add checklist').click();
-                });
+                cy.findByTestId('add-a-checklist-button').click();
             });
 
             // # Type a title and click on the Add button
             const title = 'Checklist - ' + Date.now();
-            cy.findByLabelText('Checklist name').type(title);
-            cy.findByRole('button', {name: 'Add'}).click();
+            cy.findByTestId('checklist-title-input').type(title);
+            cy.findByTestId('checklist-item-save-button').click();
 
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
@@ -276,39 +274,14 @@ describe('channels > rhs > checklist', () => {
                 cy.findByRole('button', {name: 'Rename checklist'}).click();
             });
 
-            // # Clear the text in the input
-            cy.findByLabelText('Checklist name').clear();
-
-            // * Verify that the confirm button is disabled
-            cy.findByRole('button', {name: 'Rename'}).should('be.disabled');
-
             // # Type the new title and click the confirm button
-            cy.findByLabelText('Checklist name').type(newTitle);
-            cy.findByRole('button', {name: 'Rename'}).click();
+            cy.findByTestId('checklist-title-input').type(newTitle);
+            cy.findByTestId('checklist-item-save-button').click();
 
             // * Verify that the checklist changed its name
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).should('not.exist');
-                cy.findByText(newTitle).should('exist');
-            });
-        });
-
-        it('deletes a checklist', () => {
-            const title = 'Stage 1';
-
-            // # Open the dot menu and click on the delete button
-            cy.get('#rhsContainer').within(() => {
-                cy.findByText(title).trigger('mouseover');
-                cy.findByTitle('More').click();
-                cy.findByRole('button', {name: 'Delete checklist'}).click();
-            });
-
-            // # Click the confirm button
-            cy.findByRole('button', {name: 'Delete'}).click();
-
-            // * Verify that the checklist is no longer there
-            cy.get('#rhsContainer').within(() => {
-                cy.findByText(title).should('not.exist');
+                cy.findByText(oldTitle + newTitle).should('exist');
             });
         });
 
@@ -391,6 +364,52 @@ describe('channels > rhs > checklist', () => {
 
             // # Cancel filter overdue tasks
             cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+
+            // * Verify if filter was canceled
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+        });
+
+        it('filter overdue automatically disappear if we check all overdue items', () => {
+            // # Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
+
+            // # Click the edit button
+            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
+
+            cy.findAllByTestId('due-date-info-button').eq(0).click();
+
+            // # Enter due 1 min ago
+            cy.get('.playbook-run-user-select__value-container').type('1 min ago')
+                .wait(HALF_SEC)
+                .trigger('keydown', {
+                    key: 'Enter',
+                });
+
+            // * Verify if Due 1 minute ago info is added
+            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
+                cy.findByText('1 minute ago').should('exist');
+                cy.findByText('Due').should('exist');
+            });
+
+            // * Verify if overdue tasks info was added
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
+                cy.findByText('1 task overdue').should('exist');
+            });
+
+            // # Filter overdue tasks
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+
+            // * Verify if filter works
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
+
+            // # Mark a task as completed
+            cy.findAllByTestId('checkbox-item-container').within(() => {
+                // check the overdue task
+                cy.get('input').click();
+            });
+
+            // * Verify there is no filter
+            cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
 
             // * Verify if filter was canceled
             cy.findAllByTestId('checkbox-item-container').should('have.length', 12);

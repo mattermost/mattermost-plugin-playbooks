@@ -126,6 +126,11 @@ export const HoverMenuButton = styled.i<{disabled?: boolean}>`
     color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
 `;
 
+export const ChecklistHoverMenuButton = styled(HoverMenuButton)`
+    width: 24px;
+    height: 24px;
+`;
+
 export const SmallerProfile = styled(Profile)`
     >.image {
         width: 20px;

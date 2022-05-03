@@ -12,8 +12,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
-
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
+import {FormattedMessage} from 'react-intl';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -58,7 +58,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -129,6 +129,27 @@ export default class Plugin {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
             const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
             registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
+        }
+
+        // Site statistics handler
+        if (registry.registerSiteStatisticsHandler) {
+            registry.registerSiteStatisticsHandler(async () => {
+                const siteStats = await fetchSiteStats();
+                return {
+                    playbook_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbooks'}/>,
+                        id: 'total_playbooks',
+                        icon: 'fa-book', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbooks,
+                    },
+                    playbook_run_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbook Runs'}/>,
+                        id: 'total_playbook_runs',
+                        icon: 'fa-list-alt', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbook_runs,
+                    },
+                };
+            });
         }
 
         // Websocket listeners

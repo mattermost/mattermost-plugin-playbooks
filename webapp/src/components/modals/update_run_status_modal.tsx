@@ -13,9 +13,11 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
+import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
+
 import {
     useDateTimeInput,
-    makeOption,
+    useMakeOption,
     ms,
     Mode,
     Option,
@@ -24,7 +26,6 @@ import {usePost, useRun} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
-import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -74,6 +75,7 @@ const UpdateRunStatusModal = ({
     }
 
     const [showModal, setShowModal] = useState(true);
+    const [showUnsaved, setShowUnsaved] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
@@ -102,6 +104,21 @@ const UpdateRunStatusModal = ({
             {outstanding});
     }
 
+    const onTentativeHide = () => {
+        if (providedMessage === message || message === defaultMessage || message === '') {
+            onActualHide();
+        } else {
+            setShowUnsaved(true);
+        }
+    };
+
+    const onActualHide = () => {
+        modalProps.onHide?.();
+        setTimeout(() => {
+            setShowUnsaved(false);
+        }, 300);
+    };
+
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
             postStatusUpdate(
@@ -109,13 +126,13 @@ const UpdateRunStatusModal = ({
                 {message, reminder, finishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
             );
-            setShowModal(false);
+            onActualHide();
         }
     };
 
     const onSubmit = () => {
         if (finishRun) {
-            setShowModal(false);
+            onActualHide();
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
                 show: true,
@@ -200,22 +217,30 @@ const UpdateRunStatusModal = ({
     );
 
     return (
-        <GenericModal
-            show={showModal}
-            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
-            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
-            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
-            handleCancel={() => true}
-            handleConfirm={hasPermission ? onSubmit : null}
-            autoCloseOnConfirmButton={false}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
-            {...modalProps}
-            id={ID}
-            footer={footer}
-            components={{FooterContainer}}
-        >
-            {hasPermission ? form : warning}
-        </GenericModal>
+        <>
+            <GenericModal
+                show={showModal && !showUnsaved}
+                modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+                cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+                confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
+                handleCancel={() => true}
+                {...modalProps}
+                onHide={onTentativeHide}
+                handleConfirm={hasPermission ? onSubmit : null}
+                autoCloseOnConfirmButton={false}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
+                id={ID}
+                footer={footer}
+                components={{FooterContainer}}
+            >
+                {hasPermission ? form : warning}
+            </GenericModal>
+            <UnsavedChangesModal
+                show={showUnsaved}
+                onConfirm={onActualHide}
+                onCancel={() => setShowUnsaved(false)}
+            />
+        </>
     );
 };
 
@@ -235,34 +260,28 @@ const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     return null;
 };
 
-export const optionFromSeconds = (seconds: number) => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: `in ${formatDuration(duration, 'long')}`,
-        value: duration,
-    };
-};
-
 export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
+    const {locale} = useIntl();
+    const makeOption = useMakeOption(Mode.DurationValue);
+
     const defaults = useMemo(() => {
         const options = [
-            makeOption('in 60 minutes', Mode.DurationValue),
-            makeOption('in 24 hours', Mode.DurationValue),
-            makeOption('in 7 days', Mode.DurationValue),
+            makeOption({hours: 1}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
         ];
 
         let value: Option | undefined;
         if (preselectedValue) {
-            value = optionFromSeconds(preselectedValue);
+            value = makeOption({seconds: preselectedValue});
         }
         if (run) {
             if (!value && run.previous_reminder) {
-                value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
+                value = makeOption({seconds: nearest(run.previous_reminder * 1e-9, 60)});
             }
 
             if (run.reminder_timer_default_seconds) {
-                const defaultReminderOption = optionFromSeconds(run.reminder_timer_default_seconds);
+                const defaultReminderOption = makeOption({seconds: run.reminder_timer_default_seconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
@@ -287,7 +306,7 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [run, preselectedValue]);
+    }, [run, preselectedValue, locale]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,

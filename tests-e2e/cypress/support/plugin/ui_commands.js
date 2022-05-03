@@ -60,16 +60,14 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
 
 // Create a new task from the RHS
 Cypress.Commands.add('addNewTaskFromRHS', (taskname) => {
-    // Hover over the header to reveal the add task
-    cy.findByTestId('checklistHeader').trigger('mouseover').within(() => {
-        cy.findByTestId('addNewTask').click();
-    });
+    // Click add new task
+    cy.findByTestId('add-new-task-0').click();
 
     // Type a name
-    cy.findByTestId('nameinput').type(taskname);
+    cy.findByTestId('checklist-item-textarea-title').type(taskname);
 
-    // Submit the dialog
-    cy.findByText('Add task').click();
+    // Save task
+    cy.findByTestId('checklist-item-save-button').click();
 });
 
 // Starts playbook run from the post menu
@@ -190,7 +188,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     cy.executeSlashCommand('/playbook update');
 
     // # Get the interactive dialog modal.
-    cy.get('.GenericModal').within(() => {
+    cy.getStatusUpdateDialog().within(() => {
         // # remove what's there if applicable, and type the new update in the textbox.
         cy.findByTestId('update_run_status_textbox').clear().type(message);
 
@@ -205,7 +203,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     });
 
     // * Verify that the interactive dialog has gone.
-    cy.get('.GenericModal').should('not.exist');
+    cy.getStatusUpdateDialog().should('not.exist');
 
     // # Return the post ID of the status update.
     return cy.getLastPostId();
@@ -243,6 +241,10 @@ Cypress.Commands.add('uiSwitchChannel', (channelName) => {
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStatusUpdateDialog', () => {
+    return cy.findByRole('dialog', {name: /post update/i});
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {
