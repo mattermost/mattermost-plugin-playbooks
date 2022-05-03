@@ -98,6 +98,15 @@ const RHSChecklistList = (props: Props) => {
     const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
+    const [menuEnabled, setMenuEnabled] = useState(true);
+
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
+    if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
+        dispatch(setChecklistItemsFilter(channelId, {
+            ...checklistItemsFilter,
+            overdueOnly: false,
+        }));
+    }
 
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
@@ -113,6 +122,11 @@ const RHSChecklistList = (props: Props) => {
             ...checklistItemsFilter,
             [value]: checked,
         }));
+    };
+
+    const onDragStart = () => {
+        // block hover menu on checklists
+        setMenuEnabled(false);
     };
 
     const onDragEnd = (result: DropResult) => {
@@ -172,6 +186,9 @@ const RHSChecklistList = (props: Props) => {
 
             // Persist the new data in the server
             clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
+
+            // allow again to see hover menu
+            setMenuEnabled(true);
         }
 
         // Move a whole checklist
@@ -285,7 +302,10 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            <DragDropContext onDragEnd={onDragEnd}>
+            <DragDropContext
+                onDragEnd={onDragEnd}
+                onDragStart={onDragStart}
+            >
                 <Droppable
                     droppableId={'all-checklists'}
                     direction={'vertical'}
@@ -318,6 +338,7 @@ const RHSChecklistList = (props: Props) => {
                                                     playbookRun={props.playbookRun}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
+                                                    menuEnabled={menuEnabled}
                                                 />
                                             </CollapsibleChecklist>
                                         );

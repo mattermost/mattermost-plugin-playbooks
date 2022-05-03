@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useEffect, useState, ReactNode} from 'react';
+import React, {useEffect, useState, ReactNode, HTMLAttributes} from 'react';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -25,21 +25,27 @@ interface Props {
     stats: PlaybookStats;
 }
 
-const PlaybookUsage = (props: Props) => {
+type Attrs = HTMLAttributes<HTMLElement>;
+
+const PlaybookUsage = ({
+    playbook,
+    stats,
+    ...attrs
+}: Props & Attrs) => {
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: props.playbook.id, page: 0};
+            return {...oldParams, playbook_id: playbook.id, page: 0};
         });
-    }, [props.playbook.id, setFetchParams]);
+    }, [playbook.id, setFetchParams]);
 
     return (
-        <OuterContainer>
+        <OuterContainer {...attrs}>
             <InnerContainer>
                 <StatsView
-                    stats={props.stats}
+                    stats={stats}
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     setFilterPill={setFilterPill}
@@ -85,4 +91,4 @@ const RunListContainer = styled.div`
     }
 `;
 
-export default PlaybookUsage;
+export default styled(PlaybookUsage)``;

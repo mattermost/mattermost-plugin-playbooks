@@ -294,6 +294,216 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 	}
 }
 
+func TestTotalPlaybookRuns(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
+	lucy := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucy",
+	}
+
+	john := userInfo{
+		ID:   model.NewId(),
+		Name: "john",
+	}
+
+	bot1 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mr. Bot",
+	}
+
+	bot2 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mrs. Bot",
+	}
+
+	chanOpen01 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 123, DeleteAt: 0}
+	chanOpen02 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 199, DeleteAt: 0}
+	chanOpen03 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 222, DeleteAt: 0}
+	chanPrivate01 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	chanPrivate02 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	chanPrivate03 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	chanPrivate04 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	chanPrivate05 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	chanPrivate06 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		statsStore := setupStatsStore(t, db)
+
+		_, store := setupSQLStore(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupChannelMemberHistoryTable(t, db)
+		setupChannelsTable(t, db)
+
+		addUsers(t, store, []userInfo{lucy, bob, john, bot1, bot2})
+		addBots(t, store, []userInfo{bot1, bot2})
+		addUsersToTeam(t, store, []userInfo{lucy, bob, john, bot2}, team1id)
+		addUsersToTeam(t, store, []userInfo{lucy, bob, bot1, bot2}, team2id)
+		createChannels(t, store, []model.Channel{chanOpen01, chanOpen02, chanOpen03, chanPrivate01, chanPrivate02, chanPrivate03, chanPrivate04, chanPrivate05, chanPrivate06})
+		addUsersToChannels(t, store, []userInfo{bob, lucy, bot1, bot2}, []string{chanOpen01.Id, chanOpen02.Id, chanOpen03.Id, chanPrivate01.Id, chanPrivate03.Id, chanPrivate04.Id, chanPrivate05.Id, chanPrivate06.Id})
+		addUsersToChannels(t, store, []userInfo{bob}, []string{chanPrivate02.Id})
+		addUsersToChannels(t, store, []userInfo{john}, []string{chanOpen01.Id})
+		makeAdmin(t, store, bob)
+
+		// create run with different statuses, channels, teams and playbooks
+		run01 := *NewBuilder(nil).
+			WithName("pr 1 - team1-channel1-inprogress").
+			WithChannel(&chanOpen01).
+			WithTeamID(team1id).
+			WithCurrentStatus(app.StatusInProgress).
+			WithCreateAt(123).
+			WithPlaybookID("playbook1").
+			ToPlaybookRun()
+
+		run02 := *NewBuilder(nil).
+			WithName("pr 2 - team1-channel2-inprogress").
+			WithChannel(&chanOpen02).
+			WithTeamID(team1id).
+			WithCurrentStatus(app.StatusInProgress).
+			WithCreateAt(123).
+			WithPlaybookID("playbook1").
+			ToPlaybookRun()
+
+		run03 := *NewBuilder(nil).
+			WithName("pr 3 - team1-channel3-finished").
+			WithChannel(&chanOpen03).
+			WithTeamID(team1id).
+			WithCurrentStatus(app.StatusFinished).
+			WithPlaybookID("playbook2").
+			WithCreateAt(123).
+			ToPlaybookRun()
+
+		run04 := *NewBuilder(nil).
+			WithName("pr 4 - team2-channel4-inprogress").
+			WithChannel(&chanPrivate01).
+			WithTeamID(team2id).
+			WithCurrentStatus(app.StatusInProgress).
+			WithPlaybookID("playbook1").
+			WithCreateAt(123).
+			ToPlaybookRun()
+
+		run05 := *NewBuilder(nil).
+			WithName("pr 5 - team2-channel5-inprogress").
+			WithChannel(&chanPrivate02).
+			WithTeamID(team2id).
+			WithCurrentStatus(app.StatusInProgress).
+			WithPlaybookID("playbook2").
+			WithCreateAt(123).
+			ToPlaybookRun()
+
+		run06 := *NewBuilder(nil).
+			WithName("pr 6 - team2-channel5-finished").
+			WithChannel(&chanPrivate03).
+			WithTeamID(team2id).
+			WithCurrentStatus(app.StatusFinished).
+			WithPlaybookID("playbook1").
+			WithCreateAt(123).
+			ToPlaybookRun()
+
+		playbookRuns := []app.PlaybookRun{run01, run02, run03, run04, run05, run06}
+
+		for i := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			require.NoError(t, err)
+		}
+
+		t.Run(driverName+" TotalPlaybookRuns", func(t *testing.T) {
+			result, err := statsStore.TotalPlaybookRuns()
+			assert.NoError(t, err)
+			assert.Equal(t, 6, result)
+		})
+	}
+}
+
+func TestTotalPlaybooks(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
+	lucy := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucy",
+	}
+
+	bot1 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mr. Bot",
+	}
+
+	bot2 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mrs. Bot",
+	}
+
+	channel01 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 123, DeleteAt: 0}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		statsStore := setupStatsStore(t, db)
+
+		_, store := setupSQLStore(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupChannelMemberHistoryTable(t, db)
+		setupChannelsTable(t, db)
+
+		addUsers(t, store, []userInfo{lucy, bob, bot1, bot2})
+		addBots(t, store, []userInfo{bot1, bot2})
+		addUsersToTeam(t, store, []userInfo{lucy, bot2}, team1id)
+		addUsersToTeam(t, store, []userInfo{lucy, bob, bot1, bot2}, team2id)
+		createChannels(t, store, []model.Channel{channel01})
+		addUsersToChannels(t, store, []userInfo{bob, lucy, bot1, bot2}, []string{channel01.Id})
+		makeAdmin(t, store, bob)
+
+		pb01 := NewPBBuilder().
+			WithTeamID(team1id).
+			WithTitle("playbook 1").
+			ToPlaybook()
+		pb02 := NewPBBuilder().
+			WithTeamID(team2id).
+			WithTitle("Playbook 2").
+			ToPlaybook()
+		for _, pb := range []app.Playbook{pb01, pb02} {
+			_, err := playbookStore.Create(pb)
+			require.NoError(t, err)
+		}
+
+		// create at least a run to have playbooks with and without runs
+		run01 := *NewBuilder(nil).
+			WithName("pr 1").
+			WithChannel(&channel01).
+			WithTeamID(team1id).
+			WithCurrentStatus(app.StatusInProgress).
+			WithCreateAt(123).
+			WithPlaybookID("playbook1").
+			ToPlaybookRun()
+
+		_, err := playbookRunStore.CreatePlaybookRun(&run01)
+		require.NoError(t, err)
+
+		t.Run(driverName+" TotalPlaybooks", func(t *testing.T) {
+			result, err := statsStore.TotalPlaybooks()
+			assert.NoError(t, err)
+			assert.Equal(t, 2, result)
+		})
+	}
+}
+
 type MetricStatsTest struct {
 	Playbook                 *app.Playbook
 	numMetrics               int

@@ -1698,10 +1698,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		require.Equal(t, expected, digestPost.Message)
 	})
 
-	t.Run("digest message with tasks due after today", func(t *testing.T) {
-		expected := "##### Your assigned tasks\n" +
-			":information_source: You have **3 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
-
+	t.Run("no digest message. only tasks due after today", func(t *testing.T) {
 		now := model.GetMillis()
 		assignedRuns := []app.AssignedRun{
 			{
@@ -1733,7 +1730,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
-		require.Equal(t, expected, digestPost.Message)
+		require.Nil(t, digestPost)
 	})
 }
 

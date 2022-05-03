@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -37,6 +38,7 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
+	statsRouter.HandleFunc("/site", handler.playbookSiteStats).Methods(http.MethodGet)
 	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
 
 	return handler
@@ -77,6 +79,7 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	}, nil
 }
 
+// playbookStats handles the internal plugin stats
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	if !h.licenseChecker.StatsAllowed() {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
@@ -129,5 +132,37 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		MetricRollingAverage:          metricRollingAverage,
 		MetricRollingAverageChange:    metricRollingAverageChange,
 		LastXRunNames:                 lastXRunNames,
+	}, http.StatusOK)
+}
+
+type PlaybookSiteStats struct {
+	TotalPlaybooks    int `json:"total_playbooks"`
+	TotalPlaybookRuns int `json:"total_playbook_runs"`
+}
+
+// playbooSitekStats collects and sends the stats used for system-console > statistics
+//
+// Response 200: PlaybookSiteStats
+// Response 401: when user is not authenticated
+// Response 403: when user has no permissions to see stats
+func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// user must have right to access analytics
+	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
+		return
+	}
+	totalPlaybooks, err := h.statsStore.TotalPlaybooks()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
+	totalRuns, err := h.statsStore.TotalPlaybookRuns()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
+	ReturnJSON(w, &PlaybookSiteStats{
+		TotalPlaybooks:    totalPlaybooks,
+		TotalPlaybookRuns: totalRuns,
 	}, http.StatusOK)
 }
