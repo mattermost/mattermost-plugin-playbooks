@@ -1041,6 +1041,8 @@ func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID string, settings
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
 	return nil
 }
 
