@@ -455,13 +455,13 @@ export function useFormattedUsernameByID(userId: string) {
 }
 
 // Return the list of names of the users given a list of UserProfiles or userIds
-// It will repect teamnameNameDisplaySetting.
+// It will respect teamnameNameDisplaySetting.
 export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>) : string[] {
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(
+    const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
         getTeammateNameDisplaySetting,
     ) || '';
     const displayNames = useSelector((state: GlobalState) => {
-        return usersOrUserIds?.map((user) => displayUsername(typeof user === 'string' ? getUser(state, user) : user, teamnameNameDisplaySetting));
+        return usersOrUserIds?.map((user) => displayUsername(typeof user === 'string' ? getUser(state, user) : user, teammateNameDisplaySetting));
     });
     return displayNames || [];
 }
