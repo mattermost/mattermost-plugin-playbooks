@@ -368,13 +368,13 @@ const PlaybookRunBackstage = () => {
             id={'run-actions-button-tooltip'}
             placement={'bottom'}
             shouldUpdatePosition={true}
-            content={formatMessage({defaultMessage: 'Open Run Actions modal'})}
+            content={formatMessage({defaultMessage: 'Run Actions'})}
         >
             <HeaderIcon
                 className='icon-palette-outline'
                 onClick={() => dispatch(showRunActionsModal())}
                 clicked={false}
-                aria-label={formatMessage({defaultMessage: 'Open Run Actions modal'})}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
             />
         </Tooltip>
     );

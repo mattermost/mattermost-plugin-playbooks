@@ -56,7 +56,7 @@ describe('runs > actions', () => {
 
     const openRunActionsModal = () => {
         // # Click on the run actions modal button
-        cy.findByRole('button', {name: /Open Run Actions modal/i}).click({force: true});
+        cy.findByRole('button', {name: /Run Actions/i}).click({force: true});
 
         // * Verify that the modal is shown
         cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
