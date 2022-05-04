@@ -64,15 +64,24 @@ const ChannelActionsModal = () => {
     const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
     const isSysAdmin = useSelector(isCurrentUserAdmin);
 
-    const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState({id: undefined, enabled: false, payload: {message: ''}});
-    const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState({id: undefined, enabled: false, payload: {category_name: ''}});
-    const [prompt, setPrompt, promptInit, promptReset, promptOverwrite] = useActionState({id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}});
+    const welcomeMsgEmptyState = {id: undefined, enabled: false, payload: {message: ''}};
+    const categorizationEmptyState = {id: undefined, enabled: false, payload: {category_name: ''}};
+    const promptEmptyState = {id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}};
+
+    const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState(welcomeMsgEmptyState);
+    const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState(categorizationEmptyState);
+    const [prompt, setPrompt, promptInit, promptReset, promptOverwrite] = useActionState(promptEmptyState);
 
     const editable = isChannelAdmin || isSysAdmin;
 
     useEffect(() => {
         const getActions = async (id: string) => {
             const fetchedActions = await fetchChannelActions(id);
+
+            // Reset everything to the empty state in case the channel does not have the corresponding actions
+            welcomeMsgInit(welcomeMsgEmptyState);
+            categorizationInit(categorizationEmptyState);
+            promptInit(promptEmptyState);
 
             fetchedActions.forEach((action) => {
                 switch (action.action_type) {
