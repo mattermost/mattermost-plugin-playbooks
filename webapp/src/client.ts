@@ -695,7 +695,7 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
 
 export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
     try {
-        return await doPut(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
     } catch (error) {
         return {error};
     }
