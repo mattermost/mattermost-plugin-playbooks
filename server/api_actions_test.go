@@ -308,6 +308,47 @@ func TestActionUpdate(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("valid update - remove keywords from action", func(t *testing.T) {
+		payload := client.PromptRunPlaybookFromKeywordsPayload{
+			Keywords:   []string{"one"},
+			PlaybookID: e.BasicPlaybook.ID,
+		}
+
+		newAction := client.GenericChannelAction{
+			GenericChannelActionWithoutPayload: client.GenericChannelActionWithoutPayload{
+				ChannelID:   e.BasicPublicChannel.Id,
+				Enabled:     true,
+				ActionType:  client.ActionTypePromptRunPlaybook,
+				TriggerType: client.TriggerTypeKeywordsPosted,
+			},
+			Payload: payload,
+		}
+
+		// Create an action with keywords and playbook ID
+		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   newAction.ChannelID,
+			Enabled:     newAction.Enabled,
+			ActionType:  newAction.ActionType,
+			TriggerType: newAction.TriggerType,
+			Payload:     newAction.Payload,
+		})
+		newAction.ID = actionID
+
+		// Verify that the API succeeds
+		assert.NoError(t, err)
+		assert.NotEmpty(t, actionID)
+
+		// Remove the keywords from the payload in the action
+		payload.Keywords = []string{}
+		newAction.Payload = payload
+
+		// Make the Update request with the new action
+		err = e.PlaybooksClient.Actions.Update(context.Background(), newAction)
+
+		// Verify that the API succeeds
+		assert.NoError(t, err)
+	})
+
 	t.Run("invalid update - wrong action type", func(t *testing.T) {
 		// Make an invalid modification
 		action.ActionType = "wrong"
