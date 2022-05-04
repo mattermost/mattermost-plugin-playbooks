@@ -1,6 +1,11 @@
 package app
 
-import "github.com/mattermost/mattermost-server/v6/model"
+import (
+	"database/sql/driver"
+	"fmt"
+
+	"github.com/mattermost/mattermost-server/v6/model"
+)
 
 type GenericChannelActionWithoutPayload struct {
 	ID          string      `json:"id"`
@@ -29,25 +34,71 @@ type CategorizeChannelPayload struct {
 	CategoryName string `json:"category_name" mapstructure:"category_name"`
 }
 
-type ActionType string
 type TriggerType string
 
-const (
-	// Action types: add new types to the ValidTriggerTypes array below
-	ActionTypeWelcomeMessage    ActionType = "send_welcome_message"
-	ActionTypePromptRunPlaybook ActionType = "prompt_run_playbook"
-	ActionTypeCategorizeChannel ActionType = "categorize_channel"
+// ActionType
+type ActionType int
 
+// values ActionType can take
+const (
+	ActionTypeUnknown ActionType = iota
+	ActionTypeWelcomeMessage
+	ActionTypePromptRunPlaybook
+	ActionTypeCategorizeChannel
+)
+
+var ActionTypes = [...]string{
+	ActionTypeUnknown:           "",
+	ActionTypeWelcomeMessage:    "send_welcome_message",
+	ActionTypePromptRunPlaybook: "prompt_run_playbook",
+	ActionTypeCategorizeChannel: "categorize_channel",
+}
+
+// String creates the string version of the ActionType
+func (a ActionType) String() string {
+	return ActionTypes[a]
+}
+
+// MarshalText renders the ActionType as text
+func (a ActionType) MarshalText() (text []byte, err error) {
+	return []byte(a.String()), nil
+}
+
+// UnmarshalText parses a ActionType from a textual representation
+func (a *ActionType) UnmarshalText(text []byte) error {
+	for i, ct := range ActionTypes {
+		if ct == string(text) {
+			*a = ActionType(i)
+			return nil
+		}
+	}
+	return fmt.Errorf("unknown action type: %s", string(text))
+}
+
+// Scan parses a action type back from the DB
+func (a *ActionType) Scan(src interface{}) error {
+	txt, ok := src.([]byte)
+	if ok {
+		return a.UnmarshalText(txt)
+	}
+	txtStr, ok := src.(string)
+	if ok {
+		return a.UnmarshalText([]byte(txtStr))
+	}
+
+	return fmt.Errorf("could not cast action type to []byte: %v %T", src, src)
+}
+
+// Value represents a ActionType as a type writable into the DB
+func (a ActionType) Value() (driver.Value, error) {
+	return a.MarshalText()
+}
+
+const (
 	// Trigger types: add new types to the ValidTriggerTypes array below
 	TriggerTypeNewMemberJoins TriggerType = "new_member_joins"
 	TriggerTypeKeywordsPosted TriggerType = "keywords"
 )
-
-var ValidActionTypes = []ActionType{
-	ActionTypeWelcomeMessage,
-	ActionTypePromptRunPlaybook,
-	ActionTypeCategorizeChannel,
-}
 
 var ValidTriggerTypes = []TriggerType{
 	TriggerTypeNewMemberJoins,

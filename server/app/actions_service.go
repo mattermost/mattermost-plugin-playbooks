@@ -96,7 +96,7 @@ func (a *channelActionServiceImpl) Create(action GenericChannelAction) (string, 
 	}
 
 	if len(actions) > 0 {
-		return "", fmt.Errorf("only one action of action type %q and trigger type %q is allowed", string(action.ActionType), string(action.TriggerType))
+		return "", fmt.Errorf("only one action of action type %q and trigger type %q is allowed", action.ActionType.String(), string(action.TriggerType))
 	}
 
 	if action.ActionType == ActionTypeWelcomeMessage && action.Enabled {

@@ -108,7 +108,7 @@ func (c *channelActionStore) GetChannelActions(channelID string, options app.Get
 		query = query.Where(sq.Eq{"c.TriggerType": options.TriggerType})
 	}
 
-	if options.ActionType != "" {
+	if options.ActionType != app.ActionTypeUnknown {
 		query = query.Where(sq.Eq{"c.ActionType": options.ActionType})
 	}
 

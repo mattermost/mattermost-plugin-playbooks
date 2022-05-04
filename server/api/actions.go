@@ -102,26 +102,14 @@ func isValidTrigger(trigger string) bool {
 	return false
 }
 
-func isValidAction(action string) bool {
-	if action == "" {
-		return true
-	}
-
-	for _, elem := range app.ValidActionTypes {
-		if action == string(elem) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func parseGetChannelActionsOptions(query url.Values) (*app.GetChannelActionOptions, error) {
 	actionTypeStr := query.Get("action_type")
 	triggerTypeStr := query.Get("trigger_type")
 
-	if !isValidAction(actionTypeStr) {
-		return nil, fmt.Errorf("action_type %q not recognized; valid values are %v", actionTypeStr, app.ValidActionTypes)
+	var actionType app.ActionType
+	err := (&actionType).UnmarshalText([]byte(actionTypeStr))
+	if err != nil {
+		return nil, fmt.Errorf("action_type %q not recognized; valid values are %v", actionTypeStr, app.ActionTypes)
 	}
 
 	if !isValidTrigger(triggerTypeStr) {
@@ -129,7 +117,7 @@ func parseGetChannelActionsOptions(query url.Values) (*app.GetChannelActionOptio
 	}
 
 	return &app.GetChannelActionOptions{
-		ActionType:  app.ActionType(actionTypeStr),
+		ActionType:  actionType,
 		TriggerType: app.TriggerType(triggerTypeStr),
 	}, nil
 }
