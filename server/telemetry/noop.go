@@ -178,7 +178,7 @@ func (t *NoopTelemetry) RunChannelAction(action app.GenericChannelAction, userID
 }
 
 // RunAction does nothing
-func (t *NoopTelemetry) RunAction(triggerType, userID, actionType string) {
+func (t *NoopTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numActions int) {
 }
 
 // UpdateRunActions does nothing

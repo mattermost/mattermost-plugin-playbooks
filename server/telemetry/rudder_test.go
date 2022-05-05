@@ -498,15 +498,19 @@ func TestTaskProperties(t *testing.T) {
 func TestRunActionProperties(t *testing.T) {
 	dummyTriggerType := "dummy_trigger_type"
 	dummyActionType := "dummy_action_type"
-	properties := runActionProperties(dummyTriggerType, dummyActionType, dummyUserID)
+	numActions := 7
+	properties := runActionProperties(dummyPlaybookRun, dummyUserID, dummyTriggerType, dummyActionType, numActions)
 
 	// ID field is reserved by Rudder to uniquely identify every event
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
-		"UserActualID": dummyUserID,
-		"TriggerType":  dummyTriggerType,
-		"ActionType":   dummyActionType,
+		"UserActualID":  dummyUserID,
+		"TriggerType":   dummyTriggerType,
+		"ActionType":    dummyActionType,
+		"NumActions":    numActions,
+		"PlaybookID":    dummyPlaybookRun.PlaybookID,
+		"PlaybookRunID": dummyPlaybookRun.ID,
 	}
 
 	require.Equal(t, expectedProperties, properties)
