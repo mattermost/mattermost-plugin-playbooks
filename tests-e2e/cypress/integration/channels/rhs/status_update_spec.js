@@ -65,6 +65,30 @@ describe('channels > rhs > status update', () => {
     });
 
     describe('post update dialog', () => {
+        it('renders description correctly', () => {
+            // # Run the `/playbook update` slash command.
+            cy.executeSlashCommand('/playbook update');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // * Check description
+                cy.findByTestId('update_run_status_description').contains('This update will be broadcasted to one channel and one direct message.');
+            });
+        });
+        it('description link navigates to run overview', () => {
+            // # Run the `/playbook update` slash command.
+            cy.executeSlashCommand('/playbook update');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // # Click overview link
+                cy.findByTestId('run-overview-link').click();
+            });
+
+            // * Check that we are now in run overview page
+            cy.url().should('include', `/playbooks/runs/${testRun.id}`);
+        });
+
         it('prevents posting an update message with only whitespace', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
@@ -299,7 +323,7 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').should('not.exist');
             });
 
-            it.only('click overview link and discard explicitly', () => {
+            it('click overview link and discard explicitly', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 

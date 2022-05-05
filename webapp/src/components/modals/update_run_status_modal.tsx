@@ -98,6 +98,9 @@ const UpdateRunStatusModal = ({
         getMetadata();
     }, [playbookRunId]);
 
+    // Extract channel and follower names
+    // The limit applied must be done at the end to consider the chance
+    // that the names are hidden to us (channels we haven't joined or are private)
     const broadcastChannelNames = useSelector((state: GlobalState) => {
         return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
@@ -107,12 +110,16 @@ const UpdateRunStatusModal = ({
             return result;
         }, []);
     })?.slice(0, NAMES_ON_TOOLTIP) || [];
-    const followerNames = useFormattedUsernames(runMetadata?.followers?.slice(0, NAMES_ON_TOOLTIP));
+    const followerNames = useFormattedUsernames(runMetadata?.followers)?.slice(0, NAMES_ON_TOOLTIP);
 
     const generateTooltipText = (names: string[], total: number) => {
-        return total ? formatMessage({defaultMessage: '{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}'}, {
-            text: total > NAMES_ON_TOOLTIP ? names.join(', ') : formatList(names, {type: 'conjunction'}),
-            rest: total > NAMES_ON_TOOLTIP ? total - NAMES_ON_TOOLTIP : 0,
+        // other should be added when:
+        // - we have more items than the limit (NAMES_ON_TOOLTIP)
+        // - we have les than the limit (NAMES_ON_TOOLTIP) but some are hidden
+        const shouldAddOther = total > NAMES_ON_TOOLTIP || names.length < total;
+        return names.length ? formatMessage({defaultMessage: '{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}'}, {
+            text: shouldAddOther ? names.join(', ') : formatList(names, {type: 'conjunction'}),
+            rest: total - names.length,
         }) : '';
     };
 
@@ -224,7 +231,7 @@ const UpdateRunStatusModal = ({
 
     const form = (
         <FormContainer>
-            <Description>{description()}</Description>
+            <Description data-testid='update_run_status_description'>{description()}</Description>
             <Label>
                 {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
