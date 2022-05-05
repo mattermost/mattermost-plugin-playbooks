@@ -14,8 +14,6 @@ type RemindersService struct {
 func (s *RemindersService) Reset(ctx context.Context, playbookRunID string, payload ReminderResetPayload) error {
 	resetURL := fmt.Sprintf("runs/%s/reminder", playbookRunID)
 
-	fmt.Println(s)
-	fmt.Println(s.client)
 	req, err := s.client.newRequest(http.MethodPost, resetURL, payload)
 	if err != nil {
 		return err
