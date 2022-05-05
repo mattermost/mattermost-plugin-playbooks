@@ -12,13 +12,33 @@ import (
 )
 
 func TestActionCreation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createNewChannel := func(t *testing.T, name string) *model.Channel {
+		t.Helper()
+
+		pubChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+			DisplayName: name,
+			Name:        name,
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		assert.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.AddChannelMember(pubChannel.Id, e.RegularUser.Id)
+		assert.NoError(t, err)
+
+		return pubChannel
+	}
+
 	t.Run("create valid action", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-valid-action")
 
 		// Create a valid action
-		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -33,12 +53,12 @@ func TestActionCreation(t *testing.T) {
 	})
 
 	t.Run("create valid partial action", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-valid-partial-action")
 
 		// Create an action with only keywords, but no playbook ID
-		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypePromptRunPlaybook,
 			TriggerType: client.TriggerTypeKeywordsPosted,
@@ -53,12 +73,12 @@ func TestActionCreation(t *testing.T) {
 	})
 
 	t.Run("create invalid action - duplicate action and trigger types", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-invalid-action-duplicate")
 
 		// Define an action
 		action := client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeCategorizeChannel,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -68,26 +88,26 @@ func TestActionCreation(t *testing.T) {
 		}
 
 		// Create a valid action
-		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, action)
+		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, action)
 
 		// Verify that the API succeeds
 		assert.NoError(t, err)
 		assert.NotEmpty(t, actionID)
 
 		// Try to create the same action again
-		_, err = e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, action)
+		_, err = e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, action)
 
 		// Verify that the API fails with a 500 error
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 	})
 
 	t.Run("create invalid action - wrong action type", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-invalid-action-wrong-action")
 
 		// Create an action with a wrong action type
-		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		_, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  "wrong action type",
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -101,12 +121,12 @@ func TestActionCreation(t *testing.T) {
 	})
 
 	t.Run("create invalid action - wrong trigger type", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-invalid-action-wrong-trigger")
 
 		// Create an action with a wrong trigger type
-		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		_, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: "wrong trigger type",
@@ -120,8 +140,8 @@ func TestActionCreation(t *testing.T) {
 	})
 
 	t.Run("create action forbidden - not channel admin", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-action-forbidden")
 
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 		defer func() {
@@ -132,8 +152,8 @@ func TestActionCreation(t *testing.T) {
 		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
 
 		// Attempt to create the action without those permissions
-		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		_, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -147,8 +167,8 @@ func TestActionCreation(t *testing.T) {
 	})
 
 	t.Run("create action allowed - not channel admin, but system admin", func(t *testing.T) {
-		e := Setup(t)
-		e.CreateBasic()
+		// Create a brand new channel
+		channel := createNewChannel(t, "create-action-allowed")
 
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 		defer func() {
@@ -159,8 +179,8 @@ func TestActionCreation(t *testing.T) {
 		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
 
 		// Attempt to create the action as a sysadmin without being a channel admin
-		actionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
+		actionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   channel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypePromptRunPlaybook,
 			TriggerType: client.TriggerTypeKeywordsPosted,
