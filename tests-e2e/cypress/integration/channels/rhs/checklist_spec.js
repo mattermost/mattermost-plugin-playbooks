@@ -285,7 +285,7 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it('can set due date, from hover menu', () => {
+        it.only('can set due date, from hover menu', () => {
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
 
@@ -293,11 +293,13 @@ describe('channels > rhs > checklist', () => {
             cy.get('.icon-calendar-outline').click();
 
             // # Enter due date in 10 min
-            cy.get('.playbook-run-user-select__control').type('in 10 min')
-                .wait(HALF_SEC)
-                .trigger('keydown', {
-                    key: 'Enter',
-                });
+            cy.get('.playbook-run-user-select').within(() => {
+                cy.get('input').type('in 10 min', {force: true})
+                    .wait(HALF_SEC)
+                    .trigger('keydown', {
+                        key: 'Enter',
+                    });
+            });
 
             // * Verify if Due in 10 minutes info is added
             cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
