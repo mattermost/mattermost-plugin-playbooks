@@ -13,6 +13,7 @@ describe('channels > rhs > status update', () => {
     let testChannel;
     let testUser;
     let testPlaybook;
+    let testRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, channel, user}) => {
@@ -55,6 +56,8 @@ describe('channels > rhs > status update', () => {
             playbookId: testPlaybook.id,
             playbookRunName: name,
             ownerUserId: testUser.id,
+        }).then((run) => {
+            testRun = run;
         });
 
         // # Navigate directly to the application and the playbook run channel
@@ -242,8 +245,7 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').should('not.exist');
             });
 
-            // Skip test and get help from Cass
-            it.skip('click overview link, go back and save', () => {
+            it('click overview link, go back and save', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -267,9 +269,7 @@ describe('channels > rhs > status update', () => {
                 cy.wait(TIMEOUTS.TWO_SEC);
 
                 // # Submit the dialog.
-                cy.getStatusUpdateDialog().within(() => {
-                    cy.get('button.confirm').click();
-                });
+                cy.get('button.confirm').click();
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
@@ -299,7 +299,7 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').should('not.exist');
             });
 
-            it('click overview link and discard explicitly', () => {
+            it.only('click overview link and discard explicitly', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -316,6 +316,9 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').within(() => {
                     cy.get('button.confirm').click();
                 });
+
+                // * Assert that we are at run overview page.
+                cy.url().should('include', `/playbooks/runs/${testRun.id}`);
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');

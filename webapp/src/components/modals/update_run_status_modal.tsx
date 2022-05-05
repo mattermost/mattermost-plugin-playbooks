@@ -101,7 +101,6 @@ const UpdateRunStatusModal = ({
     const broadcastChannelNames = useSelector((state: GlobalState) => {
         return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
-
             if (displayName) {
                 result.push(displayName);
             }
