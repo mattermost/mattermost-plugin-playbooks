@@ -74,12 +74,13 @@ const ChannelActionsModal = () => {
 
     useEffect(() => {
         const getActions = async (id: string) => {
-            const fetchedActions = await fetchChannelActions(id);
-
-            // Reset everything to the empty state in case the channel does not have the corresponding actions
+            // Reset everything to the empty state as soon as the channel switches.
+            // If the channel does not have the corresponding actions, the empty state will be shown.
             welcomeMsgInit(welcomeMsgEmptyState);
             categorizationInit(categorizationEmptyState);
             promptInit(promptEmptyState);
+
+            const fetchedActions = await fetchChannelActions(id);
 
             fetchedActions.forEach((action) => {
                 switch (action.action_type) {
