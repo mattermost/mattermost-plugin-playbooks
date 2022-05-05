@@ -295,10 +295,18 @@ const UpdateRunStatusModal = ({
                     browserHistory.push(path);
                 }}
                 shouldBlockNavigation={(newLoc) => {
-                    if (location.pathname !== newLoc.pathname && pendingChanges) {
+                    const locChanged = location.pathname !== newLoc.pathname;
+
+                    // block nav and keep modal
+                    if (locChanged && pendingChanges) {
                         return true;
                     }
-                    modalProps.onHide?.();
+
+                    // don't block nav but hide modal
+                    if (locChanged) {
+                        modalProps.onHide?.();
+                    }
+
                     return false;
                 }}
             />
