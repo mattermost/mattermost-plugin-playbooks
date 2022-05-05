@@ -293,7 +293,7 @@ describe('channels > rhs > checklist', () => {
             cy.get('.icon-calendar-outline').click();
 
             // # Enter due date in 10 min
-            cy.get('.playbook-run-user-select__value-container').type('in 10 min')
+            cy.get('.playbook-run-user-select__control').type('in 10 min')
                 .wait(HALF_SEC)
                 .trigger('keydown', {
                     key: 'Enter',

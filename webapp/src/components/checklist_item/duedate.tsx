@@ -6,11 +6,11 @@ import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled, {css} from 'styled-components';
-import {DateTime, Duration} from 'luxon';
+import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
-import {labelFrom, Mode, ms, useMakeOption} from '../datetime_input';
+import {labelFrom, Mode, ms, Option, useMakeOption} from '../datetime_input';
 import {ChecklistHoverMenuButton} from '../rhs/rhs_shared';
 import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
@@ -61,10 +61,16 @@ export const DueDateHoverMenuButton = ({
 }: Props) => {
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
+    const makeOption = useMakeOption(Mode.DurationValue);
 
-    const suggestedOptions = makeDefaultDateTimeOptions();
-    if (date) {
-        suggestedOptions.push(selectedValueOption(date, mode));
+    let suggestedOptions = [];
+    if (mode === Mode.DurationValue) {
+        suggestedOptions = makeDefaultDurationOptions(makeOption, date);
+    } else {
+        suggestedOptions = makeDefaultDateTimeOptions();
+        if (date) {
+            suggestedOptions.push(selectedValueOption(date, mode));
+        }
     }
 
     const licenseControl = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -140,32 +146,9 @@ export const DueDateButton = ({
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
-    const makeDefaultDurationOptions = () => {
-        const options = [
-            makeOption({hours: 4}),
-            makeOption({days: 1}),
-            makeOption({days: 7}),
-        ] as DateTimeOption[];
-
-        let value: DateTimeOption | undefined;
-        if (date) {
-            value = makeOption({milliseconds: date});
-            value.labelRHS = (<CheckIcon className={'icon icon-check'}/>);
-
-            const index = options.findIndex((o) => value && ms(o.value) === ms(value.value));
-            if (index === -1) {
-                options.push(value);
-            } else {
-                options[index].labelRHS = (<CheckIcon className={'icon icon-check'}/>);
-            }
-            options.sort((a, b) => ms(a.value) - ms(b.value));
-        }
-        return options;
-    };
-
     let suggestedOptions = [];
     if (mode === Mode.DurationValue) {
-        suggestedOptions = makeDefaultDurationOptions();
+        suggestedOptions = makeDefaultDurationOptions(makeOption, date);
     } else {
         suggestedOptions = makeDefaultDateTimeOptions();
         if (date) {
@@ -324,6 +307,29 @@ const makeDefaultDateTimeOptions = () => {
         }
     );
     return list;
+};
+
+const makeDefaultDurationOptions = (makeOption: (input: string | DateObjectUnits | DurationLikeObject, label?: string) => Option, date: number | undefined) => {
+    const options = [
+        makeOption({hours: 4}),
+        makeOption({days: 1}),
+        makeOption({days: 7}),
+    ] as DateTimeOption[];
+
+    let value: DateTimeOption | undefined;
+    if (date) {
+        value = makeOption({milliseconds: date});
+        value.labelRHS = (<CheckIcon className={'icon icon-check'}/>);
+
+        const index = options.findIndex((o) => value && ms(o.value) === ms(value.value));
+        if (index === -1) {
+            options.push(value);
+        } else {
+            options[index].labelRHS = (<CheckIcon className={'icon icon-check'}/>);
+        }
+        options.sort((a, b) => ms(a.value) - ms(b.value));
+    }
+    return options;
 };
 
 const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
