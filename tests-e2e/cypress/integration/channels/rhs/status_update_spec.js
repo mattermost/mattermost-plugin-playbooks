@@ -28,10 +28,11 @@ describe('channels > rhs > status update', () => {
                 teamId: testTeam.id,
                 title: 'Playbook',
                 userId: testUser,
-                broadcastChannelId: testChannel.id,
+                broadcastChannelIds: [testChannel.id],
                 reminderTimerDefaultSeconds: 3600,
                 reminderMessageTemplate: defaultReminderMessage,
                 retrospectiveEnabled: false,
+                broadcastEnabled: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
@@ -209,7 +210,7 @@ describe('channels > rhs > status update', () => {
         });
 
         describe('prevents user from losing changes', () => {
-            it('go back and save', () => {
+            it('cancel, go back and save', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -241,7 +242,39 @@ describe('channels > rhs > status update', () => {
                 cy.get('#confirm-modal-light').should('not.exist');
             });
 
-            it('discard explicitily', () => {
+            it.only('click overview link, go back and save', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click overview link
+                    cy.findByTestId('run-overview-link').click();
+                });
+
+                // * Go back from unsaved changes modal
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // # Delay in between the modal switch to ensure the
+                // # animation has fully happened
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # Submit the dialog.
+                cy.getStatusUpdateDialog().within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('cancel and discard explicitily', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -252,6 +285,29 @@ describe('channels > rhs > status update', () => {
 
                     // * Click cancel
                     cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // * Discard explicitily from unsaved changes
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('click overview link and discard explicitily', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // * Click overview link
+                    cy.findByTestId('run-overview-link').click();
                 });
 
                 // * Discard explicitily from unsaved changes

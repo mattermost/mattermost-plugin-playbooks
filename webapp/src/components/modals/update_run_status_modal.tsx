@@ -181,7 +181,10 @@ const UpdateRunStatusModal = ({
         const followersChannelCount = runMetadata?.followers?.length ?? 0;
 
         const OverviewLink = (...chunks: string[]) => (
-            <Link to={pluginUrl(`/runs/${playbookRunId}/overview`)}>
+            <Link
+                data-testid='run-overview-link'
+                to={pluginUrl(`/runs/${playbookRunId}/overview`)}
+            >
                 {chunks}
             </Link>
         );
