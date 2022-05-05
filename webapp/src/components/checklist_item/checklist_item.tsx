@@ -122,6 +122,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (!assigneeID && !isEditing) {
             return null;
         }
+
+        // render only in the RHS
+        if (!props.playbookRunId) {
+            return null;
+        }
+
         return (
             <AssignTo
                 assignee_id={assigneeID || ''}
@@ -159,7 +165,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <DueDateButton
                 editable={isEditing}
                 date={dueDate}
-                mode={Mode.DateTimeValue}
+                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
             />
         );
@@ -439,6 +445,6 @@ const Row = styled.div`
     row-gap: 5px;
 
     margin-left: 35px;
-    margin-top: 8px;
+    margin-top: 4px;
     padding-bottom: 8px;
 `;

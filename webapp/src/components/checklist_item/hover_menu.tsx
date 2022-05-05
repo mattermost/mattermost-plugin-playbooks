@@ -61,7 +61,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
             />
             <DueDateHoverMenuButton
                 date={props.due_date}
-                mode={Mode.DateTimeValue}
+                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={props.onDueDateChange}
             />
             <ChecklistHoverMenuButton

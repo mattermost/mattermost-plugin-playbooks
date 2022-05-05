@@ -6,11 +6,11 @@ import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled, {css} from 'styled-components';
-import {DateTime} from 'luxon';
+import {DateTime, Duration} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
-import {Mode} from '../datetime_input';
+import {labelFrom, Mode, ms, useMakeOption} from '../datetime_input';
 import {ChecklistHoverMenuButton} from '../rhs/rhs_shared';
 import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
@@ -26,12 +26,12 @@ interface Props {
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
 }
 
-const ControlComponentDueDate = (ownProps: ControlProps<DateTimeOption, boolean>) => (
+const controlComponentDueDate = (isDateTime: boolean) => (ownProps: ControlProps<DateTimeOption, boolean>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                <FormattedMessage defaultMessage='No due date'/>
+                {isDateTime ? <FormattedMessage defaultMessage='No due date'/> : <FormattedMessage defaultMessage='No time frame'/>}
             </ControlComponentAnchor>
         )}
     </div>
@@ -102,6 +102,7 @@ export const DueDateHoverMenuButton = ({
             {hoverMenuButton}
         </OverlayTrigger>
     );
+
     return (
         <DateTimeSelector
             date={date}
@@ -110,7 +111,7 @@ export const DueDateHoverMenuButton = ({
             placeholder={placeholder}
             suggestedOptions={suggestedOptions}
             onSelectedChange={props.onSelectedChange}
-            customControl={ControlComponentDueDate}
+            customControl={controlComponentDueDate(mode === Mode.DateTimeValue)}
             customControlProps={{
                 showCustomReset: Boolean(date),
                 onCustomReset: resetDueDate,
@@ -137,9 +138,39 @@ export const DueDateButton = ({
         setShowOnRight(ref.current.offsetLeft > 50);
     }, [props.editable]);
 
-    const suggestedOptions = makeDefaultDateTimeOptions();
-    if (date) {
-        suggestedOptions.push(selectedValueOption(date, mode));
+    const makeOption = useMakeOption(Mode.DurationValue);
+
+    const makeDefaultDurationOptions = () => {
+        const options = [
+            makeOption({hours: 4}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
+        ] as DateTimeOption[];
+
+        let value: DateTimeOption | undefined;
+        if (date) {
+            value = makeOption({milliseconds: date});
+            value.labelRHS = (<CheckIcon className={'icon icon-check'}/>);
+
+            const index = options.findIndex((o) => value && ms(o.value) === ms(value.value));
+            if (index === -1) {
+                options.push(value);
+            } else {
+                options[index].labelRHS = (<CheckIcon className={'icon icon-check'}/>);
+            }
+            options.sort((a, b) => ms(a.value) - ms(b.value));
+        }
+        return options;
+    };
+
+    let suggestedOptions = [];
+    if (mode === Mode.DurationValue) {
+        suggestedOptions = makeDefaultDurationOptions();
+    } else {
+        suggestedOptions = makeDefaultDateTimeOptions();
+        if (date) {
+            suggestedOptions.push(selectedValueOption(date, mode));
+        }
     }
 
     const handleButtonClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -168,9 +199,9 @@ export const DueDateButton = ({
         />
     );
 
-    const dueSoon = isDueSoon(date);
-    const overdue = isOverdue(date);
-    const label = buttonLabel(date);
+    const dueSoon = mode === Mode.DateTimeValue && isDueSoon(date);
+    const overdue = mode === Mode.DateTimeValue && isOverdue(date);
+    const label = mode === Mode.DateTimeValue ? buttonLabelForDateTime(date) : buttonLabelForDuration(date);
 
     const dueDateButton = (
         <DueDateContainer
@@ -205,7 +236,7 @@ export const DueDateButton = ({
                 onlyPlaceholder={true}
                 suggestedOptions={suggestedOptions}
                 onSelectedChange={props.onSelectedChange}
-                customControl={ControlComponentDueDate}
+                customControl={controlComponentDueDate(mode === Mode.DateTimeValue)}
                 customControlProps={{
                     showCustomReset: Boolean(date),
                     onCustomReset: resetDueDate,
@@ -234,7 +265,14 @@ export const DueDateButton = ({
     );
 };
 
-const buttonLabel = (date?: number) => {
+const buttonLabelForDuration = (date?: number) => {
+    if (!date) {
+        return <FormattedMessage defaultMessage='Add time frame'/>;
+    }
+    return labelFrom(Duration.fromMillis(date));
+};
+
+const buttonLabelForDateTime = (date?: number) => {
     if (!date) {
         return <FormattedMessage defaultMessage='Add due date'/>;
     }
