@@ -338,6 +338,20 @@ func TestActionUpdate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, actionID)
 
+		// Retrieve the newly created action and decode its payload
+		actions, err := e.PlaybooksClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{
+			TriggerType: client.TriggerTypeKeywordsPosted,
+			ActionType:  client.ActionTypePromptRunPlaybook,
+		})
+		assert.Len(t, actions, 1)
+		fetchedAction := actions[0]
+		var fetchedPayload client.PromptRunPlaybookFromKeywordsPayload
+		err = mapstructure.Decode(fetchedAction.Payload, &fetchedPayload)
+		assert.NoError(t, err)
+
+		// Verify that the payload of the created action has one keyword
+		assert.Len(t, fetchedPayload.Keywords, 1)
+
 		// Remove the keywords from the payload in the action
 		payload.Keywords = []string{}
 		newAction.Payload = payload
@@ -347,6 +361,20 @@ func TestActionUpdate(t *testing.T) {
 
 		// Verify that the API succeeds
 		assert.NoError(t, err)
+
+		// Retrieve the updated action and decode its payload
+		updatedActions, err := e.PlaybooksClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{
+			TriggerType: client.TriggerTypeKeywordsPosted,
+			ActionType:  client.ActionTypePromptRunPlaybook,
+		})
+		assert.Len(t, updatedActions, 1)
+		updatedAction := updatedActions[0]
+		var updatedPayload client.PromptRunPlaybookFromKeywordsPayload
+		err = mapstructure.Decode(updatedAction.Payload, &updatedPayload)
+		assert.NoError(t, err)
+
+		// Verify that the payload of the updated action has no keywords
+		assert.Len(t, updatedPayload.Keywords, 0)
 	})
 
 	t.Run("invalid update - wrong action type", func(t *testing.T) {
