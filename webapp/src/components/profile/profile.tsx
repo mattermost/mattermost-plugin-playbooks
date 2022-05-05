@@ -50,7 +50,7 @@ const ProfileImage = styled.img`
     }
 `;
 
-const ProfileName = styled.div`
+const ProfileName = styled.div<{hasExtra: boolean}>`
     padding: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -58,7 +58,7 @@ const ProfileName = styled.div`
     min-height: 18px;
     display: flex;
     align-items: center;
-    padding-right: 4px;
+    padding-right: ${({hasExtra}) => (hasExtra ? '4px' : '8px')};
 
     .description {
         color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -98,7 +98,10 @@ const Profile = (props: Props) => {
                 />
             }
             { !props.withoutName &&
-                <ProfileName className='name'>{name}</ProfileName>
+                <ProfileName
+                    hasExtra={Boolean(props.extra)}
+                    className='name'
+                >{name}</ProfileName>
             }
             {props.extra}
         </PlaybookRunProfile>
