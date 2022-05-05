@@ -39,9 +39,3 @@ export interface PromptRunPlaybookFromKeywordsPayload {
 export interface CategorizeChannelPayload {
     category_name: string;
 }
-
-export type ActionsByTrigger = Record<ChannelTriggerType, ChannelAction[]>;
-
-export const equalActionType = (a: ChannelAction, b: ChannelAction) => {
-    return a.action_type === b.action_type && a.trigger_type === b.trigger_type;
-};
