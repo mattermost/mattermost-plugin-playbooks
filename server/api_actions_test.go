@@ -363,6 +363,7 @@ func TestActionUpdate(t *testing.T) {
 			TriggerType: client.TriggerTypeKeywordsPosted,
 			ActionType:  client.ActionTypePromptRunPlaybook,
 		})
+		assert.NoError(t, err)
 		assert.Len(t, actions, 1)
 		fetchedAction := actions[0]
 		var fetchedPayload client.PromptRunPlaybookFromKeywordsPayload
@@ -387,6 +388,7 @@ func TestActionUpdate(t *testing.T) {
 			TriggerType: client.TriggerTypeKeywordsPosted,
 			ActionType:  client.ActionTypePromptRunPlaybook,
 		})
+		assert.NoError(t, err)
 		assert.Len(t, updatedActions, 1)
 		updatedAction := updatedActions[0]
 		var updatedPayload client.PromptRunPlaybookFromKeywordsPayload
