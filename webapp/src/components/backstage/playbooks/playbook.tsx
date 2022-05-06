@@ -32,10 +32,10 @@ import {
     autoFollowPlaybook,
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
-    getSiteUrl,
     playbookExportProps,
     archivePlaybook,
     createPlaybookRun,
+    getSiteUrl,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -45,9 +45,7 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
-import {copyToClipboard} from 'src/utils';
-
-import {HeaderIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
+import CopyLink from 'src/components/widgets/copy_link';
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
@@ -104,6 +102,15 @@ const RedText = styled.div`
     color: var(--error-text);
 `;
 
+const StyledCopyLink = styled(CopyLink)`
+    border-radius: 4px;
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    line-height: 18px;
+    margin-left: 8px;
+`;
+
 /** @deprecated this page and potentially some inner sections will be deprecated in the future. See `playbook_editor/playbook_editor.tsx`. */
 const Playbook = () => {
     const dispatch = useDispatch();
@@ -117,7 +124,6 @@ const Playbook = () => {
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
     const currentUser = useSelector(getCurrentUser);
-    const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
     const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
             archivePlaybook(playbook.id);
@@ -222,36 +228,6 @@ const Playbook = () => {
         </Tooltip>
     );
 
-    const copyPlaybookLink = () => {
-        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbook.id);
-        setPlaybookLinkCopied(true);
-    };
-
-    let copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to playbook'});
-    if (playbookLinkCopied) {
-        copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
-    }
-
-    const playbookLink = (
-        <OverlayTrigger
-            placement='bottom'
-            delay={OVERLAY_DELAY}
-            onExit={() => setPlaybookLinkCopied(false)}
-            shouldUpdatePosition={true}
-            overlay={
-                <Tooltip id='copy-playbook-link-tooltip'>
-                    {copyPlaybookLinkTooltipMessage}
-                </Tooltip>
-            }
-        >
-            <HeaderIcon
-                className='icon-link-variant'
-                onClick={copyPlaybookLink}
-                clicked={playbookLinkCopied}
-            />
-        </OverlayTrigger>
-    );
-
     const archived = playbook?.delete_at !== 0;
     const enableRunPlaybook = !archived && hasPermissionToRunPlaybook;
     const [exportHref, exportFilename] = playbookExportProps(playbook);
@@ -323,7 +299,11 @@ const Playbook = () => {
                             status={BadgeType.Archived}
                         />
                     }
-                    {playbookLink}
+                    <StyledCopyLink
+                        id='copy-playbook-link-tooltip'
+                        to={getSiteUrl() + '/playbooks/playbooks/' + playbook.id}
+                        tooltipMessage={formatMessage({defaultMessage: 'Copy link to playbook'})}
+                    />
                     <SecondaryButtonLargerRightStyled
                         checked={isFollowed}
                         disabled={archived}

@@ -188,7 +188,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     cy.executeSlashCommand('/playbook update');
 
     // # Get the interactive dialog modal.
-    cy.get('.GenericModal').within(() => {
+    cy.getStatusUpdateDialog().within(() => {
         // # remove what's there if applicable, and type the new update in the textbox.
         cy.findByTestId('update_run_status_textbox').clear().type(message);
 
@@ -203,7 +203,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     });
 
     // * Verify that the interactive dialog has gone.
-    cy.get('.GenericModal').should('not.exist');
+    cy.getStatusUpdateDialog().should('not.exist');
 
     // # Return the post ID of the status update.
     return cy.getLastPostId();
@@ -241,6 +241,10 @@ Cypress.Commands.add('uiSwitchChannel', (channelName) => {
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStatusUpdateDialog', () => {
+    return cy.findByRole('dialog', {name: /post update/i});
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {

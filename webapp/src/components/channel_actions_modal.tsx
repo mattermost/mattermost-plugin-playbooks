@@ -1,20 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
-
-import cloneDeep from 'lodash';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideChannelActionsModal} from 'src/actions';
 import {isChannelActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
 import Action from 'src/components/actions_modal_action';
 import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
-import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType, equalActionType, WelcomeMessageActionPayload, CategorizeChannelPayload, PromptRunPlaybookFromKeywordsPayload, PayloadType} from 'src/types/channel_actions';
+import {ChannelActionType, ChannelTriggerType, WelcomeMessageActionPayload, CategorizeChannelPayload, PromptRunPlaybookFromKeywordsPayload, PayloadType} from 'src/types/channel_actions';
 
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
 import {CategorizeChannelChildren, RunPlaybookChildren, WelcomeActionChildren} from 'src/components/actions_modal_action_children';
@@ -33,28 +31,32 @@ function useActionState<T extends PayloadType>(originalState: ActionState<T>) {
     const [initialEnabled, setInitialEnabled] = useState(originalState.enabled);
 
     // Reset the current state to its initial value
-    const reset = () => {
+    const reset = useCallback(() => {
         setActionState({
             ...actionState,
             enabled: initialEnabled,
             payload: initialPayload,
         });
-    };
+    }, [actionState, initialEnabled, initialPayload]);
 
     // Overwrite the initial values with the current state
-    const overwrite = () => {
+    const overwrite = useCallback(() => {
         setInitialEnabled(actionState.enabled);
         setInitialPayload(actionState.payload);
-    };
+    }, [actionState.enabled, actionState.payload]);
 
-    const init = (initState: ActionState<T>) => {
+    const init = useCallback((initState: ActionState<T>) => {
         setActionState(initState);
         setInitialEnabled(initState.enabled);
         setInitialPayload(initState.payload);
-    };
+    }, []);
 
     return [actionState, setActionState, init, reset, overwrite] as const;
 }
+
+const welcomeMsgEmptyState = {id: undefined, enabled: false, payload: {message: ''}};
+const categorizationEmptyState = {id: undefined, enabled: false, payload: {category_name: ''}};
+const promptEmptyState = {id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}};
 
 const ChannelActionsModal = () => {
     const {formatMessage} = useIntl();
@@ -64,14 +66,20 @@ const ChannelActionsModal = () => {
     const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
     const isSysAdmin = useSelector(isCurrentUserAdmin);
 
-    const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState({id: undefined, enabled: false, payload: {message: ''}});
-    const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState({id: undefined, enabled: false, payload: {category_name: ''}});
-    const [prompt, setPrompt, promptInit, promptReset, promptOverwrite] = useActionState({id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}});
+    const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState(welcomeMsgEmptyState);
+    const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState(categorizationEmptyState);
+    const [prompt, setPrompt, promptInit, promptReset, promptOverwrite] = useActionState(promptEmptyState);
 
     const editable = isChannelAdmin || isSysAdmin;
 
     useEffect(() => {
         const getActions = async (id: string) => {
+            // Reset everything to the empty state as soon as the channel switches.
+            // If the channel does not have the corresponding actions, the empty state will be shown.
+            welcomeMsgInit(welcomeMsgEmptyState);
+            categorizationInit(categorizationEmptyState);
+            promptInit(promptEmptyState);
+
             const fetchedActions = await fetchChannelActions(id);
 
             fetchedActions.forEach((action) => {
@@ -92,7 +100,7 @@ const ChannelActionsModal = () => {
         if (channelID) {
             getActions(channelID);
         }
-    }, [channelID]);
+    }, [channelID, welcomeMsgInit, categorizationInit, promptInit]);
 
     const onHide = () => {
         welcomeMsgReset();

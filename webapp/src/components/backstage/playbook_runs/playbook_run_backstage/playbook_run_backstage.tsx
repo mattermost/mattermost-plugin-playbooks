@@ -10,7 +10,8 @@ import {useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
-import {copyToClipboard} from 'src/utils';
+
+import CopyLink from 'src/components/widgets/copy_link';
 
 import {
     Badge,
@@ -123,18 +124,25 @@ export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
     font-size: 18px;
     margin-left: 8px;
     border-radius: 4px;
-
     ${({clicked}) => !clicked && css`
         &:hover {
             background: var(--center-channel-color-08);
             color: var(--center-channel-color-72);
         }
     `}
-
     ${({clicked}) => clicked && css`
         background: var(--button-bg-08);
         color: var(--button-bg);
     `}
+`;
+
+const StyledCopyLink = styled(CopyLink)`
+    border-radius: 4px;
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    line-height: 18px;
+    margin-left: 8px;
 `;
 
 const VerticalBlock = styled.div`
@@ -245,7 +253,6 @@ const PlaybookRunBackstage = () => {
     const currentRun = useRun(match.params.playbookRunId);
 
     const [following, setFollowing] = useState<string[]>([]);
-    const [runLinkCopied, setRunLinkCopied] = useState(false);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -353,16 +360,6 @@ const PlaybookRunBackstage = () => {
         followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
     }
 
-    const copyRunLink = () => {
-        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun.id);
-        setRunLinkCopied(true);
-    };
-
-    let copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to run'});
-    if (runLinkCopied) {
-        copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
-    }
-
     const runActionsButton = (
         <Tooltip
             id={'run-actions-button-tooltip'}
@@ -375,22 +372,6 @@ const PlaybookRunBackstage = () => {
                 onClick={() => dispatch(showRunActionsModal())}
                 clicked={false}
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
-            />
-        </Tooltip>
-    );
-
-    const runLink = (
-        <Tooltip
-            id={'copy-run-link-tooltip'}
-            placement={'bottom'}
-            onExit={() => setRunLinkCopied(false)}
-            shouldUpdatePosition={true}
-            content={copyRunLinkTooltipMessage}
-        >
-            <HeaderIcon
-                className='icon-link-variant'
-                onClick={copyRunLink}
-                clicked={runLinkCopied}
             />
         </Tooltip>
     );
@@ -408,7 +389,11 @@ const PlaybookRunBackstage = () => {
                             <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
                             {runActionsButton}
-                            {runLink}
+                            <StyledCopyLink
+                                id='copy-run-link-tooltip'
+                                to={getSiteUrl() + '/playbooks/runs/' + playbookRun.id}
+                                tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
+                            />
                         </TitleWithBadgeAndLink>
                         {
                             playbook &&

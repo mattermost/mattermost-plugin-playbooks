@@ -7,16 +7,14 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {Checklist, ChecklistItem as ChecklistItemType, PlaybookWithChecklist} from 'src/types/playbook';
-import Section from 'src/components/backstage/playbooks/playbook_preview_section';
 import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import CollapsibleChecklist, {TitleHelpTextWrapper} from 'src/components/collapsible_checklist';
 
 interface Props {
-    id: string;
     playbook: PlaybookWithChecklist;
 }
 
-const PlaybookPreviewChecklists = (props: Props) => {
+const SectionChecklists = (props: Props) => {
     const {formatMessage} = useIntl();
 
     const initialArray = Array(props.playbook.checklists.length).fill(false);
@@ -27,10 +25,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
     }
 
     return (
-        <Section
-            id={props.id}
-            title={formatMessage({defaultMessage: 'Checklists'})}
-        >
+        <>
             {props.playbook.checklists.map((checklist: Checklist, checklistIndex: number) => (
                 <CollapsibleChecklist
                     key={checklist.title}
@@ -75,7 +70,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                     </ChecklistContainer>
                 </CollapsibleChecklist>
             ))}
-        </Section>
+        </>
     );
 };
 
@@ -84,4 +79,4 @@ const ChecklistContainer = styled.div`
     padding: 16px 12px;
 `;
 
-export default PlaybookPreviewChecklists;
+export default SectionChecklists;
