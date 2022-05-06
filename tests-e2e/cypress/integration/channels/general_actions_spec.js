@@ -298,4 +298,45 @@ describe('channels > general actions', () => {
             cy.get('input').should('be.disabled');
         });
     });
+
+    it('action settings are reset to the default when switching to a channel with no actions configured', () => {
+        // # Create an additional channel
+        const name = 'New channel ' + Date.now();
+        cy.apiCreateChannel(
+            testTeam.id,
+            'new-channel',
+            name,
+            'O'
+        ).then(({channel}) => {
+            // # Visit the first channel
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open Channel Header and the Channel Actions modal
+            cy.get('#channelHeaderTitle').click();
+            cy.findByText('Channel Actions').click();
+
+            // # Enable the categorization action and set the name
+            const categoryName = 'example category ' + Date.now();
+            cy.contains('sidebar category').click();
+            cy.contains('Enter category name').click().type(categoryName + '{enter}');
+
+            // # Save action
+            cy.findByRole('button', {name: /save/i}).click();
+
+            // # Switch to the additional channel
+            cy.get('#sidebarItem_' + channel.name).click();
+
+            // # Open Channel Header and the Channel Actions modal
+            cy.get('#channelHeaderTitle').click();
+            cy.findByText('Channel Actions').click();
+
+            // * Verify that the categorization action is disabled
+            cy.findByText('Add the channel to a sidebar category for the user').parent().within(() => {
+                cy.get('input').should('not.be.checked');
+            });
+
+            // * Verify that the category name is not there
+            cy.findByText(categoryName).should('not.exist');
+        });
+    });
 });
