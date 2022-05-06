@@ -153,7 +153,7 @@ const ChecklistContainer = styled.div`
     border-radius: 0 0 4px 4px;
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
-    padding: 8px 8px 8px 0px;
+    padding: 8px 0px;
 `;
 
 const AddTaskLink = styled.button`
