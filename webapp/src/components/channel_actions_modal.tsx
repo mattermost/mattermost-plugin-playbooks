@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {useIntl} from 'react-intl';
 
@@ -31,28 +31,32 @@ function useActionState<T extends PayloadType>(originalState: ActionState<T>) {
     const [initialEnabled, setInitialEnabled] = useState(originalState.enabled);
 
     // Reset the current state to its initial value
-    const reset = () => {
+    const reset = useCallback(() => {
         setActionState({
             ...actionState,
             enabled: initialEnabled,
             payload: initialPayload,
         });
-    };
+    }, [actionState, initialEnabled, initialPayload]);
 
     // Overwrite the initial values with the current state
-    const overwrite = () => {
+    const overwrite = useCallback(() => {
         setInitialEnabled(actionState.enabled);
         setInitialPayload(actionState.payload);
-    };
+    }, [actionState.enabled, actionState.payload]);
 
-    const init = (initState: ActionState<T>) => {
+    const init = useCallback((initState: ActionState<T>) => {
         setActionState(initState);
         setInitialEnabled(initState.enabled);
         setInitialPayload(initState.payload);
-    };
+    }, []);
 
     return [actionState, setActionState, init, reset, overwrite] as const;
 }
+
+const welcomeMsgEmptyState = {id: undefined, enabled: false, payload: {message: ''}};
+const categorizationEmptyState = {id: undefined, enabled: false, payload: {category_name: ''}};
+const promptEmptyState = {id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}};
 
 const ChannelActionsModal = () => {
     const {formatMessage} = useIntl();
@@ -61,10 +65,6 @@ const ChannelActionsModal = () => {
     const channelID = useSelector(getCurrentChannelId);
     const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
     const isSysAdmin = useSelector(isCurrentUserAdmin);
-
-    const welcomeMsgEmptyState = {id: undefined, enabled: false, payload: {message: ''}};
-    const categorizationEmptyState = {id: undefined, enabled: false, payload: {category_name: ''}};
-    const promptEmptyState = {id: undefined, enabled: false, payload: {playbook_id: '', keywords: [] as string[]}};
 
     const [welcomeMsg, setWelcomeMsg, welcomeMsgInit, welcomeMsgReset, welcomeMsgOverwrite] = useActionState(welcomeMsgEmptyState);
     const [categorization, setCategorization, categorizationInit, categorizationReset, categorizationOverwrite] = useActionState(categorizationEmptyState);
@@ -100,7 +100,7 @@ const ChannelActionsModal = () => {
         if (channelID) {
             getActions(channelID);
         }
-    }, [channelID]);
+    }, [channelID, welcomeMsgInit, categorizationInit, promptInit]);
 
     const onHide = () => {
         welcomeMsgReset();
