@@ -72,7 +72,7 @@ describe('channels > run dialog', () => {
             });
         });
 
-        it('in threads view', () => {
+        it('in threads view', {retries: {runMode: 3}}, () => {
             // # Navigate to the application
             cy.visit(`${testTeam.name}/channels/test-run`);
 
