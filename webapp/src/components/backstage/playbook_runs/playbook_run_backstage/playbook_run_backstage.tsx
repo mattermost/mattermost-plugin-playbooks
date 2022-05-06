@@ -7,6 +7,9 @@ import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 
+import MdiIcon from '@mdi/react';
+import {mdiLightningBoltOutline} from '@mdi/js';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
@@ -121,6 +124,7 @@ const LeftArrow = styled(Icon)`
 `;
 
 export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
+    width: 28px;
     font-size: 18px;
     margin-left: 8px;
     border-radius: 4px;
@@ -368,11 +372,15 @@ const PlaybookRunBackstage = () => {
             content={formatMessage({defaultMessage: 'Run Actions'})}
         >
             <HeaderIcon
-                className='icon-palette-outline'
                 onClick={() => dispatch(showRunActionsModal())}
                 clicked={false}
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
-            />
+            >
+                <MdiIcon
+                    path={mdiLightningBoltOutline}
+                    size={1}
+                />
+            </HeaderIcon>
         </Tooltip>
     );
 
