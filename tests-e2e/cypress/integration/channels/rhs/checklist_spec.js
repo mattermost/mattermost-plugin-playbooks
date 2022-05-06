@@ -285,7 +285,7 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it.only('can set due date, from hover menu', () => {
+        it('can set due date, from hover menu', () => {
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
 
