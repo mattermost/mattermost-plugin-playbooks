@@ -819,7 +819,7 @@ type PlaybookRunTelemetry interface {
 	Unfollow(playbookRun *PlaybookRun, userID string)
 
 	// RunAction tracks the run actions, i.e., status broadcast action
-	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numActions int)
+	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numBroadcasts int)
 
 	// UpdateRunActions tracks actions settings update
 	UpdateRunActions(playbookRun *PlaybookRun, userID string)

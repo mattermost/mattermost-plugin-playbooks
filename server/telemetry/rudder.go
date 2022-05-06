@@ -605,20 +605,20 @@ func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, user
 	t.track(eventChannelAction, properties)
 }
 
-func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numActions int) map[string]interface{} {
+func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID":  userID,
 		"ActionType":    actionType,
 		"TriggerType":   triggerType,
-		"NumActions":    numActions,
+		"NumBroadcasts": numBroadcasts,
 		"PlaybookRunID": playbookRun.ID,
 		"PlaybookID":    playbookRun.PlaybookID,
 	}
 }
 
 // RunAction tracks the run actions, i.e., status broadcast action
-func (t *RudderTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numActions int) {
-	properties := runActionProperties(playbookRun, userID, triggerType, actionType, numActions)
+func (t *RudderTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
+	properties := runActionProperties(playbookRun, userID, triggerType, actionType, numBroadcasts)
 	properties["Action"] = actionRunAction
 	t.track(eventRunAction, properties)
 }
