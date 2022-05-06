@@ -381,24 +381,20 @@ export function useAllowMakePlaybookPrivate() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+type StringToUserProfileFn = (id: string) => UserProfile;
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
-    type StringToUserProfileFn = (id: string) => UserProfile;
     const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>(
         (state) => (id: string) => getUser(state, id),
     );
 
-    const unknownIds = [];
-    for (const id of userIds) {
-        const user = getUserFromStore(id);
-        if (!user) {
-            unknownIds.push(id);
+    useEffect(() => {
+        const unknownIds = userIds.filter((userId) => !getUserFromStore(userId));
+        if (unknownIds.length > 0) {
+            dispatch(getProfilesByIds(unknownIds));
         }
-    }
-
-    if (unknownIds.length > 0) {
-        dispatch(getProfilesByIds(userIds));
-    }
+    }, [userIds]);
 }
 
 export function useOpenCloudModal() {
