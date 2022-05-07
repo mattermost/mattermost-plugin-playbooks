@@ -498,8 +498,8 @@ func TestTaskProperties(t *testing.T) {
 func TestRunActionProperties(t *testing.T) {
 	dummyTriggerType := "dummy_trigger_type"
 	dummyActionType := "dummy_action_type"
-	numActions := 7
-	properties := runActionProperties(dummyPlaybookRun, dummyUserID, dummyTriggerType, dummyActionType, numActions)
+	numBroadcasts := 7
+	properties := runActionProperties(dummyPlaybookRun, dummyUserID, dummyTriggerType, dummyActionType, numBroadcasts)
 
 	// ID field is reserved by Rudder to uniquely identify every event
 	require.NotContains(t, properties, "ID")
@@ -508,7 +508,7 @@ func TestRunActionProperties(t *testing.T) {
 		"UserActualID":  dummyUserID,
 		"TriggerType":   dummyTriggerType,
 		"ActionType":    dummyActionType,
-		"NumActions":    numActions,
+		"NumBroadcasts": numBroadcasts,
 		"PlaybookID":    dummyPlaybookRun.PlaybookID,
 		"PlaybookRunID": dummyPlaybookRun.ID,
 	}
