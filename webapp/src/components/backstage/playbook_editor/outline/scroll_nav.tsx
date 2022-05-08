@@ -29,7 +29,7 @@ const headersOffset = 140;
 
 const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
     const {hash} = useLocation();
-    const [activeId, setActiveId] = useState(hash ?? items?.[0].id);
+    const [activeId, setActiveId] = useState(items?.[0].id);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -104,6 +104,12 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
 
         root.addEventListener('scroll', callback, {passive: true});
     };
+
+    useEffect(() => {
+        if (items.some(({id}) => id === hash)) {
+            scrollToSection(hash);
+        }
+    });
 
     const isSectionActive = (id: string) => {
         return activeId === id;

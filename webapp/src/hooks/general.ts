@@ -36,6 +36,8 @@ import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
+import {Argument} from 'classnames';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
@@ -542,9 +544,10 @@ export const usePlaybookName = (playbookId: string) => {
 };
 
 export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
-    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id));
+    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id ?? getCurrentTeamId(state)));
 
     return {
+        singleline: false,
         atMentions: true,
         mentionHighlight: true,
         team,
@@ -552,15 +555,17 @@ export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
     };
 };
 
+/** @deprecated use {@link useDefaultMarkdownOptions} */
 export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
     const team = useSelector((state: GlobalState) => getTeam(state, teamId));
 
     return useDefaultMarkdownOptions(team);
 };
 
-export const useMarkdownRenderer = (teamId: string | undefined) => {
-    const markdownOptions = useDefaultMarkdownOptions(teamId);
-    return (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
+/** @remarks remove ` & Record<string, any>` when {@link formatText} becomes typed */
+export const useMarkdownRenderer = (opts: Parameters<typeof formatText>[1] & Record<string, any>, team?: Maybe<Team | string>) => {
+    const markdownOptions = useDefaultMarkdownOptions(team);
+    return (msg: string) => messageHtmlToComponent(formatText(msg, {...markdownOptions, ...opts}), true, {});
 };
 
 export const useStats = (playbookId: string) => {

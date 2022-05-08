@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes, useEffect, useState} from 'react';
+import React, {Children, ReactNode, HTMLAttributes, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
-import {useLocation} from 'react-router-dom';
+import {useUpdateEffect} from 'react-use';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import TextEdit from 'src/components/text_edit';
+import MarkdownEdit from 'src/components/markdown_edit';
 import {savePlaybook} from 'src/client';
 
 import StatusUpdates from './section_status_updates';
@@ -23,25 +23,14 @@ import Section from './section';
 
 interface Props {
     playbook: PlaybookWithChecklist;
+    updatePlaybook: (diff: Partial<PlaybookWithChecklist>) => void;
     runsInProgress: number;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
-/** @alpha replace/copy-pasta/unfold sections as-needed*/
-const Outline = (props: Props) => {
+const Outline = ({playbook, updatePlaybook}: Props) => {
     const {formatMessage} = useIntl();
-    const [playbook, setPlaybook] = useState(props.playbook);
-
-    const updateSummaryForPlaybook = (summary: string) => {
-        if (!playbook) {
-            return;
-        }
-        const newPlaybook = {...props.playbook};
-        newPlaybook.run_summary_template = summary;
-        setPlaybook(newPlaybook);
-        savePlaybook(newPlaybook);
-    };
 
     return (
         <Sections
@@ -52,10 +41,12 @@ const Outline = (props: Props) => {
                 id={'summary'}
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
-                <TextEdit
+                <MarkdownEdit
                     placeholder={formatMessage({defaultMessage: 'Add run summary template...'})}
                     value={playbook.run_summary_template}
-                    onSave={updateSummaryForPlaybook}
+                    onSave={(run_summary_template) => {
+                        updatePlaybook({run_summary_template});
+                    }}
                 />
             </Section>
             <Section
@@ -101,8 +92,6 @@ const SectionsImpl = ({
     children,
     ...attrs
 }: SectionsProps & Attrs) => {
-    const {hash} = useLocation();
-
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -115,10 +104,6 @@ const SectionsImpl = ({
         }
         return result;
     }, []);
-
-    useEffect(() => {
-        // TODO implement scroll-to-section based on hash
-    }, [hash]);
 
     return (
         <>

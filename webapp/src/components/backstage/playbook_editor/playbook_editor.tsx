@@ -2,24 +2,22 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React from 'react';
+import React, {useRef, useState} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
-import {useIntl, FormattedMessage, FormattedNumber} from 'react-intl';
+import {useIntl} from 'react-intl';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
+import {useIntersection, useUpdateEffect} from 'react-use';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
     useForceDocumentTitle,
     useStats,
     usePlaybook,
-    useMarkdownRenderer,
 } from 'src/hooks';
 
 import {
-    getSiteUrl,
+    savePlaybook,
     telemetryEventForPlaybook,
 } from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
@@ -33,6 +31,8 @@ import {HorizontalBG} from 'src/components/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
+import MarkdownEdit, {RenderedText} from 'src/components/markdown_edit';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 import * as Controls from './controls';
 
@@ -40,15 +40,33 @@ interface MatchParams {
     playbookId: string
 }
 
-/** @alpha this is the new home of `playbooks/playbook.tsx`*/
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
+
     const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
-    const playbook = usePlaybook(playbookId);
+    const sourcePlaybook = usePlaybook(playbookId);
     const stats = useStats(playbookId);
-    const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
+
+    const [playbook, setPlaybook] = useState(sourcePlaybook);
+
+    useUpdateEffect(() => {
+        setPlaybook(sourcePlaybook);
+    }, [sourcePlaybook]);
+
+    const updatePlaybook = (diff: Partial<typeof sourcePlaybook>) => {
+        if (!playbook) {
+            return;
+        }
+        const newPlaybook = {...playbook, ...diff};
+        setPlaybook(newPlaybook);
+        savePlaybook(newPlaybook);
+    };
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
+
+    const headingRef = useRef<HTMLHeadingElement>(null);
+    const headingIntersection = useIntersection(headingRef, {threshold: 0.8});
+    const headingVisible = headingIntersection?.isIntersecting ?? true;
 
     if (playbook === undefined) {
         // loading
@@ -62,50 +80,41 @@ const PlaybookEditor = () => {
 
     return (
         <>
-            <Editor>
+            <Editor $headingVisible={headingVisible}>
                 <TitleHeaderBackdrop/>
                 <NavBackdrop/>
-                <TitleWing side='left'>
-                    <Controls.Back/>
-                    <Controls.TitleMenu playbook={playbook}>
-                        <Title>
-                            {playbook.title}
-                        </Title>
-                    </Controls.TitleMenu>
-                </TitleWing>
-                <TitleWing side='right'>
-                    <Controls.RunPlaybook playbook={playbook}/>
-                </TitleWing>
+                <TitleBar>
+                    <div>
+                        <Controls.Back/>
+                        <Controls.TitleMenu playbook={playbook}>
+                            <Title>
+                                {playbook.title}
+                            </Title>
+                        </Controls.TitleMenu>
+                    </div>
+                    <div>
+                        <Controls.Members playbook={playbook}/>
+                        <Controls.Share playbook={playbook}/>
+                        <Controls.AutoFollowToggle playbook={playbook}/>
+                        <Controls.RunPlaybook playbook={playbook}/>
+                    </div>
+                </TitleBar>
                 <Header>
-                    <Heading>
-                        <CopyLink
-                            id='copy-playbook-link-tooltip'
-                            to={getSiteUrl() + '/playbooks/playbooks/' + playbook.id}
-                            name={playbook.title}
-                            area-hidden={true}
-                        />
+                    <Heading ref={headingRef}>
                         <Controls.TitleMenu playbook={playbook}>
                             {playbook.title}
                         </Controls.TitleMenu>
                     </Heading>
-                    <ControlBar>
-                        {playbook.public === false && (
-                            <Controls.MetaItem>
-                                <i className={'icon icon-lock-outline'}/>
-                                <FormattedMessage defaultMessage='Private'/>
-                            </Controls.MetaItem>
-                        )}
-                        <Controls.Members playbook={playbook}/>
-                        <Controls.MetaItem>
-                            <Icon
-                                path={mdiClipboardPlayMultipleOutline}
-                                size={1.25}
-                            />
-                            <FormattedNumber value={stats.runs_in_progress}/>
-                        </Controls.MetaItem>
-                        <Controls.AutoFollowToggle playbook={playbook}/>
-                    </ControlBar>
-                    <Description>{renderMarkdown(playbook.description)}</Description>
+                    <Description>
+                        <MarkdownEdit
+                            placeholder={formatMessage({defaultMessage: 'Add a description…'})}
+                            value={playbook.description}
+                            onSave={(description) => {
+                                updatePlaybook({description});
+                            }}
+                            noBorder={true}
+                        />
+                    </Description>
                 </Header>
                 <NavBar>
                     <NavItem
@@ -135,6 +144,7 @@ const PlaybookEditor = () => {
                     >
                         <Outline
                             playbook={playbook}
+                            updatePlaybook={updatePlaybook}
                             runsInProgress={stats.runs_in_progress}
                         />
                     </Route>
@@ -156,21 +166,35 @@ const PlaybookEditor = () => {
     );
 };
 
-const ControlBar = styled.div`
-    padding-bottom: 1rem;
-    display: flex;
-`;
-
-const TitleWing = styled.div<{side: 'left' | 'right'}>`
+const TitleBar = styled.div`
     position: sticky;
-    z-index: 3;
+    z-index: 5;
     top: 0;
-    grid-area: ${({side}) => `title-${side}`};
-
+    grid-area: title;
     padding: 0 2rem;
     display: flex;
-    align-items: center;
-    justify-content: ${({side}) => (side === 'left' ? 'start' : 'end')};
+    justify-content: space-between;
+    > div {
+        display: flex;
+        align-items: center;
+    }
+    margin-bottom: 1px; // keep box-shadow visible
+
+    &::before {
+        width: 100%;
+        height: var(--bar-height);
+        display: block;
+        content: '';
+        position: absolute;
+        z-index: -1;
+        left: 0;
+        top: 0;
+
+        // === blur/cutoff ===
+        background-color: var(--center-channel-bg);
+        mask: linear-gradient(black, black, transparent);
+        filter: blur(1rem);
+    }
 `;
 
 const Header = styled.header`
@@ -229,7 +253,7 @@ const Title = styled.h1`
     ${titleMenuOverrides}
 `;
 
-const Description = styled.p`
+const Description = styled.div`
     font-weight: 400;
     font-size: 14px;
     line-height: 20px;
@@ -267,8 +291,6 @@ const NavBar = styled.nav`
     width: 100%;
     justify-content: center;
     grid-area: nav;
-    position: sticky;
-    top: 0;
     z-index: 2;
 `;
 
@@ -283,32 +305,37 @@ const NavBackdrop = styled.div`
 
 const TitleHeaderBackdrop = styled.div`
     background: var(--center-channel-bg);
-    grid-area: title-left/title-left/control/title-right;
+    grid-area: title/title/control/title;
 `;
 
-const Editor = styled.main`
+const Editor = styled.main<{$headingVisible: boolean}>`
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
+
+    --markdown-textbox-radius: 8px;
+    --markdown-textbox-padding: 12px 16px;
 
     --bar-height: 60px;
     --content-max-width: 780px;
 
     /* === standard-full === */
     grid-template:
-        'title-left title-left . title-right title-right' var(--bar-height)
-        '. header header header .'
-        '. control control control .'
-        'nav-left nav-left nav nav-right nav-right' var(--bar-height)
-        'aside content content content .' 1fr
-        / 1fr 1fr minmax(min-content, auto) 1fr 1fr;
+        'title title title' var(--bar-height)
+        '. header .'
+        '. control .'
+        'nav-left nav nav-right' var(--bar-height)
+        'aside content aside-right' 1fr
+        / 1fr minmax(auto, var(--content-max-width)) 1fr;
     ;
 
     gap: 0 3rem;
 
-    ${Header} ${Controls.TitleMenu} {
-        i.icon {
-            font-size: 3.5rem;
+    ${Header} {
+        ${Controls.TitleMenu} {
+            i.icon {
+                font-size: 3.5rem;
+            }
         }
     }
 
@@ -317,7 +344,8 @@ const Editor = styled.main`
         align-self: start;
         justify-self: end;
 
-        margin-top: 10rem;
+        margin-top: 8.75rem;
+        padding-top: 1rem;
 
         position: sticky;
         top: var(--bar-height);
@@ -340,14 +368,15 @@ const Editor = styled.main`
         grid-area: aside/aside/aside-right/aside-right;
     }
 
-    ${TitleWing} {
+    ${TitleBar} {
         ${Controls.TitleMenu} {
             display: none;
         }
     }
+
     /* === scrolling, condense header/title === */
-    .is-scrolling & {
-        ${TitleWing} {
+    ${({$headingVisible}) => !$headingVisible && css`
+        ${TitleBar} {
             ${Controls.TitleMenu} {
                 display: inline-flex;
                 margin-left: 8px;
@@ -358,19 +387,18 @@ const Editor = styled.main`
                 display: none;
             }
         }
-    }
+    `}
 
     /* === mobile === */
     @media screen and (max-width: 768px) {
-
         --bar-height: 50px;
 
         grid-template:
-            'title-left title-right' var(--bar-height)
-            'header header'
-            'control control'
-            'nav nav'
-            'content content'
+            'title' var(--bar-height)
+            'header'
+            'control'
+            'nav'
+            'content'
             / 1fr
         ;
 
@@ -385,7 +413,7 @@ const Editor = styled.main`
         }
 
         ${NavBar},
-        ${TitleWing} {
+        ${TitleBar} {
             position: unset;
         }
 

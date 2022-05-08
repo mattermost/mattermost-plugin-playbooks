@@ -19,29 +19,7 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import Tooltip from 'src/components/widgets/tooltip';
 import {clientFetchPlaybookFollowers} from 'src/client';
-
-const useFollowersMeta = (playbookId: string) => {
-    const [followerIds, setFollowerIds] = useState<string[]>([]);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const currentUserId = useSelector(getCurrentUserId);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookId) {
-                try {
-                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
-                    setFollowerIds(fetchedFollowerIds);
-                    setIsFollowing(fetchedFollowerIds?.includes(currentUserId));
-                } catch {
-                    setIsFollowing(false);
-                }
-            }
-        };
-        fetchData();
-    }, [playbookId, currentUserId, isFollowing]);
-
-    return {followerIds, isFollowing, setIsFollowing};
-};
+import {useEditorFollowersMeta} from '../controls';
 
 interface Props {
     playbook: PlaybookWithChecklist;
@@ -49,7 +27,7 @@ interface Props {
 
 const PlaybookPreviewActions = (props: Props) => {
     const {formatMessage} = useIntl();
-    const {followerIds} = useFollowersMeta(props.playbook.id);
+    const {followerIds} = useEditorFollowersMeta(props.playbook.id);
     const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 

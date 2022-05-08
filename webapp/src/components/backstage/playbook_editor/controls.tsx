@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {HTMLAttributes, PropsWithChildren, useEffect, useState} from 'react';
+import React, {HTMLAttributes, PropsWithChildren, useEffect, useMemo, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
@@ -19,7 +19,7 @@ import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entit
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import classNames from 'classnames';
+import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {useHasPlaybookPermission} from 'src/hooks';
@@ -47,7 +47,6 @@ import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
-import {PillBox} from 'src/components/widgets/pill';
 
 type ControlProps = {playbook: PlaybookWithChecklist;};
 
@@ -100,10 +99,19 @@ export const Back = styled((props: StyledProps) => {
 export const Members = ({playbook: {id, members}}: ControlProps) => {
     const dispatch = useDispatch();
     return (
-        <MembersIcon onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+        <IconButton onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
             <i className={'icon icon-account-multiple-outline'}/>
             {members.length}
-        </MembersIcon>
+        </IconButton>
+    );
+};
+
+export const Share = ({playbook: {id, members}}: ControlProps) => {
+    const dispatch = useDispatch();
+    return (
+        <IconButton onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+            <i className={'icon icon-account-multiple-outline'}/>
+        </IconButton>
     );
 };
 
@@ -120,47 +128,59 @@ export const ArchivedLabel = ({playbook: {delete_at}}: ControlProps) => {
     );
 };
 
-const useFollowersMeta = (playbookId: string) => {
-    const [followerIds, setFollowerIds] = useState<string[]>([]);
-    const [isFollowing, setIsFollowing] = useState(false);
+const changeFollowing = async (playbookId: string, userId: string, following: boolean) => {
+    if (!playbookId || !userId) {
+        return null;
+    }
+
+    try {
+        if (following) {
+            await autoFollowPlaybook(playbookId, userId);
+        } else {
+            await autoUnfollowPlaybook(playbookId, userId);
+        }
+        return following;
+    } catch {
+        return null;
+    }
+};
+
+const useFollowerIds = createGlobalState<string[] | null>(null);
+const useIsFollowing = createGlobalState(false);
+
+export const useEditorFollowersMeta = (playbookId: string) => {
+    const [followerIds, setFollowerIds] = useFollowerIds();
+    const [isFollowing, setIsFollowing] = useIsFollowing();
     const currentUserId = useSelector(getCurrentUserId);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookId) {
-                try {
-                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
-                    setFollowerIds(fetchedFollowerIds);
-                    setIsFollowing(fetchedFollowerIds?.includes(currentUserId));
-                } catch {
-                    setIsFollowing(false);
-                }
-            }
-        };
-        fetchData();
-    }, [playbookId, currentUserId, isFollowing]);
+    const refresh = async () => {
+        if (!playbookId || !currentUserId) {
+            return;
+        }
+        const followers = await clientFetchPlaybookFollowers(playbookId);
+        setFollowerIds(followers);
+        setIsFollowing(followers.includes(currentUserId));
+    };
 
-    return {followerIds, isFollowing, setIsFollowing};
+    useEffect(() => {
+        if (followerIds === null) {
+            setFollowerIds([]);
+            refresh();
+        }
+    }, [followerIds]);
+
+    const setFollowing = async (following: boolean) => {
+        setIsFollowing(following);
+        await changeFollowing(playbookId, currentUserId, following);
+        refresh();
+    };
+
+    return {followerIds: followerIds ?? [], isFollowing, setFollowing};
 };
 
 export const AutoFollowToggle = ({playbook}: ControlProps) => {
     const {formatMessage} = useIntl();
-    const {
-        isFollowing,
-        setIsFollowing,
-    } = useFollowersMeta(playbook.id);
-    const currentUserId = useSelector(getCurrentUserId);
-
-    const changeFollowing = (following: boolean) => {
-        if (playbook.id && following !== isFollowing) {
-            if (following) {
-                autoFollowPlaybook(playbook.id, currentUserId);
-            } else {
-                autoUnfollowPlaybook(playbook.id, currentUserId);
-            }
-            setIsFollowing(following);
-        }
-    };
+    const {isFollowing, setFollowing} = useEditorFollowersMeta(playbook.id);
 
     const archived = playbook.delete_at !== 0;
 
@@ -191,7 +211,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                         text={'Auto-follow runs'}
                         checked={isFollowing}
                         disabled={archived}
-                        onChange={changeFollowing}
+                        onChange={setFollowing}
                     />
                 </div>
             </OverlayTrigger>
@@ -325,20 +345,15 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 `;
 
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{checked: boolean}>`
-    border: none;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
     color: rgba(var(--center-channel-color-rgb), 0.56);
-
-    padding: 0px 3px;
-    height: 24px;
-    margin: 0;
-
 
     &:hover:enabled {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${({checked}) => checked && css`
-        border: none;
+    border: 1px solid var(--button-bg);
         color: var(--button-bg);
 
         &:hover:enabled {
@@ -351,7 +366,7 @@ const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
 
-const MembersIcon = styled.div`
+const IconButton = styled.div`
     display: inline-block;
     font-size: 14px;
     line-height: 24px;
@@ -372,6 +387,7 @@ const MembersIcon = styled.div`
 
 const TitleButton = styled.div`
     margin-left: 20px;
+    padding-left: 16px;
     display: inline-flex;
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -385,24 +401,4 @@ const TitleButton = styled.div`
 
 const RedText = styled.div`
     color: var(--error-text);
-`;
-
-export const MetaItem = styled(PillBox)`
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 14px;
-    height: 24px;
-    padding: 3px 6px;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    display: inline-flex;
-    align-items: center;
-    border-radius: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding-left: 2px;
-    background: transparent;
-
-    svg {
-        margin-right: 4px;
-    }
 `;

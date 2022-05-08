@@ -8,15 +8,12 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
-import {useScroll} from 'react-use';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
-
-import classNames from 'classnames';
 
 import Playbook from 'src/components/backstage/playbooks/playbook';
 import {promptForFeedback} from 'src/client';
@@ -89,9 +86,6 @@ const BackstageBody = styled.div`
 
 const Backstage = () => {
     const {formatMessage} = useIntl();
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const {y} = useScroll(containerRef);
 
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
@@ -119,9 +113,7 @@ const Backstage = () => {
 
     return (
         <BackstageContainer
-            ref={containerRef}
             id={BackstageID}
-            className={classNames({'is-scrolling': y > 80})}
         >
             <ToastProvider>
                 <Switch>
