@@ -233,7 +233,6 @@ type GetPlaybookRunsResults struct {
 	PageCount  int           `json:"page_count"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
-	Disabled   bool          `json:"disabled"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
