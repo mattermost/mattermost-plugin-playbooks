@@ -2,18 +2,15 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes, useState} from 'react';
+import React, {Children, ReactNode, HTMLAttributes} from 'react';
 
 import {useIntl} from 'react-intl';
 
-import {useUpdateEffect} from 'react-use';
-
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import MarkdownEdit from 'src/components/markdown_edit';
-import {savePlaybook} from 'src/client';
+import ChecklistList from 'src/components/checklist/checklist_list';
 
 import StatusUpdates from './section_status_updates';
-import Checklists from './section_checklists';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
 
@@ -59,7 +56,7 @@ const Outline = ({playbook, updatePlaybook}: Props) => {
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
             >
-                <Checklists playbook={playbook}/>
+                <ChecklistList playbook={playbook}/>
             </Section>
             <Section
                 id={'retrospective'}

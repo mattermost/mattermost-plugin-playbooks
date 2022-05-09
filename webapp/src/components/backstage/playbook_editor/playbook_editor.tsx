@@ -2,12 +2,16 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useState} from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
 import {useIntersection, useUpdateEffect} from 'react-use';
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
+import {useDispatch} from 'react-redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -31,7 +35,7 @@ import {HorizontalBG} from 'src/components/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
-import MarkdownEdit, {RenderedText} from 'src/components/markdown_edit';
+import MarkdownEdit from 'src/components/markdown_edit';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
 import * as Controls from './controls';
@@ -42,6 +46,7 @@ interface MatchParams {
 
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
 
     const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
     const sourcePlaybook = usePlaybook(playbookId);
@@ -67,6 +72,16 @@ const PlaybookEditor = () => {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const headingIntersection = useIntersection(headingRef, {threshold: 0.8});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
+    useEffect(() => {
+        const teamId = playbook?.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+        dispatch(fetchMyCategories(teamId));
+    }, [dispatch, playbook?.team_id]);
 
     if (playbook === undefined) {
         // loading

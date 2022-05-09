@@ -45,10 +45,14 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
-    SHOW_ACTIONS_MODAL,
-    ShowActionsModal,
-    HIDE_ACTIONS_MODAL,
-    HideActionsModal,
+    SHOW_CHANNEL_ACTIONS_MODAL,
+    ShowChannelActionsModal,
+    HIDE_CHANNEL_ACTIONS_MODAL,
+    HideChannelActionsModal,
+    SHOW_RUN_ACTIONS_MODAL,
+    ShowRunActionsModal,
+    HIDE_RUN_ACTIONS_MODAL,
+    HideRunActionsModal,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -293,12 +297,20 @@ export const hidePostMenuModal = (): HidePostMenuModal => ({
     type: HIDE_POST_MENU_MODAL,
 });
 
-export const showActionsModal = (): ShowActionsModal => ({
-    type: SHOW_ACTIONS_MODAL,
+export const showChannelActionsModal = (): ShowChannelActionsModal => ({
+    type: SHOW_CHANNEL_ACTIONS_MODAL,
 });
 
-export const hideActionsModal = (): HideActionsModal => ({
-    type: HIDE_ACTIONS_MODAL,
+export const hideChannelActionsModal = (): HideChannelActionsModal => ({
+    type: HIDE_CHANNEL_ACTIONS_MODAL,
+});
+
+export const showRunActionsModal = (): ShowRunActionsModal => ({
+    type: SHOW_RUN_ACTIONS_MODAL,
+});
+
+export const hideRunActionsModal = (): HideRunActionsModal => ({
+    type: HIDE_RUN_ACTIONS_MODAL,
 });
 
 export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({

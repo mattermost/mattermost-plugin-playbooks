@@ -15,7 +15,7 @@ import {CancelSaveButtons} from './inputs';
 import {DropdownArrow} from './assign_to';
 
 interface CommandProps {
-    playbookRunId: string;
+    playbookRunId?: string;
     checklistNum: number;
     itemNum: number;
 
@@ -71,7 +71,7 @@ const Command = (props: CommandProps) => {
             onClick={() => {
                 if (!running) {
                     setRunning(true);
-                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
+                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId || '', props.checklistNum, props.itemNum);
                 }
             }}
         >
@@ -101,12 +101,13 @@ const Command = (props: CommandProps) => {
             onChangeCommand={props.onChangeCommand}
             taskCommand={props.command}
             grabFocus={wasOpened}
+            isRHS={props.playbookRunId !== undefined}
         />
     );
 
     const notEditingCommand = (
         <>
-            {!props.disabled && runButton}
+            {!props.disabled && props.playbookRunId !== undefined && runButton}
             {commandButton}
             {!props.disabled && running && <StyledSpinner/>}
         </>
@@ -123,6 +124,7 @@ const Command = (props: CommandProps) => {
         <CommandContainer
             ref={commandRef}
             editing={props.isEditing}
+            isRHS={props.playbookRunId !== undefined}
         >
             {props.isEditing ? editingCommand : notEditingCommand}
         </CommandContainer>
@@ -139,7 +141,7 @@ const PlaceholderDiv = styled.div`
     }
 `;
 
-const CommandContainer = styled.div<{editing: boolean}>`
+const CommandContainer = styled.div<{editing: boolean, isRHS: boolean}>`
     ${({editing}) => editing && css`
         z-index: 49;
     `}
@@ -149,6 +151,10 @@ const CommandContainer = styled.div<{editing: boolean}>`
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+
+    ${({isRHS}) => !isRHS && css`
+        position: relative;
+    `}
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.16);
@@ -227,13 +233,14 @@ interface EditCommandDropdownProps {
     onChangeCommand: (newCommand: string) => void;
     taskCommand: string;
     grabFocus: boolean;
+    isRHS: boolean;
 }
 
 const EditCommandDropdown = (props: EditCommandDropdownProps) => {
     const [command, setCommand] = useState(props.taskCommand);
 
     return (
-        <FormContainer>
+        <FormContainer isRHS={props.isRHS}>
             <CommandInputContainer>
                 <CommandInput
                     command={command === '' ? '/' : command}
@@ -254,7 +261,7 @@ const EditCommandDropdown = (props: EditCommandDropdownProps) => {
     );
 };
 
-const FormContainer = styled.div`
+const FormContainer = styled.div<{isRHS: boolean}>`
     display: flex;
     flex-direction: column;
     position: absolute;
@@ -264,8 +271,15 @@ const FormContainer = styled.div`
     background: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     margin-top: 4px;
-    left: 50px;
-    right: 50px;
+    ${({isRHS}) => !isRHS && css`
+        top: 24px;
+        width: 500px;
+    `}
+
+    ${({isRHS}) => isRHS && css`
+        left: 50px;
+        right: 50px;
+    `}
 
     > * {
         margin-bottom: 10px;
