@@ -260,9 +260,7 @@ describe('channels > rhs > status update', () => {
                 cy.wait(TIMEOUTS.TWO_SEC);
 
                 // # Submit the dialog.
-                cy.getStatusUpdateDialog().within(() => {
-                    cy.get('button.confirm').click();
-                });
+                cy.get('button.confirm').click();
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
