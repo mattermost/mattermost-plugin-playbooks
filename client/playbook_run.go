@@ -14,7 +14,6 @@ type PlaybookRun struct {
 	ID                                   string          `json:"id"`
 	Name                                 string          `json:"name"`
 	Summary                              string          `json:"summary"`
-	Description                          string          `json:"description"`
 	OwnerUserID                          string          `json:"owner_user_id"`
 	ReporterUserID                       string          `json:"reporter_user_id"`
 	TeamID                               string          `json:"team_id"`
@@ -34,7 +33,6 @@ type PlaybookRun struct {
 	PreviousReminder                     time.Duration   `json:"previous_reminder"`
 	ReminderTimerDefaultSeconds          int64           `json:"reminder_timer_default_seconds"`
 	StatusUpdateEnabled                  bool            `json:"status_update_enabled"`
-	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
 	BroadcastChannelIDs                  []string        `json:"broadcast_channel_ids"`
 	WebhookOnStatusUpdateURLs            []string        `json:"webhook_on_status_update_urls"`
 	StatusUpdateBroadcastChannelsEnabled bool            `json:"status_update_broadcast_channels_enabled"`
@@ -43,7 +41,7 @@ type PlaybookRun struct {
 	InvitedUserIDs                       []string        `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
 	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
-	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
+	DefaultOwnerID                       string          `json:"default_owner_id"`
 	WebhookOnCreationURLs                []string        `json:"webhook_on_creation_urls"`
 	Retrospective                        string          `json:"retrospective"`
 	RetrospectivePublishedAt             int64           `json:"retrospective_published_at"`
