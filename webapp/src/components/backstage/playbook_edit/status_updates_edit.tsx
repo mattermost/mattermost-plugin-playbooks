@@ -21,7 +21,7 @@ import {
 } from 'src/components/backstage/playbook_edit/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 import {Broadcast} from 'src/components/backstage/playbook_edit/automation/broadcast';
-import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automation/patterned_text_area';
+import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
@@ -136,7 +136,7 @@ const StatusUpdatesEdit = ({playbook, setPlaybook, setChangesMade}: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
-                    <PatternedTextArea
+                    <WebhookSetting
                         enabled={playbook.webhook_on_status_update_enabled && playbook.status_update_enabled}
                         onToggle={handleToggleWebhookOnStatusUpdate}
                         input={playbook.webhook_on_status_update_urls.join('\n')}

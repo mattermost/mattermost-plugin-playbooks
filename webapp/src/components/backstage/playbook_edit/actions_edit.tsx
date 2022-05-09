@@ -11,7 +11,7 @@ import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playb
 import {Section, SectionTitle, Setting} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
-import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automation/patterned_text_area';
+import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
 import {MessageOnJoin} from 'src/components/backstage/playbook_edit/automation/message_on_join';
 import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import RunSummary from 'src/components/backstage/playbook_edit/automation/run_summary';
@@ -184,7 +184,7 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
-                    <PatternedTextArea
+                    <WebhookSetting
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
