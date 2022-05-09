@@ -281,6 +281,7 @@ const UpdateRunStatusModal = ({
                 handleCancel={() => true}
                 {...modalProps}
                 onHide={onTentativeHide}
+                onExited={() => null}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
                 isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
