@@ -383,6 +383,11 @@ export function useAllowMakePlaybookPrivate() {
 
 type StringToUserProfileFn = (id: string) => UserProfile;
 
+export function useEnsureProfile(userId: string) {
+    const userIds = useMemo(() => [userId], [userId]);
+    useEnsureProfiles(userIds);
+}
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>(
