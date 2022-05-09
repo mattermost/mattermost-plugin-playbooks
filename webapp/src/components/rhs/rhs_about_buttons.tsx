@@ -85,10 +85,13 @@ const RHSAboutButtons = (props: Props) => {
     );
 };
 
-const StyledDotMenuButton = styled(DotMenuButton)`
+const StyledDotMenuButton = styled(DotMenuButton)<{isActive: boolean}>`
+    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+
     &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
+        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }
 
     width: 28px;

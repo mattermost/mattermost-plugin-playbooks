@@ -5,9 +5,8 @@ import React, {useState, useRef} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
-import {PrimaryButton} from 'src/components/assets/buttons';
 
-export const DotMenuButton = styled.div`
+export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -83,11 +82,13 @@ interface DotMenuProps {
     topPx?: number;
     leftPx?: number;
     wide?: boolean;
-    dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
+    dotMenuButton: typeof DotMenuButton;
     dropdownMenu?: typeof DropdownMenu;
     title?: string;
     disabled?: boolean;
     className?: string;
+    isActive?: boolean;
+
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -114,6 +115,7 @@ const DotMenu = (props: DotMenuProps) => {
         <MenuButton
             title={props.title}
             ref={rootRef}
+            isActive={(props.isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 toggleOpen();
