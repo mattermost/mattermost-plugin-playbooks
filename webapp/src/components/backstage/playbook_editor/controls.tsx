@@ -17,7 +17,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 
 import {createGlobalState} from 'react-use';
 
@@ -37,10 +37,8 @@ import {
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PrimaryButton} from 'src/components/assets/buttons';
-import {RegularHeading, SemiBoldHeading} from 'src/styles/headings';
+import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
-import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {displayEditPlaybookAccessModal} from 'src/actions';
@@ -101,17 +99,18 @@ export const Members = ({playbook: {id, members}}: ControlProps) => {
     return (
         <IconButton onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
             <i className={'icon icon-account-multiple-outline'}/>
-            {members.length}
+            <FormattedNumber value={members.length}/>
         </IconButton>
     );
 };
 
-export const Share = ({playbook: {id, members}}: ControlProps) => {
+export const Share = ({playbook: {id}}: ControlProps) => {
     const dispatch = useDispatch();
     return (
-        <IconButton onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
-            <i className={'icon icon-account-multiple-outline'}/>
-        </IconButton>
+        <TertiaryButtonLarger onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+            <i className={'icon icon-lock-outline'}/>
+            <FormattedMessage defaultMessage='Share'/>
+        </TertiaryButtonLarger>
     );
 };
 
@@ -196,7 +195,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
     );
 
     return (
-        <SecondaryButtonLargerRightStyled
+        <SecondaryButtonLargerCheckbox
             checked={isFollowing}
             disabled={archived}
         >
@@ -215,7 +214,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                     />
                 </div>
             </OverlayTrigger>
-        </SecondaryButtonLargerRightStyled>
+        </SecondaryButtonLargerCheckbox>
     );
 };
 
@@ -254,11 +253,15 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
         >
-            <RightMarginedIcon
+            <Icon
                 path={mdiClipboardPlayOutline}
                 size={1.25}
             />
-            {isTutorialPlaybook ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
+            {isTutorialPlaybook ? (
+                <FormattedMessage defaultMessage='Start a test run'/>
+            ) : (
+                <FormattedMessage defaultMessage='Run'/>
+            )}
         </PrimaryButtonLarger>
     );
 };
@@ -328,25 +331,44 @@ export const TitleMenu = styled(({playbook, children, className}: PropsWithChild
 
 `;
 
-const PrimaryButtonLarger = styled(PrimaryButton)`
+const buttonCommon = css`
     padding: 0 16px;
     height: 36px;
-    margin-left: 12px;
+    gap: 8px;
+
+    i::before {
+        margin-left: 0;
+        margin-right: 0;
+        font-size: 1.05em;
+    }
+`;
+
+const PrimaryButtonLarger = styled(PrimaryButton)`
+    ${buttonCommon};
+`;
+
+const SecondaryButtonLarger = styled(SecondaryButton)`
+    ${buttonCommon};
+`;
+
+const TertiaryButtonLarger = styled(TertiaryButton)`
+    ${buttonCommon};
 `;
 
 const CheckboxInputStyled = styled(CheckboxInput)`
-    padding-right: 4px;
-    padding-left: 4px;
+    padding: 8px 16px;
     font-size: 14px;
+    height: 36px;
 
     &:hover {
         background-color: transparent;
     }
 `;
 
-const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{checked: boolean}>`
+const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: boolean}>`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    padding: 0;
 
     &:hover:enabled {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
@@ -362,21 +384,17 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{ch
     `}
 `;
 
-const RightMarginedIcon = styled(Icon)`
-    margin-right: 0.5rem;
-`;
-
 const IconButton = styled.div`
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     font-size: 14px;
     line-height: 24px;
     font-weight: 600;
     border-radius: 4px;
     padding: 0px 8px;
     margin: 0;
-    margin-right: 4px;
     color: rgba(var(--center-channel-color-rgb),0.56);
-    height: 24px;
+    height: 36px;
     cursor: pointer;
 
     &:hover {
@@ -385,8 +403,7 @@ const IconButton = styled.div`
     }
 `;
 
-const TitleButton = styled.div`
-    margin-left: 20px;
+export const TitleButton = styled.div`
     padding-left: 16px;
     display: inline-flex;
     border-radius: 4px;

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes} from 'react';
+import React, {Children, ReactNode} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -24,7 +24,7 @@ interface Props {
     runsInProgress: number;
 }
 
-type Attrs = HTMLAttributes<HTMLElement>;
+type StyledAttrs = {className?: string};
 
 const Outline = ({playbook, updatePlaybook}: Props) => {
     const {formatMessage} = useIntl();
@@ -87,8 +87,8 @@ type SectionsProps = {
 const SectionsImpl = ({
     playbookId,
     children,
-    ...attrs
-}: SectionsProps & Attrs) => {
+    className,
+}: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -108,7 +108,7 @@ const SectionsImpl = ({
                 playbookId={playbookId}
                 items={items}
             />
-            <div {...attrs}>
+            <div className={className}>
                 {children}
             </div>
         </>

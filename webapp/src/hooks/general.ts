@@ -10,7 +10,7 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
@@ -541,31 +541,6 @@ export const usePlaybookName = (playbookId: string) => {
     }, [playbookId]);
 
     return playbookName;
-};
-
-export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
-    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id ?? getCurrentTeamId(state)));
-
-    return {
-        singleline: false,
-        atMentions: true,
-        mentionHighlight: true,
-        team,
-        channelNamesMap,
-    };
-};
-
-/** @deprecated use {@link useDefaultMarkdownOptions} */
-export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
-    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
-
-    return useDefaultMarkdownOptions(team);
-};
-
-/** @remarks remove ` & Record<string, any>` when {@link formatText} becomes typed */
-export const useMarkdownRenderer = (opts: Parameters<typeof formatText>[1] & Record<string, any>, team?: Maybe<Team | string>) => {
-    const markdownOptions = useDefaultMarkdownOptions(team);
-    return (msg: string) => messageHtmlToComponent(formatText(msg, {...markdownOptions, ...opts}), true, {});
 };
 
 export const useStats = (playbookId: string) => {

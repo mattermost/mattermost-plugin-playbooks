@@ -4,9 +4,9 @@ import {useIntl} from 'react-intl';
 
 import {useUpdateEffect} from 'react-use';
 
-import {useMarkdownRenderer} from 'src/hooks';
-
 import MarkdownTextbox from 'src/components/markdown_textbox';
+
+import FormattedMarkdown from 'src/components/formatted_markdown';
 
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
@@ -28,8 +28,6 @@ const MarkdownEdit = (props: TextEditProps) => {
     useUpdateEffect(() => {
         setValue(props.value);
     }, [props.value]);
-
-    const renderMarkdown = useMarkdownRenderer({mentionHighlight: false});
 
     if (isEditing) {
         return (
@@ -76,10 +74,12 @@ const MarkdownEdit = (props: TextEditProps) => {
             >
                 {value ? (
                     <ShowMore>
-                        {renderMarkdown(value)}
+                        <FormattedMarkdown value={value}/>
                     </ShowMore>
                 ) : (
-                    <PlaceholderText>{renderMarkdown(props.placeholder)}</PlaceholderText>
+                    <PlaceholderText>
+                        <FormattedMarkdown value={props.placeholder}/>
+                    </PlaceholderText>
                 )}
             </RenderedText>
         </MarkdownEditContainer>
@@ -118,7 +118,6 @@ const commonTextStyle = css`
 
 const MarkdownEditContainer = styled.div<{editing: boolean;dashed: boolean;noBorder?: boolean;}>`
     position: relative;
-
     box-sizing: border-box;
     border-radius: var(--markdown-textbox-radius, 4px);
 

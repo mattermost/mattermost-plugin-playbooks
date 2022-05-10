@@ -9,7 +9,7 @@ import {useSelector} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
@@ -28,7 +28,7 @@ interface Props {
 const PlaybookPreviewActions = (props: Props) => {
     const {formatMessage} = useIntl();
     const {followerIds} = useEditorFollowersMeta(props.playbook.id);
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
+    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     // The following booleans control the rendering of each of the CardEntry components in this section,

@@ -6,7 +6,7 @@ import {useIntl} from 'react-intl';
 
 import {Duration} from 'luxon';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
@@ -20,7 +20,7 @@ interface Props {
 
 const PlaybookPreviewStatusUpdates = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
+    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     // The following booleans control the rendering of each of the CardEntry comopnents in this section,

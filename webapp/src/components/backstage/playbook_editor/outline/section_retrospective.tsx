@@ -6,7 +6,7 @@ import {useIntl} from 'react-intl';
 
 import {Duration} from 'luxon';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
@@ -23,7 +23,7 @@ const SectionRetrospective = (props: Props) => {
     const retrospectiveAccess = useAllowRetrospectiveAccess();
 
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
+    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     if (!retrospectiveAccess || !props.playbook.retrospective_enabled) {

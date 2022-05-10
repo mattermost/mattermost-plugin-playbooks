@@ -40,15 +40,11 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import Outline, {Sections, ScrollNav} from './outline/outline';
 import * as Controls from './controls';
 
-interface MatchParams {
-    playbookId: string
-}
-
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
 
-    const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
+    const {url, path, params: {playbookId}} = useRouteMatch<{playbookId: string;}>();
     const sourcePlaybook = usePlaybook(playbookId);
     const stats = useStats(playbookId);
 
@@ -94,90 +90,86 @@ const PlaybookEditor = () => {
     }
 
     return (
-        <>
-            <Editor $headingVisible={headingVisible}>
-                <TitleHeaderBackdrop/>
-                <NavBackdrop/>
-                <TitleBar>
-                    <div>
-                        <Controls.Back/>
-                        <Controls.TitleMenu playbook={playbook}>
-                            <Title>
-                                {playbook.title}
-                            </Title>
-                        </Controls.TitleMenu>
-                    </div>
-                    <div>
-                        <Controls.Members playbook={playbook}/>
-                        <Controls.Share playbook={playbook}/>
-                        <Controls.AutoFollowToggle playbook={playbook}/>
-                        <Controls.RunPlaybook playbook={playbook}/>
-                    </div>
-                </TitleBar>
-                <Header>
-                    <Heading ref={headingRef}>
-                        <Controls.TitleMenu playbook={playbook}>
+        <Editor $headingVisible={headingVisible}>
+            <TitleHeaderBackdrop/>
+            <NavBackdrop/>
+            <TitleBar>
+                <div>
+                    <Controls.Back/>
+                    <Controls.TitleMenu playbook={playbook}>
+                        <Title>
                             {playbook.title}
-                        </Controls.TitleMenu>
-                    </Heading>
-                    <Description>
-                        <MarkdownEdit
-                            placeholder={formatMessage({defaultMessage: 'Add a description…'})}
-                            value={playbook.description}
-                            onSave={(description) => {
-                                updatePlaybook({description});
-                            }}
-                            noBorder={true}
-                        />
-                    </Description>
-                </Header>
-                <NavBar>
-                    <NavItem
-                        to={`${url}`}
-                        exact={true}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
-                    >
-                        {formatMessage({defaultMessage: 'Outline'})}
-                    </NavItem>
-                    <NavItem
-                        to={`${url}/usage`}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
-                    >
-                        {formatMessage({defaultMessage: 'Usage'})}
-                    </NavItem>
-                    <NavItem
-                        to={`${url}/reports`}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
-                    >
-                        {formatMessage({defaultMessage: 'Reports'})}
-                    </NavItem>
-                </NavBar>
-                <Switch>
-                    <Route
-                        path={`${path}`}
-                        exact={true}
-                    >
-                        <Outline
-                            playbook={playbook}
-                            updatePlaybook={updatePlaybook}
-                            runsInProgress={stats.runs_in_progress}
-                        />
-                    </Route>
-                    <Route path={`${path}/usage`}>
-                        <PlaybookUsage
-                            playbook={playbook}
-                            stats={stats}
-                        />
-                    </Route>
-                    <Route path={`${path}/reports`}>
-                        <PlaybookKeyMetrics
-                            playbook={playbook}
-                            stats={stats}
-                        />
-                    </Route>
-                </Switch>
-            </Editor>
-        </>
+                        </Title>
+                    </Controls.TitleMenu>
+                </div>
+                <div>
+                    <Controls.Members playbook={playbook}/>
+                    <Controls.Share playbook={playbook}/>
+                    <Controls.AutoFollowToggle playbook={playbook}/>
+                    <Controls.RunPlaybook playbook={playbook}/>
+                </div>
+            </TitleBar>
+            <Header>
+                <Heading ref={headingRef}>
+                    <Controls.TitleMenu playbook={playbook}>
+                        {playbook.title}
+                    </Controls.TitleMenu>
+                </Heading>
+                <Description>
+                    <MarkdownEdit
+                        placeholder={formatMessage({defaultMessage: 'Add a description…'})}
+                        value={playbook.description}
+                        onSave={(description) => updatePlaybook({description})}
+                        noBorder={true}
+                    />
+                </Description>
+            </Header>
+            <NavBar>
+                <NavItem
+                    to={`${url}`}
+                    exact={true}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Usage'})}
+                </NavItem>
+                <NavItem
+                    to={`${url}/outline`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Outline'})}
+                </NavItem>
+                <NavItem
+                    to={`${url}/reports`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Reports'})}
+                </NavItem>
+            </NavBar>
+            <Switch>
+                <Route
+                    path={`${path}`}
+                    exact={true}
+                >
+                    <PlaybookUsage
+                        playbook={playbook}
+                        stats={stats}
+                    />
+                </Route>
+                <Route path={`${path}/outline`}>
+                    <Outline
+                        playbook={playbook}
+                        updatePlaybook={updatePlaybook}
+                        runsInProgress={stats.runs_in_progress}
+                    />
+                </Route>
+                <Route path={`${path}/reports`}>
+                    <PlaybookKeyMetrics
+                        playbook={playbook}
+                        stats={stats}
+                    />
+                </Route>
+            </Switch>
+        </Editor>
     );
 };
 
@@ -192,9 +184,15 @@ const TitleBar = styled.div`
     > div {
         display: flex;
         align-items: center;
+        gap: 8px;
     }
-    margin-bottom: 1px; // keep box-shadow visible
+    margin-bottom: 1px; // keeps box-shadow visible
 
+    ${Controls.TitleButton} {
+        padding-left: 8px;
+    }
+
+    // === blur/cutoff ===
     &::before {
         width: 100%;
         height: var(--bar-height);
@@ -204,11 +202,8 @@ const TitleBar = styled.div`
         z-index: -1;
         left: 0;
         top: 0;
-
-        // === blur/cutoff ===
         background-color: var(--center-channel-bg);
         mask: linear-gradient(black, black, transparent);
-        filter: blur(1rem);
     }
 `;
 
@@ -263,7 +258,6 @@ const Title = styled.h1`
 
     height: 24px;
     margin: 0;
-    margin-left: 8px;
 
     ${titleMenuOverrides}
 `;
@@ -344,8 +338,6 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         / 1fr minmax(auto, var(--content-max-width)) 1fr;
     ;
 
-    gap: 0 3rem;
-
     ${Header} {
         ${Controls.TitleMenu} {
             i.icon {
@@ -368,7 +360,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
 
     ${Sections} {
-        margin-top: 5rem;
+        margin: 5rem 1.5rem;
         grid-area: content;
 
         ${HorizontalBG} {
@@ -391,10 +383,12 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
     /* === scrolling, condense header/title === */
     ${({$headingVisible}) => !$headingVisible && css`
-        ${TitleBar} {
-            ${Controls.TitleMenu} {
-                display: inline-flex;
-                margin-left: 8px;
+        @media screen and (min-width: 769px) {
+            // only on tablet-desktop
+            ${TitleBar} {
+                ${Controls.TitleMenu} {
+                    display: inline-flex;
+                }
             }
         }
         ${Controls.Back} {
@@ -423,6 +417,11 @@ const Editor = styled.main<{$headingVisible: boolean}>`
             }
         }
 
+        ${PlaybookUsage},
+        ${PlaybookKeyMetrics} {
+            grid-area: content;
+        }
+
         ${Header} {
             padding: 20px;
         }
@@ -438,8 +437,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
 
         ${Sections} {
-            padding: 20px;
-            padding-top: 0;
+            padding: 15px 20px 20px;
             margin: 10px;
         }
 
@@ -453,13 +451,11 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
     }
 
-    @media screen and (max-width: 1021px) {
-        gap: 0;
+    @media screen and (max-width: 1266px) {
+        ${ScrollNav} {
+            display: none;
+        }
     }
-
-    @media screen and (min-width: 1021px) {
-    }
-
     @media screen and (min-width: 1267px) {
         --content-max-width: 900px;
     }
