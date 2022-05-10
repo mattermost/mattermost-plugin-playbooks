@@ -36,6 +36,7 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
+import {RunActions} from 'src/types/run_actions';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -690,6 +691,14 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
         body: JSON.stringify(action),
     });
     return action.id;
+};
+
+export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+    } catch (error) {
+        return {error};
+    }
 };
 
 export const doGet = async <TData = any>(url: string) => {
