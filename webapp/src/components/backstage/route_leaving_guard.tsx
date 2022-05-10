@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useIntl} from 'react-intl';
 import {Prompt} from 'react-router-dom';
 
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
@@ -11,17 +10,18 @@ interface Props {
     when?: boolean | undefined;
     navigate: (path: string) => void;
     shouldBlockNavigation: (location: Location) => boolean;
+    onCancel?: () => void;
 }
 
 // Credit to: https://michaelchan-13570.medium.com/using-react-router-v4-prompt-with-custom-modal-component-ca839f5faf39
 const RouteLeavingGuard = (props: Props) => {
-    const {formatMessage} = useIntl();
     const [modalVisible, setModalVisible] = useState(false);
     const [lastLocation, setLastLocation] = useState<Location | null>(null);
     const [confirmedNavigation, setConfirmedNavigation] = useState(false);
 
-    const closeModal = () => {
+    const onCancel = () => {
         setModalVisible(false);
+        props.onCancel?.();
     };
 
     // @ts-ignore
@@ -55,7 +55,7 @@ const RouteLeavingGuard = (props: Props) => {
             <UnsavedChangesModal
                 show={modalVisible}
                 onConfirm={handleConfirmNavigationClick}
-                onCancel={closeModal}
+                onCancel={onCancel}
             />
         </>
     );

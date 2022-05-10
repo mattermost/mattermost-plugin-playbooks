@@ -138,7 +138,7 @@ const OptionLabel = ({label, value, mode}: Option) => {
     return labelFrom(value, mode);
 };
 
-const labelFrom = (value: DateTime | Duration, mode?: Mode) => {
+export const labelFrom = (value: DateTime | Duration, mode?: Mode) => {
     if (mode === Mode.DateTimeValue || (!mode && DateTime.isDateTime(value))) {
         return (
             <Timestamp
