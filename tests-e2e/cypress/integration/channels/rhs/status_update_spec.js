@@ -13,6 +13,7 @@ describe('channels > rhs > status update', () => {
     let testChannel;
     let testUser;
     let testPlaybook;
+    let testRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, channel, user}) => {
@@ -28,10 +29,11 @@ describe('channels > rhs > status update', () => {
                 teamId: testTeam.id,
                 title: 'Playbook',
                 userId: testUser,
-                broadcastChannelId: testChannel.id,
+                broadcastChannelIds: [testChannel.id],
                 reminderTimerDefaultSeconds: 3600,
                 reminderMessageTemplate: defaultReminderMessage,
                 retrospectiveEnabled: false,
+                broadcastEnabled: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
@@ -54,6 +56,8 @@ describe('channels > rhs > status update', () => {
             playbookId: testPlaybook.id,
             playbookRunName: name,
             ownerUserId: testUser.id,
+        }).then((run) => {
+            testRun = run;
         });
 
         // # Navigate directly to the application and the playbook run channel
@@ -61,6 +65,33 @@ describe('channels > rhs > status update', () => {
     });
 
     describe('post update dialog', () => {
+        it('renders description correctly', () => {
+            // # Run the `/playbook update` slash command.
+            cy.executeSlashCommand('/playbook update');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // * Check description
+                cy.findByTestId('update_run_status_description').contains('This update will be broadcasted to one channel and one direct message.');
+            });
+        });
+        it('description link navigates to run overview', () => {
+            // # Run the `/playbook update` slash command.
+            cy.executeSlashCommand('/playbook update');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // # Click overview link
+                cy.findByTestId('run-overview-link').click();
+            });
+
+            // * Check that we are now in run overview page
+            cy.url().should('include', `/playbooks/runs/${testRun.id}`);
+
+            // * Check that the run actions modal is already opened
+            cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
+        });
+
         it('prevents posting an update message with only whitespace', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
@@ -209,7 +240,7 @@ describe('channels > rhs > status update', () => {
         });
 
         describe('prevents user from losing changes', () => {
-            it('go back and save', () => {
+            it('cancel, go back and save', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -232,16 +263,45 @@ describe('channels > rhs > status update', () => {
                 cy.wait(TIMEOUTS.TWO_SEC);
 
                 // # Submit the dialog.
-                cy.getStatusUpdateDialog().within(() => {
-                    cy.get('button.confirm').click();
-                });
+                cy.get('button.confirm').click();
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
                 cy.get('#confirm-modal-light').should('not.exist');
             });
 
-            it('discard explicitily', () => {
+            it('click overview link, go back and save', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // # Click overview link
+                    cy.findByTestId('run-overview-link').click();
+                });
+
+                // Verify that the confirmation modal is shown
+                cy.get('#confirm-modal-light').within(() => {
+                    // * Go back from unsaved changes modal
+                    cy.findByTestId('modal-cancel-button').click();
+                });
+
+                // # Delay in between the modal switch to ensure the
+                // # animation has fully happened
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # Submit the dialog.
+                cy.get('button.confirm').click();
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('cancel and discard explicitly', () => {
                 // # Run the `/playbook update` slash command.
                 cy.executeSlashCommand('/playbook update');
 
@@ -254,7 +314,7 @@ describe('channels > rhs > status update', () => {
                     cy.findByTestId('modal-cancel-button').click();
                 });
 
-                // * Discard explicitily from unsaved changes
+                // * Discard explicitly from unsaved changes
                 cy.get('#confirm-modal-light').within(() => {
                     cy.get('button.confirm').click();
                 });
@@ -262,6 +322,35 @@ describe('channels > rhs > status update', () => {
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
                 cy.get('#confirm-modal-light').should('not.exist');
+            });
+
+            it('click overview link and discard explicitly', () => {
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.getStatusUpdateDialog().within(() => {
+                    // # Type the invalid data
+                    cy.findByTestId('update_run_status_textbox').clear().type('My valid and important changes that I don\'t want to lose');
+
+                    // # Click overview link
+                    cy.findByTestId('run-overview-link').click();
+                });
+
+                // * Discard explicitly from unsaved changes
+                cy.get('#confirm-modal-light').within(() => {
+                    cy.get('button.confirm').click();
+                });
+
+                // * Assert that we are at run overview page.
+                cy.url().should('include', `/playbooks/runs/${testRun.id}`);
+
+                // * Verify that the Post update and unsaved changes modals have gone.
+                cy.getStatusUpdateDialog().should('not.exist');
+                cy.get('#confirm-modal-light').should('not.exist');
+
+                // * Verify that the run actions modal is opened.
+                cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
             });
         });
 
