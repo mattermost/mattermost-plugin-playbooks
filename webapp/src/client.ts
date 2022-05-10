@@ -36,7 +36,8 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
+import {RunActions} from 'src/types/run_actions';
+import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -135,7 +136,7 @@ export async function postStatusUpdate(
 }
 
 export async function fetchPlaybookRunMetadata(id: string) {
-    const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
+    const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
         if (!isMetadata(data)) {
@@ -144,7 +145,7 @@ export async function fetchPlaybookRunMetadata(id: string) {
         }
     }
 
-    return data as Metadata;
+    return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
@@ -456,6 +457,15 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
     });
 }
 
+// fetchSiteStats collect the stats we want to expose in system console
+export async function fetchSiteStats(): Promise<SiteStats | null> {
+    const data = await doGet(`${apiUrl}/stats/site`);
+    if (!data) {
+        return null;
+    }
+    return data as SiteStats;
+}
+
 export async function fetchStats(teamID: string): Promise<Stats | null> {
     const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
     if (!data) {
@@ -681,6 +691,14 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
         body: JSON.stringify(action),
     });
     return action.id;
+};
+
+export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+    } catch (error) {
+        return {error};
+    }
 };
 
 export const doGet = async <TData = any>(url: string) => {

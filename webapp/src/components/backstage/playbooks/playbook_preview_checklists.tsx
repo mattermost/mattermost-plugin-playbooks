@@ -62,10 +62,10 @@ const PlaybookPreviewChecklists = (props: Props) => {
                                     checklistItem={checklistItem}
                                     checklistNum={checklistIndex}
                                     itemNum={index}
-                                    channelId={''}
                                     playbookRunId={''}
                                     dragging={false}
                                     disabled={true}
+                                    menuEnabled={true}
                                     collapsibleDescription={false}
                                     newItem={false}
                                 />

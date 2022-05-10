@@ -12,8 +12,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
-
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
+import {FormattedMessage} from 'react-intl';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -34,9 +34,9 @@ import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
-import ActionsModal from 'src/components/actions_modal';
+import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -58,7 +58,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -118,17 +118,38 @@ export default class Plugin {
 
         // Buttons and menus
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showActionsModal()));
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()));
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
-        registry.registerRootComponent(ActionsModal);
+        registry.registerRootComponent(ChannelActionsModal);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
             const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
             registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
+        }
+
+        // Site statistics handler
+        if (registry.registerSiteStatisticsHandler) {
+            registry.registerSiteStatisticsHandler(async () => {
+                const siteStats = await fetchSiteStats();
+                return {
+                    playbook_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbooks'}/>,
+                        id: 'total_playbooks',
+                        icon: 'fa-book', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbooks,
+                    },
+                    playbook_run_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbook Runs'}/>,
+                        id: 'total_playbook_runs',
+                        icon: 'fa-list-alt', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbook_runs,
+                    },
+                };
+            });
         }
 
         // Websocket listeners

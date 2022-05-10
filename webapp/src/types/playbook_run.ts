@@ -24,10 +24,16 @@ export interface PlaybookRun {
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     status_update_enabled: boolean;
+    status_update_broadcast_channels_enabled: boolean;
+    broadcast_channel_ids: string[];
+    status_update_broadcast_webhooks_enabled: boolean;
+    webhook_on_status_update_urls: string[];
+
+    /** Whether run updates should be broadcasted to channels */
+    status_update_broadcast_channels_enabled: boolean;
 
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
-    broadcast_channel_ids: string[];
     timeline_events: TimelineEvent[];
     retrospective: string;
     retrospective_published_at: number;

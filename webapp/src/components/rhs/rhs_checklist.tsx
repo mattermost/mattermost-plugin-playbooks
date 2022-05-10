@@ -17,6 +17,7 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
     emptyChecklistItem,
+    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
@@ -26,9 +27,11 @@ import {currentChecklistItemsFilter} from 'src/selectors';
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun?: PlaybookRun;
+    playbook?: PlaybookWithChecklist;
     checklist: Checklist;
     checklistIndex: number;
+    menuEnabled: boolean;
 }
 
 const RHSChecklist = (props: Props) => {
@@ -100,6 +103,7 @@ const RHSChecklist = (props: Props) => {
                                     item={checklistItem}
                                     itemIndex={index}
                                     newItem={false}
+                                    menuEnabled={props.menuEnabled}
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
@@ -114,6 +118,7 @@ const RHSChecklist = (props: Props) => {
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
                                 newItem={true}
+                                menuEnabled={props.menuEnabled}
                                 cancelAddingItem={() => {
                                     setAddingItem(false);
                                 }}
@@ -121,7 +126,7 @@ const RHSChecklist = (props: Props) => {
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {props.playbookRun.current_status !== PlaybookRunStatus.Finished &&
+                    {props.playbookRun?.current_status !== PlaybookRunStatus.Finished &&
                         <AddTaskLink
                             onClick={() => {
                                 setAddingItem(true);

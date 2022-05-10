@@ -143,9 +143,6 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
-		if err := checkValidWelcomeMessagePayload(payload); err != nil {
-			return err
-		}
 	case ActionTypePromptRunPlaybook:
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
@@ -159,9 +156,6 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
-		if err := checkValidCategorizeChannelPayload(payload); err != nil {
-			return err
-		}
 
 	default:
 		return fmt.Errorf("action type %q not recognized", action.ActionType)
@@ -170,35 +164,15 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 	return nil
 }
 
-func checkValidWelcomeMessagePayload(payload WelcomeMessagePayload) error {
-	if payload.Message == "" {
-		return fmt.Errorf("payload field 'message' must be non-empty")
-	}
-
-	return nil
-}
-
 func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFromKeywordsPayload) error {
-	if len(payload.Keywords) == 0 {
-		return fmt.Errorf("payload field 'keywords' must contain at least one keyword")
-	}
-
 	for _, keyword := range payload.Keywords {
 		if keyword == "" {
 			return fmt.Errorf("payload field 'keywords' must contain only non-empty keywords")
 		}
 	}
 
-	if !model.IsValidId(payload.PlaybookID) {
+	if payload.PlaybookID != "" && !model.IsValidId(payload.PlaybookID) {
 		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
-	}
-
-	return nil
-}
-
-func checkValidCategorizeChannelPayload(payload CategorizeChannelPayload) error {
-	if payload.CategoryName == "" {
-		return fmt.Errorf("payload field 'category_name' must be non-empty")
 	}
 
 	return nil
@@ -428,6 +402,10 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			a.api.Log.Error("unable to decode payload from action", "payload", payload, "actionType", action.ActionType, "triggerType", action.TriggerType)
+			continue
+		}
+
+		if len(payload.Keywords) == 0 || payload.PlaybookID == "" {
 			continue
 		}
 

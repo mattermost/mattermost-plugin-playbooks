@@ -12,7 +12,8 @@ import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/a
 type Props = {
     className?: string;
     onHide: () => void;
-    modalHeaderText: React.ReactNode;
+    onExited?: () => void;
+    modalHeaderText?: React.ReactNode;
     show?: boolean;
     showCancel?: boolean;
     handleCancel?: (() => void) | null;
@@ -124,7 +125,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 dialogClassName={classNames('a11y__modal GenericModal', this.props.className)}
                 show={this.props.show ?? this.state.show}
                 onHide={this.onHide}
-                onExited={this.onHide}
+                onExited={this.props.onExited || this.onHide}
                 enforceFocus={this.props.enforceFocus}
                 restoreFocus={true}
                 role='dialog'
@@ -136,7 +137,9 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    {Boolean(this.props.modalHeaderText) && (
+                        <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    )}
                 </Header>
                 <form>
                     <Modal.Body>{this.props.children}</Modal.Body>
@@ -219,7 +222,7 @@ export const ModalSubheading = styled.h6`
 `;
 
 export const Description = styled.p`
-    font-size: 12px;
+    font-size: 14px;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 

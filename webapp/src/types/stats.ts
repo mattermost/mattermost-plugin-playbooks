@@ -12,6 +12,11 @@ export interface Stats {
     average_start_to_resolved: number[];
 }
 
+export interface SiteStats {
+    total_playbook_runs: number;
+    total_playbooks: number;
+}
+
 export type NullNumber = number | null;
 
 export interface PlaybookStats {

@@ -32,8 +32,8 @@ interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
     itemNum: number;
-    channelId: string;
-    playbookRunId: string;
+    playbookRunId?: string;
+    menuEnabled: boolean;
     onChange?: (item: ChecklistItemState) => void;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -41,6 +41,10 @@ interface ChecklistItemProps {
     collapsibleDescription: boolean;
     newItem: boolean;
     cancelAddingItem?: () => void;
+    onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
+    onAddChecklistItem?: (newItem: ChecklistItemType) => void;
+    onDuplicateChecklistItem?: () => void;
+    onDeleteChecklistItem?: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -60,24 +64,25 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         setShowMenu(false);
-        if (!props.playbookRunId) {
-            return;
-        }
-        setAssigneeID(user?.id);
+        const userId = user?.id || '';
+        setAssigneeID(userId);
         if (props.newItem) {
             return;
         }
-        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
-        if (response.error) {
-            console.log(response.error); // eslint-disable-line no-console
+        if (props.playbookRunId) {
+            const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
+            if (response.error) {
+                console.log(response.error); // eslint-disable-line no-console
+            }
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.assignee_id = userId;
+            props.onUpdateChecklistItem?.(newItem);
         }
     };
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
         setShowMenu(false);
-        if (!props.playbookRunId) {
-            return;
-        }
         let timestamp = 0;
         if (value?.value) {
             timestamp = value?.value.toMillis();
@@ -86,25 +91,98 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.newItem) {
             return;
         }
-        const response = await clientSetDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
-        if (response.error) {
-            console.log(response.error); // eslint-disable-line no-console
+        if (props.playbookRunId) {
+            const response = await clientSetDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
+            if (response.error) {
+                console.log(response.error); // eslint-disable-line no-console
+            }
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.due_date = timestamp;
+            props.onUpdateChecklistItem?.(newItem);
         }
     };
 
     const onCommandChange = async (newCommand: string) => {
         setShowMenu(false);
-        if (!props.playbookRunId) {
-            return;
-        }
         setCommand(newCommand);
         if (props.newItem) {
             return;
         }
-        clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, newCommand);
+        if (props.playbookRunId) {
+            clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, newCommand);
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.command = newCommand;
+            props.onUpdateChecklistItem?.(newItem);
+        }
     };
 
-    const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
+    const renderAssignTo = (): null | React.ReactNode => {
+        if (!assigneeID && !isEditing) {
+            return null;
+        }
+
+        // render only in the RHS
+        if (!props.playbookRunId) {
+            return null;
+        }
+
+        return (
+            <AssignTo
+                assignee_id={assigneeID || ''}
+                editable={isEditing}
+                withoutName={(command !== '' || dueDate > 0) && !isEditing}
+                onSelectedChange={onAssigneeChange}
+            />
+        );
+    };
+
+    const renderCommand = (): null | React.ReactNode => {
+        if (!command && !isEditing) {
+            return null;
+        }
+        return (
+            <Command
+                checklistNum={props.checklistNum}
+                command={command}
+                command_last_run={props.checklistItem.command_last_run}
+                disabled={props.disabled}
+                itemNum={props.itemNum}
+                playbookRunId={props.playbookRunId}
+                isEditing={isEditing}
+                onChangeCommand={onCommandChange}
+            />
+        );
+    };
+
+    const renderDueDate = (): null | React.ReactNode => {
+        const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
+        if ((!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+            return null;
+        }
+        return (
+            <DueDateButton
+                editable={isEditing}
+                date={dueDate}
+                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
+                onSelectedChange={onDueDateChange}
+            />
+        );
+    };
+
+    const renderRow = (): null | React.ReactNode => {
+        if (!assigneeID && !command && !dueDate && !isEditing) {
+            return null;
+        }
+        return (
+            <Row>
+                {renderAssignTo()}
+                {renderCommand()}
+                {renderDueDate()}
+            </Row>
+        );
+    };
 
     const content = (
         <ItemContainer
@@ -116,7 +194,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             editing={isEditing}
         >
             <CheckboxContainer>
-                {showMenu && !props.disabled &&
+                {showMenu && !props.disabled && props.menuEnabled &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         checklistNum={props.checklistNum}
@@ -132,6 +210,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onAssigneeChange={onAssigneeChange}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
+                        onDuplicateChecklistItem={props.onDuplicateChecklistItem}
+                        onDeleteChecklistItem={props.onDeleteChecklistItem}
                     />
                 }
                 <DragButton
@@ -141,7 +221,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     isVisible={showMenu && !props.disabled}
                 />
                 <CheckBoxButton
-                    disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip}
+                    disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => {
                         if (props.onChange) {
@@ -169,38 +249,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     value={descValue}
                 />
             }
-            {(assigneeID !== '' || command !== '' || dueDate > 0 || isEditing) &&
-                <Row>
-                    {(assigneeID !== '' || isEditing) &&
-                        <AssignTo
-                            assignee_id={assigneeID || ''}
-                            editable={isEditing}
-                            withoutName={(command !== '' || dueDate > 0) && !isEditing}
-                            onSelectedChange={onAssigneeChange}
-                        />
-                    }
-                    {(command !== '' || isEditing) &&
-                        <Command
-                            checklistNum={props.checklistNum}
-                            command={command}
-                            command_last_run={props.checklistItem.command_last_run}
-                            disabled={props.disabled}
-                            itemNum={props.itemNum}
-                            playbookRunId={props.playbookRunId}
-                            isEditing={isEditing}
-                            onChangeCommand={onCommandChange}
-                        />
-                    }
-                    {((dueDate > 0 && isTaskOpenOrInProgress) || isEditing) &&
-                        <DueDateButton
-                            editable={isEditing}
-                            date={dueDate}
-                            mode={Mode.DateTimeValue}
-                            onSelectedChange={onDueDateChange}
-                        />
-                    }
-                </Row>
-            }
+            {renderRow()}
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
@@ -215,7 +264,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         if (props.newItem) {
                             props.cancelAddingItem?.();
-                            clientAddChecklistItem(props.playbookRunId, props.checklistNum, {
+                            const newItem = {
                                 title: titleValue,
                                 command,
                                 description: descValue,
@@ -223,13 +272,24 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 command_last_run: 0,
                                 due_date: dueDate,
                                 assignee_id: assigneeID,
-                            });
-                        } else {
+                            };
+                            if (props.playbookRunId) {
+                                clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
+                            } else {
+                                props.onAddChecklistItem?.(newItem);
+                            }
+                        } else if (props.playbookRunId) {
                             clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
                                 title: titleValue,
                                 command,
                                 description: descValue,
                             });
+                        } else {
+                            const newItem = {...props.checklistItem};
+                            newItem.title = titleValue;
+                            newItem.command = command;
+                            newItem.description = descValue;
+                            props.onUpdateChecklistItem?.(newItem);
                         }
                     }}
                 />
@@ -367,9 +427,9 @@ const ChecklistItemTitleWrapper = styled.div`
 const DragButton = styled.i<{isVisible: boolean}>`
     cursor: pointer;
     width: 4px;
-    margin-right: 4px; 
-    margin-left: 4px;  
-    margin-top: 1px; 
+    margin-right: 4px;
+    margin-left: 4px;
+    margin-top: 1px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     ${({isVisible}) => !isVisible && `
         visibility: hidden
@@ -385,6 +445,6 @@ const Row = styled.div`
     row-gap: 5px;
 
     margin-left: 35px;
-    margin-top: 8px;
+    margin-top: 4px;
     padding-bottom: 8px;
 `;
