@@ -165,18 +165,13 @@ export function useClientRect() {
     return [rect, ref] as const;
 }
 
+// useProfilesInCurrentChannel ensures at least the first page of members for the current channel
+// has been loaded into Redux.
+//
+// See useProfilesInChannel for additional context.
 export function useProfilesInCurrentChannel() {
-    const dispatch = useDispatch() as DispatchFunc;
-    const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
-
-    useEffect(() => {
-        if (profilesInChannel.length > 0) {
-            return;
-        }
-
-        dispatch(getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE));
-    }, [currentChannelId, profilesInChannel]);
+    const profilesInChannel = useProfilesInChannel(currentChannelId);
 
     return profilesInChannel;
 }
@@ -191,14 +186,41 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     ));
 }
 
+const gettingProfilesInTeam = new Map<string, boolean>();
+const gettingProfilesInChannel = new Map<string, boolean>();
+
+export function clearCaches() {
+    gettingProfilesInTeam.clear();
+    gettingProfilesInChannel.clear();
+}
+
+// useProfilesInTeam ensures at least the first page of team members has been loaded into Redux.
+//
+// This pattern relieves components from having to issue their own directives to populate the
+// Redux cache when rendering in contexts where the webapp doesn't already do this itself.
+//
+// Since we never discard Redux metadata, this hook will fetch successfully at most once. If there
+// are already members in the team, the hook skips the fetch altogether. If the fetch fails, the
+// hook won't try again unless the containing component is re-mounted.
+//
+// A global gettingProfilesInTeam cache avoids the thundering herd problem of many components
+// wanting the same metadata.
 export function useProfilesInTeam() {
-    const dispatch = useDispatch() as DispatchFunc;
+    const dispatch = useDispatch();
     const profilesInTeam = useSelector(getProfilesInCurrentTeam);
     const currentTeamId = useSelector(getCurrentTeamId);
+
     useEffect(() => {
         if (profilesInTeam.length > 0) {
+            gettingProfilesInTeam.delete(currentTeamId);
             return;
         }
+
+        // Avoid issuing multiple concurrent fetches for this team.
+        if (gettingProfilesInTeam.has(currentTeamId)) {
+            return;
+        }
+        gettingProfilesInTeam.set(currentTeamId, true);
 
         dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
     }, [currentTeamId, profilesInTeam]);
@@ -245,6 +267,10 @@ export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
 }
 
+// useProfilesInChannel ensures at least the first page of members for the given channel has been
+// loaded into Redux.
+//
+// See useProfilesInTeam for additional detail regarding semantics.
 export function useProfilesInChannel(channelId: string) {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInChannel = useSelector((state) =>
@@ -253,8 +279,15 @@ export function useProfilesInChannel(channelId: string) {
 
     useEffect(() => {
         if (profilesInChannel.length > 0) {
+            gettingProfilesInChannel.delete(channelId);
             return;
         }
+
+        // Avoid issuing multiple concurrent fetches for this channel.
+        if (gettingProfilesInChannel.has(channelId)) {
+            return;
+        }
+        gettingProfilesInChannel.set(channelId, true);
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
     }, [channelId]);
