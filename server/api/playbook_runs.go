@@ -825,6 +825,7 @@ func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 // updateRunActions modifies status update broadcast settings.
 func (h *PlaybookRunHandler) updateRunActions(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	var params app.RunAction
 
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
@@ -832,7 +833,7 @@ func (h *PlaybookRunHandler) updateRunActions(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.playbookRunService.UpdateRunActions(playbookRunID, params); err != nil {
+	if err := h.playbookRunService.UpdateRunActions(playbookRunID, userID, params); err != nil {
 		h.HandleError(w, err)
 		return
 	}
