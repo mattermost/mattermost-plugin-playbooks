@@ -1,6 +1,9 @@
 package client
 
-import "time"
+import (
+	"gopkg.in/guregu/null.v4"
+	"time"
+)
 
 // Me is a constant that refers to the current user, and can be used in various APIs in place of
 // explicitly specifying the current user's id.
@@ -10,7 +13,7 @@ const Me = "me"
 type PlaybookRun struct {
 	ID                                   string          `json:"id"`
 	Name                                 string          `json:"name"`
-	Description                          string          `json:"description"`
+	Summary                              string          `json:"summary"`
 	OwnerUserID                          string          `json:"owner_user_id"`
 	ReporterUserID                       string          `json:"reporter_user_id"`
 	TeamID                               string          `json:"team_id"`
@@ -24,9 +27,12 @@ type PlaybookRun struct {
 	PlaybookID                           string          `json:"playbook_id"`
 	Checklists                           []Checklist     `json:"checklists"`
 	StatusPosts                          []StatusPost    `json:"status_posts"`
+	CurrentStatus                        string          `json:"current_status"`
+	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
 	ReminderPostID                       string          `json:"reminder_post_id"`
 	PreviousReminder                     time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
+	ReminderTimerDefaultSeconds          int64           `json:"reminder_timer_default_seconds"`
+	StatusUpdateEnabled                  bool            `json:"status_update_enabled"`
 	BroadcastChannelIDs                  []string        `json:"broadcast_channel_ids"`
 	WebhookOnStatusUpdateURLs            []string        `json:"webhook_on_status_update_urls"`
 	StatusUpdateBroadcastChannelsEnabled bool            `json:"status_update_broadcast_channels_enabled"`
@@ -35,7 +41,17 @@ type PlaybookRun struct {
 	InvitedUserIDs                       []string        `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
 	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
-	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
+	DefaultOwnerID                       string          `json:"default_owner_id"`
+	WebhookOnCreationURLs                []string        `json:"webhook_on_creation_urls"`
+	Retrospective                        string          `json:"retrospective"`
+	RetrospectivePublishedAt             int64           `json:"retrospective_published_at"`
+	RetrospectiveWasCanceled             bool            `json:"retrospective_was_canceled"`
+	RetrospectiveReminderIntervalSeconds int64           `json:"retrospective_reminder_interval_seconds"`
+	RetrospectiveEnabled                 bool            `json:"retrospective_enabled"`
+	MessageOnJoin                        string          `json:"message_on_join"`
+	ParticipantIDs                       []string        `json:"participant_ids"`
+	CategoryName                         string          `json:"category_name"`
+	MetricsData                          []RunMetricData `json:"metrics_data"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -46,8 +62,8 @@ type StatusPost struct {
 	DeleteAt int64  `json:"delete_at"`
 }
 
-// PlaybookRunMetadata tracks ancillary metadata about a playbook run.
-type PlaybookRunMetadata struct {
+// Metadata tracks ancillary metadata about a playbook run.
+type Metadata struct {
 	ChannelName        string   `json:"channel_name"`
 	ChannelDisplayName string   `json:"channel_display_name"`
 	TeamName           string   `json:"team_name"`
@@ -217,11 +233,16 @@ type GetPlaybookRunsResults struct {
 	PageCount  int           `json:"page_count"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
-	Disabled   bool          `json:"disabled"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
 type StatusUpdateOptions struct {
-	Message           string `json:"message"`
-	ReminderInSeconds int64  `json:"reminder"`
+	Message   string        `json:"message"`
+	Reminder  time.Duration `json:"reminder"`
+	FinishRun bool          `json:"finish_run"`
+}
+
+type RunMetricData struct {
+	MetricConfigID string   `json:"metric_config_id"`
+	Value          null.Int `json:"value"`
 }
