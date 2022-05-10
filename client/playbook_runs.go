@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // PlaybookRunService handles communication with the playbook run related
@@ -52,14 +53,14 @@ func (s *PlaybookRunService) GetByChannelID(ctx context.Context, channelID strin
 }
 
 // Get a playbook run's metadata.
-func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID string) (*PlaybookRunMetadata, error) {
+func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID string) (*Metadata, error) {
 	playbookRunURL := fmt.Sprintf("runs/%s/metadata", playbookRunID)
 	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	playbookRun := new(PlaybookRunMetadata)
+	playbookRun := new(Metadata)
 	resp, err := s.client.do(ctx, req, playbookRun)
 	if err != nil {
 		return nil, err
@@ -121,8 +122,8 @@ func (s *PlaybookRunService) Create(ctx context.Context, opts PlaybookRunCreateO
 func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID string, message string, reminderInSeconds int64) error {
 	updateURL := fmt.Sprintf("runs/%s/status", playbookRunID)
 	opts := StatusUpdateOptions{
-		Message:           message,
-		ReminderInSeconds: reminderInSeconds,
+		Message:  message,
+		Reminder: time.Duration(reminderInSeconds),
 	}
 	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
 	if err != nil {
