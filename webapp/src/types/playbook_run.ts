@@ -29,6 +29,9 @@ export interface PlaybookRun {
     status_update_broadcast_webhooks_enabled: boolean;
     webhook_on_status_update_urls: string[];
 
+    /** Whether run updates should be broadcasted to channels */
+    status_update_broadcast_channels_enabled: boolean;
+
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
     timeline_events: TimelineEvent[];
