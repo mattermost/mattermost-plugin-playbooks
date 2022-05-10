@@ -35,7 +35,7 @@ import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {modals, browserHistory} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
-import {openUpdateRunStatusModal/*, showRunActionsModal*/} from 'src/actions';
+import {openUpdateRunStatusModal, showRunActionsModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
@@ -272,6 +272,13 @@ const UpdateRunStatusModal = ({
         </WarningBlock>
     );
 
+    const preopenRunActionsModal = () => {
+        // Open modal only if there are already broadcast channels
+        if (run?.broadcast_channel_ids.length) {
+            dispatch(showRunActionsModal());
+        }
+    };
+
     return (
         <>
             <GenericModal
@@ -304,9 +311,7 @@ const UpdateRunStatusModal = ({
                 }}
                 navigate={(path) => {
                     modalProps.onHide?.();
-
-                    // Uncomment once https://github.com/mattermost/mattermost-plugin-playbooks/pull/1153 is merged
-                    // dispatch(showRunActionsModal());
+                    preopenRunActionsModal();
                     browserHistory.push(path);
                 }}
                 shouldBlockNavigation={(newLoc) => {
@@ -318,11 +323,10 @@ const UpdateRunStatusModal = ({
                         return true;
                     }
 
-                    // don't block nav but hide modal
                     if (locChanged) {
                         modalProps.onHide?.();
+                        preopenRunActionsModal();
                     }
-
                     return false;
                 }}
             />
