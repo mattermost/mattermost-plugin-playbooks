@@ -124,7 +124,10 @@ const LeftArrow = styled(Icon)`
 `;
 
 export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
+    display: grid;
+    place-items: center;
     width: 28px;
+    height: 28px;
     font-size: 18px;
     margin-left: 8px;
     border-radius: 4px;
@@ -142,11 +145,13 @@ export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
 
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 18px;
-    width: 24px;
-    height: 24px;
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
     line-height: 18px;
     margin-left: 8px;
+    display: grid;
+    place-items: center;
 `;
 
 const VerticalBlock = styled.div`
@@ -378,7 +383,7 @@ const PlaybookRunBackstage = () => {
             >
                 <MdiIcon
                     path={mdiLightningBoltOutline}
-                    size={1}
+                    size={'16px'}
                 />
             </HeaderIcon>
         </Tooltip>
