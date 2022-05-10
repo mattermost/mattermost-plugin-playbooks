@@ -631,7 +631,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) RenameChecklist(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklist", reflect.TypeOf((*MockPlaybookRunService)(nil).RenameChecklist), arg0, arg1, arg2, arg3)
 }
 
-// ResetReminder mocks base method.
+// ResetReminder mocks base method
 func (m *MockPlaybookRunService) ResetReminder(arg0 string, arg1 time.Duration) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetReminder", arg0, arg1)
@@ -645,7 +645,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) ResetReminder(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminder), arg0, arg1)
 }
 
-// RestoreChecklist mocks base method.
+// RestoreChecklist mocks base method
 func (m *MockPlaybookRunService) RestoreChecklist(arg0, arg1 string, arg2 int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreChecklist", arg0, arg1, arg2)
@@ -857,17 +857,17 @@ func (mr *MockPlaybookRunServiceMockRecorder) UpdateRetrospective(arg0, arg1, ar
 }
 
 // UpdateRunActions mocks base method
-func (m *MockPlaybookRunService) UpdateRunActions(arg0 string, arg1 app.RunAction) error {
+func (m *MockPlaybookRunService) UpdateRunActions(arg0, arg1 string, arg2 app.RunAction) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRunActions", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpdateRunActions", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateRunActions indicates an expected call of UpdateRunActions
-func (mr *MockPlaybookRunServiceMockRecorder) UpdateRunActions(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) UpdateRunActions(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunActions", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateRunActions), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunActions", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateRunActions), arg0, arg1, arg2)
 }
 
 // UpdateStatus mocks base method

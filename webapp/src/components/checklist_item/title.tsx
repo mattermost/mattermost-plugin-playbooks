@@ -94,7 +94,7 @@ const commonTitleStyle = css`
     font-weight: 400;
     font-size: 14px;
     line-height: 20px;
-    padding: 0px;
+    padding: 0 4px 0 0;
 
     p {
         white-space: pre-wrap;

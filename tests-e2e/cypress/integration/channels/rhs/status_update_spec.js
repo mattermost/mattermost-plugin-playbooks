@@ -87,6 +87,9 @@ describe('channels > rhs > status update', () => {
 
             // * Check that we are now in run overview page
             cy.url().should('include', `/playbooks/runs/${testRun.id}`);
+
+            // * Check that the run actions modal is already opened
+            cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
         });
 
         it('prevents posting an update message with only whitespace', () => {
@@ -345,6 +348,9 @@ describe('channels > rhs > status update', () => {
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
                 cy.get('#confirm-modal-light').should('not.exist');
+
+                // * Verify that the run actions modal is opened.
+                cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
             });
         });
 

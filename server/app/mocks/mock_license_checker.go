@@ -5,35 +5,34 @@
 package mock_app
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
-// MockLicenseChecker is a mock of LicenseChecker interface.
+// MockLicenseChecker is a mock of LicenseChecker interface
 type MockLicenseChecker struct {
 	ctrl     *gomock.Controller
 	recorder *MockLicenseCheckerMockRecorder
 }
 
-// MockLicenseCheckerMockRecorder is the mock recorder for MockLicenseChecker.
+// MockLicenseCheckerMockRecorder is the mock recorder for MockLicenseChecker
 type MockLicenseCheckerMockRecorder struct {
 	mock *MockLicenseChecker
 }
 
-// NewMockLicenseChecker creates a new mock instance.
+// NewMockLicenseChecker creates a new mock instance
 func NewMockLicenseChecker(ctrl *gomock.Controller) *MockLicenseChecker {
 	mock := &MockLicenseChecker{ctrl: ctrl}
 	mock.recorder = &MockLicenseCheckerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockLicenseChecker) EXPECT() *MockLicenseCheckerMockRecorder {
 	return m.recorder
 }
 
-// ChecklistItemDueDateAllowed mocks base method.
+// ChecklistItemDueDateAllowed mocks base method
 func (m *MockLicenseChecker) ChecklistItemDueDateAllowed() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChecklistItemDueDateAllowed")
@@ -41,13 +40,13 @@ func (m *MockLicenseChecker) ChecklistItemDueDateAllowed() bool {
 	return ret0
 }
 
-// ChecklistItemDueDateAllowed indicates an expected call of ChecklistItemDueDateAllowed.
+// ChecklistItemDueDateAllowed indicates an expected call of ChecklistItemDueDateAllowed
 func (mr *MockLicenseCheckerMockRecorder) ChecklistItemDueDateAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChecklistItemDueDateAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).ChecklistItemDueDateAllowed))
 }
 
-// PlaybookAllowed mocks base method.
+// PlaybookAllowed mocks base method
 func (m *MockLicenseChecker) PlaybookAllowed(arg0 bool) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PlaybookAllowed", arg0)
@@ -55,13 +54,13 @@ func (m *MockLicenseChecker) PlaybookAllowed(arg0 bool) bool {
 	return ret0
 }
 
-// PlaybookAllowed indicates an expected call of PlaybookAllowed.
+// PlaybookAllowed indicates an expected call of PlaybookAllowed
 func (mr *MockLicenseCheckerMockRecorder) PlaybookAllowed(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PlaybookAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).PlaybookAllowed), arg0)
 }
 
-// RetrospectiveAllowed mocks base method.
+// RetrospectiveAllowed mocks base method
 func (m *MockLicenseChecker) RetrospectiveAllowed() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RetrospectiveAllowed")
@@ -69,13 +68,13 @@ func (m *MockLicenseChecker) RetrospectiveAllowed() bool {
 	return ret0
 }
 
-// RetrospectiveAllowed indicates an expected call of RetrospectiveAllowed.
+// RetrospectiveAllowed indicates an expected call of RetrospectiveAllowed
 func (mr *MockLicenseCheckerMockRecorder) RetrospectiveAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrospectiveAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).RetrospectiveAllowed))
 }
 
-// StatsAllowed mocks base method.
+// StatsAllowed mocks base method
 func (m *MockLicenseChecker) StatsAllowed() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StatsAllowed")
@@ -83,13 +82,13 @@ func (m *MockLicenseChecker) StatsAllowed() bool {
 	return ret0
 }
 
-// StatsAllowed indicates an expected call of StatsAllowed.
+// StatsAllowed indicates an expected call of StatsAllowed
 func (mr *MockLicenseCheckerMockRecorder) StatsAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatsAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).StatsAllowed))
 }
 
-// TimelineAllowed mocks base method.
+// TimelineAllowed mocks base method
 func (m *MockLicenseChecker) TimelineAllowed() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TimelineAllowed")
@@ -97,7 +96,7 @@ func (m *MockLicenseChecker) TimelineAllowed() bool {
 	return ret0
 }
 
-// TimelineAllowed indicates an expected call of TimelineAllowed.
+// TimelineAllowed indicates an expected call of TimelineAllowed
 func (mr *MockLicenseCheckerMockRecorder) TimelineAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TimelineAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).TimelineAllowed))
