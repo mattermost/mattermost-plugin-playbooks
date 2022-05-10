@@ -79,6 +79,7 @@ const UpdateRunStatusModal = ({
 
     const [showModal, setShowModal] = useState(true);
     const [showUnsaved, setShowUnsaved] = useState(false);
+    const [showUnsavedRoute, setShowUnsaveRoute] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
@@ -197,7 +198,7 @@ const UpdateRunStatusModal = ({
 
         if ((broadcastChannelCount + followersChannelCount) === 0) {
             return formatMessage({
-                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink>',
+                defaultMessage: 'This update will be saved to <OverviewLink>overview page</OverviewLink>.',
             }, {OverviewLink});
         }
 
@@ -274,7 +275,7 @@ const UpdateRunStatusModal = ({
     return (
         <>
             <GenericModal
-                show={showModal && !showUnsaved}
+                show={showModal && !showUnsaved && !showUnsavedRoute}
                 modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
                 cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
                 confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
@@ -297,6 +298,10 @@ const UpdateRunStatusModal = ({
                 onCancel={() => setShowUnsaved(false)}
             />
             <RouteLeavingGuard
+                onCancel={() => {
+                    setShowModal(true);
+                    setShowUnsaveRoute(false);
+                }}
                 navigate={(path) => {
                     modalProps.onHide?.();
 
@@ -309,6 +314,7 @@ const UpdateRunStatusModal = ({
 
                     // block nav and keep modal
                     if (locChanged && pendingChanges) {
+                        setShowUnsaveRoute(true);
                         return true;
                     }
 
