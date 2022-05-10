@@ -34,10 +34,11 @@ import {
     archivePlaybook,
     createPlaybookRun,
     clientFetchPlaybookFollowers,
+    getSiteUrl,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
@@ -45,6 +46,7 @@ import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
+import CopyLink from 'src/components/widgets/copy_link';
 
 type ControlProps = {playbook: PlaybookWithChecklist;};
 
@@ -97,10 +99,10 @@ export const Back = styled((props: StyledProps) => {
 export const Members = ({playbook: {id, members}}: ControlProps) => {
     const dispatch = useDispatch();
     return (
-        <IconButton onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
             <i className={'icon icon-account-multiple-outline'}/>
             <FormattedNumber value={members.length}/>
-        </IconButton>
+        </ButtonIconStyled>
     );
 };
 
@@ -111,6 +113,17 @@ export const Share = ({playbook: {id}}: ControlProps) => {
             <i className={'icon icon-lock-outline'}/>
             <FormattedMessage defaultMessage='Share'/>
         </TertiaryButtonLarger>
+    );
+};
+
+export const CopyPlaybook = ({playbook: {title, id}}: ControlProps) => {
+    return (
+        <CopyLink
+            id='copy-playbook-link-tooltip'
+            to={getSiteUrl() + '/playbooks/playbooks/' + id}
+            name={title}
+            area-hidden={true}
+        />
     );
 };
 
@@ -266,7 +279,12 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     );
 };
 
-export const TitleMenu = styled(({playbook, children, className}: PropsWithChildren<ControlProps> & {className?: string;}) => {
+type TitleMenuProps = {
+    className?: string;
+    archived: boolean;
+} & PropsWithChildren<ControlProps>;
+
+const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
@@ -327,8 +345,12 @@ export const TitleMenu = styled(({playbook, children, className}: PropsWithChild
             {modal}
         </DotMenu>
     );
-})`
+};
 
+export const TitleMenu = styled(TitleMenuImpl)`
+    ${({archived}) => archived && css`
+        text-decoration: line-through;
+    `}
 `;
 
 const buttonCommon = css`
@@ -384,7 +406,7 @@ const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: b
     `}
 `;
 
-const IconButton = styled.div`
+const ButtonIconStyled = styled(ButtonIcon)`
     display: inline-flex;
     align-items: center;
     font-size: 14px;
@@ -395,12 +417,12 @@ const IconButton = styled.div`
     margin: 0;
     color: rgba(var(--center-channel-color-rgb),0.56);
     height: 36px;
-    cursor: pointer;
+    width: auto;
 
-    &:hover {
+   /*  &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: rgba(var(--center-channel-color-rgb), 0.72);
-    }
+    } */
 `;
 
 export const TitleButton = styled.div`

@@ -31,7 +31,7 @@ import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playb
 
 import {SemiBoldHeading} from 'src/styles/headings';
 
-import {HorizontalBG} from 'src/components/collapsible_checklist';
+import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
@@ -89,6 +89,8 @@ const PlaybookEditor = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
+    const archived = playbook.delete_at !== 0;
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
@@ -96,7 +98,10 @@ const PlaybookEditor = () => {
             <TitleBar>
                 <div>
                     <Controls.Back/>
-                    <Controls.TitleMenu playbook={playbook}>
+                    <Controls.TitleMenu
+                        playbook={playbook}
+                        archived={archived}
+                    >
                         <Title>
                             {playbook.title}
                         </Title>
@@ -104,14 +109,18 @@ const PlaybookEditor = () => {
                 </div>
                 <div>
                     <Controls.Members playbook={playbook}/>
-                    <Controls.Share playbook={playbook}/>
+                    {/* <Controls.Share playbook={playbook}/> */}
                     <Controls.AutoFollowToggle playbook={playbook}/>
                     <Controls.RunPlaybook playbook={playbook}/>
                 </div>
             </TitleBar>
             <Header>
                 <Heading ref={headingRef}>
-                    <Controls.TitleMenu playbook={playbook}>
+                    <Controls.CopyPlaybook playbook={playbook}/>
+                    <Controls.TitleMenu
+                        playbook={playbook}
+                        archived={archived}
+                    >
                         {playbook.title}
                     </Controls.TitleMenu>
                 </Heading>
@@ -212,7 +221,10 @@ const Header = styled.header`
     z-index: 4;
 
     ${CopyLink} {
-        margin-left: -1.25em;
+        margin-left: -40px;
+        height: 40px;
+        width: 40px;
+        font-size: 24px;
         opacity: 1;
         transition: opacity ease 0.15s;
     }
@@ -243,7 +255,7 @@ const Heading = styled.h1`
     align-items: center;
     margin: 0;
 
-    &:not(:hover) ${CopyLink}:not(:hover) {
+    &:not(:hover) ${CopyLink}:not(:hover, :focus) {
         opacity: 0;
     }
     ${titleMenuOverrides}

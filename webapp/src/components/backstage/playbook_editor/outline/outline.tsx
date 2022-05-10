@@ -10,6 +10,8 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 
+import {HorizontalBG} from 'src/components/collapsible_checklist';
+
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
