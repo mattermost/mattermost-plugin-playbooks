@@ -27,22 +27,19 @@ import {
     REMOVED_FROM_CHANNEL,
     SetRHSEventsFilter,
     SET_RHS_EVENTS_FILTER,
-    PLAYBOOK_CREATED,
-    PlaybookCreated,
-    PLAYBOOK_ARCHIVED,
-    PlaybookArchived,
-    PLAYBOOK_RESTORED,
-    PlaybookRestored,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
     HidePostMenuModal,
     SHOW_POST_MENU_MODAL,
     HIDE_POST_MENU_MODAL,
-    ShowActionsModal,
-    HideActionsModal,
-    SHOW_ACTIONS_MODAL,
-    HIDE_ACTIONS_MODAL,
+    ShowChannelActionsModal,
+    SHOW_CHANNEL_ACTIONS_MODAL,
+    HIDE_CHANNEL_ACTIONS_MODAL,
+    ShowRunActionsModal,
+    HideRunActionsModal,
+    SHOW_RUN_ACTIONS_MODAL,
+    HIDE_RUN_ACTIONS_MODAL,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -209,11 +206,22 @@ const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | Hide
     }
 };
 
-const postActionsModalVisibility = (state = false, action: ShowActionsModal | HideActionsModal) => {
+const channelActionsModalVisibility = (state = false, action: ShowChannelActionsModal) => {
     switch (action.type) {
-    case SHOW_ACTIONS_MODAL:
+    case SHOW_CHANNEL_ACTIONS_MODAL:
         return true;
-    case HIDE_ACTIONS_MODAL:
+    case HIDE_CHANNEL_ACTIONS_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
+const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | HideRunActionsModal) => {
+    switch (action.type) {
+    case SHOW_RUN_ACTIONS_MODAL:
+        return true;
+    case HIDE_RUN_ACTIONS_MODAL:
         return false;
     default:
         return state;
@@ -307,7 +315,8 @@ const reducer = combineReducers({
     eventsFilterByChannel,
     globalSettings,
     postMenuModalVisibility,
-    postActionsModalVisibility,
+    channelActionsModalVisibility,
+    runActionsModalVisibility,
     hasViewedByChannel,
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,

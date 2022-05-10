@@ -2,10 +2,15 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl, FormattedMessage, FormattedNumber} from 'react-intl';
+
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
+import {useDispatch} from 'react-redux';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
@@ -43,12 +48,24 @@ interface MatchParams {
 /** @alpha this is the new home of `playbooks/playbook.tsx`*/
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
     const playbook = usePlaybook(playbookId);
     const stats = useStats(playbookId);
     const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
+
+    useEffect(() => {
+        const teamId = playbook?.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+        dispatch(fetchMyCategories(teamId));
+    }, [dispatch, playbook?.team_id]);
 
     if (playbook === undefined) {
         // loading
