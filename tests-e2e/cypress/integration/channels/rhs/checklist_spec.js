@@ -374,11 +374,13 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
     });
 
     // # Enter due date query
-    cy.get('.playbook-run-user-select__value-container').type(dateQuery)
-        .wait(HALF_SEC)
-        .trigger('keydown', {
-            key: 'Enter',
-        });
+    cy.get('.playbook-run-user-select').within(() => {
+        cy.get('input').type(dateQuery, {force: true})
+            .wait(HALF_SEC)
+            .trigger('keydown', {
+                key: 'Enter',
+            });
+    });
 
     // * Verify if Due date info is added
     cy.findAllByTestId('due-date-info-button').eq(offset).should('exist').within(() => {
