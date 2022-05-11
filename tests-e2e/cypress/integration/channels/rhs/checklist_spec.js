@@ -314,7 +314,7 @@ describe('channels > rhs > checklist', () => {
 
             // # Mark a task as completed
             cy.findAllByTestId('checkbox-item-container').eq(5).within(() => {
-                // check the overdue task
+                // # Check the overdue task
                 cy.get('input').click();
             });
 
@@ -353,7 +353,7 @@ describe('channels > rhs > checklist', () => {
 
             // # Mark a task as completed
             cy.findAllByTestId('checkbox-item-container').within(() => {
-                // check the overdue task
+                // # Check the overdue task
                 cy.get('input').click();
             });
 
