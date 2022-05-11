@@ -50,6 +50,7 @@ const RHSAboutButtons = (props: Props) => {
                 left={true}
                 dotMenuButton={StyledDotMenuButton}
                 data-testid='run-dot-menu'
+                title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
                     onClick={() => {
