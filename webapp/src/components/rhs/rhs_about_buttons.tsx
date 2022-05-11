@@ -85,7 +85,7 @@ const RHSAboutButtons = (props: Props) => {
     );
 };
 
-const StyledDotMenuButton = styled(DotMenuButton)<{isActive: boolean}>`
+const StyledDotMenuButton = styled(DotMenuButton)`
     width: 28px;
     height: 28px;
 `;

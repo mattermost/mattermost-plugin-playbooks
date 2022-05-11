@@ -169,7 +169,7 @@ const ExpandHoverButton = styled(HoverMenuButton)`
     padding: 3px 0 0 1px;
 `;
 
-const StyledDotMenuButton = styled(DotMenuButton)<{isActive: boolean}>`
+const StyledDotMenuButton = styled(DotMenuButton)`
     display: inline-block;
     width: 28px;
     height: 28px;
