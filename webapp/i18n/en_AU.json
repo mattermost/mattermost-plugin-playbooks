@@ -554,5 +554,16 @@
     "5ZIN3u": "Status Updates",
     "4GjZsL": "Total Playbooks",
     "k12r+v": "Add run summary template",
-    "RrCui3": "Summary"
+    "RrCui3": "Summary",
+    "xHNF7i": "Run Actions",
+    "x1phlu": "No time frame",
+    "sX5Mn5": "Please enter one webhook per line",
+    "mkLeuq": "Broadcast update to selected channels",
+    "kkw4kS": "This update will be broadcast to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.",
+    "kYCbJE": "Add time frame",
+    "kV5GkX": "When a status update is posted",
+    "j940pJ": "This update will be saved to <OverviewLink>overview page</OverviewLink>.",
+    "HvAcYh": "{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}",
+    "28FTjr": "Run actions allow you to automate activities for this channel",
+    "/RnCQb": "Send outgoing webhook"
 }
