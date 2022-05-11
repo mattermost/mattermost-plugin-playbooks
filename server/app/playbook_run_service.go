@@ -2194,7 +2194,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		if appErr, ok := err.(*model.AppError); ok {
 			// Let the user correct display name errors:
 			if appErr.Id == "model.channel.is_valid.display_name.app_error" ||
-				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+				appErr.Id == "model.channel.is_valid.1_or_more.app_error" {
 				return nil, ErrChannelDisplayNameInvalid
 			}
 
