@@ -31,6 +31,7 @@
     "@babel/preset-typescript": "7.16.7",
     "@formatjs/cli": "4.7.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
+    "@testing-library/react-hooks": "8.0.0",
     "@types/chart.js": "2.7.3",
     "@types/chartjs-plugin-annotation": "^0.5.2",
     "@types/classnames": "2.3.1",

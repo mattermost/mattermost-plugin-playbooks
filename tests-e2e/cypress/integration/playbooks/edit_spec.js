@@ -1070,7 +1070,7 @@ describe('playbooks > edit', () => {
                                 // * Verify that the control shows no selected channel
                                 cy.get('#playbook-automation-broadcast .playbooks-rselect__control').within(
                                     () => {
-                                        cy.findByText('Select a channel');
+                                        cy.findByText('Select channels');
                                     }
                                 );
                             });
@@ -1087,7 +1087,7 @@ describe('playbooks > edit', () => {
                     // * Verify placeholder text is present
                     cy.get('#playbook-automation-broadcast').should(
                         'have.text',
-                        'Select a channel'
+                        'Select channels'
                     );
                 });
 

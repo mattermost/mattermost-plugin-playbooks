@@ -18,9 +18,9 @@ interface Props {
 
 export default function ProfileButton(props: Props) {
     const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
-        <i className='icon-chevron-down ml-1 mr-2'/>
+        <i className='icon-chevron-down mr-2'/>
     );
-    const downChevron = props.enableEdit ? dropdownArrow : <></>;
+    const downChevron = props.enableEdit ? dropdownArrow : null;
 
     const formatName = (preferredName: string, userName: string) => {
         let name = preferredName;

@@ -305,8 +305,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 };
 
 const ItemContainer = styled.div<{editing: boolean}>`
-    border-radius: 4px;
     margin-bottom: 4px;
+    padding: 8px 0px;
+
 
     ${({editing}) => editing && css`
         background-color: var(--button-bg-08);
@@ -323,7 +324,6 @@ export const CheckboxContainer = styled.div`
     align-items: flex-start;
     display: flex;
     position: relative;
-    padding: 8px 0px;
 
     button {
         width: 53px;
@@ -445,6 +445,5 @@ const Row = styled.div`
     row-gap: 5px;
 
     margin-left: 35px;
-    margin-top: 4px;
-    padding-bottom: 8px;
+    margin-top: 8px;
 `;
