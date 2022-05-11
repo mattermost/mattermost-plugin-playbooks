@@ -17,6 +17,7 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
     emptyChecklistItem,
+    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
@@ -26,7 +27,8 @@ import {currentChecklistItemsFilter} from 'src/selectors';
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun?: PlaybookRun;
+    playbook?: PlaybookWithChecklist;
     checklist: Checklist;
     checklistIndex: number;
     menuEnabled: boolean;
@@ -63,9 +65,17 @@ const RHSChecklist = (props: Props) => {
             return false;
         }
 
-        // "Overdue" is checked, so if item is not overdue or due date is not set, don't show it.
-        if (filter.overdueOnly && (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now())) {
-            return false;
+        // "Overdue" is checked
+        if (filter.overdueOnly) {
+            // if an item doesn't have a due date or is due in the future, don't show it.
+            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
+                return false;
+            }
+
+            // if an item is skipped or closed, don't show it.
+            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
+                return false;
+            }
         }
 
         // We should show it!
@@ -124,7 +134,7 @@ const RHSChecklist = (props: Props) => {
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {props.playbookRun.current_status !== PlaybookRunStatus.Finished &&
+                    {props.playbookRun?.current_status !== PlaybookRunStatus.Finished &&
                         <AddTaskLink
                             onClick={() => {
                                 setAddingItem(true);
@@ -160,13 +170,12 @@ const AddTaskLink = styled.button`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    height: 44px;
+    height: 36px;
     width: 100%;
 
     background: none;
     border: none;
 
-    border-radius: 8px;
     display: flex;
     flex-direction: row;
     align-items: center;
