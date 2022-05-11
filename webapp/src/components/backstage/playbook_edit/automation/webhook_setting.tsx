@@ -3,20 +3,27 @@
 
 import React from 'react';
 
-import {FormattedMessage} from 'react-intl';
-
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import BroadcastChannelSelector from 'src/components/broadcast_channel_selector';
+import PatternedTextArea from 'src/components/patterned_text_area';
 
 interface Props {
     enabled: boolean;
     onToggle: () => void;
-    channelIds: string[];
-    onChannelsSelected: (channelIds: string[]) => void;
+    textOnToggle: string;
+    placeholderText: string;
+    errorText: string;
+    input: string;
+    pattern: string;
+    delimiter?: string;
+    onChange: (updatedInput: string) => void;
+    maxLength?: number;
+    rows?: number;
+    maxRows?: number;
+    maxErrorText?: string;
 }
 
-export const Broadcast = (props: Props) => {
+export const WebhookSetting = (props: Props) => {
     return (
         <AutomationHeader>
             <AutomationTitle>
@@ -24,15 +31,10 @@ export const Broadcast = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                 />
-                <div><FormattedMessage defaultMessage='Broadcast update to other channels'/></div>
+                <div>{props.textOnToggle}</div>
             </AutomationTitle>
             <SelectorWrapper>
-                <BroadcastChannelSelector
-                    id='playbook-automation-broadcast'
-                    enabled={props.enabled}
-                    channelIds={props.channelIds}
-                    onChannelsSelected={props.onChannelsSelected}
-                />
+                <PatternedTextArea {...props}/>
             </SelectorWrapper>
         </AutomationHeader>
     );

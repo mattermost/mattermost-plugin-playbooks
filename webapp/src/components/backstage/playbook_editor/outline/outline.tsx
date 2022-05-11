@@ -9,11 +9,11 @@ import {useIntl} from 'react-intl';
 import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import ChecklistList from 'src/components/checklist/checklist_list';
 import TextEdit from 'src/components/text_edit';
 import {savePlaybook} from 'src/client';
 
 import StatusUpdates from './section_status_updates';
-import Checklists from './section_checklists';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
 
@@ -68,7 +68,7 @@ const Outline = (props: Props) => {
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
             >
-                <Checklists playbook={playbook}/>
+                <ChecklistList playbook={playbook}/>
             </Section>
             <Section
                 id={'retrospective'}

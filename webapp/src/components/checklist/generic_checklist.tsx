@@ -17,7 +17,6 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
     emptyChecklistItem,
-    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
@@ -28,13 +27,13 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
-    playbook?: PlaybookWithChecklist;
+    menuEnabled: boolean;
     checklist: Checklist;
     checklistIndex: number;
-    menuEnabled: boolean;
+    onUpdateChecklist: (newChecklist: Checklist) => void;
 }
 
-const RHSChecklist = (props: Props) => {
+const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
     const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
@@ -65,21 +64,46 @@ const RHSChecklist = (props: Props) => {
             return false;
         }
 
-        // "Overdue" is checked
-        if (filter.overdueOnly) {
-            // if an item doesn't have a due date or is due in the future, don't show it.
-            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
-                return false;
-            }
-
-            // if an item is skipped or closed, don't show it.
-            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
-                return false;
-            }
+        // "Overdue" is checked, so if item is not overdue or due date is not set, don't show it.
+        if (filter.overdueOnly && (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now())) {
+            return false;
         }
 
         // We should show it!
         return true;
+    };
+
+    const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems[index] = newItem;
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onAddChecklistItem = (newItem: ChecklistItem) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems.push(newItem);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onDuplicateChecklistItem = (index: number) => {
+        const newChecklistItems = [...props.checklist.items];
+        const duplicate = {...newChecklistItems[index]};
+        newChecklistItems.push(duplicate);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
+    };
+
+    const onDeleteChecklistItem = (index: number) => {
+        const newChecklistItems = [...props.checklist.items];
+        newChecklistItems.splice(index, 1);
+        const newChecklist = {...props.checklist};
+        newChecklist.items = newChecklistItems;
+        props.onUpdateChecklist(newChecklist);
     };
 
     const keys = generateKeys(props.checklist.items.map((item) => item.title));
@@ -107,14 +131,17 @@ const RHSChecklist = (props: Props) => {
                                 <DraggableChecklistItem
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
+                                    menuEnabled={props.menuEnabled}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
                                     newItem={false}
-                                    menuEnabled={props.menuEnabled}
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
+                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                                    onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                 />
                             );
                         })}
@@ -122,14 +149,15 @@ const RHSChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
+                                menuEnabled={props.menuEnabled}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
                                 newItem={true}
-                                menuEnabled={props.menuEnabled}
                                 cancelAddingItem={() => {
                                     setAddingItem(false);
                                 }}
+                                onAddChecklistItem={onAddChecklistItem}
                             />
                         }
                         {droppableProvided.placeholder}
@@ -201,4 +229,4 @@ export const generateKeys = (arr: string[]): string[] => {
     return keys;
 };
 
-export default RHSChecklist;
+export default GenericChecklist;
