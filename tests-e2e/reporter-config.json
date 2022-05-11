@@ -4,7 +4,7 @@
         "mochaFile": "cypress/results/junit/junit-[hash].xml"
     },
     "mochawesomeReporterOptions": {
-        "reportDir": "results/mochawesome",
+        "reportDir": "cypress/results/mochawesome",
         "overwrite": false,
         "html": false,
         "json": true
