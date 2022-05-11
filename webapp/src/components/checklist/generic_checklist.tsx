@@ -64,9 +64,17 @@ const GenericChecklist = (props: Props) => {
             return false;
         }
 
-        // "Overdue" is checked, so if item is not overdue or due date is not set, don't show it.
-        if (filter.overdueOnly && (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now())) {
-            return false;
+        // "Overdue" is checked
+        if (filter.overdueOnly) {
+            // if an item doesn't have a due date or is due in the future, don't show it.
+            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
+                return false;
+            }
+
+            // if an item is skipped or closed, don't show it.
+            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
+                return false;
+            }
         }
 
         // We should show it!
