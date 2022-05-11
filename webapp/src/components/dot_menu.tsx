@@ -5,22 +5,24 @@ import React, {useState, useRef} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
+import {PrimaryButton} from 'src/components/assets/buttons';
 
 export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
     padding: 0;
-    background: transparent;
     border: none;
     border-radius: 4px;
     width: 3.2rem;
     height: 3.2rem;
     fill: rgba(var(--center-channel-color-rgb), 0.56);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
 
+    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }
 `;
 
@@ -82,7 +84,7 @@ interface DotMenuProps {
     topPx?: number;
     leftPx?: number;
     wide?: boolean;
-    dotMenuButton: typeof DotMenuButton;
+    dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
     title?: string;
     disabled?: boolean;

@@ -173,14 +173,6 @@ const StyledDotMenuButton = styled(DotMenuButton)<{isActive: boolean}>`
     display: inline-block;
     width: 28px;
     height: 28px;
-
-    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-    background: transparent;
-
-    &:hover {
-        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    }
 `;
 
 const IconWrapper = styled.div`

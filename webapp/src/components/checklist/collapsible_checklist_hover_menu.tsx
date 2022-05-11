@@ -123,14 +123,6 @@ export const DotMenuIcon = styled(HamburgerButton)`
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`
-    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-    background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
-
-    &:hover {
-        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    }
-
     align-items: center;
     justify-content: center;
 
