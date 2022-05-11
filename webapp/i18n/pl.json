@@ -555,5 +555,17 @@
     "XF8rrh": "Skopiuj link do ''{name}''",
     "RrCui3": "Podsumowanie",
     "MyIJbr": "Zawartość",
-    "5ZIN3u": "Aktualizacje Statusu"
+    "5ZIN3u": "Aktualizacje Statusu",
+    "xHNF7i": "Akcje Uruchomień",
+    "x1phlu": "Brak przedziału czasowego",
+    "sX5Mn5": "Proszę wpisać jeden webhook w wierszu",
+    "mkLeuq": "Rozesłanie aktualizacji na wybranych kanałach",
+    "kkw4kS": "Ta aktualizacja zostanie przesłana do {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednego kanału} other {{broadcastChannelCount, number} kanałów}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {jedna bezpośrednia wiadomość} other {{followersChannelCount, number} bezpośrednie wiadomości}}</FollowersTooltip>} other {}}.",
+    "kYCbJE": "Dodaj przedział czasowy",
+    "kV5GkX": "Kiedy aktualizacja statusu jest wysyłana",
+    "j940pJ": "Ta aktualizacja zostanie zapisana na stronie <OverviewLink>przeglądowej</OverviewLink>.",
+    "c6LNcW": "Usuń zadanie",
+    "HvAcYh": "{text}{rest, plural, =0 {} one { i inne} other { i {rest} inne}}",
+    "28FTjr": "Akcje uruchomień umożliwiają zautomatyzowanie działań dla tego kanału",
+    "/RnCQb": "Wyślij wychodzący webhook"
 }
