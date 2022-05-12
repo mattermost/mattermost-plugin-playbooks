@@ -51,7 +51,7 @@ const StatusUpdates = (props: Props) => {
                             </Picker>
                         );
                     },
-                    channelCount: props.playbook.broadcast_channel_ids.length,
+                    channelCount: props.playbook.broadcast_channel_ids?.length ?? 0,
                     channels: (channelCount: ReactNode) => {
                         return (
                             <Picker>
@@ -73,15 +73,12 @@ const StatusUpdates = (props: Props) => {
                             </Picker>
                         );
                     },
-                    webhookCount: (
-                        props.playbook.webhook_on_status_update_enabled &&
-                        props.playbook.webhook_on_status_update_urls.length
-                    ) || 0,
+                    webhookCount: props.playbook.webhook_on_status_update_urls?.length ?? 0,
                     webhooks: (webhookCount: ReactNode) => {
                         return (
                             <Picker>
                                 <WebhooksInput
-                                    webhookOnStatusUpdateURLs={props.playbook.webhook_on_status_update_enabled ? props.playbook.webhook_on_status_update_urls : []}
+                                    urls={props.playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
                                         if (newWebhookOnStatusUpdateURLs.length === 0) {
                                             props.updatePlaybook({

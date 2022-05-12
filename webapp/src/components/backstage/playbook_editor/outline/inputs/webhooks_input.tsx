@@ -12,8 +12,8 @@ import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
 import {moveRect} from './broadcast_channels_selector';
 
 type Props = {
-    webhookOnStatusUpdateURLs: string[];
-    onChange: (newWebhookOnStatusUpdateURLs: string[]) => void;
+    urls: string[];
+    onChange: (urls: string[]) => void;
     errorText?: string;
     rows?: number;
     maxRows?: number;
@@ -26,7 +26,7 @@ export const WebhooksInput = (props: Props) => {
     const {formatMessage} = useIntl();
     const [invalid, setInvalid] = useState<boolean>(false);
     const [errorText, setErrorText] = useState<string>(props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'}));
-    const [urls, setURLs] = useState<string[]>(props.webhookOnStatusUpdateURLs);
+    const [urls, setURLs] = useState<string[]>(props.urls);
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -42,8 +42,8 @@ export const WebhooksInput = (props: Props) => {
     const [moveUp, setMoveUp] = useState(0);
 
     useEffect(() => {
-        moveRect(rect, props.webhookOnStatusUpdateURLs.length, setMoveUp);
-    }, [rect, props.webhookOnStatusUpdateURLs.length]);
+        moveRect(rect, props.urls.length, setMoveUp);
+    }, [rect, props.urls.length]);
 
     const target = (
         <div
@@ -91,16 +91,13 @@ export const WebhooksInput = (props: Props) => {
                     value={urls.join('\n')}
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={(e) => isValid(e.target.value)}
-                    placeholder={formatMessage({defaultMessage: 'Enter webhook'})}
+                    placeholder={formatMessage({defaultMessage: 'Enter one webhook per line'})}
                     maxLength={props.maxLength || 1000}
                     invalid={invalid}
                 />
                 <ErrorMessage>
                     {errorText}
                 </ErrorMessage>
-                <Hint>
-                    {formatMessage({defaultMessage: 'Enter one webhook per line'})}
-                </Hint>
                 <CancelSaveButtons
                     onCancel={() => {
                         setOpen(false);
@@ -130,7 +127,7 @@ const isPatternValid = (value: string, pattern: string, delimiter = '\n'): boole
 const ErrorMessage = styled.div`
     color: var(--error-text);
     margin-left: auto;
-    display: none;
+    visibility: hidden;
 `;
 
 const SelectorWrapper = styled.div`
@@ -178,17 +175,8 @@ const TextArea = styled.textarea<TextAreaProps>`
         :not(:focus) {
             box-shadow: inset 0 0 0 2px var(--error-text);
             & + ${ErrorMessage} {
-                display: inline-block;
+                visibility: visible;
             }
         }
     `}
-`;
-
-const Hint = styled.div`
-    margin: 6px 0px;
-
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--center-channel-color-64);
 `;
