@@ -13,7 +13,10 @@ interface ToggleProps {
 
 export const Toggle = (props: ToggleProps) => {
     return (
-        <Label disabled={props.disabled}>
+        <Label
+            disabled={props.disabled}
+            tabIndex={0}
+        >
             <InvisibleInput
                 type='checkbox'
                 onChange={props.onChange}
