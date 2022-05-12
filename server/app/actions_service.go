@@ -423,6 +423,32 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 				presentTriggers = append(presentTriggers, trigger)
 				actionExecuted = true
 			}
+			if !actionExecuted {
+				originalAttachments := post.Attachments()
+			attach:
+				// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
+				for _, attachment := range originalAttachments {
+					switch {
+					case strings.Contains(attachment.Pretext, trigger):
+						actionExecuted = true
+					case strings.Contains(attachment.Title, trigger):
+						actionExecuted = true
+					case strings.Contains(attachment.Text, trigger):
+						actionExecuted = true
+					case strings.Contains(attachment.Footer, trigger):
+						actionExecuted = true
+					default:
+						continue
+					}
+
+					// Add playbook and stop checking attachments
+					if actionExecuted {
+						triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
+						presentTriggers = append(presentTriggers, trigger)
+						break attach
+					}
+				}
+			}
 		}
 
 		if actionExecuted {
