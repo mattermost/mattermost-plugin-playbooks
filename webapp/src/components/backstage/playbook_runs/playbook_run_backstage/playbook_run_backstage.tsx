@@ -2,10 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import {useSelector, useDispatch} from 'react-redux';
+import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
+
+import MdiIcon from '@mdi/react';
+import {mdiLightningBoltOutline} from '@mdi/js';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -42,6 +45,10 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 import {BadgeType} from 'src/components/backstage/status_badge';
+import Tooltip from 'src/components/widgets/tooltip';
+import RunActionsModal from 'src/components/run_actions_modal';
+
+import {showRunActionsModal} from 'src/actions';
 
 declare module 'react-bootstrap/esm/OverlayTrigger' {
     interface OverlayTriggerProps {
@@ -116,13 +123,35 @@ const LeftArrow = styled(Icon)`
     }
 `;
 
+export const HeaderIcon = styled(Icon)<{clicked: boolean}>`
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    margin-left: 8px;
+    border-radius: 4px;
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
+`;
+
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 18px;
-    width: 24px;
-    height: 24px;
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
     line-height: 18px;
     margin-left: 8px;
+    display: grid;
+    place-items: center;
 `;
 
 const VerticalBlock = styled.div`
@@ -222,6 +251,7 @@ const FollowingButton = styled(Button)`
 `;
 
 const PlaybookRunBackstage = () => {
+    const dispatch = useDispatch();
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
@@ -247,7 +277,9 @@ const PlaybookRunBackstage = () => {
         } else {
             Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
                 setPlaybookRun(playbookRunResult);
-                setPlaybookRunMetadata(playbookRunMetadataResult);
+                if (playbookRunMetadataResult) {
+                    setPlaybookRunMetadata(playbookRunMetadataResult);
+                }
                 setFetchingState(FetchingStateType.fetched);
                 setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
             }).catch(() => {
@@ -339,6 +371,26 @@ const PlaybookRunBackstage = () => {
         followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
     }
 
+    const runActionsButton = (
+        <Tooltip
+            id={'run-actions-button-tooltip'}
+            placement={'bottom'}
+            shouldUpdatePosition={true}
+            content={formatMessage({defaultMessage: 'Run Actions'})}
+        >
+            <HeaderIcon
+                onClick={() => dispatch(showRunActionsModal())}
+                clicked={false}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+            >
+                <MdiIcon
+                    path={mdiLightningBoltOutline}
+                    size={'16px'}
+                />
+            </HeaderIcon>
+        </Tooltip>
+    );
+
     return (
         <OuterContainer>
             <TopContainer>
@@ -351,6 +403,7 @@ const PlaybookRunBackstage = () => {
                         <TitleWithBadgeAndLink>
                             <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                            {runActionsButton}
                             <StyledCopyLink
                                 id='copy-run-link-tooltip'
                                 to={getSiteUrl() + '/playbooks/runs/' + playbookRun.id}
@@ -416,6 +469,7 @@ const PlaybookRunBackstage = () => {
                     </Switch>
                 </InnerContainer>
             </BottomContainer>
+            <RunActionsModal playbookRun={playbookRun}/>
         </OuterContainer>
     );
 };
