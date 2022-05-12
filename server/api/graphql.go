@@ -153,7 +153,7 @@ func getContext(ctx context.Context) (*Context, error) {
 
 func graphiQL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	w.Write(graphiqlPage)
+	_, _ = w.Write(graphiqlPage)
 }
 
 var graphiqlPage = []byte(`

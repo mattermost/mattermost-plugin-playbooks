@@ -14,13 +14,13 @@ import (
 type RootResolver struct{}
 
 func (r *RootResolver) Playbook(ctx context.Context, args struct {
-	Id string
-}) (*playbookResolver, error) {
+	ID string
+}) (*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	playbookID := args.Id
+	playbookID := args.ID
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
@@ -33,7 +33,7 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	return &playbookResolver{playbook}, nil
+	return &PlaybookResolver{playbook}, nil
 }
 
 type UpdateChecklist struct {
@@ -55,7 +55,7 @@ type UpdateChecklistItem struct {
 }
 
 func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
-	Id      string
+	ID      string
 	Updates struct {
 		Title                                *string
 		Description                          *string
@@ -96,7 +96,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := c.playbookService.Get(args.Id)
+	currentPlaybook, err := c.playbookService.Get(args.ID)
 	if err != nil {
 		return "", err
 	}
@@ -199,17 +199,17 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.Id)
+		return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 	}
 	setmap["ChecklistsJSON"] = checklistsJSON
 
 	if len(setmap) > 0 {
-		if err := c.playbookStore.GraphqlUpdate(args.Id, setmap); err != nil {
+		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
 			return "", err
 		}
 	}
 
-	return args.Id, nil
+	return args.ID, nil
 }
 
 func addToSetmap[T any](setmap map[string]interface{}, name string, value *T) {

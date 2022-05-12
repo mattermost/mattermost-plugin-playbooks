@@ -4,82 +4,81 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
-type playbookResolver struct {
+type PlaybookResolver struct {
 	app.Playbook
 }
 
-func (r *playbookResolver) DeleteAt() float64 {
+func (r *PlaybookResolver) DeleteAt() float64 {
 	return float64(r.Playbook.DeleteAt)
 }
 
-func (r *playbookResolver) RetrospectiveReminderIntervalSeconds() float64 {
+func (r *PlaybookResolver) RetrospectiveReminderIntervalSeconds() float64 {
 	return float64(r.Playbook.RetrospectiveReminderIntervalSeconds)
 }
 
-func (r *playbookResolver) ReminderTimerDefaultSeconds() float64 {
+func (r *PlaybookResolver) ReminderTimerDefaultSeconds() float64 {
 	return float64(r.Playbook.ReminderTimerDefaultSeconds)
 }
 
-func (r *playbookResolver) Metrics() []*metricConfigResolver {
-	metricConfigResolvers := make([]*metricConfigResolver, 0, len(r.Playbook.Metrics))
+func (r *PlaybookResolver) Metrics() []*MetricConfigResolver {
+	metricConfigResolvers := make([]*MetricConfigResolver, 0, len(r.Playbook.Metrics))
 	for _, metricConfig := range r.Playbook.Metrics {
-		metricConfigResolvers = append(metricConfigResolvers, &metricConfigResolver{metricConfig})
+		metricConfigResolvers = append(metricConfigResolvers, &MetricConfigResolver{metricConfig})
 	}
 
 	return metricConfigResolvers
 }
 
-type metricConfigResolver struct {
+type MetricConfigResolver struct {
 	app.PlaybookMetricConfig
 }
 
-func (r *metricConfigResolver) Target() *int32 {
+func (r *MetricConfigResolver) Target() *int32 {
 	if r.PlaybookMetricConfig.Target.Valid {
 		intvalue := int32(r.PlaybookMetricConfig.Target.ValueOrZero())
 		return &intvalue
-	} else {
-		return nil
 	}
+	return nil
 }
 
-func (r *playbookResolver) Checklists() []*checklistResolver {
-	checklistResolvers := make([]*checklistResolver, 0, len(r.Playbook.Checklists))
+func (r *PlaybookResolver) Checklists() []*ChecklistResolver {
+	checklistResolvers := make([]*ChecklistResolver, 0, len(r.Playbook.Checklists))
 	for _, checklist := range r.Playbook.Checklists {
-		checklistResolvers = append(checklistResolvers, &checklistResolver{checklist})
+		checklistResolvers = append(checklistResolvers, &ChecklistResolver{checklist})
 	}
 
 	return checklistResolvers
 }
 
-type checklistResolver struct {
+type ChecklistResolver struct {
 	app.Checklist
 }
 
-func (r *checklistResolver) Items() []*checklistItemResolver {
-	checklistItemResolvers := make([]*checklistItemResolver, 0, len(r.Checklist.Items))
+func (r *ChecklistResolver) Items() []*ChecklistItemResolver {
+	checklistItemResolvers := make([]*ChecklistItemResolver, 0, len(r.Checklist.Items))
 	for _, items := range r.Checklist.Items {
-		checklistItemResolvers = append(checklistItemResolvers, &checklistItemResolver{items})
+		checklistItemResolvers = append(checklistItemResolvers, &ChecklistItemResolver{items})
 	}
 
 	return checklistItemResolvers
 }
 
-type checklistItemResolver struct {
+type ChecklistItemResolver struct {
 	app.ChecklistItem
 }
 
-func (r *checklistItemResolver) StateModified() float64 {
+func (r *ChecklistItemResolver) StateModified() float64 {
 	return float64(r.ChecklistItem.StateModified)
 }
 
-func (r *checklistItemResolver) AssigneeModified() float64 {
+func (r *ChecklistItemResolver) AssigneeModified() float64 {
 	return float64(r.ChecklistItem.AssigneeModified)
 }
 
-func (r *checklistItemResolver) CommandLastRun() float64 {
+func (r *ChecklistItemResolver) CommandLastRun() float64 {
 	return float64(r.ChecklistItem.CommandLastRun)
 }
 
-func (r *checklistItemResolver) DueDate() float64 {
+func (r *ChecklistItemResolver) DueDate() float64 {
 	return float64(r.ChecklistItem.DueDate)
 }
