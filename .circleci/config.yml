@@ -145,7 +145,7 @@ commands:
             npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
       - *save_cypress_cache
       - store_test_results:
-          path: tests-e2e/cypress/results
+          path: tests-e2e/cypress/results/junit
       - store_artifacts:
           path: tests-e2e/cypress/videos
 
