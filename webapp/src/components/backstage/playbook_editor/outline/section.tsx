@@ -12,19 +12,23 @@ interface Props {
     id: string;
     title: string;
     children?: React.ReactNode;
-    onHover?: React.ReactNode;
+    headerRight?: React.ReactNode;
+    hoverEffect?: boolean;
 }
 
-const Section = ({id, title, children, onHover}: Props) => {
+const Section = ({
+    id,
+    title,
+    headerRight,
+    children,
+    hoverEffect,
+}: Props) => {
     const {url} = useRouteMatch();
-    const [showHover, setShowHover] = useState(false);
 
     return (
         <Wrapper
             id={id}
-            onMouseEnter={() => onHover && setShowHover(true)}
-            onMouseLeave={() => onHover && setShowHover(false)}
-            onHover={onHover !== undefined}
+            $hoverEffect={hoverEffect}
         >
             <Header>
                 <Title>
@@ -36,30 +40,41 @@ const Section = ({id, title, children, onHover}: Props) => {
                     />
                     {title}
                 </Title>
-                <VerticalSpacer/>
-                {showHover && onHover}
+                {headerRight && (
+                    <HeaderRight>
+                        {headerRight}
+                    </HeaderRight>
+                )}
             </Header>
             {children}
         </Wrapper>
     );
 };
 
-const Wrapper = styled.div<{onHover: boolean}>`
-    padding: 24px;
-
-    ${({onHover}) => onHover && css`
-        :hover{
-            background: var(--center-channel-color-04);
+const Wrapper = styled.div<{$hoverEffect?: boolean; $hideHeaderRight?: boolean;}>`
+    ${({$hoverEffect}) => $hoverEffect && css`
+        ${HeaderRight} {
+            opacity: 0
+        }
+        :hover,
+        :focus-within {
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+            ${HeaderRight} {
+                opacity: 1;
+            }
         }
     `}
+    padding: 0.5rem 3rem 2rem;
+    border-radius: 8px;
 `;
+
+const HeaderRight = styled.div``;
+
 const Title = styled.h3`
     font-family: Metropolis, sans-serif;
     font-size: 20px;
     font-weight: 600;
     line-height: 28px;
-
-    padding-bottom: 6px;
     white-space: nowrap;
 
     ${CopyLink} {
@@ -76,10 +91,7 @@ const Title = styled.h3`
 const Header = styled.div`
     display: flex;
     align-items: center;
-`;
-
-const VerticalSpacer = styled.div`
-    width: 100%;
+    justify-content: space-between;
 `;
 
 export default Section;

@@ -2,9 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useMemo} from 'react';
-import styled from 'styled-components';
 
-import DateTimeSelector from '../../../datetime_selector';
+import DateTimeSelector from 'src/components/datetime_selector';
 
 import {
     useMakeOption,
@@ -12,6 +11,7 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
+import {Placeholder} from '../section_status_updates';
 
 interface Props {
     seconds: number;
@@ -42,7 +42,7 @@ const UpdateTimer = (props: Props) => {
         }
 
         return {options, value};
-    }, [props]);
+    }, [props.seconds]);
 
     return (
         <DateTimeSelector
@@ -59,43 +59,3 @@ const UpdateTimer = (props: Props) => {
 };
 
 export default UpdateTimer;
-
-interface PlaceholderProps {
-    label: React.ReactNode
-}
-
-export const Placeholder = (props: PlaceholderProps) => {
-    return (
-        <PlaceholderDiv>
-            <TimeTextContainer>
-                {props.label}
-            </TimeTextContainer>
-            <SelectorRightIcon className='icon-chevron-down icon-12'/>
-        </PlaceholderDiv>
-    );
-};
-
-const PlaceholderDiv = styled.div`
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-    white-space: nowrap;
-
-    &:hover {
-        cursor: pointer;
-    }
-`;
-
-const SelectorRightIcon = styled.i`
-    font-size: 14.4px;
-    &{
-        margin-left: 4px;
-    }
-    color: var(--center-channel-color-32);
-`;
-
-const TimeTextContainer = styled.div`
-    font-size: 12px;
-    line-height: 15px;
-    font-weight:'400';
-`;

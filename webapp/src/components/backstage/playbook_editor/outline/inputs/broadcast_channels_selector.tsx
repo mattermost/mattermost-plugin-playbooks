@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, ReactNode} from 'react';
 import styled from 'styled-components';
 
 import ReactSelect, {StylesConfig, ValueType} from 'react-select';
@@ -14,13 +14,12 @@ import {useIntl} from 'react-intl';
 import {useClientRect} from 'src/hooks';
 import Dropdown from 'src/components/dropdown';
 
-import {Placeholder} from './update_timer_selector';
-
 export interface Props {
     id?: string;
     onChannelsSelected: (channelIds: string[]) => void;
     channelIds: string[];
     placeholder?: string;
+    children?: ReactNode;
 }
 
 const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
@@ -78,13 +77,12 @@ const BroadcastChannels = (props: Props) => {
         moveRect(rect, selectableChannels.length, setMoveUp);
     }, [rect, selectableChannels.length]);
 
-    const n = props.channelIds.length;
-    const nChannels = String(n) + ' channel' + (n === 1 ? '' : 's');
     const target = (
-        <div ref={ref}>
-            <div onClick={toggleOpen}>
-                <Placeholder label={nChannels}/>
-            </div>
+        <div
+            ref={ref}
+            onClick={toggleOpen}
+        >
+            {props.children}
         </div>
     );
 
@@ -187,7 +185,7 @@ export default BroadcastChannels;
 const StyledReactSelect = styled(ReactSelect)`
     font-weight: 400;
     font-size: 14px;
-    line-height: 20px;    
+    line-height: 20px;
     color: var(--center-channel-color);
 `;
 

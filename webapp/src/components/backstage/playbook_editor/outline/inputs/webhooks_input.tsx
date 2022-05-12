@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, ReactNode} from 'react';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
@@ -9,7 +9,6 @@ import {useClientRect} from 'src/hooks';
 import Dropdown from 'src/components/dropdown';
 import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
 
-import {Placeholder} from './update_timer_selector';
 import {moveRect} from './broadcast_channels_selector';
 
 type Props = {
@@ -20,6 +19,7 @@ type Props = {
     maxRows?: number;
     maxErrorText?: string;
     maxLength?: number;
+    children?: ReactNode;
 }
 
 export const WebhooksInput = (props: Props) => {
@@ -46,10 +46,11 @@ export const WebhooksInput = (props: Props) => {
     }, [rect, props.webhookOnStatusUpdateURLs.length]);
 
     const target = (
-        <div ref={ref}>
-            <div onClick={toggleOpen}>
-                <Placeholder label={String(props.webhookOnStatusUpdateURLs.length) + ' outgoing webhook'}/>
-            </div>
+        <div
+            ref={ref}
+            onClick={toggleOpen}
+        >
+            {props.children}
         </div>
     );
 
@@ -161,7 +162,11 @@ const TextArea = styled.textarea<TextAreaProps>`
 
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
-    border: 2px solid var(--button-bg);
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.24);
+    border: none;
+    :focus {
+        box-shadow: inset 0 0 0 2px rgba(var(--center-channel-color-rgb), 0.32);
+    }
     box-sizing: border-box;
     border-radius: 4px;
 
@@ -171,7 +176,7 @@ const TextArea = styled.textarea<TextAreaProps>`
 
     ${(props) => props.invalid && props.value && css`
         :not(:focus) {
-            box-shadow: inset 0 0 0 1px var(--error-text);
+            box-shadow: inset 0 0 0 2px var(--error-text);
             & + ${ErrorMessage} {
                 display: inline-block;
             }

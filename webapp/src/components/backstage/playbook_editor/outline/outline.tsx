@@ -48,22 +48,6 @@ const Outline = (props: Props) => {
         savePlaybook(newPlaybook);
     };
 
-    const onHover = (
-        <HoverMenuContainer>
-            <Toggle
-                isChecked={playbook.status_update_enabled}
-                onChange={() => {
-                    updatePlaybook({
-                        ...playbook,
-                        status_update_enabled: !playbook.status_update_enabled,
-                        webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                        broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
-                    });
-                }}
-            />
-        </HoverMenuContainer>
-    );
-
     return (
         <Sections
             playbookId={playbook.id}
@@ -82,7 +66,22 @@ const Outline = (props: Props) => {
             <Section
                 id={'status-updates'}
                 title={formatMessage({defaultMessage: 'Status Updates'})}
-                onHover={onHover}
+                hoverEffect={true}
+                headerRight={(
+                    <HoverMenuContainer>
+                        <Toggle
+                            isChecked={playbook.status_update_enabled}
+                            onChange={() => {
+                                updatePlaybook({
+                                    ...playbook,
+                                    status_update_enabled: !playbook.status_update_enabled,
+                                    webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                    broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                });
+                            }}
+                        />
+                    </HoverMenuContainer>
+                )}
             >
                 <StatusUpdates
                     playbook={playbook}
@@ -163,7 +162,7 @@ export const Sections = styled(SectionsImpl)`
     flex-direction: column;
     flex-grow: 1;
     margin-bottom: 40px;
-    padding: 5rem;
+    padding: 2rem;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 8px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
