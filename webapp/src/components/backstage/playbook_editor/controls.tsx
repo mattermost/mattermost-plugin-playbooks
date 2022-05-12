@@ -283,7 +283,6 @@ type TitleMenuProps = {
     className?: string;
     archived: boolean;
 } & PropsWithChildren<ControlProps>;
-
 const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -299,51 +298,53 @@ const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
     const archived = playbook.delete_at !== 0;
 
     return (
-        <DotMenu
-            dotMenuButton={TitleButton}
-            className={className}
-            left={true}
-            icon={
-                <>
-                    {children}
-                    <i className={'icon icon-chevron-down'}/>
-                </>
-            }
-        >
-            <DropdownMenuItem
-                onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+        <>
+            <DotMenu
+                dotMenuButton={TitleButton}
+                className={className}
+                left={true}
+                icon={
+                    <>
+                        {children}
+                        <i className={'icon icon-chevron-down'}/>
+                    </>
+                }
             >
-                <FormattedMessage defaultMessage='Manage access'/>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={async () => {
-                    const newID = await clientDuplicatePlaybook(playbook.id);
-                    navigateToPluginUrl(`/playbooks/${newID}`);
-                    addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
-                    telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
-                }}
-            >
-                <FormattedMessage defaultMessage='Duplicate'/>
-            </DropdownMenuItem>
-            <DropdownMenuItemStyled
-                href={exportHref}
-                download={exportFilename}
-                role={'button'}
-                onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
-            >
-                <FormattedMessage defaultMessage='Export'/>
-            </DropdownMenuItemStyled>
-            {!archived && (
                 <DropdownMenuItem
-                    onClick={() => openDeletePlaybookModal(playbook)}
+                    onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
                 >
-                    <RedText>
-                        <FormattedMessage defaultMessage='Archive playbook'/>
-                    </RedText>
+                    <FormattedMessage defaultMessage='Manage access'/>
                 </DropdownMenuItem>
-            )}
+                <DropdownMenuItem
+                    onClick={async () => {
+                        const newID = await clientDuplicatePlaybook(playbook.id);
+                        navigateToPluginUrl(`/playbooks/${newID}`);
+                        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                        telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
+                    }}
+                >
+                    <FormattedMessage defaultMessage='Duplicate'/>
+                </DropdownMenuItem>
+                <DropdownMenuItemStyled
+                    href={exportHref}
+                    download={exportFilename}
+                    role={'button'}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
+                >
+                    <FormattedMessage defaultMessage='Export'/>
+                </DropdownMenuItemStyled>
+                {!archived && (
+                    <DropdownMenuItem
+                        onClick={() => openDeletePlaybookModal(playbook)}
+                    >
+                        <RedText>
+                            <FormattedMessage defaultMessage='Archive playbook'/>
+                        </RedText>
+                    </DropdownMenuItem>
+                )}
+            </DotMenu>
             {modal}
-        </DotMenu>
+        </>
     );
 };
 

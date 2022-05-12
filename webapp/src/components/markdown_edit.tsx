@@ -66,7 +66,11 @@ const MarkdownEdit = (props: TextEditProps) => {
             dashed={value === ''}
             noBorder={props.noBorder}
             className={props.className}
-            onClick={() => !value && setIsEditing(true)}
+            onClick={(e) => {
+                if (!value || e.detail >= 2) {
+                    setIsEditing(true);
+                }
+            }}
         >
             {!isEditing && <HoverMenu onEdit={() => setIsEditing(true)}/>}
             <RenderedText
@@ -144,7 +148,6 @@ const MarkdownEditContainer = styled.div<{editing: boolean;dashed: boolean;noBor
         `}
     }
 
-    background: var(--center-channel-bg);
     border: ${(props) => (props.dashed ? '1px dashed var(--center-channel-color-16)' : '1px solid var(--center-channel-color-08)')};
     ${({editing, noBorder}) => (editing || noBorder) && css`
         border-color: transparent;
