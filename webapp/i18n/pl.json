@@ -567,5 +567,11 @@
     "c6LNcW": "Usuń zadanie",
     "HvAcYh": "{text}{rest, plural, =0 {} one { i inne} other { i {rest} inne}}",
     "28FTjr": "Akcje uruchomień umożliwiają zautomatyzowanie działań dla tego kanału",
-    "/RnCQb": "Wyślij wychodzący webhook"
+    "/RnCQb": "Wyślij wychodzący webhook",
+    "uhDKO8": "Użyj markdown do utworzenia szablonu",
+    "giM/X9": "Oczekuje się aktualizacji statusu co <duration></duration>. Nowe aktualizacje będą przesyłane do <channels>{channelCount, plural, =0 {brak kanałów} one {# kanału} other {# kanałów}}</channels> i <webhooks>{webhookCount, plural, =0 {brak wychodzących webhooków} one {# wychodzącego webhooka} other {# wychodzących webhooków}}</webhooks> .",
+    "aM44Z/": "Wybierz lub określ niestandardowy czas trwania…",
+    "YQOmSf": "Wprowadź jeden webhook w każdym wierszu",
+    "XRyRzf": "Nie oczekuje się aktualizacji statusu.",
+    "DaHpK1": "Wyszukaj kanał"
 }
