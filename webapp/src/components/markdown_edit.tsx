@@ -8,9 +8,12 @@ import MarkdownTextbox from 'src/components/markdown_textbox';
 
 import FormattedMarkdown from 'src/components/formatted_markdown';
 
+import {useUniqueId} from 'src/utils';
+
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
 import ShowMore from './widgets/show_more';
+import Tooltip from './widgets/tooltip';
 
 interface TextEditProps {
     value: string;
@@ -23,6 +26,8 @@ interface TextEditProps {
 }
 
 const MarkdownEdit = (props: TextEditProps) => {
+    const {formatMessage} = useIntl();
+    const id = useUniqueId('editabletext-markdown-textbox');
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(props.value);
     useUpdateEffect(() => {
@@ -38,7 +43,7 @@ const MarkdownEdit = (props: TextEditProps) => {
             >
                 <MarkdownTextbox
                     data-testid={'rendered-editable-text'}
-                    id={'editabletext-markdown-textbox'}
+                    id={id}
                     value={value}
                     placeholder={props.placeholder}
                     setValue={setValue}
@@ -72,7 +77,21 @@ const MarkdownEdit = (props: TextEditProps) => {
                 }
             }}
         >
-            {!isEditing && <HoverMenu onEdit={() => setIsEditing(true)}/>}
+            {!isEditing && (
+                <HoverMenuContainer>
+                    <Tooltip
+                        id={`${id}-tooltip`}
+                        shouldUpdatePosition={true}
+                        content={formatMessage({defaultMessage: 'Edit'})}
+                    >
+                        <ButtonIcon
+                            data-testid='hover-menu-edit-button'
+                            className={'icon-pencil-outline icon-16 btn-icon'}
+                            onClick={() => setIsEditing(true)}
+                        />
+                    </Tooltip>
+                </HoverMenuContainer>
+            )}
             <RenderedText
                 data-testid='rendered-text'
             >
@@ -171,22 +190,3 @@ const PlaceholderText = styled.span`
 `;
 
 export default styled(MarkdownEdit)``;
-
-interface HoverMenuProps {
-    onEdit: () => void;
-}
-
-const HoverMenu = (props: HoverMenuProps) => {
-    const {formatMessage} = useIntl();
-
-    return (
-        <HoverMenuContainer>
-            <ButtonIcon
-                data-testid='hover-menu-edit-button'
-                title={formatMessage({defaultMessage: 'Edit'})}
-                className={'icon-pencil-outline icon-16 btn-icon'}
-                onClick={() => props.onEdit()}
-            />
-        </HoverMenuContainer>
-    );
-};
