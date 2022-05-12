@@ -1,10 +1,15 @@
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
-import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
+import {createSelector} from 'reselect';
+
+import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from 'mattermost-redux/types/utilities';
 import General from 'mattermost-redux/constants/general';
 
-import {Channel} from 'mattermost-redux/types/channels';
+import {Channel, ChannelMembership} from 'mattermost-redux/types/channels';
+import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {useIntl} from 'react-intl';
@@ -21,10 +26,26 @@ export interface Props {
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
     placeholder?: string;
+    teamId?: string;
 }
 
-const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0,
+const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
+    'getMyPublicAndPrivateChannelsInTeam',
+    getAllChannels,
+    getChannelsInTeam,
+    getMyChannelMemberships,
+    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToMany<Team, Channel>, myMembers: RelationOneToOne<Channel, ChannelMembership>): Channel[] => {
+        const myChannels : Channel[] = [];
+        (channelsByTeam[teamId] || []).forEach((channelId: string) => {
+            if (Object.prototype.hasOwnProperty.call(myMembers, channelId)) {
+                const channel = allChannels[channelId];
+                if (channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0) {
+                    myChannels.push(channel);
+                }
+            }
+        });
+        return myChannels;
+    },
 );
 
 const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
@@ -51,7 +72,9 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 
 const ChannelSelector = (props: Props & {className?: string}) => {
     const {formatMessage} = useIntl();
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const teamId = props.teamId || currentTeamId;
+    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(teamId));
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {

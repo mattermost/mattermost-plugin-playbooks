@@ -9,11 +9,12 @@ import {useIntl} from 'react-intl';
 import {useLocation} from 'react-router-dom';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import ChecklistList from 'src/components/checklist/checklist_list';
 import TextEdit from 'src/components/text_edit';
 import {savePlaybook} from 'src/client';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 import StatusUpdates from './section_status_updates';
-import Checklists from './section_checklists';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
 
@@ -39,6 +40,10 @@ const Outline = (props: Props) => {
         }
         const newPlaybook = {...props.playbook};
         newPlaybook.run_summary_template = summary;
+        updatePlaybook(newPlaybook);
+    };
+
+    const updatePlaybook = (newPlaybook: PlaybookWithChecklist) => {
         setPlaybook(newPlaybook);
         savePlaybook(newPlaybook);
     };
@@ -61,14 +66,33 @@ const Outline = (props: Props) => {
             <Section
                 id={'status-updates'}
                 title={formatMessage({defaultMessage: 'Status Updates'})}
+                hoverEffect={true}
+                headerRight={(
+                    <HoverMenuContainer>
+                        <Toggle
+                            isChecked={playbook.status_update_enabled}
+                            onChange={() => {
+                                updatePlaybook({
+                                    ...playbook,
+                                    status_update_enabled: !playbook.status_update_enabled,
+                                    webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                    broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                });
+                            }}
+                        />
+                    </HoverMenuContainer>
+                )}
             >
-                <StatusUpdates playbook={playbook}/>
+                <StatusUpdates
+                    playbook={playbook}
+                    updatePlaybook={updatePlaybook}
+                />
             </Section>
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
             >
-                <Checklists playbook={playbook}/>
+                <ChecklistList playbook={playbook}/>
             </Section>
             <Section
                 id={'retrospective'}
@@ -138,11 +162,21 @@ export const Sections = styled(SectionsImpl)`
     flex-direction: column;
     flex-grow: 1;
     margin-bottom: 40px;
-    padding: 5rem;
+    padding: 2rem;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 8px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
     background: var(--center-channel-bg);
+`;
+
+const HoverMenuContainer = styled.div`
+    display: flex;
+    align-items: center;
+    padding: 0px 8px;
+    position: relative;
+    height: 32px;
+    right: 1px;
+    top: 2px;
 `;
 
 export default Outline;

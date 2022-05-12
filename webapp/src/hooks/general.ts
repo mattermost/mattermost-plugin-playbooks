@@ -488,6 +488,18 @@ export function useFormattedUsernameByID(userId: string) {
     return useFormattedUsername(user);
 }
 
+// Return the list of names of the users given a list of UserProfiles or userIds
+// It will respect teamnameNameDisplaySetting.
+export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>) : string[] {
+    const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
+        getTeammateNameDisplaySetting,
+    ) || '';
+    const displayNames = useSelector((state: GlobalState) => {
+        return usersOrUserIds?.map((user) => displayUsername(typeof user === 'string' ? getUser(state, user) : user, teammateNameDisplaySetting));
+    });
+    return displayNames || [];
+}
+
 export function useNow(refreshIntervalMillis = 1000) {
     const [now, setNow] = useState(DateTime.now());
 

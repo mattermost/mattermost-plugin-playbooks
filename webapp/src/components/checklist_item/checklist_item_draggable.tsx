@@ -10,17 +10,21 @@ import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun?: PlaybookRun;
     checklistIndex: number;
     item: ChecklistItemType;
     itemIndex: number;
     newItem: boolean;
     menuEnabled: boolean;
     cancelAddingItem: () => void;
+    onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
+    onAddChecklistItem?: (newItem: ChecklistItemType) => void;
+    onDuplicateChecklistItem?: () => void;
+    onDeleteChecklistItem?: () => void;
 }
 
 const DraggableChecklistItem = (props: Props) => {
-    const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+    const finished = props.playbookRun?.current_status === PlaybookRunStatus.Finished;
 
     return (
         <Draggable
@@ -32,10 +36,11 @@ const DraggableChecklistItem = (props: Props) => {
                     checklistItem={props.item}
                     checklistNum={props.checklistIndex}
                     itemNum={props.itemIndex}
-                    channelId={props.playbookRun.channel_id}
-                    playbookRunId={props.playbookRun.id}
+                    playbookRunId={props.playbookRun?.id}
                     onChange={(newState: ChecklistItemState) => {
-                        setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
+                        if (props.playbookRun) {
+                            setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
+                        }
                     }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging}
@@ -44,6 +49,10 @@ const DraggableChecklistItem = (props: Props) => {
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}
+                    onUpdateChecklistItem={props.onUpdateChecklistItem}
+                    onAddChecklistItem={props.onAddChecklistItem}
+                    onDuplicateChecklistItem={props.onDuplicateChecklistItem}
+                    onDeleteChecklistItem={props.onDeleteChecklistItem}
                 />
             )}
         </Draggable>
