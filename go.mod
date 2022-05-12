@@ -8,11 +8,9 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
-replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220510062744-292149ee4170
+replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220512052723-ea98f9f4a9dc
 
 replace github.com/mattermost/mattermost-plugin-api => github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
-
-replace github.com/Masterminds/squirrel v1.5.2 => github.com/lieut-data/squirrel v1.5.4
 
 require (
 	github.com/Masterminds/squirrel v1.5.2
@@ -21,8 +19,8 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/isacikgoz/morph v0.0.0-20220406131225-b96d2fb806f1
-	github.com/jmoiron/sqlx v1.3.4
-	github.com/lib/pq v1.10.4
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/lib/pq v1.10.5
 	github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20220510062744-292149ee4170
