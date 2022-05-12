@@ -562,5 +562,17 @@
     "+PMJAg": "Kezdje meg a követést # felhasználó számára",
     "x1phlu": "Nincs időablak",
     "kYCbJE": "Idő ablak megadása",
-    "xHNF7i": "Műveletek futtatása"
+    "xHNF7i": "Műveletek futtatása",
+    "/RnCQb": "Kimenő webhorog küldése",
+    "28FTjr": "Műveletek futtatása lehetővé teszi a tevékenységek automatizálását ezen a csatornán",
+    "j940pJ": "Ez a frissítés az <OverviewLink>áttekintő oldalra</OverviewLink> lesz elmentve.",
+    "mkLeuq": "Frissítés közzététele a kiválasztott csatornákban",
+    "uhDKO8": "Használjon markdown formázást sablon létrehozásához",
+    "sX5Mn5": "Kérem soronként egy webhorgot adjon meg",
+    "kV5GkX": "Amikor egy állapotfrissítés rögzítésre kerül",
+    "aM44Z/": "Válasszon ki vagy adjon meg egy egyéni időtartamot…",
+    "YQOmSf": "Adjon meg soronként egy webhorgot",
+    "XRyRzf": "Állapotfrissítések nem várhatóak.",
+    "HvAcYh": "{text}{rest, plural, =0 {} one { és más} other { és {rest} más}}",
+    "DaHpK1": "Csatorna keresése"
 }
