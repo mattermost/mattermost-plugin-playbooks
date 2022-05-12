@@ -212,6 +212,16 @@ func (p *Plugin) OnActivate() error {
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
+	api.NewGraphQLHandler(
+		p.handler.APIRouter,
+		p.playbookService,
+		pluginAPIClient,
+		p.bot,
+		p.config,
+		p.permissions,
+		playbookStore,
+		p.licenseChecker,
+	)
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
 		p.playbookService,

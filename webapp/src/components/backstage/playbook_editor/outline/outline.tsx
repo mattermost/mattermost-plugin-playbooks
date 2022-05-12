@@ -14,6 +14,8 @@ import TextEdit from 'src/components/text_edit';
 import {savePlaybook} from 'src/client';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
@@ -23,8 +25,7 @@ import ScrollNavBase from './scroll_nav';
 import Section from './section';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
-    runsInProgress: number;
+    playbook: Loaded<FullPlaybook>;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
@@ -32,20 +33,15 @@ type Attrs = HTMLAttributes<HTMLElement>;
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
 const Outline = (props: Props) => {
     const {formatMessage} = useIntl();
-    const [playbook, setPlaybook] = useState(props.playbook);
+    const playbook = props.playbook;
+
+    const updatePlaybook = useUpdatePlaybook(playbook.id);
 
     const updateSummaryForPlaybook = (summary: string) => {
         if (!playbook) {
             return;
         }
-        const newPlaybook = {...props.playbook};
-        newPlaybook.run_summary_template = summary;
-        updatePlaybook(newPlaybook);
-    };
-
-    const updatePlaybook = (newPlaybook: PlaybookWithChecklist) => {
-        setPlaybook(newPlaybook);
-        savePlaybook(newPlaybook);
+        updatePlaybook({runSummaryTemplate: summary});
     };
 
     return (
@@ -73,10 +69,9 @@ const Outline = (props: Props) => {
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
                                 updatePlaybook({
-                                    ...playbook,
-                                    status_update_enabled: !playbook.status_update_enabled,
-                                    webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                                    broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                    statusUpdateEnabled: !playbook.status_update_enabled,
+                                    webhookOnStatusUpdateEnabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                    broadcastEnabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
                                 });
                             }}
                         />
@@ -85,7 +80,6 @@ const Outline = (props: Props) => {
             >
                 <StatusUpdates
                     playbook={playbook}
-                    updatePlaybook={updatePlaybook}
                 />
             </Section>
             <Section

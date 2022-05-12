@@ -6,26 +6,26 @@ import styled from 'styled-components';
 
 import MetricsCard from 'src/components/backstage/playbooks/metrics/metrics_card';
 import {PlaybookStats} from 'src/types/stats';
-import {Metric, MetricType, PlaybookWithChecklist} from 'src/types/playbook';
+import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookMetrics: Metric[];
     stats: PlaybookStats;
 }
 
-const MetricsStatsView = ({playbook, stats}: Props) => {
+const MetricsStatsView = ({playbookMetrics, stats}: Props) => {
     return (
         <>
             {
-                playbook.metrics.map((metric, idx) => (
+                playbookMetrics.map((metric, idx) => (
                     <>
                         <MetricHeader
                             key={idx}
                             metric={metric}
                         />
                         <MetricsCard
-                            playbook={playbook}
+                            playbookMetrics={playbookMetrics}
                             playbookStats={stats}
                             index={idx}
                         />
