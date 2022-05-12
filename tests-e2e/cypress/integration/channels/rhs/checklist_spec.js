@@ -187,19 +187,8 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('can skip and restore task', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
-
-            // # Click dot menu
-            cy.findByTitle('More').click();
-
-            // # Click the skip button
-            cy.findByRole('button', {name: 'Skip task'}).click();
-
-            // * Verify the item has been skipped
-            cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
-                cy.get('[data-cy=skipped]').should('exist');
-            });
+            // # Skip task and verify
+            skipTask(0);
 
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
@@ -286,26 +275,8 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('can set due date, from hover menu', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
-
-            // # Click the set due date button
-            cy.get('.icon-calendar-outline').click();
-
-            // # Enter due date in 10 min
-            cy.get('.playbook-run-user-select').within(() => {
-                cy.get('input').type('in 10 min', {force: true})
-                    .wait(HALF_SEC)
-                    .trigger('keydown', {
-                        key: 'Enter',
-                    });
-            });
-
-            // * Verify if Due in 10 minutes info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('in 10 minutes').should('exist');
-                cy.findByText('Due').should('exist');
-            });
+            // # Set due date and verify
+            setTaskDueDate(6, 'in 10 minutes');
         });
 
         it('can set due date, from edit mode', () => {
@@ -332,37 +303,31 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('filter overdue tasks', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
+            // # Set overdue date for several items
+            setTaskDueDate(2, '1 hour ago');
+            setTaskDueDate(3, '7 hours ago', 1);
+            setTaskDueDate(5, '3 hours ago', 2);
+            setTaskDueDate(6, '6 hours ago', 3);
 
-            // # Click the edit button
-            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
+            // # Skip task
+            skipTask(3);
 
-            cy.findAllByTestId('due-date-info-button').eq(0).click();
-
-            // # Enter due 1 min ago
-            cy.get('.playbook-run-user-select__value-container').type('1 min ago')
-                .wait(HALF_SEC)
-                .trigger('keydown', {
-                    key: 'Enter',
-                });
-
-            // * Verify if Due 1 minute ago info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('1 minute ago').should('exist');
-                cy.findByText('Due').should('exist');
+            // # Mark a task as completed
+            cy.findAllByTestId('checkbox-item-container').eq(5).within(() => {
+                // # Check the overdue task
+                cy.get('input').click();
             });
 
-            // * Verify if overdue tasks info was added
+            // * Verify if overdue tasks info was added. Should not include skipped / completed tasks.
             cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
-                cy.findByText('1 task overdue').should('exist');
+                cy.findByText('2 tasks overdue').should('exist');
             });
 
             // # Filter overdue tasks
             cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
 
-            // * Verify if filter works
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
+            // * Verify if filter works. Should not include skipped / completed tasks.
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 2);
 
             // # Cancel filter overdue tasks
             cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
@@ -372,26 +337,8 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('filter overdue automatically disappear if we check all overdue items', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
-
-            // # Click the edit button
-            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
-
-            cy.findAllByTestId('due-date-info-button').eq(0).click();
-
-            // # Enter due 1 min ago
-            cy.get('.playbook-run-user-select__value-container').type('1 min ago')
-                .wait(HALF_SEC)
-                .trigger('keydown', {
-                    key: 'Enter',
-                });
-
-            // * Verify if Due 1 minute ago info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('1 minute ago').should('exist');
-                cy.findByText('Due').should('exist');
-            });
+            // # Set due date
+            setTaskDueDate(2, '1 minute ago');
 
             // * Verify if overdue tasks info was added
             cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
@@ -406,7 +353,7 @@ describe('channels > rhs > checklist', () => {
 
             // # Mark a task as completed
             cy.findAllByTestId('checkbox-item-container').within(() => {
-                // check the overdue task
+                // # Check the overdue task
                 cy.get('input').click();
             });
 
@@ -418,3 +365,37 @@ describe('channels > rhs > checklist', () => {
         });
     });
 });
+
+const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
+    // # Hover over the checklist item
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).trigger('mouseover').within(() => {
+        // # Click the set due date button
+        cy.get('.icon-calendar-outline').click();
+    });
+
+    // # Enter due date query
+    cy.get('.playbook-run-user-select').within(() => {
+        cy.get('input').type(dateQuery, {force: true})
+            .wait(HALF_SEC)
+            .trigger('keydown', {
+                key: 'Enter',
+            });
+    });
+
+    // * Verify if Due date info is added
+    cy.findAllByTestId('due-date-info-button').eq(offset).should('exist').within(() => {
+        cy.findByText(dateQuery).should('exist');
+        cy.findByText('Due').should('exist');
+    });
+};
+
+const skipTask = (taskIndex) => {
+    // # Hover over the checklist item
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).trigger('mouseover');
+
+    // # Click dot menu
+    cy.findByTitle('More').click();
+
+    // # Click the skip button
+    cy.findByRole('button', {name: 'Skip task'}).click();
+};

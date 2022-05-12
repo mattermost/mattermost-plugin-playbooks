@@ -195,6 +195,7 @@ const OverdueTasksToggle = styled.div<{toggled: boolean}>`
     align-items: center;
     border-radius: 4px;
     user-select: none;
+    cursor: pointer;
     background-color: ${(props) => (props.toggled ? 'var(--dnd-indicator)' : 'rgba(var(--dnd-indicator-rgb), 0.08)')};
     color: ${(props) => (props.toggled ? 'var(--button-color)' : 'var(--dnd-indicator)')};
 `;
