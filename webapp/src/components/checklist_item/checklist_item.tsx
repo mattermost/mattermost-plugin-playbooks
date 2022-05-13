@@ -7,6 +7,7 @@ import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {
     clientEditChecklistItem,
@@ -34,7 +35,7 @@ interface ChecklistItemProps {
     itemNum: number;
     playbookRunId?: string;
     menuEnabled: boolean;
-    onChange?: (item: ChecklistItemState) => void;
+    onChange?: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
@@ -223,11 +224,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 <CheckBoxButton
                     disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => {
-                        if (props.onChange) {
-                            props.onChange(item);
-                        }
-                    }}
+                    onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}

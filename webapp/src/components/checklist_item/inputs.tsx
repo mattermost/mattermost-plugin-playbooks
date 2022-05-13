@@ -1,31 +1,37 @@
 
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
-    onChange: (item: ChecklistItemState) => void;
+    onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     item: ChecklistItem;
     disabled: boolean;
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
-    const isChecked = props.item.state === ChecklistItemState.Closed;
-
+    const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
     return (
         <ChecklistItemInput
             className='checkbox'
             type='checkbox'
             checked={isChecked}
             disabled={props.disabled}
-            onChange={() => {
-                if (isChecked) {
-                    props.onChange(ChecklistItemState.Open);
-                } else {
-                    props.onChange(ChecklistItemState.Closed);
+            onChange={async () => {
+                // There are two reasons to use this optimistic update approach
+                // 1 - avoid waiting 300ms to see how checkbox change in UI
+                // 2 - if websocket fails, we'll still mark the checkbox correctly.
+                //     Additionally in the same scenario, we prevent the user from
+                //     clicking multiple times and leaving the item in an unknown state
+                const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
+                setIsChecked(!isChecked);
+                const res = await props.onChange(newValue);
+                if (res?.error) {
+                    setIsChecked(isChecked);
                 }
             }}
         />);
