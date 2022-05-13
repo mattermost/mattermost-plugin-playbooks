@@ -558,5 +558,13 @@
     "RrCui3": "Samenvatting",
     "x1phlu": "Geen tijdsbestek",
     "kYCbJE": "Tijdsbestek toevoegen",
-    "c6LNcW": "Taak verwijderen"
+    "c6LNcW": "Taak verwijderen",
+    "giM/X9": "Elke <duration></duration> wordt een statusupdate verwacht. Nieuwe updates worden geplaatst in <channels>{channelCount, plural, =0 {geen kanalen} one {# kanaal} other {# kanalen}}</channels> and <webhooks>{webhookCount, plural, =0 {geen uitgaande webhooks} one {# uitgaande webhook} other {# uitgaande webhooks}}</webhooks> .",
+    "aM44Z/": "Kies of specificeer een aangepaste duur…",
+    "YQOmSf": "Voer één webhook per regel in",
+    "XRyRzf": "Statusupdates worden niet verwacht.",
+    "HvAcYh": "{text}{rest, plural, =0 {} one { en een andere} other { en {rest} andere}}",
+    "DaHpK1": "Een kanaal zoeken",
+    "28FTjr": "Met Run-acties kan je activiteiten voor dit kanaal automatiseren",
+    "/RnCQb": "Uitgaande webhook verzenden"
 }
