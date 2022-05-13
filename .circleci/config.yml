@@ -123,7 +123,7 @@ commands:
       - run:
           name: Getting Cypress & JavaScript dependencies
           command: |
-            apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
+            apt-get -y install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
             cd webapp
             NODE_ENV=development npm install --ignore-scripts --no-save
             cd ../tests-e2e
@@ -251,7 +251,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: docker.io/casscap/mm-builder-test:0.0.2
       - image: cimg/postgres:10.17
         command: "postgres -N 200"
         environment:
@@ -270,7 +270,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: docker.io/casscap/mm-builder-test:0.0.2
       - image: cimg/postgres:11.13
         command: "postgres -N 200"
         environment:
@@ -289,7 +289,7 @@ jobs:
 
   test-MariaDB10-Postgres12:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: docker.io/casscap/mm-builder-test:0.0.2
       - image: cimg/postgres:12.9
         command: "postgres -N 200"
         environment:
@@ -309,7 +309,7 @@ jobs:
   # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: docker.io/casscap/mm-builder-test:0.0.2
       - image: cimg/postgres:14.1
         command: "postgres -N 200"
         environment:
