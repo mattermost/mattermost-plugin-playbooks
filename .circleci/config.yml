@@ -6,8 +6,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: docker.io/mattermost/mattermost-build-server:20220415_golang-1.18.1
-      - image: docker.io/mattermost/mattermost-build-webapp:20210524_node-16
+      - image: docker.io/casscap/mm-builder-test:0.0.1
 
 aliases:
   - &restore_go_cache
@@ -334,10 +333,9 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/mattermost-build-server:20220415_golang-1.18.1
+      - image: docker.io/casscap/mm-builder-test:0.0.1
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: docker.io/mattermost/mattermost-build-webapp:20210524_node-16
       - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
@@ -410,10 +408,9 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/mattermost-build-server:20220415_golang-1.18.1
+      - image: docker.io/casscap/mm-builder-test:0.0.1
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: docker.io/mattermost/mattermost-build-webapp:20210524_node-16
       - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
