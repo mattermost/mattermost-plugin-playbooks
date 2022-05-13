@@ -6,7 +6,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: docker.io/casscap/mm-builder-test:0.0.1
+      - image: docker.io/casscap/mm-builder-test:0.0.2
 
 aliases:
   - &restore_go_cache
@@ -109,9 +109,6 @@ commands:
           name: Set and restore Postgres DB
           command: |
             whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
             psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
@@ -333,7 +330,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: docker.io/casscap/mm-builder-test:0.0.1
+      - image: docker.io/casscap/mm-builder-test:0.0.2
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -408,7 +405,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: docker.io/casscap/mm-builder-test:0.0.1
+      - image: docker.io/casscap/mm-builder-test:0.0.2
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
