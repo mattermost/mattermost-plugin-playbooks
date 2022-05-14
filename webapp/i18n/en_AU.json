@@ -565,5 +565,12 @@
     "j940pJ": "This update will be saved to <OverviewLink>overview page</OverviewLink>.",
     "HvAcYh": "{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}",
     "28FTjr": "Run actions allow you to automate activities for this channel",
-    "/RnCQb": "Send outgoing webhook"
+    "/RnCQb": "Send outgoing webhook",
+    "uhDKO8": "Use markdown to create a template",
+    "giM/X9": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks> .",
+    "aM44Z/": "Select or specify a custom duration",
+    "YQOmSf": "Enter one webhook per line",
+    "XRyRzf": "Status updates are not expected.",
+    "F9LrJA": "Filter items",
+    "DaHpK1": "Search for a channel"
 }
