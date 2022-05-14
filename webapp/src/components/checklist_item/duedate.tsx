@@ -235,7 +235,7 @@ export const DueDateButton = ({
     const toolTip = formatMessage({defaultMessage: 'Due on {date}'}, {date: dateInfo});
 
     return (
-        (date && !props.editable) ? (
+        (date && mode === Mode.DateTimeValue && !props.editable) ? (
             <OverlayTrigger
                 placement='bottom'
                 delay={OVERLAY_DELAY}

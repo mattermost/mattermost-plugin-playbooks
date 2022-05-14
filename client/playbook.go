@@ -51,6 +51,7 @@ type ChecklistItem struct {
 	Command          string `json:"command"`
 	CommandLastRun   int64  `json:"command_last_run"`
 	Description      string `json:"description"`
+	DueDate          int64  `json:"due_date"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
