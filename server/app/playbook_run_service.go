@@ -2308,7 +2308,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				DisplayName: "Run name",
 				Name:        DialogFieldNameKey,
 				Type:        "text",
-				MinLength:   2,
+				MinLength:   1,
 				MaxLength:   64,
 				Default:     defaultChannelNameTemplate,
 			},
