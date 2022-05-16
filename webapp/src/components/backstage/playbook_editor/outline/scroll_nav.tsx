@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect, useState, HTMLAttributes} from 'react';
+import React, {useEffect, useState, useCallback, HTMLAttributes, memo} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import {useLocation} from 'react-router-dom';
@@ -29,9 +29,9 @@ const headersOffset = 140;
 
 const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
     const {hash} = useLocation();
-    const [activeId, setActiveId] = useState(hash ?? items?.[0].id);
+    const [activeId, setActiveId] = useState(items?.[0].id);
 
-    const updateActiveSection = () => {
+    const updateActiveSection = useCallback(() => {
         const threshold = (window.innerHeight / 2) - headersOffset;
 
         let finalId: ItemId | null = null;
@@ -51,17 +51,17 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
         if (finalId !== null) {
             setActiveId(finalId);
         }
-    };
+    }, []);
 
     const root = document.getElementById(BackstageID);
 
     useEffect(updateActiveSection, []);
     useScrollListener(root, updateActiveSection);
 
-    const scrollToSection = (id: ItemId) => {
+    const scrollToSection = useCallback((id: ItemId) => {
         telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${id}_clicked`);
 
-        if (isSectionActive(id)) {
+        if (activeId === id) {
             return;
         }
 
@@ -103,11 +103,14 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
         };
 
         root.addEventListener('scroll', callback, {passive: true});
-    };
+    }, [activeId]);
 
-    const isSectionActive = (id: string) => {
-        return activeId === id;
-    };
+    useEffect(() => {
+        const sectionHash = hash.substring(1);
+        if (items.some(({id}) => id === sectionHash)) {
+            scrollToSection(sectionHash);
+        }
+    }, [hash]);
 
     return (
         <Wrapper
@@ -125,7 +128,7 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
                 {items.map(({id, title}) => (
                     <Item
                         key={id}
-                        active={isSectionActive(id)}
+                        active={activeId === id}
                         onClick={() => scrollToSection(id)}
                     >
                         {title}
@@ -199,4 +202,4 @@ const Item = styled.div<{active: boolean}>`
     }
 `;
 
-export default ScrollNav;
+export default memo(ScrollNav);

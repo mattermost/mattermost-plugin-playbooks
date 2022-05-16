@@ -2,30 +2,24 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect} from 'react';
+import React, {useRef, useState, useEffect, useCallback} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
-import {useIntl, FormattedMessage, FormattedNumber} from 'react-intl';
+import {useIntl} from 'react-intl';
 
+import {useIntersection, useUpdateEffect} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch} from 'react-redux';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
-
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
     useForceDocumentTitle,
     useStats,
-    useMarkdownRenderer,
 } from 'src/hooks';
 
-import {
-    getSiteUrl,
-    telemetryEventForPlaybook,
-} from 'src/client';
+import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
@@ -33,30 +27,32 @@ import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playb
 
 import {SemiBoldHeading} from 'src/styles/headings';
 
-import {HorizontalBG} from 'src/components/collapsible_checklist';
+import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
-import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
+
+import MarkdownEdit from 'src/components/markdown_edit';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
+
 import * as Controls from './controls';
 
-interface MatchParams {
-    playbookId: string
-}
-
-/** @alpha this is the new home of `playbooks/playbook.tsx`*/
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
+    const {url, path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading}] = usePlaybook(playbookId);
+    const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const stats = useStats(playbookId);
-    const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
+
+    const headingRef = useRef<HTMLHeadingElement>(null);
+    const headingIntersection = useIntersection(headingRef, {threshold: 0.8});
+    const headingVisible = headingIntersection?.isIntersecting ?? true;
 
     useEffect(() => {
         const teamId = playbook?.team_id;
@@ -79,120 +75,133 @@ const PlaybookEditor = () => {
         return null;
     }
 
+    const archived = playbook.delete_at !== 0;
+
     return (
-        <>
-            <Editor>
-                <TitleHeaderBackdrop/>
-                <NavBackdrop/>
-                <TitleWing side='left'>
+        <Editor $headingVisible={headingVisible}>
+            <TitleHeaderBackdrop/>
+            <NavBackdrop/>
+            <TitleBar>
+                <div>
                     <Controls.Back/>
-                    <Controls.TitleMenu playbook={playbook}>
+                    <Controls.TitleMenu
+                        playbook={playbook}
+                        archived={archived}
+                    >
                         <Title>
                             {playbook.title}
                         </Title>
                     </Controls.TitleMenu>
-                </TitleWing>
-                <TitleWing side='right'>
+                </div>
+                <div>
+                    <Controls.Members
+                        playbookId={playbook.id}
+                        numMembers={playbook.members.length}
+                    />
+                    {/* <Controls.Share playbook={playbook}/> */}
+                    <Controls.AutoFollowToggle playbook={playbook}/>
                     <Controls.RunPlaybook playbook={playbook}/>
-                </TitleWing>
-                <Header>
-                    <Heading>
-                        <CopyLink
-                            id='copy-playbook-link-tooltip'
-                            to={getSiteUrl() + '/playbooks/playbooks/' + playbook.id}
-                            name={playbook.title}
-                            area-hidden={true}
-                        />
-                        <Controls.TitleMenu playbook={playbook}>
-                            {playbook.title}
-                        </Controls.TitleMenu>
-                    </Heading>
-                    <ControlBar>
-                        {playbook.public === false && (
-                            <Controls.MetaItem>
-                                <i className={'icon icon-lock-outline'}/>
-                                <FormattedMessage defaultMessage='Private'/>
-                            </Controls.MetaItem>
-                        )}
-                        <Controls.Members
-                            playbookId={playbook.id}
-                            numMembers={playbook.members.length}
-                        />
-                        <Controls.MetaItem>
-                            <Icon
-                                path={mdiClipboardPlayMultipleOutline}
-                                size={1.25}
-                            />
-                            <FormattedNumber value={stats.runs_in_progress}/>
-                        </Controls.MetaItem>
-                        <Controls.AutoFollowToggle playbook={playbook}/>
-                    </ControlBar>
-                    <Description>{renderMarkdown(playbook.description)}</Description>
-                </Header>
-                <NavBar>
-                    <NavItem
-                        to={`${url}`}
-                        exact={true}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
+                </div>
+            </TitleBar>
+            <Header>
+                <Heading ref={headingRef}>
+                    <Controls.CopyPlaybook playbook={playbook}/>
+                    <Controls.TitleMenu
+                        playbook={playbook}
+                        archived={archived}
                     >
-                        {formatMessage({defaultMessage: 'Outline'})}
-                    </NavItem>
-                    <NavItem
-                        to={`${url}/usage`}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
-                    >
-                        {formatMessage({defaultMessage: 'Usage'})}
-                    </NavItem>
-                    <NavItem
-                        to={`${url}/reports`}
-                        onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
-                    >
-                        {formatMessage({defaultMessage: 'Reports'})}
-                    </NavItem>
-                </NavBar>
-                <Switch>
-                    <Route
-                        path={`${path}`}
-                        exact={true}
-                    >
-                        <Outline
-                            playbook={playbook}
-                        />
-                    </Route>
-                    <Route path={`${path}/usage`}>
-                        <PlaybookUsage
-                            playbookID={playbook.id}
-                            stats={stats}
-                        />
-                    </Route>
-                    <Route path={`${path}/reports`}>
-                        <PlaybookKeyMetrics
-                            playbookID={playbook.id}
-                            playbookMetrics={playbook.metrics}
-                            stats={stats}
-                        />
-                    </Route>
-                </Switch>
-            </Editor>
-        </>
+                        {playbook.title}
+                    </Controls.TitleMenu>
+                </Heading>
+                <Description>
+                    <MarkdownEdit
+                        placeholder={formatMessage({defaultMessage: 'Add a description…'})}
+                        value={playbook.description}
+                        onSave={(description) => updatePlaybook({description})}
+                        noBorder={true}
+                    />
+                </Description>
+            </Header>
+            <NavBar>
+                <NavItem
+                    to={`${url}`}
+                    exact={true}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Usage'})}
+                </NavItem>
+                <NavItem
+                    to={`${url}/outline`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Outline'})}
+                </NavItem>
+                <NavItem
+                    to={`${url}/reports`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Reports'})}
+                </NavItem>
+            </NavBar>
+            <Switch>
+                <Route
+                    path={`${path}`}
+                    exact={true}
+                >
+                    <PlaybookUsage
+                        playbookID={playbook.id}
+                        stats={stats}
+                    />
+                </Route>
+                <Route path={`${path}/outline`}>
+                    <Outline
+                        playbook={playbook}
+                    />
+                </Route>
+                <Route path={`${path}/reports`}>
+                    <PlaybookKeyMetrics
+                        playbookID={playbook.id}
+                        playbookMetrics={playbook.metrics}
+                        stats={stats}
+                    />
+                </Route>
+            </Switch>
+        </Editor>
     );
 };
 
-const ControlBar = styled.div`
-    padding-bottom: 1rem;
-    display: flex;
-`;
-
-const TitleWing = styled.div<{side: 'left' | 'right'}>`
+const TitleBar = styled.div`
     position: sticky;
-    z-index: 3;
+    z-index: 5;
     top: 0;
-    grid-area: ${({side}) => `title-${side}`};
-
+    grid-area: title;
     padding: 0 2rem;
     display: flex;
-    align-items: center;
-    justify-content: ${({side}) => (side === 'left' ? 'start' : 'end')};
+    justify-content: space-between;
+    > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    margin-bottom: 1px; // keeps box-shadow visible
+
+    ${Controls.TitleButton} {
+        padding-left: 8px;
+    }
+
+    // === blur/cutoff ===
+    &::before {
+        width: 100%;
+        height: var(--bar-height);
+        display: block;
+        content: '';
+        position: absolute;
+        z-index: -1;
+        left: 0;
+        top: 0;
+        background-color: var(--center-channel-bg);
+        mask: linear-gradient(black, black, transparent);
+    }
 `;
 
 const Header = styled.header`
@@ -200,7 +209,10 @@ const Header = styled.header`
     z-index: 4;
 
     ${CopyLink} {
-        margin-left: -1.25em;
+        margin-left: -40px;
+        height: 40px;
+        width: 40px;
+        font-size: 24px;
         opacity: 1;
         transition: opacity ease 0.15s;
     }
@@ -231,7 +243,7 @@ const Heading = styled.h1`
     align-items: center;
     margin: 0;
 
-    &:not(:hover) ${CopyLink}:not(:hover) {
+    &:not(:hover) ${CopyLink}:not(:hover, :focus) {
         opacity: 0;
     }
     ${titleMenuOverrides}
@@ -246,12 +258,11 @@ const Title = styled.h1`
 
     height: 24px;
     margin: 0;
-    margin-left: 8px;
 
     ${titleMenuOverrides}
 `;
 
-const Description = styled.p`
+const Description = styled.div`
     font-weight: 400;
     font-size: 14px;
     line-height: 20px;
@@ -289,8 +300,6 @@ const NavBar = styled.nav`
     width: 100%;
     justify-content: center;
     grid-area: nav;
-    position: sticky;
-    top: 0;
     z-index: 2;
 `;
 
@@ -305,32 +314,35 @@ const NavBackdrop = styled.div`
 
 const TitleHeaderBackdrop = styled.div`
     background: var(--center-channel-bg);
-    grid-area: title-left/title-left/control/title-right;
+    grid-area: title/title/control/title;
 `;
 
-const Editor = styled.main`
+const Editor = styled.main<{$headingVisible: boolean}>`
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
+
+    --markdown-textbox-radius: 8px;
+    --markdown-textbox-padding: 12px 16px;
 
     --bar-height: 60px;
     --content-max-width: 780px;
 
     /* === standard-full === */
     grid-template:
-        'title-left title-left . title-right title-right' var(--bar-height)
-        '. header header header .'
-        '. control control control .'
-        'nav-left nav-left nav nav-right nav-right' var(--bar-height)
-        'aside content content content .' 1fr
-        / 1fr 1fr minmax(min-content, auto) 1fr 1fr;
+        'title title title' var(--bar-height)
+        '. header .'
+        '. control .'
+        'nav-left nav nav-right' var(--bar-height)
+        'aside content aside-right' 1fr
+        / 1fr minmax(auto, var(--content-max-width)) 1fr;
     ;
 
-    gap: 0 3rem;
-
-    ${Header} ${Controls.TitleMenu} {
-        i.icon {
-            font-size: 3.5rem;
+    ${Header} {
+        ${Controls.TitleMenu} {
+            i.icon {
+                font-size: 3.5rem;
+            }
         }
     }
 
@@ -339,7 +351,8 @@ const Editor = styled.main`
         align-self: start;
         justify-self: end;
 
-        margin-top: 10rem;
+        margin-top: 8.25rem;
+        padding-top: 1rem;
 
         position: sticky;
         top: var(--bar-height);
@@ -347,7 +360,7 @@ const Editor = styled.main`
 
 
     ${Sections} {
-        margin-top: 5rem;
+        margin: 5rem 1.5rem;
         grid-area: content;
 
         ${HorizontalBG} {
@@ -362,17 +375,20 @@ const Editor = styled.main`
         grid-area: aside/aside/aside-right/aside-right;
     }
 
-    ${TitleWing} {
+    ${TitleBar} {
         ${Controls.TitleMenu} {
             display: none;
         }
     }
+
     /* === scrolling, condense header/title === */
-    .is-scrolling & {
-        ${TitleWing} {
-            ${Controls.TitleMenu} {
-                display: inline-flex;
-                margin-left: 8px;
+    ${({$headingVisible}) => !$headingVisible && css`
+        @media screen and (min-width: 769px) {
+            // only on tablet-desktop
+            ${TitleBar} {
+                ${Controls.TitleMenu} {
+                    display: inline-flex;
+                }
             }
         }
         ${Controls.Back} {
@@ -380,19 +396,18 @@ const Editor = styled.main`
                 display: none;
             }
         }
-    }
+    `}
 
     /* === mobile === */
     @media screen and (max-width: 768px) {
-
         --bar-height: 50px;
 
         grid-template:
-            'title-left title-right' var(--bar-height)
-            'header header'
-            'control control'
-            'nav nav'
-            'content content'
+            'title' var(--bar-height)
+            'header'
+            'control'
+            'nav'
+            'content'
             / 1fr
         ;
 
@@ -402,12 +417,17 @@ const Editor = styled.main`
             }
         }
 
+        ${PlaybookUsage},
+        ${PlaybookKeyMetrics} {
+            grid-area: content;
+        }
+
         ${Header} {
             padding: 20px;
         }
 
         ${NavBar},
-        ${TitleWing} {
+        ${TitleBar} {
             position: unset;
         }
 
@@ -417,8 +437,7 @@ const Editor = styled.main`
         }
 
         ${Sections} {
-            padding: 20px;
-            padding-top: 0;
+            padding: 15px 20px 20px;
             margin: 10px;
         }
 
@@ -432,13 +451,11 @@ const Editor = styled.main`
         }
     }
 
-    @media screen and (max-width: 1021px) {
-        gap: 0;
+    @media screen and (max-width: 1266px) {
+        ${ScrollNav} {
+            display: none;
+        }
     }
-
-    @media screen and (min-width: 1021px) {
-    }
-
     @media screen and (min-width: 1267px) {
         --content-max-width: 900px;
     }

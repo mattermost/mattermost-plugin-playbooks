@@ -6,7 +6,7 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
@@ -19,7 +19,7 @@ interface Props {
 
 const PlaybookPreviewDescription = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
+    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     if (props.playbook.description.trim() === '') {

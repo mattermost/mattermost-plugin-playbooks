@@ -13,6 +13,8 @@ import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {Playbook} from 'src/types/playbook';
 import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
 
+import {useExperimentalFeaturesEnabled} from './general';
+
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
     onGo?: (arg: T) => void
@@ -46,6 +48,7 @@ function id(p: Playbook | Playbook['id']) {
 export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
     return useMemo(() => {
         function go(path: string, p?: TParam) {
             if (!urlOnly) {
@@ -60,9 +63,15 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
 
         return {
             edit: (p: TParam, tabId?: typeof tabInfo[number]['id']) => {
+                if (experimentalFeaturesEnabled) {
+                    return go(`/playbooks/${id(p)}/editor/outline`);
+                }
                 return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}`, p);
             },
             view: (p: TParam) => {
+                if (experimentalFeaturesEnabled) {
+                    return go(`/playbooks/${id(p)}/editor`);
+                }
                 return go(`/playbooks/${id(p)}`, p);
             },
             create: (params: PlaybookCreateQueryParameters) => {

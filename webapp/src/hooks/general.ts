@@ -10,7 +10,7 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
@@ -35,6 +35,8 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
+
+import {Argument} from 'classnames';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
@@ -552,28 +554,6 @@ export const usePlaybookName = (playbookId: string) => {
     }, [playbookId]);
 
     return playbookName;
-};
-
-export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
-    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id));
-
-    return {
-        atMentions: true,
-        mentionHighlight: true,
-        team,
-        channelNamesMap,
-    };
-};
-
-export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
-    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
-
-    return useDefaultMarkdownOptions(team);
-};
-
-export const useMarkdownRenderer = (teamId: string | undefined) => {
-    const markdownOptions = useDefaultMarkdownOptions(teamId);
-    return (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 };
 
 export const useStats = (playbookId: string) => {

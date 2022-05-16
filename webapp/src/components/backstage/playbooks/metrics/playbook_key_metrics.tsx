@@ -91,7 +91,6 @@ const PlaceholderRow = styled.div`
 
 const OuterContainer = styled.div`
     height: 100%;
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const InnerContainer = styled.div`

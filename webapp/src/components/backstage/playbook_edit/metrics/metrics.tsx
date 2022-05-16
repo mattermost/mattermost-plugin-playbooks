@@ -33,9 +33,9 @@ interface Task {
 }
 
 interface Props {
-    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
-    setChangesMade: (b: boolean) => void;
+    playbook: Pick<PlaybookWithChecklist, 'metrics'>;
+    setPlaybook: React.Dispatch<React.SetStateAction<Props['playbook'] & Pick<PlaybookWithChecklist, 'metrics'>>>;
+    setChangesMade?: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
     disabled: boolean;
@@ -105,7 +105,7 @@ const Metrics = ({
             metric: newMetric(metricType),
         });
 
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     const saveMetric = (target: number | null) => {
@@ -123,7 +123,7 @@ const Metrics = ({
                     metrics,
                 };
             });
-            setChangesMade(true);
+            setChangesMade?.(true);
         }
 
         // Do we have a requested task ready to do next?
@@ -157,7 +157,7 @@ const Metrics = ({
                 metrics,
             };
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
         setDeletingIdx(-1);
         setCurEditingMetric(null);
     };
@@ -231,6 +231,7 @@ const Metrics = ({
                     idx === curEditingMetric?.index ?
                         <MetricEdit
                             metric={curEditingMetric.metric}
+                            key={curEditingMetric.metric.id}
                             setMetric={(setState) => setCurEditingMetric((prevState) => {
                                 if (prevState) {
                                     return {index: prevState.index, metric: setState(prevState.metric)};
@@ -251,6 +252,7 @@ const Metrics = ({
                             editClick={() => requestEditMetric(idx)}
                             deleteClick={() => requestDeleteMetric(idx)}
                             disabled={disabled}
+                            key={metric.id}
                         />
                 ))
             }
