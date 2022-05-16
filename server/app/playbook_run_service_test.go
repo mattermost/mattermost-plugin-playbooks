@@ -88,7 +88,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.2_or_more.app_error"})
+		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.1_or_more.app_error"})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
