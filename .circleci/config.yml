@@ -108,6 +108,9 @@ commands:
       - run:
           name: Set and restore Postgres DB
           command: |
+            sudo apt-get update
+            sudo apt-get install libxss1
+            sudo apt-get install postgresql-client
             whoami
             psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
@@ -123,7 +126,7 @@ commands:
       - run:
           name: Getting Cypress & JavaScript dependencies
           command: |
-            apt-get -y install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
+            sudo apt-get -y install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
             cd webapp
             NODE_ENV=development npm install --ignore-scripts --no-save
             cd ../tests-e2e
