@@ -12,6 +12,8 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
+import type {PlaybookReadWriteProps} from '../playbook_editor';
+
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
@@ -20,15 +22,9 @@ import ScrollNavBase from './scroll_nav';
 
 import Section from './section';
 
-interface Props {
-    playbook: PlaybookWithChecklist;
-    updatePlaybook: (diff: Partial<PlaybookWithChecklist>) => void;
-    runsInProgress: number;
-}
-
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, updatePlaybook}: Props) => {
+const Outline = ({playbook, updatePlaybook}: PlaybookReadWriteProps) => {
     const {formatMessage} = useIntl();
 
     return (
@@ -41,10 +37,13 @@ const Outline = ({playbook, updatePlaybook}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
-                    placeholder={formatMessage({defaultMessage: 'Add run summary template...'})}
+                    placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={playbook.run_summary_template}
                     onSave={(run_summary_template) => {
-                        updatePlaybook({run_summary_template});
+                        updatePlaybook({
+                            run_summary_template,
+                            run_summary_template_enabled: Boolean(run_summary_template.trim()),
+                        });
                     }}
                 />
             </Section>
@@ -58,7 +57,6 @@ const Outline = ({playbook, updatePlaybook}: Props) => {
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
                                 updatePlaybook({
-                                    ...playbook,
                                     status_update_enabled: !playbook.status_update_enabled,
                                     webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
                                     broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
@@ -83,13 +81,19 @@ const Outline = ({playbook, updatePlaybook}: Props) => {
                 id={'retrospective'}
                 title={formatMessage({defaultMessage: 'Retrospective'})}
             >
-                <Retrospective playbook={playbook}/>
+                <Retrospective
+                    playbook={playbook}
+                    updatePlaybook={updatePlaybook}
+                />
             </Section>
             <Section
                 id={'actions'}
                 title={formatMessage({defaultMessage: 'Actions'})}
             >
-                <Actions playbook={playbook}/>
+                <Actions
+                    playbook={playbook}
+                    updatePlaybook={updatePlaybook}
+                />
             </Section>
         </Sections>
     );

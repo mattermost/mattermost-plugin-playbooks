@@ -6,21 +6,22 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import MarkdownEdit from 'src/components/markdown_edit';
+
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import UpdateTimer from './inputs/update_timer_selector';
 import BroadcastChannels from './inputs/broadcast_channels_selector';
 import WebhooksInput from './inputs/webhooks_input';
 
-interface Props {
+type PlaybookReadWriteProps = {
     playbook: PlaybookWithChecklist;
-    updatePlaybook: (newPlaybook: PlaybookWithChecklist) => void;
+    updatePlaybook: (diff: Partial<PlaybookWithChecklist>) => void;
 }
 
-const StatusUpdates = (props: Props) => {
+const StatusUpdates = ({playbook, updatePlaybook}: PlaybookReadWriteProps) => {
     const {formatMessage} = useIntl();
 
-    if (!props.playbook.status_update_enabled) {
+    if (!playbook.status_update_enabled) {
         return (
             <StatusUpdatesContainer>
                 <FormattedMessage defaultMessage='Status updates are not expected.'/>
@@ -37,12 +38,13 @@ const StatusUpdates = (props: Props) => {
                         return (
                             <Picker>
                                 <UpdateTimer
-                                    seconds={props.playbook.reminder_timer_default_seconds}
+                                    seconds={playbook.reminder_timer_default_seconds}
                                     setSeconds={(seconds: number) => {
-                                        if (seconds !== props.playbook.reminder_timer_default_seconds &&
-                                            seconds > 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
+                                        if (
+                                            seconds !== playbook.reminder_timer_default_seconds &&
+                                            seconds > 0
+                                        ) {
+                                            updatePlaybook({
                                                 reminder_timer_default_seconds: seconds,
                                             });
                                         }
@@ -51,44 +53,44 @@ const StatusUpdates = (props: Props) => {
                             </Picker>
                         );
                     },
-                    channelCount: props.playbook.broadcast_channel_ids?.length ?? 0,
+                    channelCount: playbook.broadcast_channel_ids?.length ?? 0,
                     channels: (channelCount: ReactNode) => {
                         return (
                             <Picker>
                                 <BroadcastChannels
                                     id='playbook-automation-broadcast'
                                     onChannelsSelected={(channelIds: string[]) => {
-                                        if (channelIds.length !== props.playbook.broadcast_channel_ids.length || channelIds.some((id) => !props.playbook.broadcast_channel_ids.includes(id))) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
+                                        if (
+                                            channelIds.length !== playbook.broadcast_channel_ids.length ||
+                                            channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
+                                        ) {
+                                            updatePlaybook({
                                                 broadcast_channel_ids: channelIds,
+                                                broadcast_enabled: Boolean(channelIds.length),
                                             });
                                         }
                                     }}
-                                    channelIds={props.playbook.broadcast_channel_ids}
-
+                                    channelIds={playbook.broadcast_channel_ids}
                                 >
                                     <Placeholder label={channelCount}/>
                                 </BroadcastChannels>
                             </Picker>
                         );
                     },
-                    webhookCount: props.playbook.webhook_on_status_update_urls?.length ?? 0,
+                    webhookCount: playbook.webhook_on_status_update_urls?.length ?? 0,
                     webhooks: (webhookCount: ReactNode) => {
                         return (
                             <Picker>
                                 <WebhooksInput
-                                    urls={props.playbook.webhook_on_status_update_urls}
+                                    urls={playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
                                         if (newWebhookOnStatusUpdateURLs.length === 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
+                                            updatePlaybook({
                                                 webhook_on_status_update_enabled: false,
                                                 webhook_on_status_update_urls: [],
                                             });
                                         } else {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
+                                            updatePlaybook({
                                                 webhook_on_status_update_enabled: true,
                                                 webhook_on_status_update_urls: newWebhookOnStatusUpdateURLs,
                                             });
@@ -104,11 +106,10 @@ const StatusUpdates = (props: Props) => {
             />
             <Template>
                 <MarkdownEdit
-                    placeholder={formatMessage({defaultMessage: 'Use markdown to create a template'})}
-                    value={props.playbook.reminder_message_template}
+                    placeholder={formatMessage({defaultMessage: 'Add a status update template…'})}
+                    value={playbook.reminder_message_template}
                     onSave={(newMessage: string) => {
-                        props.updatePlaybook({
-                            ...props.playbook,
+                        updatePlaybook({
                             reminder_message_template: newMessage,
                         });
                     }}
@@ -138,6 +139,9 @@ const Template = styled.div`
     margin-top: 16px;
 `;
 
+interface PlaceholderProps {
+    label: React.ReactNode
+}
 export const Placeholder = (props: PlaceholderProps) => {
     return (
         <PlaceholderDiv>
@@ -148,10 +152,6 @@ export const Placeholder = (props: PlaceholderProps) => {
         </PlaceholderDiv>
     );
 };
-
-interface PlaceholderProps {
-    label: React.ReactNode
-}
 
 const PlaceholderDiv = styled.div`
     display: flex;

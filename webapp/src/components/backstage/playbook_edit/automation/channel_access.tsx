@@ -13,8 +13,8 @@ import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
-    setChangesMade: (b: boolean) => void;
+    setPlaybook: React.Dispatch<DraftPlaybookWithChecklist | PlaybookWithChecklist>;
+    setChangesMade?: (b: boolean) => void;
 }
 
 export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
@@ -25,7 +25,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             ...playbook,
             create_public_playbook_run: isPublic,
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     const handleChannelNameTemplateChange = (channelNameTemplate: string) => {
@@ -33,7 +33,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             ...playbook,
             channel_name_template: channelNameTemplate,
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     return (

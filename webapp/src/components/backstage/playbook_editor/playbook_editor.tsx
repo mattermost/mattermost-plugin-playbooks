@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState, useEffect, useCallback} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
@@ -37,8 +37,16 @@ import CopyLink from 'src/components/widgets/copy_link';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 
+import {PlaybookWithChecklist, DraftPlaybookWithChecklist} from 'src/types/playbook';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
+
 import * as Controls from './controls';
+
+export type PlaybookReadWriteProps = {
+    playbook: PlaybookWithChecklist;
+    updatePlaybook: React.Dispatch<React.SetStateAction<Partial<PlaybookWithChecklist | DraftPlaybookWithChecklist>>>;
+}
 
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
@@ -54,20 +62,23 @@ const PlaybookEditor = () => {
         setPlaybook(sourcePlaybook);
     }, [sourcePlaybook]);
 
-    const updatePlaybook = (diff: Partial<typeof sourcePlaybook>) => {
-        if (!playbook) {
-            return;
-        }
-        const newPlaybook = {...playbook, ...diff};
-        setPlaybook(newPlaybook);
-        savePlaybook(newPlaybook);
-    };
+    const updatePlaybook = useCallback((patch: React.SetStateAction<Partial<PlaybookWithChecklist>>) => {
+        setPlaybook((pb) => {
+            if (!pb || !patch) {
+                return null;
+            }
+            const newPlaybook = {...pb, ...typeof patch === 'function' ? patch(pb) : patch};
+            savePlaybook(newPlaybook);
+            return newPlaybook;
+        });
+    }, [setPlaybook]);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const headingRef = useRef<HTMLHeadingElement>(null);
     const headingIntersection = useIntersection(headingRef, {threshold: 0.8});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
+
     useEffect(() => {
         const teamId = playbook?.team_id;
         if (!teamId) {
@@ -168,7 +179,6 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         updatePlaybook={updatePlaybook}
-                        runsInProgress={stats.runs_in_progress}
                     />
                 </Route>
                 <Route path={`${path}/reports`}>
@@ -363,7 +373,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         align-self: start;
         justify-self: end;
 
-        margin-top: 8.75rem;
+        margin-top: 8.25rem;
         padding-top: 1rem;
 
         position: sticky;

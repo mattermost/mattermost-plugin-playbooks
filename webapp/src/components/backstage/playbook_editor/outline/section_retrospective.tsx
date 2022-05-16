@@ -1,60 +1,96 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 
-import {Duration} from 'luxon';
-
-import {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {Metric} from 'src/types/playbook';
 
-import {TextBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
-import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
-import {formatDuration} from 'src/components/formatted_duration';
+import {Card} from 'src/components/backstage/playbooks/playbook_preview_cards';
+import {PlaybookReadWriteProps} from '../playbook_editor';
+import {SidebarBlock} from '../../playbook_edit/styles';
+import {BackstageSubheader, BackstageSubheaderDescription, StyledMarkdownTextbox, StyledSelect} from '../../styles';
+import Metrics from '../../playbook_edit/metrics/metrics';
 
-interface Props {
-    playbook: PlaybookWithChecklist;
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+] as const;
+
+export interface EditingMetric {
+    index: number;
+    metric: Metric;
 }
 
-const SectionRetrospective = (props: Props) => {
-    const retrospectiveAccess = useAllowRetrospectiveAccess();
-
+const SectionRetrospective = ({playbook, updatePlaybook}: PlaybookReadWriteProps) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
-    const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
 
-    if (!retrospectiveAccess || !props.playbook.retrospective_enabled) {
+    if (!retrospectiveAccess) {
         return null;
     }
 
     return (
         <Card>
-            <CardEntry
-                title={formatMessage(
-                    {defaultMessage: 'The channel will be reminded to perform the retrospective {reminderEnabled, select, true {every} other {}}'},
-                    {reminderEnabled: props.playbook.retrospective_reminder_interval_seconds !== 0}
-                )}
-                iconName={'lightbulb-outline'}
-                extraInfo={(
-                    <TextBadge>
-                        {props.playbook.retrospective_reminder_interval_seconds === 0 ? 'ONCE' : formatDuration(Duration.fromObject({seconds: props.playbook.retrospective_reminder_interval_seconds}), 'long')}
-                    </TextBadge>
-                )}
-                enabled={true}
-            >
-                <CardSubEntry
-                    title={formatMessage({
-                        defaultMessage:
-                                'Retrospective report template',
-                    })}
-                    enabled={props.playbook.retrospective_template !== ''}
-                >
-                    {renderMarkdown(props.playbook.retrospective_template)}
-                </CardSubEntry>
-            </CardEntry>
+            <SidebarBlock id={'retrospective-reminder-interval'}>
+                <BackstageSubheader>
+                    {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
+                    <BackstageSubheaderDescription>
+                        {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
+                    </BackstageSubheaderDescription>
+                </BackstageSubheader>
+                <StyledSelect
+                    value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                    onChange={(option: {label: string; value: number;}) => {
+                        updatePlaybook({
+                            retrospective_reminder_interval_seconds: option?.value,
+                        });
+                    }}
+                    options={retrospectiveReminderOptions}
+                    isClearable={false}
+                    isDisabled={!playbook.retrospective_enabled}
+                />
+            </SidebarBlock>
+            <SidebarBlock id={'retrospective-metrics'}>
+                <BackstageSubheader>
+                    {formatMessage({defaultMessage: 'Key metrics'})}
+                    <BackstageSubheaderDescription>
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                    </BackstageSubheaderDescription>
+                </BackstageSubheader>
+                <Metrics
+                    playbook={playbook}
+                    setPlaybook={updatePlaybook as any}
+                    curEditingMetric={curEditingMetric}
+                    setCurEditingMetric={setCurEditingMetric}
+                    disabled={!playbook.retrospective_enabled}
+                />
+            </SidebarBlock>
+            <SidebarBlock>
+                <BackstageSubheader>
+                    {formatMessage({defaultMessage: 'Retrospective template'})}
+                    <BackstageSubheaderDescription>
+                        {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
+                    </BackstageSubheaderDescription>
+                </BackstageSubheader>
+                <StyledMarkdownTextbox
+                    className={'playbook_retrospective_template'}
+                    id={'playbook_retrospective_template_edit'}
+                    placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
+                    value={playbook.retrospective_template}
+                    setValue={(value: string) => {
+                        updatePlaybook({
+                            retrospective_template: value,
+                        });
+                    }}
+                    disabled={!playbook.retrospective_enabled}
+                />
+            </SidebarBlock>
         </Card>
     );
 };

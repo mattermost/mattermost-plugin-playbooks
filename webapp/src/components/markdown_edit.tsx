@@ -1,8 +1,8 @@
-import React, {useState} from 'react';
+import React, {useRef, useState, RefObject} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {useUpdateEffect} from 'react-use';
+import {useUpdate, useUpdateEffect} from 'react-use';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
@@ -27,9 +27,11 @@ interface TextEditProps {
 
 const MarkdownEdit = (props: TextEditProps) => {
     const {formatMessage} = useIntl();
+
     const id = useUniqueId('editabletext-markdown-textbox');
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(props.value);
+
     useUpdateEffect(() => {
         setValue(props.value);
     }, [props.value]);
@@ -92,9 +94,7 @@ const MarkdownEdit = (props: TextEditProps) => {
                     </Tooltip>
                 </HoverMenuContainer>
             )}
-            <RenderedText
-                data-testid='rendered-text'
-            >
+            <RenderedText data-testid='rendered-text'>
                 {value ? (
                     <ShowMore>
                         <FormattedMarkdown value={value}/>

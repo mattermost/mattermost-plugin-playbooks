@@ -25,6 +25,7 @@ type Props = {
     disabled?: boolean;
     previewDisabled?: boolean;
     hideHelpText?: boolean;
+    hideHelpBar?: boolean;
     previewByDefault?: boolean;
     autoFocus?: boolean;
 } & ComponentProps<typeof Textbox>;
@@ -39,6 +40,7 @@ const MarkdownTextbox = ({
     hideHelpText,
     previewByDefault,
     autoFocus,
+    hideHelpBar,
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(previewByDefault);
@@ -73,15 +75,16 @@ const MarkdownTextbox = ({
                 disabled={disabled}
                 {...textboxProps}
             />
-            <StyledTextboxLinks
-                disabled={disabled}
-                previewDisabled={previewDisabled}
-                characterLimit={charLimit}
-                showPreview={showPreview}
-                updatePreview={setShowPreview}
-                message={value}
-                hideHelpText={hideHelpText}
-            />
+            {!hideHelpBar && (
+                <StyledTextboxLinks
+                    disabled={disabled}
+                    previewDisabled={previewDisabled}
+                    characterLimit={charLimit}
+                    showPreview={showPreview}
+                    updatePreview={setShowPreview}
+                    message={value}
+                    hideHelpText={hideHelpText}
+                />)}
         </Wrapper>
     );
 };
