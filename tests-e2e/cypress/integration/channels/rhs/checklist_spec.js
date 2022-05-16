@@ -363,6 +363,28 @@ describe('channels > rhs > checklist', () => {
             // * Verify if filter was canceled
             cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
         });
+
+        it.only('switching between runs with the same checklist', () => {
+            // # Create another run using the same playbook
+            const playbookRunName2 = 'RunWithSameChecklist';
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: playbookRunName2,
+                ownerUserId: testUser.id,
+            });
+
+            // # Set due date for the first channel's task
+            setTaskDueDate(2, 'in 2 hours');
+
+            // # Switch to the second run channel
+            cy.get('#sidebarItem_runwithsamechecklist').click();
+
+            // * Verify that tasks do not have due dates
+            cy.findAllByTestId('checkbox-item-container').eq(2).within(() => {
+                cy.findAllByTestId('due-date-info-button').should('not.exist');
+            });
+        });
     });
 });
 
