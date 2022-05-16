@@ -127,7 +127,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 		addToSetmap(setmap, "Public", args.Updates.Public)
 	}
-	addToSetmap(setmap, "CreatePublicPlaybookRun", args.Updates.CreatePublicPlaybookRun)
+	addToSetmap(setmap, "CreatePublicIncident", args.Updates.CreatePublicPlaybookRun)
 	addToSetmap(setmap, "ReminderMessageTemplate", args.Updates.ReminderMessageTemplate)
 	addToSetmap(setmap, "reminderTimerDefaultSeconds", args.Updates.ReminderTimerDefaultSeconds)
 	addToSetmap(setmap, "StatusUpdateEnabled", args.Updates.StatusUpdateEnabled)
@@ -147,9 +147,9 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		if c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
 			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
 		}
-		addToSetmap(setmap, "DefaultOwnerID", args.Updates.DefaultOwnerID)
+		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)
 	}
-	addToSetmap(setmap, "DefaultOwnerEnabled", args.Updates.DefaultOwnerEnabled)
+	addToSetmap(setmap, "DefaultCommanderEnabled", args.Updates.DefaultOwnerEnabled)
 
 	if args.Updates.BroadcastChannelIDs != nil {
 		fmt.Println(*args.Updates.BroadcastChannelIDs)
