@@ -135,7 +135,7 @@ commands:
       - run:
           name: Install Playbooks
           command: |
-            make deploy
+            make deploy CGO_ENABLED=0
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
