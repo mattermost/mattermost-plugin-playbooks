@@ -11,18 +11,18 @@ executors:
 aliases:
   - &restore_go_cache
     restore_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
   - &save_go_cache
     save_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
       paths:
         - /go/pkg/mod
   - &restore_cypress_cache
     restore_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
   - &save_cypress_cache
     save_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
       paths:
         - /go/pkg/mod
         - ./webapp/node_modules
@@ -35,7 +35,7 @@ commands:
     steps:
       - restore_cache:
           name: Restore npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
       - run:
           name: Getting JavaScript dependencies
           command: |
@@ -43,7 +43,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts --no-save
       - save_cache:
           name: Save npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
           paths:
             - ./webapp/node_modules
 
@@ -330,7 +330,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: docker.io/casscap/mm-builder-test:0.0.3
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -405,7 +405,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: docker.io/casscap/mm-builder-test:0.0.3
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
