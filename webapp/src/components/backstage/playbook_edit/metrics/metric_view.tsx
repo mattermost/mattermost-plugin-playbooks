@@ -28,6 +28,9 @@ const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
     }
 
     const targetStr = metricToString(metric.target, metric.type, true);
+    console.log('SHSHSHSHSHSHSHSH');
+    console.log(targetStr);
+    console.log(metric);
     const target = metric.target === null ? '' : `${targetStr} ${perRun}`;
 
     return (
