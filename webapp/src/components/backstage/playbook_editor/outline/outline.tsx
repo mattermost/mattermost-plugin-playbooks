@@ -84,10 +84,22 @@ const Outline = ({playbook}: Props) => {
             <Section
                 id={'retrospective'}
                 title={formatMessage({defaultMessage: 'Retrospective'})}
+                hoverEffect={true}
+                headerRight={(
+                    <HoverMenuContainer>
+                        <Toggle
+                            isChecked={playbook.retrospective_enabled}
+                            onChange={() => {
+                                updatePlaybook({
+                                    retrospectiveEnabled: !playbook.retrospective_enabled,
+                                });
+                            }}
+                        />
+                    </HoverMenuContainer>
+                )}
             >
                 <Retrospective
                     playbook={playbook}
-                    updatePlaybook={updatePlaybook}
                 />
             </Section>
             <Section
@@ -96,7 +108,6 @@ const Outline = ({playbook}: Props) => {
             >
                 <Actions
                     playbook={playbook}
-                    updatePlaybook={updatePlaybook}
                 />
             </Section>
         </Sections>
