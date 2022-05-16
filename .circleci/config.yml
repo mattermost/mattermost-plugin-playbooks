@@ -6,23 +6,23 @@ orbs:
 executors:
   default:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
 
 aliases:
   - &restore_go_cache
     restore_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
   - &save_go_cache
     save_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
       paths:
         - /go/pkg/mod
   - &restore_cypress_cache
     restore_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
   - &save_cypress_cache
     save_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
       paths:
         - /go/pkg/mod
         - ./webapp/node_modules
@@ -35,7 +35,7 @@ commands:
     steps:
       - restore_cache:
           name: Restore npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
       - run:
           name: Getting JavaScript dependencies
           command: |
@@ -43,7 +43,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts --no-save
       - save_cache:
           name: Save npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
           paths:
             - ./webapp/node_modules
 
@@ -135,7 +135,7 @@ commands:
       - run:
           name: Install Playbooks
           command: |
-            make deploy
+            make deploy CGO_ENABLED=0
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
@@ -254,7 +254,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:10.17
         command: "postgres -N 200"
         environment:
@@ -273,7 +273,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:11.13
         command: "postgres -N 200"
         environment:
@@ -292,7 +292,7 @@ jobs:
 
   test-MariaDB10-Postgres12:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:12.9
         command: "postgres -N 200"
         environment:
@@ -312,7 +312,7 @@ jobs:
   # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:14.1
         command: "postgres -N 200"
         environment:
@@ -333,7 +333,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -408,7 +408,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
