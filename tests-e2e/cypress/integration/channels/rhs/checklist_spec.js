@@ -194,7 +194,9 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
             // # Click dot menu
-            cy.findByTitle('More').click();
+            cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                cy.findByTitle('More').click();
+            });
 
             // # Click the restore button
             cy.findByRole('button', {name: 'Restore task'}).click();
@@ -259,7 +261,9 @@ describe('channels > rhs > checklist', () => {
             // # Open the dot menu and click on the rename button
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).trigger('mouseover');
-                cy.findByTitle('More').click();
+                cy.findByTestId('checklistHeader').within(() => {
+                    cy.findByTitle('More').click();
+                });
                 cy.findByRole('button', {name: 'Rename checklist'}).click();
             });
 
@@ -305,6 +309,7 @@ describe('channels > rhs > checklist', () => {
         it('filter overdue tasks', () => {
             // # Set overdue date for several items
             setTaskDueDate(2, '1 hour ago');
+
             setTaskDueDate(3, '7 hours ago', 1);
             setTaskDueDate(5, '3 hours ago', 2);
             setTaskDueDate(6, '6 hours ago', 3);
@@ -394,7 +399,9 @@ const skipTask = (taskIndex) => {
     cy.findAllByTestId('checkbox-item-container').eq(taskIndex).trigger('mouseover');
 
     // # Click dot menu
-    cy.findByTitle('More').click();
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).within(() => {
+        cy.findByTitle('More').click();
+    });
 
     // # Click the skip button
     cy.findByRole('button', {name: 'Skip task'}).click();
