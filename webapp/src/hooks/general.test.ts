@@ -227,7 +227,9 @@ describe('useProfilesInTeam', () => {
         const currentTeamId = 'team_id';
 
         let calls = 0;
+
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return profilesInCurrentTeam;
             }
@@ -258,6 +260,7 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return profilesInCurrentTeam;
             }
@@ -293,6 +296,7 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return profilesInCurrentTeam;
             }
@@ -324,6 +328,7 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return profilesInCurrentTeam;
             }
@@ -353,6 +358,7 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return profilesInCurrentTeam;
             }
@@ -395,6 +401,7 @@ describe('useProfilesInCurrentChannel', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return currentChannelId;
             }
@@ -425,6 +432,7 @@ describe('useProfilesInCurrentChannel', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return currentChannelId;
             }
@@ -460,6 +468,7 @@ describe('useProfilesInCurrentChannel', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return currentChannelId;
             }
@@ -491,6 +500,7 @@ describe('useProfilesInCurrentChannel', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return currentChannelId;
             }
@@ -520,6 +530,7 @@ describe('useProfilesInCurrentChannel', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
+            // since useSelector is called twice, we mock one return value, then the other.
             if (calls++ % 2 === 0) {
                 return currentChannelId;
             }

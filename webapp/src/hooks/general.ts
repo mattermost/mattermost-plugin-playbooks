@@ -186,8 +186,14 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     ));
 }
 
-const gettingProfilesInTeam = new Map<string, boolean>();
-const gettingProfilesInChannel = new Map<string, boolean>();
+// gettingProfilesInTeam and gettingProfilesInChannel effectively as locks to prevent concurrently
+// fetching profiles from multiple components mounted at the same time, only to all fetch the
+// same data.
+//
+// Ideally, we would offload this to a Redux saga in the webapp and simply dispatch a
+// FETCH_PROFILES_IN_TEAM that handles all this complexity itself.
+const gettingProfilesInTeam = new Set<string>();
+const gettingProfilesInChannel = new Set<string>();
 
 export function clearCaches() {
     gettingProfilesInTeam.clear();
@@ -212,6 +218,9 @@ export function useProfilesInTeam() {
 
     useEffect(() => {
         if (profilesInTeam.length > 0) {
+            // As soon as we successfully fetch a team's profiles, clear the bit that prevents
+            // concurrent fetches. We won't try again since we shouldn't forget these profiles,
+            // but we also don't want to unexpectedly block this forever.
             gettingProfilesInTeam.delete(currentTeamId);
             return;
         }
@@ -220,7 +229,7 @@ export function useProfilesInTeam() {
         if (gettingProfilesInTeam.has(currentTeamId)) {
             return;
         }
-        gettingProfilesInTeam.set(currentTeamId, true);
+        gettingProfilesInTeam.add(currentTeamId);
 
         dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
     }, [currentTeamId, profilesInTeam]);
@@ -279,6 +288,9 @@ export function useProfilesInChannel(channelId: string) {
 
     useEffect(() => {
         if (profilesInChannel.length > 0) {
+            // As soon as we successfully fetch a channel's profiles, clear the bit that prevents
+            // concurrent fetches. We won't try again since we shouldn't forget these profiles,
+            // but we also don't want to unexpectedly block this forever.
             gettingProfilesInChannel.delete(channelId);
             return;
         }
@@ -287,7 +299,7 @@ export function useProfilesInChannel(channelId: string) {
         if (gettingProfilesInChannel.has(channelId)) {
             return;
         }
-        gettingProfilesInChannel.set(channelId, true);
+        gettingProfilesInChannel.add(channelId);
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
     }, [channelId]);
