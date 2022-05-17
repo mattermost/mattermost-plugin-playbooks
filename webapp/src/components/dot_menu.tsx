@@ -164,15 +164,43 @@ export const DropdownMenuItemStyled = styled.a`
     padding: 10px 20px;
     text-decoration: unset;
 
-
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
     }
+
+    &.disabled {
+        color: var(--center-channel-color-40);
+        cursor: pointer;
+    }
 }
 `;
 
-export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string }) => {
+export const DisabledDropdownMenuItemStyled = styled.div`
+ && {
+    cursor: default;
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    color: var(--center-channel-color-40);
+    padding: 10px 20px;
+    text-decoration: unset;
+}
+`;
+
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {
+    if (props.disabled) {
+        return (
+            <DisabledDropdownMenuItemStyled
+                className={props.className}
+                title={props.disabledAltText}
+            >
+                {props.children}
+            </DisabledDropdownMenuItemStyled>
+        );
+    }
+
     return (
         <DropdownMenuItemStyled
             href='#'

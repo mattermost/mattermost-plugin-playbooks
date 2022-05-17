@@ -9,6 +9,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 
+import {useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
@@ -86,6 +87,7 @@ const teamNameSelector = (teamId: string) => (state: GlobalState): string => get
 
 const PlaybookListRow = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbook.team_id));
+    const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
 
     const infos: JSX.Element[] = [];
@@ -147,6 +149,8 @@ const PlaybookListRow = (props: Props) => {
                             props.onDuplicate();
                             telemetryEventForPlaybook(props.playbook.id, 'playbook_duplicate_clicked_in_playbooks_list');
                         }}
+                        disabled={!permissionForDuplicate}
+                        disabledAltText={'Duplicate is disabled for this team.'}
                     >
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
