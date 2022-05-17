@@ -607,8 +607,23 @@ export const doPatch = async <TData = any>(url: string, body = {}) => {
     return data;
 };
 
-export const doFetchWithResponse = async <TData = any>(url: string, options = {}) => {
-    const response = await fetch(url, Client4.getOptions(options));
+const doFetch = (url: string, options: any = {}) => {
+    const newOptions = Client4.getOptions(options);
+
+    // Cherry pick the effects of https://mattermost.atlassian.net/browse/MM-40751 but without
+    // updating all of webapp.
+    if (options.body) {
+        // when the body is an instance of FormData we let fetch to set the Content-Type header so it defines a correct boundary
+        if (!(options.body instanceof FormData)) {
+            newOptions.headers['Content-Type'] = 'application/json';
+        }
+    }
+
+    return fetch(url, newOptions);
+};
+
+export const doFetchWithResponse = async <TData = any>(url: string, options: any = {}) => {
+    const response = await doFetch(url, options);
 
     let data;
     if (response.ok) {
@@ -633,7 +648,7 @@ export const doFetchWithResponse = async <TData = any>(url: string, options = {}
 };
 
 export const doFetchWithTextResponse = async <TData extends string>(url: string, options = {}) => {
-    const response = await fetch(url, Client4.getOptions(options));
+    const response = await doFetch(url, Client4.getOptions(options));
 
     let data;
     if (response.ok) {
@@ -655,7 +670,7 @@ export const doFetchWithTextResponse = async <TData extends string>(url: string,
 };
 
 export const doFetchWithoutResponse = async (url: string, options = {}) => {
-    const response = await fetch(url, Client4.getOptions(options));
+    const response = await doFetch(url, Client4.getOptions(options));
 
     if (response.ok) {
         return;
