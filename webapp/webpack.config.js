@@ -125,6 +125,7 @@ let config = {
         'react-bootstrap': 'ReactBootstrap',
         'react-router-dom': 'ReactRouterDom',
         'react-intl': 'ReactIntl',
+        'styled-components': 'StyledComponents',
     },
     output: {
         devtoolNamespace: PLUGIN_ID,
