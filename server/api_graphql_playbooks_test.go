@@ -45,6 +45,44 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Title, pbResultTest.Data.Playbook.Title)
 	})
 
+	t.Run("metrics get", func(t *testing.T) {
+		var pbResultTest struct {
+			Data struct {
+				Playbook struct {
+					ID      string
+					Title   string
+					Metrics []client.PlaybookMetricConfig
+				}
+			}
+		}
+		testPlaybookQuery :=
+			`
+	query Playbook($id: String!) {
+		playbook(id: $id) {
+			id
+			metrics {
+				id
+				title
+				description
+				type
+				target
+			}
+		}
+	}
+	`
+		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testPlaybookQuery,
+			OperationName: "Playbook",
+			Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID},
+		}, &pbResultTest)
+		require.NoError(t, err)
+
+		require.Len(t, pbResultTest.Data.Playbook.Metrics, len(e.BasicPlaybook.Metrics))
+		require.Equal(t, e.BasicPlaybook.Metrics[0].Title, pbResultTest.Data.Playbook.Metrics[0].Title)
+		require.Equal(t, e.BasicPlaybook.Metrics[0].Type, pbResultTest.Data.Playbook.Metrics[0].Type)
+		require.Equal(t, e.BasicPlaybook.Metrics[0].Target, pbResultTest.Data.Playbook.Metrics[0].Target)
+	})
+
 	t.Run("playbook mutate", func(t *testing.T) {
 		newUpdatedTitle := "graphqlmutatetitle"
 

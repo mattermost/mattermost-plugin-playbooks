@@ -125,9 +125,9 @@ type ChecklistItem {
 }
 
 enum MetricType {
-	Duration
-	Currency
-	Integer
+	metric_duration
+	metric_currency
+	metric_integer
 }
 
 type PlaybookMetricConfig {
