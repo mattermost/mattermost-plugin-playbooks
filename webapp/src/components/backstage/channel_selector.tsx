@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {createSelector} from 'reselect';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
@@ -10,7 +10,7 @@ import General from 'mattermost-redux/constants/general';
 
 import {Channel, ChannelMembership} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
 
@@ -71,8 +71,15 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 };
 
 const ChannelSelector = (props: Props & {className?: string}) => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
+
+    useEffect(() => {
+        if (props.teamId !== '' && selectableChannels.length === 0) {
+            dispatch(fetchMyChannelsAndMembers(props.teamId));
+        }
+    }, [props.teamId]);
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
