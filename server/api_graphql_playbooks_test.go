@@ -25,15 +25,14 @@ func TestGraphQLPlaybooks(t *testing.T) {
 				}
 			}
 		}
-		testPlaybookQuery :=
-			`
-	query Playbook($id: String!) {
-		playbook(id: $id) {
-			id
-			title
+		testPlaybookQuery := `
+		query Playbook($id: String!) {
+			playbook(id: $id) {
+				id
+				title
+			}
 		}
-	}
-	`
+		`
 		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbook",
@@ -86,7 +85,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	t.Run("playbook mutate", func(t *testing.T) {
 		newUpdatedTitle := "graphqlmutatetitle"
 
-		err := gqlTestPlaybookUpdate(e, t, map[string]interface{}{"title": newUpdatedTitle})
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": newUpdatedTitle})
 		require.NoError(t, err)
 
 		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
@@ -96,16 +95,16 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	})
 
 	t.Run("update playbook no permissions to broadcast", func(t *testing.T) {
-		err := gqlTestPlaybookUpdate(e, t, map[string]interface{}{"broadcastChannelIDs": []string{e.BasicPrivateChannel.Id}})
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"broadcastChannelIDs": []string{e.BasicPrivateChannel.Id}})
 		require.Error(t, err)
 	})
 
-	t.Run("update playbook without chaning existing broadcast channel", func(t *testing.T) {
+	t.Run("update playbook without modifying broadcast channel ids without permission. should succeed because no modification.", func(t *testing.T) {
 		e.BasicPlaybook.BroadcastChannelIDs = []string{e.BasicPrivateChannel.Id}
 		err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, map[string]interface{}{"description": "unrelatedupdate"})
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": "unrelatedupdate"})
 		require.NoError(t, err)
 	})
 
@@ -114,7 +113,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		for i := 0; i < 65; i++ {
 			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
 		}
-		err := gqlTestPlaybookUpdate(e, t, map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
 			"webhookOnCreationEnabled": true,
 			"webhookOnCreationURLs":    urls,
 		})
@@ -122,22 +121,22 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	})
 }
 
-func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, updates map[string]interface{}) error {
+func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
 	testPlaybookMutateQuery :=
 		`
 mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
 }
 		`
-	var responce graphql.Response
+	var response graphql.Response
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID, "updates": updates},
-	}, &responce)
+		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+	}, &response)
 
-	if len(responce.Errors) != 0 {
-		return errors.Errorf("graphql failure %+v", responce.Errors)
+	if len(response.Errors) != 0 {
+		return errors.Errorf("graphql failure %+v", response.Errors)
 	}
 
 	return err

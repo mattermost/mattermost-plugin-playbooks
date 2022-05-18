@@ -29,5 +29,5 @@ export const useUpdatePlaybook = (id?: string) => {
         const [innerUpdatePlaybook] = result;
         return innerUpdatePlaybook({variables: {id: id || '', updates}});
     };
-    return updatePlaybook;//, ...result];
+    return updatePlaybook;
 };

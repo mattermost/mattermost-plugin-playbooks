@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -129,7 +128,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 	addToSetmap(setmap, "CreatePublicIncident", args.Updates.CreatePublicPlaybookRun)
 	addToSetmap(setmap, "ReminderMessageTemplate", args.Updates.ReminderMessageTemplate)
-	addToSetmap(setmap, "reminderTimerDefaultSeconds", args.Updates.ReminderTimerDefaultSeconds)
+	addToSetmap(setmap, "ReminderTimerDefaultSeconds", args.Updates.ReminderTimerDefaultSeconds)
 	addToSetmap(setmap, "StatusUpdateEnabled", args.Updates.StatusUpdateEnabled)
 
 	if args.Updates.InvitedUserIDs != nil {
@@ -152,8 +151,6 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "DefaultCommanderEnabled", args.Updates.DefaultOwnerEnabled)
 
 	if args.Updates.BroadcastChannelIDs != nil {
-		fmt.Println(*args.Updates.BroadcastChannelIDs)
-		fmt.Println(currentPlaybook.BroadcastChannelIDs)
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, currentPlaybook.BroadcastChannelIDs); err != nil {
 			return "", err
 		}

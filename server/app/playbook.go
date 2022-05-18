@@ -463,7 +463,7 @@ func ValidateWebhookURLs(urls []string) error {
 	for _, webhook := range urls {
 		url, err := url.ParseRequestURI(webhook)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "unable to parse webhook: %v", webhook)
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {

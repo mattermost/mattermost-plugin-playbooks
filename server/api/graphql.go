@@ -92,7 +92,7 @@ type Context struct {
 	licenceChecker  app.LicenseChecker
 }
 
-// When moving over to the multi-product archatecture this should be handled by the server.
+// When moving over to the multi-product architecture this should be handled by the server.
 func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 	// Limit bodies to 100KiB.
 	r.Body = http.MaxBytesReader(w, r.Body, 102400)
@@ -103,11 +103,13 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		Variables     map[string]interface{} `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.log.Debugf("Unable to decode graphql query: %v", err)
 		return
 	}
 
 	if !h.config.IsConfiguredForDevelopmentAndTesting() {
 		if params.OperationName == "" {
+			h.log.Debugf("Invalid blank operation name.")
 			return
 		}
 	}
@@ -130,7 +132,8 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 	response := h.schema.Exec(reqCtx,
 		params.Query,
 		params.OperationName,
-		params.Variables)
+		params.Variables,
+	)
 
 	if len(response.Errors) > 0 {
 		mlog.Error("Error executing request", mlog.String("operation", params.OperationName),
@@ -151,49 +154,10 @@ func getContext(ctx context.Context) (*Context, error) {
 	return c, nil
 }
 
+//go:embed graphqli.html
+var GraphiqlPage []byte
+
 func graphiQL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	_, _ = w.Write(graphiqlPage)
+	_, _ = w.Write(GraphiqlPage)
 }
-
-var graphiqlPage = []byte(`
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>GraphiQL editor | Mattermost</title>
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/graphiql/0.11.11/graphiql.min.css" rel="stylesheet" />
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/2.0.3/fetch.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.2.0/umd/react.production.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.2.0/umd/react-dom.production.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/graphiql/0.11.11/graphiql.min.js"></script>
-	</head>
-	<body style="width: 100%; height: 100%; margin: 0; overflow: hidden;">
-		<div id="graphiql" style="height: 100vh;">Loading...</div>
-		<script>
-			function graphQLFetcher(graphQLParams) {
-				return fetch("/plugins/playbooks/api/v0/query", {
-					method: "post",
-					body: JSON.stringify(graphQLParams),
-					credentials: "include",
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest'
-					}
-				}).then(function (response) {
-					return response.text();
-				}).then(function (responseBody) {
-					try {
-						return JSON.parse(responseBody);
-					} catch (error) {
-						return responseBody;
-					}
-				});
-			}
-			ReactDOM.render(
-				React.createElement(GraphiQL, {fetcher: graphQLFetcher}),
-				document.getElementById("graphiql")
-			);
-		</script>
-	</body>
-</html>
-`)
