@@ -4,6 +4,10 @@ type Query {
 
 type Mutation {
 	updatePlaybook(id: String!, updates: PlaybookUpdates!): String!
+
+	addMetric(playbookID: String!, title: String!, description: String!, type: String!, target: Int): String!
+	updateMetric(id: String!, title: String, description: String, target: Int): String!
+	deleteMetric(id: String!): String!
 }
 
 input PlaybookUpdates {

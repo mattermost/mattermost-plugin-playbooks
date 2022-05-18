@@ -211,6 +211,62 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	return args.ID, nil
 }
 
+func (r *RootResolver) AddMetric(ctx context.Context, args struct {
+	PlaybookID  string
+	Title       string
+	Description string
+	Type        string
+	Target      *int
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	target := null.IntFromPtr(
+
+	c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
+		Title: args.Title,
+		Description: args.Description,
+		Type: args.Type,
+		Target: null.Int,
+	})
+
+
+	return args.PlaybookID, nil
+}
+
+func (r *RootResolver) UpdateMetric(ctx context.Context, args struct {
+	ID          string
+	Title       *string
+	Description *string
+	Target      *int
+}) (string, error) {
+
+	return args.ID, nil
+}
+
+func (r *RootResolver) DeleteMetric(ctx context.Context, args struct {
+	ID string
+}) (string, error) {
+
+	return args.ID, nil
+}
+
 func addToSetmap[T any](setmap map[string]interface{}, name string, value *T) {
 	if value != nil {
 		setmap[name] = *value

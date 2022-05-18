@@ -64,7 +64,29 @@ export {MetricType};
 
 export type Mutation = {
     __typename?: 'Mutation';
+    addMetric: Scalars['String'];
+    deleteMetric: Scalars['String'];
+    updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
+};
+
+export type MutationAddMetricArgs = {
+    description: Scalars['String'];
+    playbookID: Scalars['String'];
+    target?: InputMaybe<Scalars['Int']>;
+    title: Scalars['String'];
+    type: Scalars['String'];
+};
+
+export type MutationDeleteMetricArgs = {
+    id: Scalars['String'];
+};
+
+export type MutationUpdateMetricArgs = {
+    description?: InputMaybe<Scalars['String']>;
+    id: Scalars['String'];
+    target?: InputMaybe<Scalars['Int']>;
+    title?: InputMaybe<Scalars['String']>;
 };
 
 export type MutationUpdatePlaybookArgs = {
