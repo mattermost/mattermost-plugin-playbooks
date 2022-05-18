@@ -26,7 +26,7 @@ export interface Props {
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
     placeholder?: string;
-    teamId?: string;
+    teamId: string;
 }
 
 const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
@@ -72,9 +72,7 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 
 const ChannelSelector = (props: Props & {className?: string}) => {
     const {formatMessage} = useIntl();
-    const currentTeamId = useSelector(getCurrentTeamId);
-    const teamId = props.teamId || currentTeamId;
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(teamId));
+    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
