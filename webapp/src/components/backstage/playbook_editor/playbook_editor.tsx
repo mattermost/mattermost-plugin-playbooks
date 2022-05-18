@@ -19,7 +19,6 @@ import {pluginErrorUrl} from 'src/browser_routing';
 import {
     useForceDocumentTitle,
     useStats,
-    usePlaybook,
     useMarkdownRenderer,
 } from 'src/hooks';
 
@@ -38,6 +37,8 @@ import {HorizontalBG} from 'src/components/collapsible_checklist';
 
 import CopyLink from 'src/components/widgets/copy_link';
 
+import {usePlaybook} from 'src/graphql/hooks';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 import * as Controls from './controls';
 
@@ -50,7 +51,8 @@ const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const {url, path, params: {playbookId}} = useRouteMatch<MatchParams>();
-    const playbook = usePlaybook(playbookId);
+
+    const [playbook, {error, loading}] = usePlaybook(playbookId);
     const stats = useStats(playbookId);
     const renderMarkdown = useMarkdownRenderer(playbook?.team_id);
 
@@ -67,14 +69,14 @@ const PlaybookEditor = () => {
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id]);
 
-    if (playbook === undefined) {
-        // loading
-        return null;
-    }
-
-    if (playbook === null) {
+    if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
+    }
+
+    if (loading || !playbook) {
+        // loading
+        return null;
     }
 
     return (
@@ -112,7 +114,10 @@ const PlaybookEditor = () => {
                                 <FormattedMessage defaultMessage='Private'/>
                             </Controls.MetaItem>
                         )}
-                        <Controls.Members playbook={playbook}/>
+                        <Controls.Members
+                            playbookId={playbook.id}
+                            numMembers={playbook.members.length}
+                        />
                         <Controls.MetaItem>
                             <Icon
                                 path={mdiClipboardPlayMultipleOutline}
@@ -152,18 +157,18 @@ const PlaybookEditor = () => {
                     >
                         <Outline
                             playbook={playbook}
-                            runsInProgress={stats.runs_in_progress}
                         />
                     </Route>
                     <Route path={`${path}/usage`}>
                         <PlaybookUsage
-                            playbook={playbook}
+                            playbookID={playbook.id}
                             stats={stats}
                         />
                     </Route>
                     <Route path={`${path}/reports`}>
                         <PlaybookKeyMetrics
-                            playbook={playbook}
+                            playbookID={playbook.id}
+                            playbookMetrics={playbook.metrics}
                             stats={stats}
                         />
                     </Route>

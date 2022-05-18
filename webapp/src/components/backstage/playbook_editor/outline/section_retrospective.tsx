@@ -8,15 +8,15 @@ import {Duration} from 'luxon';
 
 import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {TextBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
 import {formatDuration} from 'src/components/formatted_duration';
+import {FullPlaybook, Loaded} from 'src/graphql/hooks';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbook: Loaded<FullPlaybook>;
 }
 
 const SectionRetrospective = (props: Props) => {

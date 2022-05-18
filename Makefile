@@ -83,6 +83,7 @@ else
 	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
 ifneq ($(MM_SERVICESETTINGS_ENABLEDEVELOPER),)
 	cd server && $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
+	cd server && ./dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH) graphqlcheck
 else
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-darwin-arm64;
@@ -105,6 +106,7 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run graphql;
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else

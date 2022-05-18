@@ -1,0 +1,139 @@
+type Query {
+	playbook(id: String!): Playbook
+}
+
+type Mutation {
+	updatePlaybook(id: String!, updates: PlaybookUpdates!): String!
+}
+
+input PlaybookUpdates {
+	title: String
+	description: String
+	public: Boolean
+	createPublicPlaybookRun: Boolean
+	reminderMessageTemplate: String
+	reminderTimerDefaultSeconds: Float
+	statusUpdateEnabled: Boolean
+	invitedUserIDs: [String!]
+	invitedGroupIDs: [String!]
+	inviteUsersEnabled: Boolean
+	defaultOwnerID: String
+	defaultOwnerEnabled: Boolean
+	broadcastChannelIDs: [String!]
+	broadcastEnabled: Boolean
+	webhookOnCreationURLs: [String!]
+	webhookOnCreationEnabled: Boolean
+	messageOnJoin: String
+	messageOnJoinEnabled: Boolean
+	retrospectiveReminderIntervalSeconds: Float
+	retrospectiveTemplate: String
+	retrospectiveEnabled: Boolean
+	webhookOnStatusUpdateURLs: [String!]
+	webhookOnStatusUpdateEnabled: Boolean
+	signalAnyKeywords: [String!]
+	signalAnyKeywordsEnabled: Boolean
+	categorizeChannelEnabled: Boolean
+	categoryName: String
+	runSummaryTemplateEnabled: Boolean
+	runSummaryTemplate: String
+	channelNameTemplate: String
+	checklists: [ChecklistUpdates!]
+}
+
+input ChecklistUpdates {
+	title: String!
+	items: [ChecklistItemUpdates!]!
+}
+
+input ChecklistItemUpdates {
+	title: String!
+	description: String!
+	state: String!
+	stateModified: Float!
+	assigneeID: String!
+	assigneeModified: Float!
+	command: String!
+	commandLastRun: Float!
+	dueDate: Float!
+}
+
+type Playbook {
+	id: String!
+	title: String!
+	description: String!
+	teamID: String!
+	createPublicPlaybookRun: Boolean!
+	deleteAt: Float!
+	runSummaryTemplateEnabled: Boolean!
+	defaultPlaybookMemberRole: String!
+	public: Boolean!
+	checklists: [Checklist!]!
+	members: [Member!]!
+	reminderMessageTemplate: String!
+	reminderTimerDefaultSeconds: Float!
+	statusUpdateEnabled: Boolean!
+	invitedUserIDs: [String!]!
+	invitedGroupIDs: [String!]!
+	inviteUsersEnabled: Boolean!
+	defaultOwnerID: String!
+	defaultOwnerEnabled: Boolean!
+	broadcastChannelIDs: [String!]!
+	broadcastEnabled: Boolean!
+	webhookOnCreationURLs: [String!]!
+	webhookOnCreationEnabled: Boolean!
+	messageOnJoin: String!
+	messageOnJoinEnabled: Boolean!
+	retrospectiveReminderIntervalSeconds: Float!
+	retrospectiveTemplate: String!
+	retrospectiveEnabled: Boolean!
+	webhookOnStatusUpdateURLs: [String!]!
+	webhookOnStatusUpdateEnabled: Boolean!
+	signalAnyKeywords: [String!]!
+	signalAnyKeywordsEnabled: Boolean!
+	categorizeChannelEnabled: Boolean!
+	categoryName: String!
+	runSummaryTemplateEnabled: Boolean!
+	runSummaryTemplate: String!
+	channelNameTemplate: String!
+	defaultPlaybookAdminRole: String!
+	defaultPlaybookMemberRole: String!
+	defaultRunAdminRole: String!
+	defaultRunMemberRole: String!
+	metrics: [PlaybookMetricConfig!]!
+}
+
+type Checklist {
+	title: String!
+	items: [ChecklistItem!]!
+}
+
+type Member {
+	userID: String!
+	roles: [String!]!
+}
+
+type ChecklistItem {
+	title: String!
+	description: String!
+	state: String!
+	stateModified: Float!
+	assigneeID: String!
+	assigneeModified: Float!
+	command: String!
+	commandLastRun: Float!
+	dueDate: Float!
+}
+
+enum MetricType {
+	metric_duration
+	metric_currency
+	metric_integer
+}
+
+type PlaybookMetricConfig {
+	id: String!
+	title: String!
+	description: String!
+	type: MetricType!
+	target: Int
+}

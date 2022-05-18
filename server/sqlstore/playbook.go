@@ -586,6 +586,23 @@ func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]s
 	return playbookIDs, nil
 }
 
+func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
 // Update updates a playbook
 func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {

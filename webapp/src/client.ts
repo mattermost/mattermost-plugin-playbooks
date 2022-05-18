@@ -803,7 +803,7 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
     });
 };
 
-export const playbookExportProps = (playbook: Playbook) => {
+export const playbookExportProps = (playbook: {id: string, title: string}) => {
     const href = `${apiUrl}/playbooks/${playbook.id}/export`;
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];

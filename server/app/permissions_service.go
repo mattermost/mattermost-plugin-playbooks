@@ -181,36 +181,14 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		return err
 	}
 
-	if err := p.noAddedBroadcastChannelsWithoutPermission(userID, *playbook, oldPlaybook); err != nil {
+	if err := p.NoAddedBroadcastChannelsWithoutPermission(userID, playbook.BroadcastChannelIDs, oldPlaybook.BroadcastChannelIDs); err != nil {
 		return err
 	}
 
-	filteredUsers := []string{}
-	for _, userID := range playbook.InvitedUserIDs {
-		if !p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
-			p.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", playbook.TeamID, "userID", userID)
-			continue
-		}
-		filteredUsers = append(filteredUsers, userID)
-	}
+	filteredUsers := p.FilterInvitedUserIDs(playbook.InvitedUserIDs, playbook.TeamID)
 	playbook.InvitedUserIDs = filteredUsers
 
-	filteredGroups := []string{}
-	for _, groupID := range playbook.InvitedGroupIDs {
-		var group *model.Group
-		group, err := p.pluginAPI.Group.Get(groupID)
-		if err != nil {
-			p.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
-			continue
-		}
-
-		if !group.AllowReference {
-			p.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
-			continue
-		}
-
-		filteredGroups = append(filteredGroups, groupID)
-	}
+	filteredGroups := p.FilterInvitedGroupIDs(playbook.InvitedGroupIDs)
 	playbook.InvitedGroupIDs = filteredGroups
 
 	if playbook.DefaultOwnerID != "" {
@@ -266,17 +244,49 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	return nil
 }
 
+func (p *PermissionsService) FilterInvitedUserIDs(invitedUserIDs []string, teamID string) []string {
+	filteredUsers := []string{}
+	for _, userID := range invitedUserIDs {
+		if !p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+			p.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", teamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	return filteredUsers
+}
+
+func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []string {
+	filteredGroups := []string{}
+	for _, groupID := range invitedGroupIDs {
+		var group *model.Group
+		group, err := p.pluginAPI.Group.Get(groupID)
+		if err != nil {
+			p.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			p.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			continue
+		}
+
+		filteredGroups = append(filteredGroups, groupID)
+	}
+	return filteredGroups
+}
+
 func (p *PermissionsService) DeletePlaybook(userID string, playbook Playbook) error {
 	return p.PlaybookManageProperties(userID, playbook)
 }
 
-func (p *PermissionsService) noAddedBroadcastChannelsWithoutPermission(userID string, playbook, oldPlaybook Playbook) error {
+func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID string, broadcastChannelIDs, oldBroadcastChannelIDs []string) error {
 	oldChannelsSet := make(map[string]bool)
-	for _, channelID := range oldPlaybook.BroadcastChannelIDs {
+	for _, channelID := range oldBroadcastChannelIDs {
 		oldChannelsSet[channelID] = true
 	}
 
-	for _, channelID := range playbook.BroadcastChannelIDs {
+	for _, channelID := range broadcastChannelIDs {
 		if !oldChannelsSet[channelID] &&
 			!p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
 			return errors.Wrapf(
