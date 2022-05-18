@@ -10,5 +10,6 @@
     "/RnCQb": "Giden web bağlantısı gönder",
     "/MaJux": "Geriye dönüşü başlat",
     "/HtNUp": "Bir {mode, select, DurationValue {zaman aralığı (\"4 saat\", \"7 gün\"...)} DateTimeValue {zaman (\"4 saat içinde\", \"1 Mayıs\", \"Yarın 13:00\"...)} other {zaman ya da zaman aralığı}} seçin veya belirtin",
-    "/ZsEUy": "Bu kontrol listesini silmek istediğinize emin misiniz? Bu çalışmada kaldırılacak ancak senaryo etkilenmeyecek."
+    "/ZsEUy": "Bu kontrol listesini silmek istediğinize emin misiniz? Bu çalışmada kaldırılacak ancak senaryo etkilenmeyecek.",
+    "/fU9y/": "Senaryonun farklı bölümlerini bu sayfadan inceleyebilirsiniz."
 }
