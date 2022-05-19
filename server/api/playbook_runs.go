@@ -618,13 +618,6 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunViewByChannel(userID, channelID); err != nil {
-		h.log.Warnf("User %s does not have permissions to get playbook run for channel %s", userID, channelID)
-		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
-			errors.Errorf("playbook run for channel id %s not found", channelID))
-		return
-	}
-
 	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -634,6 +627,13 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 			return
 		}
 		h.HandleError(w, err)
+		return
+	}
+
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.log.Warnf("User %s does not have permissions to get playbook run %s for channel %s", userID, playbookRunID, channelID)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
