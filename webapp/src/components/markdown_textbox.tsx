@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {MouseEvent, ChangeEvent, useState, ComponentProps, useRef, useEffect} from 'react';
+import React, {MouseEvent, ChangeEvent, useState, ComponentProps, useRef} from 'react';
 import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
@@ -11,6 +11,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
+import {useEffectOnce} from 'react-use';
 
 import {Textbox} from 'src/webapp_globals';
 
@@ -49,11 +51,11 @@ const MarkdownTextbox = ({
 
     const charLimit = parseInt(MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
-    useEffect(() => {
+    useEffectOnce(() => {
         if (autoFocus && textboxRef.current) {
             textboxRef.current?.focus();
         }
-    }, [textboxRef.current]);
+    });
 
     return (
         <Wrapper className={className}>

@@ -33,8 +33,8 @@ interface Task {
 }
 
 interface Props {
-    playbook: Pick<PlaybookWithChecklist, 'metrics'>;
-    setPlaybook: React.Dispatch<React.SetStateAction<Props['playbook'] & Pick<PlaybookWithChecklist, 'metrics'>>>;
+    playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist;
+    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>>;
     setChangesMade?: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;

@@ -24,11 +24,12 @@ import Section from './section';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    refetch: () => void;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook}: Props) => {
+const Outline = ({playbook, refetch}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
 
@@ -43,7 +44,7 @@ const Outline = ({playbook}: Props) => {
             >
                 <MarkdownEdit
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
-                    value={playbook.run_summary_template}
+                    value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
                         updatePlaybook({
                             runSummaryTemplate,
@@ -100,6 +101,7 @@ const Outline = ({playbook}: Props) => {
             >
                 <Retrospective
                     playbook={playbook}
+                    refetch={refetch}
                 />
             </Section>
             <Section

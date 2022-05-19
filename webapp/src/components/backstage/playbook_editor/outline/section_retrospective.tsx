@@ -2,18 +2,20 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import {Card} from 'src/components/backstage/playbooks/playbook_preview_cards';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import {Metric} from 'src/types/playbook';
+import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
 
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
 import {BackstageSubheader, BackstageSubheaderDescription, StyledMarkdownTextbox, StyledSelect} from 'src/components/backstage/styles';
+import MarkdownEdit from 'src/components/markdown_edit';
+import {savePlaybook} from 'src/client';
 
 export interface EditingMetric {
     index: number;
@@ -30,9 +32,10 @@ const retrospectiveReminderOptions = [
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    refetch: () => void;
 }
 
-const SectionRetrospective = ({playbook}: Props) => {
+const SectionRetrospective = ({playbook, refetch}: Props) => {
     const {formatMessage} = useIntl();
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
@@ -40,6 +43,10 @@ const SectionRetrospective = ({playbook}: Props) => {
 
     if (!retrospectiveAccess) {
         return null;
+    }
+
+    if (!playbook.retrospective_enabled) {
+        return <FormattedMessage defaultMessage='A retrospective is not expected.'/>;
     }
 
     return (
@@ -71,8 +78,11 @@ const SectionRetrospective = ({playbook}: Props) => {
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics
-                    playbook={playbook}
-                    setPlaybook={updatePlaybook as any}
+                    playbook={playbook as PlaybookWithChecklist} // TODO reduce prop scope to min-essentials
+                    setPlaybook={async (update) => {
+                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbook as PlaybookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
+                        refetch();
+                    }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
                     disabled={!playbook.retrospective_enabled}
@@ -85,12 +95,11 @@ const SectionRetrospective = ({playbook}: Props) => {
                         {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
-                <StyledMarkdownTextbox
+                <MarkdownEdit
                     className={'playbook_retrospective_template'}
-                    id={'playbook_retrospective_template_edit'}
                     placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
                     value={playbook.retrospective_template}
-                    setValue={(value: string) => {
+                    onSave={(value: string) => {
                         updatePlaybook({
                             retrospectiveTemplate: value,
                         });

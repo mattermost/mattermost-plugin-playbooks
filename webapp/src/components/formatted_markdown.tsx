@@ -1,7 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
 import {useSelector} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -12,7 +11,7 @@ import {getCurrentTeam, getTeam} from 'mattermost-redux/selectors/entities/teams
 
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
-export const useDefaultMarkdownOptions = ({team, ...opts}: {team?: Maybe<Team>} & Record<string, any> = {}) => {
+export const useDefaultMarkdownOptions = ({team, ...opts}: {team?: Maybe<Team | Team['id']>} & Record<string, any> = {}) => {
     const selectedTeam = useSelector((state: GlobalState) => {
         if (typeof team === 'string') {
             return getTeam(state, team);

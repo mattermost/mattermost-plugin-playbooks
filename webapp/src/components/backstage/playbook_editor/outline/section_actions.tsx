@@ -11,19 +11,20 @@ import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users'
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
-
 import {mdiPlay, mdiAccountCheckOutline} from '@mdi/js';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import {Section, SectionTitle, Setting} from 'src/components/backstage/playbook_edit/styles';
+import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
-import {MessageOnJoin} from 'src/components/backstage/playbook_edit/automation/message_on_join';
 import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import MarkdownEdit from 'src/components/markdown_edit';
+import {Toggle} from '../../playbook_edit/automation/toggle';
+import {AutomationTitle} from '../../playbook_edit/automation/styles';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -189,11 +190,32 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a new member joins the channel'/>
                 </StyledSectionTitle>
                 <Setting id={'user-joins-message'}>
-                    <MessageOnJoin
-                        enabled={playbook.message_on_join_enabled}
-                        onToggle={handleToggleMessageOnJoin}
-                        message={playbook.message_on_join}
-                        onChange={handleMessageOnJoinChange}
+                    {/* {playbook.message_on_join_enabled && (
+                        <span>
+                            <i className='icon-message-check-outline'/>
+                            <FormattedMessage defaultMessage='Send a welcome message'/>
+                        </span>
+                    )} */}
+                    <AutomationTitle>
+                        <Toggle
+                            isChecked={playbook.message_on_join_enabled}
+                            onChange={() => {
+                                updatePlaybook({
+                                    messageOnJoinEnabled: !playbook.message_on_join_enabled,
+                                });
+                            }}
+                        />
+                        <div><FormattedMessage defaultMessage='Send a welcome message'/></div>
+                    </AutomationTitle>
+                    <MarkdownEdit
+                        placeholder={formatMessage({defaultMessage: 'Send a welcome message…'})}
+                        value={playbook.message_on_join}
+                        onSave={(messageOnJoin) => {
+                            updatePlaybook({
+                                messageOnJoin,
+                                messageOnJoinEnabled: Boolean(messageOnJoin.trim()),
+                            });
+                        }}
                     />
                 </Setting>
                 <Setting id={'user-joins-channel-categorize'}>
@@ -214,6 +236,7 @@ export default LegacyActionsEdit;
 const StyledSection = styled(Section)`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     padding: 2rem;
+    padding-bottom: 0;
     margin: 0;
     margin-bottom: 20px;
     border-radius: 8px;
@@ -229,4 +252,11 @@ const StyledSectionTitle = styled(SectionTitle)`
     svg {
         color: rgba(var(--center-channel-color-rgb), 0.48);
     }
+`;
+
+const Setting = styled.div`
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 `;

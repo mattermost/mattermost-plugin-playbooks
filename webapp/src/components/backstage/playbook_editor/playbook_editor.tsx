@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useState, useEffect, useCallback} from 'react';
+import React, {useRef, useEffect} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
-import {useIntersection, useUpdateEffect} from 'react-use';
+import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
@@ -44,7 +44,7 @@ const PlaybookEditor = () => {
     const dispatch = useDispatch();
     const {url, path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
-    const [playbook, {error, loading}] = usePlaybook(playbookId);
+    const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const stats = useStats(playbookId);
 
@@ -156,6 +156,7 @@ const PlaybookEditor = () => {
                 <Route path={`${path}/outline`}>
                     <Outline
                         playbook={playbook}
+                        refetch={refetch}
                     />
                 </Route>
                 <Route path={`${path}/reports`}>
