@@ -159,7 +159,7 @@ export const DateTimeSelector = ({
                 controlShouldRenderValue={false}
                 menuIsOpen={true}
                 options={options}
-                placeholder={formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'})}
+                placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
                 styles={selectStyles}
                 onChange={onSelectedChange}
                 classNamePrefix='playbook-run-user-select'
