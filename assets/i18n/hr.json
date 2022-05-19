@@ -66,5 +66,41 @@
     {
         "id": "app.user.digest.tasks.all_tasks_command",
         "translation": "Koristi `/playbook todo` za prikaz svih tvojih zadataka."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "Imaš {{.Count}} dodijeljen zadatak čiji je rok sada:",
+            "few": "Imaš {{.Count}} dodijeljena zadatka čiji su rokovi sada:",
+            "other": "Imaš {{.Count}} dodijeljenih zadataka čiji su rokovi sada:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Rok: jučer"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Rok: prije {{.Count}} dana"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Rok je danas"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Rok: {{.Count}} dan",
+            "few": "Rok: {{.Count}} dana",
+            "other": "Rok: {{.Count}} dana"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Imaš **{{.Count}} dodijeljen zadatak s rokom nakon danas**.",
+            "few": "Imaš **{{.Count}} dodijeljena zadatka s rokom nakon danas**.",
+            "other": "Imaš **{{.Count}} dodijeljenih zadataka s rokom nakon danas**."
+        }
     }
 ]

@@ -1,109 +1,176 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {useIntl} from 'react-intl';
+import React, {ReactNode} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
 
-import {Duration} from 'luxon';
+import styled from 'styled-components';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
-import {PlaybookWithChecklist} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import TextEdit from 'src/components/text_edit';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import {TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
-import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
-import {formatDuration} from 'src/components/formatted_duration';
+import BroadcastChannels from './inputs/broadcast_channels_selector';
+import UpdateTimer from './inputs/update_timer_selector';
+import WebhooksInput from './inputs/webhooks_input';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbook: Loaded<FullPlaybook>;
 }
 
-const PlaybookPreviewStatusUpdates = (props: Props) => {
+const StatusUpdates = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
-    const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
+    const updatePlaybook = useUpdatePlaybook(props.playbook.id);
 
-    // The following booleans control the rendering of each of the CardEntry comopnents in this section,
-    // hiding them if they don't have any visible subentries.
-    // If a new CardSubEntry is added or the conditions are changed, these booleans need to be updated.
-
-    const updateReminderEnabled = props.playbook.reminder_timer_default_seconds !== 0;
-    const updateTemplateEnabled = props.playbook.reminder_message_template !== '';
-
-    const showReminderCardEntry =
-        updateReminderEnabled ||
-        updateTemplateEnabled;
-
-    const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
-    const webhookOnStatusUpdateEnabled = props.playbook.webhook_on_status_update_enabled && props.playbook.webhook_on_status_update_urls.length !== 0;
-
-    const showUpdatePostCardEntryemptyUpdatePostedEntry =
-        broadcastEnabled ||
-        webhookOnStatusUpdateEnabled;
-
-    const allEmpty =
-        !showReminderCardEntry &&
-        !showUpdatePostCardEntryemptyUpdatePostedEntry;
-
-    if (allEmpty || !props.playbook.status_update_enabled) {
-        return null;
+    if (!props.playbook.status_update_enabled) {
+        return (
+            <StatusUpdatesContainer>
+                <FormattedMessage defaultMessage='Status updates are not expected.'/>
+            </StatusUpdatesContainer>
+        );
     }
 
     return (
-        <Card>
-            <CardEntry
-                title={formatMessage(
-                    {defaultMessage: 'The owner will {reminderEnabled, select, true {be prompted to provide a status update every} other {not be prompted to provide a status update}}'},
-                    {reminderEnabled: props.playbook.reminder_timer_default_seconds !== 0},
-                )}
-                iconName={'clock-outline'}
-                extraInfo={updateReminderEnabled && (
-                    <TextBadge>
-                        {formatDuration(Duration.fromObject({seconds: props.playbook.reminder_timer_default_seconds}), 'long')}
-                    </TextBadge>
-                )}
-                enabled={showReminderCardEntry}
-            >
-                <CardSubEntry
-                    title={formatMessage({
-                        defaultMessage: 'Update template',
-                    })}
-                    enabled={updateTemplateEnabled}
-                >
-                    {renderMarkdown(props.playbook.reminder_message_template)}
-                </CardSubEntry>
-            </CardEntry>
-            <CardEntry
-                title={formatMessage({
-                    defaultMessage: 'When an update is posted',
-                })}
-                iconName={'message-check-outline'}
-                enabled={showUpdatePostCardEntryemptyUpdatePostedEntry}
-            >
-                <CardSubEntry
-                    title={formatMessage(
-                        {defaultMessage: 'Broadcast updates in the {oneChannel, plural, one {channel} other {channels}}'},
-                        {oneChannel: props.playbook.broadcast_channel_ids.length}
-                    )}
-                    enabled={broadcastEnabled}
-                    extraInfo={props.playbook.broadcast_channel_ids.map((id) => (
-                        <ChannelBadge
-                            key={id}
-                            channelId={id}
-                        />
-                    ))}
+        <StatusUpdatesContainer>
+            <FormattedMessage
+                defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks> .'
+                values={{
+                    duration: () => {
+                        return (
+                            <Picker>
+                                <UpdateTimer
+                                    seconds={props.playbook.reminder_timer_default_seconds}
+                                    setSeconds={(seconds: number) => {
+                                        if (seconds !== props.playbook.reminder_timer_default_seconds &&
+                                            seconds > 0) {
+                                            updatePlaybook({
+                                                reminderTimerDefaultSeconds: seconds,
+                                            });
+                                        }
+                                    }}
+                                />
+                            </Picker>
+                        );
+                    },
+                    channelCount: props.playbook.broadcast_channel_ids?.length ?? 0,
+                    channels: (channelCount: ReactNode) => {
+                        return (
+                            <Picker>
+                                <BroadcastChannels
+                                    id='playbook-automation-broadcast'
+                                    onChannelsSelected={(channelIds: string[]) => {
+                                        if (channelIds.length !== props.playbook.broadcast_channel_ids.length || channelIds.some((id) => !props.playbook.broadcast_channel_ids.includes(id))) {
+                                            updatePlaybook({
+                                                broadcastChannelIDs: channelIds,
+                                            });
+                                        }
+                                    }}
+                                    channelIds={props.playbook.broadcast_channel_ids}
+
+                                >
+                                    <Placeholder label={channelCount}/>
+                                </BroadcastChannels>
+                            </Picker>
+                        );
+                    },
+                    webhookCount: props.playbook.webhook_on_status_update_urls?.length ?? 0,
+                    webhooks: (webhookCount: ReactNode) => {
+                        return (
+                            <Picker>
+                                <WebhooksInput
+                                    urls={props.playbook.webhook_on_status_update_urls}
+                                    onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
+                                        if (newWebhookOnStatusUpdateURLs.length === 0) {
+                                            updatePlaybook({
+                                                webhookOnStatusUpdateEnabled: false,
+                                                webhookOnStatusUpdateURLs: [],
+                                            });
+                                        } else {
+                                            updatePlaybook({
+                                                webhookOnStatusUpdateEnabled: true,
+                                                webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <Placeholder label={webhookCount}/>
+                                </WebhooksInput>
+                            </Picker>
+                        );
+                    },
+                }}
+            />
+            <Template>
+                <TextEdit
+                    placeholder={formatMessage({defaultMessage: 'Use markdown to create a template'})}
+                    value={props.playbook.reminder_message_template}
+                    onSave={(newMessage: string) => {
+                        updatePlaybook({
+                            reminderMessageTemplate: newMessage,
+                        });
+                    }}
                 />
-                <CardSubEntry
-                    title={formatMessage({
-                        defaultMessage: 'Send an outgoing webhook',
-                    })}
-                    enabled={webhookOnStatusUpdateEnabled}
-                >
-                    {props.playbook.webhook_on_status_update_urls.map((url) => (<p key={url}>{url}</p>))}
-                </CardSubEntry>
-            </CardEntry>
-        </Card>
+            </Template>
+        </StatusUpdatesContainer>
     );
 };
 
-export default PlaybookPreviewStatusUpdates;
+const StatusUpdatesContainer = styled.div`
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 2.5rem;
+    color: var(--center-channel-color-72);
+`;
+
+const Picker = styled.span`
+    display: inline-block;
+    color: var(--button-bg);
+    background: rgba(var(--button-bg-rgb), 0.08);
+    border-radius: 12px;
+    line-height: 15px;
+    padding: 3px 3px 3px 10px;
+`;
+
+const Template = styled.div`
+    margin-top: 16px;
+`;
+
+export const Placeholder = (props: PlaceholderProps) => {
+    return (
+        <PlaceholderDiv>
+            <TextContainer>
+                {props.label}
+            </TextContainer>
+            <SelectorRightIcon className='icon-chevron-down icon-12'/>
+        </PlaceholderDiv>
+    );
+};
+
+interface PlaceholderProps {
+    label: React.ReactNode
+}
+
+const PlaceholderDiv = styled.div`
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    white-space: nowrap;
+
+    &:hover {
+        cursor: pointer;
+    }
+`;
+
+const SelectorRightIcon = styled.i`
+    font-size: 14.4px;
+    &{
+        margin-left: 4px;
+    }
+    color: var(--center-channel-color-32);
+`;
+
+const TextContainer = styled.span`
+    font-weight: 600;
+    font-size: 13px;
+`;
+
+export default StatusUpdates;

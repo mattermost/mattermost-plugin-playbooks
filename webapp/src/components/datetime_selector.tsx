@@ -162,8 +162,8 @@ export const DateTimeSelector = ({
                 placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
                 styles={selectStyles}
                 onChange={onSelectedChange}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-run-user-select' // TODO debt: rename
+                className='playbook-run-user-select' // TODO debt: rename
                 formatOptionLabel={OptionLabel}
                 {...props.customControlProps}
             />
@@ -172,7 +172,6 @@ export const DateTimeSelector = ({
 };
 
 const TIME_SPEC = {
-    locale: 'en',
     useDate: (_: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
 };
 
@@ -228,7 +227,7 @@ const Wrapper = styled.div`
     display: flex;
     flex: 1;
     color: var(--center-channel-color);
-    font-weight 400;
+    font-weight: 400;
     font-size: 14px;
     line-height: 20px;
 `;

@@ -46,6 +46,8 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
 
@@ -55,7 +57,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
-    playbook?: PlaybookWithChecklist;
+    playbook?: Loaded<FullPlaybook>;
 }
 
 const ChecklistList = (props: Props) => {
@@ -77,7 +79,8 @@ const ChecklistList = (props: Props) => {
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
 
-    const [playbook, setPlaybook] = useState(props.playbook);
+    const playbook = props.playbook;
+    const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const [menuEnabled, setMenuEnabled] = useState(true);
     const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -92,10 +95,27 @@ const ChecklistList = (props: Props) => {
         if (!playbook) {
             return;
         }
-        const newPlaybook = {...playbook};
-        newPlaybook.checklists = newChecklists;
-        setPlaybook(newPlaybook);
-        savePlaybook(newPlaybook);
+
+        const updated = newChecklists.map((cl: Checklist) => {
+            return {
+                ...cl,
+                items: cl.items.map((ci: ChecklistItem) => {
+                    return {
+                        title: ci.title,
+                        description: ci.description,
+                        state: ci.state,
+                        stateModified: ci.state_modified || 0,
+                        assigneeID: ci.assignee_id || '',
+                        assigneeModified: ci.assignee_modified || 0,
+                        command: ci.command,
+                        commandLastRun: ci.command_last_run,
+                        dueDate: ci.due_date,
+                    };
+                }),
+            };
+        });
+
+        updatePlaybook({checklists: updated});
     };
 
     const onRenameChecklist = (index: number, title: string) => {
@@ -235,7 +255,7 @@ const ChecklistList = (props: Props) => {
                 e.stopPropagation();
                 setAddingChecklist(true);
             }}
-            data-testId={'add-a-checklist-button'}
+            data-testid={'add-a-checklist-button'}
         >
             <IconWrapper>
                 <i className='icon icon-plus'/>

@@ -68,7 +68,7 @@ export interface Metric {
     type: MetricType;
     title: string;
     description: string;
-    target: number | null;
+    target?: number | null;
 }
 
 export interface FetchPlaybooksParams {
@@ -107,7 +107,7 @@ export enum ChecklistItemState {
 export interface ChecklistItem {
     title: string;
     description: string;
-    state: ChecklistItemState;
+    state: ChecklistItemState | string;
     state_modified?: number;
     assignee_id?: string;
     assignee_modified?: number;
