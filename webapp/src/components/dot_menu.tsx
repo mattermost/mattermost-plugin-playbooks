@@ -90,7 +90,6 @@ interface DotMenuProps {
     disabled?: boolean;
     className?: string;
     isActive?: boolean;
-
 }
 
 const DotMenu = (props: DotMenuProps) => {
