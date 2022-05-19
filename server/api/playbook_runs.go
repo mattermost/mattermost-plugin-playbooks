@@ -464,7 +464,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
-		playbookRun.Checklists = pb.Checklists
+		h.setPlaybookRunChecklist(&playbookRun, &pb)
 		public = pb.CreatePublicPlaybookRun
 
 		if pb.RunSummaryTemplateEnabled {
@@ -543,6 +543,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+}
+
+func (h *PlaybookRunHandler) setPlaybookRunChecklist(playbookRun *app.PlaybookRun, playbook *app.Playbook) {
+	playbookRun.Checklists = playbook.Checklists
+
+	// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
+	now := model.GetMillis()
+	for i := range playbookRun.Checklists {
+		for j := range playbookRun.Checklists[i].Items {
+			if playbookRun.Checklists[i].Items[j].DueDate > 0 {
+				playbookRun.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
