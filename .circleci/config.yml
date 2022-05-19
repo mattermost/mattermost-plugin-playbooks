@@ -197,7 +197,7 @@ jobs:
       - run:
           name: Building Plugin Bundle
           command: |
-            make dist
+            make dist CGO_ENABLED=0
       - run:
           name: Generating Release Notes
           command: |
