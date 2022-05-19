@@ -22,6 +22,7 @@ interface Props {
     editable: boolean;
     onSave: () => void;
     children: React.ReactNode;
+    adjustTop?: number;
 }
 
 const ActionsModal = (props: Props) => {
@@ -58,7 +59,7 @@ const ActionsModal = (props: Props) => {
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={false}
             enforceFocus={true}
-            adjustTop={400}
+            adjustTop={props.adjustTop}
             components={{
                 Header: ModalHeader,
                 FooterContainer: ModalFooter,
