@@ -15,25 +15,31 @@ interface CheckBoxButtonProps {
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
+
+    // handleOnChange optimistic update approach: first doe UI change, then
+    // call to server and finally revert UI state if there's error
+    //
+    // There are two main reasons why we do this:
+    // 1 - Happy path: avoid waiting 300ms to see checkbox update in the UI
+    // 2 - Websocket failure: we'll still mark the checkbox correctly
+    //     Additionally, we prevent the user from clicking multiple times
+    //     and leaving the item in an unknown state
+    const handleOnChange = async () => {
+        const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
+        setIsChecked(!isChecked);
+        const res = await props.onChange(newValue);
+        if (res?.error) {
+            setIsChecked(isChecked);
+        }
+    };
+
     return (
         <ChecklistItemInput
             className='checkbox'
             type='checkbox'
             checked={isChecked}
             disabled={props.disabled}
-            onChange={async () => {
-                // There are two reasons to use this optimistic update approach
-                // 1 - avoid waiting 300ms to see how checkbox change in UI
-                // 2 - if websocket fails, we'll still mark the checkbox correctly.
-                //     Additionally in the same scenario, we prevent the user from
-                //     clicking multiple times and leaving the item in an unknown state
-                const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
-                setIsChecked(!isChecked);
-                const res = await props.onChange(newValue);
-                if (res?.error) {
-                    setIsChecked(isChecked);
-                }
-            }}
+            onChange={handleOnChange}
         />);
 };
 

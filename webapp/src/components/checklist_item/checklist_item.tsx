@@ -7,7 +7,6 @@ import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from 'mattermost-redux/types/users';
-import {ClientError} from 'mattermost-redux/client/client4';
 
 import {
     clientEditChecklistItem,
@@ -15,6 +14,7 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     clientSetChecklistItemCommand,
+    setChecklistItemState,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
@@ -35,7 +35,7 @@ interface ChecklistItemProps {
     itemNum: number;
     playbookRunId?: string;
     menuEnabled: boolean;
-    onChange?: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
+    onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
