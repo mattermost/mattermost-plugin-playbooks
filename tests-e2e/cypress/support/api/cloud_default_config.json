@@ -250,7 +250,7 @@
         "Plugins": {},
         "PluginStates": {
             "com.mattermost.nps": {
-                "Enable": false
+                "Enable": true
             },
             "playbooks": {
                 "Enable": true

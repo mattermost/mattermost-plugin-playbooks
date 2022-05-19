@@ -3,22 +3,23 @@
 
 import React, {ReactNode} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+
 import styled from 'styled-components';
 
 import TextEdit from 'src/components/text_edit';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import UpdateTimer from './inputs/update_timer_selector';
 import BroadcastChannels from './inputs/broadcast_channels_selector';
+import UpdateTimer from './inputs/update_timer_selector';
 import WebhooksInput from './inputs/webhooks_input';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
-    updatePlaybook: (newPlaybook: PlaybookWithChecklist) => void;
+    playbook: Loaded<FullPlaybook>;
 }
 
 const StatusUpdates = (props: Props) => {
     const {formatMessage} = useIntl();
+    const updatePlaybook = useUpdatePlaybook(props.playbook.id);
 
     if (!props.playbook.status_update_enabled) {
         return (
@@ -41,9 +42,8 @@ const StatusUpdates = (props: Props) => {
                                     setSeconds={(seconds: number) => {
                                         if (seconds !== props.playbook.reminder_timer_default_seconds &&
                                             seconds > 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                reminder_timer_default_seconds: seconds,
+                                            updatePlaybook({
+                                                reminderTimerDefaultSeconds: seconds,
                                             });
                                         }
                                     }}
@@ -59,9 +59,8 @@ const StatusUpdates = (props: Props) => {
                                     id='playbook-automation-broadcast'
                                     onChannelsSelected={(channelIds: string[]) => {
                                         if (channelIds.length !== props.playbook.broadcast_channel_ids.length || channelIds.some((id) => !props.playbook.broadcast_channel_ids.includes(id))) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                broadcast_channel_ids: channelIds,
+                                            updatePlaybook({
+                                                broadcastChannelIDs: channelIds,
                                             });
                                         }
                                     }}
@@ -81,16 +80,14 @@ const StatusUpdates = (props: Props) => {
                                     urls={props.playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
                                         if (newWebhookOnStatusUpdateURLs.length === 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                webhook_on_status_update_enabled: false,
-                                                webhook_on_status_update_urls: [],
+                                            updatePlaybook({
+                                                webhookOnStatusUpdateEnabled: false,
+                                                webhookOnStatusUpdateURLs: [],
                                             });
                                         } else {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                webhook_on_status_update_enabled: true,
-                                                webhook_on_status_update_urls: newWebhookOnStatusUpdateURLs,
+                                            updatePlaybook({
+                                                webhookOnStatusUpdateEnabled: true,
+                                                webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
                                             });
                                         }
                                     }}
@@ -107,9 +104,8 @@ const StatusUpdates = (props: Props) => {
                     placeholder={formatMessage({defaultMessage: 'Use markdown to create a template'})}
                     value={props.playbook.reminder_message_template}
                     onSave={(newMessage: string) => {
-                        props.updatePlaybook({
-                            ...props.playbook,
-                            reminder_message_template: newMessage,
+                        updatePlaybook({
+                            reminderMessageTemplate: newMessage,
                         });
                     }}
                 />

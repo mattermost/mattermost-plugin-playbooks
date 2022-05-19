@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -9,7 +9,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import Spinner from 'src/components/assets/icons/spinner';
 import Filters from 'src/components/backstage/runs_list/filters';
-import {MetricType, PlaybookWithChecklist} from 'src/types/playbook';
+import {Metric, MetricType} from 'src/types/playbook';
 import MetricsRow from 'src/components/backstage/playbooks/metrics/metrics_row';
 import MetricsRunListHeader from 'src/components/backstage/playbooks/metrics/metrics_run_list_header';
 
@@ -25,7 +25,7 @@ export interface MetricsInfo {
 }
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookMetrics: Metric[];
     playbookRuns: PlaybookRun[]
     totalCount: number
     fetchParams: FetchPlaybookRunsParams
@@ -33,13 +33,13 @@ interface Props {
 }
 
 const MetricsRunList = ({
-    playbook,
+    playbookMetrics,
     playbookRuns,
     totalCount,
     fetchParams,
     setFetchParams,
 }: Props) => {
-    const metricsInfo = playbook.metrics.map((m) => ({type: m.type, title: m.title, target: m.target} as MetricsInfo));
+    const metricsInfo = playbookMetrics.map((m) => ({type: m.type, title: m.title, target: m.target} as MetricsInfo));
 
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||

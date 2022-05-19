@@ -114,7 +114,7 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    const keys = generateKeys(props.checklist.items.map((item) => item.title));
+    const keys = generateKeys(props.checklist.items.map((item) => props.playbookRun?.id + item.title));
 
     return (
         <Droppable

@@ -18,6 +18,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
+	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/isacikgoz/morph v0.0.0-20220406131225-b96d2fb806f1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.5
@@ -96,7 +97,6 @@ require (
 	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/graph-gophers/dataloader/v6 v6.0.0 // indirect
-	github.com/graph-gophers/graphql-go v1.4.0 // indirect
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
 	github.com/hashicorp/go-hclog v1.2.0 // indirect
 	github.com/hashicorp/go-plugin v1.4.4 // indirect

@@ -10,7 +10,6 @@ import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {EllipsizedText, TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
@@ -19,6 +18,7 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import Tooltip from 'src/components/widgets/tooltip';
 import {clientFetchPlaybookFollowers} from 'src/client';
+import {FullPlaybook, Loaded} from 'src/graphql/hooks';
 
 const useFollowersMeta = (playbookId: string) => {
     const [followerIds, setFollowerIds] = useState<string[]>([]);
@@ -44,7 +44,7 @@ const useFollowersMeta = (playbookId: string) => {
 };
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbook: Loaded<FullPlaybook>;
 }
 
 const PlaybookPreviewActions = (props: Props) => {

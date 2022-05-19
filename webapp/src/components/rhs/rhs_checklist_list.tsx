@@ -110,7 +110,7 @@ const RHSChecklistList = (props: Props) => {
                                 onselect={selectOption}
                                 dotMenuButton={StyledDotMenuButton}
                                 icon={
-                                    <IconWrapper>
+                                    <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
                                         <i className='icon icon-filter-variant'/>
                                     </IconWrapper>
                                 }

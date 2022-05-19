@@ -6,8 +6,8 @@ import {Duration} from 'luxon';
 import {MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';
 
-export const metricToString = (target: number | null, type: MetricType, naturalDuration = false) => {
-    if (target === null) {
+export const metricToString = (target: number | null | undefined, type: MetricType, naturalDuration = false) => {
+    if (target === null || target === undefined) {
         return '';
     }
 

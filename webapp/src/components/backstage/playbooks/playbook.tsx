@@ -397,13 +397,14 @@ const Playbook = () => {
                 </Route>
                 <Route path={`${match.path}/usage`}>
                     <PlaybookUsage
-                        playbook={playbook}
+                        playbookID={playbook.id}
                         stats={stats}
                     />
                 </Route>
                 <Route path={`${match.path}/metrics`}>
                     <PlaybookKeyMetrics
-                        playbook={playbook}
+                        playbookID={playbook.id}
+                        playbookMetrics={playbook.metrics}
                         stats={stats}
                     />
                 </Route>

@@ -267,19 +267,19 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 }
 
 func (b *Bot) PromptForFeedback(userID string) error {
-	surveyBot, err := b.pluginAPI.User.GetByUsername("surveybot")
+	feedbackBot, err := b.pluginAPI.User.GetByUsername("feedbackbot")
 	if err != nil {
-		return fmt.Errorf("unable to find surveybot user: %w", err)
+		return fmt.Errorf("unable to find feedbackbot user: %w", err)
 	}
 
-	channel, err := b.pluginAPI.Channel.GetDirect(userID, surveyBot.Id)
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, feedbackBot.Id)
 	if err != nil {
-		return fmt.Errorf("failed to get direct message channel between user %s and surveybot %s: %w", userID, surveyBot.Id, err)
+		return fmt.Errorf("failed to get direct message channel between user %s and feedbackbot %s: %w", userID, feedbackBot.Id, err)
 	}
 
 	post := &model.Post{
 		ChannelId: channel.Id,
-		UserId:    surveyBot.Id,
+		UserId:    feedbackBot.Id,
 		Message:   "Have feedback about Playbooks?",
 	}
 	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
