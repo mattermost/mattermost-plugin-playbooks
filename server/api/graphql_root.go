@@ -194,11 +194,13 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
-	checklistsJSON, err := json.Marshal(args.Updates.Checklists)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
+	if args.Updates.Checklists != nil {
+		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
+		}
+		setmap["ChecklistsJSON"] = checklistsJSON
 	}
-	setmap["ChecklistsJSON"] = checklistsJSON
 
 	if len(setmap) > 0 {
 		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
