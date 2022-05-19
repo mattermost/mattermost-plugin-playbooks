@@ -255,7 +255,7 @@ const ChecklistList = (props: Props) => {
                 e.stopPropagation();
                 setAddingChecklist(true);
             }}
-            data-testId={'add-a-checklist-button'}
+            data-testid={'add-a-checklist-button'}
         >
             <IconWrapper>
                 <i className='icon icon-plus'/>
