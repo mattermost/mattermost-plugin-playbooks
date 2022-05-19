@@ -16,7 +16,7 @@ interface CheckBoxButtonProps {
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
 
-    // handleOnChange optimistic update approach: first doe UI change, then
+    // handleOnChange optimistic update approach: first do UI change, then
     // call to server and finally revert UI state if there's error
     //
     // There are two main reasons why we do this:
