@@ -312,11 +312,12 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
 }
 
 export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    return doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`,
-        JSON.stringify({
-            new_state: newState,
-        }),
-    );
+    const body = JSON.stringify({new_state: newState});
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);
+    } catch (error) {
+        return {error: error as ClientError};
+    }
 }
 
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
