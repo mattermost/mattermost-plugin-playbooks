@@ -862,6 +862,28 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	return autoFollows, nil
 }
 
+func (p *playbookStore) GetMetric(id string) (*app.PlaybookMetricConfig, error) {
+	metricSelect := p.queryBuilder.
+		Select(
+			"c.ID",
+			"c.PlaybookID",
+			"c.Title",
+			"c.Description",
+			"c.Type",
+			"c.Target",
+		).
+		From("IR_MetricConfig c").
+		Where(sq.Eq{"c.ID": id})
+
+	var metric app.PlaybookMetricConfig
+	err := p.store.getBuilder(p.store.db, &metric, metricSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metric, nil
+}
+
 func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricConfig) error {
 	numExistingMetrics, err := p.GetNumMetrics(playbookID)
 	if err != nil {
@@ -876,6 +898,10 @@ func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricCo
 		Insert("IR_MetricConfig").
 		Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
 		Values(model.NewId(), playbookID, config.Title, config.Description, config.Type, config.Target, numExistingMetrics))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to add metric")
+	}
 
 	return nil
 }
@@ -903,7 +929,7 @@ func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) e
 	}
 
 	_, err := p.store.execBuilder(p.store.db, sq.
-		Update("IR_Playbook").
+		Update("IR_MetricConfig").
 		SetMap(setmap).
 		Where(sq.Eq{"ID": id}))
 

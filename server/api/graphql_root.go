@@ -8,6 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 )
 
 type RootResolver struct{}
@@ -216,7 +217,7 @@ func (r *RootResolver) AddMetric(ctx context.Context, args struct {
 	Title       string
 	Description string
 	Type        string
-	Target      *int
+	Target      *float64
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -237,15 +238,21 @@ func (r *RootResolver) AddMetric(ctx context.Context, args struct {
 		return "", err
 	}
 
-	target := null.IntFromPtr(
+	var target null.Int
+	if args.Target == nil {
+		target = null.NewInt(0, false)
+	} else {
+		target = null.IntFrom(int64(*args.Target))
+	}
 
-	c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
-		Title: args.Title,
+	if err := c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
+		Title:       args.Title,
 		Description: args.Description,
-		Type: args.Type,
-		Target: null.Int,
-	})
-
+		Type:        args.Type,
+		Target:      target,
+	}); err != nil {
+		return "", err
+	}
 
 	return args.PlaybookID, nil
 }
@@ -254,8 +261,43 @@ func (r *RootResolver) UpdateMetric(ctx context.Context, args struct {
 	ID          string
 	Title       *string
 	Description *string
-	Target      *int
+	Target      *float64
 }) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "Title", args.Title)
+	addToSetmap(setmap, "Description", args.Description)
+	if args.Target != nil {
+		setmap["Target"] = null.IntFrom(int64(*args.Target))
+	}
+	if len(setmap) > 0 {
+		if err := c.playbookStore.UpdateMetric(args.ID, setmap); err != nil {
+			return "", err
+		}
+	}
 
 	return args.ID, nil
 }
@@ -263,6 +305,29 @@ func (r *RootResolver) UpdateMetric(ctx context.Context, args struct {
 func (r *RootResolver) DeleteMetric(ctx context.Context, args struct {
 	ID string
 }) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	if err := c.playbookStore.DeleteMetric(args.ID); err != nil {
+		return "", err
+	}
 
 	return args.ID, nil
 }

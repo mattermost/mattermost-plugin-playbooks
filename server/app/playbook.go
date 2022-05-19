@@ -355,6 +355,9 @@ type PlaybookStore interface {
 	// GetPlaybooksActiveTotal returns number of active playbooks
 	GetPlaybooksActiveTotal() (int64, error)
 
+	// GetMetric retrieves a metric by ID
+	GetMetric(id string) (*PlaybookMetricConfig, error)
+
 	// AddMetric adds a metric
 	AddMetric(playbookID string, config PlaybookMetricConfig) error
 
