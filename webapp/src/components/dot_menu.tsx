@@ -171,11 +171,6 @@ export const DropdownMenuItemStyled = styled.a`
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
     }
-
-    &.disabled {
-        color: var(--center-channel-color-40);
-        cursor: pointer;
-    }
 }
 `;
 
