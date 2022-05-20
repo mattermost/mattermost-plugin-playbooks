@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import React, {useEffect, useState, ReactNode, HTMLAttributes} from 'react';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {useRunsList} from 'src/hooks';
@@ -21,14 +20,14 @@ const defaultPlaybookFetchParams = {
 };
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookID: string;
     stats: PlaybookStats;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
 const PlaybookUsage = ({
-    playbook,
+    playbookID,
     stats,
     ...attrs
 }: Props & Attrs) => {
@@ -37,9 +36,9 @@ const PlaybookUsage = ({
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: playbook.id, page: 0};
+            return {...oldParams, playbook_id: playbookID, page: 0};
         });
-    }, [playbook.id, setFetchParams]);
+    }, [playbookID, setFetchParams]);
 
     return (
         <OuterContainer {...attrs}>

@@ -14,6 +14,7 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     clientSetChecklistItemCommand,
+    setChecklistItemState,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
@@ -34,7 +35,7 @@ interface ChecklistItemProps {
     itemNum: number;
     playbookRunId?: string;
     menuEnabled: boolean;
-    onChange?: (item: ChecklistItemState) => void;
+    onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
@@ -223,11 +224,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 <CheckBoxButton
                     disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => {
-                        if (props.onChange) {
-                            props.onChange(item);
-                        }
-                    }}
+                    onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}

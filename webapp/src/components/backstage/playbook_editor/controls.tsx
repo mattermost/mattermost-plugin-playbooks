@@ -22,7 +22,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import classNames from 'classnames';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {useHasPlaybookPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useHasPlaybookPermission} from 'src/hooks';
 import {useToasts} from '../toast_banner';
 
 import {
@@ -49,7 +49,16 @@ import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import {PillBox} from 'src/components/widgets/pill';
 
-type ControlProps = {playbook: PlaybookWithChecklist;};
+type ControlProps = {playbook: {
+    id: string,
+    public: boolean,
+    default_playbook_member_role: string,
+    title: string,
+    delete_at: number,
+    team_id: string,
+    description: string,
+    members: PlaybookPermissionsMember[],
+}};
 
 type StyledProps = {className?: string;};
 
@@ -97,12 +106,12 @@ export const Back = styled((props: StyledProps) => {
 
 `;
 
-export const Members = ({playbook: {id, members}}: ControlProps) => {
+export const Members = (props: {playbookId: string, numMembers: number}) => {
     const dispatch = useDispatch();
     return (
-        <MembersIcon onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+        <MembersIcon onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId))}>
             <i className={'icon icon-account-multiple-outline'}/>
-            {members.length}
+            {props.numMembers}
         </MembersIcon>
     );
 };
@@ -200,13 +209,13 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
 };
 
 const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
-const playbookIsTutorialPlaybook = (playbook: PlaybookWithChecklist) => playbook?.title === LEARN_PLAYBOOKS_TITLE;
+const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
 
 export const RunPlaybook = ({playbook}: ControlProps) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const currentUser = useSelector(getCurrentUser);
-    const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook);
+    const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
 

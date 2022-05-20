@@ -107,11 +107,6 @@ export const DotMenuIcon = styled(HamburgerButton)`
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-
     align-items: center;
     justify-content: center;
 
