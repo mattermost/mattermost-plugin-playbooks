@@ -11,11 +11,11 @@ import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbo
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
-type PlaybookProps = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template'>;
 
 interface Props {
-    playbook: PlaybookProps;
-    setPlaybook: React.Dispatch<PlaybookProps & Pick<PlaybookWithChecklist, 'channel_name_template' | 'create_public_playbook_run'>>;
+    playbook: PlaybookSubset;
+    setPlaybook: React.Dispatch<PlaybookSubset>;
     setChangesMade?: (b: boolean) => void;
 }
 
