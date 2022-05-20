@@ -50,7 +50,7 @@ describe('playbook tour points', () => {
         cy.findByRole('button', {name: /done/i}).click();
     });
 
-    it.skip('preview tour', () => {
+    it('preview tour', () => {
         // # Make a playbook to preview
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
