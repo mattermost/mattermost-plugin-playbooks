@@ -4,7 +4,7 @@ import {getProfilesByIds, getProfilesInTeam, getProfilesInChannel} from 'matterm
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
-import {clearCaches, useEnsureProfile, useEnsureProfiles, useProfilesInTeam, useProfilesInCurrentChannel, useProfilesInChannel} from './general';
+import {clearLocks, useEnsureProfile, useEnsureProfiles, useProfilesInTeam, useProfilesInCurrentChannel, useProfilesInChannel} from './general';
 
 jest.mock('mattermost-redux/actions/users', () => ({
     getProfilesByIds: jest.fn(),
@@ -250,7 +250,7 @@ describe('useProfilesInTeam', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('dispatches if the current team changes', async () => {
@@ -286,7 +286,7 @@ describe('useProfilesInTeam', () => {
         expect(getProfilesInTeam).toHaveBeenCalledWith('new_team_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch after loading team members', async () => {
@@ -318,7 +318,7 @@ describe('useProfilesInTeam', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if team members are already loaded', async () => {
@@ -348,7 +348,7 @@ describe('useProfilesInTeam', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(0);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if already fetching', async () => {
@@ -389,7 +389,7 @@ describe('useProfilesInTeam', () => {
         expect(getProfilesInTeam).toHaveBeenCalledWith('new_team_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 });
 
@@ -422,7 +422,7 @@ describe('useProfilesInCurrentChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('dispatches if the channel changes', async () => {
@@ -458,7 +458,7 @@ describe('useProfilesInCurrentChannel', () => {
         expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch after loading channel members', async () => {
@@ -490,7 +490,7 @@ describe('useProfilesInCurrentChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if channel members are already loaded', async () => {
@@ -520,7 +520,7 @@ describe('useProfilesInCurrentChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(0);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if already fetching', async () => {
@@ -561,7 +561,7 @@ describe('useProfilesInCurrentChannel', () => {
         expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 });
 
@@ -587,7 +587,7 @@ describe('useProfilesInChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('dispatches if the channel changes', async () => {
@@ -616,7 +616,7 @@ describe('useProfilesInChannel', () => {
         expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch after loading channel members', async () => {
@@ -641,7 +641,7 @@ describe('useProfilesInChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(1);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if channel members are already loaded', async () => {
@@ -664,7 +664,7 @@ describe('useProfilesInChannel', () => {
         expect(mockDispatchFn).toHaveBeenCalledTimes(0);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 
     it('does not dispatch if already fetching', async () => {
@@ -705,6 +705,6 @@ describe('useProfilesInChannel', () => {
         expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
 
         jest.clearAllMocks();
-        clearCaches();
+        clearLocks();
     });
 });

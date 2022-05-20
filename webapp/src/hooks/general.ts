@@ -186,18 +186,18 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     ));
 }
 
-// gettingProfilesInTeam and gettingProfilesInChannel effectively as locks to prevent concurrently
-// fetching profiles from multiple components mounted at the same time, only to all fetch the
-// same data.
+// lockProfilesInTeamFetch and lockProfilesInChannelFetch prevent concurrently fetching profiles
+// from multiple components mounted at the same time, only to all fetch the same data.
 //
 // Ideally, we would offload this to a Redux saga in the webapp and simply dispatch a
 // FETCH_PROFILES_IN_TEAM that handles all this complexity itself.
-const gettingProfilesInTeam = new Set<string>();
-const gettingProfilesInChannel = new Set<string>();
+const lockProfilesInTeamFetch = new Set<string>();
+const lockProfilesInChannelFetch = new Set<string>();
 
-export function clearCaches() {
-    gettingProfilesInTeam.clear();
-    gettingProfilesInChannel.clear();
+// clearLocks is exclusively for testing.
+export function clearLocks() {
+    lockProfilesInTeamFetch.clear();
+    lockProfilesInChannelFetch.clear();
 }
 
 // useProfilesInTeam ensures at least the first page of team members has been loaded into Redux.
@@ -209,7 +209,7 @@ export function clearCaches() {
 // are already members in the team, the hook skips the fetch altogether. If the fetch fails, the
 // hook won't try again unless the containing component is re-mounted.
 //
-// A global gettingProfilesInTeam cache avoids the thundering herd problem of many components
+// A global lockProfilesInTeamFetch cache avoids the thundering herd problem of many components
 // wanting the same metadata.
 export function useProfilesInTeam() {
     const dispatch = useDispatch();
@@ -221,15 +221,15 @@ export function useProfilesInTeam() {
             // As soon as we successfully fetch a team's profiles, clear the bit that prevents
             // concurrent fetches. We won't try again since we shouldn't forget these profiles,
             // but we also don't want to unexpectedly block this forever.
-            gettingProfilesInTeam.delete(currentTeamId);
+            lockProfilesInTeamFetch.delete(currentTeamId);
             return;
         }
 
         // Avoid issuing multiple concurrent fetches for this team.
-        if (gettingProfilesInTeam.has(currentTeamId)) {
+        if (lockProfilesInTeamFetch.has(currentTeamId)) {
             return;
         }
-        gettingProfilesInTeam.add(currentTeamId);
+        lockProfilesInTeamFetch.add(currentTeamId);
 
         dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
     }, [currentTeamId, profilesInTeam]);
@@ -291,15 +291,15 @@ export function useProfilesInChannel(channelId: string) {
             // As soon as we successfully fetch a channel's profiles, clear the bit that prevents
             // concurrent fetches. We won't try again since we shouldn't forget these profiles,
             // but we also don't want to unexpectedly block this forever.
-            gettingProfilesInChannel.delete(channelId);
+            lockProfilesInChannelFetch.delete(channelId);
             return;
         }
 
         // Avoid issuing multiple concurrent fetches for this channel.
-        if (gettingProfilesInChannel.has(channelId)) {
+        if (lockProfilesInChannelFetch.has(channelId)) {
             return;
         }
-        gettingProfilesInChannel.add(channelId);
+        lockProfilesInChannelFetch.add(channelId);
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
     }, [channelId]);
