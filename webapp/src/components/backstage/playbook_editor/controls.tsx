@@ -47,6 +47,7 @@ import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
+import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
 
 type ControlProps = {playbook: {
     id: string,
@@ -291,17 +292,21 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 type TitleMenuProps = {
     className?: string;
     archived: boolean;
+    editTitle: () => void;
+    refetch: () => void;
 } & PropsWithChildren<ControlProps>;
-const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
+const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: TitleMenuProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
-    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
+    const [confirmArchiveModal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
             archivePlaybook(playbook.id);
             navigateToPluginUrl('/playbooks');
         }
     });
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+
     const {add: addToast} = useToasts();
 
     const archived = playbook.delete_at !== 0;
@@ -325,6 +330,11 @@ const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
                     <FormattedMessage defaultMessage='Manage access'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                    onClick={editTitle}
+                >
+                    <FormattedMessage defaultMessage='Rename'/>
+                </DropdownMenuItem>
+                <DropdownMenuItem
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
                         navigateToPluginUrl(`/playbooks/${newID}`);
@@ -342,7 +352,13 @@ const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
                 >
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
-                {!archived && (
+                {archived ? (
+                    <DropdownMenuItem
+                        onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
+                    >
+                        <FormattedMessage defaultMessage='Restore playbook'/>
+                    </DropdownMenuItem>
+                ) : (
                     <DropdownMenuItem
                         onClick={() => openDeletePlaybookModal(playbook)}
                     >
@@ -352,15 +368,14 @@ const TitleMenuImpl = ({playbook, children, className}: TitleMenuProps) => {
                     </DropdownMenuItem>
                 )}
             </DotMenu>
-            {modal}
+            {confirmArchiveModal}
+            {confirmRestoreModal}
         </>
     );
 };
 
 export const TitleMenu = styled(TitleMenuImpl)`
-    ${({archived}) => archived && css`
-        text-decoration: line-through;
-    `}
+
 `;
 
 const buttonCommon = css`

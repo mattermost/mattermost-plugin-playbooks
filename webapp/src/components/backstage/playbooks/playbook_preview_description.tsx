@@ -19,7 +19,7 @@ interface Props {
 
 const PlaybookPreviewDescription = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptions(props.playbook.team_id);
+    const markdownOptions = useDefaultMarkdownOptions({team: props.playbook.team_id});
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     if (props.playbook.description.trim() === '') {

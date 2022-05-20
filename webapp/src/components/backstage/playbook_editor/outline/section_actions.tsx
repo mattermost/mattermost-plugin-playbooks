@@ -72,20 +72,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         });
     };
 
-    const handleMessageOnJoinChange = (message: string) => {
-        if (playbook.message_on_join !== message) {
-            updatePlaybook({
-                messageOnJoin: message,
-            });
-        }
-    };
-
-    const handleToggleMessageOnJoin = () => {
-        updatePlaybook({
-            messageOnJoinEnabled: !playbook.message_on_join_enabled,
-        });
-    };
-
     const handleToggleInviteUsers = () => {
         updatePlaybook({
             inviteUsersEnabled: !playbook.invite_users_enabled,
@@ -168,7 +154,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
-                        onChange={handleWebhookOnCreationChange}
+                        onBlur={handleWebhookOnCreationChange}
                         pattern={'https?://.*'}
                         delimiter={'\n'}
                         maxLength={1000}
@@ -190,12 +176,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a new member joins the channel'/>
                 </StyledSectionTitle>
                 <Setting id={'user-joins-message'}>
-                    {/* {playbook.message_on_join_enabled && (
-                        <span>
-                            <i className='icon-message-check-outline'/>
-                            <FormattedMessage defaultMessage='Send a welcome message'/>
-                        </span>
-                    )} */}
                     <AutomationTitle>
                         <Toggle
                             isChecked={playbook.message_on_join_enabled}
@@ -210,6 +190,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <MarkdownEdit
                         placeholder={formatMessage({defaultMessage: 'Send a welcome message…'})}
                         value={playbook.message_on_join}
+                        disabled={!playbook.message_on_join_enabled}
                         onSave={(messageOnJoin) => {
                             updatePlaybook({
                                 messageOnJoin,

@@ -119,7 +119,7 @@ const Backstage = () => {
                 <Switch>
                     <Route path={`${match.url}/error`}/>
                     <Route path={`${match.url}/start`}/>
-                    <Route path={`${match.url}/playbooks/:playbookId/editor`}/>
+                    <Route path={`${match.url}/playbooks/:playbookId`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
@@ -168,18 +168,18 @@ const Backstage = () => {
                         <Route path={`${match.url}/playbooks/new`}>
                             <NewPlaybook/>
                         </Route>
-                        <Route
-                            path={`${match.url}/playbooks/:playbookId/editor`}
-                        >
-                            <PlaybookEditor/>
-                        </Route>
                         <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
                             <PlaybookEdit
                                 isNew={false}
                             />
                         </Route>
-                        <Route path={`${match.url}/playbooks/:playbookId`}>
+                        <Route path={`${match.url}/playbooks/:playbookId/preview`}>
                             <Playbook/>
+                        </Route>
+                        <Route
+                            path={`${match.url}/playbooks/:playbookId`}
+                        >
+                            <PlaybookEditor/>
                         </Route>
                         <Route path={`${match.url}/playbooks`}>
                             <PlaybookList/>

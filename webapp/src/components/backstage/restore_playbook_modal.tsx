@@ -1,22 +1,25 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {restorePlaybook} from 'src/client';
 import {Banner} from 'src/components/backstage/styles';
-import {Playbook} from 'src/types/playbook';
 import ConfirmModal from '../widgets/confirmation_modal';
 
 const RestoreBannerTimeout = 5000;
 
-const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (pb: Playbook) => void] => {
+type Props = {id: string; title: string};
+
+const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (playbook: Props, callback?: () => void) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
+    const cbRef = useRef<() => void>();
     const [showBanner, setShowBanner] = useState(false);
-    const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [playbook, setPlaybook] = useState<Props | null>(null);
 
-    const openModal = (playbookToOpenWith: Playbook) => {
+    const openModal = (playbookToOpenWith: Props, callback?: () => void) => {
         setPlaybook(playbookToOpenWith);
         setOpen(true);
+        cbRef.current = callback;
     };
 
     async function onRestore() {
@@ -25,6 +28,7 @@ const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (pb: Playbook) => v
 
             setOpen(false);
             setShowBanner(true);
+            cbRef.current?.();
 
             window.setTimeout(() => {
                 setShowBanner(false);

@@ -16,7 +16,8 @@ interface Props {
     input: string;
     pattern: string;
     delimiter?: string;
-    onChange: (updatedInput: string) => void;
+    onChange?: (updatedInput: string) => void;
+    onBlur?: (updatedInput: string) => void;
     maxLength?: number;
     rows?: number;
     maxRows?: number;

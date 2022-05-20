@@ -62,16 +62,10 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
         }
 
         return {
-            edit: (p: TParam, tabId?: typeof tabInfo[number]['id']) => {
-                if (experimentalFeaturesEnabled) {
-                    return go(`/playbooks/${id(p)}/editor/outline`);
-                }
-                return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}`, p);
+            edit: (p: TParam) => {
+                return go(`/playbooks/${id(p)}/outline`, p);
             },
             view: (p: TParam) => {
-                if (experimentalFeaturesEnabled) {
-                    return go(`/playbooks/${id(p)}/editor`);
-                }
                 return go(`/playbooks/${id(p)}`, p);
             },
             create: (params: PlaybookCreateQueryParameters) => {

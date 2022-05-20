@@ -34,6 +34,13 @@ import CopyLink from 'src/components/widgets/copy_link';
 import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import MarkdownEdit from 'src/components/markdown_edit';
+import TextEdit from 'src/components/text_edit';
+
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+
+import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
+
+import Tooltip from 'src/components/widgets/tooltip';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
@@ -50,8 +57,8 @@ const PlaybookEditor = () => {
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
-    const headingRef = useRef<HTMLHeadingElement>(null);
-    const headingIntersection = useIntersection(headingRef, {threshold: 0.8});
+    const headingRef = useRef<HTMLDivElement>(null);
+    const headingIntersection = useIntersection(headingRef, {threshold: 1});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
 
     useEffect(() => {
@@ -77,6 +84,26 @@ const PlaybookEditor = () => {
 
     const archived = playbook.delete_at !== 0;
 
+    const archivedTooltip = archived && (
+        <Tooltip
+            delay={{show: 0, hide: 1000}}
+            id={`archive-${playbook.id}`}
+            content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+        >
+            <i className='indicator icon-archive-outline'/>
+        </Tooltip>
+    );
+
+    const privateTooltip = !playbook.public && (
+        <Tooltip
+            delay={{show: 0, hide: 1000}}
+            id={`private-${playbook.id}`}
+            content={formatMessage({defaultMessage: 'This playbook is private.'})}
+        >
+            <i className='indicator icon-lock-outline'/>
+        </Tooltip>
+    );
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
@@ -84,14 +111,42 @@ const PlaybookEditor = () => {
             <TitleBar>
                 <div>
                     <Controls.Back/>
-                    <Controls.TitleMenu
-                        playbook={playbook}
-                        archived={archived}
+                    <TextEdit
+                        placeholder={formatMessage({defaultMessage: 'Playbook name'})}
+                        value={playbook.title}
+                        onSave={(title) => updatePlaybook({title})}
+                        editStyles={css`
+                            input {
+                                ${titleCommon}
+                                height: 36px;
+                            }
+                            ${CancelSaveContainer} {
+                                padding: 0;
+                            }
+                            ${PrimaryButton}, ${TertiaryButton} {
+                                height: 36px;
+                            }
+                        `}
                     >
-                        <Title>
-                            {playbook.title}
-                        </Title>
-                    </Controls.TitleMenu>
+                        {(edit) => (
+                            <>
+
+                                <Controls.TitleMenu
+                                    playbook={playbook}
+                                    archived={archived}
+                                    editTitle={edit}
+                                    refetch={refetch}
+                                >
+                                    <Title>
+                                        {playbook.title}
+                                    </Title>
+                                </Controls.TitleMenu>
+                                {privateTooltip}
+                                {archivedTooltip}
+                            </>
+
+                        )}
+                    </TextEdit>
                 </div>
                 <div>
                     <Controls.Members
@@ -103,16 +158,47 @@ const PlaybookEditor = () => {
                     <Controls.RunPlaybook playbook={playbook}/>
                 </div>
             </TitleBar>
-            <Header>
-                <Heading ref={headingRef}>
-                    <Controls.CopyPlaybook playbook={playbook}/>
-                    <Controls.TitleMenu
-                        playbook={playbook}
-                        archived={archived}
-                    >
-                        {playbook.title}
-                    </Controls.TitleMenu>
-                </Heading>
+            <Header ref={headingRef}>
+                <TextEdit
+                    placeholder={formatMessage({defaultMessage: 'Playbook name'})}
+                    value={playbook.title}
+                    onSave={(title) => updatePlaybook({title})}
+                    editStyles={css`
+                        input {
+                            ${titleCommon}
+                            font-size: 32px;
+                            line-height: 40px;
+                            height: 48px;
+                            margin: 6px 0;
+                            padding: 10px 16px;
+                            display: inline-flex;
+                            flex: 1 1 auto;
+                        }
+                        ${CancelSaveContainer} {
+                            padding: 0;
+                        }
+                        ${PrimaryButton}, ${TertiaryButton} {
+                            height: 48px;
+                            font-size: 16px;
+                        }
+                    `}
+                >
+                    {(edit) => (
+                        <Heading>
+                            <Controls.CopyPlaybook playbook={playbook}/>
+                            <Controls.TitleMenu
+                                playbook={playbook}
+                                archived={archived}
+                                editTitle={edit}
+                                refetch={refetch}
+                            >
+                                {playbook.title}
+                            </Controls.TitleMenu>
+                            {privateTooltip}
+                            {archivedTooltip}
+                        </Heading>
+                    )}
+                </TextEdit>
                 <Description>
                     <MarkdownEdit
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
@@ -170,6 +256,18 @@ const PlaybookEditor = () => {
         </Editor>
     );
 };
+
+const titleCommon = css`
+    ${SemiBoldHeading}
+    letter-spacing: -0.01em;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+`;
 
 const TitleBar = styled.div`
     position: sticky;
@@ -377,7 +475,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${TitleBar} {
-        ${Controls.TitleMenu} {
+        ${Controls.TitleMenu}, .indicator {
             display: none;
         }
     }
@@ -387,7 +485,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         @media screen and (min-width: 769px) {
             // only on tablet-desktop
             ${TitleBar} {
-                ${Controls.TitleMenu} {
+                ${Controls.TitleMenu}, .indicator {
                     display: inline-flex;
                 }
             }
