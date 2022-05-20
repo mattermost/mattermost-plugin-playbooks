@@ -82,7 +82,7 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
                 }
             }}
         >
-            {!isEditing && (
+            {!isEditing && !props.disabled && (
                 <HoverMenuContainer>
                     <Tooltip
                         id={`${id}-tooltip`}
