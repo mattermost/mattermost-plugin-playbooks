@@ -219,6 +219,12 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
     return async (msg: WebSocketMessage<{ channel_id: string }>) => {
         const channelId = msg.data.channel_id;
 
+        // if the user has already viewed the channel,
+        // there's no need to fetch actions again
+        if (hasViewedByChannelID(getState())[channelId]) {
+            return;
+        }
+
         // If there are no welcome message actions enabled, stop
         const actions = await fetchChannelActions(channelId, ChannelTriggerType.NewMemberJoins);
 
@@ -229,11 +235,9 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
             return;
         }
 
-        if (!hasViewedByChannelID(getState())[channelId]) {
-            const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
-            if (hasViewed) {
-                dispatch(setHasViewedChannel(channelId));
-            }
+        const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
+        if (hasViewed) {
+            dispatch(setHasViewedChannel(channelId));
         }
     };
 };
