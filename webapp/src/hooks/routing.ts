@@ -48,7 +48,6 @@ function id(p: Playbook | Playbook['id']) {
 export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
     return useMemo(() => {
         function go(path: string, p?: TParam) {
             if (!urlOnly) {

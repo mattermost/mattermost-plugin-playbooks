@@ -13,7 +13,6 @@ import {stringToMetric, metricToString, isMetricValueValid} from 'src/components
 import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
 import {BaseTextArea} from 'src/components/assets/inputs';
 import {VerticalSpacer} from 'src/components/backstage/styles';
-import {TertiaryButton} from '../../../assets/buttons';
 
 type SetState = (prevState: Metric) => Metric;
 
@@ -139,7 +138,6 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
                 <VerticalSpacer size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{formatMessage({defaultMessage: 'Save'})}</PrimaryButton>
-                {/* <TertiaryButton onClick={}>{formatMessage({defaultMessage: 'Cancel'})}</TertiaryButton> */}
             </EditContainer>
         </Container>
     );

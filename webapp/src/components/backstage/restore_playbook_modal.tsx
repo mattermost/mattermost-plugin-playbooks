@@ -9,22 +9,22 @@ const RestoreBannerTimeout = 5000;
 
 type Props = {id: string; title: string};
 
-const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (playbook: Props, callback?: () => void) => void] => {
+const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (context: Props, callback?: () => void) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
     const cbRef = useRef<() => void>();
     const [showBanner, setShowBanner] = useState(false);
-    const [playbook, setPlaybook] = useState<Props | null>(null);
+    const [context, setContext] = useState<Props | null>(null);
 
-    const openModal = (playbookToOpenWith: Props, callback?: () => void) => {
-        setPlaybook(playbookToOpenWith);
+    const openModal = (targetContext: Props, callback?: () => void) => {
+        setContext(targetContext);
         setOpen(true);
         cbRef.current = callback;
     };
 
     async function onRestore() {
-        if (playbook) {
-            await restorePlaybook(playbook.id);
+        if (context) {
+            await restorePlaybook(context.id);
 
             setOpen(false);
             setShowBanner(true);
@@ -43,7 +43,7 @@ const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (playbook: Props, c
                 onConfirm={onRestore}
                 onCancel={() => setOpen(false)}
                 title={formatMessage({defaultMessage: 'Restore playbook'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to restore the playbook {title}?'}, {title: playbook?.title})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to restore the playbook {title}?'}, {title: context?.title})}
                 confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
 
             />
@@ -52,7 +52,7 @@ const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (playbook: Props, c
                     <i className='icon icon-check mr-1'/>
                     <FormattedMessage
                         defaultMessage='The playbook {title} was successfully restored.'
-                        values={{title: playbook?.title}}
+                        values={{title: context?.title}}
                     />
                 </Banner>
             }

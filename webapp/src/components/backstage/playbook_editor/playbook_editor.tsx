@@ -153,7 +153,6 @@ const PlaybookEditor = () => {
                         playbookId={playbook.id}
                         numMembers={playbook.members.length}
                     />
-                    {/* <Controls.Share playbook={playbook}/> */}
                     <Controls.AutoFollowToggle playbook={playbook}/>
                     <Controls.RunPlaybook playbook={playbook}/>
                 </div>

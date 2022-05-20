@@ -37,7 +37,6 @@ import {
     getSiteUrl,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
@@ -443,11 +442,6 @@ const ButtonIconStyled = styled(ButtonIcon)`
     color: rgba(var(--center-channel-color-rgb),0.56);
     height: 36px;
     width: auto;
-
-   /*  &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-    } */
 `;
 
 export const TitleButton = styled.div`
