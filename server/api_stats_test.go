@@ -160,7 +160,8 @@ func TestPlaybookKeyMetricsStats(t *testing.T) {
 			Type:  client.MetricTypeInteger,
 		}
 
-		e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(e.T, err)
 
 		stats, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), playbookID)
 		require.NoError(t, err)

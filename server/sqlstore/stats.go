@@ -367,7 +367,7 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []null.Int {
 	for i, id := range configs {
 		for _, av := range averages {
 			if av.ID == id {
-				val, _ := strconv.ParseInt(string(av.Value), 10, 64)
+				val, _ := strconv.ParseInt(av.Value, 10, 64)
 				overallAverage[i] = null.IntFrom(val)
 				break
 			}
