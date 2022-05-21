@@ -27,23 +27,13 @@ type Playbook struct {
 	BroadcastEnabled            bool                   `json:"broadcast_enabled"`
 	WebhookOnCreationURLs       []string               `json:"webhook_on_creation_urls"`
 	WebhookOnCreationEnabled    bool                   `json:"webhook_on_creation_enabled"`
-	Metrics                     []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	Metrics                     []PlaybookMetricConfig `json:"metrics"`
 }
 
 type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
 	Roles       []string `json:"roles"`
 	SchemeRoles []string `json:"scheme_roles"`
-}
-
-// PlaybookMetricConfig represents key metrics configuration
-type PlaybookMetricConfig struct {
-	ID          string   `json:"id" export:"-"`
-	PlaybookID  string   `json:"playbook_id" export:"-"`
-	Title       string   `json:"title" export:"title"`
-	Description string   `json:"description" export:"description"`
-	Type        string   `json:"type" export:"type"`
-	Target      null.Int `json:"target" export:"target"`
 }
 
 const (
@@ -70,6 +60,7 @@ type ChecklistItem struct {
 	Command          string `json:"command"`
 	CommandLastRun   int64  `json:"command_last_run"`
 	Description      string `json:"description"`
+	DueDate          int64  `json:"due_date"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
@@ -91,7 +82,16 @@ type PlaybookCreateOptions struct {
 	DefaultOwnerEnabled         bool                   `json:"default_owner_enabled"`
 	BroadcastChannelIDs         []string               `json:"broadcast_channel_ids"`
 	BroadcastEnabled            bool                   `json:"broadcast_enabled"`
-	Metrics                     []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	Metrics                     []PlaybookMetricConfig `json:"metrics"`
+}
+
+type PlaybookMetricConfig struct {
+	ID          string   `json:"id"`
+	PlaybookID  string   `json:"playbook_id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Type        string   `json:"type"`
+	Target      null.Int `json:"target"`
 }
 
 // PlaybookListOptions specifies the optional parameters to the

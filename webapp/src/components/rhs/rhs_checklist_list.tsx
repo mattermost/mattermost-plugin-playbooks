@@ -173,11 +173,6 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     display: inline-block;
     width: 28px;
     height: 28px;
-
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
 `;
 
 const IconWrapper = styled.div`

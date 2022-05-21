@@ -221,8 +221,11 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		return
 	}
 
-	if len(actions) != 1 {
+	if len(actions) > 1 {
 		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+	}
+
+	if len(actions) != 1 {
 		return
 	}
 

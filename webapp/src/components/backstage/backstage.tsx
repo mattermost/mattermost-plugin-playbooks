@@ -156,7 +156,7 @@ const Backstage = () => {
                                 {npsAvailable && (
                                     <BackstageTitlebarItem
                                         onClick={promptForFeedback}
-                                        to={`/${teams[0].name}/messages/@surveybot`}
+                                        to={`/${teams[0].name}/messages/@feedbackbot`}
                                         data-testid='giveFeedbackButton'
                                     >
                                         <Icon

@@ -197,7 +197,7 @@ jobs:
       - run:
           name: Building Plugin Bundle
           command: |
-            make dist
+            make dist CGO_ENABLED=0
       - run:
           name: Generating Release Notes
           command: |
@@ -256,7 +256,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:10.17
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -275,7 +274,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:11.13
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -294,7 +292,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:12.9
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -314,7 +311,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:14.1
-        command: "postgres -N 200"
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
@@ -384,7 +380,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
@@ -459,7 +455,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000

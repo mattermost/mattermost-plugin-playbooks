@@ -2,6 +2,8 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"strings"
 
 	"gopkg.in/guregu/null.v4"
@@ -332,6 +334,9 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
 	// Archive archives a playbook
 	Archive(id string) error
 
@@ -448,4 +453,50 @@ func (o PlaybookFilterOptions) Validate() (PlaybookFilterOptions, error) {
 	}
 
 	return options, nil
+}
+
+func ValidateWebhookURLs(urls []string) error {
+	if len(urls) > 64 {
+		return errors.New("too many registered urls, limit to less than 64")
+	}
+
+	for _, webhook := range urls {
+		url, err := url.ParseRequestURI(webhook)
+		if err != nil {
+			return errors.Wrapf(err, "unable to parse webhook: %v", webhook)
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return fmt.Errorf("protocol in webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+		}
+	}
+
+	return nil
+}
+
+func ValidateCategoryName(categoryName string) error {
+	categoryNameLength := len(categoryName)
+	if categoryNameLength > 22 {
+		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
+		return errors.Errorf(msg)
+	}
+	return nil
+}
+
+func removeDuplicates(a []string) []string {
+	items := make(map[string]bool)
+	for _, item := range a {
+		if item != "" {
+			items[item] = true
+		}
+	}
+	res := make([]string, 0, len(items))
+	for item := range items {
+		res = append(res, item)
+	}
+	return res
+}
+
+func ProcessSignalAnyKeywords(keywords []string) []string {
+	return removeDuplicates(keywords)
 }

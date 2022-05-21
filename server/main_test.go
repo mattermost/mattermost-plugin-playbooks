@@ -23,6 +23,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/guregu/null.v4"
 )
 
 func TestMain(m *testing.M) {
@@ -367,6 +368,9 @@ func (e *TestEnvironment) CreateBasicPublicPlaybook() {
 		Members: []client.PlaybookMember{
 			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
 			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		Metrics: []client.PlaybookMetricConfig{
+			{Title: "testmetric", Type: app.MetricTypeDuration, Target: null.IntFrom(0)},
 		},
 	})
 	require.NoError(e.T, err)
