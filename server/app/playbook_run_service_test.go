@@ -443,10 +443,18 @@ func TestUpdateStatus(t *testing.T) {
 		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
+		type webhookEvent struct {
+			Type    string                  `json:"type"`
+			At      int64                   `json:"at"`
+			UserId  string                  `json:"user_id"`
+			Payload app.StatusUpdateOptions `json:"payload"`
+		}
+
 		type webhookPayload struct {
 			app.PlaybookRun
 			ChannelURL   string                  `json:"channel_url"`
 			DetailsURL   string                  `json:"details_url"`
+			Event        webhookEvent            `json:"event"`
 			StatusUpdate app.StatusUpdateOptions `json:"status_update"`
 		}
 
@@ -485,8 +493,15 @@ func TestUpdateStatus(t *testing.T) {
 			StatusUpdateBroadcastWebhooksEnabled: true,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
-			Message:  "latest-message",
-			Reminder: 0,
+			Message:   "latest-message",
+			Reminder:  0,
+			FinishRun: false,
+		}
+		event := &webhookEvent{
+			Type:    string(app.StatusUpdated),
+			At:      0,
+			UserId:  "user_id",
+			Payload: statusUpdateOptions,
 		}
 		siteURL := "http://example.com"
 
@@ -584,7 +599,7 @@ func TestUpdateStatus(t *testing.T) {
 			require.Equal(t,
 				fmt.Sprintf("http://example.com/playbooks/runs/%s", playbookRunID),
 				payload.DetailsURL)
-
+			require.Equal(t, *event, payload.Event)
 		case <-time.After(time.Second * 5):
 			require.Fail(t, "did not receive webhook on status update")
 		}

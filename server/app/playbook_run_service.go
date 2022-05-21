@@ -158,6 +158,23 @@ type PlaybookRunWebhookPayload struct {
 
 	// DetailsURL is the absolute URL of the playbook run overview page.
 	DetailsURL string `json:"details_url"`
+
+	// Event is metadata concerning the event that triggered this webhook.
+	Event PlaybookRunWebhookEvent `json:"event"`
+}
+
+type PlaybookRunWebhookEvent struct {
+	// Type is the type of event emitted.
+	Type timelineEventType `json:"type"`
+
+	// At is the time when the event occurred.
+	At int64 `json:"at"`
+
+	// UserId is the user who triggered the event.
+	UserId string `json:"user_id"`
+
+	// Payload is optional, event-specific metadata.
+	Payload interface{} `json:"payload"`
 }
 
 // sendWebhooksOnCreation sends a POST request to the creation webhook URL.
@@ -185,10 +202,17 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
+	event := PlaybookRunWebhookEvent{
+		Type:   PlaybookRunCreated,
+		At:     playbookRun.CreateAt,
+		UserId: playbookRun.ReporterUserID,
+	}
+
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
+		Event:       event,
 	}
 
 	body, err := json.Marshal(payload)
@@ -715,7 +739,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 
 // sendWebhooksOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string) {
+func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string, event *PlaybookRunWebhookEvent) {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun")
@@ -748,6 +772,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 		PlaybookRun: *playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
+		Event:       *event,
 	}
 
 	body, err := json.Marshal(payload)
@@ -824,7 +849,15 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:    StatusUpdated,
+			At:      channelPost.CreateAt,
+			UserId:  userID,
+			Payload: options,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
@@ -963,7 +996,14 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   RunFinished,
+			At:     endAt,
+			UserId: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
@@ -1025,7 +1065,14 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	}
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   RunRestored,
+			At:     restoreAt,
+			UserId: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToRestore, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToRestore.WebhookOnStatusUpdateURLs))
 	}
 
