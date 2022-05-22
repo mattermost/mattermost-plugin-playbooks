@@ -560,5 +560,21 @@
     "IxtSML": "チェックリストを追加",
     "CwwzAU": "チェックリストの名前を入力してください",
     "x1phlu": "制限時間なし",
-    "kYCbJE": "制限時間を追加"
+    "kYCbJE": "制限時間を追加",
+    "xHNF7i": "アクションの実行",
+    "uhDKO8": "Markdownでテンプレートを作成する",
+    "sX5Mn5": "1行に1つのWebhookを入力してください",
+    "mkLeuq": "選択したチャンネルに更新内容を配信する",
+    "kkw4kS": "この更新は {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {1 チャンネル} other {{broadcastChannelCount, number} チャンネル}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { と } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {1つのダイレクトメッセージ} other {{followersChannelCount, number} 個のダイレクトメッセージ}}</FollowersTooltip>} other {}}に配信されます。",
+    "kV5GkX": "ステータス更新が投稿された時",
+    "j940pJ": "この更新は<OverviewLink>概要ページ</OverviewLink>に保存されます。",
+    "giM/X9": "ステータス更新は<duration></duration>毎に予定されています。新たな更新は<channels>{channelCount, plural, =0 {0 チャンネル} one {# チャンネル} other {# チャンネル}}</channels>と<webhooks>{webhookCount, plural, =0 {0 個の外向きのウェブフック} one {# 個の外向きのウェブフック} other {# 個の外向きのウェブフック}}</webhooks> に投稿されます。",
+    "YQOmSf": "1行に1つのウェブフックを入力",
+    "XRyRzf": "ステータス更新は予定されていません。",
+    "OuZhcQ": "期間を指定 (\"8 hours\", \"3 days\"...)",
+    "HvAcYh": "{text}{rest, plural, =0 {} one { と もう一つ} other { と {rest} 個}}",
+    "F9LrJA": "フィルター",
+    "DaHpK1": "チャンネルを検索",
+    "28FTjr": "アクションの実行により、このチャネルのアクティビティを自動化することができます",
+    "/RnCQb": "外向きのウェブフックの送信"
 }
