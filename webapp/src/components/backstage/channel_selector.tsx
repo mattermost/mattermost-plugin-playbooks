@@ -64,13 +64,13 @@ const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
     },
 );
 
-const filterChannels = (channelIDs: string[], allPublicChannels: Channel[]): Channel[] => {
-    if (!channelIDs || !allPublicChannels) {
+const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
+    if (!channelIDs || !channels) {
         return [];
     }
 
     const channelsMap = new Map<string, Channel>();
-    allPublicChannels.forEach((channel: Channel) => channelsMap.set(channel.id, channel));
+    channels.forEach((channel: Channel) => channelsMap.set(channel.id, channel));
 
     const result: Channel[] = [];
     channelIDs.forEach((id: string) => {
@@ -143,7 +143,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const values = filterChannels(props.channelIds, allPublicChannels);
+    const values = filterChannels(props.channelIds, [...allPublicChannels, ...selectableChannels]);
 
     const components = props.selectComponents || defaultComponents;
 
