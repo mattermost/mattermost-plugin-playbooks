@@ -446,7 +446,7 @@ func TestUpdateStatus(t *testing.T) {
 		type webhookEvent struct {
 			Type    string                  `json:"type"`
 			At      int64                   `json:"at"`
-			UserId  string                  `json:"user_id"`
+			UserID  string                  `json:"user_id"`
 			Payload app.StatusUpdateOptions `json:"payload"`
 		}
 
@@ -500,7 +500,7 @@ func TestUpdateStatus(t *testing.T) {
 		event := &webhookEvent{
 			Type:    string(app.StatusUpdated),
 			At:      0,
-			UserId:  "user_id",
+			UserID:  "user_id",
 			Payload: statusUpdateOptions,
 		}
 		siteURL := "http://example.com"

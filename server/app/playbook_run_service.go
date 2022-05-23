@@ -171,7 +171,7 @@ type PlaybookRunWebhookEvent struct {
 	At int64 `json:"at"`
 
 	// UserId is the user who triggered the event.
-	UserId string `json:"user_id"`
+	UserID string `json:"user_id"`
 
 	// Payload is optional, event-specific metadata.
 	Payload interface{} `json:"payload"`
@@ -205,7 +205,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	event := PlaybookRunWebhookEvent{
 		Type:   PlaybookRunCreated,
 		At:     playbookRun.CreateAt,
-		UserId: playbookRun.ReporterUserID,
+		UserID: playbookRun.ReporterUserID,
 	}
 
 	payload := PlaybookRunWebhookPayload{
@@ -853,7 +853,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		webhookEvent := PlaybookRunWebhookEvent{
 			Type:    StatusUpdated,
 			At:      channelPost.CreateAt,
-			UserId:  userID,
+			UserID:  userID,
 			Payload: options,
 		}
 
@@ -1000,7 +1000,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		webhookEvent := PlaybookRunWebhookEvent{
 			Type:   RunFinished,
 			At:     endAt,
-			UserId: userID,
+			UserID: userID,
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
@@ -1069,7 +1069,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		webhookEvent := PlaybookRunWebhookEvent{
 			Type:   RunRestored,
 			At:     restoreAt,
-			UserId: userID,
+			UserID: userID,
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
