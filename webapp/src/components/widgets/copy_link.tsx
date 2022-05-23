@@ -60,14 +60,14 @@ const CopyLink = ({
 const CopyIcon = styled.button<{clicked: boolean}>`
     display: inline-block;
 
-    border-radius: 50%;
+    border-radius: 4px;
     padding: 0;
     width: 1.25em;
     height: 1.25em;
 
     :before {
         margin: 0;
-        vertical-align: middle;
+        vertical-align: baseline;
     }
 
     border: none;

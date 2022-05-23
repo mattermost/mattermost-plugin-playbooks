@@ -22,10 +22,10 @@ const NoMetricsPlaceholder = () => {
                 <Text>{formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs, and track performance.'})}</Text>
                 <StyledButton
                     onClick={() => {
-                        navigateToUrl(match.url.replace('/metrics', '/edit/retrospective'));
+                        navigateToUrl(match.url.replace('/reports', '/outline#retrospective'));
                     }}
                 >
-                    {formatMessage({defaultMessage: 'Configure metrics'})}
+                    {formatMessage({defaultMessage: 'Configure metrics in Retrospective'})}
                 </StyledButton>
             </InnerContainer>
         </Container>
