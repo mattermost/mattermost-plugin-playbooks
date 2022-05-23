@@ -150,6 +150,7 @@ const ChannelActionsModal = () => {
             onHide={onHide}
             editable={editable}
             onSave={onSave}
+            adjustTop={350}
         >
             <TriggersContainer>
                 <Trigger
