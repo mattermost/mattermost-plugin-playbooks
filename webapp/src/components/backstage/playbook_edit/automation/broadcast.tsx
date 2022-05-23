@@ -2,8 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -17,6 +20,8 @@ interface Props {
 }
 
 export const Broadcast = (props: Props) => {
+    const teamId = useSelector(getCurrentTeamId);
+
     return (
         <AutomationHeader>
             <AutomationTitle>
@@ -32,6 +37,7 @@ export const Broadcast = (props: Props) => {
                     enabled={props.enabled}
                     channelIds={props.channelIds}
                     onChannelsSelected={props.onChannelsSelected}
+                    teamId={teamId}
                 />
             </SelectorWrapper>
         </AutomationHeader>
