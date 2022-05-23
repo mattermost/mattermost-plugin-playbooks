@@ -48,12 +48,12 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
         left: -197px;
         top: 35px;
     `)};
-    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
-    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     ${(props) => (props.wide && css`
-        left: -236px;
+    left: -236px;
     `)};
+    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
+    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     width: max-content;
     min-width: 160px;
