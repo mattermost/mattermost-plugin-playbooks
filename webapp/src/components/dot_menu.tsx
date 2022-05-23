@@ -182,6 +182,10 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             onClick={props.onClick}
             className={props.className}
             role={'button'}
+
+            // Prevent trigger icon (parent) from propagating title prop to options
+            // Menu items use to be full text (not just icons) so don't need title
+            title=''
         >
             {props.children}
         </DropdownMenuItemStyled>
