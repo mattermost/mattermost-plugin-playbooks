@@ -342,9 +342,9 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []null.Int {
 		Select("mc.ID as ID, FLOOR(AVG(m.Value)) as Value").
 		From("IR_Metric as m").
 		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
-		GroupBy("mc.ID").
 		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
 		Where(sq.Eq{"m.Published": true}).
+		GroupBy("mc.ID").
 		OrderBy("mc.Ordering ASC")
 
 	type Average struct {
@@ -390,9 +390,9 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 		Select("mc.ID as ID, MIN(Value) as Min, MAX(Value) as Max").
 		From("IR_Metric as m").
 		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
-		GroupBy("mc.ID").
 		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
 		Where(sq.Eq{"m.Published": true}).
+		GroupBy("mc.ID").
 		OrderBy("mc.Ordering ASC")
 	var res []MinMax
 	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
