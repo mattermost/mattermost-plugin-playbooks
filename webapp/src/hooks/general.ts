@@ -636,9 +636,9 @@ export const usePrevious = (value: any) => {
 // Create a portal to render while dragging
 export const usePortal = (parent: HTMLElement) => {
     const [portal] = useState(document.createElement('div'));
-
     useEffect(() => {
         parent.appendChild(portal);
+        return () => portal.remove();
     }, [parent, portal]);
 
     return portal;
