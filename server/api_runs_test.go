@@ -272,10 +272,10 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
-		// compare date with seconds precision
-		assert.Equal(t, (now+durations[0])/1000, run.Checklists[0].Items[0].DueDate/1000)
-		assert.Equal(t, (now+durations[1])/1000, run.Checklists[0].Items[1].DueDate/1000)
-		assert.Equal(t, (now+durations[2])/1000, run.Checklists[1].Items[0].DueDate/1000)
+		// compare date with 10^4 precision because run creation might take more than a second
+		assert.Equal(t, (now+durations[0])/10000, run.Checklists[0].Items[0].DueDate/10000)
+		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
+		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
 		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
 	})
 }
