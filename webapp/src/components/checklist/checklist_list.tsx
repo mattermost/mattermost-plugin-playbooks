@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -18,7 +17,7 @@ import {
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {usePortal} from 'src/hooks';
+import Portal from 'src/components/portal';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
@@ -75,7 +74,6 @@ const ChecklistList = (props: Props) => {
         RunDetailsTutorialSteps.Checklists,
         TutorialTourCategories.RUN_DETAILS
     );
-    const portal = usePortal(document.body);
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
 
@@ -349,7 +347,7 @@ const ChecklistList = (props: Props) => {
                                         );
 
                                         if (snapshot.isDragging) {
-                                            return ReactDOM.createPortal(component, portal);
+                                            return <Portal>{component}</Portal>;
                                         }
 
                                         return component;

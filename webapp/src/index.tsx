@@ -148,6 +148,9 @@ export default class Plugin {
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
 
+        // Playbooks shared portal
+        registry.registerRootComponent(() => <div id='playbooks-root-portal'/>);
+
         // App Bar icon
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
