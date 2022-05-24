@@ -136,7 +136,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             if (command !== '') {
                 return true;
             }
-            if (dueDate > 0 && props.checklistItem.state === ChecklistItemState.Open) {
+            const notFinished = [ChecklistItemState.Open, ChecklistItemState.InProgress].includes(props.checklistItem.state as ChecklistItemState);
+            if (dueDate > 0 && notFinished) {
                 return true;
             }
             return false;
