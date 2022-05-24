@@ -337,7 +337,9 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 // Only published metrics values are included.
 // Returns empty list when Playbook doesn't have configured metrics
 // If for some metrics there are no published values, the corresponding element will be nil in the resulting slice
-func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []null.Int {
+func (s *StatsStore) MetricOverallAverage(filters StatsFilters) []null.Int {
+	// this query will return average values only for the metrics that have published data in the database
+	// so we need to add to the result array nil values for metrics that don't have data
 	query := s.store.builder.
 		Select("mc.ID as ID, FLOOR(AVG(m.Value)) as Value").
 		From("IR_Metric as m").
@@ -363,6 +365,8 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []null.Int {
 		return []null.Int{}
 	}
 
+	// use metrics configurations to build a result array, where overallAverage[i] will be average value for
+	// the i-th metric or nil if there is no data in the database for this specific metric
 	overallAverage := make([]null.Int, len(configs))
 	for i, id := range configs {
 		for _, av := range averages {
@@ -380,12 +384,15 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []null.Int {
 // Only published metrics are included.
 // If there are no configured metrics, returns an empty list
 // If for some metrics there are no published values, the corresponding slice will be nil in the resulting slice
-func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
+func (s *StatsStore) MetricValueRange(filters StatsFilters) [][]int64 {
 	type MinMax struct {
 		ID  string
 		Min int64
 		Max int64
 	}
+
+	// this query will return min-max values only for the metrics that have published data in the database
+	// so we need to add to the result array nil values for metrics that don't have data
 	q := s.store.builder.
 		Select("mc.ID as ID, MIN(Value) as Min, MAX(Value) as Max").
 		From("IR_Metric as m").
@@ -406,6 +413,8 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 		return [][]int64{}
 	}
 
+	// use metrics configurations to build a result array, where valueRange[i] will be min-max values for
+	// the i-th metric or nil if there is no data in the database for this specific metric
 	valueRange := make([][]int64, len(configs))
 	for i, id := range configs {
 		for _, minMax := range res {
@@ -423,7 +432,7 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 // first element in the list is most recent. And returns the names of the last `x` runs.
 // Returns empty list if Playbook doesn't have metrics.
 // If for some metrics there are no published values, the corresponding slice will be nil in the resulting slice
-func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) ([][]int64, []string) {
+func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters StatsFilters) ([][]int64, []string) {
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
@@ -476,7 +485,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 // change with comparison to the previous period
 // returns empty list if the Playbook doesn't have metrics
 // If for some metrics there are no published values, the corresponding element will be nil in the resulting slice
-func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []null.Int, metricRollingAverageChange []null.Int) {
+func (s *StatsStore) MetricRollingAverageAndChange(x int, filters StatsFilters) (metricRollingAverage []null.Int, metricRollingAverageChange []null.Int) {
 	metricValuesWholePeriod, _ := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
 
 	if len(metricValuesWholePeriod) == 0 {

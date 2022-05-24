@@ -535,10 +535,10 @@ func TestMetricsStats(t *testing.T) {
 				PlaybookID: playbookID,
 			}
 
-			actualAverage := statsStore.MetricOverallAverage(&filters)
-			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, &filters)
-			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, &filters)
-			actualRange := statsStore.MetricValueRange(&filters)
+			actualAverage := statsStore.MetricOverallAverage(filters)
+			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, filters)
+			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, filters)
+			actualRange := statsStore.MetricValueRange(filters)
 			require.Equal(t, []null.Int{}, actualAverage)
 			require.Equal(t, []null.Int{}, actualRollingAverage)
 			require.Equal(t, []null.Int{}, actualRollingAverageChange)
@@ -566,10 +566,10 @@ func TestMetricsStats(t *testing.T) {
 				PlaybookID: playbookID,
 			}
 
-			actualAverage := statsStore.MetricOverallAverage(&filters)
-			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, &filters)
-			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, &filters)
-			actualRange := statsStore.MetricValueRange(&filters)
+			actualAverage := statsStore.MetricOverallAverage(filters)
+			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, filters)
+			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, filters)
+			actualRange := statsStore.MetricValueRange(filters)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.NewInt(0, false)}, actualAverage)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.NewInt(0, false)}, actualRollingAverage)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.NewInt(0, false)}, actualRollingAverageChange)
@@ -598,10 +598,10 @@ func TestMetricsStats(t *testing.T) {
 			}
 
 			// period value is 2, tests case when there is available data for full two periods
-			actualAverage := statsStore.MetricOverallAverage(&filters)
-			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, &filters)
-			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, &filters)
-			actualRange := statsStore.MetricValueRange(&filters)
+			actualAverage := statsStore.MetricOverallAverage(filters)
+			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(2, filters)
+			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(2, 1, filters)
+			actualRange := statsStore.MetricValueRange(filters)
 			require.Equal(t, []null.Int{null.IntFrom(6), null.IntFrom(5)}, actualAverage)
 			require.Equal(t, []null.Int{null.IntFrom(5), null.IntFrom(6)}, actualRollingAverage)
 			require.Equal(t, []null.Int{null.IntFrom(-50), null.IntFrom(50)}, actualRollingAverageChange)
@@ -609,8 +609,8 @@ func TestMetricsStats(t *testing.T) {
 			require.Equal(t, [][]int64{{2, 11}, {1, 10}}, actualRange)
 
 			// period value is 4
-			actualRollingAverage, actualRollingAverageChange = statsStore.MetricRollingAverageAndChange(4, &filters)
-			actualRollingValues, _ = statsStore.MetricRollingValuesLastXRuns(3, 3, &filters)
+			actualRollingAverage, actualRollingAverageChange = statsStore.MetricRollingAverageAndChange(4, filters)
+			actualRollingValues, _ = statsStore.MetricRollingValuesLastXRuns(3, 3, filters)
 			require.Equal(t, []null.Int{null.IntFrom(7), null.IntFrom(5)}, actualRollingAverage)
 			require.Equal(t, []null.Int{null.IntFrom(250), null.IntFrom(66)}, actualRollingAverageChange)
 			require.Equal(t, [][]int64{{9, 2}, {8, 3}}, actualRollingValues)
@@ -648,10 +648,10 @@ func TestMetricsStats(t *testing.T) {
 			require.NoError(t, err)
 
 			// the first metric's values should not be available
-			actualAverage := statsStore.MetricOverallAverage(&filters)
-			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(3, &filters)
-			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(3, 1, &filters)
-			actualRange := statsStore.MetricValueRange(&filters)
+			actualAverage := statsStore.MetricOverallAverage(filters)
+			actualRollingAverage, actualRollingAverageChange := statsStore.MetricRollingAverageAndChange(3, filters)
+			actualRollingValues, _ := statsStore.MetricRollingValuesLastXRuns(3, 1, filters)
+			actualRange := statsStore.MetricValueRange(filters)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.IntFrom(6)}, actualAverage)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.IntFrom(7)}, actualRollingAverage)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.IntFrom(40)}, actualRollingAverageChange)
@@ -665,10 +665,10 @@ func TestMetricsStats(t *testing.T) {
 			metricsData = createMetricsData(playbook.Metrics, [][]int64{{200, 3}, {103, 9}})
 			createRunsWithMetrics(t, playbookRunStore, store, playbookID, metricsData, true, &publishTime)
 
-			actualAverage = statsStore.MetricOverallAverage(&filters)
-			actualRollingAverage, actualRollingAverageChange = statsStore.MetricRollingAverageAndChange(4, &filters)
-			actualRollingValues, _ = statsStore.MetricRollingValuesLastXRuns(4, 0, &filters)
-			actualRange = statsStore.MetricValueRange(&filters)
+			actualAverage = statsStore.MetricOverallAverage(filters)
+			actualRollingAverage, actualRollingAverageChange = statsStore.MetricRollingAverageAndChange(4, filters)
+			actualRollingValues, _ = statsStore.MetricRollingValuesLastXRuns(4, 0, filters)
+			actualRange = statsStore.MetricValueRange(filters)
 			require.Equal(t, []null.Int{null.IntFrom(151), null.IntFrom(6)}, actualAverage)
 			require.Equal(t, []null.Int{null.IntFrom(151), null.IntFrom(5)}, actualRollingAverage)
 			require.Equal(t, []null.Int{null.NewInt(0, false), null.IntFrom(-29)}, actualRollingAverageChange)

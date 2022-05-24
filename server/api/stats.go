@@ -111,10 +111,10 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeRunsPerDay, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
-	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
-	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
-	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
-	metricValueRange := h.statsStore.MetricValueRange(filters)
+	metricOverallAverage := h.statsStore.MetricOverallAverage(*filters)
+	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, *filters)
+	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, *filters)
+	metricValueRange := h.statsStore.MetricValueRange(*filters)
 
 	ReturnJSON(w, &PlaybookStats{
 		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
