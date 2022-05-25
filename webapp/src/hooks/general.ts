@@ -639,7 +639,7 @@ export const usePrevious = (value: any) => {
 export const usePortal = () => {
     const [el] = useState(document.createElement('div'));
     useLayoutEffect(() => {
-        const rootPortal = document.getElementById('playbooks-root-portal');
+        const rootPortal = document.getElementById('root-portal');
         if (rootPortal) {
             rootPortal.appendChild(el);
         }
