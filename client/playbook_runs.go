@@ -250,3 +250,35 @@ func (s *PlaybookRunService) UpdateRunActions(ctx context.Context, playbookRunID
 
 	return err
 }
+
+// UpdateRetrospective updates the run's retrospective info
+func (s *PlaybookRunService) UpdateRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
+	createURL := fmt.Sprintf("runs/%s/retrospective", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}
+
+// PublishRetrospective publishes the run's retrospective
+func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
+	createURL := fmt.Sprintf("runs/%s/retrospective/publish", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}

@@ -36,6 +36,12 @@ type PlaybookMember struct {
 	SchemeRoles []string `json:"scheme_roles"`
 }
 
+const (
+	MetricTypeDuration = "metric_duration"
+	MetricTypeCurrency = "metric_currency"
+	MetricTypeInteger  = "metric_integer"
+)
+
 // Checklist represents a checklist in a playbook
 type Checklist struct {
 	ID    string          `json:"id"`
@@ -105,14 +111,20 @@ type GetPlaybooksResults struct {
 }
 
 type PlaybookStats struct {
-	RunsInProgress                int       `json:"runs_in_progress"`
-	ParticipantsActive            int       `json:"participants_active"`
-	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+	RunsInProgress                int        `json:"runs_in_progress"`
+	ParticipantsActive            int        `json:"participants_active"`
+	RunsFinishedPrev30Days        int        `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int        `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int      `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64  `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int      `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64  `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int      `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64  `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []null.Int `json:"metric_overall_average"`
+	MetricRollingAverage          []null.Int `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []null.Int `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64  `json:"metric_value_range"`
+	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
+	LastXRunNames                 []string   `json:"last_x_run_names"`
 }
