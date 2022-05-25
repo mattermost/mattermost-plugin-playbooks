@@ -5,8 +5,11 @@ import {
     useRef,
     useState,
     useMemo,
-    UIEventHandler,
+    useLayoutEffect,
+    ReactNode,
 } from 'react';
+import {createPortal} from 'react-dom';
+
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
@@ -633,15 +636,20 @@ export const usePrevious = (value: any) => {
     return ref.current;
 };
 
-// Create a portal to render while dragging
-export const usePortal = (parent: HTMLElement) => {
-    const [portal] = useState(document.createElement('div'));
-
-    useEffect(() => {
-        parent.appendChild(portal);
-    }, [parent, portal]);
-
-    return portal;
+export const usePortal = () => {
+    const [el] = useState(document.createElement('div'));
+    useLayoutEffect(() => {
+        const rootPortal = document.getElementById('root-portal');
+        if (rootPortal) {
+            rootPortal.appendChild(el);
+        }
+        return () => {
+            if (rootPortal) {
+                rootPortal.removeChild(el);
+            }
+        };
+    }, [el]);
+    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
