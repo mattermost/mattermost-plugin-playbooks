@@ -2,16 +2,14 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, HTMLAttributes, useEffect, useState} from 'react';
+import React, {Children, ReactNode} from 'react';
 
 import {useIntl} from 'react-intl';
 
-import {useLocation} from 'react-router-dom';
-
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
-import TextEdit from 'src/components/text_edit';
-import {savePlaybook} from 'src/client';
+
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
@@ -26,23 +24,14 @@ import Section from './section';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    refetch: () => void;
 }
 
-type Attrs = HTMLAttributes<HTMLElement>;
+type StyledAttrs = {className?: string};
 
-/** @alpha replace/copy-pasta/unfold sections as-needed*/
-const Outline = (props: Props) => {
+const Outline = ({playbook, refetch}: Props) => {
     const {formatMessage} = useIntl();
-    const playbook = props.playbook;
-
     const updatePlaybook = useUpdatePlaybook(playbook.id);
-
-    const updateSummaryForPlaybook = (summary: string) => {
-        if (!playbook) {
-            return;
-        }
-        updatePlaybook({runSummaryTemplate: summary});
-    };
 
     return (
         <Sections
@@ -53,10 +42,15 @@ const Outline = (props: Props) => {
                 id={'summary'}
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
-                <TextEdit
-                    placeholder={formatMessage({defaultMessage: 'Add run summary template...'})}
-                    value={playbook.run_summary_template}
-                    onSave={updateSummaryForPlaybook}
+                <MarkdownEdit
+                    placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
+                    value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
+                    onSave={(runSummaryTemplate) => {
+                        updatePlaybook({
+                            runSummaryTemplate,
+                            runSummaryTemplateEnabled: Boolean(runSummaryTemplate.trim()),
+                        });
+                    }}
                 />
             </Section>
             <Section
@@ -91,14 +85,32 @@ const Outline = (props: Props) => {
             <Section
                 id={'retrospective'}
                 title={formatMessage({defaultMessage: 'Retrospective'})}
+                hoverEffect={true}
+                headerRight={(
+                    <HoverMenuContainer>
+                        <Toggle
+                            isChecked={playbook.retrospective_enabled}
+                            onChange={() => {
+                                updatePlaybook({
+                                    retrospectiveEnabled: !playbook.retrospective_enabled,
+                                });
+                            }}
+                        />
+                    </HoverMenuContainer>
+                )}
             >
-                <Retrospective playbook={playbook}/>
+                <Retrospective
+                    playbook={playbook}
+                    refetch={refetch}
+                />
             </Section>
             <Section
                 id={'actions'}
                 title={formatMessage({defaultMessage: 'Actions'})}
             >
-                <Actions playbook={playbook}/>
+                <Actions
+                    playbook={playbook}
+                />
             </Section>
         </Sections>
     );
@@ -117,10 +129,8 @@ type SectionsProps = {
 const SectionsImpl = ({
     playbookId,
     children,
-    ...attrs
-}: SectionsProps & Attrs) => {
-    const {hash} = useLocation();
-
+    className,
+}: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -134,17 +144,13 @@ const SectionsImpl = ({
         return result;
     }, []);
 
-    useEffect(() => {
-        // TODO implement scroll-to-section based on hash
-    }, [hash]);
-
     return (
         <>
             <ScrollNav
                 playbookId={playbookId}
                 items={items}
             />
-            <div {...attrs}>
+            <div className={className}>
                 {children}
             </div>
         </>

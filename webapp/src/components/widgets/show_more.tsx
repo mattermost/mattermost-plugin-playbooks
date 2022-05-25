@@ -3,7 +3,7 @@
 
 import React, {useState, useRef, useEffect} from 'react';
 
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 
 import styled, {css} from 'styled-components';
 

@@ -21,6 +21,7 @@ query Playbook($id: String!) {
 		retrospective_template: retrospectiveTemplate
 		default_owner_id: defaultOwnerID
 		run_summary_template: runSummaryTemplate
+		run_summary_template_enabled: runSummaryTemplateEnabled
 		message_on_join: messageOnJoin
 		category_name: categoryName
 		invite_users_enabled: inviteUsersEnabled

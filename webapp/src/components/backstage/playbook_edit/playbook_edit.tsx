@@ -73,7 +73,7 @@ export const tabInfo = [
 const WebappUtils = window.WebappUtils;
 
 const PlaybookNavbar = styled(BackstageNavbar)`
-    top: 80px;
+
 `;
 
 export interface EditingMetric {
@@ -288,7 +288,7 @@ const PlaybookEdit = (props: Props) => {
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
         if (playbookId) {
-            navigateToPluginUrl(`/playbooks/${playbookId}`);
+            navigateToPluginUrl(`/playbooks/${playbookId}/outline`);
         } else {
             navigateToPluginUrl('/playbooks');
         }

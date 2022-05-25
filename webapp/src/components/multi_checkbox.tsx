@@ -61,12 +61,16 @@ interface Props {
     onselect: (value: string, checked: boolean) => void;
     dotMenuButton: typeof DotMenuButton;
     icon?: JSX.Element;
+    topPx?: number;
+    leftPx?: number;
 }
 
 const MultiCheckbox = (props: Props) => {
     const isFilterActive = props.options.filter((o) => o.value !== 'all' && o.disabled === false && o.selected === false).length > 0;
     return (
         <DotMenu
+            topPx={props.topPx}
+            leftPx={props.leftPx}
             dotMenuButton={props.dotMenuButton}
             isActive={isFilterActive}
             icon={

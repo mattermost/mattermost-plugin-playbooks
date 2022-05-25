@@ -37,7 +37,7 @@ import PresetTemplates from 'src/components/templates/template_data';
 
 import {RegularHeading} from 'src/styles/headings';
 
-import {importFile, fetchPlaybookRuns} from 'src/client';
+import {importFile} from 'src/client';
 
 import TeamSelector from '../team/team_selector';
 
@@ -155,7 +155,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
-                onRestore={() => openConfirmRestoreModal(p)}
+                onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
             />

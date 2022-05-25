@@ -1,28 +1,31 @@
-import React, {useState} from 'react';
+import React, {useRef, useState, RefObject} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {useUpdateEffect} from 'react-use';
+import {useUpdate, useUpdateEffect} from 'react-use';
 
-import {resolve, useUniqueId} from 'src/utils';
+import MarkdownTextbox from 'src/components/markdown_textbox';
+
+import FormattedMarkdown from 'src/components/formatted_markdown';
+
+import {useUniqueId} from 'src/utils';
 
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
+import ShowMore from './widgets/show_more';
 import Tooltip from './widgets/tooltip';
 
-interface TextEditProps {
+interface MarkdownEditProps {
     value: string;
     onSave: (value: string) => void;
-    children: React.ReactNode | ((edit: () => void) => React.ReactNode);
-    placeholder?: string;
+    placeholder: string;
     className?: string;
     noBorder?: boolean;
     disabled?: boolean;
-
-    editStyles?: ReturnType<typeof css>;
+    previewDisabled?: boolean;
 }
 
-const TextEdit = (props: TextEditProps) => {
+const MarkdownEdit = (props: MarkdownEditProps) => {
     const {formatMessage} = useIntl();
 
     const id = useUniqueId('editabletext-markdown-textbox');
@@ -35,16 +38,20 @@ const TextEdit = (props: TextEditProps) => {
 
     if (isEditing) {
         return (
-            <Container className={props.className}>
-                <input
-                    data-testid={'rendered-editable-text'}
+            <MarkdownEditContainer
+                dashed={false}
+                editing={true}
+                className={props.className}
+            >
+                <MarkdownTextbox
+                    data-testid={'rendered-editable-markdown'}
+                    id={id}
                     value={value}
                     placeholder={props.placeholder}
-                    onChange={(e) => {
-                        setValue(e.target.value);
-                    }}
+                    setValue={setValue}
                     autoFocus={true}
                     disabled={props.disabled}
+                    previewDisabled={props.previewDisabled ?? true}
                 />
                 <CancelSaveButtons
                     onCancel={() => {
@@ -56,13 +63,26 @@ const TextEdit = (props: TextEditProps) => {
                         props.onSave(value);
                     }}
                 />
-            </Container>
+            </MarkdownEditContainer>
         );
     }
 
     return (
-        <Container className={props.className}>
-            {!isEditing && !props.children && (
+        <MarkdownEditContainer
+            editing={isEditing}
+            dashed={value === ''}
+            noBorder={props.noBorder}
+            className={props.className}
+            onClick={(e) => {
+                if (props.disabled) {
+                    return;
+                }
+                if (!value || e.detail >= 2) {
+                    setIsEditing(true);
+                }
+            }}
+        >
+            {!isEditing && !props.disabled && (
                 <HoverMenuContainer>
                     <Tooltip
                         id={`${id}-tooltip`}
@@ -72,17 +92,23 @@ const TextEdit = (props: TextEditProps) => {
                         <ButtonIcon
                             data-testid='hover-menu-edit-button'
                             className={'icon-pencil-outline icon-16 btn-icon'}
-                            onClick={() => setIsEditing(true)}
+                            onClick={() => !props.disabled && setIsEditing(true)}
                         />
                     </Tooltip>
                 </HoverMenuContainer>
             )}
-            {resolve(props.children, () => setIsEditing(true)) ?? (
-                <RenderedText data-testid='rendered-text'>
-                    {value}
-                </RenderedText>
-            )}
-        </Container>
+            <RenderedText data-testid='rendered-text'>
+                {value ? (
+                    <ShowMore>
+                        <FormattedMarkdown value={value}/>
+                    </ShowMore>
+                ) : (
+                    <PlaceholderText>
+                        <FormattedMarkdown value={props.placeholder}/>
+                    </PlaceholderText>
+                )}
+            </RenderedText>
+        </MarkdownEditContainer>
     );
 };
 
@@ -116,11 +142,9 @@ const commonTextStyle = css`
     }
 `;
 
-const Container = styled.div`
+const MarkdownEditContainer = styled.div<{editing: boolean;dashed: boolean;noBorder?: boolean;}>`
     position: relative;
     box-sizing: border-box;
-    display: flex;
-    align-items: center;
     border-radius: var(--markdown-textbox-radius, 4px);
 
     ${CancelSaveContainer} {
@@ -140,10 +164,19 @@ const Container = styled.div`
         ${HoverMenuContainer} {
             opacity: 1;
         }
+
+        ${({noBorder}) => noBorder && css`
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        `}
     }
+
+    border: ${(props) => (props.dashed ? '1px dashed var(--center-channel-color-16)' : '1px solid var(--center-channel-color-08)')};
+    ${({editing, noBorder}) => (editing || noBorder) && css`
+        border-color: transparent;
+    `}
 `;
 
-export const RenderedText = styled.span`
+export const RenderedText = styled.div`
     ${commonTextStyle}
 
     p:last-child {
@@ -151,6 +184,12 @@ export const RenderedText = styled.span`
     }
 `;
 
-export default styled(TextEdit)`
-    ${({editStyles}) => editStyles};
+const PlaceholderText = styled.span`
+    font-style: italic;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
+
+export default styled(MarkdownEdit)``;

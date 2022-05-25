@@ -48,12 +48,12 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
         left: -197px;
         top: 35px;
     `)};
-    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
-    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     ${(props) => (props.wide && css`
         left: -236px;
     `)};
+    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
+    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     width: max-content;
     min-width: 160px;
@@ -182,6 +182,10 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             onClick={props.onClick}
             className={props.className}
             role={'button'}
+
+            // Prevent trigger icon (parent) from propagating title prop to options
+            // Menu items use to be full text (not just icons) so don't need title
+            title=''
         >
             {props.children}
         </DropdownMenuItemStyled>

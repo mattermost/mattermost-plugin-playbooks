@@ -131,7 +131,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 role='dialog'
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
-                adjustTop={this.props.adjustTop}
+                $adjustTop={this.props.adjustTop}
             >
                 <Header
                     className='GenericModal__header'
@@ -158,7 +158,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-export const StyledModal = styled(Modal)<{adjustTop: number}>`
+export const StyledModal = styled(Modal)<{$adjustTop: number}>`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -177,7 +177,7 @@ export const StyledModal = styled(Modal)<{adjustTop: number}>`
             margin: 12px 12px 0 0;
         }
         .modal-dialog {
-            margin-top: calc(50vh - ${({adjustTop}) => adjustTop}px);
+            margin-top: calc(50vh - ${({$adjustTop}) => $adjustTop}px);
         }
     }
 

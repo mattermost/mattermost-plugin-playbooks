@@ -33,7 +33,7 @@ describe('runs > actions', () => {
     });
 
     beforeEach(() => {
-        const now = Date.now()
+        const now = Date.now();
         const runName = 'Playbook Run ' + now;
         cy.apiRunPlaybook({
             teamId: testTeam.id,
@@ -140,6 +140,31 @@ describe('runs > actions', () => {
 
     describe('trigger: when a status update is posted', () => {
         describe('action: Broadcast update to selected channels', () => {
+            it('shows channel information on first load', () => {
+                // # Open the run actions modal
+                openRunActionsModal();
+
+                // # Enable broadcast to channels
+                cy.findByText('Broadcast update to selected channels').click();
+
+                // # Select a couple of channels
+                cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+
+                // # Save the changes
+                saveRunActionsModal();
+
+                // # Reload the page, so that the store is not pre-populated when visiting Channels
+                cy.visit(`/playbooks/runs/${testRun.id}/overview`);
+
+                // # Open the run actions modal
+                openRunActionsModal();
+
+                // * Check that the channels previously added are shown with their full name,
+                // * verifying that the store has been populated by the modal component.
+                cy.findByText('Town Square').should('exist');
+                cy.findByText('Off-Topic').should('exist');
+            });
+
             it('broadcasts to two channels configured when it is enabled', () => {
                 // # Open the run actions modal
                 openRunActionsModal();
