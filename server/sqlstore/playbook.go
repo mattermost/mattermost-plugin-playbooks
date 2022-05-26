@@ -891,7 +891,7 @@ func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricCo
 	}
 
 	if numExistingMetrics >= app.MaxMetricsPerPlaybook {
-		return errors.Errorf(fmt.Sprintf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook))
+		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
 	}
 
 	_, err = p.store.execBuilder(p.store.db, sq.
@@ -917,7 +917,7 @@ func (p *playbookStore) DeleteMetric(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete metric with id '%s'", id)
+		return errors.Wrapf(err, "failed to delete metric with id %q", id)
 	}
 
 	return nil
@@ -934,7 +934,7 @@ func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) e
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update metric with id '%s'", id)
+		return errors.Wrapf(err, "failed to update metric with id %q", id)
 	}
 
 	return nil

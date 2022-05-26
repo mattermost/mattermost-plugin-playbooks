@@ -165,7 +165,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 			},
 		}, &response)
 		require.NoError(t, err)
-		require.Len(t, response.Errors, 0)
+		require.Empty(t, response.Errors)
 
 		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
@@ -191,7 +191,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 			},
 		}, &response)
 		require.NoError(t, err)
-		require.Len(t, response.Errors, 0)
+		require.Empty(t, response.Errors)
 
 		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 			},
 		}, &response)
 		require.NoError(t, err)
-		require.Len(t, response.Errors, 0)
+		require.Empty(t, response.Errors)
 
 		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
