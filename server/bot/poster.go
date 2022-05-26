@@ -214,6 +214,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
 		title = "All the statistics you need"
 		text = "View trends for total runs, active runs, and participants involved in runs of this playbook."
+	case "start_trial_to_access_metrics":
+		message = fmt.Sprintf("@%s requested access to playbook key metrics feature", author.Username)
+		title = "Track key metrics and measure value"
+		text = "Use metrics to understand patterns and progress across runs, and track performance."
 	}
 
 	actions := []*model.PostAction{
