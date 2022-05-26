@@ -279,6 +279,12 @@ disable: detach
 enable:
 	./build/bin/pluginctl enable $(PLUGIN_ID)
 
+## Generate derived types from schema files
+.PHONY: graphql
+graphql:
+	cd webapp && npm run graphql
+
+
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
 .PHONY: reset
 reset: detach

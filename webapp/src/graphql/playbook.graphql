@@ -48,6 +48,7 @@ query Playbook($id: String!) {
 		members {
 			user_id: userID
 			roles
+			scheme_roles: schemeRoles
 		}
 		metrics {
 			id

@@ -110,6 +110,7 @@ type Checklist {
 type Member {
 	userID: String!
 	roles: [String!]!
+	schemeRoles: [String!]!
 }
 
 type ChecklistItem {
