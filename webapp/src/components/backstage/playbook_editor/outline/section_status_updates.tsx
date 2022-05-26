@@ -84,16 +84,15 @@ const StatusUpdates = ({playbook}: Props) => {
                                     urls={playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
                                         if (newWebhookOnStatusUpdateURLs.length === 0) {
-                                            updatePlaybook({
+                                            return updatePlaybook({
                                                 webhookOnStatusUpdateEnabled: false,
                                                 webhookOnStatusUpdateURLs: [],
                                             });
-                                        } else {
-                                            updatePlaybook({
-                                                webhookOnStatusUpdateEnabled: true,
-                                                webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
-                                            });
                                         }
+                                        return updatePlaybook({
+                                            webhookOnStatusUpdateEnabled: true,
+                                            webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
+                                        });
                                     }}
                                 >
                                     <Placeholder label={webhookCount}/>
