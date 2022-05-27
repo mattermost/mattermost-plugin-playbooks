@@ -33,6 +33,16 @@ const TextEdit = (props: TextEditProps) => {
         setValue(props.value);
     }, [props.value]);
 
+    const save = () => {
+        setIsEditing(false);
+        props.onSave(value);
+    };
+
+    const cancel = () => {
+        setIsEditing(false);
+        setValue(props.value);
+    };
+
     if (isEditing) {
         return (
             <Container className={props.className}>
@@ -45,16 +55,17 @@ const TextEdit = (props: TextEditProps) => {
                     }}
                     autoFocus={true}
                     disabled={props.disabled}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            cancel();
+                        }
+                    }}
                 />
                 <CancelSaveButtons
-                    onCancel={() => {
-                        setIsEditing(false);
-                        setValue(props.value);
-                    }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        props.onSave(value);
-                    }}
+                    onCancel={cancel}
+                    onSave={save}
                 />
             </Container>
         );
