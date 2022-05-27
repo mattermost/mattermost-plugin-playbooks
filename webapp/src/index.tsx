@@ -36,7 +36,6 @@ import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
-import { ChannelActionsMenuItem } from './components/channel_actions_menu_item';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
     setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
@@ -68,6 +67,7 @@ import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -142,13 +142,13 @@ export default class Plugin {
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
+        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type != 'D';
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction(ChannelActionsMenuItem, () => store.dispatch(showChannelActionsModal()));
+        registry.registerChannelHeaderMenuAction("Channel Actions", () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
-        // registry.registerRootComponent(ChannelActionsMenuItem);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
