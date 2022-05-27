@@ -212,7 +212,7 @@ describe('playbooks > edit', () => {
                 });
             });
 
-            describe.only('invite members setting', () => {
+            describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
@@ -400,6 +400,7 @@ describe('playbooks > edit', () => {
                                 .within(() => {
                                     cy.findByText('Remove').click();
                                 });
+                            cy.wait(TIMEOUTS.ONE_SEC);
 
                             // * Verify that there is only one user, the one not removed
                             cy.get('.invite-users-selector__control')
@@ -1577,29 +1578,31 @@ describe('playbooks > edit', () => {
         });
     });
 
-    describe.skip('Edit playbook name', () => {
+    describe('Edit playbook name', () => {
         it('can be updated', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
             // # Start a blank playbook
             cy.findByText('Blank').click();
-            cy.get('#edit-playbook').click();
 
-            // * edit
-            cy.findByTestId('playbook-title-description').click();
-            cy.get('#playbook-edit-name-and-description-modal').should('exist');
-            cy.get('#confirm-modal-light').should('not.exist');
-            cy.findByTestId('playbook-edit-name-input').clear().type('playbook updated name');
-            cy.findByTestId('modal-confirm-button').click();
+            // # Open the title dropdown and Rename
+            cy.findByRole('button', {name: /'s Blank/i}).click();
+            cy.findByText('Rename').click();
 
-            // * check modals are hidden and name is changed
-            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
-            cy.get('#confirm-modal-light').should('not.exist');
-            cy.findByText('playbook updated name').should('exist');
+            // # Change the name and save
+            cy.focused().type('{selectAll}{del}renamed playbook');
+            cy.findByRole('button', {name: /save/i}).click();
+
+            cy.reload();
+
+            // * Verify the modified name persists
+            cy.findByRole('button', {name: /renamed playbook/i}).should('exist');
         });
 
-        it('update, leave and discard', () => {
+        // BPE regression?
+        // no more unsaved changes modal
+        it.skip('update, leave and discard', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
@@ -1625,7 +1628,9 @@ describe('playbooks > edit', () => {
             cy.findByText('playbook updated name').should('not.exist');
         });
 
-        it('update, leave and go back to edit', () => {
+        // BPE regression?
+        // no more unsaved changes modal
+        it.skip('update, leave and go back to edit', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
@@ -1657,29 +1662,25 @@ describe('playbooks > edit', () => {
         });
     });
 
-    describe.skip('Edit playbook description', () => {
+    describe('Edit playbook description', () => {
         it('can be updated', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
             // # Start a blank playbook
             cy.findByText('Blank').click();
-            cy.get('#edit-playbook').click();
+            cy.findByText(/customize this playbook's description/i).dblclick();
+            cy.focused().type('{selectAll}{del}some new description{esc}');
+            cy.findByRole('button', {name: /save/i}).click();
 
-            // * edit
-            cy.findByTestId('playbook-title-description').click();
-            cy.get('#playbook-edit-name-and-description-modal').should('exist');
-            cy.get('#confirm-modal-light').should('not.exist');
-            cy.findByTestId('playbook-edit-name-and-description-modal-description-textbox').clear().type('playbook updated desc');
-            cy.findByTestId('modal-confirm-button').click();
+            cy.reload();
 
-            // * check modals are hidden and name is changed
-            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
-            cy.get('#confirm-modal-light').should('not.exist');
-            cy.findByText('playbook updated desc').should('exist');
+            cy.findByText('some new description').should('exist');
         });
 
-        it('update, leave and discard', () => {
+        // BPE regression?
+        // no more unsaved changes modal
+        it.skip('update, leave and discard', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
@@ -1705,7 +1706,9 @@ describe('playbooks > edit', () => {
             cy.findByText('playbook updated desc').should('not.exist');
         });
 
-        it('update, leave and go back to edit', () => {
+        // BPE regression?
+        // no more unsaved changes modal
+        it.skip('update, leave and go back to edit', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 
