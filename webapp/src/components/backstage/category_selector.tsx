@@ -29,7 +29,7 @@ const CategorySelector = (props: Props & { className?: string }) => {
 
     const options = React.useMemo(() => {
         return selectableCategories
-            .filter((category) => category.type !== 'direct_messages')
+            .filter((category) => category.type !== 'direct_messages' && category.type !== 'channels')
             .map((category) => ({value: category.display_name, label: category.display_name}));
     }, [selectableCategories]);
 
