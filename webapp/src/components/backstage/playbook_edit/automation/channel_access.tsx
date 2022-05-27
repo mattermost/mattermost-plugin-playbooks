@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -15,7 +15,7 @@ type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' |
 
 interface Props {
     playbook: PlaybookSubset;
-    setPlaybook: React.Dispatch<PlaybookSubset>;
+    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
     setChangesMade?: (b: boolean) => void;
 }
 

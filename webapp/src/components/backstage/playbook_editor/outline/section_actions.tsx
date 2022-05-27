@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useCallback, ComponentProps, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -25,6 +25,7 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {Toggle} from '../../playbook_edit/automation/toggle';
 import {AutomationTitle} from '../../playbook_edit/automation/styles';
+import {useProxyState} from 'src/hooks';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -34,6 +35,16 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+
+    const [
+        playbookForCreateChannel,
+        setPlaybookForCreateChannel,
+    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(playbook, useCallback((update) => {
+        updatePlaybook({
+            createPublicPlaybookRun: update.create_public_playbook_run,
+            channelNameTemplate: update.channel_name_template,
+        });
+    }, [updatePlaybook]));
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
@@ -116,16 +127,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </StyledSectionTitle>
                 <Setting id={'create-channel'}>
                     <CreateAChannel
-                        playbook={playbook}
-                        setPlaybook={({
-                            create_public_playbook_run,
-                            channel_name_template,
-                        }) => {
-                            updatePlaybook({
-                                createPublicPlaybookRun: create_public_playbook_run,
-                                channelNameTemplate: channel_name_template,
-                            });
-                        }}
+                        playbook={playbookForCreateChannel}
+                        setPlaybook={setPlaybookForCreateChannel}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
@@ -241,3 +244,4 @@ const Setting = styled.div`
     flex-direction: column;
     gap: 8px;
 `;
+
