@@ -144,7 +144,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
-		if c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
+		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
 			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
 		}
 		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)

@@ -82,6 +82,18 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		})
 		require.Error(t, err)
 	})
+
+	t.Run("change default owner", func(t *testing.T) {
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"defaultOwnerID": e.RegularUser.Id,
+		})
+		require.NoError(t, err)
+
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"defaultOwnerID": e.RegularUserNotInTeam.Id,
+		})
+		require.Error(t, err)
+	})
 }
 
 func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
