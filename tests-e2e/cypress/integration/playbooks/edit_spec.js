@@ -712,7 +712,7 @@ describe('playbooks > edit', () => {
 
                 // BPE regression,
                 // owner assignment does not save
-                it.only('persists the assigned owner even if the toggle is off', () => {
+                it('persists the assigned owner even if the toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
@@ -843,7 +843,7 @@ describe('playbooks > edit', () => {
         });
 
         describe('when an update is posted', () => {
-            describe.only('broadcast channel setting', () => {
+            describe('broadcast channel setting', () => {
                 it('none configured in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
@@ -1224,24 +1224,24 @@ describe('playbooks > edit', () => {
             //             'Unknown Channel'
             //         );
             //     });
-            // });
+            });
         });
 
-        describe.skip('when a new member joins the channel', () => {
+        describe('when a new member joins the channel', () => {
             beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
-                // # Switch to Actions tab
-                cy.findByText('Actions').click();
+                // # Switch to the outline tab
+                cy.findByText('Outline').click();
             });
 
             describe('add the channel to a sidebar category', () => {
                 it('is disabled in a new playbook', () => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('#user-joins-channel-categorize label input').should(
-                        'not.be.checked'
-                    );
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+                    });
                 });
 
                 it('can be enabled', () => {
@@ -1362,14 +1362,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
                     });
 
-                    // # Save the playbook
-                    cy.findByTestId('save_playbook').click();
-
-                    // # Navigate again to the playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.findByText('Actions').click();
+                    cy.reload();
 
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
@@ -1405,14 +1398,7 @@ describe('playbooks > edit', () => {
                         .click()
                         .type('Custom category{enter}', {delay: 200});
 
-                    // # Save the playbook
-                    cy.findByTestId('save_playbook').click();
-
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.findByText('Actions').click();
+                    cy.reload();
 
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is checked
@@ -1428,25 +1414,21 @@ describe('playbooks > edit', () => {
             });
         });
 
-        describe.skip('status updates enable / disabled', () => {
-            it('is enabled in a new playbook', () => {
+        describe('status updates enable / disabled', () => {
+            beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
+                // # Switch to the outline tab
+                cy.findByText('Outline').click();
+            });
 
+            it('is enabled in a new playbook', () => {
                 // * Verify that the toggle is checked
                 cy.get('#status-updates label input').should('be.checked');
             });
 
             it('can be disabled', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
-
                 // * Verify that toggle can be disabled
                 cy.get('#status-updates').within(() => {
                     // * Verify that the toggle is checked
@@ -1459,198 +1441,147 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('not.be.checked');
                 });
 
-                // * Verify that the update timer is disabled
-                cy.get('#default-update-timer').within(() => {
-                    cy.getStyledComponent('StyledSelect').should(
-                        'have.class',
-                        'playbooks-rselect--is-disabled'
-                    );
-                });
-
-                // * Verify that the update text is disabled
-                cy.get('#playbook_reminder_message_edit').should('be.disabled');
-
-                // * Verify that the toggle can't be checked
-                cy.get('#broadcast-channels').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-
-                    // # Click on the toggle
-                    cy.get('label input').click({force: true});
-
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-                });
-
-                // * Verify that the toggle can't be checked
-                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-
-                    // # Click on the toggle
-                    cy.get('label input').click({force: true});
-
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-                });
+                // * Verify disabled status updates text
+                cy.findByText(/status updates are not expected/i).should('be.visible');
+                cy.reload();
+                cy.findByText(/status updates are not expected/i).should('be.visible');
             });
 
-            it('disabling status should disable actions(when an update is posted)', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+            // it('disabling status should disable actions(when an update is posted)', () => {
+            //     // # Visit the selected playbook
+            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
+            //     // # Switch to Status updates tab
+            //     cy.get('#root').findByText('Status updates').click();
 
-                // * Verify that the toggle is checked
-                cy.get('#broadcast-channels').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
+            //     // * Verify that the toggle is checked
+            //     cy.get('#broadcast-channels').within(() => {
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
 
-                    // # Click on the toggle to enable the setting
-                    cy.get('label input').click({force: true});
+            //         // # Click on the toggle to enable the setting
+            //         cy.get('label input').click({force: true});
 
-                    // * Verify that the toggle is checked
-                    cy.get('label input').should('be.checked');
-                });
+            //         // * Verify that the toggle is checked
+            //         cy.get('label input').should('be.checked');
+            //     });
 
-                // * Verify that the toggle is checked
-                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
+            //     // * Verify that the toggle is checked
+            //     cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
 
-                    // # Click on the toggle to enable the setting
-                    cy.get('label input').click({force: true});
+            //         // # Click on the toggle to enable the setting
+            //         cy.get('label input').click({force: true});
 
-                    // * Verify that the toggle is checked
-                    cy.get('label input').should('be.checked');
-                });
+            //         // * Verify that the toggle is checked
+            //         cy.get('label input').should('be.checked');
+            //     });
 
-                // * Verify that toggle can be selected
-                cy.get('#status-updates').within(() => {
-                    // * Verify that the toggle is checked
-                    cy.get('label input').should('be.checked');
+            //     // * Verify that toggle can be selected
+            //     cy.get('#status-updates').within(() => {
+            //         // * Verify that the toggle is checked
+            //         cy.get('label input').should('be.checked');
 
-                    // # Click on the toggle to enable the setting
-                    cy.get('label input').click({force: true});
+            //         // # Click on the toggle to enable the setting
+            //         cy.get('label input').click({force: true});
 
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-                });
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
+            //     });
 
-                // * Verify that the toggle can't be checked
-                cy.get('#broadcast-channels').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
+            //     // * Verify that the toggle can't be checked
+            //     cy.get('#broadcast-channels').within(() => {
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
 
-                    // # Click on the toggle
-                    cy.get('label input').click({force: true});
+            //         // # Click on the toggle
+            //         cy.get('label input').click({force: true});
 
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-                });
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
+            //     });
 
-                // * Verify that the toggle can't be checked
-                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
+            //     // * Verify that the toggle can't be checked
+            //     cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
 
-                    // # Click on the toggle
-                    cy.get('label input').click({force: true});
+            //         // # Click on the toggle
+            //         cy.get('label input').click({force: true});
 
-                    // * Verify that the toggle is unchecked
-                    cy.get('label input').should('not.be.checked');
-                });
-            });
+            //         // * Verify that the toggle is unchecked
+            //         cy.get('label input').should('not.be.checked');
+            //     });
+            // });
 
-            it('can be saved', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+            // it('can be saved', () => {
+            //     // # Visit the selected playbook
+            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
+            //     // # Switch to Status updates tab
+            //     cy.get('#root').findByText('Status updates').click();
 
-                // # Uncheck toggle
-                cy.get('#status-updates label input').click({force: true});
+            //     // # Uncheck toggle
+            //     cy.get('#status-updates label input').click({force: true});
 
-                // # Save the playbook
-                cy.findByTestId('save_playbook').click();
+            //     // # Save the playbook
+            //     cy.findByTestId('save_playbook').click();
 
-                // # Navigate again to the playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+            //     // # Navigate again to the playbook
+            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
+            //     // # Switch to Status updates tab
+            //     cy.get('#root').findByText('Status updates').click();
 
-                // * Verify that the toggle is unchecked
-                cy.get('#status-updates label input').should('not.be.checked');
-            });
+            //     // * Verify that the toggle is unchecked
+            //     cy.get('#status-updates label input').should('not.be.checked');
+            // });
         });
 
-        describe.skip('retrospective enable / disable', () => {
-            it('is enabled in a new playbook', () => {
+        describe('retrospective enable / disable', () => {
+            beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
-                // # Switch to Retrospective tab
-                cy.get('#root').findByText('Retrospective').click();
+                // # Switch to the outline tab
+                cy.findByText('Outline').click();
+            });
 
-                // * Verify that the toggle is checked
-                cy.get('#retrospective-enabled label input').should('be.checked');
+            it('is enabled in a new playbook', () => {
+                cy.get('#retrospective').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('input[type=checkbox]').should('be.checked');
+                });
             });
 
             it('can be disabled', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                // # Switch to Retrospective tab
-                cy.get('#root').findByText('Retrospective').click();
-
-                // * Verify that toggle can be disabled
-                cy.get('#retrospective-enabled').within(() => {
+                cy.get('#retrospective').within(() => {
                     // * Verify that the toggle is checked
                     cy.get('label input').should('be.checked');
 
-                    // # Click on the toggle to enable the setting
+                    // # Click on the toggle to disable the setting
                     cy.get('label input').click({force: true});
 
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
-                });
 
-                // * Verify that select box is disabled
-                cy.get('#retrospective-reminder-interval').within(() => {
-                    cy.getStyledComponent('StyledSelect').should(
-                        'have.class',
-                        'playbooks-rselect--is-disabled'
-                    );
+                    cy.findByText(/a retrospective is not expected/i).should('be.visible');
                 });
-
-                // * Verify that the text box is disabled
-                cy.get('#playbook_retrospective_template_edit').should('be.disabled');
             });
 
-            it('can be saved', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+            it('saves on toggle', () => {
+                cy.get('#retrospective').within(() => {
+                    // # Uncheck toggle
+                    cy.get('#retrospective-enabled label input').click({force: true});
+                });
 
-                // # Switch to Retrospective tab
-                cy.get('#root').findByText('Retrospective').click();
+                cy.reload();
 
-                // # Uncheck toggle
-                cy.get('#retrospective-enabled label input').click({force: true});
-
-                // # Save the playbook
-                cy.findByTestId('save_playbook').click();
-
-                // # Navigate again to the playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                // # Switch to Retrospective tab
-                cy.get('#root').findByText('Retrospective').click();
-
-                // * Verify that the toggle is unchecked
-                cy.get('#retrospective-enabled label input').should('not.be.checked');
+                cy.get('#retrospective').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('#retrospective-enabled label input').should('not.be.checked');
+                });
             });
         });
     });
