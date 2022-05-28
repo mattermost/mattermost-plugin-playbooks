@@ -2007,4 +2007,27 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.53.0"),
+		toVersion:   semver.MustParse("0.54.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ALTER WebhookOnStatusUpdateEnabled SET DEFAULT TRUE`); err != nil {
+					return errors.Wrapf(err, "failed setting column WebhookOnStatusUpdateEnabled default value to TRUE")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ALTER BroadcastEnabled SET DEFAULT TRUE`); err != nil {
+					return errors.Wrapf(err, "failed setting column BroadcastEnabled default value to TRUE")
+				}
+			} else {
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ALTER COLUMN WebhookOnStatusUpdateEnabled SET DEFAULT TRUE`); err != nil {
+					return errors.Wrapf(err, "failed setting column WebhookOnStatusUpdateEnabled default value to TRUE")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ALTER COLUMN BroadcastEnabled SET DEFAULT TRUE`); err != nil {
+					return errors.Wrapf(err, "failed setting column BroadcastEnabled default value to TRUE")
+				}
+			}
+
+			return nil
+		},
+	},
 }

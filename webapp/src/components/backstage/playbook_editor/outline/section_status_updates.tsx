@@ -53,7 +53,9 @@ const StatusUpdates = ({playbook}: Props) => {
                             </Picker>
                         );
                     },
-                    channelCount: playbook.broadcast_channel_ids?.length ?? 0,
+
+                    // if the broadcast is disabled, we broadcast update to zero channel
+                    channelCount: playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0,
                     channels: (channelCount: ReactNode) => {
                         return (
                             <Picker>
@@ -66,34 +68,35 @@ const StatusUpdates = ({playbook}: Props) => {
                                         ) {
                                             updatePlaybook({
                                                 broadcastChannelIDs: channelIds,
+
+                                                // We need this to handle cases when StatusUpdate is enabled, but broadcast is disabled. On edit of the channels list, we should enable broadcast.
+                                                broadcastEnabled: true,
                                             });
                                         }
                                     }}
                                     channelIds={playbook.broadcast_channel_ids}
+                                    broadcastEnabled={playbook.broadcast_enabled}
                                 >
                                     <Placeholder label={channelCount}/>
                                 </BroadcastChannels>
                             </Picker>
                         );
                     },
-                    webhookCount: playbook.webhook_on_status_update_urls?.length ?? 0,
+
+                    // if the broadcast is disabled, we make zero webhook call
+                    webhookCount: playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0,
                     webhooks: (webhookCount: ReactNode) => {
                         return (
                             <Picker>
                                 <WebhooksInput
                                     urls={playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
-                                        if (newWebhookOnStatusUpdateURLs.length === 0) {
-                                            return updatePlaybook({
-                                                webhookOnStatusUpdateEnabled: false,
-                                                webhookOnStatusUpdateURLs: [],
-                                            });
-                                        }
                                         return updatePlaybook({
                                             webhookOnStatusUpdateEnabled: true,
                                             webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
                                         });
                                     }}
+                                    webhooksDisabled={!playbook.webhook_on_status_update_enabled}
                                 >
                                     <Placeholder label={webhookCount}/>
                                 </WebhooksInput>

@@ -64,8 +64,8 @@ const Outline = ({playbook, refetch}: Props) => {
                             onChange={() => {
                                 updatePlaybook({
                                     statusUpdateEnabled: !playbook.status_update_enabled,
-                                    webhookOnStatusUpdateEnabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                                    broadcastEnabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                    webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
+                                    broadcastEnabled: !playbook.status_update_enabled,
                                 });
                             }}
                         />
