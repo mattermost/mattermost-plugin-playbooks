@@ -16,12 +16,11 @@ import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {startPlaybookRunById} from 'src/actions';
+import {startPlaybookRunById, displayPlaybookCreateModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import {displayPlaybookCreateModal} from 'src/actions';
 
 const Item = styled.div`
     display: flex;
