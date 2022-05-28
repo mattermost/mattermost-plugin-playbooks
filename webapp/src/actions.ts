@@ -10,6 +10,8 @@ import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
@@ -69,6 +71,8 @@ import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter, PlaybookWithChecklist} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+
+
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
@@ -106,6 +110,18 @@ export function startPlaybookRunById(teamId: string, playbookId: string, timeout
             resolve(undefined);
         }, timeout));
     };
+}
+
+export function promptPlaybookRun(playbookId: string) {
+    return async (dispatch: Dispatch) => {
+        dispatch(openPlaybookRunModal(playbookId));
+    };
+}
+
+export function openPlaybookRunModal(playbookId: string) {
+    return modals.openModal(makePlaybookRunModalDefinition({
+        playbookId,
+    }));
 }
 
 export function promptUpdateStatus(
