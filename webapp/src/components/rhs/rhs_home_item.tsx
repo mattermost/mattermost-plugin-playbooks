@@ -21,6 +21,7 @@ import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
+import {displayPlaybookCreateModal} from 'src/actions';
 
 const Item = styled.div`
     display: flex;
@@ -269,6 +270,7 @@ export const RHSHomeTemplate = ({
     onUse,
 }: RHSHomeTemplateProps) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
     const {create} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
@@ -319,7 +321,7 @@ export const RHSHomeTemplate = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => onUse(template)}>
+            <RunButton onClick={() => dispatch(displayPlaybookCreateModal({startingTemplate: template.title}))}>
                 <Icon
                     path={mdiOpenInNew}
                     size={1.5}
