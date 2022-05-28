@@ -354,6 +354,18 @@ type PlaybookStore interface {
 
 	// GetPlaybooksActiveTotal returns number of active playbooks
 	GetPlaybooksActiveTotal() (int64, error)
+
+	// GetMetric retrieves a metric by ID
+	GetMetric(id string) (*PlaybookMetricConfig, error)
+
+	// AddMetric adds a metric
+	AddMetric(playbookID string, config PlaybookMetricConfig) error
+
+	// UpdateMetric updates a metric
+	UpdateMetric(id string, setmap map[string]interface{}) error
+
+	// DeleteMetric deletes a metric
+	DeleteMetric(id string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.

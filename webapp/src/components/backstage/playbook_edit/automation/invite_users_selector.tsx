@@ -47,7 +47,7 @@ const InviteUsersSelector = (props: Props) => {
 
             //@ts-ignore
             profiles.then(({data}: { data: UserProfile[] }) => {
-                setSearchedUsers(data);
+                setSearchedUsers(data || []);
             });
         };
 
