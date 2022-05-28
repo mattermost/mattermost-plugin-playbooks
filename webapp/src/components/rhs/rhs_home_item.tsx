@@ -14,7 +14,7 @@ import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {startPlaybookRunById} from 'src/actions';
+import {promptPlaybookRun} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -170,7 +170,6 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
         num_stages,
         num_actions,
         last_run_at,
-        team_id,
     } = playbook;
 
     return (
@@ -243,7 +242,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             {hasPermissionToRunPlaybook &&
             <RunButton
                 data-testid={'run-playbook'}
-                onClick={() => dispatch(startPlaybookRunById(team_id, id))}
+                onClick={() => dispatch(promptPlaybookRun(id))}
             >
                 <Icon
                     path={mdiClipboardPlayOutline}
