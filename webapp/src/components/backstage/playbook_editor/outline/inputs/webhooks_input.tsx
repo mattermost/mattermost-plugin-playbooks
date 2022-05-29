@@ -87,6 +87,7 @@ export const WebhooksInput = (props: Props) => {
         >
             <SelectorWrapper>
                 <TextArea
+                    data-testid={'webhooks-input'}
                     disabled={false}
                     required={true}
                     rows={props.rows || 3}

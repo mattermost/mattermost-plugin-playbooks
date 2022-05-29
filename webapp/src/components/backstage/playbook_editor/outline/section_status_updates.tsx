@@ -30,7 +30,7 @@ const StatusUpdates = ({playbook}: Props) => {
     }
 
     return (
-        <StatusUpdatesContainer>
+        <StatusUpdatesContainer data-testid={'status-update-section'}>
             <FormattedMessage
                 defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks> .'
                 values={{
@@ -58,7 +58,7 @@ const StatusUpdates = ({playbook}: Props) => {
                     channelCount: playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0,
                     channels: (channelCount: ReactNode) => {
                         return (
-                            <Picker>
+                            <Picker data-testid={'status-update-broadcast-channels'}>
                                 <BroadcastChannels
                                     id='playbook-automation-broadcast'
                                     onChannelsSelected={(channelIds: string[]) => {
@@ -87,7 +87,7 @@ const StatusUpdates = ({playbook}: Props) => {
                     webhookCount: playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0,
                     webhooks: (webhookCount: ReactNode) => {
                         return (
-                            <Picker>
+                            <Picker data-testid={'status-update-webhooks'}>
                                 <WebhooksInput
                                     urls={playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {

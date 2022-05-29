@@ -58,7 +58,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Status Updates'})}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
