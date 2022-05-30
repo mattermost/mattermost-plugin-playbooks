@@ -306,7 +306,7 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it('filter overdue tasks', () => {
+        it('filter overdue tasks', {retries: {runMode: 3}}, () => {
             // # Set overdue date for several items
             setTaskDueDate(2, '1 hour ago');
 

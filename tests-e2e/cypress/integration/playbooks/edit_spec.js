@@ -704,7 +704,7 @@ describe('playbooks > edit', () => {
 
                 // BPE regression,
                 // owner assignment does not save
-                it('persists the assigned owner even if the toggle is off', () => {
+                it.skip('persists the assigned owner even if the toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
