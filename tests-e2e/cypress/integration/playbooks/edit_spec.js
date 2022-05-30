@@ -72,6 +72,7 @@ describe('playbooks > edit', () => {
             });
 
             // current regression in BPE
+            // MM-44606
             it.skip('removes the input prompt when blurring with an empty slash command', () => {
                 // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
@@ -99,6 +100,7 @@ describe('playbooks > edit', () => {
             });
 
             // current regression in BPE
+            // MM-44606
             it.skip('removes the input prompt when blurring with an invalid slash command', () => {
                 // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
@@ -493,6 +495,7 @@ describe('playbooks > edit', () => {
                 // BPE regression
                 // user is still shown in the selector
                 // with a 1 MEMBER badge
+                // MM-44635
                 it.skip('removes invitation from users that are no longer in the team', () => {
                     let userToRemove;
                     let playbookId;
@@ -544,11 +547,6 @@ describe('playbooks > edit', () => {
                                 // # Open the invited users selector
                                 cy.get('#invite-users').within(() => {
                                     cy.openSelector();
-
-                                    // // * Verify that there are no invited members
-                                    // cy.findByText('INVITED MEMBERS').should(
-                                    //     'not.exist'
-                                    // );
 
                                     // * Verify there is no member badge
                                     cy.get('.invite-users-selector__control')
@@ -704,6 +702,7 @@ describe('playbooks > edit', () => {
 
                 // BPE regression,
                 // owner assignment does not save
+                // MM-44647
                 it.skip('persists the assigned owner even if the toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
@@ -764,6 +763,7 @@ describe('playbooks > edit', () => {
                 // BPE regression
                 // removed user is not shown in the owner selector
                 // but the toggle remains on
+                // MM-44678
                 it.skip('removes the owner and disables the setting if the user is no longer in the team', () => {
                     let userToRemove;
                     let playbookId;
@@ -773,7 +773,6 @@ describe('playbooks > edit', () => {
                         .then(() => {
                             // # We need to increase the maximum number of users per team; otherwise,
                             // adding a new member to the team fails in CI
-
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;
                                 cy.apiAddUserToTeam(
@@ -867,161 +866,6 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                // it('does not allow channel selection when status update toggle is disabled', () => {
-                //     // # Visit the selected playbook
-                //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                //     // # Switch to the outline tab
-                //     cy.findByText('Outline').click();
-
-                //     // * Verify that the toggle is unchecked
-                //     cy.get('#broadcast-channels label input').should(
-                //         'not.be.checked'
-                //     );
-
-                //     // * Verify that the channel selector is disabled
-                //     cy.get('#broadcast-channels').within(() => {
-                //         cy.getStyledComponent('StyledSelect').should(
-                //             'have.class',
-                //             'playbooks-rselect--is-disabled'
-                //         );
-                //     });
-                // });
-
-                // it('allows selecting a channel when enabled', () => {
-                //     // # Visit the selected playbook
-                //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                //     // # Switch to the outline tab
-                //     cy.findByText('Outline').click();
-
-                //     cy.get('#broadcast-channels').within(() => {
-                //         // * Verify that the toggle is unchecked
-                //         cy.get('label input').should('not.be.checked');
-
-                //         // # Click on the toggle to enable the setting
-                //         cy.get('label input').click({force: true});
-
-                //         // * Verify that the toggle is checked
-                //         cy.get('label input').should('be.checked');
-
-                //         // # Open the channel selector
-                //         cy.openChannelSelector();
-
-                //         // # Select a channel
-                //         cy.selectChannel('Town Square');
-
-                //         // * Verify that the control shows the selected owner
-                //         cy.get('.playbooks-rselect__control').contains(
-                //             'Town Square'
-                //         );
-                //     });
-                // });
-
-                // it('allows changing the channel', () => {
-                //     // # Visit the selected playbook
-                //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                //     // # Switch to the outline tab
-                //     cy.findByText('Outline').click();
-
-                //     cy.get('#broadcast-channels').within(() => {
-                //         // * Verify that the toggle is unchecked
-                //         cy.get('label input').should('not.be.checked');
-
-                //         // # Click on the toggle to enable the setting
-                //         cy.get('label input').click({force: true});
-
-                //         // * Verify that the toggle is checked
-                //         cy.get('label input').should('be.checked');
-
-                //         // # Open the channel selector
-                //         cy.openChannelSelector();
-
-                //         // # Select a channel
-                //         cy.selectChannel('Town Square');
-
-                //         // * Verify that the control shows the selected channel
-                //         cy.get('#playbook-automation-broadcast .playbooks-rselect__control').contains(
-                //             'Town Square'
-                //         );
-
-                //         // # Open the channel selector
-                //         cy.get('#playbook-automation-broadcast .playbooks-rselect__control').click({
-                //             force: true,
-                //         });
-
-                //         // # Select a new channel
-                //         cy.selectChannel(testPublicChannel.display_name);
-
-                //         // * Verify that the control shows the selected channel
-                //         cy.get('#playbook-automation-broadcast .playbooks-rselect__control').contains(
-                //             testPublicChannel.display_name,
-                //         );
-                //     });
-                // });
-
-                // it('persists the channel even if the toggle is off', () => {
-                //     // # Visit the selected playbook
-                //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                //     // # Switch to Status updates tab
-                //     cy.get('#root').findByText('Status updates').click();
-
-                //     cy.get('#broadcast-channels').within(() => {
-                //         // * Verify that the toggle is unchecked
-                //         cy.get('label input').should('not.be.checked');
-
-                //         // # Click on the toggle to enable the setting
-                //         cy.get('label input').click({force: true});
-
-                //         // * Verify that the toggle is checked
-                //         cy.get('label input').should('be.checked');
-
-                //         // # Open the channel selector
-                //         cy.openChannelSelector();
-
-                //         // # Select a channel
-                //         cy.selectChannel('Town Square');
-
-                //         // * Verify that the control shows the selected channel
-                //         cy.get('#playbook-automation-broadcast .playbooks-rselect__control').contains(
-                //             'Town Square'
-                //         );
-
-                //         // # Click on the toggle to disable the setting
-                //         cy.get('label input').click({force: true});
-
-                //         // * Verify that the toggle is unchecked
-                //         cy.get('label input').should('not.be.checked');
-                //     });
-
-                //     // # Save the playbook
-                //     cy.findByTestId('save_playbook').click();
-
-                //     // # Navigate again to the playbook
-                //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                //     // # Switch to Actions tab
-                //     cy.get('#root').findByText('Status updates').click();
-
-                //     cy.get('#broadcast-channels').within(() => {
-                //         // * Verify that the toggle is unchecked
-                //         cy.get('label input').should('not.be.checked');
-
-                //         // # Click on the toggle to enable the setting
-                //         cy.get('label input').click({force: true});
-
-                //         // * Verify that the toggle is checked
-                //         cy.get('label input').should('be.checked');
-
-                //         // * Verify that the control still shows the selected channel
-                //         cy.get('#playbook-automation-broadcast .playbooks-rselect__control').contains(
-                //             'Town Square'
-                //         );
-                //     });
-                // });
-
                 it('persists selected channels when status update toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
@@ -1097,52 +941,6 @@ describe('playbooks > edit', () => {
                         });
                 });
 
-            //     it('shows "Select a channel" when no broadcast channel configured', () => {
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
-
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
-
-            //         // * Verify placeholder text is present
-            //         cy.get('#playbook-automation-broadcast').should(
-            //             'have.text',
-            //             'Select channels'
-            //         );
-            //     });
-
-            //     it('shows channel name when public broadcast channel configured', () => {
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
-
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
-
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('#broadcast-channels').within(() => {
-            //             cy.get('label input').click({force: true});
-            //         });
-
-            //         // # Open the broadcast channel widget and select a public channel
-            //         cy.get('#playbook-automation-broadcast')
-            //             .click()
-            //             .type(testPublicChannel.display_name + '{enter}', {delay: 200});
-
-            //         // # Save the playbook
-            //         cy.findByTestId('save_playbook').click();
-
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
-
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
-
-            //         // * Verify placeholder text is present
-            //         cy.get('#playbook-automation-broadcast').should(
-            //             'have.text',
-            //             testPublicChannel.display_name,
-            //         );
-            //     });
 
             //     it('shows channel name when private broadcast channel configured and user is a member', () => {
             //         // # Visit the selected playbook
@@ -1438,97 +1236,6 @@ describe('playbooks > edit', () => {
                 cy.reload();
                 cy.findByText(/status updates are not expected/i).should('be.visible');
             });
-
-            // it('disabling status should disable actions(when an update is posted)', () => {
-            //     // # Visit the selected playbook
-            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-            //     // # Switch to Status updates tab
-            //     cy.get('#root').findByText('Status updates').click();
-
-            //     // * Verify that the toggle is checked
-            //     cy.get('#broadcast-channels').within(() => {
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('label input').click({force: true});
-
-            //         // * Verify that the toggle is checked
-            //         cy.get('label input').should('be.checked');
-            //     });
-
-            //     // * Verify that the toggle is checked
-            //     cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('label input').click({force: true});
-
-            //         // * Verify that the toggle is checked
-            //         cy.get('label input').should('be.checked');
-            //     });
-
-            //     // * Verify that toggle can be selected
-            //     cy.get('#status-updates').within(() => {
-            //         // * Verify that the toggle is checked
-            //         cy.get('label input').should('be.checked');
-
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('label input').click({force: true});
-
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-            //     });
-
-            //     // * Verify that the toggle can't be checked
-            //     cy.get('#broadcast-channels').within(() => {
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-
-            //         // # Click on the toggle
-            //         cy.get('label input').click({force: true});
-
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-            //     });
-
-            //     // * Verify that the toggle can't be checked
-            //     cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-
-            //         // # Click on the toggle
-            //         cy.get('label input').click({force: true});
-
-            //         // * Verify that the toggle is unchecked
-            //         cy.get('label input').should('not.be.checked');
-            //     });
-            // });
-
-            // it('can be saved', () => {
-            //     // # Visit the selected playbook
-            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-            //     // # Switch to Status updates tab
-            //     cy.get('#root').findByText('Status updates').click();
-
-            //     // # Uncheck toggle
-            //     cy.get('#status-updates label input').click({force: true});
-
-            //     // # Save the playbook
-            //     cy.findByTestId('save_playbook').click();
-
-            //     // # Navigate again to the playbook
-            //     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-            //     // # Switch to Status updates tab
-            //     cy.get('#root').findByText('Status updates').click();
-
-            //     // * Verify that the toggle is unchecked
-            //     cy.get('#status-updates label input').should('not.be.checked');
-            // });
         });
 
         describe('retrospective enable / disable', () => {
