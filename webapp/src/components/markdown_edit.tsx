@@ -36,6 +36,16 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
         setValue(props.value);
     }, [props.value]);
 
+    const save = () => {
+        setIsEditing(false);
+        props.onSave(value);
+    };
+
+    const cancel = () => {
+        setIsEditing(false);
+        setValue(props.value);
+    };
+
     if (isEditing) {
         return (
             <MarkdownEditContainer
@@ -52,16 +62,17 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
                     autoFocus={true}
                     disabled={props.disabled}
                     previewDisabled={props.previewDisabled ?? true}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if (e.ctrlKey && e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            cancel();
+                        }
+                    }}
                 />
                 <CancelSaveButtons
-                    onCancel={() => {
-                        setIsEditing(false);
-                        setValue(props.value);
-                    }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        props.onSave(value);
-                    }}
+                    onCancel={cancel}
+                    onSave={save}
                 />
             </MarkdownEditContainer>
         );
