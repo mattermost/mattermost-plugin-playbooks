@@ -150,7 +150,7 @@ const PlaybookListRow = (props: Props) => {
                             telemetryEventForPlaybook(props.playbook.id, 'playbook_duplicate_clicked_in_playbooks_list');
                         }}
                         disabled={!permissionForDuplicate}
-                        disabledAltText={'Duplicate is disabled for this team.'}
+                        disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                     >
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
