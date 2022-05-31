@@ -58,14 +58,14 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Status Updates'})}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
                                 updatePlaybook({
                                     statusUpdateEnabled: !playbook.status_update_enabled,
-                                    webhookOnStatusUpdateEnabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                                    broadcastEnabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                    webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
+                                    broadcastEnabled: !playbook.status_update_enabled,
                                 });
                             }}
                         />
