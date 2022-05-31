@@ -63,7 +63,7 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
                     disabled={props.disabled}
                     previewDisabled={props.previewDisabled ?? true}
                     onKeyDown={(e: KeyboardEvent) => {
-                        if (e.shiftKey && e.key === 'Enter') {
+                        if (e.ctrlKey && e.key === 'Enter') {
                             save();
                         } else if (e.key === 'Escape') {
                             cancel();
