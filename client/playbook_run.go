@@ -1,8 +1,9 @@
 package client
 
 import (
-	"gopkg.in/guregu/null.v4"
 	"time"
+
+	"gopkg.in/guregu/null.v4"
 )
 
 // Me is a constant that refers to the current user, and can be used in various APIs in place of
@@ -117,6 +118,12 @@ type RunAction struct {
 
 	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
+// RetrospectiveUpdate represents the run retrospective info
+type RetrospectiveUpdate struct {
+	Text    string          `json:"retrospective"`
+	Metrics []RunMetricData `json:"metrics"`
 }
 
 // Sort enumerates the available fields we can sort on.

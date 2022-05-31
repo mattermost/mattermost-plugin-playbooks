@@ -111,25 +111,25 @@ describe('playbooks > overview', () => {
 
     describe('should switch to channels and prompt to run when clicking run', () => {
         const openAndRunPlaybook = (team, playbook) => {
-                // # Navigate directly to town square on the team
-                cy.visit(`${team.name}/channels/town-square`)
+            // # Navigate directly to town square on the team
+            cy.visit(`${team.name}/channels/town-square`);
 
-                // # Open Playbooks
-                cy.get('[aria-label="Select to open product switch menu."]').click({force: true});
-                cy.get('a[href="/playbooks"]').click({force: true});
+            // # Open Playbooks
+            cy.get('[aria-label="Select to open product switch menu."]').click({force: true});
+            cy.get('a[href="/playbooks"]').click({force: true});
 
-                // Click through to open the playbook
-                cy.findByTestId('playbooksLHSButton').click({force: true});
-                cy.get('[placeholder="Search for a playbook"]').type(testPlaybookOnTeamForSwitching.title);
-                cy.findByTestId('playbook-title').click({force: true});
+            // Click through to open the playbook
+            cy.findByTestId('playbooksLHSButton').click({force: true});
+            cy.get('[placeholder="Search for a playbook"]').type(testPlaybookOnTeamForSwitching.title);
+            cy.findByTestId('playbook-title').click({force: true});
 
-                // # Click Run Playbook
-                cy.findByTestId('run-playbook').click({force: true});
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click({force: true});
 
-                // * Verify the playbook run creation dialog has opened
-                cy.get('#interactiveDialogModal').should('exist').within(() => {
-                    cy.findByText('Start run').should('exist');
-                });
+            // * Verify the playbook run creation dialog has opened
+            cy.get('#interactiveDialogModal').should('exist').within(() => {
+                cy.findByText('Start run').should('exist');
+            });
         };
 
         it('for testPlaybookOnTeamForSwitching from its own team', () => {
@@ -246,31 +246,32 @@ describe('playbooks > overview', () => {
             ],
             retrospectiveTemplate: 'Cypress test template'
         }).then((playbook) => {
-            playbookId = playbook.id
+            playbookId = playbook.id;
             cy.visit(`/playbooks/playbooks/${playbook.id}`);
 
             // * Verify we don't have any follower
             cy.findByTestId('preview-content').within(() => {
                 cy.findByText('Begin following for').should('not.exist');
             });
+
             // * set myself as follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({ force: true });
+            cy.findByTestId('auto-follow-runs').click({force: true});
             cy.findByTestId('preview-content').within(() => {
                 cy.findByText('Begin following for one user').should('exist');
             });
 
             // # login as other follower and follow playbook
-            cy.apiLogin(testUserFollower)
+            cy.apiLogin(testUserFollower);
             cy.visit(`/playbooks/playbooks/${playbook.id}`);
 
             // * set testUserFollower as follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({force:true});
+            cy.findByTestId('auto-follow-runs').click({force: true});
             cy.findByTestId('preview-content').within(() => {
                 cy.findByText('Begin following for 2 users').should('exist');
             });
 
             // * set testUserFollower as no follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({force:true});
+            cy.findByTestId('auto-follow-runs').click({force: true});
             cy.findByTestId('preview-content').within(() => {
                 cy.findByText('Begin following for one user').should('exist');
             });

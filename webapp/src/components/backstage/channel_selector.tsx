@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {createSelector} from 'reselect';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
@@ -10,7 +10,7 @@ import General from 'mattermost-redux/constants/general';
 
 import {Channel, ChannelMembership} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {fetchMyChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
 
@@ -26,8 +26,24 @@ export interface Props {
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
     placeholder?: string;
-    teamId?: string;
+    teamId: string;
 }
+
+const getAllPublicChannelsInTeam = (teamId: string) => createSelector(
+    'getAllPublicChannelsInTeam',
+    getAllChannels,
+    getChannelsInTeam,
+    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToMany<Team, Channel>): Channel[] => {
+        const publicChannels : Channel[] = [];
+        (channelsByTeam[teamId] || []).forEach((channelId: string) => {
+            const channel = allChannels[channelId];
+            if (channel.type === General.OPEN_CHANNEL && channel.delete_at === 0) {
+                publicChannels.push(channel);
+            }
+        });
+        return publicChannels;
+    },
+);
 
 const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
     'getMyPublicAndPrivateChannelsInTeam',
@@ -71,10 +87,29 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 };
 
 const ChannelSelector = (props: Props & {className?: string}) => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const currentTeamId = useSelector(getCurrentTeamId);
-    const teamId = props.teamId || currentTeamId;
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(teamId));
+    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
+    const allPublicChannels = useSelector(getAllPublicChannelsInTeam(props.teamId));
+
+    useEffect(() => {
+        if (props.teamId !== '' && selectableChannels.length === 0) {
+            dispatch(fetchMyChannelsAndMembers(props.teamId));
+        }
+    }, [props.teamId]);
+
+    useEffect(() => {
+        // Create a map with all channels in the store, keyed by channel ID
+        const channelsMap = new Map<string, Channel>();
+        [...allPublicChannels, ...selectableChannels].forEach((channel: Channel) => channelsMap.set(channel.id, channel));
+
+        // For all channels not in the store initially, fetch them and add them to the store
+        props.channelIds.forEach((channelID) => {
+            if (!channelsMap.has(channelID)) {
+                dispatch(getChannel(channelID));
+            }
+        });
+    }, []);
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
@@ -108,7 +143,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const values = filterChannels(props.channelIds, selectableChannels);
+    const values = filterChannels(props.channelIds, [...allPublicChannels, ...selectableChannels]);
 
     const components = props.selectComponents || defaultComponents;
 

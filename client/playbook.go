@@ -1,30 +1,33 @@
 package client
 
+import "gopkg.in/guregu/null.v4"
+
 // Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
-	ID                          string           `json:"id"`
-	Title                       string           `json:"title"`
-	Description                 string           `json:"description"`
-	Public                      bool             `json:"public"`
-	TeamID                      string           `json:"team_id"`
-	CreatePublicPlaybookRun     bool             `json:"create_public_playbook_run"`
-	CreateAt                    int64            `json:"create_at"`
-	DeleteAt                    int64            `json:"delete_at"`
-	NumStages                   int64            `json:"num_stages"`
-	NumSteps                    int64            `json:"num_steps"`
-	Checklists                  []Checklist      `json:"checklists"`
-	Members                     []PlaybookMember `json:"members"`
-	ReminderMessageTemplate     string           `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds int64            `json:"reminder_timer_default_seconds"`
-	InvitedUserIDs              []string         `json:"invited_user_ids"`
-	InvitedGroupIDs             []string         `json:"invited_group_ids"`
-	InvitedUsersEnabled         bool             `json:"invited_users_enabled"`
-	DefaultOwnerID              string           `json:"default_owner_id"`
-	DefaultOwnerEnabled         bool             `json:"default_owner_enabled"`
-	BroadcastChannelIDs         []string         `json:"broadcast_channel_ids"`
-	BroadcastEnabled            bool             `json:"broadcast_enabled"`
-	WebhookOnCreationURLs       []string         `json:"webhook_on_creation_urls"`
-	WebhookOnCreationEnabled    bool             `json:"webhook_on_creation_enabled"`
+	ID                          string                 `json:"id"`
+	Title                       string                 `json:"title"`
+	Description                 string                 `json:"description"`
+	Public                      bool                   `json:"public"`
+	TeamID                      string                 `json:"team_id"`
+	CreatePublicPlaybookRun     bool                   `json:"create_public_playbook_run"`
+	CreateAt                    int64                  `json:"create_at"`
+	DeleteAt                    int64                  `json:"delete_at"`
+	NumStages                   int64                  `json:"num_stages"`
+	NumSteps                    int64                  `json:"num_steps"`
+	Checklists                  []Checklist            `json:"checklists"`
+	Members                     []PlaybookMember       `json:"members"`
+	ReminderMessageTemplate     string                 `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64                  `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string               `json:"invited_user_ids"`
+	InvitedGroupIDs             []string               `json:"invited_group_ids"`
+	InvitedUsersEnabled         bool                   `json:"invited_users_enabled"`
+	DefaultOwnerID              string                 `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool                   `json:"default_owner_enabled"`
+	BroadcastChannelIDs         []string               `json:"broadcast_channel_ids"`
+	BroadcastEnabled            bool                   `json:"broadcast_enabled"`
+	WebhookOnCreationURLs       []string               `json:"webhook_on_creation_urls"`
+	WebhookOnCreationEnabled    bool                   `json:"webhook_on_creation_enabled"`
+	Metrics                     []PlaybookMetricConfig `json:"metrics"`
 }
 
 type PlaybookMember struct {
@@ -32,6 +35,12 @@ type PlaybookMember struct {
 	Roles       []string `json:"roles"`
 	SchemeRoles []string `json:"scheme_roles"`
 }
+
+const (
+	MetricTypeDuration = "metric_duration"
+	MetricTypeCurrency = "metric_currency"
+	MetricTypeInteger  = "metric_integer"
+)
 
 // Checklist represents a checklist in a playbook
 type Checklist struct {
@@ -51,27 +60,38 @@ type ChecklistItem struct {
 	Command          string `json:"command"`
 	CommandLastRun   int64  `json:"command_last_run"`
 	Description      string `json:"description"`
+	DueDate          int64  `json:"due_date"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
 type PlaybookCreateOptions struct {
-	Title                       string           `json:"title"`
-	Description                 string           `json:"description"`
-	TeamID                      string           `json:"team_id"`
-	Public                      bool             `json:"public"`
-	CreatePublicPlaybookRun     bool             `json:"create_public_playbook_run"`
-	Checklists                  []Checklist      `json:"checklists"`
-	Members                     []PlaybookMember `json:"members"`
-	BroadcastChannelID          string           `json:"broadcast_channel_id"`
-	ReminderMessageTemplate     string           `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds int64            `json:"reminder_timer_default_seconds"`
-	InvitedUserIDs              []string         `json:"invited_user_ids"`
-	InvitedGroupIDs             []string         `json:"invited_group_ids"`
-	InviteUsersEnabled          bool             `json:"invite_users_enabled"`
-	DefaultOwnerID              string           `json:"default_owner_id"`
-	DefaultOwnerEnabled         bool             `json:"default_owner_enabled"`
-	BroadcastChannelIDs         []string         `json:"broadcast_channel_ids"`
-	BroadcastEnabled            bool             `json:"broadcast_enabled"`
+	Title                       string                 `json:"title"`
+	Description                 string                 `json:"description"`
+	TeamID                      string                 `json:"team_id"`
+	Public                      bool                   `json:"public"`
+	CreatePublicPlaybookRun     bool                   `json:"create_public_playbook_run"`
+	Checklists                  []Checklist            `json:"checklists"`
+	Members                     []PlaybookMember       `json:"members"`
+	BroadcastChannelID          string                 `json:"broadcast_channel_id"`
+	ReminderMessageTemplate     string                 `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64                  `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string               `json:"invited_user_ids"`
+	InvitedGroupIDs             []string               `json:"invited_group_ids"`
+	InviteUsersEnabled          bool                   `json:"invite_users_enabled"`
+	DefaultOwnerID              string                 `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool                   `json:"default_owner_enabled"`
+	BroadcastChannelIDs         []string               `json:"broadcast_channel_ids"`
+	BroadcastEnabled            bool                   `json:"broadcast_enabled"`
+	Metrics                     []PlaybookMetricConfig `json:"metrics"`
+}
+
+type PlaybookMetricConfig struct {
+	ID          string   `json:"id"`
+	PlaybookID  string   `json:"playbook_id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Type        string   `json:"type"`
+	Target      null.Int `json:"target"`
 }
 
 // PlaybookListOptions specifies the optional parameters to the
@@ -91,14 +111,20 @@ type GetPlaybooksResults struct {
 }
 
 type PlaybookStats struct {
-	RunsInProgress                int       `json:"runs_in_progress"`
-	ParticipantsActive            int       `json:"participants_active"`
-	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+	RunsInProgress                int        `json:"runs_in_progress"`
+	ParticipantsActive            int        `json:"participants_active"`
+	RunsFinishedPrev30Days        int        `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int        `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int      `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64  `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int      `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64  `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int      `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64  `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []null.Int `json:"metric_overall_average"`
+	MetricRollingAverage          []null.Int `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []null.Int `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64  `json:"metric_value_range"`
+	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
+	LastXRunNames                 []string   `json:"last_x_run_names"`
 }

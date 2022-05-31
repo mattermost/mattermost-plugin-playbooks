@@ -151,6 +151,7 @@ const CommandContainer = styled.div<{editing: boolean, isRHS: boolean}>`
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+	max-width: 100%;
 
     ${({isRHS}) => !isRHS && css`
         position: relative;

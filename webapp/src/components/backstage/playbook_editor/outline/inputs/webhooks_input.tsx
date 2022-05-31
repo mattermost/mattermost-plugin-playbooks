@@ -13,7 +13,7 @@ import {moveRect} from './broadcast_channels_selector';
 
 type Props = {
     urls: string[];
-    onChange: (urls: string[]) => void;
+    onChange: (urls: string[]) => Promise<any>;
     errorText?: string;
     rows?: number;
     maxRows?: number;
@@ -54,10 +54,11 @@ export const WebhooksInput = (props: Props) => {
         </div>
     );
 
+    const errorTextTemp = props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'});
+
     const isValid = (newURLs: string): boolean => {
         const maxRows = props.maxRows || 64;
         const maxErrorText = props.maxErrorText || formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'});
-        const errorTextTemp = props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'});
 
         if (newURLs.split('\n').filter((v) => v.trim().length > 0).length > maxRows) {
             setInvalid(true);
@@ -103,10 +104,17 @@ export const WebhooksInput = (props: Props) => {
                         setOpen(false);
                     }}
                     onSave={() => {
-                        const filteredURLs = urls.filter((v) => v.trim().length > 0);
+                        const filteredURLs = urls.map((v) => v.trim()).filter((v) => v.length > 0);
                         if (isValid(filteredURLs.join('\n'))) {
-                            props.onChange(filteredURLs);
-                            setOpen(false);
+                            props.onChange(filteredURLs)
+                                .then(() => {
+                                    setURLs(filteredURLs);
+                                    setOpen(false);
+                                })
+                                .catch(() => {
+                                    setInvalid(true);
+                                    setErrorText(errorTextTemp);
+                                });
                         }
                     }}
                 />

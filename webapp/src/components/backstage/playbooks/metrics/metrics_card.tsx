@@ -6,25 +6,23 @@ import styled from 'styled-components';
 import {Duration} from 'luxon';
 import {useIntl} from 'react-intl';
 
-import {MetricType, PlaybookWithChecklist} from 'src/types/playbook';
+import {Metric, MetricType} from 'src/types/playbook';
 import {HorizontalSpacer} from 'src/components/backstage/styles';
 import {NullNumber, PlaybookStats} from 'src/types/stats';
 import {formatDuration} from 'src/components/formatted_duration';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookMetrics: Metric[];
     playbookStats: PlaybookStats;
     index: number;
 }
 
-const MetricsCard = ({playbook, playbookStats, index}: Props) => {
+const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
     const {formatMessage} = useIntl();
-    const stats = makeCardStats(playbook, playbookStats, index);
-    const transformFn = playbook.metrics[index].type === MetricType.Duration ?
-        (val: number) => formatDuration(Duration.fromMillis(val)) : (val: number) => val;
-    const valueTransformFn = playbook.metrics[index].type === MetricType.Duration ?
-        (val: number) => formatDuration(Duration.fromMillis(val), 'narrow', 'truncate') : (val: number) => val;
+    const stats = makeCardStats(playbookMetrics, playbookStats, index);
+    const transformFn = playbookMetrics[index].type === MetricType.Duration ? (val: number) => formatDuration(Duration.fromMillis(val)) : (val: number) => val;
+    const valueTransformFn = playbookMetrics[index].type === MetricType.Duration ? (val: number) => formatDuration(Duration.fromMillis(val), 'narrow', 'truncate') : (val: number) => val;
 
     const style = getComputedStyle(document.body);
     const buttonBg = style.getPropertyValue('--button-bg');
@@ -47,7 +45,7 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
         },
     };
 
-    const titleEllipsis = ellipsize(playbook.metrics[index].title, 32);
+    const titleEllipsis = ellipsize(playbookMetrics[index].title, 32);
     const chartTitle = titleEllipsis + ' ' + formatMessage({defaultMessage: 'per run over the last 10 runs'});
 
     return (
@@ -121,14 +119,14 @@ interface MetricsCardStats {
     last_x_run_names: string[];
 }
 
-const makeCardStats = (playbook: PlaybookWithChecklist, stats: PlaybookStats, idx: number) => {
+const makeCardStats = (playbookMetrics: Metric[], stats: PlaybookStats, idx: number) => {
     return {
         average: stats.metric_overall_average[idx] || null,
         rolling_average: stats.metric_rolling_average[idx] || null,
         rolling_average_change: stats.metric_rolling_average_change[idx] || null,
         value_range: stats.metric_value_range[idx] || [null, null],
         rolling_values: stats.metric_rolling_values[idx] || [null, null, null, null, null, null, null, null, null, null],
-        target: playbook.metrics[idx].target || null,
+        target: playbookMetrics[idx].target || null,
         last_x_run_names: stats.last_x_run_names || ['', '', '', '', '', '', '', '', '', ''],
     } as MetricsCardStats;
 };

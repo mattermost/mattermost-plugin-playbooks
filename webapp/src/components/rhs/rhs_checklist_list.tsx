@@ -108,6 +108,8 @@ const RHSChecklistList = (props: Props) => {
                             <MultiCheckbox
                                 options={filterOptions}
                                 onselect={selectOption}
+                                topPx={8}
+                                leftPx={-177}
                                 dotMenuButton={StyledDotMenuButton}
                                 icon={
                                     <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
@@ -173,11 +175,6 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     display: inline-block;
     width: 28px;
     height: 28px;
-
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
 `;
 
 const IconWrapper = styled.div`

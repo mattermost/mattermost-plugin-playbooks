@@ -69,58 +69,28 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 
 func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Playbook) bool {
 	if playbook.WebhookOnCreationEnabled {
-		if len(playbook.WebhookOnCreationURLs) > 64 {
-			msg := "too many registered creation webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := app.ValidateWebhookURLs(playbook.WebhookOnCreationURLs); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
 			return false
-		}
-
-		for _, webhook := range playbook.WebhookOnCreationURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-				return false
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return false
-			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
-			msg := "too many registered update webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := app.ValidateWebhookURLs(playbook.WebhookOnStatusUpdateURLs); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
 			return false
-		}
-
-		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-				return false
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return false
-			}
 		}
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+		if err := app.ValidateCategoryName(playbook.CategoryName); err != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return false
 		}
 	}
 
 	if len(playbook.SignalAnyKeywords) != 0 {
-		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+		playbook.SignalAnyKeywords = app.ProcessSignalAnyKeywords(playbook.SignalAnyKeywords)
 	}
 
 	if playbook.BroadcastEnabled {
@@ -439,29 +409,6 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		SearchTerm:   searchTerm,
 		WithArchived: withArchived,
 	}, nil
-}
-
-func removeDuplicates(a []string) []string {
-	items := make(map[string]bool)
-	for _, item := range a {
-		if item != "" {
-			items[item] = true
-		}
-	}
-	res := make([]string, 0, len(items))
-	for item := range items {
-		res = append(res, item)
-	}
-	return res
-}
-
-func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
-	categoryNameLength := len(categoryName)
-	if categoryNameLength > 22 {
-		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
-		return errors.Errorf(msg)
-	}
-	return nil
 }
 
 func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {

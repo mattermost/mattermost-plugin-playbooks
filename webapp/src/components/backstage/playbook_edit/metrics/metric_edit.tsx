@@ -137,7 +137,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 />
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
                 <VerticalSpacer size={16}/>
-                <PrimaryButton onClick={verifyAndSave}>{'Add'}</PrimaryButton>
+                <PrimaryButton onClick={verifyAndSave}>{formatMessage({defaultMessage: 'Save'})}</PrimaryButton>
             </EditContainer>
         </Container>
     );

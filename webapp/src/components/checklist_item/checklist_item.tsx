@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
@@ -14,9 +13,11 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     clientSetChecklistItemCommand,
+    setChecklistItemState,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
-import {usePortal} from 'src/hooks';
+
+import Portal from 'src/components/portal';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
 
@@ -34,7 +35,7 @@ interface ChecklistItemProps {
     itemNum: number;
     playbookRunId?: string;
     menuEnabled: boolean;
-    onChange?: (item: ChecklistItemState) => void;
+    onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
@@ -56,7 +57,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [command, setCommand] = useState(props.checklistItem.command);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
-    const portal = usePortal(document.body);
 
     const [showMenu, setShowMenu] = useState(false);
 
@@ -128,11 +128,24 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
+        const shouldHideName = () => {
+            if (isEditing) {
+                return false;
+            }
+            if (command !== '') {
+                return true;
+            }
+            const notFinished = [ChecklistItemState.Open, ChecklistItemState.InProgress].includes(props.checklistItem.state as ChecklistItemState);
+            if (dueDate > 0 && notFinished) {
+                return true;
+            }
+            return false;
+        };
         return (
             <AssignTo
                 assignee_id={assigneeID || ''}
                 editable={isEditing}
-                withoutName={(command !== '' || dueDate > 0) && !isEditing}
+                withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
             />
         );
@@ -223,11 +236,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 <CheckBoxButton
                     disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => {
-                        if (props.onChange) {
-                            props.onChange(item);
-                        }
-                    }}
+                    onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
@@ -298,7 +307,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     );
 
     if (props.dragging) {
-        return ReactDOM.createPortal(content, portal);
+        return <Portal>{content}</Portal>;
     }
 
     return content;

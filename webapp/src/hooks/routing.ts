@@ -13,6 +13,8 @@ import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {Playbook} from 'src/types/playbook';
 import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
 
+import {useExperimentalFeaturesEnabled} from './general';
+
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
     onGo?: (arg: T) => void
@@ -59,8 +61,8 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
         }
 
         return {
-            edit: (p: TParam, tabId?: typeof tabInfo[number]['id']) => {
-                return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}`, p);
+            edit: (p: TParam) => {
+                return go(`/playbooks/${id(p)}/outline`, p);
             },
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);

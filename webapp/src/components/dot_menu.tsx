@@ -7,21 +7,22 @@ import styled, {css} from 'styled-components';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
 
-export const DotMenuButton = styled.div`
+export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
     padding: 0;
-    background: transparent;
     border: none;
     border-radius: 4px;
     width: 3.2rem;
     height: 3.2rem;
     fill: rgba(var(--center-channel-color-rgb), 0.56);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
 
+    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }
 `;
 
@@ -47,12 +48,12 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
         left: -197px;
         top: 35px;
     `)};
-    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
-    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     ${(props) => (props.wide && css`
         left: -236px;
     `)};
+    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
+    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
 
     width: max-content;
     min-width: 160px;
@@ -88,6 +89,7 @@ interface DotMenuProps {
     title?: string;
     disabled?: boolean;
     className?: string;
+    isActive?: boolean;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -114,6 +116,7 @@ const DotMenu = (props: DotMenuProps) => {
         <MenuButton
             title={props.title}
             ref={rootRef}
+            isActive={(props.isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 toggleOpen();
@@ -207,6 +210,10 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             onClick={props.onClick}
             className={props.className}
             role={'button'}
+
+            // Prevent trigger icon (parent) from propagating title prop to options
+            // Menu items use to be full text (not just icons) so don't need title
+            title=''
         >
             {props.children}
         </DropdownMenuItemStyled>

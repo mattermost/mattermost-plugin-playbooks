@@ -566,5 +566,22 @@
     "HvAcYh": "{text}{rest, plural, =0 {} one { en een andere} other { en {rest} andere}}",
     "DaHpK1": "Een kanaal zoeken",
     "28FTjr": "Met Run-acties kan je activiteiten voor dit kanaal automatiseren",
-    "/RnCQb": "Uitgaande webhook verzenden"
+    "/RnCQb": "Uitgaande webhook verzenden",
+    "xHNF7i": "Acties voor uitvoeringen",
+    "uhDKO8": "Gebruik Markdown om een sjabloon te maken",
+    "sX5Mn5": "Gelieve één webhook per lijn in te voeren",
+    "mkLeuq": "Verstuur update naar geselecteerde kanalen",
+    "kkw4kS": "Deze update wordt uitgezonden naar {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {een kanaal} other {{broadcastChannelCount, number} kanalen}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true {en } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {één direct bericht} other {{followersChannelCount, number} directe berichten}}</FollowersTooltip>} other {}}.",
+    "kV5GkX": "Wanneer een statusupdate is geplaatst",
+    "j940pJ": "Deze update zal worden opgeslagen in de <OverviewLink>overzichtspagina</OverviewLink>.",
+    "F9LrJA": "Items filteren",
+    "zl6378": "Configureer meetwarden in Terugblik",
+    "sGJpuF": "Voeg een beschrijving toe…",
+    "aZGAOI": "Voeg een statusupdatesjabloon toe…",
+    "OuZhcQ": "Specificeer duur (\"8 uur\", \"3 dagen\"...)",
+    "OKhRC6": "Delen",
+    "LcC/pi": "Stuur een welkomstbericht…",
+    "Brya9X": "Voeg een samenvattingsjabloon voor de uitvoering toe…",
+    "9kQNdp": "Deze playbook is privé.",
+    "3hBelc": "Een terugblik wordt niet verwacht."
 }

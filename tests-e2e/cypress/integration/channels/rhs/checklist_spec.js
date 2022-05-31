@@ -369,7 +369,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
         });
 
-        it.only('switching between runs with the same checklist', () => {
+        it('switching between runs with the same checklist', () => {
             // # Create another run using the same playbook
             const playbookRunName2 = 'RunWithSameChecklist';
             cy.apiRunPlaybook({

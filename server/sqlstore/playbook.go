@@ -586,6 +586,23 @@ func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]s
 	return playbookIDs, nil
 }
 
+func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
 // Update updates a playbook
 func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {
@@ -716,6 +733,22 @@ func (p *playbookStore) GetPlaybooksActiveTotal() (int64, error) {
 	return count, nil
 }
 
+// Get number of active playbooks.
+func (p *playbookStore) GetNumMetrics(playbookID string) (int64, error) {
+	var count int64
+
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookID})
+
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count metrics")
+	}
+
+	return count, nil
+}
+
 // replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list
@@ -827,6 +860,84 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	}
 
 	return autoFollows, nil
+}
+
+func (p *playbookStore) GetMetric(id string) (*app.PlaybookMetricConfig, error) {
+	metricSelect := p.queryBuilder.
+		Select(
+			"c.ID",
+			"c.PlaybookID",
+			"c.Title",
+			"c.Description",
+			"c.Type",
+			"c.Target",
+		).
+		From("IR_MetricConfig c").
+		Where(sq.Eq{"c.ID": id})
+
+	var metric app.PlaybookMetricConfig
+	err := p.store.getBuilder(p.store.db, &metric, metricSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metric, nil
+}
+
+func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricConfig) error {
+	numExistingMetrics, err := p.GetNumMetrics(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if numExistingMetrics >= app.MaxMetricsPerPlaybook {
+		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
+	}
+
+	_, err = p.store.execBuilder(p.store.db, sq.
+		Insert("IR_MetricConfig").
+		Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
+		Values(model.NewId(), playbookID, config.Title, config.Description, config.Type, config.Target, numExistingMetrics))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to add metric")
+	}
+
+	return nil
+}
+
+func (p *playbookStore) DeleteMetric(id string) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete metric with id %q", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update metric with id %q", id)
+	}
+
+	return nil
 }
 
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {

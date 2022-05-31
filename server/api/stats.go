@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -45,22 +46,22 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 }
 
 type PlaybookStats struct {
-	RunsInProgress                int       `json:"runs_in_progress"`
-	ParticipantsActive            int       `json:"participants_active"`
-	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
-	MetricOverallAverage          []int64   `json:"metric_overall_average"`
-	MetricRollingAverage          []int64   `json:"metric_rolling_average"`
-	MetricRollingAverageChange    []int64   `json:"metric_rolling_average_change"`
-	MetricValueRange              [][]int64 `json:"metric_value_range"`
-	MetricRollingValues           [][]int64 `json:"metric_rolling_values"`
-	LastXRunNames                 []string  `json:"last_x_run_names"`
+	RunsInProgress                int        `json:"runs_in_progress"`
+	ParticipantsActive            int        `json:"participants_active"`
+	RunsFinishedPrev30Days        int        `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int        `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int      `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64  `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int      `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64  `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int      `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64  `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []null.Int `json:"metric_overall_average"`
+	MetricRollingAverage          []null.Int `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []null.Int `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64  `json:"metric_value_range"`
+	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
+	LastXRunNames                 []string   `json:"last_x_run_names"`
 }
 
 const (
@@ -110,10 +111,10 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeRunsPerDay, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
-	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
-	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
-	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
-	metricValueRange := h.statsStore.MetricValueRange(filters)
+	metricOverallAverage := h.statsStore.MetricOverallAverage(*filters)
+	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, *filters)
+	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, *filters)
+	metricValueRange := h.statsStore.MetricValueRange(*filters)
 
 	ReturnJSON(w, &PlaybookStats{
 		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),

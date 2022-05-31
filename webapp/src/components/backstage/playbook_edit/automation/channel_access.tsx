@@ -5,16 +5,18 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template'>;
+
 interface Props {
-    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
-    setChangesMade: (b: boolean) => void;
+    playbook: PlaybookSubset;
+    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
+    setChangesMade?: (b: boolean) => void;
 }
 
 export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
@@ -25,7 +27,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             ...playbook,
             create_public_playbook_run: isPublic,
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     const handleChannelNameTemplateChange = (channelNameTemplate: string) => {
@@ -33,7 +35,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             ...playbook,
             channel_name_template: channelNameTemplate,
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     return (

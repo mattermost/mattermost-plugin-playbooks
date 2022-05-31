@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -218,6 +219,64 @@ func TestRunCreation(t *testing.T) {
 			PlaybookID:  e.ArchivedPlaybook.ID,
 		})
 		assert.Error(t, err)
+	})
+
+	t.Run("create valid run using playbook with due dates", func(t *testing.T) {
+		durations := []int64{
+			4 * time.Hour.Milliseconds(),      // 4 hours
+			30 * time.Minute.Milliseconds(),   // 30 min
+			4 * 24 * time.Hour.Milliseconds(), // 4 days
+		}
+
+		// create playbook with relative due dates
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Public: true,
+			Title:  "PB",
+			TeamID: e.BasicTeam.Id,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[0],
+						},
+						{
+							Title:   "Do this2",
+							DueDate: durations[1],
+						},
+					},
+				},
+				{
+					Title: "B",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[2],
+						},
+						{
+							Title: "Do this2",
+						},
+					},
+				},
+			},
+		})
+		assert.NoError(t, err)
+
+		now := model.GetMillis()
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "With due dates",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		// compare date with 10^4 precision because run creation might take more than a second
+		assert.Equal(t, (now+durations[0])/10000, run.Checklists[0].Items[0].DueDate/10000)
+		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
+		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
+		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
 	})
 }
 

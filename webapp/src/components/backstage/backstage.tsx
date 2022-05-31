@@ -8,15 +8,12 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
-import {useScroll} from 'react-use';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
-
-import classNames from 'classnames';
 
 import Playbook from 'src/components/backstage/playbooks/playbook';
 import {promptForFeedback} from 'src/client';
@@ -89,9 +86,6 @@ const BackstageBody = styled.div`
 
 const Backstage = () => {
     const {formatMessage} = useIntl();
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const {y} = useScroll(containerRef);
 
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
@@ -119,15 +113,13 @@ const Backstage = () => {
 
     return (
         <BackstageContainer
-            ref={containerRef}
             id={BackstageID}
-            className={classNames({'is-scrolling': y > 80})}
         >
             <ToastProvider>
                 <Switch>
                     <Route path={`${match.url}/error`}/>
                     <Route path={`${match.url}/start`}/>
-                    <Route path={`${match.url}/playbooks/:playbookId/editor`}/>
+                    <Route path={`${match.url}/playbooks/:playbookId`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
@@ -156,7 +148,7 @@ const Backstage = () => {
                                 {npsAvailable && (
                                     <BackstageTitlebarItem
                                         onClick={promptForFeedback}
-                                        to={`/${teams[0].name}/messages/@surveybot`}
+                                        to={`/${teams[0].name}/messages/@feedbackbot`}
                                         data-testid='giveFeedbackButton'
                                     >
                                         <Icon
@@ -176,18 +168,18 @@ const Backstage = () => {
                         <Route path={`${match.url}/playbooks/new`}>
                             <NewPlaybook/>
                         </Route>
-                        <Route
-                            path={`${match.url}/playbooks/:playbookId/editor`}
-                        >
-                            <PlaybookEditor/>
-                        </Route>
                         <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
                             <PlaybookEdit
                                 isNew={false}
                             />
                         </Route>
-                        <Route path={`${match.url}/playbooks/:playbookId`}>
+                        <Route path={`${match.url}/playbooks/:playbookId/preview`}>
                             <Playbook/>
+                        </Route>
+                        <Route
+                            path={`${match.url}/playbooks/:playbookId`}
+                        >
+                            <PlaybookEditor/>
                         </Route>
                         <Route path={`${match.url}/playbooks`}>
                             <PlaybookList/>

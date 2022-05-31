@@ -142,8 +142,6 @@ export const DateTimeSelector = ({
         Control: props.customControl,
     } : noDropdown;
 
-    const placeholder = mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Select or specify a custom duration…'});
-
     return (
         <Dropdown
             isOpen={isOpen}
@@ -161,7 +159,7 @@ export const DateTimeSelector = ({
                 controlShouldRenderValue={false}
                 menuIsOpen={true}
                 options={options}
-                placeholder={placeholder}
+                placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
                 styles={selectStyles}
                 onChange={onSelectedChange}
                 classNamePrefix='playbook-run-user-select' // TODO debt: rename

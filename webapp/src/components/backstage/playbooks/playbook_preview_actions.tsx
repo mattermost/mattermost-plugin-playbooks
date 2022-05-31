@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import FormattedMarkdown, {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
@@ -24,8 +24,6 @@ interface Props {
 
 const PlaybookPreviewActions = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
-    const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     // The following booleans control the rendering of each of the CardEntry components in this section,
     // hiding them if they don't have any visible subentries.
@@ -154,7 +152,7 @@ const PlaybookPreviewActions = (props: Props) => {
                         })}
                         enabled={runSummaryEnabled}
                     >
-                        {renderMarkdown(props.playbook.run_summary_template)}
+                        <FormattedMarkdown value={props.playbook.run_summary_template}/>
                     </CardSubEntry>
                     <CardSubEntry
                         title={formatMessage({
@@ -176,7 +174,7 @@ const PlaybookPreviewActions = (props: Props) => {
                         })}
                         enabled={messageOnJoinEnabled}
                     >
-                        {renderMarkdown(props.playbook.message_on_join)}
+                        <FormattedMarkdown value={props.playbook.message_on_join}/>
                     </CardSubEntry>
                     <CardSubEntry
                         title={formatMessage({defaultMessage: 'Add the channel to the sidebar category'})}

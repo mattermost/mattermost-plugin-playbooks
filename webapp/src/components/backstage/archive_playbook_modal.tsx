@@ -7,13 +7,18 @@ import ConfirmModal from '../widgets/confirmation_modal';
 
 const ArchiveBannerTimeout = 5000;
 
-const useConfirmPlaybookArchiveModal = (archivePlaybook: (id: Playbook['id']) => void): [React.ReactNode, (pb: Playbook) => void] => {
+interface ArchiveModalParams {
+    id: string
+    title: string
+}
+
+const useConfirmPlaybookArchiveModal = (archivePlaybook: (id: Playbook['id']) => void): [React.ReactNode, (pb: ArchiveModalParams) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
-    const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [playbook, setPlaybook] = useState<ArchiveModalParams | null>(null);
 
-    const openModal = (playbookToOpenWith: Playbook) => {
+    const openModal = (playbookToOpenWith: ArchiveModalParams) => {
         setPlaybook(playbookToOpenWith);
         setOpen(true);
     };

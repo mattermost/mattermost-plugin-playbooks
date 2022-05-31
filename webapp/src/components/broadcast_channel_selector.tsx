@@ -15,7 +15,7 @@ interface Props {
     enabled: boolean;
     channelIds: string[];
     onChannelsSelected: (channelIds: string[]) => void;
-    teamId?: string;
+    teamId: string;
 }
 
 const BroadcastChannelSelector = (props: Props) => {

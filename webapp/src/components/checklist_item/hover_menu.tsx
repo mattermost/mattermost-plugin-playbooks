@@ -53,12 +53,14 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            <AssignTo
-                assignee_id={props.assignee_id}
-                editable={props.isEditing}
-                inHoverMenu={true}
-                onSelectedChange={props.onAssigneeChange}
-            />
+            {props.playbookRunId !== undefined &&
+                <AssignTo
+                    assignee_id={props.assignee_id}
+                    editable={props.isEditing}
+                    inHoverMenu={true}
+                    onSelectedChange={props.onAssigneeChange}
+                />
+            }
             <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
@@ -132,7 +134,7 @@ const HoverMenu = styled.div`
     position: absolute;
     height: 32px;
     right: 1px;
-    top: 2px;
+    top: -6px;
     border: 1px solid var(--center-channel-color-08);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
@@ -140,8 +142,11 @@ const HoverMenu = styled.div`
 `;
 
 const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
-    transition: all 0.2s linear;
-    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    padding: 0;
+    &:before {
+        transition: all 0.2s linear;
+        transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    }
 `;
 
 const DotMenuButton = styled(StyledDotMenuButton)`

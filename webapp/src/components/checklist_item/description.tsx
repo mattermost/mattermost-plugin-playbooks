@@ -14,6 +14,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 
+import MarkdownTextbox from '../markdown_textbox';
+
+import {useUniqueId} from 'src/utils';
+import FormattedMarkdown from '../formatted_markdown';
+
 import {CollapsibleChecklistItemDescription} from './inputs';
 
 interface DescriptionProps {
@@ -26,41 +31,19 @@ interface DescriptionProps {
 const ChecklistItemDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a description (optional)'});
-
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
-
-    const markdownOptions = {
-        singleline: true,
-        mentionHighlight: false,
-        atMentions: true,
-        team,
-        channelNamesMap,
-    };
-
-    const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-        e.target.style.height = '5px';
-        e.target.style.height = (e.target.scrollHeight) + 'px';
-    };
+    const id = useUniqueId('editabletext-markdown-textbox');
 
     if (props.editingItem) {
         return (
             <ChecklistItemDescriptionContainer>
-                <DescriptionTextArea
+                <StyledMarkdownTextbox
                     data-testid='checklist-item-textarea-description'
+                    id={id}
                     value={props.value}
                     placeholder={placeholder}
-                    onChange={(e) => {
-                        props.onEdit(e.target.value);
-                    }}
+                    setValue={props.onEdit}
                     autoFocus={props.value !== ''}
-                    onFocus={(e) => {
-                        const val = e.target.value;
-                        e.target.value = '';
-                        e.target.value = val;
-                        computeHeight(e);
-                    }}
-                    onInput={computeHeight}
+                    hideHelpBar={true}
                 />
             </ChecklistItemDescriptionContainer>
         );
@@ -71,7 +54,7 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
             <RenderedDescription data-testid='rendered-checklist-item-description'>
                 {props.value ? (
                     <RenderedDescription>
-                        {messageHtmlToComponent(formatText(props.value, {...markdownOptions, singleline: false}), true, {})}
+                        <FormattedMarkdown value={props.value}/>
                     </RenderedDescription>
                 ) : (
                     <PlaceholderText>{placeholder}</PlaceholderText>
@@ -90,7 +73,6 @@ const commonDescriptionStyle = css`
     font-size: 12px;
     line-height: 16px;
     color: var(--center-channel-color-72);
-    height: 16px;
 
     :hover {
         cursor: text;
@@ -109,22 +91,28 @@ const RenderedDescription = styled.div`
     }
 `;
 
-const DescriptionTextArea = styled.textarea`
-    ${commonDescriptionStyle} {
+const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+    .textarea-wrapper {
+        min-height: auto;
     }
+    &&& {
+        .custom-textarea.custom-textarea {
+            ${commonDescriptionStyle}
 
-    display: block;
-    resize: none;
-    width: 100%;
-    padding: 0px;
+            display: block;
+            resize: none;
+            width: 100%;
+            padding: 0px;
 
-    border: none;
-    border-radius: 5px;
-    box-shadow: none;
-    background: none;
-
-    &:focus {
-        box-shadow: none;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            background: none;
+            &:focus {
+                box-shadow: none;
+            }
+            min-height: auto;
+        }
     }
 `;
 
@@ -136,7 +124,6 @@ const ChecklistItemDescriptionContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     padding-right: 8px;
     margin-left: 36px;
-    overflow: hidden;
 `;
 
 export default ChecklistItemDescription;

@@ -3,6 +3,7 @@
 
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
+import {useUpdateEffect} from 'react-use';
 
 interface Props {
     enabled: boolean;
@@ -11,7 +12,8 @@ interface Props {
     input: string;
     pattern: string;
     delimiter?: string;
-    onChange: (updatedInput: string) => void;
+    onChange?: (updatedInput: string) => void;
+    onBlur?: (updatedInput: string) => void;
     maxLength?: number;
     rows?: number;
     maxRows?: number;
@@ -22,6 +24,12 @@ interface Props {
 const PatternedTextArea = (props: Props) => {
     const [invalid, setInvalid] = useState<boolean>(false);
     const [errorText, setErrorText] = useState<string>(props.errorText);
+    const [value, setValue] = useState(props.input);
+
+    useUpdateEffect(() => {
+        setValue(props.input);
+    }, [props.input]);
+
     const handleOnBlur = (urls: string) => {
         if (!props.enabled) {
             setInvalid(false);
@@ -42,6 +50,8 @@ const PatternedTextArea = (props: Props) => {
             return;
         }
 
+        props.onBlur?.(urls);
+
         setInvalid(false);
     };
 
@@ -51,8 +61,11 @@ const PatternedTextArea = (props: Props) => {
                 disabled={!props.enabled}
                 required={true}
                 rows={props.rows}
-                value={props.enabled ? props.input : ''}
-                onChange={(e) => props.onChange(e.target.value)}
+                value={props.enabled ? value : ''}
+                onChange={(e) => {
+                    setValue(e.target.value);
+                    props.onChange?.(e.target.value);
+                }}
                 onBlur={(e) => handleOnBlur(e.target.value)}
                 placeholder={props.placeholderText}
                 maxLength={props.maxLength}

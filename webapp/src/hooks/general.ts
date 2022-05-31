@@ -5,12 +5,15 @@ import {
     useRef,
     useState,
     useMemo,
-    UIEventHandler,
+    useLayoutEffect,
+    ReactNode,
 } from 'react';
+import {createPortal} from 'react-dom';
+
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
@@ -36,6 +39,10 @@ import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
+import {useUpdateEffect} from 'react-use';
+
+import {debounce, isEqual} from 'lodash';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
@@ -53,7 +60,7 @@ import {
     isCurrentUserAdmin,
     myPlaybookRunsByTeam,
 } from '../selectors';
-import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
+import {resolve} from 'src/utils';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -165,18 +172,13 @@ export function useClientRect() {
     return [rect, ref] as const;
 }
 
+// useProfilesInCurrentChannel ensures at least the first page of members for the current channel
+// has been loaded into Redux.
+//
+// See useProfilesInChannel for additional context.
 export function useProfilesInCurrentChannel() {
-    const dispatch = useDispatch() as DispatchFunc;
-    const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
-
-    useEffect(() => {
-        if (profilesInChannel.length > 0) {
-            return;
-        }
-
-        dispatch(getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE));
-    }, [currentChannelId, profilesInChannel]);
+    const profilesInChannel = useProfilesInChannel(currentChannelId);
 
     return profilesInChannel;
 }
@@ -191,14 +193,50 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     ));
 }
 
+// lockProfilesInTeamFetch and lockProfilesInChannelFetch prevent concurrently fetching profiles
+// from multiple components mounted at the same time, only to all fetch the same data.
+//
+// Ideally, we would offload this to a Redux saga in the webapp and simply dispatch a
+// FETCH_PROFILES_IN_TEAM that handles all this complexity itself.
+const lockProfilesInTeamFetch = new Set<string>();
+const lockProfilesInChannelFetch = new Set<string>();
+
+// clearLocks is exclusively for testing.
+export function clearLocks() {
+    lockProfilesInTeamFetch.clear();
+    lockProfilesInChannelFetch.clear();
+}
+
+// useProfilesInTeam ensures at least the first page of team members has been loaded into Redux.
+//
+// This pattern relieves components from having to issue their own directives to populate the
+// Redux cache when rendering in contexts where the webapp doesn't already do this itself.
+//
+// Since we never discard Redux metadata, this hook will fetch successfully at most once. If there
+// are already members in the team, the hook skips the fetch altogether. If the fetch fails, the
+// hook won't try again unless the containing component is re-mounted.
+//
+// A global lockProfilesInTeamFetch cache avoids the thundering herd problem of many components
+// wanting the same metadata.
 export function useProfilesInTeam() {
-    const dispatch = useDispatch() as DispatchFunc;
+    const dispatch = useDispatch();
     const profilesInTeam = useSelector(getProfilesInCurrentTeam);
     const currentTeamId = useSelector(getCurrentTeamId);
+
     useEffect(() => {
         if (profilesInTeam.length > 0) {
+            // As soon as we successfully fetch a team's profiles, clear the bit that prevents
+            // concurrent fetches. We won't try again since we shouldn't forget these profiles,
+            // but we also don't want to unexpectedly block this forever.
+            lockProfilesInTeamFetch.delete(currentTeamId);
             return;
         }
+
+        // Avoid issuing multiple concurrent fetches for this team.
+        if (lockProfilesInTeamFetch.has(currentTeamId)) {
+            return;
+        }
+        lockProfilesInTeamFetch.add(currentTeamId);
 
         dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
     }, [currentTeamId, profilesInTeam]);
@@ -245,6 +283,10 @@ export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
 }
 
+// useProfilesInChannel ensures at least the first page of members for the given channel has been
+// loaded into Redux.
+//
+// See useProfilesInTeam for additional detail regarding semantics.
 export function useProfilesInChannel(channelId: string) {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInChannel = useSelector((state) =>
@@ -253,8 +295,18 @@ export function useProfilesInChannel(channelId: string) {
 
     useEffect(() => {
         if (profilesInChannel.length > 0) {
+            // As soon as we successfully fetch a channel's profiles, clear the bit that prevents
+            // concurrent fetches. We won't try again since we shouldn't forget these profiles,
+            // but we also don't want to unexpectedly block this forever.
+            lockProfilesInChannelFetch.delete(channelId);
             return;
         }
+
+        // Avoid issuing multiple concurrent fetches for this channel.
+        if (lockProfilesInChannelFetch.has(channelId)) {
+            return;
+        }
+        lockProfilesInChannelFetch.add(channelId);
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
     }, [channelId]);
@@ -554,28 +606,6 @@ export const usePlaybookName = (playbookId: string) => {
     return playbookName;
 };
 
-export const useDefaultMarkdownOptions = (team: Maybe<Team | string>) => {
-    const channelNamesMap = useSelector((state: GlobalState) => team && getChannelsNameMapInTeam(state, typeof team === 'string' ? team : team.id));
-
-    return {
-        atMentions: true,
-        mentionHighlight: true,
-        team,
-        channelNamesMap,
-    };
-};
-
-export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
-    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
-
-    return useDefaultMarkdownOptions(team);
-};
-
-export const useMarkdownRenderer = (teamId: string | undefined) => {
-    const markdownOptions = useDefaultMarkdownOptions(teamId);
-    return (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
-};
-
 export const useStats = (playbookId: string) => {
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
@@ -608,15 +638,20 @@ export const usePrevious = (value: any) => {
     return ref.current;
 };
 
-// Create a portal to render while dragging
-export const usePortal = (parent: HTMLElement) => {
-    const [portal] = useState(document.createElement('div'));
-
-    useEffect(() => {
-        parent.appendChild(portal);
-    }, [parent, portal]);
-
-    return portal;
+export const usePortal = () => {
+    const [el] = useState(document.createElement('div'));
+    useLayoutEffect(() => {
+        const rootPortal = document.getElementById('root-portal');
+        if (rootPortal) {
+            rootPortal.appendChild(el);
+        }
+        return () => {
+            if (rootPortal) {
+                rootPortal.removeChild(el);
+            }
+        };
+    }, [el]);
+    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
@@ -628,4 +663,48 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
         el.addEventListener('scroll', listener);
         return () => el.removeEventListener('scroll', listener);
     }, [el, listener]);
+};
+
+/**
+ * For controlled props or other pieces of state that need immediate updates with a debounced side effect.
+ * @remarks
+ * This is a problem solving hook; it is not intended for general use unless it is specifically needed.
+ * Also consider {@link https://github.com/streamich/react-use/blob/master/docs/useDebounce.md react-use#useDebounce}.
+ *
+ * @example
+ * const [debouncedValue, setDebouncedValue] = useState('…');
+ * const [val, setVal] = useProxyState(debouncedValue, setDebouncedValue, 500);
+ * const input = <input type='text' value={val} onChange={({currentTarget}) => setVal(currentTarget.value)}/>;
+ */
+export const useProxyState = <T>(
+    prop: T,
+    onChange: (val: T) => void,
+    ms = 500,
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const check = useRef(prop);
+    const [value, setValue] = useState(prop);
+
+    useUpdateEffect(() => {
+        if (!isEqual(value, check.current)) {
+            // check failed; don't destroy pending changes (values set mid-cycle between send/sync)
+            return;
+        }
+        check.current = prop; // sync check
+        setValue(prop);
+    }, [prop]);
+
+    const onChangeDebounced = useCallback(debounce((v) => {
+        check.current = v; // send check
+        onChange(v);
+    }, ms), [ms, onChange]);
+
+    useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
+
+    return [value, useCallback((update) => {
+        setValue((v) => {
+            const newValue = resolve(update, v);
+            onChangeDebounced(newValue);
+            return newValue;
+        });
+    }, [setValue, onChangeDebounced])];
 };

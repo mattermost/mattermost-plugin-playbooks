@@ -4,7 +4,6 @@
 import React, {HTMLAttributes, useEffect} from 'react';
 import styled from 'styled-components';
 
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookStats} from 'src/types/stats';
 import {useAllowPlaybookAndRunMetrics, useRunsList} from 'src/hooks';
 import UpgradeKeyMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/upgrade_key_metrics_placeholder';
@@ -13,6 +12,7 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import MetricsRunList from 'src/components/backstage/playbooks/metrics/metrics_run_list';
 import NoMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/no_metrics_placeholder';
+import {Metric} from 'src/types/playbook';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -23,14 +23,16 @@ const defaultPlaybookFetchParams = {
 };
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookID: string
+    playbookMetrics: Metric[]
     stats: PlaybookStats;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
 const PlaybookKeyMetrics = ({
-    playbook,
+    playbookID,
+    playbookMetrics,
     stats,
     ...attrs
 }: Props & Attrs) => {
@@ -39,9 +41,9 @@ const PlaybookKeyMetrics = ({
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: playbook.id};
+            return {...oldParams, playbook_id: playbookID};
         });
-    }, [playbook.id, setFetchParams]);
+    }, [playbookID, setFetchParams]);
 
     let content;
 
@@ -51,18 +53,18 @@ const PlaybookKeyMetrics = ({
                 <UpgradeKeyMetricsPlaceholder/>
             </PlaceholderRow>
         );
-    } else if (playbook.metrics.length === 0) {
+    } else if (playbookMetrics.length === 0) {
         content = <NoMetricsPlaceholder/>;
     } else {
         content = (
             <>
                 <MetricsStatsView
-                    playbook={playbook}
+                    playbookMetrics={playbookMetrics}
                     stats={stats}
                 />
                 <RunListContainer>
                     <MetricsRunList
-                        playbook={playbook}
+                        playbookMetrics={playbookMetrics}
                         playbookRuns={playbookRuns}
                         totalCount={totalCount}
                         fetchParams={fetchParams}
@@ -89,7 +91,6 @@ const PlaceholderRow = styled.div`
 
 const OuterContainer = styled.div`
     height: 100%;
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const InnerContainer = styled.div`
