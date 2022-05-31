@@ -174,11 +174,9 @@ describe('playbooks > edit', () => {
             describe('create channel setting', () => {
                 it('is enabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actoins section.
-                    cy.findByText('Outline').click();
+                    // # select the actions section.
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is checked
                         cy.get('#create-channel label input').should(
@@ -194,11 +192,9 @@ describe('playbooks > edit', () => {
 
                 it('can not be disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#create-channel').within(() => {
                             // * Verify that the toggle is checked
@@ -217,11 +213,9 @@ describe('playbooks > edit', () => {
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('#invite-users label input').should(
@@ -232,11 +226,9 @@ describe('playbooks > edit', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#invite-users').within(() => {
                             // * Verify that the toggle is unchecked
@@ -253,11 +245,9 @@ describe('playbooks > edit', () => {
 
                 it('does not let add users when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('#invite-users label input').should(
@@ -276,11 +266,9 @@ describe('playbooks > edit', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#invite-users').within(() => {
                             // * Verify that the toggle is unchecked
@@ -316,11 +304,9 @@ describe('playbooks > edit', () => {
 
                 it('allows adding new users to an already populated list', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#invite-users').within(() => {
                             // * Verify that the toggle is unchecked
@@ -366,11 +352,9 @@ describe('playbooks > edit', () => {
 
                 it('allows removing users', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#invite-users').within(() => {
                             // * Verify that the toggle is unchecked
@@ -422,11 +406,9 @@ describe('playbooks > edit', () => {
 
                 it('persists the list of users even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#invite-users').within(() => {
                             // * Verify that the toggle is unchecked
@@ -533,12 +515,9 @@ describe('playbooks > edit', () => {
                             cy.apiLogin(testUser);
 
                             // # Visit the selected playbook
-                            cy.visit(`/playbooks/playbooks/${playbookId}`);
+                            cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
 
-                            // # Switch to the outline
-                            // # and select the actions section
-                            cy.findByText('Outline').click();
-
+                            // # select the actions section
                             cy.contains('run summary template').dblclick();
                             cy.findByRole('button', {name: /save/i});
                             cy.reload();
@@ -561,12 +540,9 @@ describe('playbooks > edit', () => {
             describe('assign owner setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('#assign-owner label input').should(
@@ -577,12 +553,9 @@ describe('playbooks > edit', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#assign-owner').within(() => {
                             // * Verify that the toggle is unchecked
@@ -599,12 +572,9 @@ describe('playbooks > edit', () => {
 
                 it('does not allow adding an owner when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#assign-owner').within(() => {
                             // * Verify that the toggle is unchecked
@@ -623,12 +593,9 @@ describe('playbooks > edit', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#assign-owner').within(() => {
                             // * Verify that the toggle is unchecked
@@ -656,12 +623,9 @@ describe('playbooks > edit', () => {
 
                 it('allows changing the owner', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#actions').within(() => {
                         cy.get('#assign-owner').within(() => {
                             // * Verify that the toggle is unchecked
@@ -705,12 +669,9 @@ describe('playbooks > edit', () => {
                 // MM-44647
                 it.skip('persists the assigned owner even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                    // # Switch to the outline
-                    // # and select the actions section
-                    cy.findByText('Outline').click();
-
+                    // # select the actions section
                     cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -804,12 +765,9 @@ describe('playbooks > edit', () => {
                             cy.apiLogin(testUser);
 
                             // # Visit the selected playbook
-                            cy.visit(`/playbooks/playbooks/${playbookId}`);
+                            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                            // # Switch to the outline
-                            // # and select the actions section
-                            cy.findByText('Outline').click();
-
+                            // # select the actions section
                             cy.contains('run summary template').dblclick();
                             cy.findByRole('button', {name: /save/i});
                             cy.reload();
@@ -837,10 +795,7 @@ describe('playbooks > edit', () => {
             describe('broadcast channel setting', () => {
                 it('none configured in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                    // # Switch to the outline tab
-                    cy.findByText('Outline').click();
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').should('be.visible');
@@ -849,10 +804,7 @@ describe('playbooks > edit', () => {
 
                 it('can change channel and edit is saved immediately', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                    // # Switch to the outline tab
-                    cy.findByText('Outline').click();
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
@@ -868,10 +820,7 @@ describe('playbooks > edit', () => {
 
                 it('persists selected channels when status update toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                    // # Switch to the outline tab
-                    cy.findByText('Outline').click();
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                     // # Add a channel and turn off the
                     // # status updates toggle
@@ -930,10 +879,7 @@ describe('playbooks > edit', () => {
                             cy.apiLogin(testUser);
 
                             // # Navigate again to the playbook
-                            cy.visit(`/playbooks/playbooks/${playbookId}`);
-
-                            // # Switch to the outline tab
-                            cy.findByText('Outline').click();
+                            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                             cy.get('#status-updates').within(() => {
                                 cy.findByText('no channels').should('be.visible');
@@ -941,89 +887,85 @@ describe('playbooks > edit', () => {
                         });
                 });
 
+                it.skip('shows channel name when private broadcast channel configured and user is a member', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
 
-            //     it('shows channel name when private broadcast channel configured and user is a member', () => {
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+                    // # Switch to Status updates tab
+                    cy.get('#root').findByText('Status updates').click();
 
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
+                    // # Click on the toggle to enable the setting
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.get('label input').click({force: true});
+                    });
 
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('#broadcast-channels').within(() => {
-            //             cy.get('label input').click({force: true});
-            //         });
+                    // # Open the broadcast channel widget and select a public channel
+                    cy.get('#playbook-automation-broadcast')
+                        .click()
+                        .type(testPrivateChannel.display_name + '{enter}', {delay: 200});
 
-            //         // # Open the broadcast channel widget and select a public channel
-            //         cy.get('#playbook-automation-broadcast')
-            //             .click()
-            //             .type(testPrivateChannel.display_name + '{enter}', {delay: 200});
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
 
-            //         // # Save the playbook
-            //         cy.findByTestId('save_playbook').click();
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
 
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+                    // # Switch to Status updates tab
+                    cy.get('#root').findByText('Status updates').click();
 
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        testPrivateChannel.display_name,
+                    );
+                });
 
-            //         // * Verify placeholder text is present
-            //         cy.get('#playbook-automation-broadcast').should(
-            //             'have.text',
-            //             testPrivateChannel.display_name,
-            //         );
-            //     });
+                it.skip('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
 
-            //     it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+                    // # Switch to Status updates tab
+                    cy.get('#root').findByText('Status updates').click();
 
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
+                    // # Click on the toggle to enable the setting
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.get('label input').click({force: true});
+                    });
 
-            //         // # Click on the toggle to enable the setting
-            //         cy.get('#broadcast-channels').within(() => {
-            //             cy.get('label input').click({force: true});
-            //         });
+                    // # Open the broadcast channel widget and select the private channel
+                    cy.get('#playbook-automation-broadcast')
+                        .click()
+                        .type(testPrivateChannel.display_name + '{enter}', {delay: 200});
 
-            //         // # Open the broadcast channel widget and select the private channel
-            //         cy.get('#playbook-automation-broadcast')
-            //             .click()
-            //             .type(testPrivateChannel.display_name + '{enter}', {delay: 200});
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
 
-            //         // # Save the playbook
-            //         cy.findByTestId('save_playbook').click();
+                    // # Browse to the private channel
+                    cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
 
-            //         // # Browse to the private channel
-            //         cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
+                    // # Leave the private channel
+                    cy.executeSlashCommand('/leave');
+                    cy.get('#confirmModalButton').click();
 
-            //         // # Leave the private channel
-            //         cy.executeSlashCommand('/leave');
-            //         cy.get('#confirmModalButton').click();
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
 
-            //         // # Visit the selected playbook
-            //         cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+                    // # Switch to Status updates tab
+                    cy.get('#root').findByText('Status updates').click();
 
-            //         // # Switch to Status updates tab
-            //         cy.get('#root').findByText('Status updates').click();
-
-            //         // * Verify placeholder text is present
-            //         cy.get('#playbook-automation-broadcast').should(
-            //             'have.text',
-            //             'Unknown Channel'
-            //         );
-            //     });
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        'Unknown Channel'
+                    );
+                });
             });
         });
 
         describe('when a new member joins the channel', () => {
             beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                // # Switch to the outline tab
-                cy.findByText('Outline').click();
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
             });
 
             describe('add the channel to a sidebar category', () => {
@@ -1207,10 +1149,7 @@ describe('playbooks > edit', () => {
         describe('status updates enable / disabled', () => {
             beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                // # Switch to the outline tab
-                cy.findByText('Outline').click();
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
             });
 
             it('is enabled in a new playbook', () => {
@@ -1241,10 +1180,7 @@ describe('playbooks > edit', () => {
         describe('retrospective enable / disable', () => {
             beforeEach(() => {
                 // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
-
-                // # Switch to the outline tab
-                cy.findByText('Outline').click();
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
             });
 
             it('is enabled in a new playbook', () => {
