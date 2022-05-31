@@ -338,7 +338,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 <DropdownMenuItem
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
-                        navigateToPluginUrl(`/playbooks/${newID}`);
+                        navigateToPluginUrl(`/playbooks/${newID}/outline`);
                         addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
