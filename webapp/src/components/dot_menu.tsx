@@ -6,6 +6,8 @@ import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
+import Tooltip from 'src/components/widgets/tooltip';
+import {useUniqueId} from 'src/utils';
 
 export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
@@ -188,14 +190,20 @@ export const DisabledDropdownMenuItemStyled = styled.div`
 `;
 
 export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {
+    const tooltipId = useUniqueId();
+
     if (props.disabled) {
         return (
-            <DisabledDropdownMenuItemStyled
-                className={props.className}
-                title={props.disabledAltText}
+            <Tooltip
+                id={tooltipId}
+                content={props.disabledAltText}
             >
-                {props.children}
-            </DisabledDropdownMenuItemStyled>
+                <DisabledDropdownMenuItemStyled
+                    className={props.className}
+                >
+                    {props.children}
+                </DisabledDropdownMenuItemStyled>
+            </Tooltip>
         );
     }
 
