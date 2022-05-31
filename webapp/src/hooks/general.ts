@@ -39,7 +39,9 @@ import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
-import {Argument} from 'classnames';
+import {useUpdateEffect} from 'react-use';
+
+import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
@@ -58,7 +60,7 @@ import {
     isCurrentUserAdmin,
     myPlaybookRunsByTeam,
 } from '../selectors';
-import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
+import {resolve} from 'src/utils';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -661,4 +663,48 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
         el.addEventListener('scroll', listener);
         return () => el.removeEventListener('scroll', listener);
     }, [el, listener]);
+};
+
+/**
+ * For controlled props or other pieces of state that need immediate updates with a debounced side effect.
+ * @remarks
+ * This is a problem solving hook; it is not intended for general use unless it is specifically needed.
+ * Also consider {@link https://github.com/streamich/react-use/blob/master/docs/useDebounce.md react-use#useDebounce}.
+ *
+ * @example
+ * const [debouncedValue, setDebouncedValue] = useState('…');
+ * const [val, setVal] = useProxyState(debouncedValue, setDebouncedValue, 500);
+ * const input = <input type='text' value={val} onChange={({currentTarget}) => setVal(currentTarget.value)}/>;
+ */
+export const useProxyState = <T>(
+    prop: T,
+    onChange: (val: T) => void,
+    ms = 500,
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const check = useRef(prop);
+    const [value, setValue] = useState(prop);
+
+    useUpdateEffect(() => {
+        if (!isEqual(value, check.current)) {
+            // check failed; don't destroy pending changes (values set mid-cycle between send/sync)
+            return;
+        }
+        check.current = prop; // sync check
+        setValue(prop);
+    }, [prop]);
+
+    const onChangeDebounced = useCallback(debounce((v) => {
+        check.current = v; // send check
+        onChange(v);
+    }, ms), [ms, onChange]);
+
+    useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
+
+    return [value, useCallback((update) => {
+        setValue((v) => {
+            const newValue = resolve(update, v);
+            onChangeDebounced(newValue);
+            return newValue;
+        });
+    }, [setValue, onChangeDebounced])];
 };
