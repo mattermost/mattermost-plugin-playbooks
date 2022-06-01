@@ -129,7 +129,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
 const HoverMenu = styled.div`
     display: flex;
     align-items: center;
-    padding: 0px 8px;
+    padding: 0px 3px;
     position: absolute;
     height: 32px;
     right: 1px;
