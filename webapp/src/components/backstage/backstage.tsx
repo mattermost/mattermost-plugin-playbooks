@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
@@ -15,10 +15,11 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
+import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
+
 import Playbook from 'src/components/backstage/playbooks/playbook';
 import {promptForFeedback} from 'src/client';
-import PlaybookRunBackstage
-    from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
+import PlaybookRunBackstage from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import PlaybookEditor from 'src/components/backstage/playbook_editor/playbook_editor';
@@ -120,6 +121,7 @@ const Backstage = () => {
                     <Route path={`${match.url}/error`}/>
                     <Route path={`${match.url}/start`}/>
                     <Route path={`${match.url}/playbooks/:playbookId`}/>
+                    <Route path={`${match.url}/run_details/:playbookRunId`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
@@ -190,6 +192,9 @@ const Backstage = () => {
                         />
                         <Route path={`${match.url}/runs/:playbookRunId`}>
                             <PlaybookRunBackstage/>
+                        </Route>
+                        <Route path={`${match.url}/run_details/:playbookRunId`}>
+                            <PlaybookRun/>
                         </Route>
                         <Redirect
                             from={`${match.url}/incidents`}
