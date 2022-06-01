@@ -331,8 +331,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={editTitle}
-
-                    // @ts-expect-error
                     disabled={archived}
                     disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
                 >
