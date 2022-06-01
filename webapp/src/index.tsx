@@ -17,6 +17,8 @@ import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, InMemoryCache, gql, ApolloProvider, NormalizedCacheObject} from '@apollo/client';
 
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
 import {makeRHSOpener} from 'src/rhs_opener';
@@ -67,7 +69,6 @@ import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -142,9 +143,9 @@ export default class Plugin {
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
-        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type != 'D';
+        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type !== 'D' && getCurrentChannel(state).type !== 'G';
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction("Channel Actions", () => store.dispatch(showChannelActionsModal()), shouldRender);
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
