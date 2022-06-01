@@ -39,7 +39,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     };
 
     useClickOutsideRef(textareaRef, saveAndClose);
-    useKeyPress((e: KeyboardEvent) => e.ctrlKey && e.key === 'Enter', saveAndClose);
+    useKeyPress((e: KeyboardEvent) => (e.ctrlKey || e.metaKey) && e.key === 'Enter', saveAndClose);
 
     useEffect(() => {
         setEditedValue(props.value);
