@@ -6,6 +6,8 @@ import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
+import Tooltip from 'src/components/widgets/tooltip';
+import {useUniqueId} from 'src/utils';
 
 export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
@@ -167,7 +169,6 @@ export const DropdownMenuItemStyled = styled.a`
     padding: 10px 20px;
     text-decoration: unset;
 
-
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
@@ -175,7 +176,37 @@ export const DropdownMenuItemStyled = styled.a`
 }
 `;
 
-export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string }) => {
+export const DisabledDropdownMenuItemStyled = styled.div`
+ && {
+    cursor: default;
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    color: var(--center-channel-color-40);
+    padding: 10px 20px;
+    text-decoration: unset;
+}
+`;
+
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {
+    const tooltipId = useUniqueId();
+
+    if (props.disabled) {
+        return (
+            <Tooltip
+                id={tooltipId}
+                content={props.disabledAltText}
+            >
+                <DisabledDropdownMenuItemStyled
+                    className={props.className}
+                >
+                    {props.children}
+                </DisabledDropdownMenuItemStyled>
+            </Tooltip>
+        );
+    }
+
     return (
         <DropdownMenuItemStyled
             href='#'
