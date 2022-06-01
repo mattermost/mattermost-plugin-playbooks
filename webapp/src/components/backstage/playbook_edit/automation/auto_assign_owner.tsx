@@ -20,6 +20,7 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 interface Props {
     enabled: boolean;
+    disabled?: boolean;
     onToggle: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
@@ -34,6 +35,7 @@ export const AutoAssignOwner = (props: Props) => {
                 <Toggle
                     isChecked={props.enabled}
                     onChange={props.onToggle}
+                    disabled={props.disabled}
                 />
                 <div><FormattedMessage defaultMessage='Assign the owner role'/></div>
             </AutomationTitle>
@@ -43,7 +45,7 @@ export const AutoAssignOwner = (props: Props) => {
                     onAddUser={props.onAssignOwner}
                     searchProfiles={props.searchProfiles}
                     getProfiles={props.getProfiles}
-                    isDisabled={!props.enabled}
+                    isDisabled={props.disabled || !props.enabled}
                 />
             </SelectorWrapper>
         </AutomationHeader>

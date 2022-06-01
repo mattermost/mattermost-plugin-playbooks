@@ -14,6 +14,8 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
+import {useAllowRetrospectiveAccess} from 'src/hooks';
+
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
@@ -32,6 +34,8 @@ type StyledAttrs = {className?: string};
 const Outline = ({playbook, refetch}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const archived = playbook.delete_at !== 0;
 
     return (
         <Sections
@@ -43,6 +47,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
+                    disabled={archived}
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
@@ -60,6 +65,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer>
                         <Toggle
+                            disabled={archived}
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
                                 updatePlaybook({
@@ -89,6 +95,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer>
                         <Toggle
+                            disabled={archived || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
                             onChange={() => {
                                 updatePlaybook({

@@ -290,7 +290,6 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 
 type TitleMenuProps = {
     className?: string;
-    archived: boolean;
     editTitle: () => void;
     refetch: () => void;
 } & PropsWithChildren<ControlProps>;
@@ -330,6 +329,10 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={editTitle}
+
+                    // @ts-expect-error
+                    disabled={archived}
+                    disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
                 >
                     <FormattedMessage defaultMessage='Rename'/>
                 </DropdownMenuItem>

@@ -40,6 +40,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const archived = playbook.delete_at !== 0;
 
     if (!retrospectiveAccess) {
         return null;
@@ -67,7 +68,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     options={retrospectiveReminderOptions}
                     isClearable={false}
-                    isDisabled={!playbook.retrospective_enabled}
+                    isDisabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -85,7 +86,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={!playbook.retrospective_enabled}
+                    disabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -104,7 +105,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled}
+                    disabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
         </Card>
