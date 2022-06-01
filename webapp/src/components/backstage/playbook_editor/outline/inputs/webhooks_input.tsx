@@ -56,17 +56,17 @@ export const WebhooksInput = (props: Props) => {
 
     const errorTextTemp = props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'});
 
-    const isValid = (newURLs: string): boolean => {
+    const isValid = (newURLs: string | undefined): boolean => {
         const maxRows = props.maxRows || 64;
         const maxErrorText = props.maxErrorText || formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'});
 
-        if (newURLs.split('\n').filter((v) => v.trim().length > 0).length > maxRows) {
+        if (newURLs && newURLs.split('\n').filter((v) => v.trim().length > 0).length > maxRows) {
             setInvalid(true);
             setErrorText(maxErrorText);
             return false;
         }
 
-        if (!isPatternValid(newURLs, 'https?://.*', '\n')) {
+        if (newURLs && !isPatternValid(newURLs, 'https?://.*', '\n')) {
             setInvalid(true);
             setErrorText(errorTextTemp);
             return false;
