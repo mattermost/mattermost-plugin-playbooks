@@ -108,8 +108,7 @@ const RHSChecklistList = (props: Props) => {
                             <MultiCheckbox
                                 options={filterOptions}
                                 onselect={selectOption}
-                                topPx={8}
-                                leftPx={-177}
+                                placement='bottom-end'
                                 dotMenuButton={StyledDotMenuButton}
                                 icon={
                                     <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>

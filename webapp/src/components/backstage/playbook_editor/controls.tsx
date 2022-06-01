@@ -315,7 +315,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             <DotMenu
                 dotMenuButton={TitleButton}
                 className={className}
-                left={true}
+                placement='bottom-end'
                 icon={
                     <>
                         {children}
