@@ -20,6 +20,7 @@ type Props = {
     maxErrorText?: string;
     maxLength?: number;
     children?: ReactNode;
+    webhooksDisabled: boolean;
 }
 
 export const WebhooksInput = (props: Props) => {
@@ -86,6 +87,7 @@ export const WebhooksInput = (props: Props) => {
         >
             <SelectorWrapper>
                 <TextArea
+                    data-testid={'webhooks-input'}
                     disabled={false}
                     required={true}
                     rows={props.rows || 3}
@@ -95,6 +97,7 @@ export const WebhooksInput = (props: Props) => {
                     placeholder={formatMessage({defaultMessage: 'Enter one webhook per line'})}
                     maxLength={props.maxLength || 1000}
                     invalid={invalid}
+                    webhooksDisabled={props.webhooksDisabled}
                 />
                 <ErrorMessage>
                     {errorText}
@@ -153,6 +156,7 @@ const SelectorWrapper = styled.div`
 
 interface TextAreaProps {
     invalid: boolean;
+    webhooksDisabled: boolean;
 }
 
 const TextArea = styled.textarea<TextAreaProps>`
@@ -185,6 +189,12 @@ const TextArea = styled.textarea<TextAreaProps>`
             & + ${ErrorMessage} {
                 visibility: visible;
             }
+        }
+    `}
+    ${(props) => props.webhooksDisabled && `
+        :not(:focus):not(:placeholder-shown) {
+            text-decoration: line-through;
+            color: rgba(var(--center-channel-color-rgb), 0.48);
         }
     `}
 `;
