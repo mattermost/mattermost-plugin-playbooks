@@ -28,7 +28,7 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
-const PlaybookRun = () => {
+const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
@@ -70,7 +70,7 @@ const PlaybookRun = () => {
     );
 };
 
-export default PlaybookRun;
+export default PlaybookRunDetails;
 
 const RowContainer = styled.div`
     display: flex;
