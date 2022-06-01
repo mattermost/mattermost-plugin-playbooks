@@ -142,6 +142,7 @@ const HoverMenu = styled.div`
 
 const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
     padding: 0;
+    border-radius: 4px;
     &:before {
         transition: all 0.2s linear;
         transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
