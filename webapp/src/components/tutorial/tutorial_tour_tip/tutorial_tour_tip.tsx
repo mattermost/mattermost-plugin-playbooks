@@ -6,10 +6,6 @@ import ReactDOM from 'react-dom';
 import {FormattedMessage} from 'react-intl';
 import Tippy from '@tippyjs/react';
 
-// import 'tippy.js/dist/tippy.css';
-// import 'tippy.js/themes/light-border.css';
-// import 'tippy.js/animations/scale-subtle.css';
-// import 'tippy.js/animations/perspective-subtle.css';
 import useTutorialTourTipManager from './manager';
 
 import PulsatingDot from './dot';
