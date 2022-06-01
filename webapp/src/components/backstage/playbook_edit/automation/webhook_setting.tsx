@@ -9,6 +9,7 @@ import PatternedTextArea from 'src/components/patterned_text_area';
 
 interface Props {
     enabled: boolean;
+    disabled?: boolean;
     onToggle: () => void;
     textOnToggle: string;
     placeholderText: string;
@@ -31,11 +32,15 @@ export const WebhookSetting = (props: Props) => {
                 <Toggle
                     isChecked={props.enabled}
                     onChange={props.onToggle}
+                    disabled={props.disabled}
                 />
                 <div>{props.textOnToggle}</div>
             </AutomationTitle>
             <SelectorWrapper>
-                <PatternedTextArea {...props}/>
+                <PatternedTextArea
+                    {...props}
+                    enabled={props.enabled && !props.disabled}
+                />
             </SelectorWrapper>
         </AutomationHeader>
     );

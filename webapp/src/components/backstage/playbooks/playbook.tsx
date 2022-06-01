@@ -244,7 +244,7 @@ const Playbook = () => {
                     />
                     <DotMenu
                         dotMenuButton={TitleButton}
-                        left={true}
+                        placement='bottom-end'
                         icon={
                             <>
                                 <i className={'icon ' + accessIconClass}/>

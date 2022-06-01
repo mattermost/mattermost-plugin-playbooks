@@ -195,8 +195,7 @@ const Metrics = ({
                         </>
                     }
                     disabled={disabled || metrics.length >= 4}
-                    topPx={-170}
-                    leftPx={20}
+                    placement='bottom-start'
                 >
                     <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
                         <MetricTypeOption

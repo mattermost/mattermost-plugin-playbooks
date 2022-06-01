@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {Placement} from '@floating-ui/react-dom';
 
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';
@@ -61,16 +62,14 @@ interface Props {
     onselect: (value: string, checked: boolean) => void;
     dotMenuButton: typeof DotMenuButton;
     icon?: JSX.Element;
-    topPx?: number;
-    leftPx?: number;
+    placement?: Placement;
 }
 
 const MultiCheckbox = (props: Props) => {
     const isFilterActive = props.options.filter((o) => o.value !== 'all' && o.disabled === false && o.selected === false).length > 0;
     return (
         <DotMenu
-            topPx={props.topPx}
-            leftPx={props.leftPx}
+            placement={props.placement}
             dotMenuButton={props.dotMenuButton}
             isActive={isFilterActive}
             icon={
@@ -79,7 +78,6 @@ const MultiCheckbox = (props: Props) => {
                     <i className='icon icon-filter-variant'/>
                 </IconWrapper>
             }
-            wide={true}
         >
             {props.options.map((option, idx) => {
                 if (option.value === 'divider') {

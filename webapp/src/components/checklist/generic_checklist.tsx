@@ -27,6 +27,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
+    disabled: boolean;
     menuEnabled: boolean;
     checklist: Checklist;
     checklistIndex: number;
@@ -140,6 +141,7 @@ const GenericChecklist = (props: Props) => {
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
                                     menuEnabled={props.menuEnabled}
+                                    disabled={props.disabled}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
@@ -158,6 +160,7 @@ const GenericChecklist = (props: Props) => {
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
                                 menuEnabled={props.menuEnabled}
+                                disabled={false}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
@@ -172,6 +175,7 @@ const GenericChecklist = (props: Props) => {
                     </div>
                     {props.playbookRun?.current_status !== PlaybookRunStatus.Finished &&
                         <AddTaskLink
+                            disabled={props.disabled}
                             onClick={() => {
                                 setAddingItem(true);
                             }}
@@ -220,7 +224,7 @@ const AddTaskLink = styled.button`
 
     color: var(--center-channel-color-64);
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: var(--button-bg-08);
         color: var(--button-bg);
     }
