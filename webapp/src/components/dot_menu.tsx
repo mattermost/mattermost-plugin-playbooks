@@ -4,6 +4,8 @@
 import React, {useState, useRef} from 'react';
 import styled, {css} from 'styled-components';
 
+import {useFloating, offset, flip, shift, Placement} from '@floating-ui/react-dom';
+
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
 
@@ -42,19 +44,6 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
-    position: absolute;
-    ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
-    ${(props) => (props.left && css`
-        left: -197px;
-        top: 35px;
-    `)};
-
-    ${(props) => (props.wide && css`
-        left: -236px;
-    `)};
-    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
-    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
-
     width: max-content;
     min-width: 160px;
     text-align: left;
@@ -79,13 +68,10 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
 interface DotMenuProps {
     children: React.ReactNode;
     icon: JSX.Element;
-    top?: boolean;
-    left?: boolean;
-    topPx?: number;
-    leftPx?: number;
-    wide?: boolean;
     dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
+    placement?: Placement;
+    offset?: Parameters<typeof offset>[0];
     title?: string;
     disabled?: boolean;
     className?: string;
@@ -93,13 +79,17 @@ interface DotMenuProps {
 }
 
 const DotMenu = (props: DotMenuProps) => {
+    const {strategy, x, y, reference, floating, refs} = useFloating<HTMLElement>({
+        placement: props.placement ?? 'bottom',
+        middleware: [offset(props.offset ?? 2), flip(), shift()],
+    });
+
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(true);
     };
 
-    const rootRef = useRef(null);
-    useClickOutsideRef(rootRef, () => {
+    useClickOutsideRef(refs.reference, () => {
         setOpen(false);
     });
 
@@ -115,7 +105,7 @@ const DotMenu = (props: DotMenuProps) => {
         // @ts-ignore
         <MenuButton
             title={props.title}
-            ref={rootRef}
+            ref={reference}
             isActive={(props.isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
                 e.stopPropagation();
@@ -123,7 +113,7 @@ const DotMenu = (props: DotMenuProps) => {
             }}
             onKeyDown={(e: KeyboardEvent) => {
                 // Handle Enter and Space as clicking on the button
-                if (e.keyCode === 13 || e.keyCode === 32) {
+                if (e.key === 'Space' || e.key === 'Enter') {
                     e.stopPropagation();
                     toggleOpen();
                 }
@@ -138,12 +128,13 @@ const DotMenu = (props: DotMenuProps) => {
                 {
                     isOpen &&
                     <Menu
+                        ref={floating}
+                        style={{
+                            position: strategy,
+                            top: y ?? '',
+                            left: x ?? '',
+                        }}
                         data-testid='dropdownmenu'
-                        top={props.top}
-                        left={props.left}
-                        topPx={props.topPx}
-                        leftPx={props.leftPx}
-                        wide={props.wide}
                         onClick={(e) => {
                             e.stopPropagation();
                             setOpen(false);
