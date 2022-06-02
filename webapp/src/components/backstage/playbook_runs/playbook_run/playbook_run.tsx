@@ -56,13 +56,17 @@ const PlaybookRunDetails = () => {
         }
     }, [match.params.playbookRunId, currentRun]);
 
+    if (!currentRun) {
+        return null;
+    }
+
     return (
         <RowContainer>
             <Header>{'HEADER' + currentRun?.name}</Header>
             <Body>
                 <Summary/>
                 <StatusUpdate/>
-                <Checklists/>
+                <Checklists playbookRun={currentRun}/>
                 <FinishRun/>
                 <Retrospective/>
             </Body>
