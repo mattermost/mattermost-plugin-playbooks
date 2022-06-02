@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps, useMemo, useEffect, ReactNode, useCallback} from 'react';
+import React, {useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';

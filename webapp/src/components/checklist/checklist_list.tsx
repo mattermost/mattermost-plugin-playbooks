@@ -30,13 +30,11 @@ import {
     Checklist,
     ChecklistItemState,
     ChecklistItem,
-    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import {
     clientMoveChecklist,
     clientMoveChecklistItem,
     clientAddChecklist,
-    savePlaybook,
 } from 'src/client';
 import {
     currentChecklistCollapsedState,

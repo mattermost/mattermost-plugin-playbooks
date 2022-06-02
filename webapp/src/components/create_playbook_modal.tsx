@@ -1,9 +1,5 @@
 import React, {ComponentProps, useState} from 'react';
 
-import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
-import {getMyTeams} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/teams';
-import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 

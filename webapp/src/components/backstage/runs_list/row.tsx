@@ -13,7 +13,6 @@ import {useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
 
-import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';

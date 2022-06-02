@@ -6,25 +6,21 @@ import {
     useState,
     useMemo,
     useLayoutEffect,
-    ReactNode,
 } from 'react';
-import {createPortal} from 'react-dom';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
-    getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
     getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
 import {
     getCurrentChannelId,
-    getChannelsNameMapInTeam,
     getChannel as getChannelFromState,
 } from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';

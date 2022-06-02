@@ -1,8 +1,6 @@
 import qs from 'qs';
 import {useEffect, useMemo} from 'react';
 
-import {Team} from 'mattermost-redux/types/teams';
-
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
@@ -11,9 +9,6 @@ import {useSelector} from 'react-redux';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {Playbook} from 'src/types/playbook';
-import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
-
-import {useExperimentalFeaturesEnabled} from './general';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,

@@ -1,5 +1,5 @@
 import React, {useState, useEffect, ReactNode} from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import ReactSelect, {StylesConfig, ValueType} from 'react-select';
 import {useSelector} from 'react-redux';

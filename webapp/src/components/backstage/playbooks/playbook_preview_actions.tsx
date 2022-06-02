@@ -5,9 +5,8 @@ import styled from 'styled-components';
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import FormattedMarkdown, {useDefaultMarkdownOptions} from 'src/components/formatted_markdown';
+import FormattedMarkdown from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {EllipsizedText, TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
