@@ -49,7 +49,7 @@ const Summary = ({
     );
 
     return (
-        <>
+        <Container>
             <Header>
                 <Title>
                     <CopyLink
@@ -69,7 +69,7 @@ const Summary = ({
                     updatePlaybookRunDescription(playbookRun.id, value);
                 }}
             />
-        </>
+        </Container>
     );
 };
 
@@ -109,3 +109,9 @@ const TimestampContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
+const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+    max-width: 720px;
+    min-width: 614px;
+`;
