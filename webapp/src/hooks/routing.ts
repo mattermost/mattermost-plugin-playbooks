@@ -77,7 +77,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: (params: PlaybookCreateQueryParameters) => {
+            create: async (params: PlaybookCreateQueryParameters) => {
                 const createNewPlaybook = async () => {
                     const initialPlaybook: DraftPlaybookWithChecklist = {
                         ...(PresetTemplates.find((t) => t.title === params.template)?.template || emptyPlaybook()),
@@ -92,6 +92,9 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     if (params.description) {
                         initialPlaybook.description = params.description;
                     }
+                    if (!initialPlaybook.title) {
+                        initialPlaybook.title = 'Untitled Playbook';
+                    }
 
                     initialPlaybook.public = Boolean(params.public);
 
@@ -99,9 +102,8 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     return data?.id;
                 };
 
-                createNewPlaybook().then((playbookId) => {
-                    return go(`/playbooks/${playbookId}/outline`);
-                });
+                const playbookId = await createNewPlaybook();
+                return go(`/playbooks/${playbookId}/outline`);
             },
         };
     }, [onGo, urlOnly]);
