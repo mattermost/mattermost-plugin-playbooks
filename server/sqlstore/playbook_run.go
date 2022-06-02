@@ -186,7 +186,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
-			"COALESCE(CategoryName, '') CategoryName").
+			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
@@ -430,6 +430,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ID":                                    rawPlaybookRun.ID,
 			"Name":                                  rawPlaybookRun.Name,
 			"Description":                           rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
 			"TeamID":                                rawPlaybookRun.TeamID,
@@ -500,6 +501,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		SetMap(map[string]interface{}{
 			"Name":                                  "",
 			"Description":                           rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
