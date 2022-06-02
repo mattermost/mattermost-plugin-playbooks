@@ -27,14 +27,17 @@ const EDIT_TIME = {
     ],
 };
 
-const Summary = (props: Props) => {
+const Summary = ({
+    playbookRun,
+    id,
+}: Props) => {
     const {formatMessage} = useIntl();
     const {url} = useRouteMatch();
 
     const title = formatMessage({defaultMessage: 'Summary'});
     const modifiedAt = (
         <Timestamp
-            value={props.playbookRun.summary_modified_at}
+            value={playbookRun.summary_modified_at}
             {...EDIT_TIME}
         />
     );
@@ -50,20 +53,20 @@ const Summary = (props: Props) => {
             <Header>
                 <Title>
                     <CopyLink
-                        id={`section-link-${props.id}`}
-                        to={getSiteUrl() + `${url}#${props.id}`}
+                        id={`section-link-${id}`}
+                        to={getSiteUrl() + `${url}#${id}`}
                         name={title}
                         area-hidden={true}
                     />
                     {title}
                 </Title>
-                {props.playbookRun.summary_modified_at > 0 && modifiedAtMessage}
+                {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
             </Header>
             <MarkdownEdit
                 placeholder={formatMessage({defaultMessage: 'Add a run summary'})}
-                value={props.playbookRun.summary}
+                value={playbookRun.summary}
                 onSave={(value) => {
-                    updatePlaybookRunDescription(props.playbookRun.id, value);
+                    updatePlaybookRunDescription(playbookRun.id, value);
                 }}
             />
         </>
