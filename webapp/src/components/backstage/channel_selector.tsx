@@ -4,7 +4,6 @@ import {useSelector, useDispatch} from 'react-redux';
 import {createSelector} from 'reselect';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from 'mattermost-redux/types/utilities';
 import General from 'mattermost-redux/constants/general';
 

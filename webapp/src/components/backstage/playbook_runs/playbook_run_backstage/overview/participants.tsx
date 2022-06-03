@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
@@ -17,12 +17,10 @@ import ProfileWithPosition
 import {PlaybookRun} from 'src/types/playbook_run';
 import {
     Content,
-    SecondaryButtonRight,
     TabPageContainer,
     Title,
 } from 'src/components/backstage/playbook_runs/shared';
 import {useEnsureProfiles} from 'src/hooks';
-import {navigateToUrl} from 'src/browser_routing';
 
 const StyledContent = styled(Content)`
     padding: 8px 20px 24px 24px;

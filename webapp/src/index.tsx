@@ -15,7 +15,7 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
-import {ApolloClient, InMemoryCache, gql, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 

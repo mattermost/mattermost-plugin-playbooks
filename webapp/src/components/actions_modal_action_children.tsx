@@ -4,15 +4,12 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {CategorizeChannelPayload, ChannelAction, ChannelActionType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
-
 import {usePlaybook, usePlaybooksCrud} from 'src/hooks';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 import {StyledSelect} from 'src/components/backstage/styles';
 import CategorySelector from 'src/components/backstage/category_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
-import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 interface WelcomeProps {
     message: string;

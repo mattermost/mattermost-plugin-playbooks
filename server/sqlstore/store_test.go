@@ -188,13 +188,6 @@ func TestMigrations(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, noReminderRun.PreviousReminder, newReminder)
 
-			// Test that runs with old expired times get their timers set correctly
-			oldExpiredRun, err := getRun(oldExpired, sqlStore)
-			require.NoError(t, err)
-			require.Equal(t, noReminderRun.PreviousReminder, newReminder)
-			updateDueAt := oldExpiredRun.LastStatusUpdateAt + oldExpiredRun.PreviousReminder.Milliseconds()
-			require.Greater(t, updateDueAt, time.Now().Add(7*24*time.Hour-1*time.Second).UnixNano()/int64(time.Millisecond))
-
 			// Test that the runs that should not have been changed do /not/ have new reminders
 			activeReminderRun, err := getRun(activeReminder, sqlStore)
 			require.NoError(t, err)

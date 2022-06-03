@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect, Dispatch, SetStateAction} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useSelector} from 'react-redux';

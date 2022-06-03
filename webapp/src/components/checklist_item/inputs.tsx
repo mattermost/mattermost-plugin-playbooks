@@ -6,7 +6,6 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import MarkdownEdit from '../markdown_edit';
 
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
