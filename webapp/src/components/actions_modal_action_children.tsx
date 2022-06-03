@@ -4,7 +4,7 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {usePlaybooksCrud} from 'src/hooks';
+import {usePlaybook, usePlaybooksCrud} from 'src/hooks';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 import {StyledSelect} from 'src/components/backstage/styles';
@@ -47,21 +47,29 @@ interface OptionType {
 
 export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlaybookProps) => {
     const {formatMessage} = useIntl();
-    const [playbooks] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: true});
+    const playbook = usePlaybook(playbookId);
+    const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
 
-    const playbookOptions = playbooks?.map((playbook) => (
-        {
+    // Format the playbooks for use with StyledSelect.
+    const playbookOptions = playbooks?.map((p) => ({value: p.title, label: p.title, id: p.id})) || [];
+
+    // Add the currently selected playbook, unless we're filtering.
+    const playbookOptionsWithSelected = playbookOptions;
+    if (playbook && params.search_term?.length === 0 && playbookOptions.findIndex((p) => p.id === playbook.id) === -1) {
+        playbookOptionsWithSelected.unshift({
             value: playbook.title,
             label: playbook.title,
             id: playbook.id,
-        }
-    ));
+        });
+    }
 
     return (
         <StyledSelect
             placeholder={formatMessage({defaultMessage: 'Select a playbook'})}
+            onInputChange={setSearchTerm}
+            filterOption={() => true}
             onChange={(option: OptionType) => onUpdate(option.id)}
-            options={playbookOptions || []}
+            options={playbookOptionsWithSelected}
             value={playbookOptions?.find((p) => p.id === playbookId)}
             isClearable={false}
             maxMenuHeight={250}
