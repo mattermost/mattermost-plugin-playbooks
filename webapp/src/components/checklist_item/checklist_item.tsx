@@ -141,10 +141,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             }
             return false;
         };
+
         return (
             <AssignTo
                 assignee_id={assigneeID || ''}
-                editable={isEditing}
+                editable={!props.disabled}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
             />
@@ -174,9 +175,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if ((!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
             return null;
         }
+
         return (
             <DueDateButton
-                editable={isEditing}
+                editable={!props.disabled}
                 date={dueDate}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
