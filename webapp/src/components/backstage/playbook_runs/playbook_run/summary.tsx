@@ -8,22 +8,11 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle} from '../shared';
+import {ELAPSED_TIME} from '../playbook_run_backstage/retrospective/retrospective';
 
 interface Props {
     playbookRun: PlaybookRun;
 }
-
-const EDIT_TIME = {
-    useTime: false,
-    units: [
-        {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
-        ['minute', -59],
-        ['hour', -48],
-        ['day', -30],
-        ['month', -12],
-        'year',
-    ],
-};
 
 const Summary = ({
     playbookRun,
@@ -34,7 +23,7 @@ const Summary = ({
     const modifiedAt = (
         <Timestamp
             value={playbookRun.summary_modified_at}
-            {...EDIT_TIME}
+            {...ELAPSED_TIME}
         />
     );
 
