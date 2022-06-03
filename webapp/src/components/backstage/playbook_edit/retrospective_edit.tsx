@@ -94,7 +94,7 @@ const RetrospectiveEdit = ({
                 <BackstageSubheader>
                     {formatMessage({defaultMessage: 'Key metrics'})}
                     <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics

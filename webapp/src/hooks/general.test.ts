@@ -1,4 +1,4 @@
-import {renderHook, act} from '@testing-library/react-hooks';
+import {renderHook} from '@testing-library/react-hooks';
 import * as redux from 'react-redux';
 import {getProfilesByIds, getProfilesInTeam, getProfilesInChannel} from 'mattermost-redux/actions/users';
 

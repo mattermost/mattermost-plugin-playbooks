@@ -13,7 +13,7 @@ import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
 
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
-import {BackstageSubheader, BackstageSubheaderDescription, StyledMarkdownTextbox, StyledSelect} from 'src/components/backstage/styles';
+import {BackstageSubheader, BackstageSubheaderDescription, StyledSelect} from 'src/components/backstage/styles';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {savePlaybook} from 'src/client';
 
@@ -75,7 +75,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                 <BackstageSubheader>
                     {formatMessage({defaultMessage: 'Key metrics'})}
                     <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics

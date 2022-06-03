@@ -1,8 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef} from 'react';
-import styled, {css} from 'styled-components';
+import React, {useState} from 'react';
+import styled from 'styled-components';
 
 import {useFloating, offset, flip, shift, Placement} from '@floating-ui/react-dom';
 
