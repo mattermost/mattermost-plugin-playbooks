@@ -83,8 +83,7 @@ const TimestampContainer = styled.div`
 `;
 
 const Container = styled.div`
+    width: 100%;
     display: flex;
     flex-direction: column;
-    max-width: 720px;
-    min-width: 614px;
 `;

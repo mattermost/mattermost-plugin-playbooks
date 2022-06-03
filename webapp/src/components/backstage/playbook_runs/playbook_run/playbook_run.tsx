@@ -91,8 +91,8 @@ const Header = styled.header`
 `;
 
 const Body = styled.main`
-    max-width: 1120px;
-    width: 1120px;
+    max-width: 780px;
+    width: 662px;
     padding: 20px;
     margin: 0 auto;
     display: flex;
