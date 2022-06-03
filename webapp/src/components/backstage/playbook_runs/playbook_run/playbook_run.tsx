@@ -15,6 +15,7 @@ import {
 } from 'src/client';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
+import CopyLink from 'src/components/widgets/copy_link';
 
 import Summary from './summary';
 import StatusUpdate from './status_update';
@@ -65,7 +66,6 @@ const PlaybookRunDetails = () => {
             <Header>{'HEADER' + currentRun?.name}</Header>
             <Body>
                 <Summary
-                    id={'summary'}
                     playbookRun={currentRun}
                 />
                 <StatusUpdate/>
@@ -99,4 +99,43 @@ const Body = styled.main`
     margin: 0 auto;
     display: flex;
     flex-direction: column;
+`;
+
+interface AnchorLinkTitleProps {
+    title: string;
+    id: string;
+
+}
+
+export const AnchorLinkTitle = (props: AnchorLinkTitleProps) => {
+    const {url} = useRouteMatch();
+
+    return (
+        <Title>
+            <CopyLink
+                id={`section-link-${props.id}`}
+                to={getSiteUrl() + `${url}#${props.id}`}
+                name={props.title}
+                area-hidden={true}
+            />
+            {props.title}
+        </Title>
+    );
+};
+
+const Title = styled.h3`
+    font-family: Metropolis, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    padding-left: 8px;
+    white-space: nowrap;
+    ${CopyLink} {
+        margin-left: -1.25em;
+        opacity: 1;
+        transition: opacity ease 0.15s;
+    }
+    &:not(:hover) ${CopyLink}:not(:hover) {
+        opacity: 0;
+    }
 `;

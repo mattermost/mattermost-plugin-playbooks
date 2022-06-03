@@ -2,17 +2,16 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useRouteMatch} from 'react-router-dom';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {getSiteUrl, updatePlaybookRunDescription} from 'src/client';
-import CopyLink from 'src/components/widgets/copy_link';
+import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
+
+import {AnchorLinkTitle} from './playbook_run';
 
 interface Props {
     playbookRun: PlaybookRun;
-    id: string
 }
 
 const EDIT_TIME = {
@@ -29,10 +28,8 @@ const EDIT_TIME = {
 
 const Summary = ({
     playbookRun,
-    id,
 }: Props) => {
     const {formatMessage} = useIntl();
-    const {url} = useRouteMatch();
 
     const title = formatMessage({defaultMessage: 'Summary'});
     const modifiedAt = (
@@ -51,15 +48,10 @@ const Summary = ({
     return (
         <Container>
             <Header>
-                <Title>
-                    <CopyLink
-                        id={`section-link-${id}`}
-                        to={getSiteUrl() + `${url}#${id}`}
-                        name={title}
-                        area-hidden={true}
-                    />
-                    {title}
-                </Title>
+                <AnchorLinkTitle
+                    title={title}
+                    id='summary'
+                />
                 {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
             </Header>
             <MarkdownEdit
@@ -74,24 +66,6 @@ const Summary = ({
 };
 
 export default Summary;
-
-const Title = styled.h3`
-    font-family: Metropolis, sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 24px;
-    white-space: nowrap;
-
-    ${CopyLink} {
-        margin-left: -1.25em;
-        opacity: 1;
-        transition: opacity ease 0.15s;
-    }
-
-    &:not(:hover) ${CopyLink}:not(:hover) {
-        opacity: 0;
-    }
-`;
 
 const Header = styled.div`
     display: flex;
