@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
+import {useRouteMatch} from 'react-router-dom';
+import React from 'react';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
@@ -9,6 +11,8 @@ import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
 
 import {BaseInput} from 'src/components/assets/inputs';
+import {getSiteUrl} from 'src/client';
+import CopyLink from 'src/components/widgets/copy_link';
 
 export const Container = styled.div`
     display: flex;
@@ -133,5 +137,45 @@ export const StyledInput = styled(BaseInput)<{error?: boolean}>`
             }
         `
     )}
+`;
+
+interface AnchorLinkTitleProps {
+    title: string;
+    id: string;
+
+}
+
+export const AnchorLinkTitle = (props: AnchorLinkTitleProps) => {
+    const {url} = useRouteMatch();
+
+    return (
+        <LinkTitle>
+
+            <CopyLink
+                id={`section-link-${props.id}`}
+                to={getSiteUrl() + `${url}#${props.id}`}
+                name={props.title}
+                area-hidden={true}
+            />
+            {props.title}
+        </LinkTitle>
+    );
+};
+
+const LinkTitle = styled.h3`
+    font-family: Metropolis, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    padding-left: 8px;
+    white-space: nowrap;
+    ${CopyLink} {
+        margin-left: -1.25em;
+        opacity: 1;
+        transition: opacity ease 0.15s;
+    }
+    &:not(:hover) ${CopyLink}:not(:hover) {
+        opacity: 0;
+    }
 `;
 

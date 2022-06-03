@@ -7,8 +7,7 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
-
-import {AnchorLinkTitle} from './playbook_run';
+import {AnchorLinkTitle} from '../shared';
 
 interface Props {
     playbookRun: PlaybookRun;
