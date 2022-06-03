@@ -11,7 +11,6 @@ import {
     fetchPlaybookRunMetadata,
     followPlaybookRun,
     unfollowPlaybookRun,
-    getSiteUrl,
 } from 'src/client';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
@@ -90,8 +89,8 @@ const Header = styled.header`
 `;
 
 const Body = styled.main`
-    max-width: 1120px;
-    width: 1120px;
+    max-width: 780px;
+    width: 662px;
     padding: 20px;
     margin: 0 auto;
     display: flex;
