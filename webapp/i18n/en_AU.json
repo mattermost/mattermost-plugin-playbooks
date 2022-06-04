@@ -581,5 +581,9 @@
     "LcC/pi": "Send a welcome message",
     "Brya9X": "Add a run summary template",
     "9kQNdp": "This playbook is private.",
-    "3hBelc": "A retrospective is not expected."
+    "3hBelc": "A retrospective is not expected.",
+    "yllba1": "This archived playbook cannot be renamed.",
+    "xEQYo5": "Configure custom metrics to fill out with the retrospective report.",
+    "TD8WrM": "Duplicate is disabled for this team.",
+    "OQplDX": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>."
 }
