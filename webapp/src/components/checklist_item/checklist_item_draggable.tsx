@@ -15,7 +15,6 @@ interface Props {
     item: ChecklistItemType;
     itemIndex: number;
     newItem: boolean;
-    menuEnabled: boolean;
     disabled?: boolean;
     cancelAddingItem: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
@@ -40,9 +39,8 @@ const DraggableChecklistItem = (props: Props) => {
                     playbookRunId={props.playbookRun?.id}
                     onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
                     draggableProvided={draggableProvided}
-                    dragging={snapshot.isDragging}
+                    dragging={snapshot.isDragging || snapshot.combineWith != null}
                     disabled={props.disabled || finished}
-                    menuEnabled={props.menuEnabled}
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}
