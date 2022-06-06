@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';

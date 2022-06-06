@@ -1,19 +1,14 @@
 import React, {useState, useEffect} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
+import {useRouteMatch} from 'react-router-dom';
 
 import {
-    clientFetchPlaybook,
-    clientRemoveTimelineEvent,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
-    followPlaybookRun,
-    unfollowPlaybookRun,
 } from 'src/client';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
+import {useRun} from 'src/hooks';
+import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
 import Summary from './summary';
 import StatusUpdate from './status_update';
