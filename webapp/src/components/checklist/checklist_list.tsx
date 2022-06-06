@@ -30,13 +30,11 @@ import {
     Checklist,
     ChecklistItemState,
     ChecklistItem,
-    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import {
     clientMoveChecklist,
     clientMoveChecklistItem,
     clientAddChecklist,
-    savePlaybook,
 } from 'src/client';
 import {
     currentChecklistCollapsedState,
@@ -84,6 +82,7 @@ const ChecklistList = (props: Props) => {
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
     const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
+    const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
 
     if (!playbook && !props.playbookRun) {
         return null;
@@ -249,6 +248,7 @@ const ChecklistList = (props: Props) => {
 
     let addChecklist = (
         <AddChecklistLink
+            disabled={archived}
             onClick={(e) => {
                 e.stopPropagation();
                 setAddingChecklist(true);
@@ -322,7 +322,7 @@ const ChecklistList = (props: Props) => {
                                                 numChecklists={checklists.length}
                                                 collapsed={Boolean(checklistsState[checklistIndex])}
                                                 setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                                                disabled={finished}
+                                                disabled={archived || finished}
                                                 playbookRunID={props.playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
@@ -338,10 +338,11 @@ const ChecklistList = (props: Props) => {
                                             >
                                                 <GenericChecklist
                                                     playbookRun={props.playbookRun}
+                                                    disabled={archived}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
-                                                    menuEnabled={menuEnabled}
+                                                    menuEnabled={menuEnabled && !archived}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -406,7 +407,7 @@ const AddChecklistLink = styled.button`
     border-color: var(--center-channel-color-16);
     color: var(--center-channel-color-64);
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: var(--button-bg-08);
         color: var(--button-bg);
     }

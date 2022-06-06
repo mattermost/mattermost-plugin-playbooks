@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {DraftPlaybookWithChecklist, Metric, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
@@ -195,8 +195,7 @@ const Metrics = ({
                         </>
                     }
                     disabled={disabled || metrics.length >= 4}
-                    topPx={-170}
-                    leftPx={20}
+                    placement='bottom-start'
                 >
                     <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
                         <MetricTypeOption
