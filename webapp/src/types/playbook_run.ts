@@ -8,6 +8,7 @@ export interface PlaybookRun {
     id: string;
     name: string;
     summary: string;
+    summary_modified_at: number;
     owner_user_id: string;
     reporter_user_id: string;
     team_id: string;

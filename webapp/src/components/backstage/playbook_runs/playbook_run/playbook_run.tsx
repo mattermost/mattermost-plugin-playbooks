@@ -35,7 +35,7 @@ const PlaybookRunDetails = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
 
-    const [isRHSOpen, setIsRHSOpen] = useState(true);
+    const [isRHSOpen, setIsRHSOpen] = useState(false);
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -73,11 +73,11 @@ const PlaybookRunDetails = () => {
         <ColumnContainer>
             <Main>
                 <Header>
-                    {'HEADER' + currentRun?.name}
-                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}>Toogle RHS</button>
+                    {/* {'HEADER' + currentRun?.name}
+                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
                 </Header>
                 <Body>
-                    <Summary/>
+                    <Summary playbookRun={currentRun}/>
                     <StatusUpdate/>
                     <Checklists playbookRun={currentRun}/>
                     <FinishRun/>

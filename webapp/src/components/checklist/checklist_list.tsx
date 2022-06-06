@@ -55,6 +55,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
+    enableFinishRun: boolean;
 }
 
 const ChecklistList = (props: Props) => {
@@ -362,7 +363,7 @@ const ChecklistList = (props: Props) => {
                 {!finished && addChecklist}
             </DragDropContext>
             {
-                active && props.playbookRun &&
+                active && props.enableFinishRun && props.playbookRun &&
                 <FinishButton onClick={() => dispatch(finishRun(props.playbookRun?.team_id || ''))}>
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
