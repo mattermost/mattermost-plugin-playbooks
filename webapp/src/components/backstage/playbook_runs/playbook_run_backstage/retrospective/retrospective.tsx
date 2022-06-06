@@ -45,7 +45,7 @@ interface Props {
     setMetricsData: (metricsData: RunMetricData[]) => void;
 }
 
-const PUB_TIME = {
+export const ELAPSED_TIME = {
     useTime: false,
     units: [
         {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
@@ -114,7 +114,7 @@ export const Retrospective = (props: Props) => {
         const publishedAt = (
             <Timestamp
                 value={props.playbookRun.retrospective_published_at}
-                {...PUB_TIME}
+                {...ELAPSED_TIME}
             />
         );
         publishComponent = (

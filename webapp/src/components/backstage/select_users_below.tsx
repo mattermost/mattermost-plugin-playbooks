@@ -168,7 +168,7 @@ const UserLine = (props: UserLineProps) => {
 
         text = (
             <DotMenu
-                left={true}
+                placement='bottom-end'
                 dotMenuButton={MemberButton}
                 icon={
                     <IconWrapper>

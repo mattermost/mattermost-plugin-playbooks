@@ -1,10 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect, Dispatch, SetStateAction} from 'react';
+import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
-
+import {useUpdateEffect} from 'react-use';
 import {useSelector} from 'react-redux';
+
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -12,7 +13,6 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {useIntl} from 'react-intl';
 
 import PostText from 'src/components/post_text';
-import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
 interface DescriptionProps {
     value: string;
@@ -29,8 +29,6 @@ const RHSAboutDescription = (props: DescriptionProps) => {
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    const textareaRef = useRef(null);
-
     const saveAndClose = () => {
         const newValue = editedValue.trim();
         setEditedValue(newValue);
@@ -38,10 +36,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
         props.setEditing(false);
     };
 
-    useClickOutsideRef(textareaRef, saveAndClose);
-    useKeyPress((e: KeyboardEvent) => (e.ctrlKey || e.metaKey) && e.key === 'Enter', saveAndClose);
-
-    useEffect(() => {
+    useUpdateEffect(() => {
         setEditedValue(props.value);
     }, [props.value]);
 
@@ -80,7 +75,6 @@ const RHSAboutDescription = (props: DescriptionProps) => {
             data-testid='textarea-description'
             value={editedValue}
             placeholder={placeholder}
-            ref={textareaRef}
             onChange={(e) => setEditedValue(e.target.value)}
             autoFocus={true}
             onFocus={(e) => {
@@ -88,6 +82,15 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 e.target.value = '';
                 e.target.value = val;
                 computeHeight(e);
+            }}
+            onBlur={saveAndClose}
+            onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    saveAndClose();
+                } else if (e.key === 'Escape') {
+                    setEditedValue(props.value);
+                    props.setEditing(false);
+                }
             }}
             onInput={computeHeight}
         />

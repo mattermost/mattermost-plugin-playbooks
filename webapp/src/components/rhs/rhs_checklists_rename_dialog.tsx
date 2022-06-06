@@ -7,7 +7,6 @@ import styled from 'styled-components';
 
 import {Modal} from 'react-bootstrap';
 
-import {ChecklistItem} from 'src/types/playbook';
 import {clientRenameChecklist} from 'src/client';
 import {FormContainer, ModalField} from 'src/components/assets/modal';
 import GenericModal from 'src/components/widgets/generic_modal';

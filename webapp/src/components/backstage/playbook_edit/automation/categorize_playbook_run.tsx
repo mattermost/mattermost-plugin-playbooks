@@ -15,6 +15,7 @@ import CategorySelector from 'src/components/backstage/category_selector';
 
 interface Props {
     enabled: boolean;
+    disabled?: boolean;
     onToggle: () => void;
     categoryName: string;
     onCategorySelected: (categoryName: string) => void;
@@ -28,6 +29,7 @@ export const CategorizePlaybookRun = (props: Props) => {
                 <Toggle
                     isChecked={props.enabled}
                     onChange={props.onToggle}
+                    disabled={props.disabled}
                 />
                 <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
             </AutomationTitle>
@@ -38,7 +40,7 @@ export const CategorizePlaybookRun = (props: Props) => {
                     categoryName={props.categoryName}
                     isClearable={true}
                     selectComponents={{ClearIndicator, IndicatorSeparator: () => null, MenuList}}
-                    isDisabled={!props.enabled}
+                    isDisabled={props.disabled || !props.enabled}
                     captureMenuScroll={false}
                     shouldRenderValue={props.enabled}
                     placeholder={formatMessage({defaultMessage: 'Enter category name'})}

@@ -9,7 +9,8 @@
     "react",
     "import",
     "formatjs",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "unused-imports"
   ],
   "env": {
     "browser": true,
@@ -618,7 +619,8 @@
     "formatjs/enforce-default-message": 2,
     "formatjs/no-multiple-whitespaces": 1,
     "formatjs/no-multiple-plurals": 2,
-    "formatjs/enforce-placeholders": 2
+    "formatjs/enforce-placeholders": 2,
+    "unused-imports/no-unused-imports": 2
   },
   "overrides": [
     {

@@ -5,8 +5,6 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import classNames from 'classnames';
-import styled, {css} from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';

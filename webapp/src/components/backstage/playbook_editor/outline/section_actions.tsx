@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, ComponentProps, useState} from 'react';
+import React, {useCallback, ComponentProps} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -35,6 +35,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const archived = playbook.delete_at !== 0;
 
     const [
         playbookForCreateChannel,
@@ -133,6 +134,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
+                        disabled={archived}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -144,6 +146,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
+                        disabled={archived}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -154,6 +157,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
+                        disabled={archived}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -181,6 +185,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'user-joins-message'}>
                     <AutomationTitle>
                         <Toggle
+                            disabled={archived}
                             isChecked={playbook.message_on_join_enabled}
                             onChange={() => {
                                 updatePlaybook({
@@ -193,7 +198,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <MarkdownEdit
                         placeholder={formatMessage({defaultMessage: 'Send a welcome message…'})}
                         value={playbook.message_on_join}
-                        disabled={!playbook.message_on_join_enabled}
+                        disabled={!playbook.message_on_join_enabled || archived}
                         onSave={(messageOnJoin) => {
                             updatePlaybook({
                                 messageOnJoin,
@@ -204,6 +209,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'user-joins-channel-categorize'}>
                     <CategorizePlaybookRun
+                        disabled={archived}
                         enabled={playbook.categorize_channel_enabled}
                         onToggle={handleToggleCategorizePlaybookRun}
                         categoryName={playbook.category_name}

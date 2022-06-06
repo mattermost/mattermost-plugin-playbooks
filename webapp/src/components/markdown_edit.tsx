@@ -1,8 +1,8 @@
-import React, {useRef, useState, RefObject} from 'react';
+import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {useUpdate, useUpdateEffect} from 'react-use';
+import {useUpdateEffect} from 'react-use';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
