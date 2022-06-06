@@ -99,6 +99,7 @@ const RHSAboutTitle = (props: Props) => {
                         discardAndClose();
                     }
                 }}
+                onBlur={saveAndClose}
                 onFocus={(e) => {
                     const val = e.target.value;
                     e.target.value = '';
