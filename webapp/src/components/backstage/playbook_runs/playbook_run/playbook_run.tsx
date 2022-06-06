@@ -15,6 +15,7 @@ import StatusUpdate from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
+import RightHandSidebar from './rhs';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -56,14 +57,20 @@ const PlaybookRunDetails = () => {
 
     return (
         <RowContainer>
-            <Header>{'HEADER' + currentRun?.name}</Header>
-            <Body>
-                <Summary/>
-                <StatusUpdate/>
-                <Checklists playbookRun={currentRun}/>
-                <FinishRun/>
-                <Retrospective/>
-            </Body>
+            <Main>
+                <Header>{'HEADER' + currentRun?.name}</Header>
+                <Body>
+                    <Summary/>
+                    <StatusUpdate/>
+                    <Checklists playbookRun={currentRun}/>
+                    <FinishRun/>
+                    <Retrospective/>
+                </Body>
+            </Main>
+            <RightHandSidebar
+                isOpen={true}
+                section={'run-info'}
+            />
         </RowContainer>
     );
 };
@@ -78,12 +85,8 @@ const ColumnContainer = styled.div`
     display: flex;
     flex-direction: row;
 `;
-const Header = styled.header`
-    min-height: 56px;
-    width: 100%;
-`;
 
-const Body = styled.main`
+const Main = styled.main`
     max-width: 1120px;
     width: 1120px;
     padding: 20px;
@@ -91,3 +94,14 @@ const Body = styled.main`
     display: flex;
     flex-direction: column;
 `;
+<<<<<<< Updated upstream
+=======
+
+const Header = styled.header`
+    min-height: 56px;
+    width: 100%;
+`;
+
+const Body = styled(RowContainer)`
+`;
+>>>>>>> Stashed changes
