@@ -1,7 +1,9 @@
 import React, {useState, useEffect} from 'react';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
+import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 
 import {
     fetchPlaybookRun,
@@ -25,12 +27,15 @@ const FetchingStateType = {
 
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
+
+    const [isRHSOpen, setIsRHSOpen] = useState(true);
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -51,14 +56,26 @@ const PlaybookRunDetails = () => {
         }
     }, [match.params.playbookRunId, currentRun]);
 
+    useEffect(() => {
+        const teamId = playbookRun?.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+    }, [dispatch, playbookRun?.team_id]);
+
     if (!currentRun) {
         return null;
     }
 
     return (
-        <RowContainer>
+        <ColumnContainer>
             <Main>
-                <Header>{'HEADER' + currentRun?.name}</Header>
+                <Header>
+                    {'HEADER' + currentRun?.name}
+                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}>Toogle RHS</button>
+                </Header>
                 <Body>
                     <Summary/>
                     <StatusUpdate/>
@@ -68,10 +85,11 @@ const PlaybookRunDetails = () => {
                 </Body>
             </Main>
             <RightHandSidebar
-                isOpen={true}
+                isOpen={isRHSOpen}
                 section={'run-info'}
+                onClose={()=>setIsRHSOpen(false)}
             />
-        </RowContainer>
+        </ColumnContainer>
     );
 };
 
@@ -87,21 +105,20 @@ const ColumnContainer = styled.div`
 `;
 
 const Main = styled.main`
-    max-width: 1120px;
-    width: 1120px;
+    max-width: 780px;
     padding: 20px;
+    max-width: 780px;
+    width: 662px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
+`
+const Body = styled(RowContainer)`
 `;
-<<<<<<< Updated upstream
-=======
 
 const Header = styled.header`
     min-height: 56px;
     width: 100%;
 `;
 
-const Body = styled(RowContainer)`
-`;
->>>>>>> Stashed changes
+
