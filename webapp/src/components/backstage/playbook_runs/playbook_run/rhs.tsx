@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -17,11 +17,10 @@ interface Props {
 }
 
 const RightHandSidebar = (props: Props) => {
-
+    const sidebarRight = React.useRef(null);
     if (!props.isOpen) {
         return null;
     }
-    const sidebarRight = React.useRef(null);
 
     let title = null;
     let content = null;
@@ -54,7 +53,10 @@ const RightHandSidebar = (props: Props) => {
             <Header>
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderIcon>
-                    <i className="icon icon-close" onClick={props.onClose}/>
+                    <i
+                        className='icon icon-close'
+                        onClick={props.onClose}
+                    />
                 </HeaderIcon>
             </Header>
             <Body>{'RHS '}{content}</Body>

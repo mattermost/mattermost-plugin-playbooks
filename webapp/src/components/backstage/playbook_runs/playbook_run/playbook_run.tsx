@@ -87,7 +87,7 @@ const PlaybookRunDetails = () => {
             <RightHandSidebar
                 isOpen={isRHSOpen}
                 section={'run-info'}
-                onClose={()=>setIsRHSOpen(false)}
+                onClose={() => setIsRHSOpen(false)}
             />
         </ColumnContainer>
     );
@@ -112,7 +112,7 @@ const Main = styled.main`
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-`
+`;
 const Body = styled(RowContainer)`
 `;
 
@@ -120,5 +120,4 @@ const Header = styled.header`
     min-height: 56px;
     width: 100%;
 `;
-
 
