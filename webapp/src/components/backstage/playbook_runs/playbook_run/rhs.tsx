@@ -3,18 +3,19 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
-export type RHSSection =
-'run-info' |
-'run-timeline' |
-'run-participants' |
-'run-status-updates';
+export enum RHSContent {
+    RunInfo = 'run-info',
+    RunTimeline = 'run-timeline',
+    RunStatusUpdates = 'run-status-updates',
+    RunParticipants = 'run-participants',
+}
 
 interface Props {
 
     // playbookRun: PlaybookRun;
     isOpen: boolean;
     onClose: () => void;
-    section: RHSSection;
+    section: RHSContent;
 }
 
 const RightHandSidebar = (props: Props) => {
@@ -26,18 +27,18 @@ const RightHandSidebar = (props: Props) => {
     }
 
     let title = null;
-    let content = null;
+    const content = null;
     switch (props.section) {
-    case 'run-info':
+    case RHSContent.RunInfo:
         title = formatMessage({defaultMessage: 'Run info'});
         break;
-    case 'run-timeline':
+    case RHSContent.RunTimeline:
         title = formatMessage({defaultMessage: 'Timeline'});
         break;
-    case 'run-participants':
+    case RHSContent.RunParticipants:
         title = formatMessage({defaultMessage: 'Participants'});
         break;
-    case 'run-status-updates':
+    case RHSContent.RunStatusUpdates:
         title = formatMessage({defaultMessage: 'Status updates'});
         break;
     }

@@ -17,7 +17,7 @@ import StatusUpdate from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
-import RightHandSidebar from './rhs';
+import RightHandSidebar, {RHSContent} from './rhs';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -86,7 +86,7 @@ const PlaybookRunDetails = () => {
             </Main>
             <RightHandSidebar
                 isOpen={isRHSOpen}
-                section={'run-info'}
+                section={RHSContent.RunInfo}
                 onClose={() => setIsRHSOpen(false)}
             />
         </ColumnContainer>
