@@ -34,9 +34,16 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
+import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 
 interface Props {
     playbookRun: PlaybookRun;
+    parentContainer?: ChecklistParent;
+}
+
+export enum ChecklistParent {
+    RHS = 'rhs',
+    RunDetails = 'run_details',
 }
 
 const RHSChecklistList = (props: Props) => {
@@ -78,15 +85,23 @@ const RHSChecklistList = (props: Props) => {
         }));
     };
 
+    const title = props.parentContainer === ChecklistParent.RunDetails ? (
+        <AnchorLinkTitle
+            title={formatMessage({defaultMessage: 'Tasks'})}
+            id={'checklist'}
+        />
+    ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
+
     return (
         <InnerContainer
             id='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
+            parentContainer={props.parentContainer}
         >
             <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle>
-                    {formatMessage({defaultMessage: 'Checklists'})}
+                <MainTitle parentContainer={props.parentContainer}>
+                    {title}
                     {
                         overdueTasksNum > 0 &&
                         <OverdueTasksToggle
@@ -125,17 +140,21 @@ const RHSChecklistList = (props: Props) => {
     );
 };
 
-const InnerContainer = styled.div`
+const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     position: relative;
     z-index: 1;
 
     display: flex;
     flex-direction: column;
-    padding: 0 12px 24px 12px;
 
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    }
+    ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && `
+        padding: 0 12px 24px 12px;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        }    
+    `}    
+
     .pb-tutorial-tour-tip__pulsating-dot-ctr {
         z-index: 1000;
     }
@@ -148,17 +167,13 @@ const MainTitleBG = styled.div<{numChecklists: number}>`
     top: 0;
 `;
 
-const MainTitle = styled.div`
+const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
     ${SemiBoldHeading} {
-    }
-
-    ${InnerContainer}:hover & {
-        background-color: rgba(var(--center-channel-color-rgb), .04);
     }
 
     font-size: 16px;
     line-height: 24px;
-    padding: 12px 0 12px 8px;
+    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0' : '12px 0 12px 8px')};
 `;
 
 const HoverRow = styled(HoverMenu)`
