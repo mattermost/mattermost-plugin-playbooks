@@ -70,7 +70,9 @@ const PlaybookRunDetails = () => {
         <RowContainer>
             <Header>{'HEADER' + currentRun?.name}</Header>
             <Body>
-                <Summary/>
+                <Summary
+                    playbookRun={currentRun}
+                />
                 <StatusUpdate/>
                 <Checklists playbookRun={currentRun}/>
                 <FinishRun/>
