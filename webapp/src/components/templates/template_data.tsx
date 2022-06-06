@@ -737,7 +737,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     title: 'Learn',
                     items: [
                         newChecklistItem(
-                            'Try editing the run name or description in the top section of this page..',
+                            'Try editing the run name or description in the top section of this page.',
                         ),
                         newChecklistItem(
                             'Try checking off the first two tasks!',

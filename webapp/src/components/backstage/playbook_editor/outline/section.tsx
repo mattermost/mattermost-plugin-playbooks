@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useState} from 'react';
+import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
 import CopyLink from 'src/components/widgets/copy_link';

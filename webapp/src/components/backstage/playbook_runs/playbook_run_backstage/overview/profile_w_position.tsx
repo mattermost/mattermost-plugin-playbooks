@@ -3,7 +3,6 @@
 
 import React, {useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
-import classNames from 'classnames';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';

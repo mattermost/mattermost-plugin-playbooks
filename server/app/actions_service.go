@@ -421,7 +421,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		triggers := payload.Keywords
 		actionExecuted := false
 		for _, trigger := range triggers {
-			if strings.Contains(post.Message, trigger) {
+			if strings.Contains(post.Message, trigger) || containsAttachments(post.Attachments(), trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
 				actionExecuted = true
@@ -542,4 +542,23 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
 	}
 	return attachment
+}
+
+func containsAttachments(attachments []*model.SlackAttachment, trigger string) bool {
+	// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
+	for _, attachment := range attachments {
+		switch {
+		case strings.Contains(attachment.Pretext, trigger):
+			return true
+		case strings.Contains(attachment.Title, trigger):
+			return true
+		case strings.Contains(attachment.Text, trigger):
+			return true
+		case strings.Contains(attachment.Footer, trigger):
+			return true
+		default:
+			continue
+		}
+	}
+	return false
 }
