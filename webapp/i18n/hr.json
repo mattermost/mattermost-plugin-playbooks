@@ -64,7 +64,7 @@
     "aACJNp": "Izvođenje je započeo/la {name}",
     "ZwlIYH": "{activeRuns, number} active {activeRuns, plural, one {run} other {runs}}",
     "Z/hwEf": "Kanal će se podsjetiti da izvrši retrospektivu {reminderEnabled, select, true {svakih} other {}}",
-    "YDuW/T": "{num_runs, plural, =0 {Još nije izveden} one {# pokretanje} few {# ukupna izvođenja} other {# ukupnih izvođenja}}",
+    "YDuW/T": "{num_runs, plural, =0 {Još nije izvedeno} one {# izvođenje} few {# izvođenja ukupno} other {# izvođenja ukupno}}",
     "XmUdvV": "Sva potrebna statistika",
     "X3DLGJ": "Svatko u ovom radnom prostoru može stvoriti priručnike.",
     "W9j0FJ": "{date}",
@@ -359,7 +359,7 @@
     "BNB75h": "Priručnik propisuje popise zadataka, automatizacije i predloške za sve ponavljajuće postupke. {br} Pomaže timovima da smanje greške, steknu povjerenje sudionika i postanu učinkovitiji sa svakim ponavljanjem.",
     "AF9wda": "Ovo aktualiziranje će se spremiti na <OverviewLink>stranici pregleda</OverviewLink>{hasBroadcast, select, true { i emitirati na <ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednom kanalu} other {{broadcastChannelCount, number} kanala}}</ChannelsTooltip>} other {}}.",
     "h+e7G+": "Zatraži izvođenje ovog priručnika kad poruka sadrži {numKeywords, select, 1 {ključnu riječ} other {jednu ili više ključnih riječi}}",
-    "nqVby7": "<b>{numTasksChecked, number}</b> od <b>{numTasks, number}</b> {numTasks, plural, =1 {zadatak} few {zadatka} other {zadataka}} provjereno",
+    "nqVby7": "<b>{numTasksChecked, number}</b> od <b>{numTasks, number}</b> {numTasks, plural, =1 {zadatka} few {zadatka} other {zadataka}} provjereno",
     "kDcpd/": "{numKeywords, plural, few {# ključne riječi} other {# ključnih riječi}}",
     "MFpAtm": "{numTasks, number} {numTasks, plural, one {zadatak} few {zadatka} other {zadataka}}",
     "DtCplA": "{numParticipants, plural, =1 {<b>#</b> sudionik} few {<b>#</b> sudionika} other {<b>#</b> sudionika}}",
@@ -582,5 +582,6 @@
     "yllba1": "Ovaj se arhivirani priručnik ne može preimenovati.",
     "xHNF7i": "Radnje izvođenja",
     "xEQYo5": "Konfiguriraj prilagođene mjerne podatke za ispunjavanje s izvještjem retrospektive.",
-    "TD8WrM": "Dupiciranje je za ovaj tim deaktivirano."
+    "TD8WrM": "Dupiciranje je za ovaj tim deaktivirano.",
+    "OQplDX": "Aktualiziranje stanja se očekuju svakih <duration></duration>. Nova aktualiziranja će se slati na <channels>{channelCount, plural, =0 {nijedan kanal} one {# kanal} few {# kanala} other {# kanala}}</channels> i <webhooks>{webhookCount, plural, =0 {nijedan izlazni webhook} one {# izlazni webhook} few {# izlazna webhooka} other {# izlaznih webhooka}}</webhooks>."
 }
