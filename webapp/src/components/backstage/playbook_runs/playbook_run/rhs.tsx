@@ -1,6 +1,7 @@
 import React from 'react';
 
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 export type RHSSection =
 'run-info' |
@@ -18,6 +19,8 @@ interface Props {
 
 const RightHandSidebar = (props: Props) => {
     const sidebarRight = React.useRef(null);
+    const {formatMessage} = useIntl();
+
     if (!props.isOpen) {
         return null;
     }
@@ -26,20 +29,16 @@ const RightHandSidebar = (props: Props) => {
     let content = null;
     switch (props.section) {
     case 'run-info':
-        content = 'run-info';
-        title = 'Run info';
+        title = formatMessage({defaultMessage: 'Run info'});
         break;
     case 'run-timeline':
-        content = 'run-timeline';
-        title = 'Timeline';
+        title = formatMessage({defaultMessage: 'Timeline'});
         break;
     case 'run-participants':
-        content = 'run-participants';
-        title = 'Participants';
+        title = formatMessage({defaultMessage: 'Participants'});
         break;
     case 'run-status-updates':
-        content = 'run-status-updates';
-        title = 'All status updates';
+        title = formatMessage({defaultMessage: 'Status updates'});
         break;
     }
 
@@ -59,7 +58,7 @@ const RightHandSidebar = (props: Props) => {
                     />
                 </HeaderIcon>
             </Header>
-            <Body>{'RHS '}{content}</Body>
+            <Body>{content}</Body>
         </Container>);
 };
 
