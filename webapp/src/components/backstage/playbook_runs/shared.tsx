@@ -150,7 +150,6 @@ export const AnchorLinkTitle = (props: AnchorLinkTitleProps) => {
 
     return (
         <LinkTitle>
-
             <CopyLink
                 id={`section-link-${props.id}`}
                 to={getSiteUrl() + `${url}#${props.id}`}
@@ -168,7 +167,10 @@ const LinkTitle = styled.h3`
     font-weight: 600;
     line-height: 24px;
     padding-left: 8px;
+    margin: 0;
     white-space: nowrap;
+    display: inline-block;
+
     ${CopyLink} {
         margin-left: -1.25em;
         opacity: 1;
@@ -178,4 +180,3 @@ const LinkTitle = styled.h3`
         opacity: 0;
     }
 `;
-

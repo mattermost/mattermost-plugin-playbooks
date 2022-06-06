@@ -1,7 +1,9 @@
 import React, {useState, useEffect} from 'react';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
+import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 
 import {
     fetchPlaybookRun,
@@ -24,6 +26,7 @@ const FetchingStateType = {
 
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
@@ -49,6 +52,15 @@ const PlaybookRunDetails = () => {
             });
         }
     }, [match.params.playbookRunId, currentRun]);
+
+    useEffect(() => {
+        const teamId = playbookRun?.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+    }, [dispatch, playbookRun?.team_id]);
 
     if (!currentRun) {
         return null;
