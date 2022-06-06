@@ -1,10 +1,9 @@
 import {useEffect, useMemo} from 'react';
+import {useSelector} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
-import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PresetTemplates} from 'src/components/templates/template_data';

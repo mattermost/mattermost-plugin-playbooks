@@ -37,6 +37,9 @@ type PlaybookRun struct {
 	// Summary is a short string, in Markdown, describing what the run is.
 	Summary string `json:"summary"`
 
+	// SummaryModifiedAt is date when the summary was modified
+	SummaryModifiedAt int64 `json:"summary_modified_at"`
+
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`
 
