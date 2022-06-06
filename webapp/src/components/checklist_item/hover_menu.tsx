@@ -78,8 +78,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={DotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                topPx={15}
-                leftPx={-161}
+                placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
@@ -130,7 +129,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
 const HoverMenu = styled.div`
     display: flex;
     align-items: center;
-    padding: 0px 8px;
+    padding: 0px 3px;
     position: absolute;
     height: 32px;
     right: 1px;
@@ -143,6 +142,7 @@ const HoverMenu = styled.div`
 
 const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
     padding: 0;
+    border-radius: 4px;
     &:before {
         transition: all 0.2s linear;
         transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};

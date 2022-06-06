@@ -316,6 +316,7 @@ const ChecklistInput = styled.input`
     box-sizing: border-box;
     border-radius: 4px;
     width: 100%;
+    padding: 0 6px;
 
     font-weight: 600;
     font-size: 14px;

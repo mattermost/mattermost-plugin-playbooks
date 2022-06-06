@@ -1028,7 +1028,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it('allows changing the category', () => {
+                it.skip('allows changing the category', () => {
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1306,7 +1306,7 @@ describe('playbooks > edit', () => {
     });
 
     describe('Edit playbook description', () => {
-        it('can be updated', () => {
+        it.skip('can be updated', () => {
             // # Open Playbooks
             cy.visit('/playbooks/playbooks');
 

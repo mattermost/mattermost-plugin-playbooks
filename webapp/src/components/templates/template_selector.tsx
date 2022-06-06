@@ -12,7 +12,7 @@ import {telemetryEventForTemplate, savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
 import {setPlaybookDefaults} from 'src/types/playbook';
-import {navigateToPluginUrl} from 'src/browser_routing';
+import {usePlaybooksRouting} from 'src/hooks';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';
@@ -73,6 +73,7 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
     const dispatch = useDispatch();
     const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
     const currentUser = useSelector(getCurrentUser);
+    const {edit} = usePlaybooksRouting();
     return (
         <SelectorGrid>
             {templates.map((template: PresetTemplate) => (
@@ -94,7 +95,7 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                         }
                         if (isTutorial || teams.length === 1) {
                             const playbookID = await instantCreatePlaybook(template, teams[0].id, username);
-                            navigateToPluginUrl(`/playbooks/${playbookID}`);
+                            edit(playbookID);
                         } else {
                             dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
                         }

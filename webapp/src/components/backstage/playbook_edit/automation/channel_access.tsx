@@ -11,7 +11,7 @@ import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbo
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at'>;
 
 interface Props {
     playbook: PlaybookSubset;
@@ -21,6 +21,7 @@ interface Props {
 
 export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
     const {formatMessage} = useIntl();
+    const archived = playbook.delete_at !== 0;
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -53,6 +54,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     <ButtonLabel>
                         <RadioInput
                             type='radio'
+                            disabled={archived}
                             checked={playbook.create_public_playbook_run}
                             onChange={() => handlePublicChange(true)}
                         />
@@ -66,6 +68,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     <ButtonLabel>
                         <RadioInput
                             type='radio'
+                            disabled={archived}
                             checked={!playbook.create_public_playbook_run}
                             onChange={() => handlePublicChange(false)}
                         />
@@ -77,7 +80,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     </ButtonLabel>
                 </VerticalSplit>
                 <PatternedInput
-                    enabled={true}
+                    enabled={!archived}
                     input={playbook.channel_name_template}
                     onChange={handleChannelNameTemplateChange}
                     pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters

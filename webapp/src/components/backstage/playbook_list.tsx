@@ -41,7 +41,7 @@ import {importFile} from 'src/client';
 
 import TeamSelector from '../team/team_selector';
 
-import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+import {pluginUrl} from 'src/browser_routing';
 
 import CheckboxInput from './runs_list/checkbox_input';
 
@@ -186,7 +186,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
                     const {id} = await importFile(ev?.target?.result, teamId);
-                    navigateToPluginUrl(`/playbooks/${id}`);
+                    edit(id);
                 };
                 reader.readAsArrayBuffer(file);
             }

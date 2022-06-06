@@ -1,13 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import React from 'react';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
 import KeywordsSelector from 'src/components/keywords_selector';
-import {ChannelAction, ChannelTriggerType, PromptRunPlaybookFromKeywordsPayload} from 'src/types/channel_actions';
 
 interface Props {
     title: string;

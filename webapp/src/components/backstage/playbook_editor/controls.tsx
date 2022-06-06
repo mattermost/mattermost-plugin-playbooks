@@ -22,7 +22,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useHasPlaybookPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToasts} from '../toast_banner';
 
 import {
@@ -290,7 +290,6 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 
 type TitleMenuProps = {
     className?: string;
-    archived: boolean;
     editTitle: () => void;
     refetch: () => void;
 } & PropsWithChildren<ControlProps>;
@@ -310,12 +309,14 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
 
     const archived = playbook.delete_at !== 0;
 
+    const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
+
     return (
         <>
             <DotMenu
                 dotMenuButton={TitleButton}
                 className={className}
-                left={true}
+                placement='bottom-end'
                 icon={
                     <>
                         {children}
@@ -330,16 +331,20 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={editTitle}
+                    disabled={archived}
+                    disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
                 >
                     <FormattedMessage defaultMessage='Rename'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
-                        navigateToPluginUrl(`/playbooks/${newID}`);
+                        navigateToPluginUrl(`/playbooks/${newID}/outline`);
                         addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
+                    disabled={!permissionForDuplicate}
+                    disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                 >
                     <FormattedMessage defaultMessage='Duplicate'/>
                 </DropdownMenuItem>

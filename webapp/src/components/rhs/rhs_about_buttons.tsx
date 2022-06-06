@@ -47,7 +47,7 @@ const RHSAboutButtons = (props: Props) => {
             />
             <DotMenu
                 icon={<ThreeDotsIcon/>}
-                left={true}
+                placement='bottom-end'
                 dotMenuButton={StyledDotMenuButton}
                 data-testid='run-dot-menu'
                 title={formatMessage({defaultMessage: 'More'})}
