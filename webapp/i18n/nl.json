@@ -583,5 +583,11 @@
     "LcC/pi": "Stuur een welkomstbericht…",
     "Brya9X": "Voeg een samenvattingsjabloon voor de uitvoering toe…",
     "9kQNdp": "Deze playbook is privé.",
-    "3hBelc": "Een terugblik wordt niet verwacht."
+    "3hBelc": "Een terugblik wordt niet verwacht.",
+    "yllba1": "Dit gearchiveerde playbook kan niet hernoemd worden.",
+    "xEQYo5": "Configureer aangepaste meetwaarden om in te vullen met het terugblikrapport.",
+    "oL7YsP": "Laatst bewerkt {timestamp}",
+    "Z2Hfu4": "Voeg een samenvatting van de uitvoering toe",
+    "TD8WrM": "Dupliceren is uitgeschakeld voor dit team.",
+    "OQplDX": "Elke <duration></duration> wordt een statusupdate verwacht. Nieuwe updates worden geplaatst in <channels>{channelCount, plural, =0 {geen kanalen} one {# kanaal} other {# kanalen}}</channels> and <webhooks>{webhookCount, plural, =0 {geen uitgaande webhooks} one {# uitgaande webhook} other {# uitgaande webhooks}}</webhooks> ."
 }
