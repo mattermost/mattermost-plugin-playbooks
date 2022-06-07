@@ -19,7 +19,7 @@ interface Props {
 }
 
 const RightHandSidebar = (props: Props) => {
-    const sidebarRight = React.useRef(null);
+    const sidebarRef = React.useRef(null);
     const {formatMessage} = useIntl();
 
     if (!props.isOpen) {
@@ -47,7 +47,7 @@ const RightHandSidebar = (props: Props) => {
         <Container
             id='playbooks-sidebar-right'
             role='complementary'
-            ref={sidebarRight}
+            ref={sidebarRef}
             isOpen={props.isOpen}
         >
             <Header>
@@ -69,7 +69,6 @@ const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
     width: 400px;
     height: 100%;
-    z-index: 11;
     width: 400px;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
@@ -99,11 +98,11 @@ const HeaderTitle = styled.div`
     line-height: 32px;
     font-size: 16px;
     font-weight: 600;
-    color: --center-channel-color-rgb;
+    color: var(--center-channel-color-rgb);
 `;
 
 const Body = styled.div`
     display: flex;
     flex: 1;
-    flex-direction: columnn;
+    flex-direction: column;
 `;

@@ -21,7 +21,7 @@ import Portal from 'src/components/portal';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
 
-import ChecklistItemHoverMenu from './hover_menu';
+import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
 import ChecklistItemTitle from './title';
 import AssignTo from './assign_to';
@@ -34,7 +34,6 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
-    menuEnabled: boolean;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -141,10 +140,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             }
             return false;
         };
+
         return (
             <AssignTo
                 assignee_id={assigneeID || ''}
-                editable={isEditing}
+                editable={!props.disabled}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
             />
@@ -174,9 +174,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if ((!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
             return null;
         }
+
         return (
             <DueDateButton
-                editable={isEditing}
+                editable={!props.disabled}
                 date={dueDate}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
@@ -201,13 +202,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         <ItemContainer
             ref={props.draggableProvided?.innerRef}
             {...props.draggableProvided?.draggableProps}
-            onMouseEnter={() => setShowMenu(true)}
-            onMouseLeave={() => setShowMenu(false)}
             data-testid='checkbox-item-container'
             editing={isEditing}
+            $disabled={props.disabled}
         >
             <CheckboxContainer>
-                {showMenu && !props.disabled && props.menuEnabled &&
+                {!props.disabled && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         checklistNum={props.checklistNum}
@@ -231,7 +231,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                     className={'icon icon-drag-vertical'}
                     {...props.draggableProvided?.dragHandleProps}
-                    isVisible={showMenu && !props.disabled}
+                    isVisible={!props.disabled}
+                    isDragging={props.dragging}
                 />
                 <CheckBoxButton
                     disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
@@ -312,22 +313,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     return content;
 };
-
-const ItemContainer = styled.div<{editing: boolean}>`
-    margin-bottom: 4px;
-    padding: 8px 0px;
-
-
-    ${({editing}) => editing && css`
-        background-color: var(--button-bg-08);
-    `}
-
-    ${({editing}) => !editing && css`
-        &:hover{
-            background: var(--center-channel-color-04);
-        }
-    `}
-`;
 
 export const CheckboxContainer = styled.div`
     align-items: flex-start;
@@ -433,15 +418,19 @@ const ChecklistItemTitleWrapper = styled.div`
     width: 100%;
 `;
 
-const DragButton = styled.i<{isVisible: boolean}>`
+const DragButton = styled.i<{isVisible: boolean, isDragging: boolean}>`
     cursor: pointer;
     width: 4px;
     margin-right: 4px;
     margin-left: 4px;
     margin-top: 1px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
-    ${({isVisible}) => !isVisible && `
-        visibility: hidden
+    opacity: 0;
+    ${({isVisible}) => !isVisible && css`
+        visibility: hidden;
+    `}
+    ${({isDragging}) => isDragging && css`
+        opacity: 1;
     `}
 `;
 
@@ -455,4 +444,34 @@ const Row = styled.div`
 
     margin-left: 35px;
     margin-top: 8px;
+`;
+
+const ItemContainer = styled.div<{editing: boolean, $disabled: boolean}>`
+    margin-bottom: 4px;
+    padding: 8px 0px;
+
+    ${HoverMenu} {
+        opacity: 0;
+    }
+
+    .checklists:not(.isDragging) & {
+        // not dragging and hover or focus-within
+        &:hover,
+        &:focus-within {
+            ${DragButton},
+            ${HoverMenu} {
+                opacity: 1;
+            }
+        }
+    }
+
+    ${({editing}) => editing && css`
+        background-color: var(--button-bg-08);
+    `}
+
+    ${({editing, $disabled}) => !editing && !$disabled && css`
+        .checklists:not(.isDragging) &:hover {
+            background: var(--center-channel-color-04);
+        }
+    `}
 `;
