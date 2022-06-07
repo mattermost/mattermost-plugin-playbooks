@@ -8,7 +8,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle} from '../shared';
-import {ELAPSED_TIME} from '../playbook_run_backstage/retrospective/retrospective';
+import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -23,7 +23,7 @@ const Summary = ({
     const modifiedAt = (
         <Timestamp
             value={playbookRun.summary_modified_at}
-            {...ELAPSED_TIME}
+            {...PAST_TIME_SPEC}
         />
     );
 

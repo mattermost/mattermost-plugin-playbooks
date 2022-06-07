@@ -38,7 +38,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 
 interface Props {
     playbookRun: PlaybookRun;
-    parentContainer?: ChecklistParent;
+    parentContainer: ChecklistParent;
 }
 
 export enum ChecklistParent {
@@ -137,7 +137,7 @@ const RHSChecklistList = (props: Props) => {
             </MainTitleBG>
             <ChecklistList
                 playbookRun={props.playbookRun}
-                enableFinishRun={props.parentContainer === ChecklistParent.RHS}
+                enableFinishRun={props.parentContainer !== ChecklistParent.RunDetails}
             />
         </InnerContainer>
     );

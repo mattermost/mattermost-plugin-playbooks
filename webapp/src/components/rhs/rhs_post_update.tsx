@@ -9,6 +9,7 @@ import Icon from '@mdi/react';
 import {mdiFlagCheckered} from '@mdi/js';
 
 import {FormattedMessage} from 'react-intl';
+import {Timestamp} from 'src/webapp_globals';
 
 import {promptUpdateStatus} from 'src/actions';
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
@@ -39,12 +40,6 @@ const RHSPostUpdate = (props: Props) => {
         RunDetailsTutorialSteps.PostUpdate,
         TutorialTourCategories.RUN_DETAILS
     );
-
-    //@ts-ignore
-    const Timestamp = window.Components?.Timestamp;
-    if (!Timestamp) {
-        return null;
-    }
 
     const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);

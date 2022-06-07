@@ -12,6 +12,8 @@ import {
 import {useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
+import {Role} from '../shared';
+
 import Summary from './summary';
 import StatusUpdate from './status_update';
 import Checklists from './checklists';
@@ -36,6 +38,12 @@ const PlaybookRunDetails = () => {
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
 
     const [isRHSOpen, setIsRHSOpen] = useState(false);
+    const [RHSSection, setRHSSection] = useState(RHSContent.RunInfo);
+
+    const openRHS = (section: RHSContent) => {
+        setRHSSection(section);
+        setIsRHSOpen(true);
+    };
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -69,6 +77,8 @@ const PlaybookRunDetails = () => {
         return null;
     }
 
+    const role = Role.Participant;
+
     return (
         <ColumnContainer>
             <Main>
@@ -78,15 +88,19 @@ const PlaybookRunDetails = () => {
                 </Header>
                 <Body>
                     <Summary playbookRun={currentRun}/>
-                    <StatusUpdate/>
+                    <StatusUpdate
+                        onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                        role={Role.Participant}
+                        playbookRun={currentRun}
+                    />
                     <Checklists playbookRun={currentRun}/>
-                    <FinishRun/>
+                    {role === Role.Participant ? <FinishRun playbookRun={currentRun}/> : null}
                     <Retrospective/>
                 </Body>
             </Main>
             <RightHandSidebar
                 isOpen={isRHSOpen}
-                section={RHSContent.RunInfo}
+                section={RHSSection}
                 onClose={() => setIsRHSOpen(false)}
             />
         </ColumnContainer>
