@@ -590,5 +590,7 @@
     "yllba1": "Dieses archivierte Playbook kann nicht umbenannt werden.",
     "TD8WrM": "Duplizieren ist für dieses Team deaktiviert.",
     "OQplDX": "Eine Status-Aktualisierung wird alle <duration></duration> erwartet. Neue Updates werden in <channels>{channelCount, plural, =0 {keinen Kanal} one {einen Kanal} other {# Kanäle}}</channels> und <webhooks>{webhookCount, plural, =0 {keinen ausgehenden Webhook} one {einen ausgehenden Webhook} other {# ausgehende Webhooks}}</webhooks> gesendet.",
-    "xEQYo5": "Konfiguriere eigene Metriken um die Retrospektive zu füllen."
+    "xEQYo5": "Konfiguriere eigene Metriken um die Retrospektive zu füllen.",
+    "oL7YsP": "Zuletzt bearbeitet {timestamp}",
+    "Z2Hfu4": "Erstelle eine Zusammenfassung des Durchlaufs"
 }
