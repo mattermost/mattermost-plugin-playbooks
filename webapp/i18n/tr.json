@@ -504,5 +504,7 @@
     "yllba1": "Arşivlenmiş bu senaryo yeniden adlandırılamaz.",
     "xEQYo5": "Geçmiş değerlendirmesi raporunda doldurulacak özel ölçümleri yapılandırın.",
     "TD8WrM": "Kopyalama bu takım için devre dışı bırakıldı.",
-    "OQplDX": "<duration></duration> sıklıkla bir durum güncellemesi beklenecek. Yeni güncellemeler <channels>{channelCount, plural, =0 {hiç bir kanala} one {# kanala} other {# kanala}}</channels> ve <webhooks>{webhookCount, plural, =0 {hiç bir web bağlantısına} one {# web bağlantısına} other {# web bağlantısına}}</webhooks> gönderilecek."
+    "OQplDX": "<duration></duration> sıklıkla bir durum güncellemesi beklenecek. Yeni güncellemeler <channels>{channelCount, plural, =0 {hiç bir kanala} one {# kanala} other {# kanala}}</channels> ve <webhooks>{webhookCount, plural, =0 {hiç bir web bağlantısına} one {# web bağlantısına} other {# web bağlantısına}}</webhooks> gönderilecek.",
+    "oL7YsP": "Son düzenlenme {timestamp}",
+    "Z2Hfu4": "Bir oyun özeti ekle"
 }
