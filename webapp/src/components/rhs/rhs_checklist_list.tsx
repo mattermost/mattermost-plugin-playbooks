@@ -38,7 +38,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 
 interface Props {
     playbookRun: PlaybookRun;
-    parentContainer?: ChecklistParent;
+    parentContainer: ChecklistParent;
 }
 
 export enum ChecklistParent {
