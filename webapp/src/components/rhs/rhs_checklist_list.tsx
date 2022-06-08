@@ -38,7 +38,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 
 interface Props {
     playbookRun: PlaybookRun;
-    parentContainer?: ChecklistParent;
+    parentContainer: ChecklistParent;
 }
 
 export enum ChecklistParent {
@@ -135,7 +135,10 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            <ChecklistList playbookRun={props.playbookRun}/>
+            <ChecklistList
+                playbookRun={props.playbookRun}
+                enableFinishRun={props.parentContainer === ChecklistParent.RHS}
+            />
         </InnerContainer>
     );
 };
@@ -152,8 +155,8 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
 
         &:hover {
             background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        }    
-    `}    
+        }
+    `}
 
     .pb-tutorial-tour-tip__pulsating-dot-ctr {
         z-index: 1000;

@@ -17,6 +17,7 @@ import StatusUpdate from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
+import RightHandSidebar, {RHSContent} from './rhs';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -33,6 +34,8 @@ const PlaybookRunDetails = () => {
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
+
+    const [isRHSOpen, setIsRHSOpen] = useState(false);
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -67,18 +70,26 @@ const PlaybookRunDetails = () => {
     }
 
     return (
-        <RowContainer>
-            <Header>{'HEADER' + currentRun?.name}</Header>
-            <Body>
-                <Summary
-                    playbookRun={currentRun}
-                />
-                <StatusUpdate/>
-                <Checklists playbookRun={currentRun}/>
-                <FinishRun/>
-                <Retrospective/>
-            </Body>
-        </RowContainer>
+        <ColumnContainer>
+            <Main>
+                <Header>
+                    {/* {'HEADER' + currentRun?.name}
+                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
+                </Header>
+                <Body>
+                    <Summary playbookRun={currentRun}/>
+                    <StatusUpdate/>
+                    <Checklists playbookRun={currentRun}/>
+                    <FinishRun/>
+                    <Retrospective/>
+                </Body>
+            </Main>
+            <RightHandSidebar
+                isOpen={isRHSOpen}
+                section={RHSContent.RunInfo}
+                onClose={() => setIsRHSOpen(false)}
+            />
+        </ColumnContainer>
     );
 };
 
@@ -92,16 +103,20 @@ const ColumnContainer = styled.div`
     display: flex;
     flex-direction: row;
 `;
+
+const Main = styled.main`
+    max-width: 780px;
+    padding: 20px;
+    width: 662px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+`;
+const Body = styled(RowContainer)`
+`;
+
 const Header = styled.header`
     min-height: 56px;
     width: 100%;
 `;
 
-const Body = styled.main`
-    max-width: 780px;
-    width: 662px;
-    padding: 20px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-`;
