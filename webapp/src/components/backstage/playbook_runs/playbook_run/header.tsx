@@ -11,19 +11,22 @@ import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
 import {TitleButton} from '../../playbook_editor/controls';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import Tooltip from 'src/components/widgets/tooltip';
 import {HeaderIcon} from '../playbook_run_backstage/playbook_run_backstage';
 
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
+import RunActionsModal from 'src/components/run_actions_modal';
+import {navigateToUrl} from 'src/browser_routing';
 
 interface HeaderProps {
-    playbookRun?: PlaybookRun;
+    playbookRun: PlaybookRun;
+    playbookRunMetadata: PlaybookRunMetadata | null
 }
 
-export const HeaderContainer = ({playbookRun}: HeaderProps) => {
+export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
@@ -50,7 +53,12 @@ export const HeaderContainer = ({playbookRun}: HeaderProps) => {
                 tooltipId={'go-to-channel-button-tooltip'}
                 tooltipContent={formatMessage({defaultMessage: 'Go to channel'})}
                 className={'icon-product-channels'}
-                onClick={() => {}}
+                onClick={() => {
+                    if (!playbookRunMetadata) {
+                        return;
+                    }
+                    navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+                }}
             />
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
@@ -64,6 +72,7 @@ export const HeaderContainer = ({playbookRun}: HeaderProps) => {
                 className={'󰋽 icon-information-outline'}
                 onClick={() => {}}
             />
+            <RunActionsModal playbookRun={playbookRun}/>
         </Container>
     );
 };
