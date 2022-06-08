@@ -17,6 +17,7 @@ import StatusUpdate from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
+import {HeaderContainer} from './header';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -68,8 +69,10 @@ const PlaybookRunDetails = () => {
 
     return (
         <RowContainer>
-            <Header>{'HEADER' + currentRun?.name}</Header>
             <Body>
+                <Header>
+                    <HeaderContainer/>
+                </Header>
                 <Summary
                     playbookRun={currentRun}
                 />
