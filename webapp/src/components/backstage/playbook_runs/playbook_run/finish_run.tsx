@@ -13,16 +13,16 @@ interface Props {
 }
 
 // TODO: replace clock with actual icon
-// TODO plug a different endpoint for finish (run command is not enough)
-const FinishRun = (props: Props) => {
+// TODO plug a different endpoint for finish (run command is not enough) or make command execution work
+const FinishRun = ({playbookRun}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
 
-    if (props.playbookRun.current_status === PlaybookRunStatus.Finished) {
+    if (playbookRun.current_status === PlaybookRunStatus.Finished) {
         return null;
     }
 
-    const onFinishRun = () => dispatch(finishRun(props.playbookRun.team_id || ''));
+    const onFinishRun = () => dispatch(finishRun(playbookRun.team_id));
 
     return (
         <Container>

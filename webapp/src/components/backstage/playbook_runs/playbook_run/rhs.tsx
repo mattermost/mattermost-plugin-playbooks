@@ -1,7 +1,6 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
 
 export enum RHSContent {
     RunInfo = 'run-info',
@@ -15,32 +14,15 @@ interface Props {
     // playbookRun: PlaybookRun;
     isOpen: boolean;
     onClose: () => void;
-    section: RHSContent;
+    title: ReactNode;
+    children: ReactNode;
 }
 
-const RightHandSidebar = (props: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children}: Props) => {
     const sidebarRef = React.useRef(null);
-    const {formatMessage} = useIntl();
 
-    if (!props.isOpen) {
+    if (!isOpen) {
         return null;
-    }
-
-    let title = null;
-    const content = null;
-    switch (props.section) {
-    case RHSContent.RunInfo:
-        title = formatMessage({defaultMessage: 'Run info'});
-        break;
-    case RHSContent.RunTimeline:
-        title = formatMessage({defaultMessage: 'Timeline'});
-        break;
-    case RHSContent.RunParticipants:
-        title = formatMessage({defaultMessage: 'Participants'});
-        break;
-    case RHSContent.RunStatusUpdates:
-        title = formatMessage({defaultMessage: 'Status updates'});
-        break;
     }
 
     return (
@@ -48,18 +30,18 @@ const RightHandSidebar = (props: Props) => {
             id='playbooks-sidebar-right'
             role='complementary'
             ref={sidebarRef}
-            isOpen={props.isOpen}
+            isOpen={isOpen}
         >
             <Header>
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderIcon>
                     <i
                         className='icon icon-close'
-                        onClick={props.onClose}
+                        onClick={onClose}
                     />
                 </HeaderIcon>
             </Header>
-            <Body>{content}</Body>
+            <Body>{children}</Body>
         </Container>);
 };
 

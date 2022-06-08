@@ -11,11 +11,12 @@ import {Role, AnchorLinkTitle} from '../shared';
 import {Timestamp} from 'src/webapp_globals';
 import {promptUpdateStatus} from 'src/actions';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {useNow} from 'src/hooks';
+import {useNow, usePost} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
-import Exclamation from 'src/components/assets/icons/exclamation';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
+
+import StatusUpdateCard from './update_card';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -36,129 +37,219 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
     return DateTime.fromMillis(timestampValue);
 };
 
+enum dueType {
+    Scheduled = 'scheduled',
+    Overdue = 'overdue',
+    Past = 'past',
+    Finished = 'finished',
+}
+
+// getDueInfo does all the computation to know the relative date and text
+// that should be done related to the last/next status update
+// TODO: check missing else
+const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
+    const isFinished = playbookRun.current_status === PlaybookRunStatus.Finished;
+    const isNextUpdateScheduled = playbookRun.previous_reminder !== 0;
+    const timestamp = getTimestamp(playbookRun, isNextUpdateScheduled);
+    const isDue = isNextUpdateScheduled && timestamp < now;
+
+    let type = dueType.Past;
+    let text = <FormattedMessage defaultMessage='Last update'/>;
+
+    if (isFinished) {
+        text = <FormattedMessage defaultMessage='Run finished'/>;
+        type = dueType.Finished;
+    } else if (isNextUpdateScheduled) {
+        type = (isDue ? dueType.Overdue : dueType.Scheduled);
+        text = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
+    }
+
+    const timespec = (isDue || !isNextUpdateScheduled) ? PAST_TIME_SPEC : FUTURE_TIME_SPEC;
+    const time = (
+        <Timestamp
+            value={timestamp.toJSDate()}
+            units={timespec}
+            useTime={false}
+        />
+    );
+    return {time, text, type};
+};
+
 // TODO:
-// - ask abhijit for state when overdue
-const StatusUpdate = (props: Props) => {
+// - statusupdate' usePost returns 403 as viewer :(, need to figure out how to bypass
+// - implement request update mechanism
+// - dotivon hover/active statuses -> check compass
+const StatusUpdate = ({playbookRun, role, onViewAllUpdates}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
-    if (!props.playbookRun.status_update_enabled) {
+    if (!playbookRun.status_update_enabled) {
         return null;
     }
 
-    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
-    const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
-    const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);
-    const isDue = isNextUpdateScheduled && timestamp < now;
+    const dueInfo = getDueInfo(playbookRun, now);
 
-    let pretext = <FormattedMessage defaultMessage='Last update'/>;
+    const postUpdate = () => dispatch(promptUpdateStatus(
+        playbookRun.team_id,
+        playbookRun.id,
+        playbookRun.channel_id,
+    ));
 
-    if (isFinished) {
-        pretext = <FormattedMessage defaultMessage='Run finished'/>;
-    } else if (isNextUpdateScheduled) {
-        pretext = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
-    }
+    // Extract last update (only if viewer)
+    const renderStatusUpdate = () => {
+        if (playbookRun.status_posts.length === 0) {
+            return null;
+        }
+        const statusPosts = playbookRun.status_posts;
+        const sortedStatusPosts = [...statusPosts].sort((a, b) => b.create_at - a.create_at);
+        return <StatusCard postId={sortedStatusPosts[0].id}/>;
+    };
 
-    const timespec = (isDue || !isNextUpdateScheduled) ? PAST_TIME_SPEC : FUTURE_TIME_SPEC;
-    let icon: JSX.Element;
-    if (isDue) {
-        icon = <Exclamation/>;
-    } else {
-        icon = <Clock className='icon-size-24'/>;
+    if (role === Role.Viewer) {
+        return (
+            <Container>
+                <Header>
+                    <AnchorLinkTitle
+                        title={formatMessage({defaultMessage: 'Recent status update'})}
+                        id='recent-update'
+                    />
+                    <RightWrapper>
+                        <IconWrapper>
+                            <IconClock
+                                type={dueInfo.type}
+                                size={14}
+                            />
+                        </IconWrapper>
+                        <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
+                        <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
+                        <ActionButton onClick={() => null}>
+                            {formatMessage({defaultMessage: 'Request update...'})}
+                        </ActionButton>
+                    </RightWrapper>
+                </Header>
+                <Content isShort={false}>
+                    {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
+                </Content>
+                {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onViewAllUpdates}>
+                    {formatMessage({defaultMessage: 'View all updates'})}
+                </ViewAllUpdates> : null}
+            </Container>
+        );
     }
 
     return (
         <Container>
-            {props.role === Role.Viewer ? <Header>
-                <AnchorLinkTitle
-                    title={formatMessage({defaultMessage: 'Recent status update'})}
-                    id='recent-update'
-                />
-            </Header> : <Content>
-                <IconWrapper>{icon}</IconWrapper>
-                <Text>{pretext}</Text>
-                <DueDate>
-                    <Timestamp
-                        value={timestamp.toJSDate()}
-                        units={timespec}
-                        useTime={false}
+            <Content isShort={true}>
+                <IconWrapper>
+                    <IconClock
+                        type={dueInfo.type}
+                        size={24}
                     />
-                </DueDate>
+                </IconWrapper>
+                <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
+                <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
                 <RightWrapper>
-                    <PostUpdateButton
-                        onClick={() =>
-                            dispatch(promptUpdateStatus(
-                                props.playbookRun.team_id,
-                                props.playbookRun.id,
-                                props.playbookRun.channel_id,
-                            ))}
-                    >
+                    <ActionButton onClick={postUpdate}>
                         {formatMessage({defaultMessage: 'Post update'})}
-                    </PostUpdateButton>
+                    </ActionButton>
                     <Kebab>
-                        <DotMenu
-                            icon={<ThreeDotsIcon/>}
-                        >
-                            <DropdownMenuItemStyled
-                                onClick={props.onViewAllUpdates}
-                            >
+                        <DotMenu icon={<ThreeDotsIcon/>}>
+                            <DropdownMenuItemStyled onClick={onViewAllUpdates}>
                                 <FormattedMessage defaultMessage='View all updates'/>
                             </DropdownMenuItemStyled>
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
-            </Content>}
+            </Content>
         </Container>
     );
 };
 
 export default StatusUpdate;
+interface StatusCardProps {
+    postId: string;
+}
+
+const StatusCard = ({postId}: StatusCardProps) => {
+    const post = usePost(postId);
+
+    if (!post) {
+        return null;
+    }
+
+    return (
+        <StatusUpdateCard post={post}/>
+    );
+};
 
 const Container = styled.div`
     margin: 8px 0 25px 0;
     display: flex;
     flex-direction: column;
-
-    .icon-size-24 {
-        width: 24px;
-        height: 24px;
-    }
 `;
 
-const Content = styled.div`
+const Content = styled.div<{isShort: boolean}>`
     display: flex;
     flex-direction: row;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     padding: 12px;
     border-radius: 4px;
-    height: 56px;
+    height: ${({isShort}) => (isShort ? '56px' : 'auto')};
     align-items: center;
 `;
 
 const Header = styled.div`
+    margin-top: 20px;
+    margin-bottom: 4px;
     display: flex;
     flex: 1;
+    align-items: center;
+`;
+
+const Placeholder = styled.i`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const IconWrapper = styled.div`
     margin-left: 4px;
     display: flex;
 `;
-const Text = styled.div`
+
+const TextDate = styled.div<{type: dueType}>`
     margin: 0 4px;
     font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
+    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     display: flex;
 `;
-const DueDate = styled.div`
+
+const TextDateViewer = styled(TextDate)`
+    font-size: 12px;
+    line-height: 9.5px;
+`;
+
+const DueDateParticipant = styled.div<{type: dueType}>`
     font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
+    line-height:20px;
+    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     font-weight: 600;
     display: flex;
+    margin-right: 5px;
+`;
+
+const IconClock = styled(Clock)<{type: dueType, size: number}>`
+    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    height: ${({size}) => size}px;
+    width: ${({size}) => size}px;
+`;
+
+const DueDateViewer = styled(DueDateParticipant)`
+    font-size: 12px;
+    line-height: 9.5px;
+    margin-right: 10px;
+
 `;
 const Kebab = styled.div`
     margin-left: 8px;
@@ -168,13 +259,21 @@ const Kebab = styled.div`
 const RightWrapper = styled.div`
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     flex: 1;
 `;
 
-const PostUpdateButton = styled(TertiaryButton)`
+const ActionButton = styled(TertiaryButton)`
     font-size: 12px;
     height: 32px;
-    padding: 0 32px;
+    padding: 0 16px;
+`;
+
+const ViewAllUpdates = styled.div`
+    margin-top: 9px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--button-bg);
 `;
 
 // TODO: hover effect and check background colors
@@ -182,3 +281,4 @@ const ThreeDotsIcon = styled(HamburgerButton)`
     font-size: 18px;
     margin-left: 4px;
 `;
+
