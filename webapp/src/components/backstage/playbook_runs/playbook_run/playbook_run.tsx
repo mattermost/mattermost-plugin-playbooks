@@ -107,7 +107,6 @@ const ColumnContainer = styled.div`
 const Main = styled.main`
     max-width: 780px;
     padding: 20px;
-    max-width: 780px;
     width: 662px;
     margin: 0 auto;
     display: flex;
