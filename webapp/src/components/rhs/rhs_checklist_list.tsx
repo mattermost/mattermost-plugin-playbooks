@@ -137,7 +137,7 @@ const RHSChecklistList = (props: Props) => {
             </MainTitleBG>
             <ChecklistList
                 playbookRun={props.playbookRun}
-                enableFinishRun={props.parentContainer !== ChecklistParent.RunDetails}
+                enableFinishRun={props.parentContainer === ChecklistParent.RHS}
             />
         </InnerContainer>
     );

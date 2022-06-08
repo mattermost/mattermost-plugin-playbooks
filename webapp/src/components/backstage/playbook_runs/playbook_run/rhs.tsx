@@ -69,7 +69,6 @@ const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
     width: 400px;
     height: 100%;
-    width: 400px;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 
@@ -98,7 +97,7 @@ const HeaderTitle = styled.div`
     line-height: 32px;
     font-size: 16px;
     font-weight: 600;
-    color: var(--center-channel-color-rgb);
+    color: var(--center-channel-color);
 `;
 
 const Body = styled.div`
