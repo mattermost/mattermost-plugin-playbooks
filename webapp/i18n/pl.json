@@ -583,5 +583,12 @@
     "LcC/pi": "Wyślij wiadomość powitalną…",
     "Brya9X": "Dodaj szablon podsumowania przebiegu…",
     "9kQNdp": "Ten playbook jest prywatny.",
-    "3hBelc": "Nie przewiduje się retrospektywy."
+    "3hBelc": "Nie przewiduje się retrospektywy.",
+    "yllba1": "Nie można zmienić nazwy tego zarchiwizowanego playbooka.",
+    "xEQYo5": "Konfiguracja niestandardowych metryk do wypełnienia w raporcie retrospektywnym.",
+    "vSMfYU": "Informacje o przebiegu",
+    "oL7YsP": "Ostatnio edytowane {timestamp}",
+    "Z2Hfu4": "Dodaj podsumowanie przebiegu",
+    "TD8WrM": "Duplikowanie jest wyłączone dla tego zespołu.",
+    "OQplDX": "Oczekuje się aktualizacji statusu co <duration></duration>. Nowe aktualizacje będą przesyłane do <channels>{channelCount, plural, =0 {brak kanałów} one {# kanału} other {# kanałów}}</channels> i <webhooks>{webhookCount, plural, =0 {brak wychodzących webhooków} one {# wychodzącego webhooka} other {# wychodzących webhooków}}</webhooks> ."
 }
