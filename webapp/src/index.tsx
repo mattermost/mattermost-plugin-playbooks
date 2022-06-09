@@ -162,6 +162,8 @@ export default class Plugin {
             />
         );
 
+        const enableTeamSidebar = false;
+
         registry.registerProduct(
             '/playbooks',
             'product-playbooks',
@@ -169,6 +171,8 @@ export default class Plugin {
             '/playbooks',
             BackstageWrapped,
             GlobalHeaderCenter,
+            () => null,
+            enableTeamSidebar
         );
 
         // RHS Registration

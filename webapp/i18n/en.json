@@ -467,6 +467,7 @@
   "vJ2SaW": "Automate aspects of your playbook, such as sending a welcome message, inviting key members, and creating an update channel.",
   "vL4++D": "Track progress and ownership",
   "vNiZXF": "There are no runs in progress at the moment. Run a playbook to start orchestrating workflows for your team and tools.",
+  "vSMfYU": "Run info",
   "vaYTD+": "There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?",
   "viXE32": "Private",
   "vjzpnC": "There are no playbooks matching those filters.",

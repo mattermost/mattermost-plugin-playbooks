@@ -17,6 +17,8 @@ import {
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import classNames from 'classnames';
+
 import Portal from 'src/components/portal';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
@@ -55,6 +57,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
+    enableFinishRun: boolean;
 }
 
 const ChecklistList = (props: Props) => {
@@ -74,10 +77,10 @@ const ChecklistList = (props: Props) => {
     );
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
 
     const playbook = props.playbook;
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
-    const [menuEnabled, setMenuEnabled] = useState(true);
     const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
@@ -140,11 +143,12 @@ const ChecklistList = (props: Props) => {
     };
 
     const onDragStart = () => {
-        // block hover menu on checklists
-        setMenuEnabled(false);
+        setIsDragging(true);
     };
 
     const onDragEnd = (result: DropResult) => {
+        setIsDragging(false);
+
         // If the item is dropped out of any droppable zones, do nothing
         if (!result.destination) {
             return;
@@ -203,9 +207,6 @@ const ChecklistList = (props: Props) => {
             if (props.playbookRun) {
                 clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
-
-            // allow again to see hover menu
-            setMenuEnabled(true);
         }
 
         // Move a whole checklist
@@ -304,6 +305,7 @@ const ChecklistList = (props: Props) => {
                     {(droppableProvided: DroppableProvided) => (
                         <ChecklistsContainer
                             {...droppableProvided.droppableProps}
+                            className={classNames('checklists', {isDragging})}
                             ref={droppableProvided.innerRef}
                         >
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
@@ -342,7 +344,6 @@ const ChecklistList = (props: Props) => {
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
-                                                    menuEnabled={menuEnabled && !archived}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -362,7 +363,7 @@ const ChecklistList = (props: Props) => {
                 {!finished && addChecklist}
             </DragDropContext>
             {
-                active && props.playbookRun &&
+                active && props.enableFinishRun && props.playbookRun &&
                 <FinishButton onClick={() => dispatch(finishRun(props.playbookRun?.team_id || ''))}>
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>

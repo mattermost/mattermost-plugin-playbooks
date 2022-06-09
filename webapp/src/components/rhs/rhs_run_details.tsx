@@ -15,7 +15,7 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
-import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
+import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
@@ -82,7 +82,10 @@ const RHSRunDetails = () => {
                     style={{position: 'absolute'}}
                 >
                     <RHSAbout playbookRun={playbookRun}/>
-                    <RHSChecklistList playbookRun={playbookRun}/>
+                    <RHSChecklistList
+                        playbookRun={playbookRun}
+                        parentContainer={ChecklistParent.RHS}
+                    />
                 </Scrollbars>
             </RHSContent>
 
