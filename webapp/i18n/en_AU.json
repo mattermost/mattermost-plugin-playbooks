@@ -585,5 +585,8 @@
     "yllba1": "This archived playbook cannot be renamed.",
     "xEQYo5": "Configure custom metrics to fill out with the retrospective report.",
     "TD8WrM": "Duplicate is disabled for this team.",
-    "OQplDX": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>."
+    "OQplDX": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.",
+    "vSMfYU": "Run info",
+    "oL7YsP": "Last edited {timestamp}",
+    "Z2Hfu4": "Add a run summary"
 }
