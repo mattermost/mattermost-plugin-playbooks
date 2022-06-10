@@ -3,13 +3,14 @@
 
 import styled from 'styled-components';
 
-import React from 'react';
+import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import CopyLink from 'src/components/widgets/copy_link';
-import {showRunActionsModal} from 'src/actions';
-import {getSiteUrl} from 'src/client';
+import {finishRun, showRunActionsModal} from 'src/actions';
+import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
@@ -20,6 +21,11 @@ import {HeaderIcon} from '../playbook_run_backstage/playbook_run_backstage';
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
+import {copyToClipboard} from 'src/utils';
+import {useToasts} from '../../toast_banner';
+import {useAllowChannelExport} from 'src/hooks';
+import UpgradeModal from '../../upgrade_modal';
+import {AdminNotificationType} from 'src/constants';
 
 interface HeaderProps {
     playbookRun: PlaybookRun;
@@ -35,10 +41,10 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
     return (
         <Container>
             <Icon className={'icon-star'}/>
-            <TitleMenuImpl/>
+            <TitleMenuImpl playbookRun={playbookRun}/>
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
-                tooltipContent={formatMessage({defaultMessage: 'Run Actions'})}
+                tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
                 className={'icon-lightning-bolt-outline'}
                 onClick={() => dispatch(showRunActionsModal())}
             />
@@ -51,7 +57,7 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
 
             <HeaderButton
                 tooltipId={'go-to-channel-button-tooltip'}
-                tooltipContent={formatMessage({defaultMessage: 'Go to channel'})}
+                tooltipMessage={formatMessage({defaultMessage: 'Go to channel'})}
                 className={'icon-product-channels'}
                 onClick={() => {
                     if (!playbookRunMetadata) {
@@ -62,13 +68,13 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
             />
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
-                tooltipContent={formatMessage({defaultMessage: 'View Timeline'})}
+                tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-lightning-bolt-outline'}
                 onClick={() => {}}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
-                tooltipContent={formatMessage({defaultMessage: 'View Info'})}
+                tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'󰋽 icon-information-outline'}
                 onClick={() => {}}
             />
@@ -78,16 +84,27 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
 };
 
 interface TitleMenuProps {
-    playbookRun?: PlaybookRun;
-    className?: string;
+    playbookRun: PlaybookRun;
 }
 
-const TitleMenuImpl = ({playbookRun, className}: TitleMenuProps) => {
-    // const dispatch = useDispatch();
-    // const {formatMessage} = useIntl();
-    // const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+const TitleMenuImpl = ({playbookRun}: TitleMenuProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+    const {add: addToast} = useToasts();
 
-    // const {add: addToast} = useToasts();
+    //@ts-ignore plugins state is a thing
+    const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+    const allowChannelExport = useAllowChannelExport();
+    const [showModal, setShowModal] = useState(false);
+
+    const onExportClick = () => {
+        if (!allowChannelExport) {
+            setShowModal(true);
+            return;
+        }
+
+        window.location.href = exportChannelUrl(playbookRun.channel_id);
+    };
 
     return (
         <>
@@ -102,21 +119,38 @@ const TitleMenuImpl = ({playbookRun, className}: TitleMenuProps) => {
                 }
             >
                 <DropdownMenuItem
-                    onClick={() => {}}
+                    onClick={() => {
+                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
+                        addToast(formatMessage({defaultMessage: 'Copied!'}));
+                    }}
                 >
-                    <FormattedMessage defaultMessage='Manage access'/>
+                    <FormattedMessage defaultMessage='Copy link'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                    onClick={() => {}}
+                    onClick={() => dispatch(showRunActionsModal())}
                 >
-                    <FormattedMessage defaultMessage='Rename'/>
+                    <FormattedMessage defaultMessage='Run actions'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                    onClick={async () => {}}
+                    disabled={!exportAvailable}
+                    disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
+                    onClick={async () => {
+                        onExportClick();
+                    }}
                 >
-                    <FormattedMessage defaultMessage='Duplicate'/>
+                    <FormattedMessage defaultMessage='Export channel log'/>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={() => dispatch(finishRun(playbookRun.team_id))}
+                >
+                    <FormattedMessage defaultMessage='Finish run'/>
                 </DropdownMenuItem>
             </DotMenu>
+            <UpgradeModal
+                messageType={AdminNotificationType.EXPORT_CHANNEL}
+                show={showModal}
+                onHide={() => setShowModal(false)}
+            />
         </>
     );
 };
@@ -162,22 +196,23 @@ const StyledCopyLink = styled(CopyLink)`
 
 interface HeaderButtonProps {
     tooltipId: string;
-    tooltipContent: string
+    tooltipMessage: string
     className: string;
     onClick: () => void;
+    clicked?: boolean;
 }
 
-const HeaderButton = ({tooltipId, tooltipContent, onClick, className}: HeaderButtonProps) => {
+const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked}: HeaderButtonProps) => {
     return (
         <Tooltip
             id={tooltipId}
             placement={'bottom'}
             shouldUpdatePosition={true}
-            content={tooltipContent}
+            content={tooltipMessage}
         >
             <HeaderIcon
                 onClick={() => onClick()}
-                clicked={false}
+                clicked={clicked ?? false}
             >
 
                 <Icon className={className}/>
