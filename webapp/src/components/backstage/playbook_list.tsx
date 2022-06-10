@@ -13,10 +13,6 @@ import {Redirect} from 'react-router-dom';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import LeftDots from 'src/components/assets/left_dots';
-import LeftFade from 'src/components/assets/left_fade';
-import RightDots from 'src/components/assets/right_dots';
-import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -63,9 +59,8 @@ const ContainerMedium = styled.article`
 `;
 
 const PlaybookListContainer = styled.div`
-    font-family: $font-family;
+    flex: 1 1 auto;
     color: rgba(var(--center-channel-color-rgb), 0.90);
-
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
@@ -114,7 +109,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const content = useRef<JSX.Element | null>(null);
-    const dispatch = useDispatch();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importTargetTeam, setImportTargetTeam] = useState('');
     const selectorRef = useRef<HTMLDivElement>(null);
@@ -122,7 +116,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [
         playbooks,
         {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
@@ -194,38 +188,33 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
         return (
             <>
-                <RightDots/>
-                <RightFade/>
-                <LeftDots/>
-                <LeftFade/>
-                <ContainerMedium>
-                    <PlaybooksHeader data-testid='titlePlaybook'>
-                        <Heading>
-                            {formatMessage({defaultMessage: 'Playbooks'})}
-                        </Heading>
-                        <ExpandRight/>
-                        <SearchInput
-                            testId={'search-filter'}
-                            default={params.search_term}
-                            onSearch={setSearchTerm}
-                            placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <CheckboxInput
-                            testId={'with-archived'}
-                            text={formatMessage({defaultMessage: 'With archived'})}
-                            checked={params.with_archived}
-                            onChange={setWithArchived}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <input
-                            type='file'
-                            accept='*.json,application/JSON'
-                            onChange={importUpload}
-                            ref={fileInputRef}
-                            style={{display: 'none'}}
-                        />
-                        { teams.length > 1 &&
+                <PlaybooksHeader data-testid='titlePlaybook'>
+                    <Heading>
+                        {formatMessage({defaultMessage: 'Playbooks'})}
+                    </Heading>
+                    <ExpandRight/>
+                    <SearchInput
+                        testId={'search-filter'}
+                        default={params.search_term}
+                        onSearch={setSearchTerm}
+                        placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
+                    />
+                    <HorizontalSpacer size={12}/>
+                    <CheckboxInput
+                        testId={'with-archived'}
+                        text={formatMessage({defaultMessage: 'With archived'})}
+                        checked={params.with_archived}
+                        onChange={setWithArchived}
+                    />
+                    <HorizontalSpacer size={12}/>
+                    <input
+                        type='file'
+                        accept='*.json,application/JSON'
+                        onChange={importUpload}
+                        ref={fileInputRef}
+                        style={{display: 'none'}}
+                    />
+                    {teams.length > 1 &&
                         <TeamSelector
                             placeholder={
                                 <ImportButton/>
@@ -240,8 +229,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                 }
                             }}
                         />
-                        }
-                        { teams.length <= 1 &&
+                    }
+                    {teams.length <= 1 &&
                         <ImportButton
                             onClick={() => {
                                 if (fileInputRef && fileInputRef.current) {
@@ -249,61 +238,60 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                 }
                             }}
                         />
-                        }
-                        {canCreatePlaybooks &&
+                    }
+                    {canCreatePlaybooks &&
                         <>
                             <HorizontalSpacer size={12}/>
                             <PlaybookModalButton/>
                         </>
-                        }
-                    </PlaybooksHeader>
-                    <BackstageListHeader>
-                        <div className='row'>
-                            <div className='col-sm-4'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Name'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'title'}
-                                    onClick={() => sortBy('title')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Checklists'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'stages'}
-                                    onClick={() => sortBy('stages')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={'Tasks'}
-                                    direction={params.direction}
-                                    active={params.sort === 'steps'}
-                                    onClick={() => sortBy('steps')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Runs'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'runs'}
-                                    onClick={() => sortBy('runs')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <FormattedMessage defaultMessage='Actions'/>
-                            </div>
+                    }
+                </PlaybooksHeader>
+                <BackstageListHeader>
+                    <div className='row'>
+                        <div className='col-sm-4'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Name'})}
+                                direction={params.direction}
+                                active={params.sort === 'title'}
+                                onClick={() => sortBy('title')}
+                            />
                         </div>
-                    </BackstageListHeader>
-                    {listBody}
-                    <PaginationRow
-                        page={params.page}
-                        perPage={params.per_page}
-                        totalCount={totalCount}
-                        setPage={setPage}
-                    />
-                </ContainerMedium>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Checklists'})}
+                                direction={params.direction}
+                                active={params.sort === 'stages'}
+                                onClick={() => sortBy('stages')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Tasks'}
+                                direction={params.direction}
+                                active={params.sort === 'steps'}
+                                onClick={() => sortBy('steps')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Runs'})}
+                                direction={params.direction}
+                                active={params.sort === 'runs'}
+                                onClick={() => sortBy('runs')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <FormattedMessage defaultMessage='Actions'/>
+                        </div>
+                    </div>
+                </BackstageListHeader>
+                {listBody}
+                <PaginationRow
+                    page={params.page}
+                    perPage={params.per_page}
+                    totalCount={totalCount}
+                    setPage={setPage}
+                />
             </>
         );
     };
