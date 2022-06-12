@@ -4,6 +4,7 @@
 import styled, {css} from 'styled-components';
 import {useRouteMatch} from 'react-router-dom';
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
@@ -180,3 +181,16 @@ const LinkTitle = styled.h3`
         opacity: 0;
     }
 `;
+
+export const ELAPSED_TIME = {
+    useTime: false,
+    units: [
+        {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
+        ['minute', -59],
+        ['hour', -48],
+        ['day', -30],
+        ['month', -12],
+        'year',
+    ],
+};
+

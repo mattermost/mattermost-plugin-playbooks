@@ -7,8 +7,7 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
-import {AnchorLinkTitle} from '../shared';
-import {ELAPSED_TIME} from '../playbook_run_backstage/retrospective/retrospective';
+import {AnchorLinkTitle, ELAPSED_TIME} from '../shared';
 
 interface Props {
     playbookRun: PlaybookRun;

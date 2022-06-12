@@ -65,7 +65,7 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
-    if (!currentRun) {
+    if (!currentRun || !playbookRun) {
         return null;
     }
 
@@ -81,7 +81,10 @@ const PlaybookRunDetails = () => {
                     <StatusUpdate/>
                     <Checklists playbookRun={currentRun}/>
                     <FinishRun/>
-                    <Retrospective/>
+                    <Retrospective
+                        playbookRun={playbookRun}
+                        setPlaybookRun={setPlaybookRun}
+                    />
                 </Body>
             </Main>
             <RightHandSidebar
@@ -119,4 +122,3 @@ const Header = styled.header`
     min-height: 56px;
     width: 100%;
 `;
-
