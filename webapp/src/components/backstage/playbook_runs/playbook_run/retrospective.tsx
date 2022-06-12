@@ -53,15 +53,16 @@ const Retrospective = ({
                     title={formatMessage({defaultMessage: 'Retrospective'})}
                     id='retrospective'
                 />
-
-                <UpgradeBanner
-                    background={<></>}
-                    titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
-                    helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
-                    notificationType={AdminNotificationType.RETROSPECTIVE}
-                    verticalAdjustment={0}
-                    vertical={true}
-                />
+                <BannerWrapper>
+                    <UpgradeBanner
+                        background={<></>}
+                        titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
+                        helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
+                        notificationType={AdminNotificationType.RETROSPECTIVE}
+                        verticalAdjustment={0}
+                        vertical={true}
+                    />
+                </BannerWrapper>
             </Container>
         );
     }
@@ -245,4 +246,13 @@ const TimestampContainer = styled.div`
 const Container = styled.div`
     display: flex;
     flex-direction: column;
+`;
+
+const BannerWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+
+    padding: 30px 0;
+    margin-top: 8px;
+    box-shadow: rgb(0 0 0 / 5%) 0px 0px 0px 1px;
 `;
