@@ -9,8 +9,8 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import CopyLink from 'src/components/widgets/copy_link';
-import {finishRun, showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl} from 'src/client';
+import {showRunActionsModal} from 'src/actions';
+import {exportChannelUrl, finishRun, getSiteUrl} from 'src/client';
 import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
@@ -26,6 +26,9 @@ import {useToasts} from '../../toast_banner';
 import {useAllowChannelExport} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
+import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
+import {modals} from 'src/webapp_globals';
+import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 interface HeaderProps {
     playbookRun: PlaybookRun;
@@ -113,7 +116,7 @@ const TitleMenuImpl = ({playbookRun}: TitleMenuProps) => {
                 placement='bottom-end'
                 icon={
                     <>
-                        <Title>{'Run title'}</Title>
+                        <Title>{playbookRun.name}</Title>
                         <i className={'icon icon-chevron-down'}/>
                     </>
                 }
@@ -141,7 +144,29 @@ const TitleMenuImpl = ({playbookRun}: TitleMenuProps) => {
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                    onClick={() => dispatch(finishRun(playbookRun.team_id))}
+                    onClick={() => {
+                        const outstanding = outstandingTasks(playbookRun.checklists);
+                        let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
+                        if (outstanding > 0) {
+                            confirmationMessage = formatMessage(
+                                {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?'},
+                                {outstanding});
+                        }
+
+                        const onConfirm = () => {
+                            finishRun(playbookRun.id);
+                        };
+
+                        dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
+                            show: true,
+                            title: formatMessage({defaultMessage: 'Confirm finish run'}),
+                            message: confirmationMessage,
+                            confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
+                            onConfirm,
+                            // eslint-disable-next-line @typescript-eslint/no-empty-function
+                            onCancel: () => {},
+                        })));
+                    }}
                 >
                     <FormattedMessage defaultMessage='Finish run'/>
                 </DropdownMenuItem>

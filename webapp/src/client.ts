@@ -287,6 +287,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     return data as OwnerInfo[];
 }
 
+export async function finishRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
