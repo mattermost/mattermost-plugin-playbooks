@@ -9,7 +9,6 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import {clientFetchPlaybook, publishRetrospective, updateRetrospective} from 'src/client';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
-import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle, Content, ELAPSED_TIME} from 'src/components/backstage/playbook_runs/shared';
@@ -49,13 +48,21 @@ const Retrospective = ({
 
     if (!allowRetrospectiveAccess) {
         return (
-            <UpgradeBanner
-                background={<UpgradeRetrospectiveSvg/>}
-                titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
-                helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
-                notificationType={AdminNotificationType.RETROSPECTIVE}
-                verticalAdjustment={650}
-            />
+            <Container>
+                <AnchorLinkTitle
+                    title={formatMessage({defaultMessage: 'Retrospective'})}
+                    id='retrospective'
+                />
+
+                <UpgradeBanner
+                    background={<></>}
+                    titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
+                    helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
+                    notificationType={AdminNotificationType.RETROSPECTIVE}
+                    verticalAdjustment={0}
+                    vertical={true}
+                />
+            </Container>
         );
     }
 
