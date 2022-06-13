@@ -61,7 +61,8 @@ const StyledLink = styled(Link)`
     font-size: 14px;
     text-decoration: none;
 
-    :hover {
+    :hover,
+    :focus {
         padding-right: 5px;
         background-color: var(--sidebar-text-hover-bg);
         text-decoration: none;

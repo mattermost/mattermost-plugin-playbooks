@@ -5,8 +5,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import Scrollbars from 'react-custom-scrollbars';
 
 import {OVERLAY_DELAY} from 'src/constants';
+
+import {renderThumbVertical, renderTrackHorizontal, renderView} from '../rhs/rhs_shared';
 
 import Group from './group';
 
@@ -60,7 +63,15 @@ const Sidebar = (props: SidebarProps) => {
                 </OverlayTrigger>
                 {props.headerDropdown}
             </Header>
-            <Groups>
+            <Scrollbars
+                autoHide={true}
+                autoHideTimeout={500}
+                autoHideDuration={500}
+                renderThumbVertical={renderThumbVertical}
+                renderView={renderView}
+                renderTrackHorizontal={renderTrackHorizontal}
+                style={{position: 'relative'}}
+            >
                 {props.groups.map((group) => {
                     return (
                         <Group
@@ -74,7 +85,7 @@ const Sidebar = (props: SidebarProps) => {
                         />
                     );
                 })}
-            </Groups>
+            </Scrollbars>
         </SidebarComponent>
     );
 };
@@ -102,8 +113,6 @@ const Header = styled.div`
     justify-content: space-between;
     margin: 0px;
 `;
-
-const Groups = styled.div``;
 
 const SidebarHeading = styled.h1`
     color: var(--sidebar-header-text-color);
