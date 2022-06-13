@@ -589,5 +589,6 @@
     "oL7YsP": "Laatst bewerkt {timestamp}",
     "Z2Hfu4": "Voeg een samenvatting van de uitvoering toe",
     "TD8WrM": "Dupliceren is uitgeschakeld voor dit team.",
-    "OQplDX": "Elke <duration></duration> wordt een statusupdate verwacht. Nieuwe updates worden geplaatst in <channels>{channelCount, plural, =0 {geen kanalen} one {# kanaal} other {# kanalen}}</channels> and <webhooks>{webhookCount, plural, =0 {geen uitgaande webhooks} one {# uitgaande webhook} other {# uitgaande webhooks}}</webhooks> ."
+    "OQplDX": "Elke <duration></duration> wordt een statusupdate verwacht. Nieuwe updates worden geplaatst in <channels>{channelCount, plural, =0 {geen kanalen} one {# kanaal} other {# kanalen}}</channels> and <webhooks>{webhookCount, plural, =0 {geen uitgaande webhooks} one {# uitgaande webhook} other {# uitgaande webhooks}}</webhooks> .",
+    "vSMfYU": "Informatie over de uitvoering"
 }
