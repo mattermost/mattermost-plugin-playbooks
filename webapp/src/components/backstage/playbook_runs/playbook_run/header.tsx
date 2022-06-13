@@ -20,12 +20,12 @@ import {navigateToUrl} from 'src/browser_routing';
 
 import {ContextMenu} from './context_menu';
 
-interface HeaderProps {
+interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
 }
 
-export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 

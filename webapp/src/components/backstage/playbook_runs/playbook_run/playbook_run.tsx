@@ -17,7 +17,7 @@ import StatusUpdate from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
-import {HeaderContainer} from './header';
+import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 
 const FetchingStateType = {
@@ -74,7 +74,7 @@ const PlaybookRunDetails = () => {
         <ColumnContainer>
             <Main>
                 <Header>
-                    <HeaderContainer
+                    <RunHeader
                         playbookRun={currentRun}
                         playbookRunMetadata={playbookRunMetadata}
                     />

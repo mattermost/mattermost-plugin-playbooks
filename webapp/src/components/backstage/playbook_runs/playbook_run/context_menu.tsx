@@ -24,11 +24,11 @@ import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
-interface TitleMenuProps {
+interface Props {
     playbookRun: PlaybookRun;
 }
 
-export const ContextMenu = ({playbookRun}: TitleMenuProps) => {
+export const ContextMenu = ({playbookRun}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToasts();
