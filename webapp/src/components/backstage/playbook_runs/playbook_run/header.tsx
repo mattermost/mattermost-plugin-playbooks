@@ -61,13 +61,17 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => {}}
+                onClick={() => {
+                    //TODO: show rhs with timeline info
+                }}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'󰋽 icon-information-outline'}
-                onClick={() => {}}
+                onClick={() => {
+                    //TODO: show rhs with run info
+                }}
             />
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>
