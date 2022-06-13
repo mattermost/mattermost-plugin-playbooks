@@ -11,7 +11,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, finishRun, getSiteUrl} from 'src/client';
 import {TitleButton} from '../../playbook_editor/controls';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -105,11 +105,14 @@ export const ContextMenu = ({playbookRun}: TitleMenuProps) => {
                 >
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={onFinishRunClick}
-                >
-                    <FormattedMessage defaultMessage='Finish run'/>
-                </DropdownMenuItem>
+                {
+                    playbookRunIsActive(playbookRun) &&
+                    <DropdownMenuItem
+                        onClick={onFinishRunClick}
+                    >
+                        <FormattedMessage defaultMessage='Finish run'/>
+                    </DropdownMenuItem>
+                }
             </DotMenu>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
