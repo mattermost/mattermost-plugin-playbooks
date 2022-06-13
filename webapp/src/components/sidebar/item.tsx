@@ -43,9 +43,7 @@ const ItemContainer = styled.li`
     color: rgba(var(--sidebar-text-rgb), 0.6);
     list-style-type: none;
     opacity: 1;
-    transition-duration: 0.18s;
-    transition-property: height;
-    transition-timing-function: ease;
+    transition: height 0.18s ease;
     visibility: visible;
 `;
 

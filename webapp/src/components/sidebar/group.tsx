@@ -78,9 +78,6 @@ const HeaderButton = styled.button`
     background-color: transparent;
     box-shadow: 0 0 0 0 rgb(0 0 0 / 33%);
     color: rgba(var(--sidebar-text-rgb), 0.6);
-    font-family: "Open Sans", sans-serif;
-    font-size: 12px;
-    font-weight: 600;
     text-align: left;
     text-transform: uppercase;
     transition: box-shadow 0.25s ease-in-out;
