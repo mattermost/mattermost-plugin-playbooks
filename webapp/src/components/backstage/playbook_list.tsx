@@ -15,7 +15,6 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
 import {BackstageSubheader, HorizontalSpacer} from 'src/components/backstage/styles';
 import TemplateSelector from 'src/components/templates/template_selector';
@@ -35,21 +34,17 @@ import {RegularHeading} from 'src/styles/headings';
 
 import {importFile} from 'src/client';
 
-import TeamSelector from '../team/team_selector';
-
 import {pluginUrl} from 'src/browser_routing';
+
+import Header from '../widgets/header';
+
+import TeamSelector from '../team/team_selector';
 
 import CheckboxInput from './runs_list/checkbox_input';
 
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
-
-const PlaybooksHeader = styled(BackstageSubheader)`
-    display: flex;
-    padding: 4rem 0 3.2rem;
-    align-items: center;
-`;
 
 const ContainerMedium = styled.article`
     margin: 0 auto;
@@ -60,13 +55,16 @@ const ContainerMedium = styled.article`
 
 const PlaybookListContainer = styled.div`
     flex: 1 1 auto;
-    color: rgba(var(--center-channel-color-rgb), 0.90);
+    color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
     margin-top: 4rem;
     padding: 4rem 0 3.2rem;
+    display: grid;
+    justify-items: space-between;
 `;
+
 export const Heading = styled.h1`
     ${RegularHeading} {
     }
@@ -102,6 +100,16 @@ export const AltHeading = styled(Heading)`
 const AltSub = styled(Sub)`
     text-align: center;
     margin-bottom: 36px;
+`;
+
+const TitleActions = styled.div`
+    display: flex;
+`;
+
+const PlaybooksListFilters = styled.div`
+    display: flex;
+    padding: 16px;
+    align-items: center;
 `;
 
 const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
@@ -188,11 +196,49 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
         return (
             <>
-                <PlaybooksHeader data-testid='titlePlaybook'>
-                    <Heading>
-                        {formatMessage({defaultMessage: 'Playbooks'})}
-                    </Heading>
-                    <ExpandRight/>
+                <Header
+                    data-testid='titlePlaybook'
+                    level={2}
+                    heading={formatMessage({defaultMessage: 'Playbooks'})}
+                    subtitle={formatMessage({defaultMessage: 'All the playbooks that you can access will show here'})}
+                    right={(
+                        <TitleActions>
+                            {teams.length > 1 && (
+                                <TeamSelector
+                                    placeholder={<ImportButton/>}
+                                    onlyPlaceholder={true}
+                                    enableEdit={true}
+                                    teams={teams}
+                                    onSelectedChange={(teamId: string) => {
+                                        setImportTargetTeam(teamId);
+                                        if (fileInputRef && fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    }}
+                                />
+                            )}
+                            {teams.length <= 1 && (
+                                <ImportButton
+                                    onClick={() => {
+                                        if (fileInputRef && fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    }}
+                                />
+                            )}
+                            {canCreatePlaybooks && (
+                                <>
+                                    <HorizontalSpacer size={12}/>
+                                    <PlaybookModalButton/>
+                                </>
+                            )}
+                        </TitleActions>
+                    )}
+                    css={`
+                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+                    `}
+                />
+                <PlaybooksListFilters>
                     <SearchInput
                         testId={'search-filter'}
                         default={params.search_term}
@@ -214,39 +260,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         ref={fileInputRef}
                         style={{display: 'none'}}
                     />
-                    {teams.length > 1 &&
-                        <TeamSelector
-                            placeholder={
-                                <ImportButton/>
-                            }
-                            onlyPlaceholder={true}
-                            enableEdit={true}
-                            teams={teams}
-                            onSelectedChange={(teamId: string) => {
-                                setImportTargetTeam(teamId);
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                    }
-                    {teams.length <= 1 &&
-                        <ImportButton
-                            onClick={() => {
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                    }
-                    {canCreatePlaybooks &&
-                        <>
-                            <HorizontalSpacer size={12}/>
-                            <PlaybookModalButton/>
-                        </>
-                    }
-                </PlaybooksHeader>
-                <BackstageListHeader>
+                </PlaybooksListFilters>
+                <BackstageListHeader $edgeless={true}>
                     <div className='row'>
                         <div className='col-sm-4'>
                             <SortableColHeader
