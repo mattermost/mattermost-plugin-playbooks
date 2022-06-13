@@ -60,7 +60,7 @@ export const HeaderContainer = ({playbookRun, playbookRunMetadata}: HeaderProps)
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                className={'icon-lightning-bolt-outline'}
+                className={'icon-update'}
                 onClick={() => {}}
             />
             <HeaderButton
@@ -99,6 +99,10 @@ const StyledCopyLink = styled(CopyLink)`
     place-items: center;
 `;
 
+const StyledHeaderIcon = styled(HeaderIcon)`
+    margin-left: 4px;
+`;
+
 interface HeaderButtonProps {
     tooltipId: string;
     tooltipMessage: string
@@ -115,14 +119,14 @@ const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked}: 
             shouldUpdatePosition={true}
             content={tooltipMessage}
         >
-            <HeaderIcon
+            <StyledHeaderIcon
                 onClick={() => onClick()}
                 clicked={clicked ?? false}
             >
 
                 <Icon className={className}/>
 
-            </HeaderIcon>
+            </StyledHeaderIcon>
         </Tooltip>
     );
 };
