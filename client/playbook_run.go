@@ -64,7 +64,7 @@ type StatusPost struct {
 }
 
 // StatusUpdatePost is the complete status update (post)
-// it's similar to StatusPost but with the message content
+// it's similar to StatusPost but with extended info.
 type StatusUpdatePost struct {
 	Id             string `json:"id"`
 	CreateAt       int64  `json:"create_at"`

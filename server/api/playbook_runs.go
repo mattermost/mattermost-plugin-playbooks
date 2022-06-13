@@ -853,7 +853,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
 		}
 		// Given the fact that we are bypassing some permissions,
-		// an additional check is added to limit the bypass to status updates
+		// an additional check is added to limit the risk
 		if post.Type == "custom_run_update" {
 			posts = append(posts, app.NewStatusPostComplete(post))
 		}

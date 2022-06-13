@@ -7,8 +7,8 @@ import styled, {css} from 'styled-components';
 import {DateTime} from 'luxon';
 import Icon from '@mdi/react';
 import {mdiFlagCheckered} from '@mdi/js';
-
 import {FormattedMessage} from 'react-intl';
+
 import {Timestamp} from 'src/webapp_globals';
 
 import {promptUpdateStatus} from 'src/actions';
