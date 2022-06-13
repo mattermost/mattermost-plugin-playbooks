@@ -50,6 +50,14 @@ export interface StatusPost {
     delete_at: number;
 }
 
+export interface StatusPostComplete {
+    id: string;
+    create_at: number;
+    delete_at: number;
+    message: string;
+    author_user_name: string;
+}
+
 export interface Metadata {
     channel_name: string;
     channel_display_name: string;

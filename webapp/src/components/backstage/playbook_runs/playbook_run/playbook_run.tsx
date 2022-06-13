@@ -9,9 +9,10 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
+    fetchPlaybookRunStatusUpdates,
 } from 'src/client';
 import {useRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
 
 import {Role} from '../shared';
 
@@ -39,6 +40,7 @@ const PlaybookRunDetails = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [isRHSOpen, setIsRHSOpen] = useState(false);
+    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
     const [RHSData, setRHSData] = useState<{title: ReactNode, content: ReactNode} | null>(null);
 
     const myUser = useSelector(getCurrentUser);
@@ -61,7 +63,12 @@ const PlaybookRunDetails = () => {
             break;
         case RHSContent.RunStatusUpdates:
             title = formatMessage({defaultMessage: 'Status updates'});
-            content = <RHSStatusUpdates playbookRun={playbookRun}/>;
+            content = (
+                <RHSStatusUpdates
+                    playbookRun={playbookRun}
+                    statusUpdates={statusUpdates}
+                />
+            );
             break;
         }
 
@@ -75,16 +82,21 @@ const PlaybookRunDetails = () => {
         if (currentRun) {
             setPlaybookRun(currentRun);
         } else {
-            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-                setPlaybookRun(playbookRunResult);
-                if (playbookRunMetadataResult) {
-                    setPlaybookRunMetadata(playbookRunMetadataResult);
-                }
-                setFetchingState(FetchingStateType.fetched);
-                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-            }).catch(() => {
-                setFetchingState(FetchingStateType.notFound);
-            });
+            Promise
+                .all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId), fetchPlaybookRunStatusUpdates(playbookRunId)])
+                .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
+                    setPlaybookRun(playbookRunResult);
+                    if (playbookRunMetadataResult) {
+                        setPlaybookRunMetadata(playbookRunMetadataResult);
+                    }
+                    setFetchingState(FetchingStateType.fetched);
+                    setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+                    if (statusUpdatesResult) {
+                        setStatusUpdates(statusUpdatesResult);
+                    }
+                }).catch(() => {
+                    setFetchingState(FetchingStateType.notFound);
+                });
         }
     }, [match.params.playbookRunId, currentRun]);
 
@@ -119,6 +131,7 @@ const PlaybookRunDetails = () => {
                     <StatusUpdate
                         onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
                         role={role}
+                        lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
                         playbookRun={playbookRun}
                     />
                     <Checklists playbookRun={playbookRun}/>

@@ -10,8 +10,8 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {Role, AnchorLinkTitle} from '../shared';
 import {Timestamp} from 'src/webapp_globals';
 import {promptUpdateStatus} from 'src/actions';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {useNow, usePost} from 'src/hooks';
+import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
+import {useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
@@ -21,6 +21,7 @@ import StatusUpdateCard from './update_card';
 interface Props {
     playbookRun: PlaybookRun;
     role: Role,
+    lastStatusUpdate?: StatusPostComplete;
     onViewAllUpdates: () => void,
 }
 
@@ -76,10 +77,9 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
 };
 
 // TODO:
-// - statusupdate' usePost returns 403 as viewer :(, need to figure out how to bypass
 // - implement request update mechanism
-// - dotivon hover/active statuses -> check compass
-const StatusUpdate = ({playbookRun, role, onViewAllUpdates}: Props) => {
+// - doticon hover/active statuses -> check compass
+const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
@@ -99,12 +99,10 @@ const StatusUpdate = ({playbookRun, role, onViewAllUpdates}: Props) => {
 
     // Extract last update (only if viewer)
     const renderStatusUpdate = () => {
-        if (playbookRun.status_posts.length === 0) {
+        if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
             return null;
         }
-        const statusPosts = playbookRun.status_posts;
-        const sortedStatusPosts = [...statusPosts].sort((a, b) => b.create_at - a.create_at);
-        return <StatusCard postId={sortedStatusPosts[0].id}/>;
+        return <StatusUpdateCard post={lastStatusUpdate}/>;
     };
 
     if (role === Role.Viewer) {
@@ -168,21 +166,6 @@ const StatusUpdate = ({playbookRun, role, onViewAllUpdates}: Props) => {
 };
 
 export default StatusUpdate;
-interface StatusCardProps {
-    postId: string;
-}
-
-const StatusCard = ({postId}: StatusCardProps) => {
-    const post = usePost(postId);
-
-    if (!post) {
-        return null;
-    }
-
-    return (
-        <StatusUpdateCard post={post}/>
-    );
-};
 
 const Container = styled.div`
     margin: 8px 0 25px 0;

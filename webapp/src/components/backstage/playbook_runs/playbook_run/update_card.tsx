@@ -3,15 +3,12 @@
 
 import styled from 'styled-components';
 
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 import React from 'react';
-import {useIntl} from 'react-intl';
 
-import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getUserByUsername} from 'mattermost-redux/selectors/entities/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
@@ -19,11 +16,12 @@ import {Client4} from 'mattermost-redux/client';
 import {Timestamp, messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {useEnsureProfile} from 'src/hooks';
+import {StatusPostComplete} from 'src/types/playbook_run';
 
-function useAuthorInfo(userID: string) : [string, string] {
+function useAuthorInfo(userName: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userID));
-    useEnsureProfile(userID);
+    const user = useSelector<GlobalState, UserProfile>((state) => getUserByUsername(state, userName));
+    useEnsureProfile(userName);
 
     let profileUrl = '';
     let preferredName = '';
@@ -36,8 +34,7 @@ function useAuthorInfo(userID: string) : [string, string] {
 }
 
 interface Props {
-    post: Post;
-    team?: Team;
+    post: StatusPostComplete;
 }
 
 const REL_UNITS = [
@@ -45,16 +42,8 @@ const REL_UNITS = [
     'Yesterday',
 ];
 
-const StatusUpdateCard = ({post, team}: Props) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    let authorId = post.user_id || '';
-
-    // TODO: double-check how reliable is that field
-    if (post.props?.participantIds?.length) {
-        authorId = post.props.participantIds[0];
-    }
-    const [authorProfileUrl, authorUserName] = useAuthorInfo(authorId);
+const StatusUpdateCard = ({post}: Props) => {
+    const [authorProfileUrl, authorUserName] = useAuthorInfo(post.author_user_name);
     const markdownOptions = {
         singleline: false,
         mentionHighlight: true,
