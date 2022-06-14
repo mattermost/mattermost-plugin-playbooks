@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -47,15 +50,14 @@ enum dueType {
 
 // getDueInfo does all the computation to know the relative date and text
 // that should be done related to the last/next status update
-// TODO: check missing else
 const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     const isFinished = playbookRun.current_status === PlaybookRunStatus.Finished;
     const isNextUpdateScheduled = playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(playbookRun, isNextUpdateScheduled);
     const isDue = isNextUpdateScheduled && timestamp < now;
 
-    let type = dueType.Past;
-    let text = <FormattedMessage defaultMessage='Last update'/>;
+    let type: dueType;
+    let text: React.ReactNode;
 
     if (isFinished) {
         text = <FormattedMessage defaultMessage='Run finished'/>;
@@ -63,6 +65,9 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     } else if (isNextUpdateScheduled) {
         type = (isDue ? dueType.Overdue : dueType.Scheduled);
         text = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
+    } else {
+        type = dueType.Past;
+        text = <FormattedMessage defaultMessage='Last update'/>;
     }
 
     const timespec = (isDue || !isNextUpdateScheduled) ? PAST_TIME_SPEC : FUTURE_TIME_SPEC;
@@ -76,9 +81,6 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     return {time, text, type};
 };
 
-// TODO:
-// - implement request update mechanism
-// - doticon hover/active statuses -> check compass
 const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
@@ -91,21 +93,14 @@ const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: P
 
     const dueInfo = getDueInfo(playbookRun, now);
 
-    const postUpdate = () => dispatch(promptUpdateStatus(
-        playbookRun.team_id,
-        playbookRun.id,
-        playbookRun.channel_id,
-    ));
+    const renderAsViewer = () => {
+        const renderStatusUpdate = () => {
+            if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
+                return null;
+            }
+            return <StatusUpdateCard post={lastStatusUpdate}/>;
+        };
 
-    // Extract last update (only if viewer)
-    const renderStatusUpdate = () => {
-        if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
-            return null;
-        }
-        return <StatusUpdateCard post={lastStatusUpdate}/>;
-    };
-
-    if (role === Role.Viewer) {
         return (
             <Container>
                 <Header>
@@ -135,34 +130,44 @@ const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: P
                 </ViewAllUpdates> : null}
             </Container>
         );
-    }
+    };
 
-    return (
-        <Container>
-            <Content isShort={true}>
-                <IconWrapper>
-                    <IconClock
-                        type={dueInfo.type}
-                        size={24}
-                    />
-                </IconWrapper>
-                <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
-                <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
-                <RightWrapper>
-                    <ActionButton onClick={postUpdate}>
-                        {formatMessage({defaultMessage: 'Post update'})}
-                    </ActionButton>
-                    <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
-                            <DropdownMenuItemStyled onClick={onViewAllUpdates}>
-                                <FormattedMessage defaultMessage='View all updates'/>
-                            </DropdownMenuItemStyled>
-                        </DotMenu>
-                    </Kebab>
-                </RightWrapper>
-            </Content>
-        </Container>
-    );
+    const renderAsParticipant = () => {
+        const postUpdate = () => dispatch(promptUpdateStatus(
+            playbookRun.team_id,
+            playbookRun.id,
+            playbookRun.channel_id,
+        ));
+
+        return (
+            <Container>
+                <Content isShort={true}>
+                    <IconWrapper>
+                        <IconClock
+                            type={dueInfo.type}
+                            size={24}
+                        />
+                    </IconWrapper>
+                    <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
+                    <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
+                    <RightWrapper>
+                        <ActionButton onClick={postUpdate}>
+                            {formatMessage({defaultMessage: 'Post update'})}
+                        </ActionButton>
+                        <Kebab>
+                            <DotMenu icon={<ThreeDotsIcon/>}>
+                                <DropdownMenuItemStyled onClick={onViewAllUpdates}>
+                                    <FormattedMessage defaultMessage='View all updates'/>
+                                </DropdownMenuItemStyled>
+                            </DotMenu>
+                        </Kebab>
+                    </RightWrapper>
+                </Content>
+            </Container>
+        );
+    };
+
+    return role === Role.Viewer ? renderAsViewer() : renderAsParticipant();
 };
 
 export default StatusUpdate;
@@ -259,7 +264,6 @@ const ViewAllUpdates = styled.div`
     color: var(--button-bg);
 `;
 
-// TODO: hover effect and check background colors
 const ThreeDotsIcon = styled(HamburgerButton)`
     font-size: 18px;
     margin-left: 4px;
