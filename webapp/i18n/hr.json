@@ -583,5 +583,8 @@
     "xHNF7i": "Radnje izvođenja",
     "xEQYo5": "Konfiguriraj prilagođene mjerne podatke za ispunjavanje s izvještjem retrospektive.",
     "TD8WrM": "Dupiciranje je za ovaj tim deaktivirano.",
-    "OQplDX": "Aktualiziranje stanja se očekuju svakih <duration></duration>. Nova aktualiziranja će se slati na <channels>{channelCount, plural, =0 {nijedan kanal} one {# kanal} few {# kanala} other {# kanala}}</channels> i <webhooks>{webhookCount, plural, =0 {nijedan izlazni webhook} one {# izlazni webhook} few {# izlazna webhooka} other {# izlaznih webhooka}}</webhooks>."
+    "OQplDX": "Aktualiziranje stanja se očekuju svakih <duration></duration>. Nova aktualiziranja će se slati na <channels>{channelCount, plural, =0 {nijedan kanal} one {# kanal} few {# kanala} other {# kanala}}</channels> i <webhooks>{webhookCount, plural, =0 {nijedan izlazni webhook} one {# izlazni webhook} few {# izlazna webhooka} other {# izlaznih webhooka}}</webhooks>.",
+    "vSMfYU": "Podaci izvođenja",
+    "oL7YsP": "Zadnja promjena {timestamp}",
+    "Z2Hfu4": "Dodaj sažetak izvođenja"
 }
