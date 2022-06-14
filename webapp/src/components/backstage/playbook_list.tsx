@@ -58,6 +58,10 @@ const PlaybookListContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 
+const TableContainer = styled.div`
+    overflow: clip;
+`;
+
 const CreatePlaybookHeader = styled(BackstageSubheader)`
     margin-top: 4rem;
     padding: 4rem 0 3.2rem;
@@ -195,7 +199,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         };
 
         return (
-            <>
+            <TableContainer>
                 <Header
                     data-testid='titlePlaybook'
                     level={2}
@@ -307,7 +311,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                     totalCount={totalCount}
                     setPage={setPage}
                 />
-            </>
+            </TableContainer>
         );
     };
 
