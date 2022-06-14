@@ -60,6 +60,7 @@ const PlaybookListContainer = styled.div`
 `;
 
 const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
+    overflow: hidden;
     overflow: clip;
     ${({$newLHSEnabled}) => !$newLHSEnabled && css`
         margin: 0 auto;
