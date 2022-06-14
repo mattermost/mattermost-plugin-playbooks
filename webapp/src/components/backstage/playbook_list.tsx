@@ -7,7 +7,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
@@ -23,6 +23,7 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
+    useExperimentalFeaturesEnabled,
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
@@ -58,8 +59,12 @@ const PlaybookListContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 
-const TableContainer = styled.div`
+const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
     overflow: clip;
+    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
+        margin: 0 auto;
+        max-width: 1160px;
+    `}
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
@@ -136,6 +141,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
+    const newLHSEnabled = useExperimentalFeaturesEnabled();
+
     const hasPlaybooks = Boolean(playbooks?.length);
 
     if (props.firstTimeUserExperience && hasPlaybooks) {
@@ -199,7 +206,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         };
 
         return (
-            <TableContainer>
+            <TableContainer $newLHSEnabled={newLHSEnabled}>
                 <Header
                     data-testid='titlePlaybook'
                     level={2}
