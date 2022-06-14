@@ -177,7 +177,7 @@ const Main = styled.main<{isRHSOpen: boolean}>`
     flex-direction: column;
 
     @media screen and (max-width: 1400px) and (min-width: 1100px){
-        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '780px')};
     }
 `;
 const Body = styled(RowContainer)`
