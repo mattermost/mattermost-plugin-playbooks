@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {ReactNode} from 'react';
-
+import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
+
+import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 
 export enum RHSContent {
     RunInfo = 'run-info',
@@ -44,7 +46,19 @@ const RightHandSidebar = ({isOpen, onClose, title, children}: Props) => {
                     />
                 </HeaderIcon>
             </Header>
-            <Body>{children}</Body>
+            <Body>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                    renderTrackHorizontal={renderTrackHorizontal}
+                    style={{position: 'relative'}}
+                >
+                    {children}
+                </Scrollbars>
+            </Body>
         </Container>);
 };
 
@@ -52,10 +66,14 @@ export default RightHandSidebar;
 
 const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
+    position: fixed;
     width: 400px;
     height: 100%;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    right: 0;
+    z-index: 2;
+    background-color: var(--center-channel-bg);
 
     @media screen and (min-width: 1680px) {
         width: 500px;

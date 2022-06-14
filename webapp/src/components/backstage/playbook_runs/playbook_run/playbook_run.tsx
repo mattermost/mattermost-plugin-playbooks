@@ -120,8 +120,8 @@ const PlaybookRunDetails = () => {
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     return (
-        <ColumnContainer>
-            <Main>
+        <Container>
+            <Main isRHSOpen={isRHSOpen}>
                 <Header>
                     {/* {'HEADER' + currentRun?.name}
                     <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
@@ -149,7 +149,7 @@ const PlaybookRunDetails = () => {
             >
                 {RHSData?.content}
             </RightHandSidebar>
-        </ColumnContainer>
+        </Container>
     );
 };
 
@@ -164,13 +164,21 @@ const ColumnContainer = styled.div`
     flex-direction: row;
 `;
 
-const Main = styled.main`
+const Container = styled(ColumnContainer)`
+    flex: 1;
+`;
+
+const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
     padding: 20px;
-    width: 662px;
-    margin: 0 auto;
+    flex: 1;
+    margin: ${({isRHSOpen}) => (isRHSOpen ? '0 10px' : '0 auto')};
     display: flex;
     flex-direction: column;
+
+    @media screen and (max-width: 1400px) and (min-width: 1100px){
+        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+    }
 `;
 const Body = styled(RowContainer)`
 `;
