@@ -836,6 +836,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to get status updates", nil)
 		return
 	}
 
