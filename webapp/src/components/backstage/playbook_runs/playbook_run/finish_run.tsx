@@ -2,36 +2,36 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import Icon from '@mdi/react';
+import {mdiFlagOutline} from '@mdi/js';
 
-import Clock from 'src/components/assets/icons/clock';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
-import {finishRun} from 'src/actions';
 
 interface Props {
     playbookRun: PlaybookRun;
 }
 
-// TODO: replace clock with actual icon
-// TODO plug a different endpoint for finish (run command is not enough) or make command execution work
 const FinishRun = ({playbookRun}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
 
     if (playbookRun.current_status === PlaybookRunStatus.Finished) {
         return null;
     }
 
-    const onFinishRun = () => dispatch(finishRun(playbookRun.team_id));
+    // TODO: plug endpoint when client is ready
+    const onFinishRun = () => null;
 
     return (
         <Container>
             <Content>
                 <IconWrapper>
-                    <Clock className='icon-size-24'/>
+                    <Icon
+                        path={mdiFlagOutline}
+                        size={'24px'}
+                    />
                 </IconWrapper>
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
@@ -70,6 +70,7 @@ const Content = styled.div`
 const IconWrapper = styled.div`
     margin-left: 4px;
     display: flex;
+    color: rgba(var(--center-channel-color-rgb), 0.32);
 `;
 const Text = styled.div`
     margin: 0 4px;
