@@ -18,13 +18,15 @@ const RHSStatusUpdates = ({playbookRun, statusUpdates}: Props) => {
         return null;
     }
 
-    return (<Container>
-        {statusUpdates.map((post) => (
-            <Wrapper key={post.id}>
-                <StatusUpdateCard post={post}/>
-            </Wrapper>
-        ))}
-    </Container>);
+    return (
+        <Container>
+            {statusUpdates.map((post) => (
+                <Wrapper key={post.id}>
+                    <StatusUpdateCard post={post}/>
+                </Wrapper>
+            ))}
+        </Container>
+    );
 };
 
 export default RHSStatusUpdates;
