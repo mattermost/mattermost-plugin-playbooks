@@ -16,7 +16,6 @@ import {
 } from 'src/client';
 import {useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
-
 import {Role} from '../shared';
 
 import Summary from './summary';
@@ -121,27 +120,29 @@ const PlaybookRunDetails = () => {
 
     return (
         <Container>
-            <Main isRHSOpen={isRHSOpen}>
-                <Header>
-                    {/* {'HEADER' + currentRun?.name}
-                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
-                </Header>
-                <Body>
-                    <Summary
-                        playbookRun={playbookRun}
-                        role={role}
-                    />
-                    <StatusUpdate
-                        onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
-                        role={role}
-                        lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
-                        playbookRun={playbookRun}
-                    />
-                    <Checklists playbookRun={playbookRun}/>
-                    {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
-                    <Retrospective/>
-                </Body>
-            </Main>
+            <MainWrapper isRHSOpen={isRHSOpen}>
+                <Main isRHSOpen={isRHSOpen}>
+                    <Header>
+                        {/* {'HEADER' + currentRun?.name}
+                        <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
+                    </Header>
+                    <Body>
+                        <Summary
+                            playbookRun={playbookRun}
+                            role={role}
+                        />
+                        <StatusUpdate
+                            onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                            role={role}
+                            lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
+                            playbookRun={playbookRun}
+                        />
+                        <Checklists playbookRun={playbookRun}/>
+                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
+                        <Retrospective/>
+                    </Body>
+                </Main>
+            </MainWrapper>
             <RightHandSidebar
                 isOpen={isRHSOpen}
                 title={RHSData?.title}
@@ -168,17 +169,20 @@ const Container = styled(ColumnContainer)`
     flex: 1;
 `;
 
+const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+    flex: 1;
+    display: flex;
+    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+`;
+
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
+    min-width: 500px;
     padding: 20px;
     flex: 1;
-    margin: ${({isRHSOpen}) => (isRHSOpen ? '0 10px' : '0 auto')};
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-
-    @media screen and (max-width: 1400px) and (min-width: 1100px){
-        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '780px')};
-    }
 `;
 const Body = styled(RowContainer)`
 `;

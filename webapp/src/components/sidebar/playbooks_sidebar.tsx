@@ -60,7 +60,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
             icon: <StyledPlaybookRunIcon/>,
             isCollapsed: false,
             itemMenu: null,
-            link: pluginUrl(`/runs/${run.id}`),
+            link: pluginUrl(`/run_details/${run.id}`),
         };
     }) : [];
 

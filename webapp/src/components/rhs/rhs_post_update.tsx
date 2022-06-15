@@ -133,7 +133,7 @@ const RHSPostUpdate = (props: Props) => {
     );
 };
 
-const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
+export const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
     let timestampValue = playbookRun.last_status_update_at;
 
     if (playbookRun.current_status === PlaybookRunStatus.Finished) {

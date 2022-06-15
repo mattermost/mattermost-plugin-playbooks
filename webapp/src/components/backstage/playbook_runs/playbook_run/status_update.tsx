@@ -9,7 +9,7 @@ import {DateTime} from 'luxon';
 
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-
+import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {Role, AnchorLinkTitle} from '../shared';
 import {Timestamp} from 'src/webapp_globals';
 import {promptUpdateStatus} from 'src/actions';
@@ -27,19 +27,6 @@ interface Props {
     lastStatusUpdate?: StatusPostComplete;
     onViewAllUpdates: () => void,
 }
-
-const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
-    let timestampValue = playbookRun.last_status_update_at;
-
-    if (playbookRun.current_status === PlaybookRunStatus.Finished) {
-        timestampValue = playbookRun.end_at;
-    } else if (isNextUpdateScheduled) {
-        const previousReminderMillis = Math.floor(playbookRun.previous_reminder / 1e6);
-        timestampValue = playbookRun.last_status_update_at + previousReminderMillis;
-    }
-
-    return DateTime.fromMillis(timestampValue);
-};
 
 enum dueType {
     Scheduled = 'scheduled',

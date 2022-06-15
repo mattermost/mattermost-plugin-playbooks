@@ -99,7 +99,8 @@ export const Retrospective = (props: Props) => {
         const publishedAt = (
             <Timestamp
                 value={props.playbookRun.retrospective_published_at}
-                {...PAST_TIME_SPEC}
+                useTime={false}
+                units={PAST_TIME_SPEC}
             />
         );
         publishComponent = (
