@@ -1,5 +1,5 @@
 
-import React, {useRef, useState} from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -15,6 +15,11 @@ interface CheckBoxButtonProps {
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
+
+    // Needed to have live update in multiple users/devices
+    useEffect(() => {
+        setIsChecked(props.item.state === ChecklistItemState.Closed);
+    }, [props.item.state]);
 
     // handleOnChange optimistic update approach: first do UI change, then
     // call to server and finally revert UI state if there's error
