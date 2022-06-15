@@ -1,23 +1,31 @@
-import React, {useState, useEffect} from 'react';
-import {useDispatch} from 'react-redux';
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import React, {useState, useEffect, ReactNode} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
+    fetchPlaybookRunStatusUpdates,
 } from 'src/client';
 import {useRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
+
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import Summary from './summary';
-import StatusUpdate from './status_update';
+import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
 import RightHandSidebar, {RHSContent} from './rhs';
+import RHSStatusUpdates from './rhs_status_updates';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -34,8 +42,42 @@ const PlaybookRunDetails = () => {
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-
     const [isRHSOpen, setIsRHSOpen] = useState(false);
+    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
+    const [RHSData, setRHSData] = useState<{title: ReactNode, content: ReactNode} | null>(null);
+
+    const myUser = useSelector(getCurrentUser);
+
+    const openRHS = (section: RHSContent) => {
+        if (!playbookRun) {
+            return;
+        }
+        let title = null;
+        let content = null;
+        switch (section) {
+        case RHSContent.RunInfo:
+            title = formatMessage({defaultMessage: 'Run info'});
+            break;
+        case RHSContent.RunTimeline:
+            title = formatMessage({defaultMessage: 'Timeline'});
+            break;
+        case RHSContent.RunParticipants:
+            title = formatMessage({defaultMessage: 'Participants'});
+            break;
+        case RHSContent.RunStatusUpdates:
+            title = formatMessage({defaultMessage: 'Status updates'});
+            content = (
+                <RHSStatusUpdates
+                    playbookRun={playbookRun}
+                    statusUpdates={statusUpdates}
+                />
+            );
+            break;
+        }
+
+        setRHSData({content, title});
+        setIsRHSOpen(true);
+    };
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -43,16 +85,21 @@ const PlaybookRunDetails = () => {
         if (currentRun) {
             setPlaybookRun(currentRun);
         } else {
-            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-                setPlaybookRun(playbookRunResult);
-                if (playbookRunMetadataResult) {
-                    setPlaybookRunMetadata(playbookRunMetadataResult);
-                }
-                setFetchingState(FetchingStateType.fetched);
-                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-            }).catch(() => {
-                setFetchingState(FetchingStateType.notFound);
-            });
+            Promise
+                .all([
+                    fetchPlaybookRun(playbookRunId),
+                    fetchPlaybookRunMetadata(playbookRunId),
+                    fetchPlaybookRunStatusUpdates(playbookRunId),
+                ])
+                .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
+                    setPlaybookRun(playbookRunResult);
+                    setPlaybookRunMetadata(playbookRunMetadataResult || null);
+                    setFetchingState(FetchingStateType.fetched);
+                    setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+                    setStatusUpdates(statusUpdatesResult || []);
+                }).catch(() => {
+                    setFetchingState(FetchingStateType.notFound);
+                });
         }
     }, [match.params.playbookRunId, currentRun]);
 
@@ -65,31 +112,52 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
-    if (!currentRun) {
+    if (!playbookRun) {
         return null;
     }
 
+    // TODO: triple-check this assumption, can we rely on participant_ids?
+    const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
+
     return (
-        <ColumnContainer>
-            <Main>
-                <Header>
-                    {/* {'HEADER' + currentRun?.name}
-                    <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
-                </Header>
-                <Body>
-                    <Summary playbookRun={currentRun}/>
-                    <StatusUpdate/>
-                    <Checklists playbookRun={currentRun}/>
-                    <FinishRun/>
-                    <Retrospective/>
-                </Body>
-            </Main>
+        <Container>
+            <MainWrapper isRHSOpen={isRHSOpen}>
+                <Main isRHSOpen={isRHSOpen}>
+                    <Header>
+                        {/* {'HEADER' + currentRun?.name}
+                        <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
+                    </Header>
+                    <Body>
+                        <Summary
+                            playbookRun={playbookRun}
+                            role={role}
+                        />
+                        {role === Role.Participant ? (
+                            <ParticipantStatusUpdate
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                playbookRun={playbookRun}
+                            />
+                        ) : (
+                            <ViewerStatusUpdate
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
+                                playbookRun={playbookRun}
+                            />
+                        )}
+                        <Checklists playbookRun={playbookRun}/>
+                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
+                        <Retrospective/>
+                    </Body>
+                </Main>
+            </MainWrapper>
             <RightHandSidebar
                 isOpen={isRHSOpen}
-                section={RHSContent.RunInfo}
+                title={RHSData?.title}
                 onClose={() => setIsRHSOpen(false)}
-            />
-        </ColumnContainer>
+            >
+                {RHSData?.content}
+            </RightHandSidebar>
+        </Container>
     );
 };
 
@@ -104,10 +172,21 @@ const ColumnContainer = styled.div`
     flex-direction: row;
 `;
 
-const Main = styled.main`
+const Container = styled(ColumnContainer)`
+    flex: 1;
+`;
+
+const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+    flex: 1;
+    display: flex;
+    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+`;
+
+const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
+    min-width: 500px;
     padding: 20px;
-    width: 662px;
+    flex: 1;
     margin: 0 auto;
     display: flex;
     flex-direction: column;

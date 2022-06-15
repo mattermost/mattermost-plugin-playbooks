@@ -180,3 +180,8 @@ const LinkTitle = styled.h3`
         opacity: 0;
     }
 `;
+
+export enum Role {
+    Viewer = 'viewer',
+    Participant = 'participant',
+}

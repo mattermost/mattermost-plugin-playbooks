@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -72,6 +73,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", handler.getPlaybookRunMetadata).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -820,6 +822,50 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// getStatusUpdates handles the GET /runs/{id}/status endpoint
+//
+// Our goal is to deliver status updates to any user (when playbook is public) or
+// any playbook member (when playbook is private). To do that we need to bypass the
+// permissions system and avoid checking channel membership.
+//
+// This approach will be deprecated as a step towards channel-playbook decoupling.
+func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to get status updates", nil)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	posts := make([]*app.StatusPostComplete, 0)
+	for _, p := range playbookRun.StatusPosts {
+		post, err := h.pluginAPI.Post.GetPost(p.ID)
+		if err != nil {
+			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
+		}
+
+		// Given the fact that we are bypassing some permissions,
+		// an additional check is added to limit the risk
+		if post.Type == "custom_run_update" {
+			posts = append(posts, app.NewStatusPostComplete(post))
+		}
+	}
+
+	// sort by creation date, so that the first element is the newest post
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreateAt > posts[j].CreateAt
+	})
+
+	ReturnJSON(w, posts, http.StatusOK)
 }
 
 // restore "un-finishes" a playbook run
