@@ -51,8 +51,8 @@ const Item = styled.div`
     border-radius: 8px;
     box-sizing: border-box;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
-    aspect-ratio: 284 / 300;
     max-width: 360px;
+    height: 100%;
     &:not(:hover):not(:focus) {
         ${HoverPanel} {
             display: none;
