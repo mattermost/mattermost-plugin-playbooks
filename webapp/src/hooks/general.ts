@@ -575,7 +575,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
         const newFetchParams: Record<string, unknown> = {...fetchParams};
         delete newFetchParams.page;
         delete newFetchParams.per_page;
-        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
+        history.replace({...location, search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
     }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
