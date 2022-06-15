@@ -15,7 +15,7 @@ import {AnchorLinkTitle, Content, ELAPSED_TIME} from 'src/components/backstage/p
 import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
 import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
-import {PrimaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -67,28 +67,20 @@ const Retrospective = ({
         setShowConfirmation(false);
     };
 
+    const onPublishClick = () => {
+        if (childRef.current) {
+            const valid = childRef.current.validateInputs();
+            if (!valid) {
+                return;
+            }
+        }
+        setShowConfirmation(true);
+    };
+
     const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
 
     const renderPublishComponent = () => {
         const publishButtonText = formatMessage({defaultMessage: 'Publish'});
-
-        if (!isPublished) {
-            return (
-                <PrimaryButtonSmaller
-                    onClick={() => {
-                        if (childRef.current) {
-                            const valid = childRef.current.validateInputs();
-                            if (!valid) {
-                                return;
-                            }
-                        }
-                        setShowConfirmation(true);
-                    }}
-                >
-                    <TextContainer>{publishButtonText}</TextContainer>
-                </PrimaryButtonSmaller>
-            );
-        }
 
         const publishedAt = (
             <Timestamp
@@ -96,16 +88,23 @@ const Retrospective = ({
                 {...ELAPSED_TIME}
             />
         );
+
         return (
             <>
-                <TimestampContainer>
-                    <i className={'icon icon-check-all'}/>
-                    <span>{''}</span>
-                    {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
-                </TimestampContainer>
-                <DisabledPrimaryButtonSmaller>
-                    <TextContainer>{publishButtonText}</TextContainer>
-                </DisabledPrimaryButtonSmaller>
+                {
+                    isPublished &&
+                    <TimestampContainer>
+                        <i className={'icon icon-check-all'}/>
+                        <span>{''}</span>
+                        {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
+                    </TimestampContainer>
+                }
+                <PublishButton
+                    onClick={onPublishClick}
+                    disabled={isPublished}
+                >
+                    {publishButtonText}
+                </PublishButton>
             </>
         );
     };
@@ -189,35 +188,10 @@ const StyledContent = styled(Content)`
     padding: 0 24px;
 `;
 
-const PrimaryButtonSmaller = styled(PrimaryButton)`
-    height: 32px;
-`;
-
-const TextContainer = styled.span`
-    display: flex;
-`;
-
-const DisabledPrimaryButtonSmaller = styled(PrimaryButtonSmaller)`
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    color: rgba(var(--center-channel-color-rgb), 0.32);
-    margin-left: 16px;
-    cursor: default;
-
-    &:active:not([disabled])  {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
-    &:hover:enabled {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        &:before {
-            opacity: 0;
-        }
-    }
-`;
-
 const Header = styled.div`
     display: flex;
     align-items: center;
+    padding-right: 12px;
 `;
 
 const HeaderButtonsRight = styled.div`
@@ -249,4 +223,10 @@ const BannerWrapper = styled.div`
     padding: 30px 0;
     margin-top: 8px;
     box-shadow: rgb(0 0 0 / 5%) 0px 0px 0px 1px;
+`;
+
+const PublishButton = styled(TertiaryButton)`
+    font-size: 12px;
+    height: 32px;
+    padding: 0 16px;
 `;
