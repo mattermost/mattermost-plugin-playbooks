@@ -64,7 +64,7 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
 
-    z-index: 2;
+    z-index: 12;
 `;
 
 interface DotMenuProps {

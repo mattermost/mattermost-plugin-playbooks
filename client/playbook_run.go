@@ -63,6 +63,17 @@ type StatusPost struct {
 	DeleteAt int64  `json:"delete_at"`
 }
 
+// StatusPostComplete is the complete status update (post)
+// it's similar to StatusPost but with extended info.
+type StatusPostComplete struct {
+	Id             string `json:"id"`
+	CreateAt       int64  `json:"create_at"`
+	UpdateAt       int64  `json:"update_at"`
+	DeleteAt       int64  `json:"delete_at"`
+	Message        string `json:"message"`
+	AuthorUserName string `json:"author_user_name"`
+}
+
 // Metadata tracks ancillary metadata about a playbook run.
 type Metadata struct {
 	ChannelName        string   `json:"channel_name"`

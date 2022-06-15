@@ -70,6 +70,24 @@ func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID stri
 	return playbookRun, nil
 }
 
+// Get all playbook status updates.
+func (s *PlaybookRunService) GetStatusUpdates(ctx context.Context, playbookRunID string) ([]StatusPostComplete, error) {
+	playbookRunURL := fmt.Sprintf("runs/%s/status-updates", playbookRunID)
+	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var statusUpdates []StatusPostComplete
+	resp, err := s.client.do(ctx, req, &statusUpdates)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return statusUpdates, nil
+}
+
 // List the playbook runs.
 func (s *PlaybookRunService) List(ctx context.Context, page, perPage int, opts PlaybookRunListOptions) (*GetPlaybookRunsResults, error) {
 	playbookRunURL := "runs"

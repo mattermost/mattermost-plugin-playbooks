@@ -252,6 +252,41 @@ type StatusPost struct {
 	DeleteAt int64 `json:"delete_at"`
 }
 
+// StatusPostComplete is the "complete" representation of a status update
+//
+// This type is part of an effort to decopuple channels and playbooks, where
+// status updates will stop being -only- Posts in a channel.
+type StatusPostComplete struct {
+	// ID is the identifier of the post containing the status update.
+	ID string `json:"id"`
+
+	// CreateAt is the timestamp, in milliseconds since epoch, of the time this status update was
+	// posted.
+	CreateAt int64 `json:"create_at"`
+
+	// DeleteAt is the timestamp, in milliseconds since epoch, of the time the post containing this
+	// status update was deleted. 0 if it was never deleted.
+	DeleteAt int64 `json:"delete_at"`
+
+	// Message is the content of the status update. It supports markdown.
+	Message string `json:"message"`
+
+	// AuthorUserName is the username of the user who sent the status update.
+	AuthorUserName string `json:"author_user_name"`
+}
+
+// NewStatusPostComplete creates a StatusUpdate from a channel Post
+func NewStatusPostComplete(post *model.Post) *StatusPostComplete {
+	author, _ := post.GetProp("authorUsername").(string)
+	return &StatusPostComplete{
+		ID:             post.Id,
+		CreateAt:       post.CreateAt,
+		DeleteAt:       post.DeleteAt,
+		Message:        post.Message,
+		AuthorUserName: author,
+	}
+}
+
 type UpdateOptions struct {
 }
 
