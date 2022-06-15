@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, ReactNode} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
@@ -42,47 +42,36 @@ const PlaybookRunDetails = () => {
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-    const [isRHSOpen, setIsRHSOpen] = useState(false);
     const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
-    const [RHSData, setRHSData] = useState<{title: ReactNode, content: ReactNode} | null>(null);
+    const [isRHSOpen, setIsRHSOpen] = useState(false);
+    const [RHSSection, setRHSSection] = useState<RHSContent>(RHSContent.RunInfo);
 
     const myUser = useSelector(getCurrentUser);
-
-    const openRHS = (section: RHSContent) => {
-        if (!playbookRun) {
-            return;
-        }
-        let title = null;
-        let content = null;
+    const getRHSTitle = (section: RHSContent) => {
         switch (section) {
         case RHSContent.RunInfo:
-            title = formatMessage({defaultMessage: 'Run info'});
-            break;
+            return formatMessage({defaultMessage: 'Run info'});
         case RHSContent.RunTimeline:
-            title = formatMessage({defaultMessage: 'Timeline'});
-            break;
+            return formatMessage({defaultMessage: 'Timeline'});
         case RHSContent.RunParticipants:
-            title = formatMessage({defaultMessage: 'Participants'});
-            break;
+            return formatMessage({defaultMessage: 'Participants'});
         case RHSContent.RunStatusUpdates:
-            title = formatMessage({defaultMessage: 'Status updates'});
-            content = (
-                <RHSStatusUpdates
-                    playbookRun={playbookRun}
-                    statusUpdates={statusUpdates}
-                />
-            );
-            break;
+            return formatMessage({defaultMessage: 'Status updates'});
+        default:
+            return '';
         }
-
-        setRHSData({content, title});
-        setIsRHSOpen(true);
     };
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
 
         if (currentRun) {
+            // re-download status updates if status_posts size is different
+            if (playbookRun && currentRun.status_posts.length !== playbookRun.status_posts.length) {
+                fetchPlaybookRunStatusUpdates(playbookRunId).then((statusUpdatesResult) => {
+                    setStatusUpdates(statusUpdatesResult || []);
+                });
+            }
             setPlaybookRun(currentRun);
         } else {
             Promise
@@ -134,12 +123,18 @@ const PlaybookRunDetails = () => {
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                onViewAllUpdates={() => {
+                                    setIsRHSOpen(true);
+                                    setRHSSection(RHSContent.RunStatusUpdates);
+                                }}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                onViewAllUpdates={() => {
+                                    setIsRHSOpen(true);
+                                    setRHSSection(RHSContent.RunStatusUpdates);
+                                }}
                                 lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
@@ -152,10 +147,15 @@ const PlaybookRunDetails = () => {
             </MainWrapper>
             <RightHandSidebar
                 isOpen={isRHSOpen}
-                title={RHSData?.title}
+                title={getRHSTitle(RHSSection)}
                 onClose={() => setIsRHSOpen(false)}
             >
-                {RHSData?.content}
+                {RHSContent.RunStatusUpdates === RHSSection ? (
+                    <RHSStatusUpdates
+                        playbookRun={playbookRun}
+                        statusUpdates={statusUpdates}
+                    />
+                ) : null}
             </RightHandSidebar>
         </Container>
     );
