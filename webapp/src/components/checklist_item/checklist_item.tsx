@@ -1,13 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {useEffect} from 'react';
 
 import {
     clientEditChecklistItem,
