@@ -47,9 +47,11 @@ import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
-const ContainerMedium = styled.article`
-    margin: 0 auto;
-    max-width: 1160px;
+const ContainerMedium = styled.article<{$newLHSEnabled: boolean}>`
+    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
+        margin: 0 auto;
+        max-width: 1160px;
+    `}
     padding: 0 20px;
     scroll-margin-top: 20px;
 `;
@@ -333,7 +335,10 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             {content.current}
             {canCreatePlaybooks && (
                 <>
-                    <ContainerMedium ref={selectorRef}>
+                    <ContainerMedium
+                        ref={selectorRef}
+                        $newLHSEnabled={newLHSEnabled}
+                    >
                         {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>

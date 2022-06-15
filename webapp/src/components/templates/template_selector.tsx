@@ -52,7 +52,7 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
 const SelectorGrid = styled.div`
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: min(4vw, 5rem);
+    gap: min(4vw, 4rem);
     place-items: flex-start center;
     padding: 0 0 100px;
 `;
