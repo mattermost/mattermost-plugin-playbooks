@@ -19,14 +19,14 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
-    setPlaybookRun: (value: React.SetStateAction<PlaybookRun | null>) => void
+    onChange: (playbookRun: PlaybookRun) => void
 }
 
-const editDebounceDelayMilliseconds = 2000;
+const DEBOUNCE_2_SECS = 2000;
 
 const Retrospective = ({
     playbookRun,
-    setPlaybookRun,
+    onChange,
 }: Props) => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
@@ -69,40 +69,44 @@ const Retrospective = ({
 
     const confirmedPublish = () => {
         publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
-        setPlaybookRun((run) => ({
-            ...run,
+        onChange({
+            ...playbookRun,
             retrospective_published_at: DateTime.now().valueOf(),
             retrospective_was_canceled: false,
-        } as PlaybookRun));
+        });
         setShowConfirmation(false);
     };
 
-    const publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
-    let publishComponent = (
-        <PrimaryButtonSmaller
-            onClick={() => {
-                if (childRef.current) {
-                    const valid = childRef.current.validateInputs();
-                    if (!valid) {
-                        return;
-                    }
-                }
-                setShowConfirmation(true);
-            }}
-        >
-            <TextContainer>{publishButtonText}</TextContainer>
-        </PrimaryButtonSmaller>
-    );
-
     const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
-    if (isPublished) {
+
+    const renderPublishComponent = () => {
+        const publishButtonText = formatMessage({defaultMessage: 'Publish'});
+
+        if (!isPublished) {
+            return (
+                <PrimaryButtonSmaller
+                    onClick={() => {
+                        if (childRef.current) {
+                            const valid = childRef.current.validateInputs();
+                            if (!valid) {
+                                return;
+                            }
+                        }
+                        setShowConfirmation(true);
+                    }}
+                >
+                    <TextContainer>{publishButtonText}</TextContainer>
+                </PrimaryButtonSmaller>
+            );
+        }
+
         const publishedAt = (
             <Timestamp
                 value={playbookRun.retrospective_published_at}
                 {...ELAPSED_TIME}
             />
         );
-        publishComponent = (
+        return (
             <>
                 <TimestampContainer>
                     <i className={'icon icon-check-all'}/>
@@ -114,25 +118,25 @@ const Retrospective = ({
                 </DisabledPrimaryButtonSmaller>
             </>
         );
-    }
+    };
 
     const persistMetricEditEvent = (metrics_data: RunMetricData[]) => {
-        setPlaybookRun((run) => ({
-            ...run,
+        onChange({
+            ...playbookRun,
             metrics_data,
-        } as PlaybookRun));
+        });
         updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
     };
     const persistReportEditEvent = (retrospective: string) => {
-        setPlaybookRun((run) => ({
-            ...run,
+        onChange({
+            ...playbookRun,
             retrospective,
-        } as PlaybookRun));
+        });
         updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
     };
 
-    const debouncedPersistMetricEditEvent = debounce(persistMetricEditEvent, editDebounceDelayMilliseconds);
-    const debouncedPersistReportEditEvent = debounce(persistReportEditEvent, editDebounceDelayMilliseconds);
+    const debouncedPersistMetricEditEvent = debounce(persistMetricEditEvent, DEBOUNCE_2_SECS);
+    const debouncedPersistReportEditEvent = debounce(persistReportEditEvent, DEBOUNCE_2_SECS);
 
     return (
         <Container>
@@ -144,7 +148,7 @@ const Retrospective = ({
                             id='retrospective'
                         />
                         <HeaderButtonsRight>
-                            {publishComponent}
+                            {renderPublishComponent()}
                         </HeaderButtonsRight>
                     </Header>
                     <StyledContent>
@@ -152,7 +156,7 @@ const Retrospective = ({
                             <MetricsData
                                 ref={childRef}
                                 metricsData={playbookRun.metrics_data}
-                                metricsConfigs={playbook?.metrics}
+                                metricsConfigs={playbook.metrics}
                                 isPublished={isPublished}
                                 onEdit={debouncedPersistMetricEditEvent}
                                 flushChanges={() => debouncedPersistMetricEditEvent.flush()}

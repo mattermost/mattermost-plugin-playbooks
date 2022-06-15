@@ -83,7 +83,7 @@ const PlaybookRunDetails = () => {
                     <FinishRun/>
                     <Retrospective
                         playbookRun={playbookRun}
-                        setPlaybookRun={setPlaybookRun}
+                        onChange={setPlaybookRun}
                     />
                 </Body>
             </Main>
