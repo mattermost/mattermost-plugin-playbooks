@@ -7,6 +7,8 @@ import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {useEffect} from 'react';
+
 import {
     clientEditChecklistItem,
     clientAddChecklistItem,
@@ -60,6 +62,18 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [showMenu, setShowMenu] = useState(false);
 
     const toggleDescription = () => setShowDescription(!showDescription);
+
+    useEffect(() => {
+        setAssigneeID(props.checklistItem.assignee_id);
+    }, [props.checklistItem.assignee_id]);
+
+    useEffect(() => {
+        setCommand(props.checklistItem.command);
+    }, [props.checklistItem.command]);
+
+    useEffect(() => {
+        setDueDate(props.checklistItem.due_date);
+    }, [props.checklistItem.due_date]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         setShowMenu(false);
