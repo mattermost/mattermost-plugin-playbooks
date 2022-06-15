@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
@@ -6,7 +6,7 @@ import debounce from 'debounce';
 
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {clientFetchPlaybook, publishRetrospective, updateRetrospective} from 'src/client';
+import {publishRetrospective, updateRetrospective} from 'src/client';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
@@ -19,6 +19,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
+    playbook: PlaybookWithChecklist | null
     onChange: (playbookRun: PlaybookRun) => void
 }
 
@@ -26,25 +27,14 @@ const DEBOUNCE_2_SECS = 2000;
 
 const Retrospective = ({
     playbookRun,
+    playbook,
     onChange,
 }: Props) => {
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const childRef = useRef<any>();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookRun?.playbook_id) {
-                const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
-                setPlaybook(fetchedPlaybook ?? null);
-            }
-        };
-
-        fetchData();
-    }, [playbookRun?.playbook_id]);
 
     if (!allowRetrospectiveAccess) {
         return (

@@ -6,11 +6,13 @@ import {useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 
 import {
+    clientFetchPlaybook,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
 } from 'src/client';
 import {useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import Summary from './summary';
 import StatusUpdate from './status_update';
@@ -31,6 +33,7 @@ const PlaybookRunDetails = () => {
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -55,6 +58,17 @@ const PlaybookRunDetails = () => {
             });
         }
     }, [match.params.playbookRunId, currentRun]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (playbookRun?.playbook_id) {
+                const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
+                setPlaybook(fetchedPlaybook ?? null);
+            }
+        };
+
+        fetchData();
+    }, [playbookRun?.playbook_id]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
@@ -83,6 +97,7 @@ const PlaybookRunDetails = () => {
                     <FinishRun/>
                     <Retrospective
                         playbookRun={playbookRun}
+                        playbook={playbook}
                         onChange={setPlaybookRun}
                     />
                 </Body>
