@@ -123,13 +123,13 @@ const PlaybookRunDetails = () => {
     return (
         <Container>
             <MainWrapper isRHSOpen={isRHSOpen}>
+                <Header>
+                    <RunHeader
+                        playbookRun={playbookRun}
+                        playbookRunMetadata={playbookRunMetadata}
+                    />
+                </Header>
                 <Main isRHSOpen={isRHSOpen}>
-                    <Header>
-                        <RunHeader
-                            playbookRun={playbookRun}
-                            playbookRunMetadata={playbookRunMetadata}
-                        />
-                    </Header>
                     <Body>
                         <Summary
                             playbookRun={playbookRun}
@@ -182,6 +182,7 @@ const Container = styled(ColumnContainer)`
 const MainWrapper = styled.main<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
+    flex-direction: column;
     max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
 `;
 

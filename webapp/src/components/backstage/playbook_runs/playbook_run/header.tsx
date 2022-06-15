@@ -87,6 +87,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
+    padding: 0 14px 0 20px;
 
     box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
