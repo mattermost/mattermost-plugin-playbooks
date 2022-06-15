@@ -73,7 +73,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", handler.getPlaybookRunMetadata).Methods(http.MethodGet)
-	playbookRunRouter.HandleFunc("/status", handler.getStatusUpdates).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -849,10 +849,10 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 	posts := make([]*app.StatusPostComplete, 0)
 	for _, p := range playbookRun.StatusPosts {
 		post, err := h.pluginAPI.Post.GetPost(p.ID)
-
 		if err != nil {
 			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
 		}
+
 		// Given the fact that we are bypassing some permissions,
 		// an additional check is added to limit the risk
 		if post.Type == "custom_run_update" {
@@ -860,7 +860,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	// sort desc
+	// sort by creation date, so that the first element is the newest post
 	sort.Slice(posts, func(i, j int) bool {
 		return posts[i].CreateAt > posts[j].CreateAt
 	})

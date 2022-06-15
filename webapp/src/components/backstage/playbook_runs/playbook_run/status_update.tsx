@@ -10,7 +10,7 @@ import {DateTime} from 'luxon';
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
-import {Role, AnchorLinkTitle} from '../shared';
+import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
 import {promptUpdateStatus} from 'src/actions';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
@@ -20,13 +20,6 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 
 import StatusUpdateCard from './update_card';
-
-interface Props {
-    playbookRun: PlaybookRun;
-    role: Role,
-    lastStatusUpdate?: StatusPostComplete;
-    onViewAllUpdates: () => void,
-}
 
 enum dueType {
     Scheduled = 'scheduled',
@@ -68,7 +61,67 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     return {time, text, type};
 };
 
-const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: Props) => {
+interface ViewerProps {
+    playbookRun: PlaybookRun;
+    lastStatusUpdate?: StatusPostComplete;
+    onViewAllUpdates: () => void,
+}
+
+export const ViewerStatusUpdate = ({playbookRun, onViewAllUpdates, lastStatusUpdate}: ViewerProps) => {
+    const {formatMessage} = useIntl();
+    const fiveSeconds = 5000;
+    const now = useNow(fiveSeconds);
+
+    if (!playbookRun.status_update_enabled) {
+        return null;
+    }
+
+    const dueInfo = getDueInfo(playbookRun, now);
+
+    const renderStatusUpdate = () => {
+        if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
+            return null;
+        }
+        return <StatusUpdateCard post={lastStatusUpdate}/>;
+    };
+
+    return (
+        <Container>
+            <Header>
+                <AnchorLinkTitle
+                    title={formatMessage({defaultMessage: 'Recent status update'})}
+                    id='recent-update'
+                />
+                <RightWrapper>
+                    <IconWrapper>
+                        <IconClock
+                            type={dueInfo.type}
+                            size={14}
+                        />
+                    </IconWrapper>
+                    <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
+                    <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
+                    <ActionButton onClick={() => null}>
+                        {formatMessage({defaultMessage: 'Request update...'})}
+                    </ActionButton>
+                </RightWrapper>
+            </Header>
+            <Content isShort={false}>
+                {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
+            </Content>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onViewAllUpdates}>
+                {formatMessage({defaultMessage: 'View all updates'})}
+            </ViewAllUpdates> : null}
+        </Container>
+    );
+};
+
+interface ParticipantProps {
+    playbookRun: PlaybookRun;
+    onViewAllUpdates: () => void,
+}
+
+export const ParticipantStatusUpdate = ({playbookRun, onViewAllUpdates}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
@@ -80,84 +133,39 @@ const StatusUpdate = ({playbookRun, role, onViewAllUpdates, lastStatusUpdate}: P
 
     const dueInfo = getDueInfo(playbookRun, now);
 
-    const renderAsViewer = () => {
-        const renderStatusUpdate = () => {
-            if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
-                return null;
-            }
-            return <StatusUpdateCard post={lastStatusUpdate}/>;
-        };
+    const postUpdate = () => dispatch(promptUpdateStatus(
+        playbookRun.team_id,
+        playbookRun.id,
+        playbookRun.channel_id,
+    ));
 
-        return (
-            <Container>
-                <Header>
-                    <AnchorLinkTitle
-                        title={formatMessage({defaultMessage: 'Recent status update'})}
-                        id='recent-update'
+    return (
+        <Container>
+            <Content isShort={true}>
+                <IconWrapper>
+                    <IconClock
+                        type={dueInfo.type}
+                        size={24}
                     />
-                    <RightWrapper>
-                        <IconWrapper>
-                            <IconClock
-                                type={dueInfo.type}
-                                size={14}
-                            />
-                        </IconWrapper>
-                        <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
-                        <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
-                        <ActionButton onClick={() => null}>
-                            {formatMessage({defaultMessage: 'Request update...'})}
-                        </ActionButton>
-                    </RightWrapper>
-                </Header>
-                <Content isShort={false}>
-                    {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
-                </Content>
-                {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onViewAllUpdates}>
-                    {formatMessage({defaultMessage: 'View all updates'})}
-                </ViewAllUpdates> : null}
-            </Container>
-        );
-    };
-
-    const renderAsParticipant = () => {
-        const postUpdate = () => dispatch(promptUpdateStatus(
-            playbookRun.team_id,
-            playbookRun.id,
-            playbookRun.channel_id,
-        ));
-
-        return (
-            <Container>
-                <Content isShort={true}>
-                    <IconWrapper>
-                        <IconClock
-                            type={dueInfo.type}
-                            size={24}
-                        />
-                    </IconWrapper>
-                    <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
-                    <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
-                    <RightWrapper>
-                        <ActionButton onClick={postUpdate}>
-                            {formatMessage({defaultMessage: 'Post update'})}
-                        </ActionButton>
-                        <Kebab>
-                            <DotMenu icon={<ThreeDotsIcon/>}>
-                                <DropdownMenuItemStyled onClick={onViewAllUpdates}>
-                                    <FormattedMessage defaultMessage='View all updates'/>
-                                </DropdownMenuItemStyled>
-                            </DotMenu>
-                        </Kebab>
-                    </RightWrapper>
-                </Content>
-            </Container>
-        );
-    };
-
-    return role === Role.Viewer ? renderAsViewer() : renderAsParticipant();
+                </IconWrapper>
+                <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
+                <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
+                <RightWrapper>
+                    <ActionButton onClick={postUpdate}>
+                        {formatMessage({defaultMessage: 'Post update'})}
+                    </ActionButton>
+                    <Kebab>
+                        <DotMenu icon={<ThreeDotsIcon/>}>
+                            <DropdownMenuItemStyled onClick={onViewAllUpdates}>
+                                <FormattedMessage defaultMessage='View all updates'/>
+                            </DropdownMenuItemStyled>
+                        </DotMenu>
+                    </Kebab>
+                </RightWrapper>
+            </Content>
+        </Container>
+    );
 };
-
-export default StatusUpdate;
 
 const Container = styled.div`
     margin: 8px 0 25px 0;
@@ -196,7 +204,7 @@ const TextDate = styled.div<{type: dueType}>`
     margin: 0 4px;
     font-size: 14px;
     line-height: 20px;
-    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     display: flex;
 `;
 
@@ -208,14 +216,14 @@ const TextDateViewer = styled(TextDate)`
 const DueDateParticipant = styled.div<{type: dueType}>`
     font-size: 14px;
     line-height:20px;
-    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     font-weight: 600;
     display: flex;
     margin-right: 5px;
 `;
 
 const IconClock = styled(Clock)<{type: dueType, size: number}>`
-    color: ${({type}) => (type === dueType.Overdue ? '#D24B4E' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     height: ${({size}) => size}px;
     width: ${({size}) => size}px;
 `;

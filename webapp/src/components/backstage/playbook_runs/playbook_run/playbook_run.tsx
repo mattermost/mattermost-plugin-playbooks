@@ -16,10 +16,11 @@ import {
 } from 'src/client';
 import {useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
-import {Role} from '../shared';
+
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import Summary from './summary';
-import StatusUpdate from './status_update';
+import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
@@ -85,17 +86,17 @@ const PlaybookRunDetails = () => {
             setPlaybookRun(currentRun);
         } else {
             Promise
-                .all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId), fetchPlaybookRunStatusUpdates(playbookRunId)])
+                .all([
+                    fetchPlaybookRun(playbookRunId),
+                    fetchPlaybookRunMetadata(playbookRunId),
+                    fetchPlaybookRunStatusUpdates(playbookRunId),
+                ])
                 .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
                     setPlaybookRun(playbookRunResult);
-                    if (playbookRunMetadataResult) {
-                        setPlaybookRunMetadata(playbookRunMetadataResult);
-                    }
+                    setPlaybookRunMetadata(playbookRunMetadataResult || null);
                     setFetchingState(FetchingStateType.fetched);
                     setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-                    if (statusUpdatesResult) {
-                        setStatusUpdates(statusUpdatesResult);
-                    }
+                    setStatusUpdates(statusUpdatesResult || []);
                 }).catch(() => {
                     setFetchingState(FetchingStateType.notFound);
                 });
@@ -131,12 +132,18 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             role={role}
                         />
-                        <StatusUpdate
-                            onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
-                            role={role}
-                            lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
-                            playbookRun={playbookRun}
-                        />
+                        {role === Role.Participant ? (
+                            <ParticipantStatusUpdate
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                playbookRun={playbookRun}
+                            />
+                        ) : (
+                            <ViewerStatusUpdate
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
+                                playbookRun={playbookRun}
+                            />
+                        )}
                         <Checklists playbookRun={playbookRun}/>
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective/>

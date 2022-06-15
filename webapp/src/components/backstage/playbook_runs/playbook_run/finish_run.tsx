@@ -50,11 +50,6 @@ const Container = styled.div`
     margin: 24px 0;
     display: flex;
     flex-direction: column;
-
-    .icon-size-24 {
-        width: 24px;
-        height: 24px;
-    }
 `;
 
 const Content = styled.div`

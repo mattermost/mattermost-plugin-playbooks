@@ -92,7 +92,7 @@ export async function fetchPlaybookRun(id: string) {
 }
 
 export async function fetchPlaybookRunStatusUpdates(id: string) {
-    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status`);
+    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
 export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {

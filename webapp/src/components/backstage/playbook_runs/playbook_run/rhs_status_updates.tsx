@@ -34,6 +34,7 @@ export default RHSStatusUpdates;
 const Container = styled.div`
     display: flex;
     flex-direction: column;
+    margin-bottom: 25px;
 `;
 
 const Wrapper = styled.div`

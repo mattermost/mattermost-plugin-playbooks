@@ -268,10 +268,10 @@ type StatusPostComplete struct {
 	// status update was deleted. 0 if it was never deleted.
 	DeleteAt int64 `json:"delete_at"`
 
-	// Message is the content of the status update. It supports markdown
+	// Message is the content of the status update. It supports markdown.
 	Message string `json:"message"`
 
-	// AuthorUserName is the username of the user who sent the status update
+	// AuthorUserName is the username of the user who sent the status update.
 	AuthorUserName string `json:"author_user_name"`
 }
 

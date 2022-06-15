@@ -10,7 +10,7 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {updatePlaybookRunDescription} from 'src/client';
 import {Timestamp} from 'src/webapp_globals';
-import {AnchorLinkTitle, Role} from '../shared';
+import {AnchorLinkTitle, Role} from 'src/components/backstage/playbook_runs/shared';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
