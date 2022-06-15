@@ -11,14 +11,13 @@ import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
-import Tooltip from 'src/components/widgets/tooltip';
-import {HeaderIcon} from '../playbook_run_backstage/playbook_run_backstage';
 
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
 
 import {ContextMenu} from './context_menu';
+import HeaderButton from './header_button';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -36,8 +35,12 @@ export const RunHeader = ({playbookRun, playbookRunMetadata}: Props) => {
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-                className={'icon-lightning-bolt-outline'}
+
+                //TODO: replace icon to 'icon-lightning-bolt-outline'
+                className={'icon-hammer'}
                 onClick={() => dispatch(showRunActionsModal())}
+                size={24}
+                iconSize={14}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
@@ -68,7 +71,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata}: Props) => {
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
-                className={'󰋽 icon-information-outline'}
+                className={'icon-information-outline'}
                 onClick={() => {
                     //TODO: show rhs with run info
                 }}
@@ -94,43 +97,10 @@ const Icon = styled.i`
 
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 16px;
-    width: 28px;
-    height: 28px;
-    line-height: 18px;
-    margin-left: 8px;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    margin-left: 4px;
     display: grid;
     place-items: center;
 `;
-
-const StyledHeaderIcon = styled(HeaderIcon)`
-    margin-left: 4px;
-`;
-
-interface HeaderButtonProps {
-    tooltipId: string;
-    tooltipMessage: string
-    className: string;
-    onClick: () => void;
-    clicked?: boolean;
-}
-
-const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked}: HeaderButtonProps) => {
-    return (
-        <Tooltip
-            id={tooltipId}
-            placement={'bottom'}
-            shouldUpdatePosition={true}
-            content={tooltipMessage}
-        >
-            <StyledHeaderIcon
-                onClick={() => onClick()}
-                clicked={clicked ?? false}
-            >
-
-                <Icon className={className}/>
-
-            </StyledHeaderIcon>
-        </Tooltip>
-    );
-};

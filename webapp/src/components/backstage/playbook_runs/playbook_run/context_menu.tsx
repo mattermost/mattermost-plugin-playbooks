@@ -99,9 +99,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
                 <DropdownMenuItem
                     disabled={!exportAvailable}
                     disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
-                    onClick={async () => {
-                        onExportClick();
-                    }}
+                    onClick={onExportClick}
                 >
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
