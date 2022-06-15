@@ -194,3 +194,7 @@ export const ELAPSED_TIME = {
     ],
 };
 
+export enum Role {
+    Viewer = 'viewer',
+    Participant = 'participant',
+}

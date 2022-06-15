@@ -1,7 +1,11 @@
-import React from 'react';
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
+import React, {ReactNode} from 'react';
+import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+
+import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 
 export enum RHSContent {
     RunInfo = 'run-info',
@@ -15,32 +19,15 @@ interface Props {
     // playbookRun: PlaybookRun;
     isOpen: boolean;
     onClose: () => void;
-    section: RHSContent;
+    title: ReactNode;
+    children: ReactNode;
 }
 
-const RightHandSidebar = (props: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children}: Props) => {
     const sidebarRef = React.useRef(null);
-    const {formatMessage} = useIntl();
 
-    if (!props.isOpen) {
+    if (!isOpen) {
         return null;
-    }
-
-    let title = null;
-    const content = null;
-    switch (props.section) {
-    case RHSContent.RunInfo:
-        title = formatMessage({defaultMessage: 'Run info'});
-        break;
-    case RHSContent.RunTimeline:
-        title = formatMessage({defaultMessage: 'Timeline'});
-        break;
-    case RHSContent.RunParticipants:
-        title = formatMessage({defaultMessage: 'Participants'});
-        break;
-    case RHSContent.RunStatusUpdates:
-        title = formatMessage({defaultMessage: 'Status updates'});
-        break;
     }
 
     return (
@@ -48,18 +35,30 @@ const RightHandSidebar = (props: Props) => {
             id='playbooks-sidebar-right'
             role='complementary'
             ref={sidebarRef}
-            isOpen={props.isOpen}
+            isOpen={isOpen}
         >
             <Header>
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderIcon>
                     <i
                         className='icon icon-close'
-                        onClick={props.onClose}
+                        onClick={onClose}
                     />
                 </HeaderIcon>
             </Header>
-            <Body>{content}</Body>
+            <Body>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                    renderTrackHorizontal={renderTrackHorizontal}
+                    style={{position: 'relative'}}
+                >
+                    {children}
+                </Scrollbars>
+            </Body>
         </Container>);
 };
 
@@ -67,14 +66,14 @@ export default RightHandSidebar;
 
 const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
-    width: 400px;
+    position: fixed;
+    width: 500px;
     height: 100%;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-
-    @media screen and (min-width: 1680px) {
-        width: 500px;
-    }
+    right: 0;
+    z-index: 2;
+    background-color: var(--center-channel-bg);
 `;
 
 const Header = styled.div`
