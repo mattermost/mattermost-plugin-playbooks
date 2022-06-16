@@ -11,11 +11,12 @@ import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/ho
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
-import {AnchorLinkTitle, Content, ELAPSED_TIME, Role} from 'src/components/backstage/playbook_runs/shared';
+import {AnchorLinkTitle, Content, Role} from 'src/components/backstage/playbook_runs/shared';
 import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
 import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
+import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -88,7 +89,7 @@ const Retrospective = ({
         const publishedAt = (
             <Timestamp
                 value={playbookRun.retrospective_published_at}
-                {...ELAPSED_TIME}
+                {...PAST_TIME_SPEC}
             />
         );
 

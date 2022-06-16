@@ -182,18 +182,6 @@ const LinkTitle = styled.h3`
     }
 `;
 
-export const ELAPSED_TIME = {
-    useTime: false,
-    units: [
-        {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
-        ['minute', -59],
-        ['hour', -48],
-        ['day', -30],
-        ['month', -12],
-        'year',
-    ],
-};
-
 export enum Role {
     Viewer = 'viewer',
     Participant = 'participant',
