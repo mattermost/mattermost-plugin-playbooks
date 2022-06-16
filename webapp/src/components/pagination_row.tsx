@@ -8,11 +8,16 @@ import styled from 'styled-components';
 const PaginationRowDiv = styled.div`
     margin: 10px 0 20px;
     font-size: 14px;
+    display: grid;
+    align-items: center;
+    grid-template-columns: minmax(20rem, min-content) auto minmax(20rem, min-content);
+    justify-content: space-between;
+    padding: 0 2px;
 `;
 
-const CountDiv = styled.div`
-    padding-top: 8px;
+const Count = styled.span`
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    white-space: nowrap;
 `;
 
 const Button = styled.button`
@@ -43,35 +48,40 @@ export function PaginationRow(props: Props) {
 
     return (
         <PaginationRowDiv>
-            <div className='row'>
-                <div className='text-center col-sm-2'>
-                    {
-                        (props.page > 0) &&
-                        <Button
-                            className='btn btn-link'
-                            onClick={onPrevPage}
-                        >
-                            <FormattedMessage defaultMessage='Previous'/>
-                        </Button>
-                    }
-                </div>
-                <CountDiv className='text-center col-sm-8'>
-                    <FormattedMessage
-                        defaultMessage='{from, number}–{to, number} of {total, number} total'
-                        values={{from, to, total: props.totalCount}}
-                    />
-                </CountDiv>
-                <div className='text-center col-sm-2'>
-                    {
-                        showNextPage &&
-                        <Button
-                            className='btn btn-link'
-                            onClick={onNextPage}
-                        >
-                            <FormattedMessage defaultMessage='Next'/>
-                        </Button>}
-                </div>
-            </div>
+            {props.page > 0 && (
+                <Button
+                    className='btn btn-link'
+                    onClick={onPrevPage}
+                    css={`
+                        grid-column: 1;
+                        justify-self: start;
+                    `}
+                >
+                    <FormattedMessage defaultMessage='Previous'/>
+                </Button>
+            )}
+            <Count
+                css={`
+                    grid-column: 2;
+                `}
+            >
+                <FormattedMessage
+                    defaultMessage='{from, number}–{to, number} of {total, number} total'
+                    values={{from, to, total: props.totalCount}}
+                />
+            </Count>
+            {showNextPage && (
+                <Button
+                    className='btn btn-link'
+                    onClick={onNextPage}
+                    css={`
+                        grid-column: 3;
+                        justify-self: end;
+                    `}
+                >
+                    <FormattedMessage defaultMessage='Next'/>
+                </Button>
+            )}
         </PaginationRowDiv>
     );
 }
