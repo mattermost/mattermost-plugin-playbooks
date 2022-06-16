@@ -215,6 +215,7 @@ const TimestampContainer = styled.div`
 `;
 
 const Container = styled.div`
+    margin-top: 24px;
     display: flex;
     flex-direction: column;
 `;
