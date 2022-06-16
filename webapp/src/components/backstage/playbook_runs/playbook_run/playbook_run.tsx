@@ -189,10 +189,9 @@ const MainWrapper = styled.main<{isRHSOpen: boolean}>`
 
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
-    min-width: 500px;
     padding: 20px;
     flex: 1;
-    margin: 0 auto;
+    margin: 40px auto;
     display: flex;
     flex-direction: column;
 `;
@@ -200,7 +199,12 @@ const Body = styled(RowContainer)`
 `;
 
 const Header = styled.header`
+    height: 56px;
     min-height: 56px;
     width: 100%;
+    z-index: 2;
+    position: fixed;
+    background-color: var(--center-channel-bg);
+    display:flex;
 `;
 
