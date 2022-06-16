@@ -15,7 +15,7 @@ describe('channels > App Bar', () => {
     let testUser;
     let testPlaybook;
     let siteURL;
-    let appBarFeatureFlagEnabled;
+    let appBarEnabled;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -44,7 +44,7 @@ describe('channels > App Bar', () => {
 
             cy.apiGetConfig(true).then(({config}) => {
                 siteURL = config.SiteURL;
-                appBarFeatureFlagEnabled = config.FeatureFlagAppBarEnabled === 'true';
+                appBarEnabled = config.EnableAppBar === 'true';
             });
         });
     });
@@ -57,57 +57,57 @@ describe('channels > App Bar', () => {
         cy.apiLogin(testUser);
     });
 
-    const getAppBarImageSelector = (siteURL) => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
+    const getAppBarImageSelector = () => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
 
-    describe('App Bar feature flag disabled', () => {
+    describe('App Bar disabled', () => {
         it('should not show the Playbook App Bar icon', () => {
-            onlyOn(!appBarFeatureFlagEnabled);
+            onlyOn(!appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // * Verify App Bar icon is not showing
             cy.get('#channel_view').within(() => {
-                cy.get(getAppBarImageSelector(siteURL)).should('not.exist');
+                cy.get(getAppBarImageSelector()).should('not.exist');
             });
         });
     });
 
-    describe('App Bar feature flag enabled', () => {
+    describe('App Bar enabled', () => {
         it('should show the Playbook App Bar icon', () => {
-            onlyOn(appBarFeatureFlagEnabled);
+            onlyOn(appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // * Verify App Bar icon is showing
             cy.get('#channel_view').within(() => {
-                cy.get(getAppBarImageSelector(siteURL)).should('exist');
+                cy.get(getAppBarImageSelector()).should('exist');
             });
         });
 
         describe('tooltip text', () => {
             it('should show "Toggle Playbook List" outside a playbook run channel', () => {
-                onlyOn(appBarFeatureFlagEnabled);
+                onlyOn(appBarEnabled);
 
                 // # Navigate directly to a non-playbook run channel
                 cy.visit(`/${testTeam.name}/channels/town-square`);
 
                 // # Hover over the channel header icon
-                cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
+                cy.get(getAppBarImageSelector()).trigger('mouseover');
 
                 // * Verify tooltip text
                 cy.findByRole('tooltip', {name: 'Toggle Playbook List'}).should('be.visible');
             });
 
             it('should show "Toggle Run Details" inside a playbook run channel', () => {
-                onlyOn(appBarFeatureFlagEnabled);
+                onlyOn(appBarEnabled);
 
                 // # Navigate directly to a playbook run channel
                 cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
                 // # Hover over the channel header icon
-                cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
+                cy.get(getAppBarImageSelector()).trigger('mouseover');
                 cy.wait(TIMEOUTS.HALF_SEC);
 
                 // * Verify tooltip text

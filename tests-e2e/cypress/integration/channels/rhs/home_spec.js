@@ -9,6 +9,7 @@
 describe('channels > rhs > home', () => {
     let testTeam;
     let testUser;
+    let siteURL;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -29,8 +30,14 @@ describe('channels > rhs > home', () => {
                 memberIDs: [],
                 channelNameTemplate: 'templated name',
             });
+
+            cy.apiGetConfig(true).then(({config}) => {
+                siteURL = config.SiteURL;
+            });
         });
     });
+
+    const getAppBarImageSelector = () => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
 
     beforeEach(() => {
         // # Login as testUser
@@ -43,9 +50,7 @@ describe('channels > rhs > home', () => {
     describe('shows available', () => {
         it('team playbooks', () => {
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
 
             // * Verify the playbook is shown
             cy.findByText('Your Playbooks')
@@ -70,9 +75,7 @@ describe('channels > rhs > home', () => {
             ];
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
 
             // * Verify the templates are shown
             cy.findByText('Playbook Templates')
@@ -92,10 +95,8 @@ describe('channels > rhs > home', () => {
 
     describe('runs playbook', () => {
         beforeEach(() => {
-            // # Open RHS
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            // # Click the icon
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
         });
 
         it('without pre-populated channel name template', () => {

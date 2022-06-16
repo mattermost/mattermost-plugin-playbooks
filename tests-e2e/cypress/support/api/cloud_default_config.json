@@ -223,7 +223,8 @@
         "Enable": false
     },
     "ExperimentalSettings": {
-        "RestrictSystemAdmin": false
+        "RestrictSystemAdmin": false,
+        "EnableAppBar": true
     },
     "DataRetentionSettings": {
         "EnableMessageDeletion": false,

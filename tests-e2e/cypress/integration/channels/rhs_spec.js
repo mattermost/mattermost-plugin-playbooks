@@ -12,6 +12,7 @@ describe('channels > rhs', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
+    let siteURL;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -29,8 +30,14 @@ describe('channels > rhs', () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
+
+            cy.apiGetConfig(true).then(({config}) => {
+                siteURL = config.SiteURL;
+            });
         });
     });
+
+    const getAppBarImageSelector = () => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
 
     beforeEach(() => {
         // # Login as testUser
@@ -390,9 +397,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
 
             // * Verify RHS Home shows the run details
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -410,19 +415,15 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByText('Playbooks').should('exist');
             });
 
-            // # Click the icon again
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            // # Click the icon
+            cy.get(getAppBarImageSelector()).should('be.visible').click();
 
             // * Verify the playbook run RHS is no longer open.
             cy.get('#rhsContainer').should('not.exist');
