@@ -507,5 +507,15 @@
     "OQplDX": "<duration></duration> sıklıkla bir durum güncellemesi beklenecek. Yeni güncellemeler <channels>{channelCount, plural, =0 {hiç bir kanala} one {# kanala} other {# kanala}}</channels> ve <webhooks>{webhookCount, plural, =0 {hiç bir web bağlantısına} one {# web bağlantısına} other {# web bağlantısına}}</webhooks> gönderilecek.",
     "oL7YsP": "Son düzenlenme {timestamp}",
     "Z2Hfu4": "Bir oyun özeti ekle",
-    "vSMfYU": "Oyun bilgileri"
+    "vSMfYU": "Oyun bilgileri",
+    "opn6uf": "Zaman çizelgesini görüntüle",
+    "o6N9pU": "Rolü oyuna",
+    "lbr3Lq": "Bağlantıyı kopyala",
+    "iigkp8": "Toplanma zamanı geldi mi?",
+    "hjteuA": "Erişebileceğiniz tüm senaryolar burada görüntülenir",
+    "bf5rs0": "Bilgileri görüntüle",
+    "ZJS10z": "Henüz bir güncelleme gönderilmemiş",
+    "Q15rLN": "Güncelleme isteğinde bulun...",
+    "GDCpPr": "Son durum güncellemesi",
+    "+qDKgW": "Tüm güncellemeleri görüntüle"
 }
