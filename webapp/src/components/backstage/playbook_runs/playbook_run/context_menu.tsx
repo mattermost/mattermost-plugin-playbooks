@@ -51,7 +51,8 @@ export const ContextMenu = ({playbookRun}: Props) => {
         if (outstanding > 0) {
             confirmationMessage = formatMessage(
                 {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?'},
-                {outstanding});
+                {outstanding}
+            );
         }
 
         const onConfirm = () => {
