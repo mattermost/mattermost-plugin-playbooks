@@ -4,7 +4,6 @@
 import styled, {css} from 'styled-components';
 import {useRouteMatch} from 'react-router-dom';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
