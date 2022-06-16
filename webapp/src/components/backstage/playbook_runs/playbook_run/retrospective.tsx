@@ -39,6 +39,10 @@ const Retrospective = ({
     const childRef = useRef<any>();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
 
+    if (!playbookRun.retrospective_enabled) {
+        return null;
+    }
+
     if (!allowRetrospectiveAccess) {
         return (
             <Container>
@@ -84,8 +88,6 @@ const Retrospective = ({
     const notEditable = isPublished || role === Role.Viewer;
 
     const renderPublishComponent = () => {
-        const publishButtonText = formatMessage({defaultMessage: 'Publish'});
-
         const publishedAt = (
             <Timestamp
                 value={playbookRun.retrospective_published_at}
@@ -107,66 +109,57 @@ const Retrospective = ({
                     onClick={onPublishClick}
                     disabled={notEditable}
                 >
-                    {publishButtonText}
+                    {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
             </>
         );
     };
 
-    const persistMetricEditEvent = (metrics_data: RunMetricData[]) => {
+    const onMetricsChange = debounce((metrics_data: RunMetricData[]) => {
         onChange({
             ...playbookRun,
             metrics_data,
         });
         updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
-    };
-    const persistReportEditEvent = (retrospective: string) => {
+    }, DEBOUNCE_2_SECS);
+    const onReportChange = debounce((retrospective: string) => {
         onChange({
             ...playbookRun,
             retrospective,
         });
         updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
-    };
-
-    const debouncedPersistMetricEditEvent = debounce(persistMetricEditEvent, DEBOUNCE_2_SECS);
-    const debouncedPersistReportEditEvent = debounce(persistReportEditEvent, DEBOUNCE_2_SECS);
+    }, DEBOUNCE_2_SECS);
 
     return (
         <Container>
-            {playbookRun.retrospective_enabled ? (
-                <div>
-                    <Header>
-                        <AnchorLinkTitle
-                            title={formatMessage({defaultMessage: 'Retrospective'})}
-                            id='retrospective'
-                        />
-                        <HeaderButtonsRight>
-                            {renderPublishComponent()}
-                        </HeaderButtonsRight>
-                    </Header>
-                    <StyledContent>
-                        {playbook?.metrics && metricsAvailable &&
-                            <MetricsData
-                                ref={childRef}
-                                metricsData={playbookRun.metrics_data}
-                                metricsConfigs={playbook.metrics}
-                                notEditable={notEditable}
-                                onEdit={debouncedPersistMetricEditEvent}
-                                flushChanges={() => debouncedPersistMetricEditEvent.flush()}
-                            />}
-                        <Report
-                            playbookRun={playbookRun}
-                            onEdit={debouncedPersistReportEditEvent}
-                            flushChanges={() => debouncedPersistReportEditEvent.flush()}
+            <div>
+                <Header>
+                    <AnchorLinkTitle
+                        title={formatMessage({defaultMessage: 'Retrospective'})}
+                        id='retrospective'
+                    />
+                    <HeaderButtonsRight>
+                        {renderPublishComponent()}
+                    </HeaderButtonsRight>
+                </Header>
+                <StyledContent>
+                    {playbook?.metrics && metricsAvailable &&
+                        <MetricsData
+                            ref={childRef}
+                            metricsData={playbookRun.metrics_data}
+                            metricsConfigs={playbook.metrics}
                             notEditable={notEditable}
-                        />
-                    </StyledContent>
-                </div>
-            ) : (
-                <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
-                    {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
-                </RetrospectiveDisabledText>
-            )}
+                            onEdit={onMetricsChange}
+                            flushChanges={() => onMetricsChange.flush()}
+                        />}
+                    <Report
+                        playbookRun={playbookRun}
+                        onEdit={onReportChange}
+                        flushChanges={() => onReportChange.flush()}
+                        notEditable={notEditable}
+                    />
+                </StyledContent>
+            </div>
             <ConfirmModalLight
                 show={showConfirmation}
                 title={formatMessage({defaultMessage: 'Are you sure you want to publish?'})}
