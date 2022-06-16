@@ -18,19 +18,21 @@ import {navigateToUrl} from 'src/browser_routing';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
+import {RHSContent} from './rhs';
 
 interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
+    openRHS: (section: RHSContent) => void
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
     return (
         <Container>
-            <Icon className={'icon-star'}/>
+            {/* <Icon className={'icon-star'}/> */}
             <ContextMenu playbookRun={playbookRun}/>
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
@@ -64,17 +66,13 @@ export const RunHeader = ({playbookRun, playbookRunMetadata}: Props) => {
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => {
-                    //TODO: show rhs with timeline info
-                }}
+                onClick={() => openRHS(RHSContent.RunTimeline)}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => {
-                    //TODO: show rhs with run info
-                }}
+                onClick={() => openRHS(RHSContent.RunInfo)}
             />
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>

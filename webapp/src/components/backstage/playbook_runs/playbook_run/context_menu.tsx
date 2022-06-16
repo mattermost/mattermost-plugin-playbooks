@@ -5,8 +5,7 @@ import styled from 'styled-components';
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {useDispatch} from 'react-redux';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, finishRun, getSiteUrl} from 'src/client';
@@ -17,7 +16,7 @@ import {SemiBoldHeading} from 'src/styles/headings';
 
 import {copyToClipboard} from 'src/utils';
 import {useToasts} from '../../toast_banner';
-import {useAllowChannelExport} from 'src/hooks';
+import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
@@ -33,8 +32,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToasts();
 
-    //@ts-ignore plugins state is a thing
-    const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+    const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
 
