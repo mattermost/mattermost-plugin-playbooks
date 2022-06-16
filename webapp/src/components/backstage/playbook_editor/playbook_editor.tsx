@@ -416,6 +416,7 @@ const TitleHeaderBackdrop = styled.div`
 `;
 
 const Editor = styled.main<{$headingVisible: boolean}>`
+    flex: 1 1 auto;
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);

@@ -50,7 +50,7 @@ const PlaybookItem = styled.div`
     padding-bottom: 15px;
     align-items: center;
     margin: 0;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const PlaybookItemTitle = styled.div`
