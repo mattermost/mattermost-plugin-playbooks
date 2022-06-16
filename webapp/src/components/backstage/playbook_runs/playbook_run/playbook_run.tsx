@@ -128,6 +128,7 @@ const PlaybookRunDetails = () => {
                         playbookRun={playbookRun}
                         playbookRunMetadata={playbookRunMetadata}
                         openRHS={openRHS}
+                        role={role}
                     />
                 </Header>
                 <Main isRHSOpen={isRHSOpen}>

@@ -22,12 +22,14 @@ import {AdminNotificationType} from 'src/constants';
 import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import {Role} from '../shared';
 
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
 
-export const ContextMenu = ({playbookRun}: Props) => {
+export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToasts();
@@ -103,7 +105,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
                 {
-                    playbookRunIsActive(playbookRun) &&
+                    playbookRunIsActive(playbookRun) && role === Role.Participant &&
                     <DropdownMenuItem
                         onClick={onFinishRunClick}
                     >

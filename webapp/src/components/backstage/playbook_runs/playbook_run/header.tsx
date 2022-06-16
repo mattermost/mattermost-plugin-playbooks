@@ -12,7 +12,7 @@ import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
-import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
+import {ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
 
@@ -24,16 +24,20 @@ interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
     openRHS: (section: RHSContent) => void
+    role: Role;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
     return (
         <Container>
             {/* <Icon className={'icon-star'}/> */}
-            <ContextMenu playbookRun={playbookRun}/>
+            <ContextMenu
+                playbookRun={playbookRun}
+                role={role}
+            />
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
@@ -51,17 +55,20 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) =>
             />
             <ExpandRight/>
 
-            <HeaderButton
-                tooltipId={'go-to-channel-button-tooltip'}
-                tooltipMessage={formatMessage({defaultMessage: 'Go to channel'})}
-                className={'icon-product-channels'}
-                onClick={() => {
-                    if (!playbookRunMetadata) {
-                        return;
-                    }
-                    navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
-                }}
-            />
+            {//TODO: for viewers we should show 'Get involved' button
+                role === Role.Participant &&
+                <HeaderButton
+                    tooltipId={'go-to-channel-button-tooltip'}
+                    tooltipMessage={formatMessage({defaultMessage: 'Go to channel'})}
+                    className={'icon-product-channels'}
+                    onClick={() => {
+                        if (!playbookRunMetadata) {
+                            return;
+                        }
+                        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+                    }}
+                />
+            }
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
