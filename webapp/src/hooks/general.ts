@@ -704,3 +704,8 @@ export const useProxyState = <T>(
         });
     }, [setValue, onChangeDebounced])];
 };
+
+export const useExportLogAvailable = () => {
+    //@ts-ignore plugins state is a thing
+    return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+};
