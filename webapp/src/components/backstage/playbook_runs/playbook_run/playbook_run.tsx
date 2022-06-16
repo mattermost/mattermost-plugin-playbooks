@@ -164,6 +164,7 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             playbook={playbook}
                             onChange={setPlaybookRun}
+                            role={role}
                         />
                     </Body>
                 </Main>

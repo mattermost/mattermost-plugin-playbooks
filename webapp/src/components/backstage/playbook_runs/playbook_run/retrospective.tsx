@@ -11,7 +11,7 @@ import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/ho
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
-import {AnchorLinkTitle, Content, ELAPSED_TIME} from 'src/components/backstage/playbook_runs/shared';
+import {AnchorLinkTitle, Content, ELAPSED_TIME, Role} from 'src/components/backstage/playbook_runs/shared';
 import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
 import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
@@ -19,8 +19,9 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
-    playbook: PlaybookWithChecklist | null
-    onChange: (playbookRun: PlaybookRun) => void
+    playbook: PlaybookWithChecklist | null;
+    onChange: (playbookRun: PlaybookRun) => void;
+    role: Role;
 }
 
 const DEBOUNCE_2_SECS = 2000;
@@ -29,6 +30,7 @@ const Retrospective = ({
     playbookRun,
     playbook,
     onChange,
+    role,
 }: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
@@ -78,6 +80,7 @@ const Retrospective = ({
     };
 
     const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
+    const notEditable = isPublished || role === Role.Viewer;
 
     const renderPublishComponent = () => {
         const publishButtonText = formatMessage({defaultMessage: 'Publish'});
@@ -101,7 +104,7 @@ const Retrospective = ({
                 }
                 <PublishButton
                     onClick={onPublishClick}
-                    disabled={isPublished}
+                    disabled={notEditable}
                 >
                     {publishButtonText}
                 </PublishButton>
@@ -146,7 +149,7 @@ const Retrospective = ({
                                 ref={childRef}
                                 metricsData={playbookRun.metrics_data}
                                 metricsConfigs={playbook.metrics}
-                                isPublished={isPublished}
+                                notEditable={notEditable}
                                 onEdit={debouncedPersistMetricEditEvent}
                                 flushChanges={() => debouncedPersistMetricEditEvent.flush()}
                             />}
@@ -154,7 +157,7 @@ const Retrospective = ({
                             playbookRun={playbookRun}
                             onEdit={debouncedPersistReportEditEvent}
                             flushChanges={() => debouncedPersistReportEditEvent.flush()}
-                            isPublished={isPublished}
+                            notEditable={notEditable}
                         />
                     </StyledContent>
                 </div>
