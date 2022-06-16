@@ -180,7 +180,7 @@ const Container = styled(ColumnContainer)`
     flex: 1;
 `;
 
-const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+const MainWrapper = styled.div<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -189,6 +189,7 @@ const MainWrapper = styled.main<{isRHSOpen: boolean}>`
 
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
+    width: min(780px, 100%);
     padding: 20px;
     flex: 1;
     margin: 40px auto;
