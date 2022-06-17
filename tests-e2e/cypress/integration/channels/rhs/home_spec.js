@@ -43,9 +43,7 @@ describe('channels > rhs > home', () => {
     describe('shows available', () => {
         it('team playbooks', () => {
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.getPlaybooksAppBarIcon().should('exist').click();
 
             // * Verify the playbook is shown
             cy.findByText('Your Playbooks')
@@ -70,9 +68,7 @@ describe('channels > rhs > home', () => {
             ];
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify the templates are shown
             cy.findByText('Playbook Templates')
@@ -92,10 +88,8 @@ describe('channels > rhs > home', () => {
 
     describe('runs playbook', () => {
         beforeEach(() => {
-            // # Open RHS
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            // # Click the icon
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
         });
 
         it('without pre-populated channel name template', () => {
