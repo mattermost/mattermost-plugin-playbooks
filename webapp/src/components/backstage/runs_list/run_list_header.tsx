@@ -16,8 +16,8 @@ const PlaybookRunListHeader = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
     padding: 0 1.6rem;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-width: 1px 0;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 interface Props {

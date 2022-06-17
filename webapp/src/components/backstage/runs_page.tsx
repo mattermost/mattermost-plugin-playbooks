@@ -82,7 +82,7 @@ const RunsPage = () => {
                 heading={formatMessage({defaultMessage: 'Runs'})}
                 subtitle={formatMessage({defaultMessage: 'All the runs that you can access will show here'})}
                 css={`
-                    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+                    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
                 `}
             />
             <RunList

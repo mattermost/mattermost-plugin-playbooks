@@ -72,7 +72,7 @@ const PlaybookRunItem = styled.div`
     align-items: center;
     margin: 0;
     background-color: var(--center-channel-bg);
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     cursor: pointer;
 
     &:hover {
