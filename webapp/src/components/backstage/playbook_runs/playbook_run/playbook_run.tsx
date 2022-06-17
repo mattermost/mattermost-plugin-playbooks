@@ -149,7 +149,7 @@ const PlaybookRunDetails = () => {
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
                             playbookRun={playbookRun}
-                            playbook={playbook}
+                            playbook={playbook ?? null}
                             onChange={setPlaybookRun}
                             role={role}
                         />
