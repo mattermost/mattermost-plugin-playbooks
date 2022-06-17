@@ -589,5 +589,16 @@
     "aZGAOI": "Állapot frissítő sablon hozzáadása…",
     "Z2Hfu4": "Futás összefoglaló hozzáadása",
     "Brya9X": "Futás összefoglaló sablon hozzáadása…",
-    "3hBelc": "Nem várt visszatekintő."
+    "3hBelc": "Nem várt visszatekintő.",
+    "OQplDX": "Állapotfrissítések közzétételének várható időszaka: <duration></duration>. Az új frissítések <channels>{channelCount, plural, =0 {egy csatornán sem} other {# csatornán}}</channels> és <webhooks>{webhookCount, plural, =0 {egy kimenő webhorgon sem} other {# kimenő webhorgon}}</webhooks> lesznek közzétéve.",
+    "iigkp8": "Ideje befejezni?",
+    "opn6uf": "Idővonal megtekintése",
+    "o6N9pU": "Műveletek futtatása",
+    "lbr3Lq": "Link másolása",
+    "ZJS10z": "Még nem lett frissítés közzétéve",
+    "hjteuA": "Az összes elérhető forgatókönyv itt fog megjelenni",
+    "bf5rs0": "Információk megtekintése",
+    "Q15rLN": "Frissítés kérése...",
+    "GDCpPr": "Legújabb állapot frissítés",
+    "+qDKgW": "Összes frissítés megtekintése"
 }
