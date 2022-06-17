@@ -106,6 +106,11 @@ const PlaybookRunDetails = () => {
         return null;
     }
 
+    const openRHS = (section: RHSContent) => {
+        setIsRHSOpen(true);
+        setRHSSection(section);
+    };
+
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
@@ -127,18 +132,12 @@ const PlaybookRunDetails = () => {
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
-                                onViewAllUpdates={() => {
-                                    setIsRHSOpen(true);
-                                    setRHSSection(RHSContent.RunStatusUpdates);
-                                }}
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
-                                onViewAllUpdates={() => {
-                                    setIsRHSOpen(true);
-                                    setRHSSection(RHSContent.RunStatusUpdates);
-                                }}
+                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
                                 lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />

@@ -63,15 +63,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     useEffect(() => {
         setAssigneeID(props.checklistItem.assignee_id);
-    }, [props.checklistItem.assignee_id]);
-
-    useEffect(() => {
         setCommand(props.checklistItem.command);
-    }, [props.checklistItem.command]);
-
-    useEffect(() => {
         setDueDate(props.checklistItem.due_date);
-    }, [props.checklistItem.due_date]);
+    }, [props.checklistItem]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         setShowMenu(false);
