@@ -86,7 +86,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
             }
             {playbookRuns.length === 0 && isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no runs matching those filters.'}
+                    <FormattedMessage defaultMessage='There are no runs matching those filters.'/>
                 </div>
             }
             <InfiniteScroll
