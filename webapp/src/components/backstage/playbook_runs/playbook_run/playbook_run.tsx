@@ -202,7 +202,7 @@ const Body = styled(RowContainer)`
 const Header = styled.header`
     height: 56px;
     min-height: 56px;
-    width: 100%;
+    width: calc(100% - 239px);
     z-index: 2;
     position: fixed;
     background-color: var(--center-channel-bg);
