@@ -186,7 +186,7 @@ const Container = styled(ColumnContainer)`
     flex: 1;
 `;
 
-const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+const MainWrapper = styled.div<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -195,10 +195,10 @@ const MainWrapper = styled.main<{isRHSOpen: boolean}>`
 
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
-    min-width: 500px;
+    width: min(780px, 100%);
     padding: 20px;
     flex: 1;
-    margin: 0 auto;
+    margin: 40px auto;
     display: flex;
     flex-direction: column;
 `;
@@ -206,6 +206,11 @@ const Body = styled(RowContainer)`
 `;
 
 const Header = styled.header`
+    height: 56px;
     min-height: 56px;
-    width: 100%;
+    width: calc(100% - 239px);
+    z-index: 2;
+    position: fixed;
+    background-color: var(--center-channel-bg);
+    display:flex;
 `;
