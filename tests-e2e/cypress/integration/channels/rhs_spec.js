@@ -12,7 +12,6 @@ describe('channels > rhs', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
-    let siteURL;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {

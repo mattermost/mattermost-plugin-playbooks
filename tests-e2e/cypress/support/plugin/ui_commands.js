@@ -40,7 +40,7 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
-// Opens Playbooks RHS using the app bar icon
+// Selects Playbooks icon in the App Bar
 Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
     cy.apiGetConfig(true).then(({config}) => {
         return cy.get(`.app-bar .app-bar__icon-inner img[src="${config.SiteURL}/plugins/playbooks/public/app-bar-icon.png"]`);
