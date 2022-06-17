@@ -89,7 +89,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 <ChecklistList
                     playbook={playbook}
                     enableFinishRun={false}
-                    viewerMode={false}
+                    isReadOnly={false}
                 />
             </Section>
             <Section

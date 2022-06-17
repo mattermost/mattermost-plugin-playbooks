@@ -58,7 +58,7 @@ interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
     enableFinishRun: boolean;
-    viewerMode: boolean;
+    isReadOnly: boolean;
 }
 
 const ChecklistList = (props: Props) => {
@@ -87,7 +87,7 @@ const ChecklistList = (props: Props) => {
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
     const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
-    const disabled = finished || archived || props.viewerMode;
+    const disabled = finished || archived || props.isReadOnly;
 
     if (!playbook && !props.playbookRun) {
         return null;

@@ -139,7 +139,7 @@ const RHSChecklistList = (props: Props) => {
             <ChecklistList
                 playbookRun={props.playbookRun}
                 enableFinishRun={props.parentContainer === ChecklistParent.RHS}
-                viewerMode={props.viewerMode}
+                isReadOnly={props.viewerMode}
             />
         </InnerContainer>
     );
