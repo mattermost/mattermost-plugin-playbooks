@@ -34,6 +34,23 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+const useRHS = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
+    const [title, setTitle] = useState<React.ReactNode>(null);
+
+    const open = (_section: RHSContent, _title: React.ReactNode) => {
+        setIsOpen(true);
+        setSection(_section);
+        setTitle(_title);
+    };
+    const close = () => {
+        setIsOpen(false);
+    };
+
+    return {isOpen, section, title, open, close};
+};
+
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
@@ -44,24 +61,10 @@ const PlaybookRunDetails = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
-    const [isRHSOpen, setIsRHSOpen] = useState(false);
-    const [RHSSection, setRHSSection] = useState<RHSContent>(RHSContent.RunInfo);
+
+    const RHS = useRHS();
 
     const myUser = useSelector(getCurrentUser);
-    const getRHSTitle = (section: RHSContent) => {
-        switch (section) {
-        case RHSContent.RunInfo:
-            return formatMessage({defaultMessage: 'Run info'});
-        case RHSContent.RunTimeline:
-            return formatMessage({defaultMessage: 'Timeline'});
-        case RHSContent.RunParticipants:
-            return formatMessage({defaultMessage: 'Participants'});
-        case RHSContent.RunStatusUpdates:
-            return formatMessage({defaultMessage: 'Status updates'});
-        default:
-            return '';
-        }
-    };
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -106,25 +109,20 @@ const PlaybookRunDetails = () => {
         return null;
     }
 
-    const openRHS = (section: RHSContent) => {
-        setIsRHSOpen(true);
-        setRHSSection(section);
-    };
-
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     return (
         <Container>
-            <MainWrapper isRHSOpen={isRHSOpen}>
+            <MainWrapper isRHSOpen={RHS.isOpen}>
                 <Header>
                     <RunHeader
                         playbookRun={playbookRun}
                         playbookRunMetadata={playbookRunMetadata}
-                        openRHS={openRHS}
+                        openRHS={RHS.open}
                     />
                 </Header>
-                <Main isRHSOpen={isRHSOpen}>
+                <Main isRHSOpen={RHS.isOpen}>
                     <Body>
                         <Summary
                             playbookRun={playbookRun}
@@ -132,12 +130,12 @@ const PlaybookRunDetails = () => {
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                openRHS={RHS.open}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                openRHS={RHS.open}
                                 lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
@@ -149,11 +147,11 @@ const PlaybookRunDetails = () => {
                 </Main>
             </MainWrapper>
             <RightHandSidebar
-                isOpen={isRHSOpen}
-                title={getRHSTitle(RHSSection)}
-                onClose={() => setIsRHSOpen(false)}
+                isOpen={RHS.isOpen}
+                title={RHS.title}
+                onClose={RHS.close}
             >
-                {RHSContent.RunStatusUpdates === RHSSection ? (
+                {RHSContent.RunStatusUpdates === RHS.section ? (
                     <RHSStatusUpdates
                         playbookRun={playbookRun}
                         statusUpdates={statusUpdates}

@@ -20,6 +20,7 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 
 import StatusUpdateCard from './update_card';
+import {RHSContent} from './rhs';
 
 enum dueType {
     Scheduled = 'scheduled',
@@ -64,10 +65,10 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
 interface ViewerProps {
     playbookRun: PlaybookRun;
     lastStatusUpdate?: StatusPostComplete;
-    onViewAllUpdates: () => void,
+    openRHS: (section: RHSContent, title: React.ReactNode) => void;
 }
 
-export const ViewerStatusUpdate = ({playbookRun, onViewAllUpdates, lastStatusUpdate}: ViewerProps) => {
+export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
@@ -109,7 +110,7 @@ export const ViewerStatusUpdate = ({playbookRun, onViewAllUpdates, lastStatusUpd
             <Content isShort={false}>
                 {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
             </Content>
-            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onViewAllUpdates}>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}))}>
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
         </Container>
@@ -118,10 +119,10 @@ export const ViewerStatusUpdate = ({playbookRun, onViewAllUpdates, lastStatusUpd
 
 interface ParticipantProps {
     playbookRun: PlaybookRun;
-    onViewAllUpdates: () => void,
+    openRHS: (section: RHSContent, title: React.ReactNode) => void;
 }
 
-export const ParticipantStatusUpdate = ({playbookRun, onViewAllUpdates}: ParticipantProps) => {
+export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
@@ -156,7 +157,7 @@ export const ParticipantStatusUpdate = ({playbookRun, onViewAllUpdates}: Partici
                     </ActionButton>
                     <Kebab>
                         <DotMenu icon={<ThreeDotsIcon/>}>
-                            <DropdownMenuItemStyled onClick={onViewAllUpdates}>
+                            <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}))}>
                                 <FormattedMessage defaultMessage='View all updates'/>
                             </DropdownMenuItemStyled>
                         </DotMenu>
