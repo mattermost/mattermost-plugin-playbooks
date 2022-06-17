@@ -8,7 +8,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, finishRun, getSiteUrl} from 'src/client';
+import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
@@ -19,9 +19,8 @@ import {useToasts} from '../../toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
-import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
-import {modals} from 'src/webapp_globals';
-import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+
+import withFinishRun from './hoc_finish_run';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -45,30 +44,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
         window.location.href = exportChannelUrl(playbookRun.channel_id);
     };
 
-    const onFinishRunClick = () => {
-        const outstanding = outstandingTasks(playbookRun.checklists);
-        let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
-        if (outstanding > 0) {
-            confirmationMessage = formatMessage(
-                {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?'},
-                {outstanding}
-            );
-        }
-
-        const onConfirm = () => {
-            finishRun(playbookRun.id);
-        };
-
-        dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
-            show: true,
-            title: formatMessage({defaultMessage: 'Confirm finish run'}),
-            message: confirmationMessage,
-            confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
-            onConfirm,
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            onCancel: () => {},
-        })));
-    };
+    const FinishMenuItem = withFinishRun(DropdownMenuItem);
 
     return (
         <>
@@ -104,11 +80,11 @@ export const ContextMenu = ({playbookRun}: Props) => {
                 </DropdownMenuItem>
                 {
                     playbookRunIsActive(playbookRun) &&
-                    <DropdownMenuItem
-                        onClick={onFinishRunClick}
+                    <FinishMenuItem
+                        playbookRun={playbookRun}
                     >
                         <FormattedMessage defaultMessage='Finish run'/>
-                    </DropdownMenuItem>
+                    </FinishMenuItem>
                 }
             </DotMenu>
             <UpgradeModal

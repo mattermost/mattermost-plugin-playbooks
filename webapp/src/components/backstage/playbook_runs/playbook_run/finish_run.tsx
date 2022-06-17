@@ -10,6 +10,7 @@ import {mdiFlagOutline} from '@mdi/js';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
 
+import withFinishRun from './hoc_finish_run';
 interface Props {
     playbookRun: PlaybookRun;
 }
@@ -21,8 +22,7 @@ const FinishRun = ({playbookRun}: Props) => {
         return null;
     }
 
-    // TODO: plug endpoint when client is ready
-    const onFinishRun = () => null;
+    const Finish = withFinishRun(FinishRunButton);
 
     return (
         <Container>
@@ -35,9 +35,9 @@ const FinishRun = ({playbookRun}: Props) => {
                 </IconWrapper>
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
-                    <FinishRunButton onClick={onFinishRun}>
+                    <Finish playbookRun={playbookRun}>
                         {formatMessage({defaultMessage: 'Finish run'})}
-                    </FinishRunButton>
+                    </Finish>
                 </RightWrapper>
             </Content>
         </Container>
