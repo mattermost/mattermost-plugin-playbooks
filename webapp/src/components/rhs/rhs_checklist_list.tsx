@@ -39,6 +39,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 interface Props {
     playbookRun: PlaybookRun;
     parentContainer: ChecklistParent;
+    viewerMode: boolean;
 }
 
 export enum ChecklistParent {
@@ -138,6 +139,7 @@ const RHSChecklistList = (props: Props) => {
             <ChecklistList
                 playbookRun={props.playbookRun}
                 enableFinishRun={props.parentContainer === ChecklistParent.RHS}
+                viewerMode={props.viewerMode}
             />
         </InnerContainer>
     );

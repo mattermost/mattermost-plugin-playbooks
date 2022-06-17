@@ -10,7 +10,7 @@ import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {DateTime} from 'luxon';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 import {
     Checklist,
     ChecklistItem,
@@ -157,7 +157,7 @@ const GenericChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
-                                disabled={false}
+                                disabled={props.disabled}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
@@ -170,7 +170,7 @@ const GenericChecklist = (props: Props) => {
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {props.playbookRun?.current_status !== PlaybookRunStatus.Finished &&
+                    {!props.disabled &&
                         <AddTaskLink
                             disabled={props.disabled}
                             onClick={() => {

@@ -7,8 +7,10 @@ import styled from 'styled-components';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
+import {Role} from '../shared';
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
 const Checklists = (props: Props) => {
     return (
@@ -16,6 +18,7 @@ const Checklists = (props: Props) => {
             <RHSChecklistList
                 playbookRun={props.playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
+                viewerMode={props.role === Role.Viewer}
             />
         </Container>);
 };

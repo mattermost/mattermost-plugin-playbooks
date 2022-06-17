@@ -149,7 +149,10 @@ const PlaybookRunDetails = () => {
                                 playbookRun={playbookRun}
                             />
                         )}
-                        <Checklists playbookRun={playbookRun}/>
+                        <Checklists
+                            playbookRun={playbookRun}
+                            role={role}
+                        />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective/>
                     </Body>

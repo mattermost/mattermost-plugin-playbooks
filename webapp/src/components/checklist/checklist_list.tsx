@@ -58,6 +58,7 @@ interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
     enableFinishRun: boolean;
+    viewerMode: boolean;
 }
 
 const ChecklistList = (props: Props) => {
@@ -86,6 +87,7 @@ const ChecklistList = (props: Props) => {
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
     const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
+    const disabled = finished || archived || props.viewerMode;
 
     if (!playbook && !props.playbookRun) {
         return null;
@@ -324,7 +326,7 @@ const ChecklistList = (props: Props) => {
                                                 numChecklists={checklists.length}
                                                 collapsed={Boolean(checklistsState[checklistIndex])}
                                                 setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                                                disabled={archived || finished}
+                                                disabled={disabled}
                                                 playbookRunID={props.playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
@@ -340,7 +342,7 @@ const ChecklistList = (props: Props) => {
                                             >
                                                 <GenericChecklist
                                                     playbookRun={props.playbookRun}
-                                                    disabled={archived}
+                                                    disabled={disabled}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
@@ -360,7 +362,7 @@ const ChecklistList = (props: Props) => {
                         </ChecklistsContainer>
                     )}
                 </Droppable>
-                {!finished && addChecklist}
+                {!disabled && addChecklist}
             </DragDropContext>
             {
                 active && props.enableFinishRun && props.playbookRun &&
