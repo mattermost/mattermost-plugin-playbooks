@@ -588,5 +588,15 @@
     "OQplDX": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.",
     "vSMfYU": "Run info",
     "oL7YsP": "Last edited {timestamp}",
-    "Z2Hfu4": "Add a run summary"
+    "Z2Hfu4": "Add a run summary",
+    "opn6uf": "View Timeline",
+    "o6N9pU": "Run actions",
+    "lbr3Lq": "Copy link",
+    "iigkp8": "Time to wrap up?",
+    "hjteuA": "All the playbooks that you can access will show here",
+    "bf5rs0": "View Info",
+    "ZJS10z": "No updates have been posted yet",
+    "Q15rLN": "Request update",
+    "GDCpPr": "Recent status update",
+    "+qDKgW": "View all updates"
 }
