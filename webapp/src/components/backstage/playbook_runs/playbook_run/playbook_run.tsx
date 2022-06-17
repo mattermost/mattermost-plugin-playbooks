@@ -24,6 +24,7 @@ import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
+import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 
@@ -111,11 +112,14 @@ const PlaybookRunDetails = () => {
     return (
         <Container>
             <MainWrapper isRHSOpen={isRHSOpen}>
+                <Header>
+                    <RunHeader
+                        playbookRun={playbookRun}
+                        playbookRunMetadata={playbookRunMetadata}
+                        openRHS={openRHS}
+                    />
+                </Header>
                 <Main isRHSOpen={isRHSOpen}>
-                    <Header>
-                        {/* {'HEADER' + currentRun?.name}
-                        <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
-                    </Header>
                     <Body>
                         <Summary
                             playbookRun={playbookRun}
@@ -179,6 +183,7 @@ const Container = styled(ColumnContainer)`
 const MainWrapper = styled.main<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
+    flex-direction: column;
     max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
 `;
 

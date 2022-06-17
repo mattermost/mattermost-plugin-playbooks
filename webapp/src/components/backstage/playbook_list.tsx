@@ -7,19 +7,14 @@ import {Team} from 'mattermost-redux/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import LeftDots from 'src/components/assets/left_dots';
-import LeftFade from 'src/components/assets/left_fade';
-import RightDots from 'src/components/assets/right_dots';
-import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
 import {BackstageSubheader, HorizontalSpacer} from 'src/components/backstage/styles';
 import TemplateSelector from 'src/components/templates/template_selector';
@@ -28,6 +23,7 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
+    useExperimentalFeaturesEnabled,
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
@@ -39,9 +35,11 @@ import {RegularHeading} from 'src/styles/headings';
 
 import {importFile} from 'src/client';
 
-import TeamSelector from '../team/team_selector';
-
 import {pluginUrl} from 'src/browser_routing';
+
+import Header from '../widgets/header';
+
+import TeamSelector from '../team/team_selector';
 
 import CheckboxInput from './runs_list/checkbox_input';
 
@@ -49,29 +47,36 @@ import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
-const PlaybooksHeader = styled(BackstageSubheader)`
-    display: flex;
-    padding: 4rem 0 3.2rem;
-    align-items: center;
-`;
-
-const ContainerMedium = styled.article`
-    margin: 0 auto;
-    max-width: 1160px;
+const ContainerMedium = styled.article<{$newLHSEnabled: boolean}>`
+    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
+        margin: 0 auto;
+        max-width: 1160px;
+    `}
     padding: 0 20px;
     scroll-margin-top: 20px;
 `;
 
 const PlaybookListContainer = styled.div`
-    font-family: $font-family;
-    color: rgba(var(--center-channel-color-rgb), 0.90);
+    flex: 1 1 auto;
+    color: rgba(var(--center-channel-color-rgb), 0.9);
+`;
 
+const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
+    overflow: hidden;
+    overflow: clip;
+    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
+        margin: 0 auto;
+        max-width: 1160px;
+    `}
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
     margin-top: 4rem;
     padding: 4rem 0 3.2rem;
+    display: grid;
+    justify-items: space-between;
 `;
+
 export const Heading = styled.h1`
     ${RegularHeading} {
     }
@@ -109,12 +114,21 @@ const AltSub = styled(Sub)`
     margin-bottom: 36px;
 `;
 
+const TitleActions = styled.div`
+    display: flex;
+`;
+
+const PlaybooksListFilters = styled.div`
+    display: flex;
+    padding: 16px;
+    align-items: center;
+`;
+
 const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const content = useRef<JSX.Element | null>(null);
-    const dispatch = useDispatch();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importTargetTeam, setImportTargetTeam] = useState('');
     const selectorRef = useRef<HTMLDivElement>(null);
@@ -122,13 +136,15 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [
         playbooks,
         {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+
+    const newLHSEnabled = useExperimentalFeaturesEnabled();
 
     const hasPlaybooks = Boolean(playbooks?.length);
 
@@ -193,118 +209,119 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         };
 
         return (
-            <>
-                <RightDots/>
-                <RightFade/>
-                <LeftDots/>
-                <LeftFade/>
-                <ContainerMedium>
-                    <PlaybooksHeader data-testid='titlePlaybook'>
-                        <Heading>
-                            {formatMessage({defaultMessage: 'Playbooks'})}
-                        </Heading>
-                        <ExpandRight/>
-                        <SearchInput
-                            testId={'search-filter'}
-                            default={params.search_term}
-                            onSearch={setSearchTerm}
-                            placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <CheckboxInput
-                            testId={'with-archived'}
-                            text={formatMessage({defaultMessage: 'With archived'})}
-                            checked={params.with_archived}
-                            onChange={setWithArchived}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <input
-                            type='file'
-                            accept='*.json,application/JSON'
-                            onChange={importUpload}
-                            ref={fileInputRef}
-                            style={{display: 'none'}}
-                        />
-                        { teams.length > 1 &&
-                        <TeamSelector
-                            placeholder={
-                                <ImportButton/>
-                            }
-                            onlyPlaceholder={true}
-                            enableEdit={true}
-                            teams={teams}
-                            onSelectedChange={(teamId: string) => {
-                                setImportTargetTeam(teamId);
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                        }
-                        { teams.length <= 1 &&
-                        <ImportButton
-                            onClick={() => {
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                        }
-                        {canCreatePlaybooks &&
-                        <>
-                            <HorizontalSpacer size={12}/>
-                            <PlaybookModalButton/>
-                        </>
-                        }
-                    </PlaybooksHeader>
-                    <BackstageListHeader>
-                        <div className='row'>
-                            <div className='col-sm-4'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Name'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'title'}
-                                    onClick={() => sortBy('title')}
+            <TableContainer $newLHSEnabled={newLHSEnabled}>
+                <Header
+                    data-testid='titlePlaybook'
+                    level={2}
+                    heading={formatMessage({defaultMessage: 'Playbooks'})}
+                    subtitle={formatMessage({defaultMessage: 'All the playbooks that you can access will show here'})}
+                    right={(
+                        <TitleActions>
+                            {teams.length > 1 && (
+                                <TeamSelector
+                                    placeholder={<ImportButton/>}
+                                    onlyPlaceholder={true}
+                                    enableEdit={true}
+                                    teams={teams}
+                                    onSelectedChange={(teamId: string) => {
+                                        setImportTargetTeam(teamId);
+                                        if (fileInputRef && fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    }}
                                 />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Checklists'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'stages'}
-                                    onClick={() => sortBy('stages')}
+                            )}
+                            {teams.length <= 1 && (
+                                <ImportButton
+                                    onClick={() => {
+                                        if (fileInputRef && fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    }}
                                 />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={'Tasks'}
-                                    direction={params.direction}
-                                    active={params.sort === 'steps'}
-                                    onClick={() => sortBy('steps')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Runs'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'runs'}
-                                    onClick={() => sortBy('runs')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <FormattedMessage defaultMessage='Actions'/>
-                            </div>
-                        </div>
-                    </BackstageListHeader>
-                    {listBody}
-                    <PaginationRow
-                        page={params.page}
-                        perPage={params.per_page}
-                        totalCount={totalCount}
-                        setPage={setPage}
+                            )}
+                            {canCreatePlaybooks && (
+                                <>
+                                    <HorizontalSpacer size={12}/>
+                                    <PlaybookModalButton/>
+                                </>
+                            )}
+                        </TitleActions>
+                    )}
+                    css={`
+                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+                    `}
+                />
+                <PlaybooksListFilters>
+                    <SearchInput
+                        testId={'search-filter'}
+                        default={params.search_term}
+                        onSearch={setSearchTerm}
+                        placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                     />
-                </ContainerMedium>
-            </>
+                    <HorizontalSpacer size={12}/>
+                    <CheckboxInput
+                        testId={'with-archived'}
+                        text={formatMessage({defaultMessage: 'With archived'})}
+                        checked={params.with_archived}
+                        onChange={setWithArchived}
+                    />
+                    <HorizontalSpacer size={12}/>
+                    <input
+                        type='file'
+                        accept='*.json,application/JSON'
+                        onChange={importUpload}
+                        ref={fileInputRef}
+                        style={{display: 'none'}}
+                    />
+                </PlaybooksListFilters>
+                <BackstageListHeader $edgeless={true}>
+                    <div className='row'>
+                        <div className='col-sm-4'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Name'})}
+                                direction={params.direction}
+                                active={params.sort === 'title'}
+                                onClick={() => sortBy('title')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Checklists'})}
+                                direction={params.direction}
+                                active={params.sort === 'stages'}
+                                onClick={() => sortBy('stages')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Tasks'}
+                                direction={params.direction}
+                                active={params.sort === 'steps'}
+                                onClick={() => sortBy('steps')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Runs'})}
+                                direction={params.direction}
+                                active={params.sort === 'runs'}
+                                onClick={() => sortBy('runs')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <FormattedMessage defaultMessage='Actions'/>
+                        </div>
+                    </div>
+                </BackstageListHeader>
+                {listBody}
+                <PaginationRow
+                    page={params.page}
+                    perPage={params.per_page}
+                    totalCount={totalCount}
+                    setPage={setPage}
+                />
+            </TableContainer>
         );
     };
 
@@ -318,7 +335,10 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             {content.current}
             {canCreatePlaybooks && (
                 <>
-                    <ContainerMedium ref={selectorRef}>
+                    <ContainerMedium
+                        ref={selectorRef}
+                        $newLHSEnabled={newLHSEnabled}
+                    >
                         {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>
