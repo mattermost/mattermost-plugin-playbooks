@@ -8,6 +8,7 @@ export interface PlaybookRun {
     id: string;
     name: string;
     summary: string;
+    summary_modified_at: number;
     owner_user_id: string;
     reporter_user_id: string;
     team_id: string;
@@ -47,6 +48,14 @@ export interface StatusPost {
     id: string;
     create_at: number;
     delete_at: number;
+}
+
+export interface StatusPostComplete {
+    id: string;
+    create_at: number;
+    delete_at: number;
+    message: string;
+    author_user_name: string;
 }
 
 export interface Metadata {

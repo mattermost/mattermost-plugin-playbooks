@@ -1,10 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Store} from 'redux';
 import React from 'react';
 import styled from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
 import {Team} from 'mattermost-redux/types/teams';

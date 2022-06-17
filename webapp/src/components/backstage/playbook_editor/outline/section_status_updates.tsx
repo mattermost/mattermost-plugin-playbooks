@@ -3,24 +3,30 @@
 
 import React, {ReactNode} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+
 import styled from 'styled-components';
 
-import TextEdit from 'src/components/text_edit';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {Duration} from 'luxon';
 
-import UpdateTimer from './inputs/update_timer_selector';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import MarkdownEdit from 'src/components/markdown_edit';
+
+import {formatDuration} from 'src/components/formatted_duration';
+
 import BroadcastChannels from './inputs/broadcast_channels_selector';
+import UpdateTimer from './inputs/update_timer_selector';
 import WebhooksInput from './inputs/webhooks_input';
 
 interface Props {
-    playbook: PlaybookWithChecklist;
-    updatePlaybook: (newPlaybook: PlaybookWithChecklist) => void;
+    playbook: Loaded<FullPlaybook>;
 }
 
-const StatusUpdates = (props: Props) => {
+const StatusUpdates = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
+    const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const archived = playbook.delete_at !== 0;
 
-    if (!props.playbook.status_update_enabled) {
+    if (!playbook.status_update_enabled) {
         return (
             <StatusUpdatesContainer>
                 <FormattedMessage defaultMessage='Status updates are not expected.'/>
@@ -29,21 +35,25 @@ const StatusUpdates = (props: Props) => {
     }
 
     return (
-        <StatusUpdatesContainer>
+        <StatusUpdatesContainer data-testid={'status-update-section'}>
             <FormattedMessage
-                defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks> .'
+                defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.'
                 values={{
                     duration: () => {
+                        if (archived) {
+                            return formatDuration(Duration.fromDurationLike({seconds: playbook.reminder_timer_default_seconds}), 'long');
+                        }
                         return (
                             <Picker>
                                 <UpdateTimer
-                                    seconds={props.playbook.reminder_timer_default_seconds}
+                                    seconds={playbook.reminder_timer_default_seconds}
                                     setSeconds={(seconds: number) => {
-                                        if (seconds !== props.playbook.reminder_timer_default_seconds &&
-                                            seconds > 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                reminder_timer_default_seconds: seconds,
+                                        if (
+                                            seconds !== playbook.reminder_timer_default_seconds &&
+                                            seconds > 0
+                                        ) {
+                                            updatePlaybook({
+                                                reminderTimerDefaultSeconds: seconds,
                                             });
                                         }
                                     }}
@@ -51,49 +61,56 @@ const StatusUpdates = (props: Props) => {
                             </Picker>
                         );
                     },
-                    channelCount: props.playbook.broadcast_channel_ids?.length ?? 0,
+
+                    // if the broadcast is disabled, we broadcast update to zero channel
+                    channelCount: playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0,
                     channels: (channelCount: ReactNode) => {
+                        if (archived) {
+                            return channelCount;
+                        }
                         return (
-                            <Picker>
+                            <Picker data-testid={'status-update-broadcast-channels'}>
                                 <BroadcastChannels
                                     id='playbook-automation-broadcast'
                                     onChannelsSelected={(channelIds: string[]) => {
-                                        if (channelIds.length !== props.playbook.broadcast_channel_ids.length || channelIds.some((id) => !props.playbook.broadcast_channel_ids.includes(id))) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                broadcast_channel_ids: channelIds,
+                                        if (
+                                            channelIds.length !== playbook.broadcast_channel_ids.length ||
+                                            channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
+                                        ) {
+                                            updatePlaybook({
+                                                broadcastChannelIDs: channelIds,
+
+                                                // We need this to handle cases when StatusUpdate is enabled, but broadcast is disabled. On edit of the channels list, we should enable broadcast.
+                                                broadcastEnabled: true,
                                             });
                                         }
                                     }}
-                                    channelIds={props.playbook.broadcast_channel_ids}
-
+                                    channelIds={playbook.broadcast_channel_ids}
+                                    broadcastEnabled={playbook.broadcast_enabled}
                                 >
                                     <Placeholder label={channelCount}/>
                                 </BroadcastChannels>
                             </Picker>
                         );
                     },
-                    webhookCount: props.playbook.webhook_on_status_update_urls?.length ?? 0,
+
+                    // if the broadcast is disabled, we make zero webhook call
+                    webhookCount: playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0,
                     webhooks: (webhookCount: ReactNode) => {
+                        if (archived) {
+                            return webhookCount;
+                        }
                         return (
-                            <Picker>
+                            <Picker data-testid={'status-update-webhooks'}>
                                 <WebhooksInput
-                                    urls={props.playbook.webhook_on_status_update_urls}
+                                    urls={playbook.webhook_on_status_update_urls}
                                     onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
-                                        if (newWebhookOnStatusUpdateURLs.length === 0) {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                webhook_on_status_update_enabled: false,
-                                                webhook_on_status_update_urls: [],
-                                            });
-                                        } else {
-                                            props.updatePlaybook({
-                                                ...props.playbook,
-                                                webhook_on_status_update_enabled: true,
-                                                webhook_on_status_update_urls: newWebhookOnStatusUpdateURLs,
-                                            });
-                                        }
+                                        return updatePlaybook({
+                                            webhookOnStatusUpdateEnabled: true,
+                                            webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
+                                        });
                                     }}
+                                    webhooksDisabled={!playbook.webhook_on_status_update_enabled}
                                 >
                                     <Placeholder label={webhookCount}/>
                                 </WebhooksInput>
@@ -103,13 +120,13 @@ const StatusUpdates = (props: Props) => {
                 }}
             />
             <Template>
-                <TextEdit
-                    placeholder={formatMessage({defaultMessage: 'Use markdown to create a template'})}
-                    value={props.playbook.reminder_message_template}
+                <MarkdownEdit
+                    disabled={archived}
+                    placeholder={formatMessage({defaultMessage: 'Add a status update template…'})}
+                    value={playbook.reminder_message_template}
                     onSave={(newMessage: string) => {
-                        props.updatePlaybook({
-                            ...props.playbook,
-                            reminder_message_template: newMessage,
+                        updatePlaybook({
+                            reminderMessageTemplate: newMessage,
                         });
                     }}
                 />
@@ -138,6 +155,9 @@ const Template = styled.div`
     margin-top: 16px;
 `;
 
+interface PlaceholderProps {
+    label: React.ReactNode
+}
 export const Placeholder = (props: PlaceholderProps) => {
     return (
         <PlaceholderDiv>
@@ -148,10 +168,6 @@ export const Placeholder = (props: PlaceholderProps) => {
         </PlaceholderDiv>
     );
 };
-
-interface PlaceholderProps {
-    label: React.ReactNode
-}
 
 const PlaceholderDiv = styled.div`
     display: flex;

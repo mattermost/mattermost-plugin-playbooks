@@ -177,6 +177,11 @@ jobs:
           name: Checking diff of webapp i18n files
           command: |
             git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
+      - run: make graphql
+      - run:
+          name: Checking diff of webapp graphql generated files
+          command: |
+            git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
       # - run:
       #     name: Checking diff of server i18n files
       #     command: |
@@ -197,7 +202,7 @@ jobs:
       - run:
           name: Building Plugin Bundle
           command: |
-            make dist
+            make dist CGO_ENABLED=0
       - run:
           name: Generating Release Notes
           command: |
@@ -256,7 +261,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:10.17
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -275,7 +279,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:11.13
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -294,7 +297,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:12.9
-        command: "postgres -N 200"
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -314,7 +316,6 @@ jobs:
     docker:
       - image: cimg/go:1.18.1-node
       - image: cimg/postgres:14.1
-        command: "postgres -N 200"
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
@@ -384,7 +385,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
@@ -459,7 +460,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000

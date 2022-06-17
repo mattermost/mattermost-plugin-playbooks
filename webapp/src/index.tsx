@@ -15,6 +15,8 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
+import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
 import {makeRHSOpener} from 'src/rhs_opener';
@@ -58,7 +60,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getApiUrl, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -82,13 +84,59 @@ const OldRoutesRedirect = () => {
     );
 };
 
+const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<NormalizedCacheObject>}) => {
+    return (
+        <ApolloProvider client={props.client}>
+            {props.component}
+        </ApolloProvider>
+    );
+};
+
+type WindowObject = {
+    location: {
+        origin: string;
+        protocol: string;
+        hostname: string;
+        port: string;
+    };
+    basename?: string;
+}
+
+// From mattermost-webapp/utils
+function getSiteURLFromWindowObject(obj: WindowObject): string {
+    let siteURL = '';
+    if (obj.location.origin) {
+        siteURL = obj.location.origin;
+    } else {
+        siteURL = obj.location.protocol + '//' + obj.location.hostname + (obj.location.port ? ':' + obj.location.port : '');
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    if (obj.basename) {
+        siteURL += obj.basename;
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    return siteURL;
+}
+
+function getSiteURL(): string {
+    return getSiteURLFromWindowObject(window);
+}
+
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>): void {
+    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -100,17 +148,35 @@ export default class Plugin {
             }
         });
 
+        const BackstageWrapped = () => (
+            <ApolloWrapped
+                component={<Backstage/>}
+                client={graphqlClient}
+            />
+        );
+
+        const RHSWrapped = () => (
+            <ApolloWrapped
+                component={<RightHandSidebar/>}
+                client={graphqlClient}
+            />
+        );
+
+        const enableTeamSidebar = false;
+
         registry.registerProduct(
             '/playbooks',
             'product-playbooks',
             'Playbooks',
             '/playbooks',
-            Backstage,
+            BackstageWrapped,
             GlobalHeaderCenter,
+            () => null,
+            enableTeamSidebar
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitle/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
@@ -203,16 +269,26 @@ export default class Plugin {
     }
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
-        this.doRegistrations(registry, store);
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
-        const siteUrl = getConfig(store.getState())?.SiteURL || '';
+        const siteUrl = getSiteURL();
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
+
+        // Setup our graphql client
+        const graphqlFetch = (_: RequestInfo, options: any) => {
+            return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
+        };
+        const graphqlClient = new ApolloClient({
+            link: new HttpLink({fetch: graphqlFetch}),
+            cache: new InMemoryCache(),
+        });
+
+        this.doRegistrations(registry, store, graphqlClient);
 
         // Grab global settings
         const getGlobalSettings = async () => {

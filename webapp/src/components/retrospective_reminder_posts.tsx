@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {Post} from 'mattermost-redux/types/posts';
 
-import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
+import {getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 

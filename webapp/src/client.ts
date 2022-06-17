@@ -20,6 +20,7 @@ import {
     isMetadata,
     Metadata,
     RunMetricData,
+    StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -62,6 +63,10 @@ export const getSiteUrl = (): string => {
     return siteURL;
 };
 
+export const getApiUrl = (): string => {
+    return apiUrl;
+};
+
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
@@ -84,6 +89,10 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function fetchPlaybookRunStatusUpdates(id: string) {
+    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
 export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
@@ -283,6 +292,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     return data as OwnerInfo[];
 }
 
+export async function finishRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
@@ -312,11 +329,12 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
 }
 
 export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    return doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`,
-        JSON.stringify({
-            new_state: newState,
-        }),
-    );
+    const body = JSON.stringify({new_state: newState});
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);
+    } catch (error) {
+        return {error: error as ClientError};
+    }
 }
 
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
@@ -803,7 +821,7 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
     });
 };
 
-export const playbookExportProps = (playbook: Playbook) => {
+export const playbookExportProps = (playbook: {id: string, title: string}) => {
     const href = `${apiUrl}/playbooks/${playbook.id}/export`;
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];

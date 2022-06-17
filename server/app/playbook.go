@@ -2,6 +2,8 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"strings"
 
 	"gopkg.in/guregu/null.v4"
@@ -40,7 +42,6 @@ type Playbook struct {
 	DefaultOwnerID                       string                 `json:"default_owner_id" export:"-"`
 	DefaultOwnerEnabled                  bool                   `json:"default_owner_enabled" export:"-"`
 	BroadcastChannelIDs                  []string               `json:"broadcast_channel_ids" export:"-"`
-	BroadcastEnabled                     bool                   `json:"broadcast_enabled" export:"-"`
 	WebhookOnCreationURLs                []string               `json:"webhook_on_creation_urls" export:"-"`
 	WebhookOnCreationEnabled             bool                   `json:"webhook_on_creation_enabled" export:"-"`
 	MessageOnJoin                        string                 `json:"message_on_join" export:"message_on_join"`
@@ -49,7 +50,6 @@ type Playbook struct {
 	RetrospectiveTemplate                string                 `json:"retrospective_template" export:"retrospective_template"`
 	RetrospectiveEnabled                 bool                   `json:"retrospective_enabled" export:"retrospective_enabled"`
 	WebhookOnStatusUpdateURLs            []string               `json:"webhook_on_status_update_urls" export:"-"`
-	WebhookOnStatusUpdateEnabled         bool                   `json:"webhook_on_status_update_enabled" export:"-"`
 	SignalAnyKeywords                    []string               `json:"signal_any_keywords" export:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool                   `json:"signal_any_keywords_enabled" export:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool                   `json:"categorize_channel_enabled" export:"categorize_channel_enabled"`
@@ -62,6 +62,9 @@ type Playbook struct {
 	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
 	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	// Deprecated: preserved for backwards compatibility with v1.27
+	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
+	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
 }
 
 const (
@@ -332,6 +335,9 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
 	// Archive archives a playbook
 	Archive(id string) error
 
@@ -349,6 +355,18 @@ type PlaybookStore interface {
 
 	// GetPlaybooksActiveTotal returns number of active playbooks
 	GetPlaybooksActiveTotal() (int64, error)
+
+	// GetMetric retrieves a metric by ID
+	GetMetric(id string) (*PlaybookMetricConfig, error)
+
+	// AddMetric adds a metric
+	AddMetric(playbookID string, config PlaybookMetricConfig) error
+
+	// UpdateMetric updates a metric
+	UpdateMetric(id string, setmap map[string]interface{}) error
+
+	// DeleteMetric deletes a metric
+	DeleteMetric(id string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -448,4 +466,50 @@ func (o PlaybookFilterOptions) Validate() (PlaybookFilterOptions, error) {
 	}
 
 	return options, nil
+}
+
+func ValidateWebhookURLs(urls []string) error {
+	if len(urls) > 64 {
+		return errors.New("too many registered urls, limit to less than 64")
+	}
+
+	for _, webhook := range urls {
+		url, err := url.ParseRequestURI(webhook)
+		if err != nil {
+			return errors.Wrapf(err, "unable to parse webhook: %v", webhook)
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return fmt.Errorf("protocol in webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+		}
+	}
+
+	return nil
+}
+
+func ValidateCategoryName(categoryName string) error {
+	categoryNameLength := len(categoryName)
+	if categoryNameLength > 22 {
+		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
+		return errors.Errorf(msg)
+	}
+	return nil
+}
+
+func removeDuplicates(a []string) []string {
+	items := make(map[string]bool)
+	for _, item := range a {
+		if item != "" {
+			items[item] = true
+		}
+	}
+	res := make([]string, 0, len(items))
+	for item := range items {
+		res = append(res, item)
+	}
+	return res
+}
+
+func ProcessSignalAnyKeywords(keywords []string) []string {
+	return removeDuplicates(keywords)
 }

@@ -221,8 +221,11 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		return
 	}
 
-	if len(actions) != 1 {
+	if len(actions) > 1 {
 		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+	}
+
+	if len(actions) != 1 {
 		return
 	}
 
@@ -418,7 +421,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		triggers := payload.Keywords
 		actionExecuted := false
 		for _, trigger := range triggers {
-			if strings.Contains(post.Message, trigger) {
+			if strings.Contains(post.Message, trigger) || containsAttachments(post.Attachments(), trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
 				actionExecuted = true
@@ -539,4 +542,23 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
 	}
 	return attachment
+}
+
+func containsAttachments(attachments []*model.SlackAttachment, trigger string) bool {
+	// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
+	for _, attachment := range attachments {
+		switch {
+		case strings.Contains(attachment.Pretext, trigger):
+			return true
+		case strings.Contains(attachment.Title, trigger):
+			return true
+		case strings.Contains(attachment.Text, trigger):
+			return true
+		case strings.Contains(attachment.Footer, trigger):
+			return true
+		default:
+			continue
+		}
+	}
+	return false
 }

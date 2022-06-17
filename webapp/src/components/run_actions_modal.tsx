@@ -9,7 +9,6 @@ import styled from 'styled-components';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {useChannel} from 'src/hooks/general';
 import {updateRunActions} from 'src/client';
 
 import Action from 'src/components/actions_modal_action';
@@ -26,8 +25,7 @@ const RunActionsModal = ({playbookRun}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const show = useSelector(isRunActionsModalVisible);
-    const runChannel = useChannel(playbookRun.channel_id);
-    const teamId = runChannel?.team_id || '';
+    const teamId = playbookRun.team_id || '';
 
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
     const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
@@ -65,6 +63,7 @@ const RunActionsModal = ({playbookRun}: Props) => {
             onHide={onHide}
             editable={true}
             onSave={onSave}
+            adjustTop={260}
         >
             <TriggersContainer>
                 <Trigger

@@ -1,19 +1,37 @@
 
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
-    onChange: (item: ChecklistItemState) => void;
+    onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     item: ChecklistItem;
     disabled: boolean;
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
-    const isChecked = props.item.state === ChecklistItemState.Closed;
+    const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
+
+    // handleOnChange optimistic update approach: first do UI change, then
+    // call to server and finally revert UI state if there's error
+    //
+    // There are two main reasons why we do this:
+    // 1 - Happy path: avoid waiting 300ms to see checkbox update in the UI
+    // 2 - Websocket failure: we'll still mark the checkbox correctly
+    //     Additionally, we prevent the user from clicking multiple times
+    //     and leaving the item in an unknown state
+    const handleOnChange = async () => {
+        const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
+        setIsChecked(!isChecked);
+        const res = await props.onChange(newValue);
+        if (res?.error) {
+            setIsChecked(isChecked);
+        }
+    };
 
     return (
         <ChecklistItemInput
@@ -21,13 +39,7 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
             type='checkbox'
             checked={isChecked}
             disabled={props.disabled}
-            onChange={() => {
-                if (isChecked) {
-                    props.onChange(ChecklistItemState.Open);
-                } else {
-                    props.onChange(ChecklistItemState.Closed);
-                }
-            }}
+            onChange={handleOnChange}
         />);
 };
 
@@ -99,7 +111,7 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
     );
 };
 
-const CancelSaveContainer = styled.div`
+export const CancelSaveContainer = styled.div`
     text-align: right;
     padding: 8px;
     z-index: 2;
@@ -109,7 +121,7 @@ const CancelSaveContainer = styled.div`
 const CancelButton = styled(TertiaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 2px;
+    margin-left: 8px;
     border-radius: 4px;
     font-size: 12px;
 `;
@@ -117,7 +129,7 @@ const CancelButton = styled(TertiaryButton)`
 const SaveButton = styled(PrimaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 2px;
+    margin-left: 8px;
     border-radius: 4px;
     font-size: 12px;
 `;

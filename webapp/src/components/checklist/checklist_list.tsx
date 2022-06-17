@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -18,7 +17,9 @@ import {
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {usePortal} from 'src/hooks';
+import classNames from 'classnames';
+
+import Portal from 'src/components/portal';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
@@ -31,13 +32,11 @@ import {
     Checklist,
     ChecklistItemState,
     ChecklistItem,
-    PlaybookWithChecklist,
 } from 'src/types/playbook';
 import {
     clientMoveChecklist,
     clientMoveChecklistItem,
     clientAddChecklist,
-    savePlaybook,
 } from 'src/client';
 import {
     currentChecklistCollapsedState,
@@ -45,6 +44,8 @@ import {
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
@@ -55,7 +56,8 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
-    playbook?: PlaybookWithChecklist;
+    playbook?: Loaded<FullPlaybook>;
+    enableFinishRun: boolean;
 }
 
 const ChecklistList = (props: Props) => {
@@ -73,16 +75,17 @@ const ChecklistList = (props: Props) => {
         RunDetailsTutorialSteps.Checklists,
         TutorialTourCategories.RUN_DETAILS
     );
-    const portal = usePortal(document.body);
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
 
-    const [playbook, setPlaybook] = useState(props.playbook);
-    const [menuEnabled, setMenuEnabled] = useState(true);
+    const playbook = props.playbook;
+    const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
     const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
+    const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
 
     if (!playbook && !props.playbookRun) {
         return null;
@@ -92,10 +95,27 @@ const ChecklistList = (props: Props) => {
         if (!playbook) {
             return;
         }
-        const newPlaybook = {...playbook};
-        newPlaybook.checklists = newChecklists;
-        setPlaybook(newPlaybook);
-        savePlaybook(newPlaybook);
+
+        const updated = newChecklists.map((cl: Checklist) => {
+            return {
+                ...cl,
+                items: cl.items.map((ci: ChecklistItem) => {
+                    return {
+                        title: ci.title,
+                        description: ci.description,
+                        state: ci.state,
+                        stateModified: ci.state_modified || 0,
+                        assigneeID: ci.assignee_id || '',
+                        assigneeModified: ci.assignee_modified || 0,
+                        command: ci.command,
+                        commandLastRun: ci.command_last_run,
+                        dueDate: ci.due_date,
+                    };
+                }),
+            };
+        });
+
+        updatePlaybook({checklists: updated});
     };
 
     const onRenameChecklist = (index: number, title: string) => {
@@ -123,11 +143,12 @@ const ChecklistList = (props: Props) => {
     };
 
     const onDragStart = () => {
-        // block hover menu on checklists
-        setMenuEnabled(false);
+        setIsDragging(true);
     };
 
     const onDragEnd = (result: DropResult) => {
+        setIsDragging(false);
+
         // If the item is dropped out of any droppable zones, do nothing
         if (!result.destination) {
             return;
@@ -186,9 +207,6 @@ const ChecklistList = (props: Props) => {
             if (props.playbookRun) {
                 clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
-
-            // allow again to see hover menu
-            setMenuEnabled(true);
         }
 
         // Move a whole checklist
@@ -231,11 +249,12 @@ const ChecklistList = (props: Props) => {
 
     let addChecklist = (
         <AddChecklistLink
+            disabled={archived}
             onClick={(e) => {
                 e.stopPropagation();
                 setAddingChecklist(true);
             }}
-            data-testId={'add-a-checklist-button'}
+            data-testid={'add-a-checklist-button'}
         >
             <IconWrapper>
                 <i className='icon icon-plus'/>
@@ -286,6 +305,7 @@ const ChecklistList = (props: Props) => {
                     {(droppableProvided: DroppableProvided) => (
                         <ChecklistsContainer
                             {...droppableProvided.droppableProps}
+                            className={classNames('checklists', {isDragging})}
                             ref={droppableProvided.innerRef}
                         >
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
@@ -304,7 +324,7 @@ const ChecklistList = (props: Props) => {
                                                 numChecklists={checklists.length}
                                                 collapsed={Boolean(checklistsState[checklistIndex])}
                                                 setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                                                disabled={finished}
+                                                disabled={archived || finished}
                                                 playbookRunID={props.playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
@@ -320,16 +340,16 @@ const ChecklistList = (props: Props) => {
                                             >
                                                 <GenericChecklist
                                                     playbookRun={props.playbookRun}
+                                                    disabled={archived}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
-                                                    menuEnabled={menuEnabled}
                                                 />
                                             </CollapsibleChecklist>
                                         );
 
                                         if (snapshot.isDragging) {
-                                            return ReactDOM.createPortal(component, portal);
+                                            return <Portal>{component}</Portal>;
                                         }
 
                                         return component;
@@ -343,7 +363,7 @@ const ChecklistList = (props: Props) => {
                 {!finished && addChecklist}
             </DragDropContext>
             {
-                active && props.playbookRun &&
+                active && props.enableFinishRun && props.playbookRun &&
                 <FinishButton onClick={() => dispatch(finishRun(props.playbookRun?.team_id || ''))}>
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
@@ -388,7 +408,7 @@ const AddChecklistLink = styled.button`
     border-color: var(--center-channel-color-16);
     color: var(--center-channel-color-64);
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: var(--button-bg-08);
         color: var(--button-bg);
     }

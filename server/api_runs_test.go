@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -218,6 +219,64 @@ func TestRunCreation(t *testing.T) {
 			PlaybookID:  e.ArchivedPlaybook.ID,
 		})
 		assert.Error(t, err)
+	})
+
+	t.Run("create valid run using playbook with due dates", func(t *testing.T) {
+		durations := []int64{
+			4 * time.Hour.Milliseconds(),      // 4 hours
+			30 * time.Minute.Milliseconds(),   // 30 min
+			4 * 24 * time.Hour.Milliseconds(), // 4 days
+		}
+
+		// create playbook with relative due dates
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Public: true,
+			Title:  "PB",
+			TeamID: e.BasicTeam.Id,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[0],
+						},
+						{
+							Title:   "Do this2",
+							DueDate: durations[1],
+						},
+					},
+				},
+				{
+					Title: "B",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[2],
+						},
+						{
+							Title: "Do this2",
+						},
+					},
+				},
+			},
+		})
+		assert.NoError(t, err)
+
+		now := model.GetMillis()
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "With due dates",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		// compare date with 10^4 precision because run creation might take more than a second
+		assert.Equal(t, (now+durations[0])/10000, run.Checklists[0].Items[0].DueDate/10000)
+		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
+		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
+		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
 	})
 }
 
@@ -944,5 +1003,134 @@ func TestRunActions(t *testing.T) {
 		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
 		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
 		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
+	})
+}
+
+func TestRunGetStatusUpdates(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public - get no updates", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("public - get 2 updates as participant", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+	})
+
+	t.Run("public - get 2 updates as viewer", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[1].AuthorUserName)
+	})
+
+	t.Run("public - fails because not in team", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClientNotInTeam.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("private - get no updates", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		assert.NoError(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("private - get 2 updates as participant", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[1].AuthorUserName)
+	})
+
+	t.Run("private - get 2 updates as viewer", func(t *testing.T) {
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privatePlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(e.T, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+	})
+
+	t.Run("private - fails because not in playbook members", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.Error(t, err)
+		assert.Len(t, statusUpdates, 0)
 	})
 }

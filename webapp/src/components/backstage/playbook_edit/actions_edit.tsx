@@ -150,7 +150,7 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
                 <Setting id={'create-channel'}>
                     <CreateAChannel
                         playbook={playbook}
-                        setPlaybook={setPlaybook}
+                        setPlaybook={setPlaybook as any}
                         setChangesMade={setChangesMade}
                     />
                 </Setting>

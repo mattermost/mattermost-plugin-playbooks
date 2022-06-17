@@ -53,12 +53,14 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            <AssignTo
-                assignee_id={props.assignee_id}
-                editable={props.isEditing}
-                inHoverMenu={true}
-                onSelectedChange={props.onAssigneeChange}
-            />
+            {props.playbookRunId !== undefined &&
+                <AssignTo
+                    assignee_id={props.assignee_id}
+                    editable={props.isEditing}
+                    inHoverMenu={true}
+                    onSelectedChange={props.onAssigneeChange}
+                />
+            }
             <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
@@ -76,8 +78,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={DotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                topPx={15}
-                leftPx={-161}
+                placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
@@ -125,14 +126,14 @@ const ChecklistItemHoverMenu = (props: Props) => {
     );
 };
 
-const HoverMenu = styled.div`
+export const HoverMenu = styled.div`
     display: flex;
     align-items: center;
-    padding: 0px 8px;
+    padding: 0px 3px;
     position: absolute;
     height: 32px;
     right: 1px;
-    top: 2px;
+    top: -6px;
     border: 1px solid var(--center-channel-color-08);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
@@ -140,8 +141,12 @@ const HoverMenu = styled.div`
 `;
 
 const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
-    transition: all 0.2s linear;
-    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    padding: 0;
+    border-radius: 4px;
+    &:before {
+        transition: all 0.2s linear;
+        transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    }
 `;
 
 const DotMenuButton = styled(StyledDotMenuButton)`

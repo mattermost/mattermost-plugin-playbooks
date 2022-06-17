@@ -38,9 +38,7 @@ export interface PlaybookWithChecklist extends Playbook {
     default_owner_id: string;
     default_owner_enabled: boolean;
     broadcast_channel_ids: string[];
-    broadcast_enabled: boolean;
     webhook_on_creation_urls: string[];
-    webhook_on_creation_enabled: boolean;
     webhook_on_status_update_urls: string[];
     webhook_on_status_update_enabled: boolean;
     message_on_join: string;
@@ -55,6 +53,10 @@ export interface PlaybookWithChecklist extends Playbook {
     run_summary_template: string;
     channel_name_template: string;
     metrics: Metric[];
+
+    // Deprecated: preserved for backwards compatibility with v1.27
+    broadcast_enabled: boolean;
+    webhook_on_creation_enabled: boolean;
 }
 
 export enum MetricType {
@@ -68,7 +70,7 @@ export interface Metric {
     type: MetricType;
     title: string;
     description: string;
-    target: number | null;
+    target?: number | null;
 }
 
 export interface FetchPlaybooksParams {
@@ -107,7 +109,7 @@ export enum ChecklistItemState {
 export interface ChecklistItem {
     title: string;
     description: string;
-    state: ChecklistItemState;
+    state: ChecklistItemState | string;
     state_modified?: number;
     assignee_id?: string;
     assignee_modified?: number;
@@ -158,11 +160,11 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         default_owner_id: '',
         default_owner_enabled: false,
         broadcast_channel_ids: [],
-        broadcast_enabled: false,
+        broadcast_enabled: true,
         webhook_on_creation_urls: [],
         webhook_on_creation_enabled: false,
         webhook_on_status_update_urls: [],
-        webhook_on_status_update_enabled: false,
+        webhook_on_status_update_enabled: true,
         message_on_join: defaultMessageOnJoin,
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,

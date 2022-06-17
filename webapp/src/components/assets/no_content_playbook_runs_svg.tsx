@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
 const NoContentPlaybookRunsSvg = () => (
     <svg

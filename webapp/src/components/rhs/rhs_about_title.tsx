@@ -14,7 +14,7 @@ import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles'
 import {FormattedMessage} from 'react-intl';
 
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
-import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
+import {useClickOutsideRef} from 'src/hooks/general';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
@@ -48,7 +48,7 @@ const RHSAboutTitle = (props: Props) => {
     }, [props.value]);
 
     const saveAndClose = () => {
-        if (!invalidValue) {
+        if (!invalidValue && permissionToChangeTitle) {
             props.onEdit(editedValue);
             setEditing(false);
         }
@@ -67,8 +67,6 @@ const RHSAboutTitle = (props: Props) => {
     }
 
     useClickOutsideRef(inputRef, saveAndClose);
-    useKeyPress('Enter', saveAndClose);
-    useKeyPress('Escape', discardAndClose);
 
     if (!editing) {
         const RenderedTitle = props.renderedTitle ?? DefaultRenderedTitle;
@@ -94,6 +92,14 @@ const RHSAboutTitle = (props: Props) => {
                 value={editedValue}
                 maxLength={59}
                 autoFocus={true}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        saveAndClose();
+                    } else if (e.key === 'Escape') {
+                        discardAndClose();
+                    }
+                }}
+                onBlur={saveAndClose}
                 onFocus={(e) => {
                     const val = e.target.value;
                     e.target.value = '';

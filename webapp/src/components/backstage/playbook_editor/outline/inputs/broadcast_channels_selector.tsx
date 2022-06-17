@@ -20,6 +20,7 @@ export interface Props {
     channelIds: string[];
     placeholder?: string;
     children?: ReactNode;
+    broadcastEnabled: boolean;
 }
 
 const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
@@ -136,6 +137,7 @@ const BroadcastChannels = (props: Props) => {
                 getOptionValue={getOptionValue}
                 formatOptionLabel={(option: Channel) => (
                     <ChannelLabel
+                        broadcastEnabled={props.broadcastEnabled}
                         channel={option}
                         selected={props.channelIds.some((channelId: string) => channelId === option.id)}
                     />
@@ -192,6 +194,7 @@ const StyledReactSelect = styled(ReactSelect)`
 interface ChannelLabelProps {
     channel: Channel;
     selected: boolean | undefined;
+    broadcastEnabled: boolean
 }
 
 const ChannelLabel = (props: ChannelLabelProps) => {
@@ -199,15 +202,28 @@ const ChannelLabel = (props: ChannelLabelProps) => {
 
     return (
         <React.Fragment>
-            {props.channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}
-            {props.selected && <CheckIcon className={'icon icon-check'}/>}
+            <ChannelLabelWrapper disabled={(props.selected ?? false) && !props.broadcastEnabled}>
+                {props.channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}
+            </ChannelLabelWrapper>
+            {props.selected &&
+            <CheckIcon
+                disabled={!props.broadcastEnabled}
+                className={'icon icon-check'}
+            />}
         </React.Fragment>
     );
 };
 
-const CheckIcon = styled.i`
-    color: var(--button-bg);
+const CheckIcon = styled.i<{disabled: boolean}>`
+    color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb),0.48)' : 'var(--button-bg)')};
 	font-size: 22px;
     position: absolute;
     right: 0;
+`;
+
+const ChannelLabelWrapper = styled.span<{disabled: boolean}>`
+    ${({disabled: enabled}) => enabled && `
+        text-decoration: line-through;
+        color: rgba(var(--center-channel-color-rgb),0.48);
+    `}
 `;

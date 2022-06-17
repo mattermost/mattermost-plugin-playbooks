@@ -184,6 +184,7 @@ const TimelineRetro = (props: Props) => {
                     dotMenuButton={FakeButton}
                     options={filterOptions}
                     onselect={selectOption}
+                    placement='bottom-end'
                     icon={
                         <TextContainer>
                             <i className='icon icon-filter-variant'/>

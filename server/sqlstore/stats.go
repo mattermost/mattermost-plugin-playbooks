@@ -333,56 +333,96 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	return counts, daysAsTimes
 }
 
-// MetricOverallAverage returns list of average values of playbook's metrics.
+// MetricOverallAverage for a specific playbook returns a list that contains an average value for each metric.
 // Only published metrics values are included.
-// Returns empty list when Playbook doesn't have metrics or there are no any published metrics values
-func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
+// Returns empty list when Playbook doesn't have configured metrics
+// If for some metrics there are no published values, the corresponding element will be nil in the resulting slice
+func (s *StatsStore) MetricOverallAverage(filters StatsFilters) []null.Int {
+	// this query will return average values only for the metrics that have published data in the database
+	// so we need to add to the result array nil values for metrics that don't have data
 	query := s.store.builder.
-		Select("FLOOR(AVG(m.Value))").
+		Select("mc.ID as ID, FLOOR(AVG(m.Value)) as Value").
 		From("IR_Metric as m").
 		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
-		GroupBy("mc.ID").
 		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
 		Where(sq.Eq{"m.Published": true}).
+		GroupBy("mc.ID").
 		OrderBy("mc.Ordering ASC")
 
-	var averages [][]uint8
+	type Average struct {
+		ID    string
+		Value string
+	}
+	var averages []Average
 	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
 		s.log.Warnf("Error retrieving stat total active participants %w", err)
-		return []int64{}
+		return []null.Int{}
 	}
 
-	overallAverage := make([]int64, len(averages))
-	for i, v := range averages {
-		overallAverage[i], _ = strconv.ParseInt(string(v), 10, 64)
+	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return []null.Int{}
+	}
+
+	// use metrics configurations to build a result array, where overallAverage[i] will be average value for
+	// the i-th metric or nil if there is no data in the database for this specific metric
+	overallAverage := make([]null.Int, len(configs))
+	for i, id := range configs {
+		for _, av := range averages {
+			if av.ID == id {
+				val, _ := strconv.ParseInt(av.Value, 10, 64)
+				overallAverage[i] = null.IntFrom(val)
+				break
+			}
+		}
 	}
 	return overallAverage
 }
 
 // MetricValueRange returns min and max values for each metric
 // Only published metrics are included.
-// If there are no any published values, returns empty list
-func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
+// If there are no configured metrics, returns an empty list
+// If for some metrics there are no published values, the corresponding slice will be nil in the resulting slice
+func (s *StatsStore) MetricValueRange(filters StatsFilters) [][]int64 {
 	type MinMax struct {
-		Min null.Int
-		Max null.Int
+		ID  string
+		Min int64
+		Max int64
 	}
+
+	// this query will return min-max values only for the metrics that have published data in the database
+	// so we need to add to the result array nil values for metrics that don't have data
 	q := s.store.builder.
-		Select("MIN(Value) as Min, MAX(Value) as Max").
+		Select("mc.ID as ID, MIN(Value) as Min, MAX(Value) as Max").
 		From("IR_Metric as m").
 		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
-		GroupBy("mc.ID").
 		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
 		Where(sq.Eq{"m.Published": true}).
+		GroupBy("mc.ID").
 		OrderBy("mc.Ordering ASC")
 	var res []MinMax
 	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
 		s.log.Warnf("Error retrieving metric min and max values %w", err)
 		return [][]int64{}
 	}
-	valueRange := make([][]int64, len(res))
-	for i := range res {
-		valueRange[i] = []int64{res[i].Min.Int64, res[i].Max.Int64}
+
+	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return [][]int64{}
+	}
+
+	// use metrics configurations to build a result array, where valueRange[i] will be min-max values for
+	// the i-th metric or nil if there is no data in the database for this specific metric
+	valueRange := make([][]int64, len(configs))
+	for i, id := range configs {
+		for _, minMax := range res {
+			if minMax.ID == id {
+				valueRange[i] = []int64{minMax.Min, minMax.Max}
+				break
+			}
+		}
 	}
 
 	return valueRange
@@ -390,9 +430,9 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 
 // MetricRollingValuesLastXRuns for each metric returns list of last `x` published values, starting from `offset`
 // first element in the list is most recent. And returns the names of the last `x` runs.
-// Retruns empty list if Playbook doesn't have metrics.
-// Returns list with null values, if Playbook has metrics but there are no any published values
-func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) ([][]int64, []string) {
+// Returns empty list if Playbook doesn't have metrics.
+// If for some metrics there are no published values, the corresponding slice will be nil in the resulting slice
+func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters StatsFilters) ([][]int64, []string) {
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
@@ -443,26 +483,36 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 
 // MetricRollingAverageAndChange for each metric returns average of last `x` published values and
 // change with comparison to the previous period
-// returns empty list if there are no available published metrics values
-func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
+// returns empty list if the Playbook doesn't have metrics
+// If for some metrics there are no published values, the corresponding element will be nil in the resulting slice
+func (s *StatsStore) MetricRollingAverageAndChange(x int, filters StatsFilters) (metricRollingAverage []null.Int, metricRollingAverageChange []null.Int) {
 	metricValuesWholePeriod, _ := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
 
 	if len(metricValuesWholePeriod) == 0 {
-		return []int64{}, []int64{}
+		return []null.Int{}, []null.Int{}
 	}
 
-	firstPeriodEnd := int(math.Min(float64(x), float64(len(metricValuesWholePeriod[0]))))
-	metricRollingAverage = getMetricRollingAverageForPeriod(metricValuesWholePeriod, 0, firstPeriodEnd)
-
-	secondPeriodEnd := int(math.Min(float64(2*x), float64(len(metricValuesWholePeriod[0]))))
-	prevPeriodAverages := getMetricRollingAverageForPeriod(metricValuesWholePeriod, firstPeriodEnd, secondPeriodEnd)
-	metricRollingAverageChange = make([]int64, 0)
-	for i, num := range prevPeriodAverages {
-		// if previous value was zero, increase percentage can't be defined
-		if num == 0 {
+	metricRollingAverage = make([]null.Int, 0)
+	metricRollingAverageChange = make([]null.Int, 0)
+	for i, nums := range metricValuesWholePeriod {
+		firstPeriodEnd := int(math.Min(float64(x), float64(len(nums))))
+		// add null values when there are no metric values available
+		if firstPeriodEnd == 0 {
+			metricRollingAverage = append(metricRollingAverage, null.NewInt(0, false))
+			metricRollingAverageChange = append(metricRollingAverageChange, null.NewInt(0, false))
 			continue
 		}
-		metricRollingAverageChange = append(metricRollingAverageChange, metricRollingAverage[i]*100/num-100)
+
+		metricRollingAverage = append(metricRollingAverage, null.IntFrom(getAverage(nums[:firstPeriodEnd])))
+
+		secondPeriodEnd := int(math.Min(float64(2*x), float64(len(nums))))
+		// add null value when change can't be calculated
+		if firstPeriodEnd >= secondPeriodEnd || metricRollingAverage[i].IsZero() {
+			metricRollingAverageChange = append(metricRollingAverageChange, null.NewInt(0, false))
+			continue
+		}
+		diff := metricRollingAverage[i].Int64*100/getAverage(nums[firstPeriodEnd:secondPeriodEnd]) - 100
+		metricRollingAverageChange = append(metricRollingAverageChange, null.IntFrom(diff))
 	}
 	return
 }
@@ -549,18 +599,6 @@ func reverseSlice(s interface{}) {
 	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
 		swap(i, j)
 	}
-}
-
-func getMetricRollingAverageForPeriod(metricRollingValues [][]int64, start, end int) []int64 {
-	metricRollingAverage := make([]int64, 0)
-
-	for _, nums := range metricRollingValues {
-		// if there are some values calculate average and add to list
-		if start < end {
-			metricRollingAverage = append(metricRollingAverage, getAverage(nums[start:end]))
-		}
-	}
-	return metricRollingAverage
 }
 
 func getAverage(nums []int64) int64 {

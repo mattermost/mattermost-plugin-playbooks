@@ -2,15 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
-
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
@@ -269,15 +267,13 @@ export const RHSHomeTemplate = ({
     onUse,
 }: RHSHomeTemplateProps) => {
     const {formatMessage} = useIntl();
-    const currentTeam = useSelector(getCurrentTeam);
-    const {create} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     return (
         <Item>
             <div data-testid='template-details'>
                 <Title ref={linkRef}>
                     <Link
-                        to={create({teamId: currentTeam.id, template: template.title})}
+                        to={''}
                         onClick={(e) => {
                             e.preventDefault();
                             onUse(template);

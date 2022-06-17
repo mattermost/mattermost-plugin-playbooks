@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {DraftPlaybookWithChecklist, Metric, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
@@ -33,9 +33,9 @@ interface Task {
 }
 
 interface Props {
-    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
-    setChangesMade: (b: boolean) => void;
+    playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist;
+    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>>;
+    setChangesMade?: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
     disabled: boolean;
@@ -105,7 +105,7 @@ const Metrics = ({
             metric: newMetric(metricType),
         });
 
-        setChangesMade(true);
+        setChangesMade?.(true);
     };
 
     const saveMetric = (target: number | null) => {
@@ -123,7 +123,7 @@ const Metrics = ({
                     metrics,
                 };
             });
-            setChangesMade(true);
+            setChangesMade?.(true);
         }
 
         // Do we have a requested task ready to do next?
@@ -157,7 +157,7 @@ const Metrics = ({
                 metrics,
             };
         });
-        setChangesMade(true);
+        setChangesMade?.(true);
         setDeletingIdx(-1);
         setCurEditingMetric(null);
     };
@@ -195,8 +195,7 @@ const Metrics = ({
                         </>
                     }
                     disabled={disabled || metrics.length >= 4}
-                    topPx={-170}
-                    leftPx={20}
+                    placement='bottom-start'
                 >
                     <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
                         <MetricTypeOption
@@ -231,6 +230,7 @@ const Metrics = ({
                     idx === curEditingMetric?.index ?
                         <MetricEdit
                             metric={curEditingMetric.metric}
+                            key={curEditingMetric.metric.id}
                             setMetric={(setState) => setCurEditingMetric((prevState) => {
                                 if (prevState) {
                                     return {index: prevState.index, metric: setState(prevState.metric)};
@@ -251,6 +251,7 @@ const Metrics = ({
                             editClick={() => requestEditMetric(idx)}
                             deleteClick={() => requestDeleteMetric(idx)}
                             disabled={disabled}
+                            key={metric.id}
                         />
                 ))
             }

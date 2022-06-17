@@ -162,6 +162,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
+type GraphQLInput struct {
+	Query         string                 `json:"query"`
+	OperationName string                 `json:"operationName"`
+	Variables     map[string]interface{} `json:"variables"`
+}
+
+func (c *Client) DoGraphql(ctx context.Context, input *GraphQLInput, v interface{}) error {
+	url := "query"
+	req, err := c.newRequest(http.MethodPost, url, input)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(ctx, req, v)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // checkResponse checks the API response for an error.
 //
 // Any response with a status code outside 2xx is considered an error, and its body inspected for

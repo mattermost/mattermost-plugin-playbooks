@@ -47,8 +47,7 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                topPx={15}
-                leftPx={-189}
+                placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem onClick={props.onRenameChecklist}>
@@ -123,11 +122,6 @@ export const DotMenuIcon = styled(HamburgerButton)`
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-
     align-items: center;
     justify-content: center;
 

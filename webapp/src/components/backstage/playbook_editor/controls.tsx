@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {HTMLAttributes, PropsWithChildren, useEffect, useState} from 'react';
+import React, {PropsWithChildren, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
@@ -17,12 +17,12 @@ import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 
-import classNames from 'classnames';
+import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {useHasPlaybookPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToasts} from '../toast_banner';
 
 import {
@@ -34,22 +34,30 @@ import {
     archivePlaybook,
     createPlaybookRun,
     clientFetchPlaybookFollowers,
+    getSiteUrl,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
-import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PrimaryButton} from 'src/components/assets/buttons';
-import {RegularHeading, SemiBoldHeading} from 'src/styles/headings';
+import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
-import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
-import {PillBox} from 'src/components/widgets/pill';
+import CopyLink from 'src/components/widgets/copy_link';
+import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
 
-type ControlProps = {playbook: PlaybookWithChecklist;};
+type ControlProps = {playbook: {
+    id: string,
+    public: boolean,
+    default_playbook_member_role: string,
+    title: string,
+    delete_at: number,
+    team_id: string,
+    description: string,
+    members: PlaybookPermissionsMember[],
+}};
 
 type StyledProps = {className?: string;};
 
@@ -97,13 +105,34 @@ export const Back = styled((props: StyledProps) => {
 
 `;
 
-export const Members = ({playbook: {id, members}}: ControlProps) => {
+export const Members = (props: {playbookId: string, numMembers: number}) => {
     const dispatch = useDispatch();
     return (
-        <MembersIcon onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId))}>
             <i className={'icon icon-account-multiple-outline'}/>
-            {members.length}
-        </MembersIcon>
+            <FormattedNumber value={props.numMembers}/>
+        </ButtonIconStyled>
+    );
+};
+
+export const Share = ({playbook: {id}}: ControlProps) => {
+    const dispatch = useDispatch();
+    return (
+        <TertiaryButtonLarger onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
+            <i className={'icon icon-lock-outline'}/>
+            <FormattedMessage defaultMessage='Share'/>
+        </TertiaryButtonLarger>
+    );
+};
+
+export const CopyPlaybook = ({playbook: {title, id}}: ControlProps) => {
+    return (
+        <CopyLink
+            id='copy-playbook-link-tooltip'
+            to={getSiteUrl() + '/playbooks/playbooks/' + id}
+            name={title}
+            area-hidden={true}
+        />
     );
 };
 
@@ -120,47 +149,59 @@ export const ArchivedLabel = ({playbook: {delete_at}}: ControlProps) => {
     );
 };
 
-const useFollowersMeta = (playbookId: string) => {
-    const [followerIds, setFollowerIds] = useState<string[]>([]);
-    const [isFollowing, setIsFollowing] = useState(false);
+const changeFollowing = async (playbookId: string, userId: string, following: boolean) => {
+    if (!playbookId || !userId) {
+        return null;
+    }
+
+    try {
+        if (following) {
+            await autoFollowPlaybook(playbookId, userId);
+        } else {
+            await autoUnfollowPlaybook(playbookId, userId);
+        }
+        return following;
+    } catch {
+        return null;
+    }
+};
+
+const useFollowerIds = createGlobalState<string[] | null>(null);
+const useIsFollowing = createGlobalState(false);
+
+export const useEditorFollowersMeta = (playbookId: string) => {
+    const [followerIds, setFollowerIds] = useFollowerIds();
+    const [isFollowing, setIsFollowing] = useIsFollowing();
     const currentUserId = useSelector(getCurrentUserId);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookId) {
-                try {
-                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
-                    setFollowerIds(fetchedFollowerIds);
-                    setIsFollowing(fetchedFollowerIds?.includes(currentUserId));
-                } catch {
-                    setIsFollowing(false);
-                }
-            }
-        };
-        fetchData();
-    }, [playbookId, currentUserId, isFollowing]);
+    const refresh = async () => {
+        if (!playbookId || !currentUserId) {
+            return;
+        }
+        const followers = await clientFetchPlaybookFollowers(playbookId);
+        setFollowerIds(followers);
+        setIsFollowing(followers.includes(currentUserId));
+    };
 
-    return {followerIds, isFollowing, setIsFollowing};
+    useEffect(() => {
+        if (followerIds === null) {
+            setFollowerIds([]);
+            refresh();
+        }
+    }, [followerIds]);
+
+    const setFollowing = async (following: boolean) => {
+        setIsFollowing(following);
+        await changeFollowing(playbookId, currentUserId, following);
+        refresh();
+    };
+
+    return {followerIds: followerIds ?? [], isFollowing, setFollowing};
 };
 
 export const AutoFollowToggle = ({playbook}: ControlProps) => {
     const {formatMessage} = useIntl();
-    const {
-        isFollowing,
-        setIsFollowing,
-    } = useFollowersMeta(playbook.id);
-    const currentUserId = useSelector(getCurrentUserId);
-
-    const changeFollowing = (following: boolean) => {
-        if (playbook.id && following !== isFollowing) {
-            if (following) {
-                autoFollowPlaybook(playbook.id, currentUserId);
-            } else {
-                autoUnfollowPlaybook(playbook.id, currentUserId);
-            }
-            setIsFollowing(following);
-        }
-    };
+    const {isFollowing, setFollowing} = useEditorFollowersMeta(playbook.id);
 
     const archived = playbook.delete_at !== 0;
 
@@ -176,7 +217,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
     );
 
     return (
-        <SecondaryButtonLargerRightStyled
+        <SecondaryButtonLargerCheckbox
             checked={isFollowing}
             disabled={archived}
         >
@@ -191,22 +232,22 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                         text={'Auto-follow runs'}
                         checked={isFollowing}
                         disabled={archived}
-                        onChange={changeFollowing}
+                        onChange={setFollowing}
                     />
                 </div>
             </OverlayTrigger>
-        </SecondaryButtonLargerRightStyled>
+        </SecondaryButtonLargerCheckbox>
     );
 };
 
 const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
-const playbookIsTutorialPlaybook = (playbook: PlaybookWithChecklist) => playbook?.title === LEARN_PLAYBOOKS_TITLE;
+const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
 
 export const RunPlaybook = ({playbook}: ControlProps) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const currentUser = useSelector(getCurrentUser);
-    const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook);
+    const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
 
@@ -234,111 +275,158 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
         >
-            <RightMarginedIcon
+            <Icon
                 path={mdiClipboardPlayOutline}
                 size={1.25}
             />
-            {isTutorialPlaybook ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
+            {isTutorialPlaybook ? (
+                <FormattedMessage defaultMessage='Start a test run'/>
+            ) : (
+                <FormattedMessage defaultMessage='Run'/>
+            )}
         </PrimaryButtonLarger>
     );
 };
 
-export const TitleMenu = styled(({playbook, children, className}: PropsWithChildren<ControlProps> & {className?: string;}) => {
+type TitleMenuProps = {
+    className?: string;
+    editTitle: () => void;
+    refetch: () => void;
+} & PropsWithChildren<ControlProps>;
+const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: TitleMenuProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
-    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
+    const [confirmArchiveModal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
             archivePlaybook(playbook.id);
             navigateToPluginUrl('/playbooks');
         }
     });
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+
     const {add: addToast} = useToasts();
 
     const archived = playbook.delete_at !== 0;
 
-    return (
-        <DotMenu
-            dotMenuButton={TitleButton}
-            className={className}
-            left={true}
-            icon={
-                <>
-                    {children}
-                    <i className={'icon icon-chevron-down'}/>
-                </>
-            }
-        >
-            <DropdownMenuItem
-                onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
-            >
-                <FormattedMessage defaultMessage='Manage access'/>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={async () => {
-                    const newID = await clientDuplicatePlaybook(playbook.id);
-                    navigateToPluginUrl(`/playbooks/${newID}`);
-                    addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
-                    telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
-                }}
-            >
-                <FormattedMessage defaultMessage='Duplicate'/>
-            </DropdownMenuItem>
-            <DropdownMenuItemStyled
-                href={exportHref}
-                download={exportFilename}
-                role={'button'}
-                onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
-            >
-                <FormattedMessage defaultMessage='Export'/>
-            </DropdownMenuItemStyled>
-            {!archived && (
-                <DropdownMenuItem
-                    onClick={() => openDeletePlaybookModal(playbook)}
-                >
-                    <RedText>
-                        <FormattedMessage defaultMessage='Archive playbook'/>
-                    </RedText>
-                </DropdownMenuItem>
-            )}
-            {modal}
-        </DotMenu>
-    );
-})`
+    const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
 
+    return (
+        <>
+            <DotMenu
+                dotMenuButton={TitleButton}
+                className={className}
+                placement='bottom-end'
+                icon={
+                    <>
+                        {children}
+                        <i className={'icon icon-chevron-down'}/>
+                    </>
+                }
+            >
+                <DropdownMenuItem
+                    onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                >
+                    <FormattedMessage defaultMessage='Manage access'/>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={editTitle}
+                    disabled={archived}
+                    disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
+                >
+                    <FormattedMessage defaultMessage='Rename'/>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={async () => {
+                        const newID = await clientDuplicatePlaybook(playbook.id);
+                        navigateToPluginUrl(`/playbooks/${newID}/outline`);
+                        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                        telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
+                    }}
+                    disabled={!permissionForDuplicate}
+                    disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
+                >
+                    <FormattedMessage defaultMessage='Duplicate'/>
+                </DropdownMenuItem>
+                <DropdownMenuItemStyled
+                    href={exportHref}
+                    download={exportFilename}
+                    role={'button'}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
+                >
+                    <FormattedMessage defaultMessage='Export'/>
+                </DropdownMenuItemStyled>
+                {archived ? (
+                    <DropdownMenuItem
+                        onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
+                    >
+                        <FormattedMessage defaultMessage='Restore playbook'/>
+                    </DropdownMenuItem>
+                ) : (
+                    <DropdownMenuItem
+                        onClick={() => openDeletePlaybookModal(playbook)}
+                    >
+                        <RedText>
+                            <FormattedMessage defaultMessage='Archive playbook'/>
+                        </RedText>
+                    </DropdownMenuItem>
+                )}
+            </DotMenu>
+            {confirmArchiveModal}
+            {confirmRestoreModal}
+        </>
+    );
+};
+
+export const TitleMenu = styled(TitleMenuImpl)`
+
+`;
+
+const buttonCommon = css`
+    padding: 0 16px;
+    height: 36px;
+    gap: 8px;
+
+    i::before {
+        margin-left: 0;
+        margin-right: 0;
+        font-size: 1.05em;
+    }
 `;
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
-    padding: 0 16px;
-    height: 36px;
-    margin-left: 12px;
+    ${buttonCommon};
+`;
+
+const SecondaryButtonLarger = styled(SecondaryButton)`
+    ${buttonCommon};
+`;
+
+const TertiaryButtonLarger = styled(TertiaryButton)`
+    ${buttonCommon};
 `;
 
 const CheckboxInputStyled = styled(CheckboxInput)`
-    padding-right: 4px;
-    padding-left: 4px;
+    padding: 8px 16px;
     font-size: 14px;
+    height: 36px;
 
     &:hover {
         background-color: transparent;
     }
 `;
 
-const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{checked: boolean}>`
-    border: none;
+const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: boolean}>`
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
     color: rgba(var(--center-channel-color-rgb), 0.56);
-
-    padding: 0px 3px;
-    height: 24px;
-    margin: 0;
-
+    padding: 0;
 
     &:hover:enabled {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${({checked}) => checked && css`
-        border: none;
+    border: 1px solid var(--button-bg);
         color: var(--button-bg);
 
         &:hover:enabled {
@@ -347,31 +435,22 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <{ch
     `}
 `;
 
-const RightMarginedIcon = styled(Icon)`
-    margin-right: 0.5rem;
-`;
-
-const MembersIcon = styled.div`
-    display: inline-block;
+const ButtonIconStyled = styled(ButtonIcon)`
+    display: inline-flex;
+    align-items: center;
     font-size: 14px;
     line-height: 24px;
     font-weight: 600;
     border-radius: 4px;
     padding: 0px 8px;
     margin: 0;
-    margin-right: 4px;
     color: rgba(var(--center-channel-color-rgb),0.56);
-    height: 24px;
-    cursor: pointer;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-    }
+    height: 36px;
+    width: auto;
 `;
 
-const TitleButton = styled.div`
-    margin-left: 20px;
+export const TitleButton = styled.div`
+    padding-left: 16px;
     display: inline-flex;
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -385,24 +464,4 @@ const TitleButton = styled.div`
 
 const RedText = styled.div`
     color: var(--error-text);
-`;
-
-export const MetaItem = styled(PillBox)`
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 14px;
-    height: 24px;
-    padding: 3px 6px;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    display: inline-flex;
-    align-items: center;
-    border-radius: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding-left: 2px;
-    background: transparent;
-
-    svg {
-        margin-right: 4px;
-    }
 `;

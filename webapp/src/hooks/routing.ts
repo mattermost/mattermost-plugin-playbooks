@@ -1,17 +1,20 @@
-import qs from 'qs';
 import {useEffect, useMemo} from 'react';
-
-import {Team} from 'mattermost-redux/types/teams';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-
-import {getConfig} from 'mattermost-redux/selectors/entities/general';
-
 import {useSelector} from 'react-redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {PresetTemplates} from 'src/components/templates/template_data';
+import {
+    DraftPlaybookWithChecklist,
+    Playbook,
+    emptyPlaybook,
+} from 'src/types/playbook';
+import {PlaybookRole} from 'src/types/permissions';
+import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
-import {Playbook} from 'src/types/playbook';
-import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
@@ -46,6 +49,8 @@ function id(p: Playbook | Playbook['id']) {
 export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
+    const currentUserId = useSelector(getCurrentUserId);
+
     return useMemo(() => {
         function go(path: string, p?: TParam) {
             if (!urlOnly) {
@@ -59,15 +64,39 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
         }
 
         return {
-            edit: (p: TParam, tabId?: typeof tabInfo[number]['id']) => {
-                return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}`, p);
+            edit: (p: TParam) => {
+                return go(`/playbooks/${id(p)}/outline`, p);
             },
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: (params: PlaybookCreateQueryParameters) => {
-                const queryParams = qs.stringify(params, {addQueryPrefix: true});
-                return go(`/playbooks/new${queryParams}`);
+            create: async (params: PlaybookCreateQueryParameters) => {
+                const createNewPlaybook = async () => {
+                    const initialPlaybook: DraftPlaybookWithChecklist = {
+                        ...(PresetTemplates.find((t) => t.title === params.template)?.template || emptyPlaybook()),
+                        reminder_timer_default_seconds: 86400,
+                        members: [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}],
+                        team_id: params.teamId || '',
+                    };
+
+                    if (params.name) {
+                        initialPlaybook.title = params.name;
+                    }
+                    if (params.description) {
+                        initialPlaybook.description = params.description;
+                    }
+                    if (!initialPlaybook.title) {
+                        initialPlaybook.title = 'Untitled Playbook';
+                    }
+
+                    initialPlaybook.public = Boolean(params.public);
+
+                    const data = await savePlaybook(initialPlaybook);
+                    return data?.id;
+                };
+
+                const playbookId = await createNewPlaybook();
+                return go(`/playbooks/${playbookId}/outline`);
             },
         };
     }, [onGo, urlOnly]);

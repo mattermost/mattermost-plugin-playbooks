@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {Placement} from '@floating-ui/react-dom';
 
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';
@@ -59,51 +60,52 @@ export interface CheckboxOption {
 interface Props {
     options: CheckboxOption[];
     onselect: (value: string, checked: boolean) => void;
-    dotMenuButton?: typeof DotMenuButton;
+    dotMenuButton: typeof DotMenuButton;
     icon?: JSX.Element;
+    placement?: Placement;
 }
 
-const MultiCheckbox = (props: Props) => (
-    <DotMenu
-        dotMenuButton={props.dotMenuButton ?? DotMenuButtonRight}
-        icon={
-            props.icon ??
-            <IconWrapper>
-                <i className='icon icon-filter-variant'/>
-            </IconWrapper>
-        }
-        wide={true}
-    >
-        {props.options.map((option, idx) => {
-            if (option.value === 'divider') {
-                return <Divider key={'divider' + idx}/>;
+const MultiCheckbox = (props: Props) => {
+    const isFilterActive = props.options.filter((o) => o.value !== 'all' && o.disabled === false && o.selected === false).length > 0;
+    return (
+        <DotMenu
+            placement={props.placement}
+            dotMenuButton={props.dotMenuButton}
+            isActive={isFilterActive}
+            icon={
+                props.icon ??
+                <IconWrapper>
+                    <i className='icon icon-filter-variant'/>
+                </IconWrapper>
             }
-            if (option.value === 'title') {
-                return <Title key={'title' + idx}>{option.display}</Title>;
-            }
+        >
+            {props.options.map((option, idx) => {
+                if (option.value === 'divider') {
+                    return <Divider key={'divider' + idx}/>;
+                }
+                if (option.value === 'title') {
+                    return <Title key={'title' + idx}>{option.display}</Title>;
+                }
 
-            const onClick = () => props.onselect(option.value, !option.selected);
+                const onClick = () => props.onselect(option.value, !option.selected);
 
-            return (
-                <FilterCheckboxContainer
-                    key={option.value}
-                    onClick={onClick}
-                >
-                    <input
-                        type='checkbox'
-                        checked={option.selected}
-                        disabled={option.disabled}
-                        onChange={onClick}
-                    />
-                    <OptionDisplay>{option.display}</OptionDisplay>
-                </FilterCheckboxContainer>
-            );
-        })}
-    </DotMenu>
-);
-
-const DotMenuButtonRight = styled(DotMenuButton)`
-    margin: 0 16px 0 auto;
-`;
+                return (
+                    <FilterCheckboxContainer
+                        key={option.value}
+                        onClick={onClick}
+                    >
+                        <input
+                            type='checkbox'
+                            checked={option.selected}
+                            disabled={option.disabled}
+                            onChange={onClick}
+                        />
+                        <OptionDisplay>{option.display}</OptionDisplay>
+                    </FilterCheckboxContainer>
+                );
+            })}
+        </DotMenu>
+    );
+};
 
 export default MultiCheckbox;

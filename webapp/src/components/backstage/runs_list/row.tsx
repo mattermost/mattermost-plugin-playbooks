@@ -13,7 +13,6 @@ import {useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
 
-import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -72,6 +71,7 @@ const PlaybookRunItem = styled.div`
     padding-bottom: 8px;
     align-items: center;
     margin: 0;
+    background-color: var(--center-channel-bg);
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     cursor: pointer;
 

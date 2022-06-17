@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -72,6 +73,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", handler.getPlaybookRunMetadata).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -464,7 +466,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
-		playbookRun.Checklists = pb.Checklists
+		h.setPlaybookRunChecklist(&playbookRun, &pb)
 		public = pb.CreatePublicPlaybookRun
 
 		if pb.RunSummaryTemplateEnabled {
@@ -545,6 +547,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 }
 
+func (h *PlaybookRunHandler) setPlaybookRunChecklist(playbookRun *app.PlaybookRun, playbook *app.Playbook) {
+	playbookRun.Checklists = playbook.Checklists
+
+	// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
+	now := model.GetMillis()
+	for i := range playbookRun.Checklists {
+		for j := range playbookRun.Checklists[i].Items {
+			if playbookRun.Checklists[i].Items[j].DueDate > 0 {
+				playbookRun.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
+}
+
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
 	return app.GetRequesterInfo(userID, h.pluginAPI)
 }
@@ -618,13 +634,6 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunViewByChannel(userID, channelID); err != nil {
-		h.log.Warnf("User %s does not have permissions to get playbook run for channel %s", userID, channelID)
-		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
-			errors.Errorf("playbook run for channel id %s not found", channelID))
-		return
-	}
-
 	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -634,6 +643,13 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 			return
 		}
 		h.HandleError(w, err)
+		return
+	}
+
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.log.Warnf("User %s does not have permissions to get playbook run %s for channel %s", userID, playbookRunID, channelID)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
@@ -806,6 +822,50 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// getStatusUpdates handles the GET /runs/{id}/status endpoint
+//
+// Our goal is to deliver status updates to any user (when playbook is public) or
+// any playbook member (when playbook is private). To do that we need to bypass the
+// permissions system and avoid checking channel membership.
+//
+// This approach will be deprecated as a step towards channel-playbook decoupling.
+func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to get status updates", nil)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	posts := make([]*app.StatusPostComplete, 0)
+	for _, p := range playbookRun.StatusPosts {
+		post, err := h.pluginAPI.Post.GetPost(p.ID)
+		if err != nil {
+			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
+		}
+
+		// Given the fact that we are bypassing some permissions,
+		// an additional check is added to limit the risk
+		if post.Type == "custom_run_update" {
+			posts = append(posts, app.NewStatusPostComplete(post))
+		}
+	}
+
+	// sort by creation date, so that the first element is the newest post
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreateAt > posts[j].CreateAt
+	})
+
+	ReturnJSON(w, posts, http.StatusOK)
 }
 
 // restore "un-finishes" a playbook run

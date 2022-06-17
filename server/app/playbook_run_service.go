@@ -2149,6 +2149,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 	}
 
 	playbookRun.Summary = description
+	playbookRun.SummaryModifiedAt = model.GetMillis()
 	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
