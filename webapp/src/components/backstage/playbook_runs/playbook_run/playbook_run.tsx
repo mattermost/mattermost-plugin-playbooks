@@ -14,7 +14,7 @@ import {
     fetchPlaybookRunMetadata,
     fetchPlaybookRunStatusUpdates,
 } from 'src/client';
-import {useRun} from 'src/hooks';
+import {usePlaybook, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -40,6 +40,7 @@ const PlaybookRunDetails = () => {
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
+    const playbook = usePlaybook(playbookRun?.playbook_id);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -154,7 +155,12 @@ const PlaybookRunDetails = () => {
                             role={role}
                         />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
-                        <Retrospective/>
+                        <Retrospective
+                            playbookRun={playbookRun}
+                            playbook={playbook ?? null}
+                            onChange={setPlaybookRun}
+                            role={role}
+                        />
                     </Body>
                 </Main>
             </MainWrapper>
@@ -207,4 +213,3 @@ const Header = styled.header`
     min-height: 56px;
     width: 100%;
 `;
-
