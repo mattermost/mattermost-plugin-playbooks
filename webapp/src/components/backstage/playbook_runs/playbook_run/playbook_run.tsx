@@ -10,14 +10,12 @@ import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/action
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {
-    clientFetchPlaybook,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
     fetchPlaybookRunStatusUpdates,
 } from 'src/client';
-import {useRun} from 'src/hooks';
+import {usePlaybook, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
@@ -41,7 +39,7 @@ const PlaybookRunDetails = () => {
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
+    const playbook = usePlaybook(playbookRun?.playbook_id);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -105,17 +103,6 @@ const PlaybookRunDetails = () => {
                 });
         }
     }, [match.params.playbookRunId, currentRun]);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (playbookRun?.playbook_id) {
-                const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
-                setPlaybook(fetchedPlaybook ?? null);
-            }
-        };
-
-        fetchData();
-    }, [playbookRun?.playbook_id]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
