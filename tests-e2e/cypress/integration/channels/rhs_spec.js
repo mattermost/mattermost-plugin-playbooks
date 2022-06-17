@@ -30,14 +30,8 @@ describe('channels > rhs', () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
-
-            cy.apiGetConfig(true).then(({config}) => {
-                siteURL = config.SiteURL;
-            });
         });
     });
-
-    const getAppBarImageSelector = () => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
 
     beforeEach(() => {
         // # Login as testUser
@@ -397,7 +391,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // # Click the icon
-            cy.get(getAppBarImageSelector()).should('be.visible').click();
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify RHS Home shows the run details
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -415,7 +409,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Click the icon
-            cy.get(getAppBarImageSelector()).should('be.visible').click();
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -423,7 +417,7 @@ describe('channels > rhs', () => {
             });
 
             // # Click the icon
-            cy.get(getAppBarImageSelector()).should('be.visible').click();
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify the playbook run RHS is no longer open.
             cy.get('#rhsContainer').should('not.exist');

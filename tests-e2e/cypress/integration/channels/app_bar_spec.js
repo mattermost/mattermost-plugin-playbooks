@@ -14,7 +14,6 @@ describe('channels > App Bar', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
-    let siteURL;
     let appBarEnabled;
 
     before(() => {
@@ -43,7 +42,6 @@ describe('channels > App Bar', () => {
             });
 
             cy.apiGetConfig(true).then(({config}) => {
-                siteURL = config.SiteURL;
                 appBarEnabled = config.EnableAppBar === 'true';
             });
         });
@@ -57,8 +55,6 @@ describe('channels > App Bar', () => {
         cy.apiLogin(testUser);
     });
 
-    const getAppBarImageSelector = () => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
-
     describe('App Bar disabled', () => {
         it('should not show the Playbook App Bar icon', () => {
             onlyOn(!appBarEnabled);
@@ -68,7 +64,7 @@ describe('channels > App Bar', () => {
 
             // * Verify App Bar icon is not showing
             cy.get('#channel_view').within(() => {
-                cy.get(getAppBarImageSelector()).should('not.exist');
+                cy.getPlaybooksAppBarIcon().should('not.exist');
             });
         });
     });
@@ -82,7 +78,7 @@ describe('channels > App Bar', () => {
 
             // * Verify App Bar icon is showing
             cy.get('#channel_view').within(() => {
-                cy.get(getAppBarImageSelector()).should('exist');
+                cy.getPlaybooksAppBarIcon().should('exist');
             });
         });
 
@@ -94,7 +90,7 @@ describe('channels > App Bar', () => {
                 cy.visit(`/${testTeam.name}/channels/town-square`);
 
                 // # Hover over the channel header icon
-                cy.get(getAppBarImageSelector()).trigger('mouseover');
+                cy.getPlaybooksAppBarIcon().trigger('mouseover');
 
                 // * Verify tooltip text
                 cy.findByRole('tooltip', {name: 'Toggle Playbook List'}).should('be.visible');
@@ -107,7 +103,7 @@ describe('channels > App Bar', () => {
                 cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
                 // # Hover over the channel header icon
-                cy.get(getAppBarImageSelector()).trigger('mouseover');
+                cy.getPlaybooksAppBarIcon().trigger('mouseover');
                 cy.wait(TIMEOUTS.HALF_SEC);
 
                 // * Verify tooltip text

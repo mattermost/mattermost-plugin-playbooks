@@ -40,6 +40,13 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
+// Opens Playbooks RHS using the app bar icon
+Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
+    cy.apiGetConfig(true).then(({config}) => {
+        return cy.get(`.app-bar .app-bar__icon-inner img[src="${config.SiteURL}/plugins/playbooks/public/app-bar-icon.png"]`);
+    });
+});
+
 // Starts playbook run from the playbook run RHS
 // function startPlaybookRunFromRHS(playbookName, playbookRunName) {
 Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) => {
@@ -48,7 +55,7 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
         cy.get('#channelHeaderFlagButton').click();
 
         // open the playbook run RHS
-        cy.get('#incidentIcon').click();
+        cy.getPlaybooksAppBarIcon().should('exist').click();
     });
 
     cy.get('#rhsContainer').should('exist').within(() => {

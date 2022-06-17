@@ -63,7 +63,7 @@ describe('channels > channel header', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
-            // * Verify channel header button is showing
+            // * Verify channel header button is not showing
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('not.exist');
             });
