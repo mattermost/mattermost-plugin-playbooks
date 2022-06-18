@@ -360,7 +360,7 @@
     "Mu2aDs": "Mindenkinek a csapatban (<b>{team}</b>) van hozzáférése.",
     "iXNbPf": "Átnevezés",
     "2/2yg+": "Hozzáadás",
-    "vaYTD+": "Van # megoldatlan feladat. Biztos, hogy be akarja fejezni a futást?",
+    "vaYTD+": "Van {outstanding, plural, =1 {egy} other {#}} megoldatlan feladat. Biztos, hogy be akarja fejezni a futást?",
     "q0cpUe": "Ellenőrzőlista létrehozása",
     "nSFBC2": "+ Új feladat",
     "m/Q4ye": "Ellenőrzőlista átnevezése",
@@ -559,7 +559,7 @@
     "5ZIN3u": "Állapot frissítések",
     "k12r+v": "Futás összefoglaló sablon hozzáadása...",
     "RrCui3": "Összefoglaló",
-    "+PMJAg": "Kezdje meg a követést # felhasználó számára",
+    "+PMJAg": "Kezdje meg a követést {followers, plural, =1 {egy} other {#}} felhasználó számára",
     "x1phlu": "Nincs időablak",
     "kYCbJE": "Idő ablak megadása",
     "xHNF7i": "Műveletek futtatása",
@@ -600,5 +600,6 @@
     "bf5rs0": "Információk megtekintése",
     "Q15rLN": "Frissítés kérése...",
     "GDCpPr": "Legújabb állapot frissítés",
-    "+qDKgW": "Összes frissítés megtekintése"
+    "+qDKgW": "Összes frissítés megtekintése",
+    "kkw4kS": "Ez a frissítés közzé lesz téve {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {egy csatornában} other {{broadcastChannelCount, number} csatornában}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { és } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {egy közvetlen üzenetben} other {{followersChannelCount, number} közvetlen üzenetben}}</FollowersTooltip>} other {}}."
 }
