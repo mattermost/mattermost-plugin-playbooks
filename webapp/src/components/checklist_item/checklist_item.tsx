@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
@@ -61,7 +62,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
-    useEffect(() => {
+    useUpdateEffect(() => {
         setAssigneeID(props.checklistItem.assignee_id);
         setCommand(props.checklistItem.command);
         setDueDate(props.checklistItem.due_date);

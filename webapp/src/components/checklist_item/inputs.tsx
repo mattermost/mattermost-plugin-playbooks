@@ -1,5 +1,6 @@
 
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -16,8 +17,7 @@ interface CheckBoxButtonProps {
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
 
-    // Needed to have live update in multiple users/devices
-    useEffect(() => {
+    useUpdateEffect(() => {
         setIsChecked(props.item.state === ChecklistItemState.Closed);
     }, [props.item.state]);
 
