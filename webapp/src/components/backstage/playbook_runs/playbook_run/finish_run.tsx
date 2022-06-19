@@ -47,7 +47,7 @@ const FinishRun = ({playbookRun}: Props) => {
 export default FinishRun;
 
 const Container = styled.div`
-    margin: 24px 0;
+    margin-top: 24px;
     display: flex;
     flex-direction: column;
 `;

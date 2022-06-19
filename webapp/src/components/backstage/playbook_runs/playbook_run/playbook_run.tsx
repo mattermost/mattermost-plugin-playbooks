@@ -14,7 +14,7 @@ import {
     fetchPlaybookRunMetadata,
     fetchPlaybookRunStatusUpdates,
 } from 'src/client';
-import {useRun} from 'src/hooks';
+import {usePlaybook, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -57,6 +57,7 @@ const PlaybookRunDetails = () => {
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
+    const playbook = usePlaybook(playbookRun?.playbook_id);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -142,7 +143,12 @@ const PlaybookRunDetails = () => {
                         )}
                         <Checklists playbookRun={playbookRun}/>
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
-                        <Retrospective/>
+                        <Retrospective
+                            playbookRun={playbookRun}
+                            playbook={playbook ?? null}
+                            onChange={setPlaybookRun}
+                            role={role}
+                        />
                     </Body>
                 </Main>
             </MainWrapper>
@@ -177,7 +183,7 @@ const Container = styled(ColumnContainer)`
     flex: 1;
 `;
 
-const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+const MainWrapper = styled.div<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -186,10 +192,10 @@ const MainWrapper = styled.main<{isRHSOpen: boolean}>`
 
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
-    min-width: 500px;
+    width: min(780px, 100%);
     padding: 20px;
     flex: 1;
-    margin: 0 auto;
+    margin: 40px auto;
     display: flex;
     flex-direction: column;
 `;
@@ -197,7 +203,11 @@ const Body = styled(RowContainer)`
 `;
 
 const Header = styled.header`
+    height: 56px;
     min-height: 56px;
-    width: 100%;
+    width: calc(100% - 239px);
+    z-index: 2;
+    position: fixed;
+    background-color: var(--center-channel-bg);
+    display:flex;
 `;
-

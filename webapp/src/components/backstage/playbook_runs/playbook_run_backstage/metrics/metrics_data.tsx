@@ -15,12 +15,12 @@ import {VerticalSpacer} from 'src/components/backstage/styles';
 interface MetricsProps {
     metricsData: RunMetricData[];
     metricsConfigs: Metric[];
-    isPublished: boolean;
+    notEditable: boolean;
     onEdit: (metricsData: RunMetricData[]) => void;
     flushChanges: () => void;
 }
 
-const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdit, flushChanges}: MetricsProps, ref) => {
+const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdit, flushChanges}: MetricsProps, ref) => {
     const {formatMessage} = useIntl();
 
     const [inputsValues, setInputsValues] = useState(() => {
@@ -127,7 +127,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                                 inputIcon={inputIcon}
                                 inputRef={inputRef}
                                 onChange={(e) => updateMetrics(idx, e)}
-                                disabled={isPublished}
+                                disabled={notEditable}
                             />
                         </div>
                     );

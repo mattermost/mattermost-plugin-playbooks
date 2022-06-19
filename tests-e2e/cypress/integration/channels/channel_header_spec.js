@@ -6,14 +6,14 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {onlyOn} from '@cypress/skip-test'
+import {onlyOn} from '@cypress/skip-test';
 
 describe('channels > channel header', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
     let testPlaybookRun;
-    let appBarFeatureFlagEnabled;
+    let appBarEnabled;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -43,7 +43,7 @@ describe('channels > channel header', () => {
             });
 
             cy.apiGetConfig(true).then(({config}) => {
-                appBarFeatureFlagEnabled = config.FeatureFlagAppBarEnabled === 'true';
+                appBarEnabled = config.EnableAppBar === 'true';
             });
         });
     });
@@ -56,23 +56,23 @@ describe('channels > channel header', () => {
         cy.apiLogin(testUser);
     });
 
-    describe('App Bar feature flag enabled', () => {
+    describe('App Bar enabled', () => {
         it('webapp should hide the Playbook channel header button', () => {
-            onlyOn(appBarFeatureFlagEnabled);
+            onlyOn(appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
-            // * Verify channel header button is showing
+            // * Verify channel header button is not showing
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('not.exist');
             });
         });
     });
 
-    describe('App Bar feature flag disabled', () => {
+    describe('App Bar disabled', () => {
         it('webapp should show the Playbook channel header button', () => {
-            onlyOn(!appBarFeatureFlagEnabled);
+            onlyOn(!appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
@@ -85,7 +85,7 @@ describe('channels > channel header', () => {
 
         describe('tooltip text', () => {
             it('should show "Toggle Playbook List" outside a playbook run channel', () => {
-                onlyOn(!appBarFeatureFlagEnabled);
+                onlyOn(!appBarEnabled);
 
                 // # Navigate directly to a non-playbook run channel
                 cy.visit(`/${testTeam.name}/channels/town-square`);
@@ -100,7 +100,7 @@ describe('channels > channel header', () => {
             });
 
             it('should show "Toggle Run Details" inside a playbook run channel', () => {
-                onlyOn(!appBarFeatureFlagEnabled);
+                onlyOn(!appBarEnabled);
 
                 // # Navigate directly to a playbook run channel
                 cy.visit(`/${testTeam.name}/channels/playbook-run`);
