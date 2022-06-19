@@ -169,6 +169,7 @@ const PlaybookRunDetails = () => {
             <RightHandSidebar
                 isOpen={isRHSOpen}
                 title={RHSData?.title}
+                subtitle={playbookRun.name}
                 onClose={() => setIsRHSOpen(false)}
             >
                 {RHSData?.content}
