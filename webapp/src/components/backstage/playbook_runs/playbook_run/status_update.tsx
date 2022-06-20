@@ -65,7 +65,7 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
 interface ViewerProps {
     playbookRun: PlaybookRun;
     lastStatusUpdate?: StatusPostComplete;
-    openRHS: (section: RHSContent, title: React.ReactNode) => void;
+    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
 export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
@@ -110,7 +110,7 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
             <Content isShort={false}>
                 {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
             </Content>
-            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}))}>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
         </Container>
@@ -119,7 +119,7 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
 
 interface ParticipantProps {
     playbookRun: PlaybookRun;
-    openRHS: (section: RHSContent, title: React.ReactNode) => void;
+    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
 export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps) => {
@@ -157,7 +157,7 @@ export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps
                     </ActionButton>
                     <Kebab>
                         <DotMenu icon={<ThreeDotsIcon/>}>
-                            <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}))}>
+                            <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                                 <FormattedMessage defaultMessage='View all updates'/>
                             </DropdownMenuItemStyled>
                         </DotMenu>

@@ -40,17 +40,19 @@ const useRHS = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(null);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(null);
 
-    const open = (_section: RHSContent, _title: React.ReactNode) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
+        setSubtitle(_subtitle);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, open, close};
+    return {isOpen, section, title, subtitle, open, close};
 };
 
 const PlaybookRunDetails = () => {
@@ -161,6 +163,7 @@ const PlaybookRunDetails = () => {
             <RightHandSidebar
                 isOpen={RHS.isOpen}
                 title={RHS.title}
+                subtitle={RHS.subtitle}
                 onClose={RHS.close}
             >
                 {RHSContent.RunStatusUpdates === RHS.section ? (
