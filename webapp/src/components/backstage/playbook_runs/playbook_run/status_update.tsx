@@ -168,7 +168,7 @@ export const ParticipantStatusUpdate = ({playbookRun, onViewAllUpdates}: Partici
 };
 
 const Container = styled.div`
-    margin: 8px 0 25px 0;
+    margin: 8px 0 16px 0;
     display: flex;
     flex-direction: column;
 `;
@@ -184,7 +184,7 @@ const Content = styled.div<{isShort: boolean}>`
 `;
 
 const Header = styled.div`
-    margin-top: 20px;
+    margin-top: 16px;
     margin-bottom: 4px;
     display: flex;
     flex: 1;

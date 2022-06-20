@@ -209,7 +209,7 @@ const TimestampContainer = styled.div`
 `;
 
 const Container = styled.div`
-    margin-top: 24px;
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
 `;
