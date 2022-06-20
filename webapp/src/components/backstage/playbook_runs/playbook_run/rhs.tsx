@@ -40,6 +40,7 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
         >
             <Header>
                 <HeaderTitle>{title}</HeaderTitle>
+                <HeaderVerticalDivider/>
                 {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
                 <HeaderIcon>
                     <i
@@ -102,15 +103,18 @@ const HeaderTitle = styled.div`
     white-space: nowrap;
 `;
 
+const HeaderVerticalDivider = styled.div`
+    height: 2.4rem;
+    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    margin: 0 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    align-self: center;
+`;
+
 const HeaderSubtitle = styled.div`
     overflow: hidden;
-    height: 2.4rem;
-    padding: 0 8px;
-    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    margin: 0 0 0 8px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
-    line-height: 2.4rem;
     text-overflow: ellipsis;
     white-space: nowrap;
     align-self: center;
