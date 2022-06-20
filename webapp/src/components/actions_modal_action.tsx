@@ -2,11 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 import {Toggle as BasicToggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {ChannelAction, ChannelActionType} from 'src/types/channel_actions';
 
 interface Props {
     enabled: boolean;

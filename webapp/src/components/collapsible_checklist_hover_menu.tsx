@@ -43,8 +43,7 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                topPx={15}
-                leftPx={-189}
+                placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem onClick={props.onRenameChecklist}>

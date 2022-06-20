@@ -1,8 +1,8 @@
-import React, {useRef, useState, RefObject} from 'react';
+import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {useUpdate, useUpdateEffect} from 'react-use';
+import {useUpdateEffect} from 'react-use';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
@@ -36,6 +36,16 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
         setValue(props.value);
     }, [props.value]);
 
+    const save = () => {
+        setIsEditing(false);
+        props.onSave(value);
+    };
+
+    const cancel = () => {
+        setIsEditing(false);
+        setValue(props.value);
+    };
+
     if (isEditing) {
         return (
             <MarkdownEditContainer
@@ -52,16 +62,17 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
                     autoFocus={true}
                     disabled={props.disabled}
                     previewDisabled={props.previewDisabled ?? true}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            cancel();
+                        }
+                    }}
                 />
                 <CancelSaveButtons
-                    onCancel={() => {
-                        setIsEditing(false);
-                        setValue(props.value);
-                    }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        props.onSave(value);
-                    }}
+                    onCancel={cancel}
+                    onSave={save}
                 />
             </MarkdownEditContainer>
         );

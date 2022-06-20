@@ -112,6 +112,7 @@ const PlaybookEditor = () => {
                 <div>
                     <Controls.Back/>
                     <TextEdit
+                        disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -133,7 +134,6 @@ const PlaybookEditor = () => {
 
                                 <Controls.TitleMenu
                                     playbook={playbook}
-                                    archived={archived}
                                     editTitle={edit}
                                     refetch={refetch}
                                 >
@@ -187,7 +187,6 @@ const PlaybookEditor = () => {
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}
-                                archived={archived}
                                 editTitle={edit}
                                 refetch={refetch}
                             >
@@ -200,6 +199,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
+                        disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -416,6 +416,7 @@ const TitleHeaderBackdrop = styled.div`
 `;
 
 const Editor = styled.main<{$headingVisible: boolean}>`
+    flex: 1 1 auto;
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);

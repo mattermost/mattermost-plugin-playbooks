@@ -13,7 +13,7 @@ import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
 
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
-import {BackstageSubheader, BackstageSubheaderDescription, StyledMarkdownTextbox, StyledSelect} from 'src/components/backstage/styles';
+import {BackstageSubheader, BackstageSubheaderDescription, StyledSelect} from 'src/components/backstage/styles';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {savePlaybook} from 'src/client';
 
@@ -40,6 +40,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const archived = playbook.delete_at !== 0;
 
     if (!retrospectiveAccess) {
         return null;
@@ -67,14 +68,14 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     options={retrospectiveReminderOptions}
                     isClearable={false}
-                    isDisabled={!playbook.retrospective_enabled}
+                    isDisabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
                 <BackstageSubheader>
                     {formatMessage({defaultMessage: 'Key metrics'})}
                     <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics
@@ -85,7 +86,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={!playbook.retrospective_enabled}
+                    disabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -104,7 +105,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled}
+                    disabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
         </Card>

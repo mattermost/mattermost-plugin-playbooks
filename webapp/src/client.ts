@@ -20,6 +20,7 @@ import {
     isMetadata,
     Metadata,
     RunMetricData,
+    StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -62,6 +63,10 @@ export const getSiteUrl = (): string => {
     return siteURL;
 };
 
+export const getApiUrl = (): string => {
+    return apiUrl;
+};
+
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
@@ -84,6 +89,10 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function fetchPlaybookRunStatusUpdates(id: string) {
+    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
 export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
@@ -281,6 +290,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
         data = [];
     }
     return data as OwnerInfo[];
+}
+
+export async function finishRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
 }
 
 export async function setOwner(playbookRunId: string, ownerId: string) {
