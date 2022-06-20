@@ -32,19 +32,19 @@ describe('channels > rhs > template', () => {
             // # Switch to playbooks DM channel
             cy.visit(`/${team1.name}/messages/@playbooks`);
            
-            // Open playbooks RHS.
+            // # Open playbooks RHS.
             cy.get('button > .icon-product-playbooks').click();
 
-            // Return first template (Blank) 
+            // # Return first template (Blank) 
             cy.contains('Use').click();
 
-            // Assert playbooks creation modal is shown.
+            // * Assert playbooks creation modal is shown.
             cy.get('#playbooks_create').should('exist');
 
-            // Click create playbook button.
+            // # Click create playbook button.
             cy.get('button[data-testid=modal-confirm-button]').click();
 
-            // Navigate to playbooks creation url.
+            // * Assert that we navigated to the playbook creation URL.
             cy.url().should('include', 'template=Blank') 
         });
     });
