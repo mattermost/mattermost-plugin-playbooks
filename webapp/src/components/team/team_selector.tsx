@@ -38,7 +38,6 @@ interface Props {
     teams: Team[];
     onSelectedChange?: (teamId: string) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
 }
 
 const dropdownYShift = 27;
@@ -227,7 +226,6 @@ export default function TeamSelector(props: Props) {
             isOpen={isOpen}
             onClose={toggleOpen}
             target={target}
-            showOnRight={props.showOnRight}
             moveUp={moveUp}
         >
             <ReactSelect

@@ -123,7 +123,7 @@ export const DueDateHoverMenuButton = ({
                 onCustomReset: resetDueDate,
             }}
             controlledOpenToggle={dateTimeSelectorToggle}
-            showOnRight={true}
+            dropdownMoveRightPx={-55}
         />
     );
 };
@@ -225,7 +225,7 @@ export const DueDateButton = ({
                     onCustomReset: resetDueDate,
                 }}
                 controlledOpenToggle={dateTimeSelectorToggle}
-                showOnRight={showOnRight}
+                dropdownMoveRightPx={showOnRight ? -55 : undefined}
             />
             {upgradeModal}
         </DueDateContainer>
