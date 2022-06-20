@@ -4,19 +4,19 @@
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {GlobalState} from 'mattermost-redux/types/store';
 
+import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
+import {getRun} from 'src/selectors';
+import {usePlaybook} from 'src/hooks';
 import {
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
     fetchPlaybookRunStatusUpdates,
 } from 'src/client';
-import {usePlaybook, useRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
-
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import Summary from './summary';
@@ -52,50 +52,52 @@ const useRHS = () => {
 };
 
 const PlaybookRunDetails = () => {
-    const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
-    const currentRun = useRun(match.params.playbookRunId);
+    const playbookRunId = match.params.playbookRunId;
+
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const playbook = usePlaybook(playbookRun?.playbook_id);
     const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
-
-    const RHS = useRHS();
-
     const myUser = useSelector(getCurrentUser);
 
-    useEffect(() => {
-        const playbookRunId = match.params.playbookRunId;
+    const RHS = useRHS();
+    const runFromStore = useSelector<GlobalState, PlaybookRun|undefined|null>(getRun(playbookRunId));
 
-        if (currentRun) {
-            // re-download status updates if status_posts size is different
-            if (playbookRun && currentRun.status_posts.length !== playbookRun.status_posts.length) {
-                fetchPlaybookRunStatusUpdates(playbookRunId).then((statusUpdatesResult) => {
-                    setStatusUpdates(statusUpdatesResult || []);
-                });
-            }
-            setPlaybookRun(currentRun);
-        } else {
-            Promise
-                .all([
-                    fetchPlaybookRun(playbookRunId),
-                    fetchPlaybookRunMetadata(playbookRunId),
-                    fetchPlaybookRunStatusUpdates(playbookRunId),
-                ])
-                .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
-                    setPlaybookRun(playbookRunResult);
-                    setPlaybookRunMetadata(playbookRunMetadataResult || null);
-                    setFetchingState(FetchingStateType.fetched);
-                    setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-                    setStatusUpdates(statusUpdatesResult || []);
-                }).catch(() => {
-                    setFetchingState(FetchingStateType.notFound);
-                });
+    // Trigger multiple parallel fetch if the URL param changes
+    useEffect(() => {
+        if (playbookRunId !== playbookRun?.id && RHS.isOpen) {
+            RHS.close();
         }
-    }, [match.params.playbookRunId, currentRun]);
+
+        Promise
+            .all([
+                fetchPlaybookRun(playbookRunId),
+                fetchPlaybookRunMetadata(playbookRunId),
+                fetchPlaybookRunStatusUpdates(playbookRunId),
+            ])
+            .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
+                setPlaybookRun(playbookRunResult);
+                setPlaybookRunMetadata(playbookRunMetadataResult || null);
+                setFetchingState(FetchingStateType.fetched);
+                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+                setStatusUpdates(statusUpdatesResult || []);
+            }).catch(() => {
+                setFetchingState(FetchingStateType.notFound);
+            });
+    }, [match.params.playbookRunId]);
+
+    // re-download status updates if status_posts size is different
+    useEffect(() => {
+        if (runFromStore && runFromStore.status_posts.length !== playbookRun?.status_posts.length) {
+            fetchPlaybookRunStatusUpdates(playbookRunId).then((statusUpdatesResult) => {
+                setStatusUpdates(statusUpdatesResult || []);
+            });
+        }
+    }, [runFromStore?.status_posts.length]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
