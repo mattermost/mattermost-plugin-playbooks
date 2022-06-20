@@ -590,5 +590,15 @@
     "oL7YsP": "Ostatnio edytowane {timestamp}",
     "Z2Hfu4": "Dodaj podsumowanie przebiegu",
     "TD8WrM": "Duplikowanie jest wyłączone dla tego zespołu.",
-    "OQplDX": "Oczekuje się aktualizacji statusu co <duration></duration>. Nowe aktualizacje będą przesyłane do <channels>{channelCount, plural, =0 {brak kanałów} one {# kanału} other {# kanałów}}</channels> i <webhooks>{webhookCount, plural, =0 {brak wychodzących webhooków} one {# wychodzącego webhooka} other {# wychodzących webhooków}}</webhooks> ."
+    "OQplDX": "Oczekuje się aktualizacji statusu co <duration></duration>. Nowe aktualizacje będą przesyłane do <channels>{channelCount, plural, =0 {brak kanałów} one {# kanału} other {# kanałów}}</channels> i <webhooks>{webhookCount, plural, =0 {brak wychodzących webhooków} one {# wychodzącego webhooka} other {# wychodzących webhooków}}</webhooks> .",
+    "opn6uf": "Zobacz oś czasu",
+    "o6N9pU": "Akcje Uruchomień",
+    "lbr3Lq": "Kopiuj link",
+    "iigkp8": "Czas na podsumowanie?",
+    "hjteuA": "Wszystkie playbooki, do których można uzyskać dostęp, będą widoczne tutaj",
+    "bf5rs0": "Wyświetl Informacje",
+    "ZJS10z": "Nie zamieszczono jeszcze żadnych aktualizacji",
+    "Q15rLN": "Prośba o aktualizację...",
+    "GDCpPr": "Ostatnia aktualizacja statusu",
+    "+qDKgW": "Wyświetl wszystkie aktualizacje"
 }
