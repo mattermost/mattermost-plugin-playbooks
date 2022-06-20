@@ -51,8 +51,8 @@
     {
         "id": "app.user.digest.tasks.due_after_today",
         "translation": {
-            "one": "Du har **{{{.Count}} tilldelad uppgift som ska utföras idag**.",
-            "other": "Du har **{{{.Count}} tilldelade uppgifter som ska utföras idag**."
+            "one": "Du har **{{.Count}} tilldelad uppgift som ska utföras idag**.",
+            "other": "Du har **{{.Count}} tilldelade uppgifter som ska utföras idag**."
         }
     },
     {
