@@ -52,7 +52,7 @@ describe('channels > rhs > template', () => {
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 
                 // # Open playbooks RHS.
-                cy.get('button > .icon-product-playbooks').click();
+                cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                 // # Return first template (Blank)
                 cy.contains('Use').click();
