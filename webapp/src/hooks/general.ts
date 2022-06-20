@@ -43,7 +43,7 @@ import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
+import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 
 import {
@@ -54,7 +54,6 @@ import {
 import {
     globalSettings,
     isCurrentUserAdmin,
-    myPlaybookRunsByTeam,
 } from '../selectors';
 import {resolve} from 'src/utils';
 
@@ -345,14 +344,7 @@ export function usePost(postId: string) {
 }
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
-    return useThing(runId, fetchPlaybookRun, (state) => {
-        const runsByTeam = myPlaybookRunsByTeam(state);
-        if (teamId && channelId) {
-            // use efficient path
-            return runsByTeam[teamId]?.[channelId];
-        }
-        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
-    });
+    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
 }
 
 export function useChannel(channelId: string) {
