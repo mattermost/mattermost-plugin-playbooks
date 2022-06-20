@@ -10,10 +10,10 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 
 interface WithFinishRun {
     playbookRun: PlaybookRun;
-    children?: React.ReactNode;
+    children: React.ReactNode;
 }
 
-export default function withFinishRun<T extends WithFinishRun>(ChildComponent: React.ComponentType<T>) {
+export default function withFinishRun<T extends WithFinishRun>(ChildComponent: React.ComponentType<T & {onClick: any}>) {
     return (props: T) => {
         const dispatch = useDispatch();
         const {formatMessage} = useIntl();
