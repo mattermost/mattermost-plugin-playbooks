@@ -468,7 +468,7 @@
     "QbGfqo": "Šalji sudionicima i zadrži dokument za retrospektivu sa samo jednom objavom.",
     "vL4++D": "Prati napredak i vlasništvo",
     "q/VD+s": "Postavi mjerače vremena i sastavi predložak za aktualiziranje stanja kako bi sudionici uvijek bili informirani o tijeku razvoja.",
-    "Tt04f1": "Pogledaj tko je uključen i što treba učiniti bez napuštanja razgovora.",
+    "Tt04f1": "Pogledaj tko je uključen i što se mora obaviti bez napuštanja razgovora.",
     "1ikfp3": "Ako izbrišeš ovaj mjerni podatak, vrijednosti za njega neće se prikupljati za nijedno buduće izvođenje.",
     "wPVxBN": "",
     "JrZ2th": "Dodaj mjerni podatak",
@@ -586,5 +586,15 @@
     "OQplDX": "Aktualiziranje stanja se očekuju svakih <duration></duration>. Nova aktualiziranja će se slati na <channels>{channelCount, plural, =0 {nijedan kanal} one {# kanal} few {# kanala} other {# kanala}}</channels> i <webhooks>{webhookCount, plural, =0 {nijedan izlazni webhook} one {# izlazni webhook} few {# izlazna webhooka} other {# izlaznih webhooka}}</webhooks>.",
     "vSMfYU": "Podaci izvođenja",
     "oL7YsP": "Zadnja promjena {timestamp}",
-    "Z2Hfu4": "Dodaj sažetak izvođenja"
+    "Z2Hfu4": "Dodaj sažetak izvođenja",
+    "o6N9pU": "Pokreni radnje",
+    "iigkp8": "Vrijeme za dovršavanje?",
+    "hjteuA": "Ovdje će se prikazati svi priručnici kojima možeš pristupiti",
+    "ZJS10z": "Još nije objavljeno nijedno aktualiziranje",
+    "Q15rLN": "Zatraži aktualiziranje …",
+    "GDCpPr": "Nedavno aktualiziranje stanja",
+    "+qDKgW": "Pogledaj sva aktualiziranja",
+    "opn6uf": "Pogledaj kronologiju",
+    "lbr3Lq": "Kopiraj poveznicu",
+    "bf5rs0": "Pogledaj informacije"
 }
