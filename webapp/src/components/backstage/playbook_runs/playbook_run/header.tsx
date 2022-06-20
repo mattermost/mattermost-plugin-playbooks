@@ -12,9 +12,10 @@ import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
-import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
+import {Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
+import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -34,6 +35,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) =>
         <Container>
             {/* <Icon className={'icon-star'}/> */}
             <ContextMenu playbookRun={playbookRun}/>
+            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
@@ -102,4 +104,9 @@ const StyledCopyLink = styled(CopyLink)`
     margin-left: 4px;
     display: grid;
     place-items: center;
+`;
+
+const StyledBadge = styled(Badge)`
+    margin-left: 8px;
+    margin-right: 6px;
 `;

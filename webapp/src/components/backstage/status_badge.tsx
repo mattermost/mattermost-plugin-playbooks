@@ -65,13 +65,13 @@ const StatusBadge = (props: BadgeProps) => {
     let message;
     switch (props.status) {
     case BadgeType.InProgress:
-        message = <FormattedMessage defaultMessage='In Progress'/>;
+        message = <FormattedMessage defaultMessage='IN PROGRESS'/>;
         break;
     case BadgeType.Finished:
-        message = <FormattedMessage defaultMessage='Finished'/>;
+        message = <FormattedMessage defaultMessage='FINISHED'/>;
         break;
     case BadgeType.Archived:
-        message = <FormattedMessage defaultMessage='Archived'/>;
+        message = <FormattedMessage defaultMessage='ARCHIVED'/>;
         break;
     }
 
