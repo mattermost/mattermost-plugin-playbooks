@@ -9,7 +9,7 @@
 describe('channels > rhs > template', () => {
     let team1;
     let testUser;
-   
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             team1 = team;
@@ -25,27 +25,47 @@ describe('channels > rhs > template', () => {
         cy.apiLogin(testUser);
     });
 
-    describe('create playbook by RHS', () => {
-      
-        it('open new playbook creation modal and navigate to playbooks', () => {
-           
-            // # Switch to playbooks DM channel
-            cy.visit(`/${team1.name}/messages/@playbooks`);
-           
-            // # Open playbooks RHS.
-            cy.get('button > .icon-product-playbooks').click();
+    describe('create playbook', () => {
+        describe('open new playbook creation modal and navigates to playbooks', () => {
+            it('after clicking on Use', () => {
+                // # Switch to playbooks DM channel
+                cy.visit(`/${team1.name}/messages/@playbooks`);
 
-            // # Return first template (Blank) 
-            cy.contains('Use').click();
+                // # Open playbooks RHS.
+                cy.get('button > .icon-product-playbooks').click();
 
-            // * Assert playbooks creation modal is shown.
-            cy.get('#playbooks_create').should('exist');
+                // # Return first template (Blank)
+                cy.contains('Blank').click();
 
-            // # Click create playbook button.
-            cy.get('button[data-testid=modal-confirm-button]').click();
+                // * Assert playbooks creation modal is shown.
+                cy.get('#playbooks_create').should('exist');
 
-            // * Assert that we navigated to the playbook creation URL.
-            cy.url().should('include', 'template=Blank') 
+                // # Click create playbook button.
+                cy.get('button[data-testid=modal-confirm-button]').click();
+
+                // * Assert expected playbook template title in outline.
+                cy.findByTestId('playbook-editor-title').contains('Blank');
+            });
+
+            it('after clicking on title', () => {
+                // # Switch to playbooks DM channel
+                cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                // # Open playbooks RHS.
+                cy.get('button > .icon-product-playbooks').click();
+
+                // # Return first template (Blank)
+                cy.contains('Use').click();
+
+                // * Assert playbooks creation modal is shown.
+                cy.get('#playbooks_create').should('exist');
+
+                // # Click create playbook button.
+                cy.get('button[data-testid=modal-confirm-button]').click();
+
+                // * Assert expected playbook template title in outline.
+                cy.findByTestId('playbook-editor-title').contains('Blank');
+            });
         });
     });
 });

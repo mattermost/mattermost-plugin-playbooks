@@ -14,7 +14,7 @@ import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {startPlaybookRunById, displayPlaybookCreateModal} from 'src/actions';
+import {startPlaybookRunById} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -267,7 +267,6 @@ export const RHSHomeTemplate = ({
     onUse,
 }: RHSHomeTemplateProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
     const linkRef = useRef(null);
     return (
         <Item>
@@ -316,7 +315,7 @@ export const RHSHomeTemplate = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => dispatch(displayPlaybookCreateModal({startingTemplate: template.title}))}>
+            <RunButton onClick={() => onUse(template)}>
                 <Icon
                     path={mdiOpenInNew}
                     size={1.5}
