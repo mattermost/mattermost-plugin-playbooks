@@ -38,7 +38,7 @@ const Summary = ({
     );
 
     return (
-        <Container>
+        <Container data-testid={'run-summary-section'}>
             <Header>
                 <AnchorLinkTitle
                     title={title}

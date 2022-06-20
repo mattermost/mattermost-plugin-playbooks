@@ -87,7 +87,7 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
     };
 
     return (
-        <Container>
+        <Container data-testid={'run-statusupdate-section'}>
             <Header>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Recent status update'})}

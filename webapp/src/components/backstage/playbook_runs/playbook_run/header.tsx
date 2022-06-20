@@ -31,7 +31,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) =>
     const {formatMessage} = useIntl();
 
     return (
-        <Container>
+        <Container data-testid={'run-header-section'}>
             {/* <Icon className={'icon-star'}/> */}
             <ContextMenu playbookRun={playbookRun}/>
             <HeaderButton

@@ -25,7 +25,7 @@ const FinishRun = ({playbookRun}: Props) => {
     const onFinishRun = () => null;
 
     return (
-        <Container>
+        <Container data-testid={'run-finish-section'}>
             <Content>
                 <IconWrapper>
                     <Icon

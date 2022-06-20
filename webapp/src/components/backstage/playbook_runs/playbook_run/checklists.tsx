@@ -12,7 +12,7 @@ interface Props {
 }
 const Checklists = ({playbookRun}: Props) => {
     return (
-        <Container>
+        <Container data-testid={'run-checklist-section'}>
             <RHSChecklistList
                 playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}

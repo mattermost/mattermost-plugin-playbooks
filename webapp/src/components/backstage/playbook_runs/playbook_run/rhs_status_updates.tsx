@@ -19,7 +19,7 @@ const RHSStatusUpdates = ({playbookRun, statusUpdates}: Props) => {
     }
 
     return (
-        <Container>
+        <Container data-testid={'run-rhs-statusupdates'}>
             {statusUpdates.map((post) => (
                 <Wrapper key={post.id}>
                     <StatusUpdateCard post={post}/>

@@ -120,7 +120,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
     );
 };
 
-const Title = styled.div`
+const Title = styled.h1`
     ${SemiBoldHeading}
     letter-spacing: -0.01em;
     font-size: 16px;
