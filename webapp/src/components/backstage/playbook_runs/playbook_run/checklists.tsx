@@ -10,11 +10,11 @@ import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklis
 interface Props {
     playbookRun: PlaybookRun;
 }
-const Checklists = (props: Props) => {
+const Checklists = ({playbookRun}: Props) => {
     return (
         <Container>
             <RHSChecklistList
-                playbookRun={props.playbookRun}
+                playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
             />
         </Container>);
