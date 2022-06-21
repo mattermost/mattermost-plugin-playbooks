@@ -4,7 +4,6 @@
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -27,6 +26,7 @@ import Retrospective from './retrospective';
 import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
+import RHSInfo from './rhs_info';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -52,13 +52,11 @@ const useRHS = () => {
 };
 
 const PlaybookRunDetails = () => {
-    const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
     const currentRun = useRun(match.params.playbookRunId);
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [following, setFollowing] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
@@ -89,7 +87,6 @@ const PlaybookRunDetails = () => {
                     setPlaybookRun(playbookRunResult);
                     setPlaybookRunMetadata(playbookRunMetadataResult || null);
                     setFetchingState(FetchingStateType.fetched);
-                    setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
                     setStatusUpdates(statusUpdatesResult || []);
                 }).catch(() => {
                     setFetchingState(FetchingStateType.notFound);
@@ -112,6 +109,28 @@ const PlaybookRunDetails = () => {
 
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
+
+    let rhsComponent = null;
+    switch (RHS.section) {
+    case RHSContent.RunStatusUpdates:
+        rhsComponent = (
+            <RHSStatusUpdates
+                playbookRun={playbookRun}
+                statusUpdates={statusUpdates}
+            />
+        );
+        break;
+    case RHSContent.RunInfo:
+        rhsComponent = (
+            <RHSInfo
+                run={playbookRun}
+                runMetadata={playbookRunMetadata}
+            />
+        );
+        break;
+    default:
+        rhsComponent = null;
+    }
 
     return (
         <Container>
@@ -157,12 +176,7 @@ const PlaybookRunDetails = () => {
                 title={RHS.title}
                 onClose={RHS.close}
             >
-                {RHSContent.RunStatusUpdates === RHS.section ? (
-                    <RHSStatusUpdates
-                        playbookRun={playbookRun}
-                        statusUpdates={statusUpdates}
-                    />
-                ) : null}
+                {rhsComponent}
             </RightHandSidebar>
         </Container>
     );
