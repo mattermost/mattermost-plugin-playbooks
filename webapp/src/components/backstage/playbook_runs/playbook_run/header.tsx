@@ -109,4 +109,5 @@ const StyledCopyLink = styled(CopyLink)`
 const StyledBadge = styled(Badge)`
     margin-left: 8px;
     margin-right: 6px;
+    text-transform: uppercase;
 `;
