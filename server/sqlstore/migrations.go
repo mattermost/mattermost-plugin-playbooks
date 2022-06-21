@@ -2024,4 +2024,98 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.54.0"),
+		toVersion:   semver.MustParse("0.55.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category (
+						ID VARCHAR(26) PRIMARY KEY,
+						Name VARCHAR(512) NOT NULL,
+						TeamID VARCHAR(26) NOT NULL,
+						UserID VARCHAR(26) NOT NULL,
+						Collapsed BOOLEAN DEFAULT FALSE,
+						CreateAt BIGINT NOT NULL,
+						UpdateAt BIGINT NOT NULL DEFAULT 0,
+						DeleteAt BIGINT NOT NULL DEFAULT 0,
+						INDEX IR_Category_TeamID_UserID (TeamID, UserID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category")
+				}
+
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Category_Item (
+					Type VARCHAR(1) NOT NULL,
+					CategoryID VARCHAR(26) NOT NULL,
+					ItemID VARCHAR(26) NOT NULL
+					INDEX IR_Category_Item_CategoryID (CategoryID)
+				)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category_Item")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category (
+						ID TEXT PRIMARY KEY,
+						Name TEXT NOT NULL,
+						TeamID TEXT NOT NULL,
+						UserID TEXT NOT NULL,
+						Collapsed BOOLEAN DEFAULT FALSE,
+						CreateAt BIGINT NOT NULL,
+						UpdateAt BIGINT NOT NULL DEFAULT 0,
+						DeleteAt BIGINT NOT NULL DEFAULT 0
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Category_TeamID_UserID", "IR_Category", "TeamID, UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Category_TeamID_UserID")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category_Item (
+						Type TEXT NOT NULL,
+						CategoryID TEXT NOT NULL,
+						ItemID TEXT NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category_Item")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Category_Item_CategoryID", "IR_Category_Item", "CategoryID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Category_Item_CategoryID")
+				}
+			}
+
+			idString := "REPLACE(uuid_in(md5(random()::text || clock_timestamp()::text)::cstring)::varchar, '-', '')"
+			timeNowString := "(extract(epoch from now())*1000)::bigint"
+			if e.DriverName() == model.DatabaseDriverMysql {
+				idString = "REPLACE(UUID(), '-', '')"
+				timeNowString = "UNIX_TIMESTAMP() * 1000"
+			}
+
+			// Create `Favorite` category for every user in every team
+			insertQuery := sqlStore.builder.
+				Insert("IR_Category").
+				Columns("ID", "Name", "TeamID", "UserID", "Collapsed", "CreateAt", "UpdateAt").
+				Select(sqlStore.builder.
+					Select(
+						idString,
+						"'Favorite'",
+						"tm.TeamId",
+						"tm.UserId",
+						"false",
+						timeNowString,
+						timeNowString).
+					From("TeamMembers as tm").
+					Where(sq.Eq{"tm.DeleteAt": 0}))
+			if _, err := sqlStore.execBuilder(e, insertQuery); err != nil {
+				return errors.Wrapf(err, "failed to populate categories table with favorite category for every user in every team")
+			}
+			return nil
+		},
+	},
 }
