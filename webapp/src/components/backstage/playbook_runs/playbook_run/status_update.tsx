@@ -141,7 +141,7 @@ export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps
     ));
 
     return (
-        <Container>
+        <Container data-testid={'run-statusupdate-section'}>
             <Content isShort={true}>
                 <IconWrapper>
                     <IconClock

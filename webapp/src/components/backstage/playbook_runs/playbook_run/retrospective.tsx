@@ -131,7 +131,7 @@ const Retrospective = ({
     }, DEBOUNCE_2_SECS);
 
     return (
-        <Container>
+        <Container data-testid={'run-retrospective-section'}>
             <div>
                 <Header>
                     <AnchorLinkTitle

@@ -52,59 +52,218 @@ describe('runs > run details page > header', () => {
         });
     });
 
+    const openRunActionsModal = () => {
+        // # Click on the run actions modal button
+        cy.findByRole('button', {name: /Run Actions/i}).click({force: true});
+
+        // * Verify that the modal is shown
+        cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
+    };
+
+    const saveRunActionsModal = () => {
+        // # Click on the Save button without changing anything
+        cy.findByRole('button', {name: /Save/i}).click();
+
+        // * Verify that the modal is no longer there
+        cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+    };
+
+    const getHeaderIcon = (selector) => {
+        return cy.findByTestId('run-header-section').find(selector);
+    };
+
+    const getDropdownItemByText = (text) => {
+        return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
+    };
+
     describe('title and icons', () => {
         it('shows the title', () => {
             // * assert title is shown in h1 inside header
             cy.findByTestId('run-header-section').find('h1').contains(playbookRun.name);
         });
 
-        it('show link icon', () => {
+        it('has a copy-link icon', () => {
             // # Mouseover on the icon
-            cy.findByTestId('run-header-section').find('.icon-link-variant').trigger('mouseover');
+            getHeaderIcon('.icon-link-variant').trigger('mouseover');
 
             // * Assert tooltip is shown
             cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
 
             stubClipboard().as('clipboard');
-            cy.findByTestId('run-header-section').within(() => {
-                // # click on copy button
-                cy.get('.icon-link-variant').click().then(() => {
-                    // * Verify clipboard content
-                    cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
-                });
-            });
+            getHeaderIcon('.icon-link-variant').click().then(() => {
+                // # Verify that tooltip text changed
+                cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
 
-            // * Verify that tooltip text changed
-            cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+                // # Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+            });
         });
 
-        // it('links back to original post in channel', () => {
-        //     cy.findByTestId('updates').within(() => {
-        //         // # Click status post permalink
-        //         cy.get('[class^="UpdateTimeLink"]').click();
-        //     });
+        it('has a go-to-channel icon', () => {
+            // * Click on go to channel
+            getHeaderIcon('.icon-product-channels').click();
 
-        //     // * Verify post message
-        //     cy.get('.post').contains(message);
-        // });
+            // # assert we navigated correctly
+            cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+        });
 
-        // it('should copy run link', () => {
-        //     // # trigger the tooltip
-        //     cy.get('.icon-link-variant').trigger('mouseover');
+        describe('run actions', () => {
+            describe('modal behaviour', () => {
+                it.only('shows and hides as expected', () => {
+                    // * Verify that the run actions modal is shown when clicking on the button
+                    openRunActionsModal();
 
-        //     // * Verify tooltip text
-        //     cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
+                    // # Click on the Cancel button
+                    cy.findByRole('button', {name: /Cancel/i}).click();
 
-        //     stubClipboard().as('clipboard');
+                    // * Verify that the modal is no longer there
+                    cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
 
-        //     // # click on copy button
-        //     cy.get('.icon-link-variant').click().then(() => {
-        //         // * Verify that tooltip text changed
-        //         cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+                    // # Open the run actions modal
+                    openRunActionsModal();
 
-        //         // * Verify clipboard content
-        //         cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRunId}`);
-        //     });
-        // });
+                    // * Verify that saving the modal hides it
+                    saveRunActionsModal();
+                });
+
+                it('honours the settings from the playbook', () => {
+                    cy.apiCreateChannel(
+                        testTeam.id,
+                        'action-channel',
+                        'Action Channel',
+                        'O'
+                    ).then(({channel}) => {
+                        // # Create a different playbook with both settings enabled and populated with data,
+                        // # and then start a run from it
+                        const broadcastChannelIds = [channel.id];
+                        const webhookOnStatusUpdateURLs = ['https://one.com', 'https://two.com'];
+                        cy.apiCreatePlaybook({
+                            teamId: testTeam.id,
+                            title: 'Playbook' + Date.now(),
+                            broadcastEnabled: true,
+                            broadcastChannelIds,
+                            webhookOnStatusUpdateEnabled: true,
+                            webhookOnStatusUpdateURLs,
+                        }).then((playbook) => {
+                            cy.apiRunPlaybook({
+                                teamId: testTeam.id,
+                                playbookId: playbook.id,
+                                playbookRunName: 'Run with actions preconfigured',
+                                ownerUserId: testUser.id,
+                            });
+                        });
+
+                        // # Navigate to the run page
+                        cy.visit(`/${testTeam.name}/channels/run-with-actions-preconfigured`);
+                        cy.findByRole('button', {name: /Run details/i}).click({force: true});
+
+                        // # Open the run actions modal
+                        openRunActionsModal();
+
+                        // * Verify that the broadcast-to-channels toggle is checked
+                        cy.findByText('Broadcast update to selected channels').parent().within(() => {
+                            cy.get('input').should('be.checked');
+                        });
+
+                        // * Verify that the channel is in the selector
+                        cy.findByText(channel.display_name);
+
+                        // * Verify that the send-webhooks toggle is checked
+                        cy.findByText('Send outgoing webhook').parent().within(() => {
+                            cy.get('input').should('be.checked');
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('context menu', () => {
+        it('shows on click', () => {
+            // * Click title
+            cy.findByTestId('run-header-section').find('h1').click();
+
+            // Assert context menu is opened
+            cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
+        });
+
+        it('can copy link', () => {
+            stubClipboard().as('clipboard');
+
+            // * Open dropdown
+            cy.findByTestId('run-header-section').find('h1').click();
+
+            getDropdownItemByText('Copy link').click().then(() => {
+                // # Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+            });
+        });
+
+        describe('finish run', () => {
+            it('can be confirmed', () => {
+                // * Open dropdown
+                cy.findByTestId('run-header-section').find('h1').click();
+
+                // * Click on finish run
+                getDropdownItemByText('Finish run').click();
+
+                // # Check that finish run modal is open
+                cy.get('#confirmModal').should('be.visible');
+                cy.get('#confirmModal').find('h1').contains('Confirm finish run');
+
+                // * Click on confirm
+                cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                // * Open dropdown
+                cy.findByTestId('run-header-section').find('h1').click();
+
+                // # Assert option is not anymore in context dropdown
+                getDropdownItemByText('Finish run').should('not.exist');
+
+                // TODO: assert badge with status
+            });
+
+            it('can be canceled', () => {
+                // * Open dropdown
+                cy.findByTestId('run-header-section').find('h1').click();
+
+                // * Click on finish run
+                getDropdownItemByText('Finish run').click();
+
+                // # Check that finish run modal is open
+                cy.get('#confirmModal').should('be.visible');
+                cy.get('#confirmModal').find('h1').contains('Confirm finish run');
+
+                // * Click on cancel
+                cy.get('#confirmModal').get('#cancelModalButton').click();
+
+                // * Open dropdown
+                cy.findByTestId('run-header-section').find('h1').click();
+
+                // # Assert option is not anymore in context dropdown
+                getDropdownItemByText('Finish run').should('be.visible');
+
+                // TODO: assert badge with status
+            });
+        });
+
+        describe('run actions', () => {
+            it('modal can be opened', () => {
+                // * Open dropdown
+                cy.findByTestId('run-header-section').find('h1').click();
+
+                // * Click on finish run
+                getDropdownItemByText('Run actions').click();
+
+                // # assert modal pop up
+                cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
+
+                // * Click on cancel
+                cy.findByRole('dialog', {name: /Run Actions/i}).findByTestId('modal-cancel-button').click();
+
+                // # Assert modal disappeared
+                cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+            });
+        });
     });
 });

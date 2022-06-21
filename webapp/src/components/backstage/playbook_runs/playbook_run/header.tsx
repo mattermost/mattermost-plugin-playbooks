@@ -40,13 +40,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) =>
 
                 //TODO: replace icon to 'icon-lightning-bolt-outline'
                 className={'icon-hammer'}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                to={getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id}
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
