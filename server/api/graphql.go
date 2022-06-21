@@ -12,7 +12,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/pkg/errors"
 )
 
@@ -136,12 +135,11 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if len(response.Errors) > 0 {
-		mlog.Error("Error executing request", mlog.String("operation", params.OperationName),
-			mlog.Array("errors", response.Errors))
+		h.pluginAPI.Log.Error("Error executing request", "operation", params.OperationName, "errors", response.Errors)
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		mlog.Warn("Error while writing response", mlog.Err(err))
+		h.pluginAPI.Log.Warn("Error while writing response", "error", err.Error())
 	}
 }
 
