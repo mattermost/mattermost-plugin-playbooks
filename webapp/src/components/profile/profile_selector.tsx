@@ -182,7 +182,7 @@ export default function ProfileSelector(props: Props) {
     const [moveUp, setMoveUp] = useState(0);
 
     useEffect(() => {
-        if (!rect) {
+        if (!rect || !isOpen) {
             setMoveUp(0);
             return;
         }
