@@ -314,7 +314,7 @@ describe('channels > rhs > checklist', () => {
             // # Open the dot menu and click on the rename button
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).trigger('mouseover');
-                cy.findByTestId('checklistHeader').within(() => {
+                cy.findAllByTestId('checklistHeader').eq(0).within(() => {
                     cy.findByTitle('More').click();
                 });
                 cy.findByRole('button', {name: 'Rename checklist'}).click();
@@ -391,7 +391,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
 
             // * Verify if filter was canceled
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
         });
 
         it('filter overdue automatically disappear if we check all overdue items', () => {
@@ -419,7 +419,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
 
             // * Verify if filter was canceled
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
         });
 
         it('switching between runs with the same checklist', () => {
