@@ -2049,7 +2049,7 @@ var migrations = []Migration{
 				CREATE TABLE IF NOT EXISTS IR_Category_Item (
 					Type VARCHAR(1) NOT NULL,
 					CategoryID VARCHAR(26) NOT NULL,
-					ItemID VARCHAR(26) NOT NULL
+					ItemID VARCHAR(26) NOT NULL,
 					INDEX IR_Category_Item_CategoryID (CategoryID)
 				)
 				` + MySQLCharset); err != nil {
