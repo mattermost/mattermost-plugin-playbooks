@@ -13,13 +13,13 @@ interface Props {
     playbookRun: PlaybookRun;
     role: Role;
 }
-const Checklists = (props: Props) => {
+const Checklists = ({playbookRun, role}: Props) => {
     return (
         <Container>
             <RHSChecklistList
-                playbookRun={props.playbookRun}
+                playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
-                viewerMode={props.role === Role.Viewer}
+                viewerMode={role === Role.Viewer}
             />
         </Container>);
 };

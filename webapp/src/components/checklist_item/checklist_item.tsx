@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
@@ -60,6 +61,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [showMenu, setShowMenu] = useState(false);
 
     const toggleDescription = () => setShowDescription(!showDescription);
+
+    useUpdateEffect(() => {
+        setAssigneeID(props.checklistItem.assignee_id);
+        setCommand(props.checklistItem.command);
+        setDueDate(props.checklistItem.due_date);
+    }, [props.checklistItem]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         setShowMenu(false);
