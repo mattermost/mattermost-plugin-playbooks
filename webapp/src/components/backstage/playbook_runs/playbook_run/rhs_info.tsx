@@ -7,11 +7,13 @@ import styled from 'styled-components';
 import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_overview';
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
 interface Props {
     run: PlaybookRun;
     runMetadata: Metadata | null;
+    role: Role;
 }
 
 const RHSInfo = (props: Props) => {
@@ -20,6 +22,7 @@ const RHSInfo = (props: Props) => {
             <RHSInfoOverview
                 run={props.run}
                 runMetadata={props.runMetadata}
+                role={props.role}
             />
             <RHSInfoMetrics/>
             <RHSInfoActivity/>

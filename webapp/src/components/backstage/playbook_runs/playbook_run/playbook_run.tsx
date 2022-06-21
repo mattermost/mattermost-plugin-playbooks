@@ -125,6 +125,7 @@ const PlaybookRunDetails = () => {
             <RHSInfo
                 run={playbookRun}
                 runMetadata={playbookRunMetadata}
+                role={role}
             />
         );
         break;

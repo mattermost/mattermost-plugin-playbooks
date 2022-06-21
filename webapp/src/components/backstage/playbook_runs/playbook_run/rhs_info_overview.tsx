@@ -19,6 +19,7 @@ import Following from 'src/components/backstage/playbook_runs/playbook_run_backs
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
@@ -28,9 +29,10 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 interface Props {
     run: PlaybookRun;
     runMetadata: Metadata | null;
+    role: Role;
 }
 
-const RHSInfoOverview = ({run, runMetadata}: Props) => {
+const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
     const addToast = useToasts().add;
@@ -123,7 +125,7 @@ const RHSInfoOverview = ({run, runMetadata}: Props) => {
             >
                 <AssignTo
                     assignee_id={run.owner_user_id}
-                    editable={true}
+                    editable={role === Role.Participant}
                     onSelectedChange={onOwnerChange}
                     dropdownMoveRightPx={0}
                 />
