@@ -110,7 +110,6 @@ const PlaybookRunDetails = () => {
                         <Retrospective
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
-                            onChange={() => null}
                             role={role}
                         />
                     </Body>
