@@ -36,54 +36,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
     const addToast = useToasts().add;
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(runMetadata?.followers || []);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    const onFollow = () => {
-        if (isFollowing) {
-            return;
-        }
-
-        followPlaybookRun(run.id)
-            .then(() => {
-                setIsFollowing(true);
-                setFollowers((oldFollowers) => [...oldFollowers, currentUser.id]);
-            })
-            .catch(() => {
-                setIsFollowing(false);
-                addToast(formatMessage({defaultMessage: 'It was not possible to follow the run'}), ToastType.Failure);
-            });
-    };
-
-    const onUnfollow = () => {
-        if (!isFollowing) {
-            return;
-        }
-
-        unfollowPlaybookRun(run.id)
-            .then(() => {
-                setIsFollowing(false);
-                setFollowers((oldFollowers) => oldFollowers.filter((userId) => userId !== currentUser.id));
-            })
-            .catch(() => {
-                setIsFollowing(true);
-                addToast(formatMessage({defaultMessage: 'It was not possible to unfollow the run'}), ToastType.Failure);
-            });
-    };
-
-    let followButton = (
-        <FollowButton onClick={onFollow}>
-            {formatMessage({defaultMessage: 'Follow'})}
-        </FollowButton>
-    );
-    if (isFollowing) {
-        followButton = (
-            <UnfollowButton onClick={onUnfollow}>
-                {formatMessage({defaultMessage: 'Following'})}
-            </UnfollowButton>
-        );
-    }
+    const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
 
     const onOwnerChange = async (userType?: string, user?: UserProfile) => {
         if (!user) {
@@ -146,7 +99,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
                 name={formatMessage({defaultMessage: 'Following'})}
             >
                 <FollowersWrapper>
-                    {followButton}
+                    <FollowingButton/>
                     <Following
                         userIds={followers}
                         hideHelpText={true}
@@ -159,6 +112,56 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
 };
 
 export default RHSInfoOverview;
+
+const useFollowing = (runID: string, metadataFollowers: string[]) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToasts().add;
+    const currentUser = useSelector(getCurrentUser);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    const toggleFollow = () => {
+        if (isFollowing) {
+            unfollowPlaybookRun(runID)
+                .then(() => {
+                    setIsFollowing(false);
+                    setFollowers((oldFollowers) => oldFollowers.filter((userId) => userId !== currentUser.id));
+                })
+                .catch(() => {
+                    setIsFollowing(true);
+                    addToast(formatMessage({defaultMessage: 'It was not possible to unfollow the run'}), ToastType.Failure);
+                });
+        } else {
+            followPlaybookRun(runID)
+                .then(() => {
+                    setIsFollowing(true);
+                    setFollowers((oldFollowers) => [...oldFollowers, currentUser.id]);
+                })
+                .catch(() => {
+                    setIsFollowing(false);
+                    addToast(formatMessage({defaultMessage: 'It was not possible to follow the run'}), ToastType.Failure);
+                });
+        }
+    };
+
+    const FollowingButton = () => {
+        if (isFollowing) {
+            return (
+                <UnfollowButton onClick={toggleFollow}>
+                    {formatMessage({defaultMessage: 'Following'})}
+                </UnfollowButton>
+            );
+        }
+
+        return (
+            <FollowButton onClick={toggleFollow}>
+                {formatMessage({defaultMessage: 'Follow'})}
+            </FollowButton>
+        );
+    };
+
+    return [FollowingButton, followers] as const;
+};
 
 interface ItemProps {
     iconPath: string;
