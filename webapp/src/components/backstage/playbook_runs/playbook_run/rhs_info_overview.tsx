@@ -130,7 +130,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
             })
             .catch(() => {
                 setIsFollowing(isFollowing);
-                addToast(formatMessage({defaultMessage: 'It was not possible to unfollow the run'}), ToastType.Failure);
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
             });
     };
 
