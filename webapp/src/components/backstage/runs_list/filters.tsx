@@ -43,6 +43,7 @@ const PlaybookRunListFilters = styled.div`
     display: flex;
     align-items: center;
     padding: 1rem 16px;
+    gap: 4px;
 `;
 
 type ControlComponentProps = ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean> | ControlProps<PlaybookOption, boolean>;
