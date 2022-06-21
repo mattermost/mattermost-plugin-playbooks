@@ -57,23 +57,76 @@ describe('channels > rhs > checklist', () => {
             cy.apiCreatePlaybook({
                 teamId: team.id,
                 title: 'Playbook',
-                checklists: [{
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1', command: '/invalid'},
-                        {title: 'Step 2', command: '/echo VALID'},
-                        {title: 'Step 3'},
-                        {title: 'Step 4'},
-                        {title: 'Step 5'},
-                        {title: 'Step 6'},
-                        {title: 'Step 7'},
-                        {title: 'Step 8'},
-                        {title: 'Step 9'},
-                        {title: 'Step 10'},
-                        {title: 'Step 11'},
-                        {title: 'Step 12'},
-                    ],
-                }],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    }
+                ],
                 memberIDs: [
                     user.id,
                 ],
@@ -389,6 +442,17 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').eq(2).within(() => {
                 cy.findAllByTestId('due-date-info-button').should('not.exist');
             });
+        });
+
+        it('scroll 2-3 pages and open due date selector- unexpected scroll issue', () => {
+            // # Hover over the checklist item that is ~3 pages down
+            cy.findAllByTestId('checkbox-item-container').eq(26).trigger('mouseover').within(() => {
+                // # Click the set due date button
+                cy.get('.icon-calendar-outline').click();
+            });
+
+            // * Verify if date selector is visible
+            cy.get('.playbook-run-user-select').should('be.visible');
         });
     });
 });
