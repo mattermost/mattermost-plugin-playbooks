@@ -20,7 +20,7 @@ import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 
-import withFinishRun from './hoc_finish_run';
+import {useOnFinishRun} from './finish_run';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -44,7 +44,8 @@ export const ContextMenu = ({playbookRun}: Props) => {
         window.location.href = exportChannelUrl(playbookRun.channel_id);
     };
 
-    const FinishMenuItem = withFinishRun(DropdownMenuItem);
+    // const FinishMenuItem = withFinishRun(DropdownMenuItem);
+    const onFinishRun = useOnFinishRun(playbookRun);
 
     return (
         <>
@@ -80,11 +81,11 @@ export const ContextMenu = ({playbookRun}: Props) => {
                 </DropdownMenuItem>
                 {
                     playbookRunIsActive(playbookRun) &&
-                    <FinishMenuItem
-                        playbookRun={playbookRun}
+                    <DropdownMenuItem
+                        onClick={onFinishRun}
                     >
                         <FormattedMessage defaultMessage='Finish run'/>
-                    </FinishMenuItem>
+                    </DropdownMenuItem>
                 }
             </DotMenu>
             <UpgradeModal
