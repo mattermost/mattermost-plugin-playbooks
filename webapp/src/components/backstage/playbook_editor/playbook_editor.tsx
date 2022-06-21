@@ -190,7 +190,9 @@ const PlaybookEditor = () => {
                                 editTitle={edit}
                                 refetch={refetch}
                             >
-                                {playbook.title}
+                                <span data-testid={'playbook-editor-title'}>
+                                    {playbook.title}
+                                </span>
                             </Controls.TitleMenu>
                             {privateTooltip}
                             {archivedTooltip}
