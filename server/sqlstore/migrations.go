@@ -2048,12 +2048,15 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 				CREATE TABLE IF NOT EXISTS IR_Category_Item (
 					Type VARCHAR(1) NOT NULL,
-					CategoryID VARCHAR(26) NOT NULL,
+					CategoryID VARCHAR(26) NOT NULL REFERENCES IR_Category(ID),
 					ItemID VARCHAR(26) NOT NULL,
 					INDEX IR_Category_Item_CategoryID (CategoryID)
 				)
 				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Category_Item")
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_Category_Item", "(CategoryID, ItemID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
 				}
 			} else {
 				if _, err := e.Exec(`
@@ -2078,7 +2081,7 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Category_Item (
 						Type TEXT NOT NULL,
-						CategoryID TEXT NOT NULL,
+						CategoryID TEXT NOT NULL REFERENCES IR_Category(ID),
 						ItemID TEXT NOT NULL
 					)
 				`); err != nil {
@@ -2088,12 +2091,16 @@ var migrations = []Migration{
 				if _, err := e.Exec(createPGIndex("IR_Category_Item_CategoryID", "IR_Category_Item", "CategoryID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Category_Item_CategoryID")
 				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_category_item", "(CategoryID, ItemID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
+				}
 			}
 
 			idString := "REPLACE(uuid_in(md5(random()::text || clock_timestamp()::text)::cstring)::varchar, '-', '')"
 			timeNowString := "(extract(epoch from now())*1000)::bigint"
 			if e.DriverName() == model.DatabaseDriverMysql {
-				idString = "REPLACE(UUID(), '-', '')"
+				idString = "LEFT(MD5(RAND()), 26)"
 				timeNowString = "UNIX_TIMESTAMP() * 1000"
 			}
 
