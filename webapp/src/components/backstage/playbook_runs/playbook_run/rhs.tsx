@@ -21,9 +21,10 @@ interface Props {
     onClose: () => void;
     title: ReactNode;
     children: ReactNode;
+    subtitle?: ReactNode;
 }
 
-const RightHandSidebar = ({isOpen, onClose, title, children}: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) => {
     const sidebarRef = React.useRef(null);
 
     if (!isOpen) {
@@ -39,6 +40,8 @@ const RightHandSidebar = ({isOpen, onClose, title, children}: Props) => {
         >
             <Header>
                 <HeaderTitle>{title}</HeaderTitle>
+                <HeaderVerticalDivider/>
+                {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
                 <HeaderIcon>
                     <i
                         className='icon icon-close'
@@ -92,11 +95,29 @@ const HeaderIcon = styled.div`
 `;
 
 const HeaderTitle = styled.div`
-    margin: auto 20px;
+    margin: auto 0 auto 20px;
     line-height: 32px;
     font-size: 16px;
     font-weight: 600;
     color: var(--center-channel-color);
+    white-space: nowrap;
+`;
+
+const HeaderVerticalDivider = styled.div`
+    height: 2.4rem;
+    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    margin: 0 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    align-self: center;
+`;
+
+const HeaderSubtitle = styled.div`
+    overflow: hidden;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    align-self: center;
 `;
 
 const Body = styled.div`

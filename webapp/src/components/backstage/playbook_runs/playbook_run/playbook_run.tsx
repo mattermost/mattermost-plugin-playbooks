@@ -4,7 +4,7 @@
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useRouteMatch} from 'react-router-dom';
+import {useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -17,6 +17,8 @@ import {usePlaybook, useRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {pluginErrorUrl} from 'src/browser_routing';
+import {ErrorPageTypes} from 'src/constants';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -38,17 +40,19 @@ const useRHS = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(null);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(null);
 
-    const open = (_section: RHSContent, _title: React.ReactNode) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
+        setSubtitle(_subtitle);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, open, close};
+    return {isOpen, section, title, subtitle, open, close};
 };
 
 const PlaybookRunDetails = () => {
@@ -103,8 +107,12 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
-    if (!playbookRun) {
+    if (fetchingState === FetchingStateType.loading) {
         return null;
+    }
+
+    if (fetchingState === FetchingStateType.notFound || playbookRun === null || playbookRunMetadata === null) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     // TODO: triple-check this assumption, can we rely on participant_ids?
@@ -175,6 +183,7 @@ const PlaybookRunDetails = () => {
             <RightHandSidebar
                 isOpen={RHS.isOpen}
                 title={RHS.title}
+                subtitle={RHS.subtitle}
                 onClose={RHS.close}
             >
                 {rhsComponent}
