@@ -249,7 +249,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         </TitleActions>
                     )}
                     css={`
-                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
                     `}
                 />
                 <PlaybooksListFilters>
