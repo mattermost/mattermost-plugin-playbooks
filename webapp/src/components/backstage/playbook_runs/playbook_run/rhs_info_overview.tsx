@@ -121,27 +121,17 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
 
     const toggleFollow = () => {
-        if (isFollowing) {
-            unfollowPlaybookRun(runID)
-                .then(() => {
-                    setIsFollowing(false);
-                    setFollowers((oldFollowers) => oldFollowers.filter((userId) => userId !== currentUser.id));
-                })
-                .catch(() => {
-                    setIsFollowing(true);
-                    addToast(formatMessage({defaultMessage: 'It was not possible to unfollow the run'}), ToastType.Failure);
-                });
-        } else {
-            followPlaybookRun(runID)
-                .then(() => {
-                    setIsFollowing(true);
-                    setFollowers((oldFollowers) => [...oldFollowers, currentUser.id]);
-                })
-                .catch(() => {
-                    setIsFollowing(false);
-                    addToast(formatMessage({defaultMessage: 'It was not possible to follow the run'}), ToastType.Failure);
-                });
-        }
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(runID)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setIsFollowing(!isFollowing);
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                setIsFollowing(isFollowing);
+                addToast(formatMessage({defaultMessage: 'It was not possible to unfollow the run'}), ToastType.Failure);
+            });
     };
 
     const FollowingButton = () => {
