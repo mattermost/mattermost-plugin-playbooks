@@ -44,7 +44,6 @@ export const ContextMenu = ({playbookRun}: Props) => {
         window.location.href = exportChannelUrl(playbookRun.channel_id);
     };
 
-    // const FinishMenuItem = withFinishRun(DropdownMenuItem);
     const onFinishRun = useOnFinishRun(playbookRun);
 
     return (
