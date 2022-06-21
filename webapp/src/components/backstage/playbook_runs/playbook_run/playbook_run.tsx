@@ -3,20 +3,14 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from 'mattermost-redux/types/store';
 
-import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
-import {getRun} from 'src/selectors';
-import {usePlaybook} from 'src/hooks';
-import {
-    fetchPlaybookRun,
-    fetchPlaybookRunMetadata,
-    fetchPlaybookRunStatusUpdates,
-} from 'src/client';
+import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import Summary from './summary';
@@ -28,16 +22,11 @@ import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 
-const FetchingStateType = {
-    loading: 'loading',
-    fetched: 'fetched',
-    notFound: 'notfound',
-};
-
 const useRHS = () => {
-    const [isOpen, setIsOpen] = useState(false);
+    const {formatMessage} = useIntl();
+    const [isOpen, setIsOpen] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
-    const [title, setTitle] = useState<React.ReactNode>(null);
+    const [title, setTitle] = useState<React.ReactNode>(formatMessage({defaultMessage: 'Run info'}));
 
     const open = (_section: RHSContent, _title: React.ReactNode) => {
         setIsOpen(true);
@@ -53,51 +42,24 @@ const useRHS = () => {
 
 const PlaybookRunDetails = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const match = useRouteMatch<{playbookRunId: string}>();
     const playbookRunId = match.params.playbookRunId;
-
-    const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
+    const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [following, setFollowing] = useState<string[]>([]);
-    const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
-    const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
+    const metadata = useRunMetadata(playbookRunId);
+    const statusUpdates = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);
 
     const RHS = useRHS();
-    const runFromStore = useSelector<GlobalState, PlaybookRun|undefined|null>(getRun(playbookRunId));
 
-    // Trigger multiple parallel fetch if the URL param changes
     useEffect(() => {
-        if (playbookRunId !== playbookRun?.id && RHS.isOpen) {
-            RHS.close();
+        const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
+        const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
+        if (RHSUpdatesOpened && emptyUpdates) {
+            RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}));
         }
-
-        Promise
-            .all([
-                fetchPlaybookRun(playbookRunId),
-                fetchPlaybookRunMetadata(playbookRunId),
-                fetchPlaybookRunStatusUpdates(playbookRunId),
-            ])
-            .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
-                setPlaybookRun(playbookRunResult);
-                setPlaybookRunMetadata(playbookRunMetadataResult || null);
-                setFetchingState(FetchingStateType.fetched);
-                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-                setStatusUpdates(statusUpdatesResult || []);
-            }).catch(() => {
-                setFetchingState(FetchingStateType.notFound);
-            });
-    }, [match.params.playbookRunId]);
-
-    // re-download status updates if status_posts size is different
-    useEffect(() => {
-        if (runFromStore && runFromStore.status_posts.length !== playbookRun?.status_posts.length) {
-            fetchPlaybookRunStatusUpdates(playbookRunId).then((statusUpdatesResult) => {
-                setStatusUpdates(statusUpdatesResult || []);
-            });
-        }
-    }, [runFromStore?.status_posts.length]);
+    }, [playbookRun, RHS.section, RHS.isOpen]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
@@ -121,7 +83,7 @@ const PlaybookRunDetails = () => {
                 <Header>
                     <RunHeader
                         playbookRun={playbookRun}
-                        playbookRunMetadata={playbookRunMetadata}
+                        playbookRunMetadata={metadata ?? null}
                         openRHS={RHS.open}
                     />
                 </Header>
@@ -139,7 +101,7 @@ const PlaybookRunDetails = () => {
                         ) : (
                             <ViewerStatusUpdate
                                 openRHS={RHS.open}
-                                lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
+                                lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
@@ -148,7 +110,7 @@ const PlaybookRunDetails = () => {
                         <Retrospective
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
-                            onChange={setPlaybookRun}
+                            onChange={() => null}
                             role={role}
                         />
                     </Body>
@@ -162,7 +124,7 @@ const PlaybookRunDetails = () => {
                 {RHSContent.RunStatusUpdates === RHS.section ? (
                     <RHSStatusUpdates
                         playbookRun={playbookRun}
-                        statusUpdates={statusUpdates}
+                        statusUpdates={statusUpdates ?? null}
                     />
                 ) : null}
             </RightHandSidebar>

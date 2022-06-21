@@ -39,12 +39,12 @@ import {useUpdateEffect} from 'react-use';
 
 import {debounce, isEqual} from 'lodash';
 
-import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
-import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
+import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
 
 import {
     isCloud,
@@ -345,6 +345,46 @@ export function usePost(postId: string) {
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
     return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
+}
+
+/**
+ * Read-only logic to fetch playbook run metadata
+ * @param id identifier of the run to fetch metadata
+ * @returns undefined == loading; null == not found
+ */
+export function useRunMetadata(id: PlaybookRun['id'] | undefined) {
+    const [metadata, setMetadata] = useState<PlaybookRunMetadata | undefined | null>();
+    useEffect(() => {
+        if (!id) {
+            setMetadata(null);
+            return;
+        }
+        fetchPlaybookRunMetadata(id)
+            .then(setMetadata)
+            .catch(() => setMetadata(null));
+    }, [id]);
+
+    return metadata;
+}
+
+/**
+ * Read-only logic to fetch playbook run status udpates
+ * @param id identifier of the playbook run to fetch updates
+ * @returns undefined == loading; null == not found
+ */
+export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: Array<any> = []) {
+    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[] | undefined | null>();
+    useEffect(() => {
+        if (!id) {
+            setStatusUpdates(null);
+            return;
+        }
+        fetchPlaybookRunStatusUpdates(id)
+            .then(setStatusUpdates)
+            .catch(() => setStatusUpdates(null));
+    }, [id, ...deps]);
+
+    return statusUpdates;
 }
 
 export function useChannel(channelId: string) {

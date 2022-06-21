@@ -10,11 +10,11 @@ import StatusUpdateCard from './update_card';
 
 interface Props {
     playbookRun: PlaybookRun;
-    statusUpdates: StatusPostComplete[];
+    statusUpdates: StatusPostComplete[] | null;
 }
 
 const RHSStatusUpdates = ({playbookRun, statusUpdates}: Props) => {
-    if (playbookRun.status_posts.length === 0) {
+    if (playbookRun.status_posts.length === 0 || statusUpdates === null) {
         return null;
     }
 
