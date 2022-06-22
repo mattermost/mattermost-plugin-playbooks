@@ -387,12 +387,10 @@ export function useFetch<T>(
                 setFetchState(FetchState.done);
                 setData(res);
             })
-            .catch((e: ClientError) => {
-                setFetchState(FetchState.error);
-                setData(null);
-                setError(e);
-            })
-            .catch(() => {
+            .catch((err) => {
+                if (err instanceof ClientError) {
+                    setError(err);
+                }
                 setFetchState(FetchState.error);
                 setData(null);
             });
