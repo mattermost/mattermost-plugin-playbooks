@@ -197,13 +197,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	user, err := a.api.User.Get(userID)
 	if err != nil {
-		logrus.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
 		return
 	}
 
 	channel, err := a.api.Channel.Get(channelID)
 	if err != nil {
-		logrus.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
 		return
 	}
 
@@ -216,7 +216,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		logrus.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
+		logrus.WithError(err).Errorf("failed to get the channel actions for channelID %q", channelID)
 		return
 	}
 
@@ -253,7 +253,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, payload.CategoryName)
 			if err != nil {
-				logrus.Errorf("failed to categorize channel; error: %s", err.Error())
+				logrus.WithError(err).Error("failed to categorize channel")
 			}
 
 			a.telemetry.RunChannelAction(action, userID)
@@ -340,7 +340,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		logrus.Errorf("failed to resolve actions for channelID %q and trigger type %q; error: %q", channelID, TriggerTypeNewMemberJoins, err.Error())
+		logrus.WithError(err).Errorf("failed to resolve actions for channelID %q and trigger type %q", channelID, TriggerTypeNewMemberJoins)
 		return false
 	}
 
