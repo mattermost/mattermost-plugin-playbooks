@@ -4,8 +4,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
 import {mdiClipboardPlayMultipleOutline, mdiImport} from '@mdi/js';
 import Icon from '@mdi/react';
 
@@ -19,6 +17,7 @@ import MenuWrapper from '../widgets/menu/menu_wrapper';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {OVERLAY_DELAY} from 'src/constants';
+import {useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
 
 interface CreatePlaybookDropdownProps {
     team_id: string;
@@ -28,7 +27,8 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
+    const teams = useSelector(getMyTeams);
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
@@ -37,7 +37,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     );
 
     const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
+        if (e.target.files?.[0]) {
             const file = e.target.files[0];
 
             const teamId = props.team_id || teams[0].id;
@@ -79,14 +79,12 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                     id='importPlaybook'
                     show={true}
                     onClick={() => {
-                        if (fileInputRef && fileInputRef.current) {
-                            fileInputRef.current.click();
-                        }
+                        fileInputRef?.current?.click();
                     }}
                     icon={
                         <StyledMDIIcon
                             path={mdiImport}
-                            size={1.25}
+                            size={'18px'}
                         />
                     }
                     text={formatMessage({defaultMessage: 'Import Playbook'})}
@@ -104,7 +102,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 icon={
                     <StyledMDIIcon
                         path={mdiClipboardPlayMultipleOutline}
-                        size={1.25}
+                        size={'18px'}
                     />
                 }
                 text={formatMessage({defaultMessage: 'Browse Runs'})}
@@ -115,7 +113,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             <>
                 <MenuGroup noDivider={true}>
                     {browsePlaybooks}
-                    {createPlaybook}
+                    {canCreatePlaybooks && createPlaybook}
                     {importPlaybook}
                 </MenuGroup>
                 <MenuGroup>
@@ -192,7 +190,8 @@ const Button = styled.button`
 const StyledMDIIcon = styled(Icon)`
     width: 25px;
     height: 22px;
-    margin-right: 10px;
+    margin-right: 7px;
+    margin-left: 4px;
 `;
 
 const StyledIcon = styled.i`
