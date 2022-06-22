@@ -70,13 +70,18 @@ export default RightHandSidebar;
 const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
     position: fixed;
-    width: 500px;
+    width: 400px;
     height: 100%;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     right: 0;
     z-index: 2;
     background-color: var(--center-channel-bg);
+
+
+    @media screen and (min-width: 1600px) {
+        width: 500px;
+    }
 `;
 
 const Header = styled.div`

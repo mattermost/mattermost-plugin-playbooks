@@ -3,17 +3,20 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 import {useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+
+import {useUpdateEffect} from 'react-use';
 
 import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -24,11 +27,17 @@ import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 
-const useRHS = () => {
+const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
+
+const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
-    const [title, setTitle] = useState<React.ReactNode>(null);
-    const [subtitle, setSubtitle] = useState<React.ReactNode>(null);
+    const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
+
+    useUpdateEffect(() => {
+        setSubtitle(playbookRun?.name);
+    }, [playbookRun?.name]);
 
     const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
         setIsOpen(true);
@@ -54,13 +63,13 @@ const PlaybookRunDetails = () => {
     const statusUpdates = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);
 
-    const RHS = useRHS();
+    const RHS = useRHS(playbookRun);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
         const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
         if (RHSUpdatesOpened && emptyUpdates) {
-            RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}));
+            RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
     }, [playbookRun, RHS.section, RHS.isOpen]);
 
@@ -89,7 +98,7 @@ const PlaybookRunDetails = () => {
     return (
         <Container>
             <MainWrapper isRHSOpen={RHS.isOpen}>
-                <Header>
+                <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
@@ -160,7 +169,11 @@ const MainWrapper = styled.div<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
     flex-direction: column;
-    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+
+    @media screen and (min-width: 1600px) {
+        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+    }
 `;
 
 const Main = styled.main<{isRHSOpen: boolean}>`
@@ -175,12 +188,16 @@ const Main = styled.main<{isRHSOpen: boolean}>`
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header`
+const Header = styled.header<{isRHSOpen: boolean}>`
     height: 56px;
     min-height: 56px;
-    width: calc(100% - 239px);
+    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 639px)' : 'calc(100% - 239px)')};
     z-index: 2;
     position: fixed;
     background-color: var(--center-channel-bg);
     display:flex;
+
+    @media screen and (min-width: 1600px) {
+        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 739px)' : 'calc(100% - 239px)')};
+    }
 `;
