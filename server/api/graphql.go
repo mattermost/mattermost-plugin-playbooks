@@ -10,16 +10,15 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type GraphQLHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
 	pluginAPI       *pluginapi.Client
-	log             bot.Logger
 	config          config.Service
 	permissions     *app.PermissionsService
 	playbookStore   app.PlaybookStore
@@ -35,17 +34,15 @@ func NewGraphQLHandler(
 	router *mux.Router,
 	playbookService app.PlaybookService,
 	api *pluginapi.Client,
-	log bot.Logger,
 	configService config.Service,
 	permissions *app.PermissionsService,
 	playbookStore app.PlaybookStore,
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
 	handler := &GraphQLHandler{
-		ErrorHandler:    &ErrorHandler{log: log},
+		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
 		pluginAPI:       api,
-		log:             log,
 		config:          configService,
 		permissions:     permissions,
 		playbookStore:   playbookStore,
@@ -68,12 +65,12 @@ func NewGraphQLHandler(
 	var err error
 	handler.schema, err = graphql.ParseSchema(SchemaFile, root, opts...)
 	if err != nil {
-		log.Errorf("unable to parse graphql schema: %v", err.Error())
+		logrus.WithError(err).Error("unable to parse graphql schema")
 		return nil
 	}
 
-	router.HandleFunc("/query", graphiQL).Methods("GET")
-	router.HandleFunc("/query", handler.graphQL).Methods("POST")
+	router.HandleFunc("/query", withLogger(graphiQL)).Methods("GET")
+	router.HandleFunc("/query", withLogger(handler.graphQL)).Methods("POST")
 
 	return handler
 }
@@ -85,14 +82,14 @@ type Context struct {
 	playbookService app.PlaybookService
 	playbookStore   app.PlaybookStore
 	pluginAPI       *pluginapi.Client
-	log             bot.Logger
+	log             logrus.FieldLogger
 	config          config.Service
 	permissions     *app.PermissionsService
 	licenceChecker  app.LicenseChecker
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
-func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
+func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
 	// Limit bodies to 100KiB.
 	r.Body = http.MaxBytesReader(w, r.Body, 102400)
 
@@ -102,13 +99,13 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		Variables     map[string]interface{} `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.log.Debugf("Unable to decode graphql query: %v", err)
+		logger.WithError(err).Debug("Unable to decode graphql query")
 		return
 	}
 
 	if !h.config.IsConfiguredForDevelopmentAndTesting() {
 		if params.OperationName == "" {
-			h.log.Debugf("Invalid blank operation name.")
+			logger.Debug("Invalid blank operation name")
 			return
 		}
 	}
@@ -117,7 +114,7 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		r:               r,
 		playbookService: h.playbookService,
 		pluginAPI:       h.pluginAPI,
-		log:             h.log,
+		log:             logger,
 		config:          h.config,
 		permissions:     h.permissions,
 		playbookStore:   h.playbookStore,
@@ -134,12 +131,12 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		params.Variables,
 	)
 
-	if len(response.Errors) > 0 {
-		h.pluginAPI.Log.Error("Error executing request", "operation", params.OperationName, "errors", response.Errors)
+	for _, err := range response.Errors {
+		logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		h.pluginAPI.Log.Warn("Error while writing response", "error", err.Error())
+		logger.WithError(err).Warn("Error while writing response")
 	}
 }
 
@@ -155,7 +152,7 @@ func getContext(ctx context.Context) (*Context, error) {
 //go:embed graphqli.html
 var GraphiqlPage []byte
 
-func graphiQL(w http.ResponseWriter, r *http.Request) {
+func graphiQL(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
 	w.Header().Set("Content-Type", "text/html")
 	_, _ = w.Write(GraphiqlPage)
 }

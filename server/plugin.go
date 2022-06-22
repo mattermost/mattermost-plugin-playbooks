@@ -100,7 +100,9 @@ func (p *Plugin) OnActivate() error {
 	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
-	pluginapi.ConfigureLogrus(logrus.StandardLogger(), pluginAPIClient)
+
+	logger := logrus.StandardLogger()
+	pluginapi.ConfigureLogrus(logger, pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "playbooks",
@@ -167,7 +169,7 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
+	p.handler = api.NewHandler(pluginAPIClient, p.config, logger)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 
@@ -216,7 +218,6 @@ func (p *Plugin) OnActivate() error {
 		p.handler.APIRouter,
 		p.playbookService,
 		pluginAPIClient,
-		p.bot,
 		p.config,
 		p.permissions,
 		playbookStore,
@@ -226,7 +227,6 @@ func (p *Plugin) OnActivate() error {
 		p.handler.APIRouter,
 		p.playbookService,
 		pluginAPIClient,
-		p.bot,
 		p.config,
 		p.permissions,
 	)
@@ -238,15 +238,14 @@ func (p *Plugin) OnActivate() error {
 		p.licenseChecker,
 		pluginAPIClient,
 		p.bot,
-		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions, p.licenseChecker)
-	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
-	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
-	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
-	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
+	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
