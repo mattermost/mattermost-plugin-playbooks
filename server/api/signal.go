@@ -129,7 +129,7 @@ func (h *SignalHandler) returnError(returnMessage string, err error, logger logr
 	resp := model.PostActionIntegrationResponse{
 		EphemeralText: fmt.Sprintf("Error: %s", returnMessage),
 	}
-	logger.Errorf(err.Error())
+	logger.WithError(err).Warn(returnMessage)
 	ReturnJSON(w, &resp, http.StatusOK)
 }
 

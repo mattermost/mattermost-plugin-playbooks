@@ -17,7 +17,7 @@ type ErrorLoggerWrapper struct {
 }
 
 func (el *ErrorLoggerWrapper) Println(v ...interface{}) {
-	logrus.Error("metric server error", v)
+	logrus.Warn("metric server error", v)
 }
 
 // NewMetricsServer factory method to create a new prometheus server.

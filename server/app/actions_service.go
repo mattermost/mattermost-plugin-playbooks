@@ -221,7 +221,11 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 	}
 
 	if len(actions) > 1 {
-		logrus.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+		logrus.WithFields(logrus.Fields{
+			"action_type":  ActionTypeCategorizeChannel,
+			"trigger_type": TriggerTypeNewMemberJoins,
+			"num_actions":  len(actions),
+		}).Errorf("expected only one action to be retrived")
 	}
 
 	if len(actions) != 1 {
@@ -235,7 +239,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 	var payload CategorizeChannelPayload
 	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-		logrus.Errorf("unable to decode payload of CategorizeChannelPayload")
+		logrus.WithError(err).Error("unable to decode payload of CategorizeChannelPayload")
 		return
 	}
 
@@ -354,7 +358,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		if action.ActionType == ActionTypeWelcomeMessage {
 			var payload WelcomeMessagePayload
 			if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-				logrus.Errorf("payload of action of type %q is not valid", action.ActionType)
+				logrus.WithError(err).WithField("action_type", action.ActionType).Error("payload of action is not valid")
 			}
 
 			// Run the action

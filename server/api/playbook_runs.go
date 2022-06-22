@@ -645,7 +645,11 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	}
 
 	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
-		logger.Warnf("User %s does not have permissions to get playbook run %s for channel %s", userID, playbookRunID, channelID)
+		logger.WithFields(logrus.Fields{
+			"user_id":         userID,
+			"playbook_run_id": playbookRunID,
+			"channel_id":      channelID,
+		}).Warn("User does not have permissions to get playbook run for channel")
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "Not found",
 			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return

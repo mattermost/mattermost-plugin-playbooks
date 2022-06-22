@@ -65,12 +65,11 @@ func handleResponseWithCode(w http.ResponseWriter, code int, publicMsg string) {
 // HandleErrorWithCode logs the internal error and sends the public facing error
 // message as JSON in a response with the provided code.
 func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	details := ""
 	if internalErr != nil {
-		details = internalErr.Error()
+		logger = logger.WithError(internalErr)
 	}
 
-	logger.Errorf("public error message: %v; internal details: %v", publicErrorMsg, details)
+	logger.Warn(publicErrorMsg)
 
 	handleResponseWithCode(w, code, publicErrorMsg)
 }
@@ -78,12 +77,11 @@ func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code 
 // HandleWarningWithCode logs the internal warning and sends the public facing error
 // message as JSON in a response with the provided code.
 func HandleWarningWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code int, publicWarningMsg string, internalErr error) {
-	details := ""
 	if internalErr != nil {
-		details = internalErr.Error()
+		logger = logger.WithError(internalErr)
 	}
 
-	logger.Warnf("public error message: %v; internal details: %v", publicWarningMsg, details)
+	logger.Warn(publicWarningMsg)
 
 	handleResponseWithCode(w, code, publicWarningMsg)
 }
@@ -92,7 +90,7 @@ func HandleWarningWithCode(logger logrus.FieldLogger, w http.ResponseWriter, cod
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
-		logrus.Warnf("Unable to marshall JSON. Error details: %s", err.Error())
+		logrus.WithError(err).Warnf("Unable to marshall JSON")
 		return
 	}
 
@@ -100,7 +98,7 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus i
 	w.WriteHeader(httpStatus)
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		logrus.Warnf("Unable to write to http.ResponseWriter. Error details: %s", err.Error())
+		logrus.WithError(err).Warn("Unable to write to http.ResponseWriter")
 		return
 	}
 }

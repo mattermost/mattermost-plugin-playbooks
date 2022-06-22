@@ -224,7 +224,11 @@ var migrations = []Migration{
 				}
 
 				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
-					logrus.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
+					logrus.WithFields(logrus.Fields{
+						"active_stage":    playbookRun.ActiveStage,
+						"playbook_run_id": playbookRun.ID,
+						"num_checklists":  numChecklists,
+					}).Warn("index out of bounds: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 

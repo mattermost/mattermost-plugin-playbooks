@@ -121,6 +121,6 @@ func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
 func (sqlStore *SQLStore) finalizeTransaction(tx *sqlx.Tx) {
 	// Rollback returns sql.ErrTxDone if the transaction was already closed.
 	if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-		logrus.Errorf("Failed to rollback transaction; err: %v", err)
+		logrus.WithError(err).Error("Failed to rollback transaction")
 	}
 }
