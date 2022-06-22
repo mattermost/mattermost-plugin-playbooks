@@ -91,8 +91,8 @@ const Header = styled.div`
     flex-direction: row;
     height: 56px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-
 `;
+
 const HeaderIcon = styled.div`
     display: flex;
     align-self: center;

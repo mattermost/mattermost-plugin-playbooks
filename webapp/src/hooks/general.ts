@@ -352,7 +352,7 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
 
 export enum FetchState {
     idle = 'idle',
-    pending = 'pending',
+    loading = 'loading',
     done = 'done',
     error = 'error',
 }
@@ -371,18 +371,19 @@ export type FetchMetadata = {
  */
 export function useFetch<T>(
     id: string,
-    fetch: (id: string) => Promise<T>,
+    fetchFunction: (id: string) => Promise<T>,
     deps: Array<any> = [],
 ) {
     const [error, setError] = useState<ClientError|null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
     const [data, setData] = useState<T | null>(null);
+
     useEffect(() => {
         if (!id) {
             return;
         }
-        setFetchState(FetchState.pending);
-        fetch(id)
+        setFetchState(FetchState.loading);
+        fetchFunction(id)
             .then((res) => {
                 setFetchState(FetchState.done);
                 setData(res);

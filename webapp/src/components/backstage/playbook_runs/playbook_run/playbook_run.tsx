@@ -58,7 +58,7 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [metadata, metadataRes] = useRunMetadata(playbookRunId);
+    const [metadata, metadataResult] = useRunMetadata(playbookRunId);
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);
 
@@ -87,7 +87,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataRes.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.state === FetchState.error) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
