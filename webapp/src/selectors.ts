@@ -53,6 +53,21 @@ export const globalSettings = (state: GlobalState): GlobalSettings | null => plu
  */
 export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).myPlaybookRunsByTeam;
 
+/**
+ * getRun selector to extract a run from the store
+ *
+ * teamId and channelId are optional, when they are passed run will be found efficiently
+ */
+export const getRun = (playbookRunId: string, teamId?: string, channelId?: string) => {
+    return (state: GlobalState) => {
+        const runsByTeam = myPlaybookRunsByTeam(state);
+        if (teamId && channelId) {
+            return runsByTeam[teamId]?.[channelId];
+        }
+        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === playbookRunId);
+    };
+};
+
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
     const canPost = haveIChannelPermission(state, teamId, channelId, Permissions.READ_CHANNEL);
 
