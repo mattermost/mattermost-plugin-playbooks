@@ -82,11 +82,16 @@ describe('runs > run details page > header', () => {
             cy.findByTestId('run-header-section').find('h1').contains(playbookRun.name);
         });
 
+        it('shows the in-progress status badge', () => {
+            // # assert in progress status badge
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+        });
+
         it('has a copy-link icon', () => {
-            // # Mouseover on the icon
+            // * Mouseover on the icon
             getHeaderIcon('.icon-link-variant').trigger('mouseover');
 
-            // * Assert tooltip is shown
+            // # Assert tooltip is shown
             cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
 
             stubClipboard().as('clipboard');
@@ -109,7 +114,7 @@ describe('runs > run details page > header', () => {
 
         describe('run actions', () => {
             describe('modal behaviour', () => {
-                it.only('shows and hides as expected', () => {
+                it('shows and hides as expected', () => {
                     // * Verify that the run actions modal is shown when clicking on the button
                     openRunActionsModal();
 
@@ -176,6 +181,112 @@ describe('runs > run details page > header', () => {
                 });
             });
         });
+
+        describe('trigger: when a status update is posted', () => {
+            describe('action: Broadcast update to selected channels', () => {
+                it('shows channel information on first load', () => {
+                    // # Open the run actions modal
+                    openRunActionsModal();
+
+                    // # Enable broadcast to channels
+                    cy.findByText('Broadcast update to selected channels').click();
+
+                    // # Select a couple of channels
+                    cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+
+                    // # Save the changes
+                    saveRunActionsModal();
+
+                    // # Reload the page, so that the store is not pre-populated when visiting Channels
+                    cy.visit(`/playbooks/runs/${playbookRun.id}/overview`);
+
+                    // # Open the run actions modal
+                    openRunActionsModal();
+
+                    // * Check that the channels previously added are shown with their full name,
+                    // * verifying that the store has been populated by the modal component.
+                    cy.findByText('Town Square').should('exist');
+                    cy.findByText('Off-Topic').should('exist');
+                });
+
+                it('broadcasts to two channels configured when it is enabled', () => {
+                    // # Open the run actions modal
+                    openRunActionsModal();
+
+                    // # Enable broadcast to channels
+                    cy.findByText('Broadcast update to selected channels').click();
+
+                    // # Select a couple of channels
+                    cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+
+                    // # Save the changes
+                    saveRunActionsModal();
+
+                    // # Post a status update, with a reminder in 1 second.
+                    const message = 'Status update - ' + Date.now();
+                    cy.apiUpdateStatus({
+                        playbookRunId: playbookRun.id,
+                        message,
+                    });
+
+                    // # Navigate to the town square channel
+                    cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    // * Verify that the last post contains the status update
+                    cy.getLastPost().then((post) => {
+                        cy.get(post).contains(message);
+                    });
+
+                    // # Navigate to the off-topic channel
+                    cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+                    // * Verify that the last post contains the status update
+                    cy.getLastPost().then((post) => {
+                        cy.get(post).contains(message);
+                    });
+                });
+
+                it('does not broadcast if it is disabled, even if there are channels configured', () => {
+                    // # Open the run actions modal
+                    openRunActionsModal();
+
+                    // # Enable broadcast to channels
+                    cy.findByText('Broadcast update to selected channels').click();
+
+                    // # Select a couple of channels
+                    cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+
+                    // # Disable broadcast to channels
+                    cy.findByText('Broadcast update to selected channels').click();
+
+                    // # Save the changes
+                    saveRunActionsModal();
+
+                    // # Post a status update, with a reminder in 1 second.
+                    const message = 'Status update - ' + Date.now();
+                    cy.apiUpdateStatus({
+                        playbookRunId: playbookRun.id,
+                        message,
+                    });
+
+                    // # Navigate to the town square channel
+                    cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    // * Verify that the last post does not contain the status update
+                    cy.getLastPost().then((post) => {
+                        cy.get(post).contains(message).should('not.exist');
+                    });
+
+                    // # Navigate to the off-topic channel
+                    cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+                    // * Verify that the last post does not contain the status update
+                    cy.getLastPost().then((post) => {
+                        cy.get(post).contains(message).should('not.exist');
+                    });
+                });
+            });
+        });
     });
 
     describe('context menu', () => {
@@ -207,6 +318,9 @@ describe('runs > run details page > header', () => {
                 // * Click on finish run
                 getDropdownItemByText('Finish run').click();
 
+                // # Check that status badge is in-progress
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+
                 // # Check that finish run modal is open
                 cy.get('#confirmModal').should('be.visible');
                 cy.get('#confirmModal').find('h1').contains('Confirm finish run');
@@ -220,7 +334,8 @@ describe('runs > run details page > header', () => {
                 // # Assert option is not anymore in context dropdown
                 getDropdownItemByText('Finish run').should('not.exist');
 
-                // TODO: assert badge with status
+                // assert status badge is finished
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
             });
 
             it('can be canceled', () => {
@@ -229,6 +344,9 @@ describe('runs > run details page > header', () => {
 
                 // * Click on finish run
                 getDropdownItemByText('Finish run').click();
+
+                // # Check that status badge is in-progress
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
                 // # Check that finish run modal is open
                 cy.get('#confirmModal').should('be.visible');
@@ -243,7 +361,8 @@ describe('runs > run details page > header', () => {
                 // # Assert option is not anymore in context dropdown
                 getDropdownItemByText('Finish run').should('be.visible');
 
-                // TODO: assert badge with status
+                // assert status badge is still in progress
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
             });
         });
 
