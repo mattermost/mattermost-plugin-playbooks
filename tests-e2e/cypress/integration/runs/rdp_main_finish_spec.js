@@ -9,12 +9,20 @@
 describe('runs > run details page > finish', () => {
     let testTeam;
     let testUser;
+    let testViewerUser;
+    let testPlaybookRun;
     let testPublicPlaybook;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // Create another user in the same team
+            cy.apiCreateUser().then(({user: viewer}) => {
+                testViewerUser = viewer;
+                cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
+            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -43,22 +51,33 @@ describe('runs > run details page > finish', () => {
             playbookRunName: 'the run name',
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
+            testPlaybookRun = playbookRun;
+
             // # Visit the playbook run
             cy.visit(`/playbooks/run_details/${playbookRun.id}`);
         });
     });
+    it('is hidden as viewer', () => {
+        cy.apiLogin(testViewerUser).then(() => {
+            // # Visit the playbook run
+            cy.visit(`/playbooks/run_details/${testPlaybookRun.id}`);
+        });
+
+        // # assert that finish section does not exist
+        cy.findByTestId('run-finish-section').should('not.exist');
+    });
 
     it('is visible', () => {
-        // * Verify the tasks section is present
+        // # Verify the tasks section is present
         cy.findByTestId('run-finish-section').should('be.visible');
     });
 
     it('has a placeholder visible', () => {
-        // * Verify the tasks section is present
+        // # Verify the tasks section is present
         cy.findByTestId('run-finish-section').contains('Time to wrap up?');
     });
-    describe.only('finish run', () => {
-        // wait for merge
+
+    describe('finish run', () => {
         it('can be confirmed', () => {
             // * Click finish run button
             cy.findByTestId('run-finish-section').find('button').click();
@@ -66,7 +85,7 @@ describe('runs > run details page > finish', () => {
             // # Check that status badge is in-progress
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
-            // # Check that finish run modal is open
+            // # Check that finish run modal is open and has the right title
             cy.get('#confirmModal').should('be.visible');
             cy.get('#confirmModal').find('h1').contains('Confirm finish run');
 
@@ -76,7 +95,7 @@ describe('runs > run details page > finish', () => {
             // # Assert finish section is not visible anymore
             cy.findByTestId('run-finish-section').should('not.exist');
 
-            // assert status badge is finished
+            // # Assert status badge is finished
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
         });
 

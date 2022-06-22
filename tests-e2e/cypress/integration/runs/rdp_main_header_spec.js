@@ -395,6 +395,7 @@ describe('runs > run details page > header', () => {
         });
     });
 
+    // waiting for https://github.com/mattermost/mattermost-plugin-playbooks/pull/1259
     describe.skip('viewer', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
