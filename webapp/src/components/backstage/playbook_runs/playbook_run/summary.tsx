@@ -63,6 +63,7 @@ export default Summary;
 const Header = styled.div`
     display: flex;
     flex: 1;
+    margin-bottom: 8px;
 `;
 
 const TimestampContainer = styled.div`

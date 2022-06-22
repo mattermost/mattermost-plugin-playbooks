@@ -42,11 +42,8 @@ const ControlComponentAnchor = styled.a`
 const PlaybookRunListFilters = styled.div`
     display: flex;
     align-items: center;
-    margin: 0 -4px 20px;
-
-    > div {
-        padding: 0 4px;
-    }
+    padding: 1rem 16px;
+    gap: 4px;
 `;
 
 type ControlComponentProps = ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean> | ControlProps<PlaybookOption, boolean>;

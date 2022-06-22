@@ -59,6 +59,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         description: 'Start with a blank state and create your own masterpiece.',
         template: {
             ...emptyPlaybook(),
+            title: 'Blank',
             description: 'Customize this playbook\'s description to give an overview of when and how this playbook is run.',
         },
     },
@@ -568,7 +569,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
-            title: 'Playbooks: Bug Bash',
+            title: 'Bug Bash',
             description: mtrim`About once or twice a month, the Mattermost Playbooks team uses this playbook to run a 50 minute bug-bash testing the latest version of Playbooks.
 
             Customize this playbook to reflect your own bug bash process.`,

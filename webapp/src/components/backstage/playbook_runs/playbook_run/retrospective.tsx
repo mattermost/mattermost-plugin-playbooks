@@ -174,13 +174,6 @@ const Retrospective = ({
 
 export default Retrospective;
 
-const RetrospectiveDisabledText = styled.div`
-    font-weight: normal;
-    font-size: 20px;
-    color: var(--center-channel-color);
-    text-align: left;
-`;
-
 const StyledContent = styled(Content)`
     padding: 0 24px;
 `;
@@ -209,7 +202,7 @@ const TimestampContainer = styled.div`
 `;
 
 const Container = styled.div`
-    margin-top: 24px;
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
 `;

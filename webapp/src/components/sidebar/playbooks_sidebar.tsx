@@ -29,7 +29,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const groups: Array<SidebarGroup> = [];
 
     const [playbooks] = usePlaybooksCrud({team_id: props.team_id, per_page: 20});
-    const [playbookRuns] = useRunsList(defaultRunsFetchParams);
+    const [playbookRuns] = useRunsList(defaultRunsFetchParams, false);
 
     // Not a correct list of playbooks, should be changed
     const playbooksItems = playbooks ? playbooks.map((playbook) => {

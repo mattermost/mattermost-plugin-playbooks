@@ -25,7 +25,7 @@ import {
     RHSContainer,
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {setRHSViewingPlaybookRun} from 'src/actions';
+import {setRHSViewingPlaybookRun, displayPlaybookCreateModal} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 import {telemetryEventForTemplate} from 'src/client';
 
@@ -204,7 +204,7 @@ const RHSHome = () => {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
 
-        create({teamId: currentTeam.id, template: template?.title});
+        dispatch(displayPlaybookCreateModal({startingTemplate: template?.title, startingTeamId: currentTeam.id}));
     };
 
     useEffect(() => {
