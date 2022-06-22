@@ -30,6 +30,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
@@ -43,8 +44,8 @@ import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
+import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
+import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
 
 import {
     isCloud,
@@ -54,7 +55,6 @@ import {
 import {
     globalSettings,
     isCurrentUserAdmin,
-    myPlaybookRunsByTeam,
 } from '../selectors';
 import {resolve} from 'src/utils';
 
@@ -315,13 +315,15 @@ export function useProfilesInChannel(channelId: string) {
  *
  * @param fetch required thing fetcher
  * @param select thing from store if available
+ *
+ * @returns undefined == loading; null == not found
  */
 function useThing<T extends NonNullable<any>>(
     id: string,
     fetch: (id: string) => Promise<T>,
     select?: (state: GlobalState, id: string) => T,
 ) {
-    const [thing, setThing] = useState<T | null>(null);
+    const [thing, setThing] = useState<T | null>();
     const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
 
     useEffect(() => {
@@ -331,7 +333,7 @@ function useThing<T extends NonNullable<any>>(
         }
 
         if (id) {
-            fetch(id).then(setThing);
+            fetch(id).then(setThing).catch(() => setThing(null));
             return;
         }
         setThing(null);
@@ -345,14 +347,76 @@ export function usePost(postId: string) {
 }
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
-    return useThing(runId, fetchPlaybookRun, (state) => {
-        const runsByTeam = myPlaybookRunsByTeam(state);
-        if (teamId && channelId) {
-            // use efficient path
-            return runsByTeam[teamId]?.[channelId];
+    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
+}
+
+export enum FetchState {
+    idle = 'idle',
+    loading = 'loading',
+    done = 'done',
+    error = 'error',
+}
+
+export type FetchMetadata = {
+    state: FetchState;
+    error: ClientError | null;
+}
+
+/**
+ *
+ * @param id The id of the resource to be fetched
+ * @param fetch The function used to make the fetch
+ * @param deps Additional deps that might be needed to trigger again the fetch func
+ * @returns array tuple with the data in the first position and the fetchState in the second
+ */
+export function useFetch<T>(
+    id: string,
+    fetchFunction: (id: string) => Promise<T>,
+    deps: Array<any> = [],
+) {
+    const [error, setError] = useState<ClientError|null>(null);
+    const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
+    const [data, setData] = useState<T | null>(null);
+
+    useEffect(() => {
+        if (!id) {
+            return;
         }
-        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
-    });
+        setFetchState(FetchState.loading);
+        fetchFunction(id)
+            .then((res) => {
+                setFetchState(FetchState.done);
+                setData(res);
+            })
+            .catch((err) => {
+                if (err instanceof ClientError) {
+                    setError(err);
+                }
+                setFetchState(FetchState.error);
+                setData(null);
+            });
+    }, [id, ...deps]);
+
+    return [data, {state: fetchState, error}] as [T|null, FetchMetadata];
+}
+
+/**
+ * Read-only logic to fetch playbook run metadata
+ * @param id identifier of the run to fetch metadata
+ * @returns data and fetchState in a array tuple
+ */
+export function useRunMetadata(id: PlaybookRun['id']) {
+    return useFetch(id, fetchPlaybookRunMetadata);
+}
+
+/**
+ * Read-only logic to fetch playbook run status udpates
+ * @param id identifier of the playbook run to fetch updates
+ * @param deps Array of additional deps whose change will invoke again fetch
+ * @returns data and fetchState in a array tuple
+ */
+export function useRunStatusUpdates(id: PlaybookRun['id'], deps: Array<any> = []) {
+    return useFetch(id, fetchPlaybookRunStatusUpdates, deps);
 }
 
 export function useChannel(channelId: string) {
