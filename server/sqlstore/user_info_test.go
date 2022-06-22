@@ -11,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -165,7 +163,6 @@ func setupSQLStoreForUserInfo(t *testing.T, db *sqlx.DB) *SQLStore {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
-	logger := mock_bot.NewMockLogger(mockCtrl)
 	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
@@ -176,13 +173,10 @@ func setupSQLStoreForUserInfo(t *testing.T, db *sqlx.DB) *SQLStore {
 	}
 
 	sqlStore := &SQLStore{
-		logger,
 		db,
 		builder,
 		scheduler,
 	}
-
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	setupChannelsTable(t, db)
 	setupPostsTable(t, db)

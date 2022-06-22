@@ -9,7 +9,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -28,7 +27,6 @@ type sqlPlaybook struct {
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type playbookStore struct {
 	pluginAPI      PluginAPIClient
-	log            bot.Logger
 	store          *SQLStore
 	queryBuilder   sq.StatementBuilderType
 	playbookSelect sq.SelectBuilder
@@ -99,7 +97,7 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 }
 
 // NewPlaybookStore creates a new store for playbook service.
-func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
+func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
 		Select(
 			"p.ID",
@@ -184,7 +182,6 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	newStore := &playbookStore{
 		pluginAPI:      pluginAPI,
-		log:            log,
 		store:          sqlStore,
 		queryBuilder:   sqlStore.builder,
 		playbookSelect: playbookSelect,

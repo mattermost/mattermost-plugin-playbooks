@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type PlaybookGetter interface {
@@ -19,7 +20,6 @@ type PlaybookGetter interface {
 }
 
 type channelActionServiceImpl struct {
-	logger                bot.Logger
 	poster                bot.Poster
 	configService         config.Service
 	store                 ChannelActionStore
@@ -29,9 +29,8 @@ type channelActionServiceImpl struct {
 	telemetry             ChannelActionTelemetry
 }
 
-func NewChannelActionsService(api *pluginapi.Client, logger bot.Logger, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
+func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
 	return &channelActionServiceImpl{
-		logger:                logger,
 		poster:                poster,
 		configService:         configService,
 		store:                 store,
@@ -198,13 +197,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	user, err := a.api.User.Get(userID)
 	if err != nil {
-		a.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		logrus.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := a.api.Channel.Get(channelID)
 	if err != nil {
-		a.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		logrus.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -217,12 +216,12 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		a.logger.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
+		logrus.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
 		return
 	}
 
 	if len(actions) > 1 {
-		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+		logrus.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
 	}
 
 	if len(actions) != 1 {
@@ -236,7 +235,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 	var payload CategorizeChannelPayload
 	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-		a.logger.Errorf("unable to decode payload of CategorizeChannelPayload")
+		logrus.Errorf("unable to decode payload of CategorizeChannelPayload")
 		return
 	}
 
@@ -254,7 +253,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, payload.CategoryName)
 			if err != nil {
-				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+				logrus.Errorf("failed to categorize channel; error: %s", err.Error())
 			}
 
 			a.telemetry.RunChannelAction(action, userID)
@@ -341,7 +340,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		a.logger.Errorf("failed to resolve actions for channelID %q and trigger type %q; error: %q", channelID, TriggerTypeNewMemberJoins, err.Error())
+		logrus.Errorf("failed to resolve actions for channelID %q and trigger type %q; error: %q", channelID, TriggerTypeNewMemberJoins, err.Error())
 		return false
 	}
 
@@ -355,7 +354,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		if action.ActionType == ActionTypeWelcomeMessage {
 			var payload WelcomeMessagePayload
 			if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-				a.logger.Errorf("payload of action of type %q is not valid", action.ActionType)
+				logrus.Errorf("payload of action of type %q is not valid", action.ActionType)
 			}
 
 			// Run the action

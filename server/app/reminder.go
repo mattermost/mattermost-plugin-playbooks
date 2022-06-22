@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const RetrospectivePrefix = "retro_"
@@ -26,7 +27,7 @@ func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
 func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string) {
 	playbookRunToRemind, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID).Error())
+		logrus.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID).Error())
 		return
 	}
 
@@ -41,7 +42,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	}
 
 	if err = s.postRetrospectiveReminder(playbookRunToRemind, false); err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "couldn't post reminder").Error())
+		logrus.Errorf(errors.Wrapf(err, "couldn't post reminder").Error())
 		return
 	}
 
@@ -49,7 +50,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	go func() {
 		time.Sleep(time.Second * 2)
 		if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-			s.logger.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
+			logrus.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
 			return
 		}
 	}()
@@ -58,13 +59,13 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
+		logrus.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
 		return
 	}
 
 	owner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", playbookRunToModify.OwnerUserID).Error())
+		logrus.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", playbookRunToModify.OwnerUserID).Error())
 		return
 	}
 
@@ -95,7 +96,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	model.ParseSlackAttachment(post, attachments)
 
 	if err := s.poster.PostMessageToThread("", post); err != nil {
-		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
+		logrus.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
 	}
 
@@ -109,7 +110,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 
 	playbookRunToModify.ReminderPostID = post.Id
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
+		logrus.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
 	}
 }
 

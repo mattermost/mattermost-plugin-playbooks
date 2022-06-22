@@ -24,9 +24,9 @@ func setupStatsStore(t *testing.T, db *sqlx.DB) *StatsStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewStatsStore(pluginAPIClient, logger, sqlStore)
+	return NewStatsStore(pluginAPIClient, sqlStore)
 }
 
 func TestTotalInProgressPlaybookRuns(t *testing.T) {
@@ -93,7 +93,7 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -337,7 +337,7 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -455,7 +455,7 @@ func TestTotalPlaybooks(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -511,7 +511,7 @@ func TestMetricsStats(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		playbookStore := setupPlaybookStore(t, db)
 		statsStore := setupStatsStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)

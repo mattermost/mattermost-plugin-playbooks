@@ -11,6 +11,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type Migration struct {
@@ -223,7 +224,7 @@ var migrations = []Migration{
 				}
 
 				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
+					logrus.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 
@@ -1233,12 +1234,12 @@ var migrations = []Migration{
 			// Best effort migration so we just log the error to avoid killing the plugin.
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Warnf("failed to migrate KV store plugin id")
 				}
 			} else {
 
 				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Warnf("failed to migrate KV store plugin id")
 				}
 			}
 

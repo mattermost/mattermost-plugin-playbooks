@@ -11,15 +11,12 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigrations(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
-	logger := mock_bot.NewMockLogger(mockCtrl)
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
 	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	for _, driver := range driverNames {
@@ -31,7 +28,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("Run every migration twice", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -65,7 +61,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("Run the whole set of migrations twice", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -99,7 +94,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("force incidents to have a reminder set", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -203,7 +197,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("copy Description column into new RunSummaryTemplate", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,

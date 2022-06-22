@@ -14,7 +14,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -44,7 +43,6 @@ type sqlRunMetricData struct {
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {
 	pluginAPI                        PluginAPIClient
-	log                              bot.Logger
 	store                            *SQLStore
 	queryBuilder                     sq.StatementBuilderType
 	playbookRunSelect                sq.SelectBuilder
@@ -153,7 +151,7 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 }
 
 // NewPlaybookRunStore creates a new store for playbook run ServiceImpl.
-func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookRunStore {
+func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.PlaybookRunStore {
 	// construct the participants list so that the frontend doesn't have to query the server, bc if
 	// the user is not a member of the channel they won't have permissions to get the user list
 	participantsCol := `
@@ -238,7 +236,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 
 	return &playbookRunStore{
 		pluginAPI:                        pluginAPI,
-		log:                              log,
 		store:                            sqlStore,
 		queryBuilder:                     sqlStore.builder,
 		playbookRunSelect:                playbookRunSelect,

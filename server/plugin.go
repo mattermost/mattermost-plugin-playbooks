@@ -158,30 +158,29 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
+	sqlStore, err := sqlstore.New(apiClient, scheduler)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
-	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
-	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
+	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
+	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
-	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
+	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, logger)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
-		p.bot,
 		p.bot,
 		p.config,
 		scheduler,
@@ -284,7 +283,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot,
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
 		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {

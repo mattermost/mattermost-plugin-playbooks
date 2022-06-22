@@ -300,9 +300,7 @@ func (b *Bot) IsFromPoster(post *model.Post) bool {
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
-		b.With(LogContext{
-			"payload": payload,
-		}).Errorf("could not marshall payload")
+		logrus.WithError(err).Error("could not marshall payload")
 		payloadJSON = []byte("null")
 	}
 	return map[string]interface{}{"payload": string(payloadJSON)}

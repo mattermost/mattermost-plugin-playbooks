@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	stripmd "github.com/writeas/go-strip-markdown"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -41,7 +42,6 @@ type PlaybookRunServiceImpl struct {
 	configService   config.Service
 	store           PlaybookRunStore
 	poster          bot.Poster
-	logger          bot.Logger
 	scheduler       JobOnceScheduler
 	telemetry       PlaybookRunTelemetry
 	api             plugin.API
@@ -92,7 +92,6 @@ func NewPlaybookRunService(
 	pluginAPI *pluginapi.Client,
 	store PlaybookRunStore,
 	poster bot.Poster,
-	logger bot.Logger,
 	configService config.Service,
 	scheduler JobOnceScheduler,
 	telemetry PlaybookRunTelemetry,
@@ -106,7 +105,6 @@ func NewPlaybookRunService(
 		pluginAPI:       pluginAPI,
 		store:           store,
 		poster:          poster,
-		logger:          logger,
 		configService:   configService,
 		scheduler:       scheduler,
 		telemetry:       telemetry,
@@ -290,7 +288,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if _, err := s.actionService.Create(welcomeAction); err != nil {
-			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+			logrus.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
 		}
 	}
 
@@ -308,7 +306,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if _, err := s.actionService.Create(categorizeChannelAction); err != nil {
-			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+			logrus.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
 		}
 	}
 
@@ -2088,13 +2086,13 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		logrus.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		logrus.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -2104,7 +2102,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
+			logrus.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -2123,7 +2121,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+		logrus.Errorf("failed to create timeline event; error: %s", err.Error())
 	}
 
 	_ = s.sendPlaybookRunToClient(playbookRunID)
@@ -2138,7 +2136,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	if err := s.Follow(playbookRun.ID, userID); err != nil {
-		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
+		logrus.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
 	}
 }
 
@@ -2171,13 +2169,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		logrus.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		logrus.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -2187,7 +2185,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
+			logrus.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -2206,7 +2204,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+		logrus.Errorf("failed to create timeline event; error: %s", err.Error())
 	}
 
 	_ = s.sendPlaybookRunToClient(playbookRunID)
@@ -2585,7 +2583,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+		logrus.Errorf("failed send websocket event; error: %s", err.Error())
 	}
 	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
 
@@ -2667,7 +2665,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	}
 
 	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+		logrus.Errorf("failed send websocket event; error: %s", err.Error())
 	}
 
 	return nil

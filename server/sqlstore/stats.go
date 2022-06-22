@@ -8,23 +8,21 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 type StatsStore struct {
 	pluginAPI PluginAPIClient
-	log       bot.Logger
 	store     *SQLStore
 }
 
-func NewStatsStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) *StatsStore {
+func NewStatsStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) *StatsStore {
 	return &StatsStore{
 		pluginAPI: pluginAPI,
-		log:       log,
 		store:     sqlStore,
 	}
 }
@@ -57,7 +55,7 @@ func (s *StatsStore) TotalInProgressPlaybookRuns(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retrieving stat total in progress %w", err)
+		logrus.WithError(err).Warnf("Error retrieving stat total in progress")
 		return -1
 	}
 
@@ -104,7 +102,7 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retrieving stat total active participants %w", err)
+		logrus.WithError(err).Warnf("Error retrieving stat total active participants")
 		return -1
 	}
 
@@ -130,7 +128,7 @@ func (s *StatsStore) RunsFinishedBetweenDays(filters *StatsFilters, startDay, en
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retrieving stat total in progress %w", err)
+		logrus.WithError(err).Warnf("Error retrieving stat total in progress")
 		return -1
 	}
 
@@ -210,7 +208,7 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %v", err)
+		logrus.Warnf("failed to perform query: %v", err)
 		return []int{}, [][]int64{}
 	}
 
@@ -268,7 +266,7 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %v", err)
+		logrus.Warnf("failed to perform query: %v", err)
 		return []int{}, [][]int64{}
 	}
 
@@ -323,7 +321,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %v", err)
+		logrus.Warnf("failed to perform query: %v", err)
 		return []int{}, [][]int64{}
 	}
 
@@ -355,13 +353,13 @@ func (s *StatsStore) MetricOverallAverage(filters StatsFilters) []null.Int {
 	}
 	var averages []Average
 	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
-		s.log.Warnf("Error retrieving stat total active participants %w", err)
+		logrus.WithError(err).Warnf("Error retrieving stat total active participants")
 		return []null.Int{}
 	}
 
 	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
 		return []null.Int{}
 	}
 
@@ -403,13 +401,13 @@ func (s *StatsStore) MetricValueRange(filters StatsFilters) [][]int64 {
 		OrderBy("mc.Ordering ASC")
 	var res []MinMax
 	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
-		s.log.Warnf("Error retrieving metric min and max values %w", err)
+		logrus.WithError(err).Warnf("Error retrieving metric min and max values")
 		return [][]int64{}
 	}
 
 	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
 		return [][]int64{}
 	}
 
@@ -436,7 +434,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters Sta
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
 		return [][]int64{}, []string{}
 	}
 
@@ -463,7 +461,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters Sta
 			Name  string
 		}
 		if err := s.store.selectBuilder(s.store.db, &rows, query); err != nil {
-			s.log.Warnf("Error retrieving metrics values %w", err)
+			logrus.WithError(err).Warnf("Error retrieving metrics values")
 			return [][]int64{}, []string{}
 		}
 
@@ -563,7 +561,7 @@ func (s *StatsStore) retrieveMetricConfigs(playbookID string) ([]string, error) 
 		OrderBy("Ordering ASC")
 	var ids []string
 	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %s ", playbookID)
+		logrus.Warnf("Error retrieving metrics configs ids for playbook %s ", playbookID)
 		return nil, err
 	}
 	return ids, nil
