@@ -296,7 +296,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 	// certain keywords are posted in a channel), then we need to edit that original post
 	if state.PromptPostID != "" {
 		if err := h.editPromptPost(state.PromptPostID, playbookID, playbookRun.ID, userID, name); err != nil {
-			logger.WithError(err).Warnf("failed editing the prompt post")
+			logger.WithError(err).Warn("failed editing the prompt post")
 		}
 	}
 
@@ -852,7 +852,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 	for _, p := range playbookRun.StatusPosts {
 		post, err := h.pluginAPI.Post.GetPost(p.ID)
 		if err != nil {
-			logger.WithError(err).Warnf("statusUpdates: can not retrieve post %s", p.ID)
+			logger.WithError(err).WithField("post_id", p.ID).Warn("statusUpdates: can not retrieve post")
 		}
 
 		// Given the fact that we are bypassing some permissions,

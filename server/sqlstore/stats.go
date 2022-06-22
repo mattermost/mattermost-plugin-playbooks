@@ -55,7 +55,7 @@ func (s *StatsStore) TotalInProgressPlaybookRuns(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		logrus.WithError(err).Warnf("Error retrieving stat total in progress")
+		logrus.WithError(err).Warn("Error retrieving stat total in progress")
 		return -1
 	}
 
@@ -102,7 +102,7 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		logrus.WithError(err).Warnf("Error retrieving stat total active participants")
+		logrus.WithError(err).Warn("Error retrieving stat total active participants")
 		return -1
 	}
 
@@ -128,7 +128,7 @@ func (s *StatsStore) RunsFinishedBetweenDays(filters *StatsFilters, startDay, en
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		logrus.WithError(err).Warnf("Error retrieving stat total in progress")
+		logrus.WithError(err).Warn("Error retrieving stat total in progress")
 		return -1
 	}
 
@@ -353,13 +353,13 @@ func (s *StatsStore) MetricOverallAverage(filters StatsFilters) []null.Int {
 	}
 	var averages []Average
 	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
-		logrus.WithError(err).Warnf("Error retrieving stat total active participants")
+		logrus.WithError(err).Warn("Error retrieving stat total active participants")
 		return []null.Int{}
 	}
 
 	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
+		logrus.WithError(err).Warn("Error retrieving metrics configs ids for playbook")
 		return []null.Int{}
 	}
 
@@ -401,13 +401,13 @@ func (s *StatsStore) MetricValueRange(filters StatsFilters) [][]int64 {
 		OrderBy("mc.Ordering ASC")
 	var res []MinMax
 	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
-		logrus.WithError(err).Warnf("Error retrieving metric min and max values")
+		logrus.WithError(err).Warn("Error retrieving metric min and max values")
 		return [][]int64{}
 	}
 
 	configs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
+		logrus.WithError(err).Warn("Error retrieving metrics configs ids for playbook")
 		return [][]int64{}
 	}
 
@@ -434,7 +434,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters Sta
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
-		logrus.WithError(err).Warnf("Error retrieving metrics configs ids for playbook")
+		logrus.WithError(err).Warn("Error retrieving metrics configs ids for playbook")
 		return [][]int64{}, []string{}
 	}
 
@@ -461,7 +461,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters Sta
 			Name  string
 		}
 		if err := s.store.selectBuilder(s.store.db, &rows, query); err != nil {
-			logrus.WithError(err).Warnf("Error retrieving metrics values")
+			logrus.WithError(err).Warn("Error retrieving metrics values")
 			return [][]int64{}, []string{}
 		}
 

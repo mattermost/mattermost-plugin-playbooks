@@ -344,7 +344,10 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve actions for channelID %q and trigger type %q", channelID, TriggerTypeNewMemberJoins)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"channel_id":   channelID,
+			"trigger_type": TriggerTypeNewMemberJoins,
+		}).Error("failed to resolve actions")
 		return false
 	}
 

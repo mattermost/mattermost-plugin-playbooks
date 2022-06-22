@@ -291,7 +291,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if _, err := s.actionService.Create(welcomeAction); err != nil {
-			logrus.WithError(err).Errorf("unable to create welcome action for new run in channel %q", playbookRun.ChannelID)
+			logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("unable to create welcome action for new run in channel")
 		}
 	}
 
@@ -309,7 +309,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if _, err := s.actionService.Create(categorizeChannelAction); err != nil {
-			logrus.WithError(err).Errorf("unable to create welcome action for new run in channel %q", playbookRun.ChannelID)
+			logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("unable to create welcome action for new run in channel")
 		}
 	}
 
@@ -3000,7 +3000,7 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessageToChannels(channelID
 	for _, broadcastChannelID := range channelIDs {
 		post.Id = "" // Reset the ID so we avoid cloning the whole object
 		if err := s.broadcastPlaybookRunMessage(broadcastChannelID, post, mType, playbookRun); err != nil {
-			logger.WithError(err).Warnf("failed to broadcast run to channel")
+			logger.WithError(err).Warn("failed to broadcast run to channel")
 
 			if _, err = s.poster.PostMessage(playbookRun.ChannelID, fmt.Sprintf("Failed to broadcast run %s to the configured channel.", mType)); err != nil {
 				logger.WithError(err).WithField("channel_id", playbookRun.ChannelID).Warn("failed to post failure message to the channel")
@@ -3032,7 +3032,7 @@ func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, mType me
 
 	followers, err := s.GetFollowers(playbookRunID)
 	if err != nil {
-		logger.WithError(err).Warnf("failed to broadcast run to followers")
+		logger.WithError(err).Warn("failed to broadcast run to followers")
 		return
 	}
 

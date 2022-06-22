@@ -25,9 +25,11 @@ func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
 }
 
 func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string) {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToRemind, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		logrus.WithError(err).Errorf("handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID)
+		logger.WithError(err).Errorf("handleReminderToFillRetro failed to get playbook run")
 		return
 	}
 
@@ -42,7 +44,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	}
 
 	if err = s.postRetrospectiveReminder(playbookRunToRemind, false); err != nil {
-		logrus.WithError(err).Errorf("couldn't post reminder")
+		logger.WithError(err).Errorf("couldn't post reminder")
 		return
 	}
 
@@ -50,22 +52,24 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	go func() {
 		time.Sleep(time.Second * 2)
 		if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-			logrus.WithError(err).Errorf("failed to reocurr retrospective reminder")
+			logger.WithError(err).Errorf("failed to reocurr retrospective reminder")
 			return
 		}
 	}()
 }
 
 func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		logrus.WithError(err).Errorf("HandleReminder failed to get playbook run id: %s", playbookRunID)
+		logger.WithError(err).Error("HandleReminder failed to get playbook run")
 		return
 	}
 
 	owner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 	if err != nil {
-		logrus.WithError(err).Errorf("HandleReminder failed to get owner for id: %s", playbookRunToModify.OwnerUserID)
+		logger.WithError(err).WithField("user_id", playbookRunToModify.OwnerUserID).Error("HandleReminder failed to get owner")
 		return
 	}
 
@@ -96,21 +100,21 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	model.ParseSlackAttachment(post, attachments)
 
 	if err := s.poster.PostMessageToThread("", post); err != nil {
-		logrus.WithError(err).Errorf("HandleReminder error posting reminder message")
+		logger.WithError(err).Errorf("HandleReminder error posting reminder message")
 		return
 	}
 
 	// broadcast to followers
 	message, err := s.buildOverdueStatusUpdateMessage(playbookRunToModify, owner.Username)
 	if err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunToModify.ID).Warn("failed to build overdue status update message")
+		logger.WithError(err).Warn("failed to build overdue status update message")
 	} else {
 		s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		logrus.WithError(err).Errorf("error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID)
+		logger.WithError(err).Error("error updating with reminder post id")
 	}
 }
 

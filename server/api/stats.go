@@ -154,11 +154,11 @@ func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request,
 	}
 	totalPlaybooks, err := h.statsStore.TotalPlaybooks()
 	if err != nil {
-		logger.WithError(err).Warnf("playbookSiteStats failed fetching total playbooks")
+		logger.WithError(err).Warn("playbookSiteStats failed fetching total playbooks")
 	}
 	totalRuns, err := h.statsStore.TotalPlaybookRuns()
 	if err != nil {
-		logger.WithError(err).Warnf("playbookSiteStats failed fetching total playbook runs")
+		logger.WithError(err).Warn("playbookSiteStats failed fetching total playbook runs")
 	}
 	ReturnJSON(w, &PlaybookSiteStats{
 		TotalPlaybooks:    totalPlaybooks,

@@ -24,7 +24,7 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
-		c.logger.WithError(err).Warnf("Not authorized")
+		c.logger.WithError(err).Warn("Not authorized")
 		return nil, errors.New("Not authorized")
 	}
 
