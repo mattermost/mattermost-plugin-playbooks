@@ -7,24 +7,12 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-// Bot stores the information for the plugin configuration, and implements the Poster and Logger
-// interfaces.
+// Bot stores the information for the plugin configuration, and implements the Poster interfaces.
 type Bot struct {
 	configService config.Service
 	pluginAPI     *pluginapi.Client
 	botUserID     string
-	logContext    LogContext
 	telemetry     Telemetry
-}
-
-// Logger interface - a logging system that will tee logs to a DM channel.
-type Logger interface {
-	With(LogContext) Logger
-	Timed() Logger
-	Debugf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
 }
 
 // Poster interface - a small subset of the plugin posting API.
@@ -84,7 +72,7 @@ type Telemetry interface {
 	StartTrial(userID string, action string)
 }
 
-// New creates a new bot poster/logger.
+// New creates a new bot poster.
 func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
 	return &Bot{
 		pluginAPI:     api,
@@ -100,7 +88,6 @@ func (b *Bot) clone() *Bot {
 		configService: b.configService,
 		pluginAPI:     b.pluginAPI,
 		botUserID:     b.botUserID,
-		logContext:    b.logContext.copyShallow(),
 		telemetry:     b.telemetry,
 	}
 }
