@@ -601,5 +601,7 @@
     "Q15rLN": "Frissítés kérése...",
     "GDCpPr": "Legújabb állapot frissítés",
     "+qDKgW": "Összes frissítés megtekintése",
-    "kkw4kS": "Ez a frissítés közzé lesz téve {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {egy csatornában} other {{broadcastChannelCount, number} csatornában}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { és } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {egy közvetlen üzenetben} other {{followersChannelCount, number} közvetlen üzenetben}}</FollowersTooltip>} other {}}."
+    "kkw4kS": "Ez a frissítés közzé lesz téve {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {egy csatornában} other {{broadcastChannelCount, number} csatornában}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { és } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {egy közvetlen üzenetben} other {{followersChannelCount, number} közvetlen üzenetben}}</FollowersTooltip>} other {}}.",
+    "kEMvwX": "Nincs a szűrésnek megfelelő futás.",
+    "GXjP8g": "Minden futás, amelyhez hozzáférhet, itt fog megjelenni"
 }
