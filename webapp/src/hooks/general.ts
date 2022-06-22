@@ -352,7 +352,7 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
  * @param id identifier of the run to fetch metadata
  * @returns undefined == loading; null == not found
  */
-export function useRunMetadata(id: PlaybookRun['id'] | undefined) {
+export function useRunMetadata(id: PlaybookRun['id']) {
     const [metadata, setMetadata] = useState<PlaybookRunMetadata | undefined | null>();
     useEffect(() => {
         if (!id) {
@@ -370,9 +370,10 @@ export function useRunMetadata(id: PlaybookRun['id'] | undefined) {
 /**
  * Read-only logic to fetch playbook run status udpates
  * @param id identifier of the playbook run to fetch updates
+ * @param deps Array of additional deps whose change will invoke again fetch
  * @returns undefined == loading; null == not found
  */
-export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: Array<any> = []) {
+export function useRunStatusUpdates(id: PlaybookRun['id'], deps: Array<any> = []) {
     const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[] | undefined | null>();
     useEffect(() => {
         if (!id) {
