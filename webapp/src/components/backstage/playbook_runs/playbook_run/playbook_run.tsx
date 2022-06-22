@@ -5,13 +5,15 @@ import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useRouteMatch} from 'react-router-dom';
+import {useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {pluginErrorUrl} from 'src/browser_routing';
+import {ErrorPageTypes} from 'src/constants';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -23,21 +25,22 @@ import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 
 const useRHS = () => {
-    const {formatMessage} = useIntl();
     const [isOpen, setIsOpen] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
-    const [title, setTitle] = useState<React.ReactNode>(formatMessage({defaultMessage: 'Run info'}));
+    const [title, setTitle] = useState<React.ReactNode>(null);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(null);
 
-    const open = (_section: RHSContent, _title: React.ReactNode) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
+        setSubtitle(_subtitle);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, open, close};
+    return {isOpen, section, title, subtitle, open, close};
 };
 
 const PlaybookRunDetails = () => {
@@ -70,8 +73,14 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
-    if (!playbookRun) {
+    // loading state
+    if (playbookRun === undefined) {
         return null;
+    }
+
+    // not found or error
+    if (playbookRun === null || metadata === null) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     // TODO: triple-check this assumption, can we rely on participant_ids?
@@ -118,6 +127,7 @@ const PlaybookRunDetails = () => {
             <RightHandSidebar
                 isOpen={RHS.isOpen}
                 title={RHS.title}
+                subtitle={RHS.subtitle}
                 onClose={RHS.close}
             >
                 {RHSContent.RunStatusUpdates === RHS.section ? (

@@ -275,7 +275,6 @@ interface PlaybookRunFilterButtonProps {
 }
 
 export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
-	flex-grow: 1;
     display: flex;
     align-items: center;
     border: none;
@@ -286,10 +285,6 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     font-weight: 600;
     font-size: 14px;
     line-height: 12px;
-    -webkit-transition: all 0.15s ease;
-    -webkit-transition-delay: 0s;
-    -moz-transition: all 0.15s ease;
-    -o-transition: all 0.15s ease;
     transition: all 0.15s ease;
     padding: 0 16px;
     height: 4rem;
