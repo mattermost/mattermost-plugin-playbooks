@@ -82,7 +82,7 @@ type Context struct {
 	playbookService app.PlaybookService
 	playbookStore   app.PlaybookStore
 	pluginAPI       *pluginapi.Client
-	log             logrus.FieldLogger
+	logger          logrus.FieldLogger
 	config          config.Service
 	permissions     *app.PermissionsService
 	licenceChecker  app.LicenseChecker
@@ -114,7 +114,7 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger 
 		r:               r,
 		playbookService: h.playbookService,
 		pluginAPI:       h.pluginAPI,
-		log:             logger,
+		logger:          logger,
 		config:          h.config,
 		permissions:     h.permissions,
 		playbookStore:   h.playbookStore,
