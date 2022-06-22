@@ -3,7 +3,7 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 import {useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
@@ -11,7 +11,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {useUpdateEffect} from 'react-use';
 
-import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -54,13 +54,12 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
 
 const PlaybookRunDetails = () => {
     const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
     const match = useRouteMatch<{playbookRunId: string}>();
     const playbookRunId = match.params.playbookRunId;
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
-    const metadata = useRunMetadata(playbookRunId);
-    const statusUpdates = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
+    const [metadata, metadataRes] = useRunMetadata(playbookRunId);
+    const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);
 
     const RHS = useRHS(playbookRun);
@@ -88,7 +87,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadata === null) {
+    if (playbookRun === null || metadataRes.state === FetchState.error) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 

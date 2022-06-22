@@ -30,6 +30,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
@@ -39,7 +40,7 @@ import {useUpdateEffect} from 'react-use';
 
 import {debounce, isEqual} from 'lodash';
 
-import {FetchPlaybookRunsParams, PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -349,45 +350,74 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
     return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
 }
 
+export enum FetchState {
+    idle = 'idle',
+    pending = 'pending',
+    done = 'done',
+    error = 'error',
+}
+
+export type FetchMetadata = {
+    state: FetchState;
+    error: ClientError | null;
+}
+
+/**
+ *
+ * @param id The id of the resource to be fetched
+ * @param fetch The function used to make the fetch
+ * @param deps Additional deps that might be needed to trigger again the fetch func
+ * @returns array tuple with the data in the first position and the fetchState in the second
+ */
+export function useFetch<T>(
+    id: string,
+    fetch: (id: string) => Promise<T>,
+    deps: Array<any> = [],
+) {
+    const [error, setError] = useState<ClientError|null>(null);
+    const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
+    const [data, setData] = useState<T | null>(null);
+    useEffect(() => {
+        if (!id) {
+            return;
+        }
+        setFetchState(FetchState.pending);
+        fetch(id)
+            .then((res) => {
+                setFetchState(FetchState.done);
+                setData(res);
+            })
+            .catch((e: ClientError) => {
+                setFetchState(FetchState.error);
+                setData(null);
+                setError(e);
+            })
+            .catch(() => {
+                setFetchState(FetchState.error);
+                setData(null);
+            });
+    }, [id, ...deps]);
+
+    return [data, {state: fetchState, error}] as [T|null, FetchMetadata];
+}
+
 /**
  * Read-only logic to fetch playbook run metadata
  * @param id identifier of the run to fetch metadata
- * @returns undefined == loading; null == not found
+ * @returns data and fetchState in a array tuple
  */
 export function useRunMetadata(id: PlaybookRun['id']) {
-    const [metadata, setMetadata] = useState<PlaybookRunMetadata | undefined | null>();
-    useEffect(() => {
-        if (!id) {
-            setMetadata(null);
-            return;
-        }
-        fetchPlaybookRunMetadata(id)
-            .then(setMetadata)
-            .catch(() => setMetadata(null));
-    }, [id]);
-
-    return metadata;
+    return useFetch(id, fetchPlaybookRunMetadata);
 }
 
 /**
  * Read-only logic to fetch playbook run status udpates
  * @param id identifier of the playbook run to fetch updates
  * @param deps Array of additional deps whose change will invoke again fetch
- * @returns undefined == loading; null == not found
+ * @returns data and fetchState in a array tuple
  */
 export function useRunStatusUpdates(id: PlaybookRun['id'], deps: Array<any> = []) {
-    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[] | undefined | null>();
-    useEffect(() => {
-        if (!id) {
-            setStatusUpdates(null);
-            return;
-        }
-        fetchPlaybookRunStatusUpdates(id)
-            .then(setStatusUpdates)
-            .catch(() => setStatusUpdates(null));
-    }, [id, ...deps]);
-
-    return statusUpdates;
+    return useFetch(id, fetchPlaybookRunStatusUpdates, deps);
 }
 
 export function useChannel(channelId: string) {
