@@ -68,6 +68,7 @@ export const getRun = (playbookRunId: string, teamId?: string, channelId?: strin
     };
 };
 
+// @deprecated: now we should check playbookRun.participants ang ignore channel members
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
     const canPost = haveIChannelPermission(state, teamId, channelId, Permissions.READ_CHANNEL);
 

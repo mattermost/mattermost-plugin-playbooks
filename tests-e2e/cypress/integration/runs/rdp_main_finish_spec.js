@@ -57,6 +57,7 @@ describe('runs > run details page > finish', () => {
             cy.visit(`/playbooks/run_details/${playbookRun.id}`);
         });
     });
+
     it('is hidden as viewer', () => {
         cy.apiLogin(testViewerUser).then(() => {
             // # Visit the playbook run
