@@ -6,6 +6,7 @@ import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
+import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 
 export enum RHSContent {
     RunInfo = 'run-info',
@@ -42,6 +43,7 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderVerticalDivider/>
                 {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
+                <ExpandRight/>
                 <HeaderIcon>
                     <i
                         className='icon icon-close'
@@ -89,14 +91,19 @@ const Header = styled.div`
     flex-direction: row;
     height: 56px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
 `;
 const HeaderIcon = styled.div`
     display: flex;
     align-self: center;
+    justify-content: center;
     cursor: pointer;
-    flex: 1;
-    justify-content: flex-end;
+    width: 32px;
+    height: 32px;
     margin-right: 20px;
+    :hover {
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+    }
 `;
 
 const HeaderTitle = styled.div`
