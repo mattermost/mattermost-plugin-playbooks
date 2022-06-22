@@ -57,11 +57,14 @@ describe('runs > run details page > finish', () => {
         // * Verify the tasks section is present
         cy.findByTestId('run-finish-section').contains('Time to wrap up?');
     });
-    describe.skip('finish run', () => {
+    describe.only('finish run', () => {
         // wait for merge
         it('can be confirmed', () => {
             // * Click finish run button
             cy.findByTestId('run-finish-section').find('button').click();
+
+            // # Check that status badge is in-progress
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
             // # Check that finish run modal is open
             cy.get('#confirmModal').should('be.visible');
@@ -70,21 +73,19 @@ describe('runs > run details page > finish', () => {
             // * Click on confirm
             cy.get('#confirmModal').get('#confirmModalButton').click();
 
-            // * Open dropdown
-            cy.findByTestId('run-header-section').find('h1').click();
+            // # Assert finish section is not visible anymore
+            cy.findByTestId('run-finish-section').should('not.exist');
 
-            // # Assert option is not anymore in context dropdown
-            // getDropdownItemByText('Finish run').should('not.exist');
-
-            // TODO: assert badge with status
+            // assert status badge is finished
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
         });
 
         it('can be canceled', () => {
-            // * Open dropdown
-            cy.findByTestId('run-header-section').find('h1').click();
-
             // * Click on finish run
-            getDropdownItemByText('Finish run').click();
+            cy.findByTestId('run-finish-section').find('button').click();
+
+            // # Check that status badge is in-progress
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
             // # Check that finish run modal is open
             cy.get('#confirmModal').should('be.visible');
@@ -93,13 +94,11 @@ describe('runs > run details page > finish', () => {
             // * Click on cancel
             cy.get('#confirmModal').get('#cancelModalButton').click();
 
-            // * Open dropdown
-            cy.findByTestId('run-header-section').find('h1').click();
+            // # Check that status badge is still in-progress
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
-            // # Assert option is not anymore in context dropdown
-            getDropdownItemByText('Finish run').should('be.visible');
-
-            // TODO: assert badge with status
+            // # Check that section is still visible
+            cy.findByTestId('run-finish-section').should('be.visible');
         });
     });
 });
