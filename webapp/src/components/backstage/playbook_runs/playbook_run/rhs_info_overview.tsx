@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import Icon from '@mdi/react';
 import {mdiAccountOutline, mdiAccountMultipleOutline, mdiBookOutline, mdiBullhornOutline} from '@mdi/js';
@@ -22,7 +22,7 @@ import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/play
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
-import {pluginUrl} from 'src/browser_routing';
+import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {usePlaybook} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
@@ -69,6 +69,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
             <Item
                 iconPath={mdiBookOutline}
                 name={formatMessage({defaultMessage: 'Playbook'})}
+                onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
                 {playbook && <Link to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</Link>}
             </Item>
@@ -86,6 +87,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
             <Item
                 iconPath={mdiAccountMultipleOutline}
                 name={formatMessage({defaultMessage: 'Participants'})}
+                onClick={() => {/* implement the participants list view */}}
             >
                 <Participants>
                     <UserList
@@ -157,10 +159,11 @@ interface ItemProps {
     iconPath: string;
     name: string;
     children: React.ReactNode;
+    onClick?: () => void;
 }
 
 const Item = (props: ItemProps) => (
-    <OverviewRow>
+    <OverviewRow onClick={props.onClick}>
         <OverviewItemName>
             <OverviewIcon
                 path={props.iconPath}
@@ -172,7 +175,7 @@ const Item = (props: ItemProps) => (
     </OverviewRow>
 );
 
-const OverviewRow = styled.div`
+const OverviewRow = styled.div<{onClick: () => void}>`
     padding: 10px 24px;
     display: flex;
     justify-content: space-between;
@@ -180,6 +183,10 @@ const OverviewRow = styled.div`
     :hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
+
+    ${({onClick}) => onClick && css`
+        cursor: pointer;
+    `}
 `;
 
 const OverviewItemName = styled.div`
