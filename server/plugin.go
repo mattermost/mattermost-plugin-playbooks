@@ -124,7 +124,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
-		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
+		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
 		p.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
@@ -141,13 +141,13 @@ func (p *Plugin) OnActivate() error {
 
 		if telemetryEnabled {
 			if err = p.telemetryClient.Enable(); err != nil {
-				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
+				logrus.WithError(err).Warn("Telemetry could not be enabled")
 			}
 			return
 		}
 
 		if err = p.telemetryClient.Disable(); err != nil {
-			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
+			logrus.WithError(err).Error("Telemetry could not be disabled")
 		}
 	}
 
@@ -193,10 +193,10 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not add the playbookRunService's HandleReminder", "error", err.Error())
+		logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
 	}
 	if err = scheduler.Start(); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
+		logrus.WithError(err).Error("JobOnceScheduler could not start")
 	}
 
 	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
@@ -324,12 +324,12 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 }
 
 func (p *Plugin) runMetricsServer() {
-	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
+	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService)
 	// Run server to expose metrics
 	go func() {
 		err := metricServer.Run()
 		if err != nil {
-			p.pluginAPI.Log.Error("Metrics server could not be started", "Error", err)
+			logrus.WithError(err).Error("Metrics server could not be started")
 		}
 	}()
 }
@@ -339,37 +339,37 @@ func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbook
 		if playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal(); err == nil {
 			p.metricsService.ObservePlaybooksActiveTotal(playbooksActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, playbooks_active_total")
 		}
 
 		if runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal(); err == nil {
 			p.metricsService.ObserveRunsActiveTotal(runsActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, runs_active_total")
 		}
 
 		if remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal(); err == nil {
 			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
+			logrus.WithError(err).Error("error updating metrics, reminders_outstanding_total")
 		}
 
 		if retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal(); err == nil {
 			p.metricsService.ObserveRetrosOutstandingTotal(retrosOverdueTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
+			logrus.WithError(err).Error("error updating metrics, retros_outstanding_total")
 		}
 
 		if followersActiveTotal, err := playbookRunStore.GetFollowersActiveTotal(); err == nil {
 			p.metricsService.ObserveFollowersActiveTotal(followersActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, followers_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, followers_active_total")
 		}
 
 		if participantsActiveTotal, err := playbookRunStore.GetParticipantsActiveTotal(); err == nil {
 			p.metricsService.ObserveParticipantsActiveTotal(participantsActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, participants_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, participants_active_total")
 		}
 	}
 

@@ -180,19 +180,19 @@ type PlaybookRunWebhookEvent struct {
 func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun) {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
+		logrus.Warn("cannot send webhook on creation, please set siteURL")
 		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.TeamID")
+		logrus.WithError(err).Warn("cannot send webhook on creation, not able to get playbookRun.TeamID")
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.ChannelID")
+		logrus.WithError(err).Warn("cannot send webhook on creation, not able to get playbookRun.ChannelID")
 		return
 	}
 
@@ -215,7 +215,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on creation, unable to marshal payload")
+		logrus.WithError(err).Warn("cannot send webhook on creation, unable to marshal payload")
 		return
 	}
 
@@ -227,7 +227,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
-			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the playbook run's team", "userID", playbookRun.DefaultOwnerID, "teamID", playbookRun.TeamID)
+			logrus.WithFields(logrus.Fields{
+				"user_id": playbookRun.DefaultOwnerID,
+				"team_id": playbookRun.TeamID,
+			}).Warn("default owner specified, but it is not a member of the playbook run's team")
 		} else {
 			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 		}
@@ -342,15 +345,17 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	invitedUserIDs := playbookRun.InvitedUserIDs
 
 	for _, groupID := range playbookRun.InvitedGroupIDs {
+		logger := logrus.WithField("group_id", groupID)
+
 		var group *model.Group
 		group, err = s.pluginAPI.Group.Get(groupID)
 		if err != nil {
-			s.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			logger.WithError(err).Warn("failed to query group")
 			continue
 		}
 
 		if !group.AllowReference {
-			s.pluginAPI.Log.Warn("group that does not allow references", "group_id", groupID)
+			logrus.Warn("group that does not allow references")
 			continue
 		}
 
@@ -359,7 +364,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			var users []*model.User
 			users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to query group", "group_id", groupID, "err", err)
+				logger.WithError(err).Warn("failed to query group")
 				break
 			}
 			for _, user := range users {
@@ -466,8 +471,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 		for _, autoFollow := range autoFollows {
 			if err := s.Follow(playbookRun.ID, autoFollow); err != nil {
-				s.pluginAPI.Log.Warn("failed to follow the playbook run",
-					"playbookRunID", playbookRun.ID, "autoFollow", autoFollow, "error", err.Error())
+				logrus.WithError(err).WithFields(logrus.Fields{
+					"playbook_run_id": playbookRun.ID,
+					"auto_follow":     autoFollow,
+				}).Warn("failed to follow the playbook run")
 			}
 		}
 	}
@@ -738,27 +745,29 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 // sendWebhooksOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
 func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string, event *PlaybookRunWebhookEvent) {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun")
+		logger.WithError(err).Warn("cannot send webhook on update, not able to get playbookRun")
 		return
 	}
 
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
+		logger.Warn("cannot send webhook on update, please set siteURL")
 		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		logger.WithField("team_id", playbookRun.TeamID).Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		logger.WithField("channel_id", playbookRun.ChannelID).Warn("cannot send webhook on update, not able to get playbookRun.ChannelID")
 		return
 	}
 
@@ -775,7 +784,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot send webhook on update, unable to marshal payload")
+		logger.WithError(err).Warn("cannot send webhook on update, unable to marshal payload")
 		return
 	}
 
@@ -913,6 +922,8 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -936,7 +947,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
-		s.pluginAPI.Log.Warn("failed to post the status update to channel", "ChannelID", playbookRunToModify.ChannelID)
+		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Warn("failed to post the status update to channel")
 	} else {
 		postID = post.Id
 	}
@@ -954,7 +965,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	err = s.resetReminderTimer(playbookRunID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
+		logger.WithError(err).Warn("failed to reset the reminder timer when updating status to Archived")
 	}
 
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
@@ -990,7 +1001,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	s.metricsService.IncrementRunsFinishedCount(1)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1010,6 +1021,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 // RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToRestore, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -1033,7 +1046,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
-		s.pluginAPI.Log.Warn("failed to post the status update to channel", "ChannelID", playbookRunToRestore.ChannelID)
+		logger.WithField("channel_id", playbookRunToRestore.ChannelID).Warn("failed to post the status update to channel")
 	} else {
 		postID = post.Id
 	}
@@ -2086,13 +2099,13 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to resolve user")
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to resolve channel")
 		return
 	}
 
@@ -2102,7 +2115,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			logrus.WithError(err2).Errorf("failed to resolve user for userID '%s'", actorID)
+			logrus.WithError(err2).WithField("user_id", actorID).Error("failed to resolve user for userID")
 			return
 		}
 
@@ -2136,7 +2149,10 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	if err := s.Follow(playbookRun.ID, userID); err != nil {
-		logrus.WIthError(err).Errorf("user `%s` was not able to follow the run `%s`", userID, playbookRun.ID)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"user_id":         userID,
+			"playbook_run_id": playbookRun.ID,
+		}).Error("user was not able to follow the run")
 	}
 }
 
@@ -2169,13 +2185,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to resolve user")
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to resolve channel")
 		return
 	}
 
@@ -2185,7 +2201,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			logrus.WithError(err2).Errorf("failed to resolve user for userID '%s'", actorID)
+			logrus.WithError(err2).WithField("user_id", userID).Error("failed to resolve user")
 			return
 		}
 
@@ -2279,7 +2295,10 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 	}
 
 	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
-		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"channel_id":    channel.Id,
+			"owner_user_id": playbookRun.OwnerUserID,
+		}).Warn("failed to promote owner to admin")
 	}
 
 	return nil
@@ -2606,14 +2625,12 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 
 		metricsConfigs, err := json.Marshal(playbook.Metrics)
 		if err != nil {
-			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics configs")
-			return nil, err
+			return nil, errors.Wrap(err, "unable to marshal metrics configs")
 		}
 
 		metricsData, err := json.Marshal(playbookRunToPublish.MetricsData)
 		if err != nil {
-			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics data")
-			return nil, err
+			return nil, errors.Wrap(err, "cannot post retro, unable to marshal metrics data")
 		}
 		props["metricsData"] = string(metricsData)
 		props["metricsConfigs"] = string(metricsConfigs)
@@ -2809,7 +2826,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 			req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to create a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+				logrus.WithError(err).WithField("webhook_url", url).Warn("failed to create a POST request to webhook URL")
 				return
 			}
 
@@ -2817,7 +2834,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 			resp, err := s.httpClient.Do(req)
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+				logrus.WithError(err).WithField("webhook_url", url).Warn("failed to send a POST request to webhook URL")
 				return
 			}
 
@@ -2825,7 +2842,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				err := errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
-				s.pluginAPI.Log.Warn("failed to finish a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+				logrus.WithError(err).WithField("webhook_url", url).Warn("failed to finish a POST request to webhook URL")
 			}
 		}()
 	}
@@ -2978,13 +2995,15 @@ const (
 
 // broadcasting to channels
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessageToChannels(channelIDs []string, post *model.Post, mType messageType, playbookRun *PlaybookRun) {
+	logger := logrus.WithField("message_type", mType)
+
 	for _, broadcastChannelID := range channelIDs {
 		post.Id = "" // Reset the ID so we avoid cloning the whole object
 		if err := s.broadcastPlaybookRunMessage(broadcastChannelID, post, mType, playbookRun); err != nil {
-			s.pluginAPI.Log.Warn(fmt.Sprintf("failed to broadcast run %s to channel", mType), "error", err.Error())
+			logger.WithError(err).Warnf("failed to broadcast run to channel")
 
 			if _, err = s.poster.PostMessage(playbookRun.ChannelID, fmt.Sprintf("Failed to broadcast run %s to the configured channel.", mType)); err != nil {
-				s.pluginAPI.Log.Warn("failed to post failure message to the channel", "channelID", playbookRun.ChannelID, "error", err.Error())
+				logger.WithError(err).WithField("channel_id", playbookRun.ChannelID).Warn("failed to post failure message to the channel")
 			}
 		}
 	}
@@ -3006,9 +3025,14 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(broadcastChannelID 
 // dm to users who follow
 
 func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, mType messageType, playbookRunID, authorID string) {
+	logger := logrus.WithFields(logrus.Fields{
+		"playbook_run_id": playbookRunID,
+		"message_type":    mType,
+	})
+
 	followers, err := s.GetFollowers(playbookRunID)
 	if err != nil {
-		s.pluginAPI.Log.Warn(fmt.Sprintf("failed to broadcast run %s to run followers", mType))
+		logger.WithError(err).Warnf("failed to broadcast run to followers")
 		return
 	}
 
@@ -3018,7 +3042,7 @@ func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, mType me
 func (s *PlaybookRunServiceImpl) dmPostToAutoFollows(post *model.Post, playbookID, playbookRunID, authorID string) {
 	autoFollows, err := s.playbookService.GetAutoFollows(playbookID)
 	if err != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast run creation to auto-follows for the playbook", "PlaybookID", playbookID, "error", err)
+		logrus.WithError(err).WithField("playbook_id", playbookID).Warn("failed to broadcast run creation to auto-follows for the playbook")
 		return
 	}
 
@@ -3026,6 +3050,10 @@ func (s *PlaybookRunServiceImpl) dmPostToAutoFollows(post *model.Post, playbookI
 }
 
 func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, post *model.Post, playbookRunID, authorID string) {
+	logger := logrus.WithFields(logrus.Fields{
+		"playbook_run_id": playbookRunID,
+	})
+
 	for _, user := range users {
 		// Do not send update to the author
 		if user == authorID {
@@ -3040,8 +3068,7 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 		post.Id = "" // Reset the ID so we avoid cloning the whole object
 		post.RootId = ""
 		if err := s.poster.DM(user, post); err != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast post to the user",
-				"user", user, "error", err.Error())
+			logger.WithError(err).WithField("user_id", user).Warn("failed to broadcast post to the user")
 		}
 	}
 }

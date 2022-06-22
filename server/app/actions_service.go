@@ -379,7 +379,10 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		ActionType:  ActionTypePromptRunPlaybook,
 	})
 	if err != nil {
-		a.api.Log.Error("unable to retrieve channel actions", "channelID", post.ChannelId, "triggerType", TriggerTypeKeywordsPosted)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"channel_id":   post.ChannelId,
+			"trigger_type": TriggerTypeKeywordsPosted,
+		}).Error("unable to retrieve channel actions")
 		return
 	}
 
@@ -390,7 +393,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 	session, err := a.api.Session.Get(sessionID)
 	if err != nil {
-		a.api.Log.Error("can't get session", "sessionID", sessionID, "err", err.Error())
+		logrus.WithError(err).WithField("session_id", sessionID).Error("can't get session")
 		return
 	}
 
@@ -403,7 +406,11 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-			a.api.Log.Error("unable to decode payload from action", "payload", payload, "actionType", action.ActionType, "triggerType", action.TriggerType)
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"payload":     payload,
+				"actionType":  action.ActionType,
+				"triggerType": action.TriggerType,
+			}).Error("unable to decode payload from action")
 			continue
 		}
 
@@ -413,7 +420,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 		suggestedPlaybook, err := a.playbookGetter.Get(payload.PlaybookID)
 		if err != nil {
-			a.api.Log.Error("unable to get playbook to run action", "playbookID", payload.PlaybookID)
+			logrus.WithError(err).WithField("playbook_id", payload.PlaybookID).Error("unable to get playbook to run action")
 			continue
 		}
 
@@ -455,7 +462,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 	}
 	model.ParseSlackAttachment(newPost, []*model.SlackAttachment{attachment})
 	if err := a.poster.PostMessageToThread(rootID, newPost); err != nil {
-		a.api.Log.Error("unable to post message with suggestions to run playbooks", "error", err)
+		logrus.WithError(err).Error("unable to post message with suggestions to run playbooks")
 	}
 }
 

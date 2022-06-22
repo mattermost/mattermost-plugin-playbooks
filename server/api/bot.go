@@ -141,7 +141,7 @@ outer:
 		post.Message = "Trial license could not be retrieved. Visit [https://mattermost.com/trial/](https://mattermost.com/trial/) to request a license."
 
 		if postErr := h.pluginAPI.Post.UpdatePost(post); postErr != nil {
-			h.pluginAPI.Log.Warn("unable to edit the admin notification post", "post ID", post.Id)
+			logrus.WithError(postErr).WithField("post_id", post.Id).Warn("unable to edit the admin notification post")
 		}
 
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "unable to request the trial license", err)
@@ -158,7 +158,7 @@ outer:
 	model.ParseSlackAttachment(post, attachments)
 
 	if err := h.pluginAPI.Post.UpdatePost(post); err != nil {
-		h.pluginAPI.Log.Warn("unable to edit the admin notification post", "post ID", post.Id)
+		logrus.WithError(err).WithField("post_id", post.Id).Warn("unable to edit the admin notification post")
 	}
 
 	ReturnJSON(w, post, http.StatusOK)
