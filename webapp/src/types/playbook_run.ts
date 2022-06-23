@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
-import {Checklist, isChecklist} from 'src/types/playbook';
+import {Checklist, isChecklist, ChecklistItem} from 'src/types/playbook';
 
 export interface PlaybookRun {
     id: string;
@@ -189,3 +189,15 @@ export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParams, b: FetchPlayboo
         a.started_gte === b.started_gte &&
         a.started_lt === b.started_lt);
 };
+
+// PlaybookRunChecklistItem annotates ChecklistsItem with properties that associate it with the
+// containing playbook run.
+export interface PlaybookRunChecklistItem extends ChecklistItem {
+    item_num: number;
+    playbook_run_id: string;
+    playbook_run_name: string;
+    playbook_run_owner_user_id: string;
+    playbook_run_create_at: number;
+    checklist_title: string;
+    checklist_num: number;
+}

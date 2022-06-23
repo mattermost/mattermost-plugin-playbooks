@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {createSelector} from 'reselect';
-
 import General from 'mattermost-redux/constants/general';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
@@ -26,7 +25,7 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
+import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
@@ -53,6 +52,11 @@ export const getAdminAnalytics = (state: GlobalState): Record<string, number> =>
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
+
+/**
+ * @returns runs indexed by playbookRunId->playbookRun
+ */
+export const myPlaybookRuns = (state: GlobalState) => pluginState(state).myPlaybookRuns;
 
 /**
  * @returns runs indexed by teamId->{channelId->playbookRun}
@@ -273,3 +277,41 @@ export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) 
 };
 
 export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+
+// Select tasks assigned to the current user, or unassigned but belonging to a run owned by the
+// current user.
+export const selectMyTasks = createSelector(
+    'selectMyTasks',
+    myPlaybookRuns,
+    getCurrentUser,
+    (playbookRuns, currentUser) => Object
+
+        // Flatten to a list of playbook runs, ignoring the keys.
+        .values(playbookRuns)
+
+        // Only consider in progress runs.
+        .filter((playbookRun) => playbookRun.current_status === PlaybookRunStatus.InProgress)
+
+        // Flatten to a list of tasks, annotated with the playbook_run_id and checklist name.
+        .flatMap((playbookRun) =>
+            playbookRun.checklists.flatMap((checklist, checklistNum) =>
+                checklist.items.map((item, itemNum) => ({
+                    ...item,
+                    item_num: itemNum,
+                    playbook_run_id: playbookRun.id,
+                    playbook_run_name: playbookRun.name,
+                    playbook_run_owner_user_id: playbookRun.owner_user_id,
+                    playbook_run_create_at: playbookRun.create_at,
+                    checklist_title: checklist.title,
+                    checklist_num: checklistNum,
+                }))
+            )
+        )
+
+        // Filter to tasks assigned to the current user, or unassigned but belonging to a run
+        // owned by the current user.
+        .filter((checklistItem) =>
+            checklistItem.assignee_id === currentUser.id ||
+            (!checklistItem.assignee_id && checklistItem.playbook_run_owner_user_id === currentUser.id)
+        )
+);

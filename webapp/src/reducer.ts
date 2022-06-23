@@ -18,6 +18,8 @@ import {
     SetClientId,
     PLAYBOOK_RUN_CREATED,
     PlaybookRunCreated,
+    RECEIVED_PLAYBOOK_RUNS,
+    ReceivedPlaybookRuns,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     ReceivedTeamPlaybookRuns,
     SetRHSState,
@@ -96,6 +98,94 @@ function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
         return state;
     }
 }
+
+type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
+
+/**
+ * @returns a map of playbookRunId -> playbookRun for all playbook runs for which the current user
+ * is a playbook run member.
+ * @remarks
+ * It is lazy loaded on team change, but will also track incremental updates as provided by websocket events.
+ */
+const myPlaybookRuns = (
+    state: TStateMyPlaybookRuns = {},
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
+): TStateMyPlaybookRuns => {
+    switch (action.type) {
+    case PLAYBOOK_RUN_CREATED: {
+        const playbookRunCreatedAction = action as PlaybookRunCreated;
+        const playbookRun = playbookRunCreatedAction.playbookRun;
+        return {
+            ...state,
+            [playbookRun.id]: playbookRun,
+        };
+    }
+
+    case PLAYBOOK_RUN_UPDATED: {
+        const playbookRunUpdated = action as PlaybookRunUpdated;
+        const playbookRun = playbookRunUpdated.playbookRun;
+        return {
+            ...state,
+            [playbookRun.id]: playbookRun,
+        };
+    }
+
+    case RECEIVED_PLAYBOOK_RUNS: {
+        const receivedPlaybookRunsAction = action as ReceivedPlaybookRuns;
+        const playbookRuns = receivedPlaybookRunsAction.playbookRuns;
+        if (playbookRuns.length === 0) {
+            return state;
+        }
+
+        const newState = {
+            ...state,
+        };
+
+        for (const playbookRun of playbookRuns) {
+            newState[playbookRun.id] = playbookRun;
+        }
+
+        return newState;
+    }
+
+    case RECEIVED_TEAM_PLAYBOOK_RUNS: {
+        const receivedTeamPlaybookRunsAction = action as ReceivedTeamPlaybookRuns;
+        const playbookRuns = receivedTeamPlaybookRunsAction.playbookRuns;
+        if (playbookRuns.length === 0) {
+            return state;
+        }
+
+        const newState = {
+            ...state,
+        };
+
+        for (const playbookRun of playbookRuns) {
+            newState[playbookRun.id] = playbookRun;
+        }
+
+        return newState;
+    }
+
+    // TODO: REMOVED_FROM_CHANNEL
+    // case REMOVED_FROM_CHANNEL: {
+    //     const removedFromChannelAction = action as RemovedFromChannel;
+    //     const channelId = removedFromChannelAction.channelId;
+
+    //     const newState = {
+    //         ...state,
+    //         [teamId]: {...state[teamId]},
+    //     };
+    //     const runMap = newState[teamId];
+    //     if (runMap) {
+    //         delete runMap[channelId];
+    //     }
+    //     return newState;
+    // }
+
+    default:
+        return state;
+    }
+};
 
 type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id'], PlaybookRun>>;
 
@@ -343,6 +433,7 @@ const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
+    myPlaybookRuns,
     myPlaybookRunsByTeam,
     rhsState,
     eventsFilterByChannel,

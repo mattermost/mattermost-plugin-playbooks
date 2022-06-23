@@ -4,20 +4,12 @@ import Icon from '@mdi/react';
 import {mdiCheckAll, mdiPlayOutline, mdiCircleSmall} from '@mdi/js';
 
 import {setChecklistItemState} from 'src/client';
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItemState} from 'src/types/playbook';
 import {ChecklistItem as ItemComponent} from 'src/components/checklist_item/checklist_item';
 import {HoverMenu} from 'src/components/checklist_item/hover_menu';
+import {PlaybookRunChecklistItem} from 'src/types/playbook_run';
 
-interface Props {
-    item: ChecklistItem;
-    checklistNum: number;
-    itemNum: number;
-    checklistTitle: string;
-    playbookRunId: string;
-    playbookRunName: string;
-}
-
-const Task = ({item, playbookRunName, checklistTitle, checklistNum, itemNum, playbookRunId} : Props) => {
+const Task = (props: {item: PlaybookRunChecklistItem}) => {
     return (
         <Container>
             <Header>
@@ -25,7 +17,7 @@ const Task = ({item, playbookRunName, checklistTitle, checklistNum, itemNum, pla
                     path={mdiPlayOutline}
                     size={1}
                 />
-                <HeaderText>{playbookRunName}</HeaderText>
+                <HeaderText>{props.item.playbook_run_name}</HeaderText>
                 <Icon
                     path={mdiCircleSmall}
                     size={1}
@@ -34,19 +26,21 @@ const Task = ({item, playbookRunName, checklistTitle, checklistNum, itemNum, pla
                     path={mdiCheckAll}
                     size={1}
                 />
-                <HeaderText>{checklistTitle}</HeaderText>
+                <HeaderText>{props.item.checklist_title}</HeaderText>
             </Header>
             <Body>
                 <ItemComponent
-                    checklistItem={item}
-                    playbookRunId={playbookRunId}
-                    checklistNum={checklistNum}
+                    checklistItem={props.item}
+                    playbookRunId={props.item.playbook_run_id}
+                    checklistNum={props.item.checklist_num}
                     dragging={false}
                     collapsibleDescription={true}
                     newItem={false}
                     disabled={false}
-                    itemNum={itemNum}
-                    onChange={(newState: ChecklistItemState) => setChecklistItemState(playbookRunId, checklistNum, itemNum, newState)}
+                    itemNum={props.item.item_num}
+                    onChange={(newState: ChecklistItemState) =>
+                        setChecklistItemState(props.item.playbook_run_id, props.item.checklist_num, props.item.item_num, newState)
+                    }
                 />
             </Body>
         </Container>

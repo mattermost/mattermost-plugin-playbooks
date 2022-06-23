@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -10,91 +10,77 @@ import {DateTime} from 'luxon';
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 
 import {fetchPlaybookRuns} from 'src/client';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {PlaybookRunStatus, PlaybookRunChecklistItem} from 'src/types/playbook_run';
+import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {selectMyTasks} from 'src/selectors';
+import {receivedPlaybookRuns} from 'src/actions';
 
 import Task from './task';
 
 export const TaskInboxTitle = <FormattedMessage defaultMessage={'Your tasks'}/>;
-
-type TasksWithMore = {
-    item: ChecklistItem;
-    itemNum: number;
-    checklistNum: number;
-    playbookRunId: string;
-    playbookRunName: string;
-    checklistTitle: string;
-    playbookCreatedAt: number;
-}
 
 enum Filter {
     FilterChecked = 'checked',
     FilterRunOwner = 'ownrun',
 }
 
-const getTasksFromRuns = (runs: PlaybookRun[], myId: string, filters: Filter[]) => {
-    const tasks: TasksWithMore[] = [];
-    const shouldItemBeShown = (playbookRun: PlaybookRun, item: ChecklistItem, f: Filter[]) => {
-        if (item.assignee_id !== myId && !f.includes(Filter.FilterRunOwner)) {
-            return false;
-        }
-        if (item.state !== ChecklistItemState.Open && !f.includes(Filter.FilterChecked)) {
-            return false;
-        }
-        if (item.assignee_id === '' && playbookRun.owner_user_id !== myId && f.includes(Filter.FilterRunOwner)) {
-            return false;
-        }
-        return true;
-    };
-    runs.forEach((run: PlaybookRun) => {
-        run.checklists.forEach((checklist: Checklist, checklistNum: number) => {
-            checklist.items.forEach((item: ChecklistItem, itemNum: number) => {
-                if (shouldItemBeShown(run, item, filters)) {
-                    tasks.push({
-                        item,
-                        checklistNum,
-                        itemNum,
-                        playbookRunId: run.id,
-                        playbookRunName: run.name,
-                        checklistTitle: checklist.title,
-                        playbookCreatedAt: run.create_at,
-                    });
-                }
-            });
-        });
-    });
+const filterTasks = (checklistItems: PlaybookRunChecklistItem[], userId: string, filters: Filter[]) => {
+    return checklistItems
+        .filter((item) => {
+            if (item.assignee_id !== userId && !filters.includes(Filter.FilterRunOwner)) {
+                return false;
+            }
+            if (item.state !== ChecklistItemState.Open && !filters.includes(Filter.FilterChecked)) {
+                return false;
+            }
+            if (item.assignee_id === '' && item.playbook_run_owner_user_id !== userId && filters.includes(Filter.FilterRunOwner)) {
+                return false;
+            }
 
-    tasks.sort((a, b) => {
-        if (a.item.due_date !== 0 && b.item.due_date === 0) {
-            return -1;
-        }
-        if (a.item.due_date === 0 && b.item.due_date !== 0) {
-            return 1;
-        }
-        if (a.item.due_date !== 0 && b.item.due_date !== 0) {
-            return -1 * (b.item.due_date - a.item.due_date);
-        }
-        return -1 * (b.playbookCreatedAt - a.playbookCreatedAt);
-    });
-    return tasks;
+            return true;
+        })
+        .sort((a, b) => {
+            if (a.due_date !== 0 && b.due_date === 0) {
+                return -1;
+            }
+            if (a.due_date === 0 && b.due_date !== 0) {
+                return 1;
+            }
+            if (a.due_date !== 0 && b.due_date !== 0) {
+                return -1 * (b.due_date - a.due_date);
+            }
+            return -1 * (b.playbook_run_create_at - a.playbook_run_create_at);
+        });
+};
+
+const isOverdue = (item: ChecklistItem) => {
+    if (item.due_date === 0 || DateTime.fromMillis(item.due_date) > DateTime.now()) {
+        return false;
+    }
+
+    if (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip) {
+        return false;
+    }
+    return true;
 };
 
 const TaskInbox = () => {
     const {formatMessage} = useIntl();
-    const [runs, setRuns] = useState<PlaybookRun[]>([]);
+    const dispatch = useDispatch();
     const [filters, setFilters] = useState<Filter[]>([]);
-    const myUserId = useSelector(getCurrentUserId);
+    const currentUserId = useSelector(getCurrentUserId);
+    const myTasks = useSelector(selectMyTasks);
+
     useEffect(() => {
         const options = {
             page: 0,
             per_page: 50,
             statuses: [PlaybookRunStatus.InProgress],
-            participant_id: myUserId,
+            participant_id: currentUserId,
         };
         fetchPlaybookRuns(options)
-            .then((res) => setRuns(res.items || []))
-            .catch(() => setRuns([]));
-    }, [myUserId, filters]);
+            .then((res) => dispatch(receivedPlaybookRuns(res.items || [])));
+    }, [currentUserId]);
 
     const toggleFilter = (f: Filter) => {
         if (filters.includes(f)) {
@@ -104,20 +90,10 @@ const TaskInbox = () => {
         }
     };
 
-    const isOverdue = (item: ChecklistItem) => {
-        if (item.due_date === 0 || DateTime.fromMillis(item.due_date) > DateTime.now()) {
-            return false;
-        }
+    const tasks = filterTasks(myTasks, currentUserId, filters);
+    const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
+    const overdueNum = tasks.filter((item) => isOverdue(item)).length;
 
-        if (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip) {
-            return false;
-        }
-        return true;
-    };
-
-    const tasks = getTasksFromRuns(runs, myUserId, filters);
-    const assignedNum = tasks.filter((t) => t.item.assignee_id === myUserId).length;
-    const overdueNum = tasks.filter((t) => isOverdue(t.item)).length;
     return (
         <Container>
             <Filters>
@@ -156,8 +132,8 @@ const TaskInbox = () => {
             <TaskList>
                 {tasks.map((task) => (
                     <Task
-                        key={`${task.playbookRunId}-${task.checklistNum}-${task.itemNum}`}
-                        {...task}
+                        key={`${task.id}`}
+                        item={task}
                     />
                 ))}
             </TaskList>

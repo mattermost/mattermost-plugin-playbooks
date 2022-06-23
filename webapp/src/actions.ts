@@ -19,9 +19,11 @@ import {
     PLAYBOOK_RUN_UPDATED,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    RECEIVED_PLAYBOOK_RUNS,
+    ReceivedPlaybookRuns,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
-    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedTeamPlaybookRuns,
+    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
@@ -271,6 +273,11 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
+});
+
+export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({
+    type: RECEIVED_PLAYBOOK_RUNS,
+    playbookRuns,
 });
 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
