@@ -5,25 +5,13 @@ package app
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
-const RetrospectivePrefix = "retro_"
-
-// HandleReminder is the handler for all reminder events.
-func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
-	if strings.HasPrefix(key, RetrospectivePrefix) {
-		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
-	} else {
-		s.handleStatusUpdateReminder(key)
-	}
-}
-
-func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string) {
+func (s *PlaybookRunServiceImpl) HandleReminderToFillRetro(playbookRunID string) {
 	playbookRunToRemind, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID).Error())
@@ -55,7 +43,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	}()
 }
 
-func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
+func (s *PlaybookRunServiceImpl) HandleStatusUpdateReminder(playbookRunID string) {
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
@@ -111,6 +99,9 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
 	}
+}
+
+func (s *PlaybookRunServiceImpl) HandleScheduledRun(playbookID string) {
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {

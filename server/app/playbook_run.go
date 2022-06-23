@@ -666,8 +666,14 @@ type PlaybookRunService interface {
 	// RemoveReminder removes the pending reminder for playbookRunID (if any).
 	RemoveReminder(playbookRunID string)
 
-	// HandleReminder is the handler for all reminder events.
-	HandleReminder(key string)
+	// HandleReminderToFillRetro handles the reminder events to fill retro.
+	HandleReminderToFillRetro(playbookRunID string)
+
+	// HandleStatusUpdateReminder handles the reminder events to update the status.
+	HandleStatusUpdateReminder(playbookRunID string)
+
+	// HandleScheduledRun handles the events to run a scheduled playbook.
+	HandleScheduledRun(playbookID string)
 
 	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and

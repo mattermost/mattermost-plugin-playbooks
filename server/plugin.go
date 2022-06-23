@@ -191,8 +191,10 @@ func (p *Plugin) OnActivate() error {
 		p.metricsService,
 	)
 
-	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not add the playbookRunService's HandleReminder", "error", err.Error())
+	schedulerHandler := app.NewSchedulerHandler(scheduler, p.playbookRunService)
+
+	if err = scheduler.SetCallback(schedulerHandler.HandleReminder); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not add the SchedulerHandler's HandleReminder", "error", err.Error())
 	}
 	if err = scheduler.Start(); err != nil {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
