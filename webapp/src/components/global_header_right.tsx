@@ -5,13 +5,15 @@ import React from 'react';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {useSelector, useDispatch} from 'react-redux';
-import ThemeProvider from '@mattermost/compass-components/utilities/theme';
-import IconButton from '@mattermost/compass-components/components/icon-button';
 
 import {openBackstageRHS, closeBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS} from 'src/selectors';
+
+// TODO: Figure out how one is supposed to use compass-components properly...
+// @ts-ignore
+const IconButton = window.Components.IconButton;
 
 const GlobalHeaderRight = () => {
     const dispatch = useDispatch();
@@ -39,24 +41,22 @@ const GlobalHeaderRight = () => {
     );
 
     return (
-        <ThemeProvider>
-            <OverlayTrigger
-                trigger={['hover', 'focus']}
-                delay={OVERLAY_DELAY}
-                placement='bottom'
-                overlay={tooltip}
-            >
-                <IconButton
-                    size={'sm'}
-                    icon={'bookmark-outline'}
-                    toggled={isTasksOpen}
-                    onClick={onClick}
-                    inverted={true}
-                    compact={true}
-                    aria-label='Select to toggle a list of tasks.' // proper wording and translation needed
-                />
-            </OverlayTrigger>
-        </ThemeProvider>
+        <OverlayTrigger
+            trigger={['hover', 'focus']}
+            delay={OVERLAY_DELAY}
+            placement='bottom'
+            overlay={tooltip}
+        >
+            <IconButton
+                size={'sm'}
+                icon={'bookmark-outline'}
+                toggled={isTasksOpen}
+                onClick={onClick}
+                inverted={true}
+                compact={true}
+                aria-label='Select to toggle a list of tasks.' // proper wording and translation needed
+            />
+        </OverlayTrigger>
     );
 };
 
