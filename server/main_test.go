@@ -156,7 +156,7 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
-		sapp.SetLogger(testLogger),
+		//sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)

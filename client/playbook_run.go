@@ -264,3 +264,10 @@ type RunMetricData struct {
 	MetricConfigID string   `json:"metric_config_id"`
 	Value          null.Int `json:"value"`
 }
+
+type ScheduledRun struct {
+	PlaybookID   string        `json:"playbook_id"`
+	RunName      string        `json:"run_name"`
+	FirstRunTime time.Time     `json:"first_run_time"`
+	Frequency    time.Duration `json:"frequency"`
+}

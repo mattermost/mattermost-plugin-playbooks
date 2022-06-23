@@ -300,3 +300,35 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 
 	return err
 }
+
+func (s *PlaybookRunService) Schedule(ctx context.Context, run ScheduledRun) error {
+	scheduleURL := "runs/schedule"
+	req, err := s.client.newRequest(http.MethodPost, scheduleURL, run)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("expected status code %d; received %d", http.StatusCreated, resp.StatusCode)
+	}
+
+	return err
+}
+
+func (s *PlaybookRunService) CancelScheduled(ctx context.Context, playbookID string) error {
+	scheduleURL := "runs/schedule"
+	req, err := s.client.newRequest(http.MethodDelete, scheduleURL, struct {
+		PlaybookID string `json:"playbook_id"`
+	}{playbookID})
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected status code %d; received %d", http.StatusNoContent, resp.StatusCode)
+	}
+
+	return err
+}
