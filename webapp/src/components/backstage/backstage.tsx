@@ -22,6 +22,8 @@ import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
+import BackstageRHS from 'src/components/backstage/rhs/rhs';
+
 import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
@@ -116,6 +118,7 @@ const Backstage = () => {
                 }
                 <CloudModal/>
             </ToastProvider>
+            <BackstageRHS/>
         </BackstageContainer>
     );
 };

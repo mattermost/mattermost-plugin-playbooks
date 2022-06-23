@@ -13,6 +13,7 @@ import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/s
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -65,6 +66,10 @@ import {
     SetChecklistItemsFilter,
     SetEachChecklistCollapsedState,
     SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    OPEN_BACKSTAGE_RHS,
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
+    OpenBackstageRHS,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -349,4 +354,14 @@ export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistI
     type: SET_CHECKLIST_ITEMS_FILTER,
     channelId,
     nextState,
+});
+
+export const closeBackstageRHS = (): CloseBackstageRHS => ({
+    type: CLOSE_BACKSTAGE_RHS,
+});
+
+export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
+    type: OPEN_BACKSTAGE_RHS,
+    section,
+    viewMode,
 });
