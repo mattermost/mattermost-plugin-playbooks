@@ -18,17 +18,6 @@ interface Props {
 }
 
 const Task = ({item, playbookRunName, checklistTitle, checklistNum, itemNum, playbookRunId} : Props) => {
-    // const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
-    //     const newChecklistItems = [...props.checklist.items];
-    //     newChecklistItems[index] = newItem;
-    //     const newChecklist = {...props.checklist};
-    //     newChecklist.items = newChecklistItems;
-    //     props.onUpdateChecklist(newChecklist);
-    // };
-    if (item.state !== ChecklistItemState.Open) {
-        return null;
-    }
-
     return (
         <Container>
             <Header>
@@ -64,16 +53,6 @@ const Task = ({item, playbookRunName, checklistTitle, checklistNum, itemNum, pla
     );
 };
 
-// itemNum: number;
-// onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
-// draggableProvided?: DraggableProvided;
-// collapsibleDescription: boolean;
-// cancelAddingItem?: () => void;
-// onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
-// onAddChecklistItem?: (newItem: ChecklistItemType) => void;
-// onDuplicateChecklistItem?: () => void;
-// onDeleteChecklistItem?: () => void;
-
 export default Task;
 
 const Container = styled.div`
@@ -85,6 +64,7 @@ const Container = styled.div`
 const Header = styled.div`
     display: flex;
     flex-direction: row;
+    align-items: center;
 `;
 const HeaderText = styled.div`
     font-size: 12px;
