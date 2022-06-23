@@ -69,6 +69,8 @@ func NewPlaybookRunHandler(
 	playbookRunsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
+	playbookRunsRouter.HandleFunc("/schedule", handler.scheduleRun).Methods(http.MethodPost)
+	playbookRunsRouter.HandleFunc("/schedule", handler.cancelScheduledRun).Methods(http.MethodDelete)
 
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
@@ -1090,6 +1092,69 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(w http.ResponseWriter,
 	}
 
 	ReturnJSON(w, data, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) scheduleRun(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		PlaybookID   string        `json:"playbook_id"`
+		RunName      string        `json:"run_name"`
+		FirstRunTime time.Time     `json:"first_run_time"`
+		Frequency    time.Duration `json:"frequency"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode scheduling info", err)
+		return
+	}
+
+	playbook, err := h.playbookService.Get(payload.PlaybookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.RunCreate(userID, playbook)) {
+		return
+	}
+
+	if err := h.playbookRunService.ScheduleRun(userID, payload.PlaybookID, payload.RunName, payload.FirstRunTime, payload.Frequency); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *PlaybookRunHandler) cancelScheduledRun(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		PlaybookID string `json:"playbook_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode scheduling info", err)
+		return
+	}
+
+	playbook, err := h.playbookService.Get(payload.PlaybookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.RunCreate(userID, playbook)) {
+		return
+	}
+
+	if err := h.playbookRunService.CancelScheduledRun(userID, payload.PlaybookID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {

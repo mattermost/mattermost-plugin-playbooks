@@ -1134,3 +1134,37 @@ func TestRunGetStatusUpdates(t *testing.T) {
 		assert.Len(t, statusUpdates, 0)
 	})
 }
+
+func TestScheduleRecurringRuns(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	reset := func(t *testing.T) {
+		t.Helper()
+		e.PlaybooksClient.PlaybookRuns.CancelScheduled(context.Background(), e.BasicPlaybook.ID)
+	}
+
+	t.Run("schedule a run once", func(t *testing.T) {
+		reset(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.Schedule(context.Background(), client.ScheduledRun{
+			PlaybookID:   e.BasicPlaybook.ID,
+			RunName:      "Run name",
+			FirstRunTime: time.Now().Add(24 * time.Hour),
+			Frequency:    0,
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("schedule a recurring run", func(t *testing.T) {
+		reset(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.Schedule(context.Background(), client.ScheduledRun{
+			PlaybookID:   e.BasicPlaybook.ID,
+			RunName:      "Run name",
+			FirstRunTime: time.Now().Add(24 * time.Hour),
+			Frequency:    0,
+		})
+		require.NoError(t, err)
+	})
+}
