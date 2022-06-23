@@ -5,6 +5,7 @@ import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {pluginId} from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -34,6 +35,13 @@ export const SET_EACH_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checkli
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
+
+// Backstage RHS related action types
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
+export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -166,4 +174,18 @@ export interface SetChecklistItemsFilter {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
     channelId: string;
     nextState: ChecklistItemsFilter;
+}
+
+// Backstage RHS related action types
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export interface OpenBackstageRHS {
+    type: typeof OPEN_BACKSTAGE_RHS;
+    section: BackstageRHSSection;
+    viewMode: BackstageRHSViewMode;
+}
+
+export interface CloseBackstageRHS {
+    type: typeof CLOSE_BACKSTAGE_RHS;
 }

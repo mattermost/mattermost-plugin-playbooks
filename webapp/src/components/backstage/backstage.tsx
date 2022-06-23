@@ -3,7 +3,7 @@
 
 import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
@@ -21,6 +21,10 @@ import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {applyTheme} from 'src/components/backstage/css_utils';
+
+import BackstageRHS from 'src/components/backstage/rhs/rhs';
+import {openBackstageRHS} from 'src/actions';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 
 import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
@@ -75,6 +79,10 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    // Temporary code to trigger rhs always (until we have header button)
+    const dispatch = useDispatch();
+    dispatch(openBackstageRHS(BackstageRHSSection.TaskInbox, BackstageRHSViewMode.Overlap));
+
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
@@ -116,6 +124,7 @@ const Backstage = () => {
                 }
                 <CloudModal/>
             </ToastProvider>
+            <BackstageRHS/>
         </BackstageContainer>
     );
 };

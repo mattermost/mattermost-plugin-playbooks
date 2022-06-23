@@ -8,6 +8,7 @@ import {Channel} from 'mattermost-redux/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -52,6 +53,10 @@ import {
     SET_EACH_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
+    OPEN_BACKSTAGE_RHS,
+    OpenBackstageRHS,
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -306,6 +311,34 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     }
 };
 
+// Backstage RHS related reducer
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export type backstageRHSState = {
+    isOpen: boolean;
+    viewMode: BackstageRHSViewMode;
+    section: BackstageRHSSection;
+}
+const initialBackstageRHSState = {
+    isOpen: false,
+    viewMode: BackstageRHSViewMode.Overlap,
+    section: BackstageRHSSection.TaskInbox,
+};
+
+const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, action: OpenBackstageRHS | CloseBackstageRHS) => {
+    switch (action.type) {
+    case OPEN_BACKSTAGE_RHS: {
+        const openAction = action as OpenBackstageRHS;
+        return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+    }
+    case CLOSE_BACKSTAGE_RHS:
+        return {...state, isOpen: false};
+    default:
+        return state;
+    }
+};
+
 const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -321,6 +354,7 @@ const reducer = combineReducers({
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,
     checklistItemsFilterByChannel,
+    backstageRHS,
 });
 
 export default reducer;

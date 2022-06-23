@@ -40,6 +40,12 @@ export const selectToggleRHS = (state: GlobalState): () => void => pluginState(s
 
 export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
+export const backstageRHS = {
+    section: (state: GlobalState) => pluginState(state).backstageRHS.section,
+    isOpen: (state: GlobalState) => pluginState(state).backstageRHS.isOpen,
+    viewMode: (state: GlobalState) => pluginState(state).backstageRHS.viewMode,
+};
+
 export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
 
 export const getAdminAnalytics = (state: GlobalState): Record<string, number> => state.entities.admin.analytics as Record<string, number>;
