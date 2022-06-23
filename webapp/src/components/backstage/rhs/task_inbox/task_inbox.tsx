@@ -19,6 +19,7 @@ type TasksWithMore = {
     playbookRunId: string;
     playbookRunName: string;
     checklistTitle: string;
+    playbookCreatedAt: number;
 }
 
 const getTasksFromRuns = (runs: PlaybookRun[], myId: string) => {
@@ -38,10 +39,24 @@ const getTasksFromRuns = (runs: PlaybookRun[], myId: string) => {
                         playbookRunId: run.id,
                         playbookRunName: run.name,
                         checklistTitle: checklist.title,
+                        playbookCreatedAt: run.create_at,
                     });
                 }
             });
         });
+    });
+
+    tasks.sort((a, b) => {
+        if (a.item.due_date !== 0 && b.item.due_date === 0) {
+            return -1;
+        }
+        if (a.item.due_date === 0 && b.item.due_date !== 0) {
+            return 1;
+        }
+        if (a.item.due_date !== 0 && b.item.due_date !== 0) {
+            return -1 * (b.item.due_date - a.item.due_date);
+        }
+        return -1 * (b.playbookCreatedAt - a.playbookCreatedAt);
     });
     return tasks;
 };
