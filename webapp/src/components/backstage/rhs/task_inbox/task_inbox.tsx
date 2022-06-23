@@ -49,17 +49,17 @@ const getTasksFromRuns = (runs: PlaybookRun[], myId: string) => {
 const TaskInbox = () => {
     const [runs, setRuns] = useState<PlaybookRun[]>([]);
     const myUserId = useSelector(getCurrentUserId);
-    const options = {
-        page: 0,
-        per_page: 50,
-        statuses: [PlaybookRunStatus.InProgress],
-        participant_id: myUserId,
-    };
     useEffect(() => {
+        const options = {
+            page: 0,
+            per_page: 50,
+            statuses: [PlaybookRunStatus.InProgress],
+            participant_id: myUserId,
+        };
         fetchPlaybookRuns(options)
             .then((res) => setRuns(res.items || []))
             .catch(() => setRuns([]));
-    }, []);
+    }, [myUserId]);
 
     const tasks = getTasksFromRuns(runs, myUserId);
 
