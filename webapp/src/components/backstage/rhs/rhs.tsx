@@ -11,7 +11,7 @@ import {backstageRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
-import TaskInbox, {TaskInboxTitle} from './task_inbox';
+import TaskInbox, {TaskInboxTitle} from './task_inbox/task_inbox';
 
 const BackstageRHS = () => {
     const sidebarRef = React.useRef(null);
