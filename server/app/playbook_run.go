@@ -734,6 +734,12 @@ type PlaybookRunService interface {
 
 	// UpdateRunActions updates status update broadcast settings
 	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
+
+	// ScheduleRun schedules a new run
+	ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency time.Duration) error
+
+	// CancelScheduledRun cancels a scheduled run
+	CancelScheduledRun(userID, playbookID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -828,6 +834,9 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// ScheduleRun registers a scheduled run to be executed some time in the future
+	ScheduleRun(run ScheduledRun) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

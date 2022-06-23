@@ -1283,6 +1283,23 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	return count, nil
 }
 
+// ScheduleRun stores the scheduling of a recurring run
+func (p *playbookRunStore) ScheduleRun(run app.ScheduledRun) error {
+	if run.ID == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_RecurringRuns").
+		Columns("ID", "UserID", "PlaybookID", "RunName", "Frequency").
+		Values(run.ID, run.UserID, run.PlaybookID, run.RunName, run.Frequency))
+	if err != nil {
+		return errors.Wrapf(err, "failed to create scheduled run from playbook %q (user: %q, run name: %q, frequency: %q)", run.PlaybookID, run.UserID, run.RunName, run.Frequency)
+	}
+
+	return nil
+}
+
 // updateRunMetrics updates run metrics values.
 func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
 	if len(playbookRun.MetricsData) == 0 {
