@@ -57,7 +57,7 @@ const filterTasks = (checklistItems: PlaybookRunChecklistItem[], userId: string,
 const TaskInbox = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const [filters, setFilters] = useState<Filter[]>([]);
+    const [filters, setFilters] = useState<Filter[]>([Filter.FilterRunOwner]);
     const currentUserId = useSelector(getCurrentUserId);
     const myTasks = useSelector(selectMyTasks);
 
