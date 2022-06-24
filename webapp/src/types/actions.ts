@@ -144,26 +144,26 @@ export interface SetRHSAboutCollapsedState {
 
 export interface SetChecklistCollapsedState {
     type: typeof SET_CHECKLIST_COLLAPSED_STATE;
-    channelId: string;
+    key: string;
     checklistIndex: number;
     collapsed: boolean;
 }
 
 export interface SetEachChecklistCollapsedState {
     type: typeof SET_EACH_CHECKLIST_COLLAPSED_STATE;
-    channelId: string;
+    key: string;
     state: Record<number, boolean>;
 }
 
 export interface SetAllChecklistsCollapsedState {
     type: typeof SET_ALL_CHECKLISTS_COLLAPSED_STATE;
-    channelId: string;
+    key: string;
     numOfChecklists: number;
     collapsed: boolean;
 }
 
 export interface SetChecklistItemsFilter {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
-    channelId: string;
+    key: string;
     nextState: ChecklistItemsFilter;
 }

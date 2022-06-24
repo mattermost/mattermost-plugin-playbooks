@@ -265,8 +265,8 @@ const checklistCollapsedState = (
         const setAction = action as SetChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: {
-                ...state[setAction.channelId],
+            [setAction.key]: {
+                ...state[setAction.key],
                 [setAction.checklistIndex]: setAction.collapsed,
             },
         };
@@ -279,14 +279,14 @@ const checklistCollapsedState = (
         }
         return {
             ...state,
-            [setAction.channelId]: newState,
+            [setAction.key]: newState,
         };
     }
     case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
         const setAction = action as SetEachChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: setAction.state,
+            [setAction.key]: setAction.state,
         };
     }
     default:
@@ -299,7 +299,7 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     case SET_CHECKLIST_ITEMS_FILTER:
         return {
             ...state,
-            [action.channelId]: action.nextState,
+            [action.key]: action.nextState,
         };
     default:
         return state;
