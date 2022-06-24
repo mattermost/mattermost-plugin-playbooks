@@ -12,9 +12,10 @@ import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
-import {ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
+import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
+import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -24,7 +25,7 @@ interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
     role: Role;
-    openRHS: (section: RHSContent, title: React.ReactNode) => void
+    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
 }
 
 export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
@@ -38,6 +39,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
                 playbookRun={playbookRun}
                 role={role}
             />
+            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
@@ -73,13 +75,13 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}))}
+                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name)}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}))}
+                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
             />
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>
@@ -109,4 +111,10 @@ const StyledCopyLink = styled(CopyLink)`
     margin-left: 4px;
     display: grid;
     place-items: center;
+`;
+
+const StyledBadge = styled(Badge)`
+    margin-left: 8px;
+    margin-right: 6px;
+    text-transform: uppercase;
 `;

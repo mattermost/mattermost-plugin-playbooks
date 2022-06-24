@@ -21,7 +21,7 @@ import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
-import {usePlaybookName} from 'src/hooks';
+import {useExperimentalFeaturesEnabled, usePlaybookName} from 'src/hooks';
 
 import {InfoLine} from '../styles';
 
@@ -72,7 +72,7 @@ const PlaybookRunItem = styled.div`
     align-items: center;
     margin: 0;
     background-color: var(--center-channel-bg);
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     cursor: pointer;
 
     &:hover {
@@ -92,6 +92,7 @@ const Row = (props: Props) => {
     const playbookName = usePlaybookName(props.fixedTeam ? '' : props.playbookRun.playbook_id);
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
+    const newLHSEnabled = useExperimentalFeaturesEnabled();
 
     let infoLine: React.ReactNode = null;
     if (!props.fixedTeam) {
@@ -99,7 +100,7 @@ const Row = (props: Props) => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToPluginUrl(`/runs/${playbookRun.id}`);
+        navigateToPluginUrl(newLHSEnabled ? `/run_details/${playbookRun.id}` : `/runs/${playbookRun.id}`);
     }
 
     return (

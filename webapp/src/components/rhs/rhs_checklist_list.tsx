@@ -238,7 +238,7 @@ const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
 
     font-size: 16px;
     line-height: 24px;
-    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0' : '12px 0 12px 8px')};
+    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0 8px 0' : '12px 0 12px 8px')};
 `;
 
 const HoverRow = styled(HoverMenu)`
