@@ -22,6 +22,7 @@ import {
 } from 'src/actions';
 import {
     Checklist,
+    ChecklistItem,
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
@@ -73,6 +74,48 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
     };
     const onEachChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         dispatch(setEachChecklistCollapsedState(stateKey, state));
+    };
+
+    const showItem = (checklistItem: ChecklistItem, myId: string) => {
+        if (checklistItemsFilter.all) {
+            return true;
+        }
+
+        // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
+        if (!checklistItemsFilter.checked && checklistItem.state === ChecklistItemState.Closed) {
+            return false;
+        }
+
+        // "Me" is not checked, so if assignee_id is me, don't show it.
+        if (!checklistItemsFilter.me && checklistItem.assignee_id === myId) {
+            return false;
+        }
+
+        // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
+        if (!checklistItemsFilter.unassigned && checklistItem.assignee_id === '') {
+            return false;
+        }
+
+        // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+        if (!checklistItemsFilter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
+            return false;
+        }
+
+        // "Overdue" is checked
+        if (checklistItemsFilter.overdueOnly) {
+            // if an item doesn't have a due date or is due in the future, don't show it.
+            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
+                return false;
+            }
+
+            // if an item is skipped or closed, don't show it.
+            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
+                return false;
+            }
+        }
+
+        // We should show it!
+        return true;
     };
 
     // Cancel overdueOnly filter if there are no overdue tasks anymore
@@ -153,9 +196,10 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
                 playbookRun={playbookRun}
                 enableFinishRun={parentContainer === ChecklistParent.RHS}
                 isReadOnly={viewerMode}
-                checklistsState={checklistsState}
+                checklistsCollapseState={checklistsState}
                 onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                 onEachChecklistCollapsedStateChange={onEachChecklistCollapsedStateChange}
+                showItem={showItem}
             />
         </InnerContainer>
     );

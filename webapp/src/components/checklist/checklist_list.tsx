@@ -52,9 +52,10 @@ interface Props {
     playbook?: Loaded<FullPlaybook>;
     enableFinishRun: boolean;
     isReadOnly: boolean;
-    checklistsState: Record<number, boolean>;
+    checklistsCollapseState: Record<number, boolean>;
     onChecklistCollapsedStateChange: (checklistIndex: number, state: boolean) => void;
     onEachChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
+    showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
 }
 
 const ChecklistList = ({
@@ -62,9 +63,10 @@ const ChecklistList = ({
     playbook,
     enableFinishRun,
     isReadOnly,
-    checklistsState,
+    checklistsCollapseState,
     onChecklistCollapsedStateChange,
     onEachChecklistCollapsedStateChange,
+    showItem,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -217,21 +219,22 @@ const ChecklistList = ({
             const [moved] = newChecklists.splice(srcIdx, 1);
             newChecklists.splice(dstIdx, 0, moved);
 
-            // The collapsed state of a checklist in the store is linked to the index in the list,
-            // so we need to shift all indices between srcIdx and dstIdx to the left (or to the
-            // right, depending on whether srcIdx < dstIdx) one position
-            const newState = {...checklistsState};
-            if (srcIdx < dstIdx) {
-                for (let i = srcIdx; i < dstIdx; i++) {
-                    newState[i] = checklistsState[i + 1];
-                }
-            } else {
-                for (let i = dstIdx + 1; i <= srcIdx; i++) {
-                    newState[i] = checklistsState[i - 1];
-                }
-            }
-            newState[dstIdx] = checklistsState[srcIdx];
             if (playbookRun) {
+                // The collapsed state of a checklist in the store is linked to the index in the list,
+                // so we need to shift all indices between srcIdx and dstIdx to the left (or to the
+                // right, depending on whether srcIdx < dstIdx) one position
+                const newState = {...checklistsCollapseState};
+                if (srcIdx < dstIdx) {
+                    for (let i = srcIdx; i < dstIdx; i++) {
+                        newState[i] = checklistsCollapseState[i + 1];
+                    }
+                } else {
+                    for (let i = dstIdx + 1; i <= srcIdx; i++) {
+                        newState[i] = checklistsCollapseState[i - 1];
+                    }
+                }
+                newState[dstIdx] = checklistsCollapseState[srcIdx];
+
                 onEachChecklistCollapsedStateChange(newState);
 
                 // Persist the new data in the server
@@ -325,7 +328,7 @@ const ChecklistList = ({
                                                 items={checklist.items}
                                                 index={checklistIndex}
                                                 numChecklists={checklists.length}
-                                                collapsed={Boolean(checklistsState[checklistIndex])}
+                                                collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}
                                                 disabled={disabled}
                                                 playbookRunID={playbookRun?.id}
@@ -347,6 +350,7 @@ const ChecklistList = ({
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
+                                                    showItem={showItem}
                                                 />
                                             </CollapsibleChecklist>
                                         );
