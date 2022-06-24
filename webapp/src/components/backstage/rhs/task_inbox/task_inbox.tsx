@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
+import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
-import {mdiCircleSmall} from '@mdi/js';
+import {mdiCircleSmall, mdiAccessPointNetwork} from '@mdi/js';
 import {DateTime} from 'luxon';
 
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
@@ -14,6 +15,7 @@ import {PlaybookRunStatus, PlaybookRunChecklistItem} from 'src/types/playbook_ru
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {selectMyTasks} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
+import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import Task from './task';
 
@@ -90,9 +92,26 @@ const TaskInbox = () => {
         }
     };
 
+    const getZeroCaseTexts = (myTasksNum: number, filteredTasksNum: number) => {
+        if (myTasksNum === 0) {
+            return [
+                formatMessage({defaultMessage: 'No assigned tasks'}),
+                formatMessage({defaultMessage: 'You don\'t have any pending task assigned.'}),
+            ];
+        }
+        if (myTasksNum > 0 && filteredTasksNum === 0) {
+            return [
+                formatMessage({defaultMessage: 'No assigned tasks'}),
+                formatMessage({defaultMessage: 'There is no task explicitly assigned to you. You can expand your search using the filters.'}),
+            ];
+        }
+        return ['', ''];
+    };
+
     const tasks = filterTasks(myTasks, currentUserId, filters);
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isOverdue(item)).length;
+    const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
 
     return (
         <Container>
@@ -100,10 +119,12 @@ const TaskInbox = () => {
                 <FilterAssignedText>
                     {formatMessage({defaultMessage: '{assignedNum, plural, =0 {No assigned tasks} other {# assigned}}'}, {assignedNum})}
                 </FilterAssignedText>
-                <Icon
-                    path={mdiCircleSmall}
-                    size={1}
-                />
+                {overdueNum ? (
+                    <Icon
+                        path={mdiCircleSmall}
+                        size={1}
+                    />
+                ) : null }
                 <FilterOverdueText>
                     {formatMessage({defaultMessage: '{overdueNum, plural, =0 {} other {# overdue}}'}, {overdueNum})}
                 </FilterOverdueText>
@@ -129,14 +150,39 @@ const TaskInbox = () => {
                     </StyledDropdownMenuItem>
                 </DotMenu>
             </Filters>
-            <TaskList>
-                {tasks.map((task) => (
-                    <Task
-                        key={`${task.id}`}
-                        item={task}
-                    />
-                ))}
-            </TaskList>
+            {tasks.length === 0 ? (
+                <ZeroCase>
+                    <ZeroCaseIconWrapper>
+                        <Icon
+                            path={mdiAccessPointNetwork}
+                            size={5}
+                            color={'var(--button-bg)'}
+                        />
+                    </ZeroCaseIconWrapper>
+                    <ZeroCaseTitle>{zerocaseTitle}</ZeroCaseTitle>
+                    <ZeroCaseDescription>{zerocaseSubtitle}</ZeroCaseDescription>
+                </ZeroCase>
+            ) : (
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                    renderTrackHorizontal={renderTrackHorizontal}
+                    style={{position: 'relative'}}
+                >
+                    <TaskList>
+                        {tasks.map((task) => (
+                            <Task
+                                key={task.id}
+                                item={task}
+                                enableAnimation={!filters.includes(Filter.FilterChecked)}
+                            />
+                        ))}
+                    </TaskList>
+                </Scrollbars>
+            )}
         </Container>
     );
 };
@@ -144,12 +190,14 @@ const TaskInbox = () => {
 export default TaskInbox;
 
 const Container = styled.div`
-    margin-bottom: 30px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
 `;
 
 const Filters = styled.div`
-    flex: 1;
     height: 56px;
+    min-height: 56px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -179,7 +227,9 @@ const FilterButton = styled(DotMenuButton)`
     cursor: pointer;
     padding: 0 10px;
     border: 0;
+    height: 30px;
     width: auto;
+    align-items: center;
 
     &:before {
         color: var(--button-bg);
@@ -199,6 +249,8 @@ const FilterButton = styled(DotMenuButton)`
 const TaskList = styled.div`
     display: flex;
     flex-direction: column;
+    flex: 1;
+    margin-bottom: 30px;
 `;
 
 export const ExpandRight = styled.div`
@@ -212,6 +264,7 @@ export const StyledDropdownMenu = styled(DropdownMenu)`
 export const StyledDropdownMenuItem = styled(DropdownMenuItem)<{checked: boolean}>`
     padding: 8px 0;
     font-size: 14px;
+    display: flex;
 
     &:after {
         display: ${({checked}) => (checked ? 'block' : 'none')};
@@ -221,6 +274,44 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)<{checked: boolean
         font-family: 'compass-icons', mattermosticons;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        margin-left: 3px;
+        margin-left: 10px;
     }
+`;
+
+const ZeroCase = styled.div`
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-height: 350px;
+    align-items: center;
+    margin: auto;
+`;
+
+const ZeroCaseIconWrapper = styled.div`
+    background-color: rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 100%;
+    width: 120px;
+    height: 120px;
+    margin: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const ZeroCaseTitle = styled.h3`
+    margin: 0;
+    margin-bottom: 15px;
+    color: var(--center-channel-color);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 20px;
+`;
+
+const ZeroCaseDescription = styled.div`
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+    text-align: center;
+    word-break: break-word;
+    font-size: 14px;
 `;

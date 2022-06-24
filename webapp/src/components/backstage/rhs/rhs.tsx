@@ -2,14 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {closeBackstageRHS} from 'src/actions';
 import {backstageRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
-import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import TaskInbox, {TaskInboxTitle} from './task_inbox/task_inbox';
 
@@ -52,17 +50,7 @@ const BackstageRHS = () => {
                 </HeaderIcon>
             </Header>
             <Body>
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'relative'}}
-                >
-                    {section === BackstageRHSSection.TaskInbox ? <TaskInbox/> : null}
-                </Scrollbars>
+                {section === BackstageRHSSection.TaskInbox ? <TaskInbox/> : null}
             </Body>
         </Container>);
 };
