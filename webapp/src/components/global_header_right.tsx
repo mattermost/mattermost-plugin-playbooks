@@ -24,7 +24,7 @@ const UnreadBadge = styled.div<{toggled: boolean}>`
     right: 4px;
     width: 7px;
     height: 7px;
-    background: var(--sidebar-text-active-border);
+    background: var(--dnd-indicator);
     border-radius: 100%;
     box-shadow: 0 0 0 2px var(--global-header-background);
 
