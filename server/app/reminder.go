@@ -108,7 +108,9 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
 	}
 }
@@ -153,7 +155,9 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 	}
 
 	playbookRunToModify.PreviousReminder = 0
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
 	}
 
@@ -184,7 +188,9 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 
 	playbookRunToModify.PreviousReminder = newReminder
 	playbookRunToModify.LastStatusUpdateAt = model.GetMillis()
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
 	}
 
