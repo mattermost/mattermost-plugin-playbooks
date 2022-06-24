@@ -63,8 +63,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const toggleDescription = () => setShowDescription(!showDescription);
 
     useUpdateEffect(() => {
-        setAssigneeID(props.checklistItem.assignee_id);
+        setTitleValue(props.checklistItem.title);
+        setDescValue(props.checklistItem.description);
         setCommand(props.checklistItem.command);
+        setAssigneeID(props.checklistItem.assignee_id);
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem]);
 
