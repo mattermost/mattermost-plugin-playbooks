@@ -590,5 +590,17 @@
     "Z2Hfu4": "Voeg een samenvatting van de uitvoering toe",
     "TD8WrM": "Dupliceren is uitgeschakeld voor dit team.",
     "OQplDX": "Elke <duration></duration> wordt een statusupdate verwacht. Nieuwe updates worden geplaatst in <channels>{channelCount, plural, =0 {geen kanalen} one {# kanaal} other {# kanalen}}</channels> and <webhooks>{webhookCount, plural, =0 {geen uitgaande webhooks} one {# uitgaande webhook} other {# uitgaande webhooks}}</webhooks> .",
-    "vSMfYU": "Informatie over de uitvoering"
+    "vSMfYU": "Informatie over de uitvoering",
+    "opn6uf": "Bekijk Tijdlijn",
+    "o6N9pU": "Acties voor uitvoeringen",
+    "lbr3Lq": "Link kopiëren",
+    "kEMvwX": "Er zijn geen uitvoeringen die aan deze filters voldoen.",
+    "iigkp8": "Tijd om af te ronden?",
+    "hjteuA": "Alle Playbooks waartoe je toegang hebt worden hier getoond",
+    "bf5rs0": "Bekijk Info",
+    "ZJS10z": "Er zijn nog geen updates geplaatst",
+    "Q15rLN": "Vraag een update...",
+    "GXjP8g": "Alle uitvoeringen waartoe je toegang hebt worden hier getoond",
+    "GDCpPr": "Recente status update",
+    "+qDKgW": "Bekijk alle updates"
 }
