@@ -60,6 +60,7 @@ const Task = (props: Props) => {
                     checklistNum={props.item.checklist_num}
                     dragging={false}
                     collapsibleDescription={true}
+                    descriptionCollapsedByDefault={true}
                     newItem={false}
                     disabled={false}
                     itemNum={props.item.item_num}

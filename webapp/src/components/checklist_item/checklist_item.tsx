@@ -40,6 +40,7 @@ interface ChecklistItemProps {
     dragging: boolean;
     disabled: boolean;
     collapsibleDescription: boolean;
+    descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
     cancelAddingItem?: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
@@ -50,7 +51,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
-    const [showDescription, setShowDescription] = useState(true);
+    const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
