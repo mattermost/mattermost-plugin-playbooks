@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
@@ -15,8 +15,6 @@ import {
     DraggableStateSnapshot,
 } from 'react-beautiful-dnd';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-
 import classNames from 'classnames';
 
 import Portal from 'src/components/portal';
@@ -25,8 +23,6 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     finishRun,
     playbookRunUpdated,
-    setChecklistCollapsedState,
-    setEachChecklistCollapsedState,
 } from 'src/actions';
 import {
     Checklist,
@@ -38,9 +34,6 @@ import {
     clientMoveChecklistItem,
     clientAddChecklist,
 } from 'src/client';
-import {
-    currentChecklistCollapsedState,
-} from 'src/selectors';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
@@ -59,13 +52,22 @@ interface Props {
     playbook?: Loaded<FullPlaybook>;
     enableFinishRun: boolean;
     isReadOnly: boolean;
+    checklistsState: Record<number, boolean>;
+    onChecklistCollapsedStateChange: (checklistIndex: number, state: boolean) => void;
+    onEachChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
 }
 
-const ChecklistList = (props: Props) => {
+const ChecklistList = ({
+    playbookRun,
+    playbook,
+    enableFinishRun,
+    isReadOnly,
+    checklistsState,
+    onChecklistCollapsedStateChange,
+    onEachChecklistCollapsedStateChange,
+}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const channelId = useSelector(getCurrentChannelId);
-    const checklistsState = useSelector(currentChecklistCollapsedState);
 
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
@@ -80,16 +82,15 @@ const ChecklistList = (props: Props) => {
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
 
-    const playbook = props.playbook;
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
-    const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
+    const checklists = playbookRun?.checklists || playbook?.checklists || [];
     const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
-    const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
-    const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
-    const disabled = finished || archived || props.isReadOnly;
+    const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
+    const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
+    const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
+    const disabled = finished || archived || isReadOnly;
 
-    if (!playbook && !props.playbookRun) {
+    if (!playbook && !playbookRun) {
         return null;
     }
 
@@ -206,8 +207,8 @@ const ChecklistList = (props: Props) => {
             }
 
             // Persist the new data in the server
-            if (props.playbookRun) {
-                clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
+            if (playbookRun) {
+                clientMoveChecklistItem(playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
         }
 
@@ -230,18 +231,18 @@ const ChecklistList = (props: Props) => {
                 }
             }
             newState[dstIdx] = checklistsState[srcIdx];
-            if (props.playbookRun) {
-                dispatch(setEachChecklistCollapsedState(channelId, newState));
+            if (playbookRun) {
+                onEachChecklistCollapsedStateChange(newState);
 
                 // Persist the new data in the server
-                clientMoveChecklist(props.playbookRun.id, srcIdx, dstIdx);
+                clientMoveChecklist(playbookRun.id, srcIdx, dstIdx);
             }
         }
 
         // Update the store with the new checklists
-        if (props.playbookRun) {
+        if (playbookRun) {
             dispatch(playbookRunUpdated({
-                ...props.playbookRun,
+                ...playbookRun,
                 checklists: newChecklists,
             }));
         } else {
@@ -278,8 +279,8 @@ const ChecklistList = (props: Props) => {
                     }}
                     onSave={() => {
                         const newChecklist = {title: newChecklistName, items: [] as ChecklistItem[]};
-                        if (props.playbookRun) {
-                            clientAddChecklist(props.playbookRun.id, newChecklist);
+                        if (playbookRun) {
+                            clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
                             updateChecklistsForPlaybook([...checklists, newChecklist]);
                         }
@@ -325,13 +326,13 @@ const ChecklistList = (props: Props) => {
                                                 index={checklistIndex}
                                                 numChecklists={checklists.length}
                                                 collapsed={Boolean(checklistsState[checklistIndex])}
-                                                setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
+                                                setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}
                                                 disabled={disabled}
-                                                playbookRunID={props.playbookRun?.id}
+                                                playbookRunID={playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
                                                 onDeleteChecklist={onDeleteChecklist}
-                                                titleHelpText={props.playbook ? (
+                                                titleHelpText={playbook ? (
                                                     <TitleHelpTextWrapper>
                                                         {formatMessage(
                                                             {defaultMessage: '{numTasks, number} {numTasks, plural, one {task} other {tasks}}'},
@@ -341,7 +342,7 @@ const ChecklistList = (props: Props) => {
                                                 ) : undefined}
                                             >
                                                 <GenericChecklist
-                                                    playbookRun={props.playbookRun}
+                                                    playbookRun={playbookRun}
                                                     disabled={disabled}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
@@ -365,8 +366,8 @@ const ChecklistList = (props: Props) => {
                 {!disabled && addChecklist}
             </DragDropContext>
             {
-                active && props.enableFinishRun && props.playbookRun &&
-                <FinishButton onClick={() => dispatch(finishRun(props.playbookRun?.team_id || ''))}>
+                active && enableFinishRun && playbookRun &&
+                <FinishButton onClick={() => dispatch(finishRun(playbookRun?.team_id || ''))}>
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
