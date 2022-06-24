@@ -73,10 +73,9 @@ const Task = (props: Props) => {
 export default Task;
 
 const Container = styled.div`
-    padding: 10px 10px 10px 0;
+    padding: 15px 10px 5px 0;
     display: flex;
     flex-direction: column;
-
 
     &.removed {
         -webkit-animation: disapear 0.7s;
@@ -106,6 +105,18 @@ const Container = styled.div`
             transform: translateX(200%);
         }
     }
+
+    &:not(:first-child) {
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    }
+
+    &:last-child {
+        padding-bottom: 10px;
+    }
+
+    &:hover {
+        background-color: rgba(var(--center-channel-color-rgb), 0.04)
+    }
 `;
 
 const Header = styled.div`
@@ -114,6 +125,7 @@ const Header = styled.div`
     align-items: center;
     padding: 0 10px;
 `;
+
 const HeaderText = styled.div`
     font-size: 12px;
     line-height: 16px;
