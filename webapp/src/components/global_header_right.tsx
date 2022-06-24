@@ -10,10 +10,7 @@ import {openBackstageRHS, closeBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS} from 'src/selectors';
-
-// TODO: Figure out how one is supposed to use compass-components properly...
-// @ts-ignore
-const IconButton = window.Components.IconButton;
+import {IconButton} from 'src/webapp_globals';
 
 const GlobalHeaderRight = () => {
     const dispatch = useDispatch();

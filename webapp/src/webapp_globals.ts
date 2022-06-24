@@ -20,6 +20,8 @@ export const {
 export const {
     Timestamp,
     Textbox,
+    IconButton,
 
     // @ts-ignore
 } = global.Components ?? {};
+

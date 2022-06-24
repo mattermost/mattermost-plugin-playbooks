@@ -5,7 +5,7 @@ import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
-import {mdiCircleSmall, mdiAccessPointNetwork} from '@mdi/js';
+import {mdiCircleSmall} from '@mdi/js';
 import {DateTime} from 'luxon';
 
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
@@ -153,11 +153,7 @@ const TaskInbox = () => {
             {tasks.length === 0 ? (
                 <ZeroCase>
                     <ZeroCaseIconWrapper>
-                        <Icon
-                            path={mdiAccessPointNetwork}
-                            size={5}
-                            color={'var(--button-bg)'}
-                        />
+                        <ZeroCaseIcon/>
                     </ZeroCaseIconWrapper>
                     <ZeroCaseTitle>{zerocaseTitle}</ZeroCaseTitle>
                     <ZeroCaseDescription>{zerocaseSubtitle}</ZeroCaseDescription>
@@ -296,6 +292,17 @@ const ZeroCaseIconWrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+`;
+
+const ZeroCaseIcon = styled.span`
+    &:after {
+        color: var(--button-bg);
+        content: '\f0139';
+        font-size: 48px;
+        font-family: 'compass-icons', mattermosticons;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 `;
 
 const ZeroCaseTitle = styled.h3`
