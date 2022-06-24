@@ -75,6 +75,7 @@ import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbo
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
+import {makeScheduleRunDialog} from 'src/components/schedule_run_dialog';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -158,6 +159,12 @@ export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
 export function displayRhsRunDetailsTourDialog(props: Parameters<typeof makeRhsRunDetailsTourDialog>[0]) {
     return async (dispatch: Dispatch<AnyAction>) => {
         dispatch(modals.openModal(makeRhsRunDetailsTourDialog(props)));
+    };
+}
+
+export function displayScheduleRunDialog(props: Parameters<typeof makeScheduleRunDialog>[0]) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makeScheduleRunDialog(props)));
     };
 }
 

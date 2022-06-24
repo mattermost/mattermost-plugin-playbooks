@@ -7,7 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline} from '@mdi/js';
+import {mdiClipboardPlayOutline, mdiClockOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Client4} from 'mattermost-redux/client';
@@ -24,6 +24,7 @@ import {createGlobalState} from 'react-use';
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToasts} from '../toast_banner';
+import {ScheduledRun} from 'src/types/playbook_run';
 
 import {
     duplicatePlaybook as clientDuplicatePlaybook,
@@ -35,18 +36,22 @@ import {
     createPlaybookRun,
     clientFetchPlaybookFollowers,
     getSiteUrl,
+    cancelScheduledRun,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
-import {displayEditPlaybookAccessModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, displayScheduleRunDialog} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
+
+import {modals} from 'src/webapp_globals';
+import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 type ControlProps = {playbook: {
     id: string,
@@ -287,6 +292,145 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
         </PrimaryButtonLarger>
     );
 };
+
+interface ScheduleRunProps {
+    scheduledRun: ScheduledRun | null;
+    setScheduledRun: (newRun: ScheduledRun | null) => void;
+}
+
+export const ScheduleRun = ({playbook, scheduledRun, setScheduledRun}: ControlProps & ScheduleRunProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+
+    /* const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || '')); */
+    /* const currentUser = useSelector(getCurrentUser); */
+    const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
+    const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
+    const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+
+    if (isTutorialPlaybook) {
+        return null;
+    }
+
+    const onClickHandler = async () => {
+        dispatch(displayScheduleRunDialog({
+            scheduledRun,
+            setScheduledRun,
+            playbook,
+        }));
+    };
+
+    return (
+        <PrimaryButtonLarger
+            onClick={onClickHandler}
+            disabled={!enableRunPlaybook}
+            title={enableRunPlaybook ? formatMessage({defaultMessage: 'Schedule run'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
+            data-testid='run-playbook'
+        >
+            <Icon
+                path={mdiClockOutline}
+                size={1.25}
+            />
+            <FormattedMessage defaultMessage='Schedule'/>
+        </PrimaryButtonLarger>
+    );
+};
+
+export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: ControlProps & ScheduleRunProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+
+    const onClickHandler = async () => {
+        dispatch(displayScheduleRunDialog({
+            scheduledRun,
+            setScheduledRun,
+            playbook,
+        }));
+    };
+
+    if (!scheduledRun) {
+        return null;
+    }
+
+    return (
+        <ScheduledChipContainer
+            onClick={onClickHandler}
+        >
+            <ScheduledIcon className={'icon-10 icon-calendar-check-outline'}/>
+            <ScheduledText>
+                {formatMessage({defaultMessage: 'Scheduled to run every {frequency, number} nanoseconds'}, {frequency: scheduledRun.frequency})}
+            </ScheduledText>
+            <RemoveScheduledIcon
+                className={'icon-12 icon-trash-can-outline'}
+                onClick={(e) => {
+                    e.stopPropagation();
+
+                    dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
+                        show: true,
+                        title: formatMessage({defaultMessage: 'Cancelling all scheduled runs'}),
+                        message: formatMessage({defaultMessage: 'Are you sure you want to cancel all scheduled runs? This cannot be undone.'}),
+                        confirmButtonText: formatMessage({defaultMessage: 'Yes, cancel all scheduled runs'}),
+                        cancelButtonText: formatMessage({defaultMessage: 'Do not cancel'}),
+                        onConfirm: () => cancelScheduledRun(playbook.id).then(() => setScheduledRun(null)),
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
+                        onCancel: () => {},
+                    })));
+                }}
+            />
+        </ScheduledChipContainer>
+    );
+};
+
+const ScheduledChipContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px 4px 4px;
+    gap: 6px;
+    margin-left: 16px;
+    width: max-content;
+    cursor: pointer;
+
+    height: 24px;
+
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 12px;
+`;
+
+const ScheduledIcon = styled.i`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: rgba(var(--center-channel-color-rgb), 0.32);
+    color: var(--button-color);
+    padding: 3px;
+    width: 16px;
+    height: 16px;
+`;
+
+const RemoveScheduledIcon = styled.i`
+    color: var(--dnd-indicator);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+
+    :hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
+const ScheduledText = styled.div`
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--center-channel-color);
+`;
 
 type TitleMenuProps = {
     className?: string;

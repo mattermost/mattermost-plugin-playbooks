@@ -3053,26 +3053,26 @@ type ScheduledRun struct {
 	UserID     string        `json:"user_id"`
 	PlaybookID string        `json:"playbook_id"`
 	RunName    string        `json:"run_name"`
-	Frequency  time.Duration `json:"time_duration"`
+	Frequency  time.Duration `json:"frequency"`
 }
 
-func scheduledRunID(userID, playbookID string) string {
-	return PlaybookSchedulerPrefix + userID + playbookID
+func (s *PlaybookRunServiceImpl) GetScheduledRun(userID, playbookID string) (*ScheduledRun, error) {
+	return s.store.GetScheduledRun(userID, playbookID)
 }
 
-func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency time.Duration) error {
+func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency time.Duration) (*ScheduledRun, error) {
 	id := model.NewId()
 
 	if !model.IsValidId(userID) {
-		return errors.Errorf("userID %q is not a valid identifier", userID)
+		return nil, errors.Errorf("userID %q is not a valid identifier", userID)
 	}
 
 	if !model.IsValidId(playbookID) {
-		return errors.Errorf("playbookID %q is not a valid identifier", playbookID)
+		return nil, errors.Errorf("playbookID %q is not a valid identifier", playbookID)
 	}
 
 	if runName == "" {
-		return errors.Errorf("runName must be non-empty")
+		return nil, errors.Errorf("runName must be non-empty")
 	}
 
 	scheduledRun := ScheduledRun{
@@ -3083,19 +3083,18 @@ func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string,
 		Frequency:  frequency,
 	}
 
-	_, err := s.scheduler.ScheduleOnce(scheduledRunID(userID, playbookID), firstRunTime)
+	// Store the scheduled run in the database
+	if err := s.store.ScheduleRun(scheduledRun); err != nil {
+		return nil, errors.Wrapf(err, "unable to store the scheduled run")
+	}
+
+	// Schedule the first run
+	_, err := s.scheduler.ScheduleOnce(EncodeScheduledRunKey(userID, playbookID), firstRunTime)
 	if err != nil {
-		return errors.Wrapf(err, "unable to schedule the first execution of the run")
+		return nil, errors.Wrapf(err, "unable to schedule the first execution of the run")
 	}
 
-	// If frequency is not zero, then this is a recurring run, so we need to store it for future reference
-	if frequency != 0 {
-		if err := s.store.ScheduleRun(scheduledRun); err != nil {
-			return errors.Wrapf(err, "unable to store the scheduled run")
-		}
-	}
-
-	return nil
+	return &scheduledRun, nil
 }
 
 func (s *PlaybookRunServiceImpl) CancelScheduledRun(userID, playbookID string) error {
@@ -3107,9 +3106,12 @@ func (s *PlaybookRunServiceImpl) CancelScheduledRun(userID, playbookID string) e
 		return errors.Errorf("playbookID %q is not a valid identifier", playbookID)
 	}
 
-	s.scheduler.Cancel(scheduledRunID(userID, playbookID))
+	s.scheduler.Cancel(EncodeScheduledRunKey(userID, playbookID))
 
 	// TODO: Also remove from database
+	if err := s.store.UnscheduleRun(userID, playbookID); err != nil {
+		return errors.Wrapf(err, "unable to unschedule runs with userID %q and playbookID %q", userID, playbookID)
+	}
 
 	return nil
 }

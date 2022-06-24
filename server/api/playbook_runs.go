@@ -69,8 +69,11 @@ func NewPlaybookRunHandler(
 	playbookRunsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
-	playbookRunsRouter.HandleFunc("/schedule", handler.scheduleRun).Methods(http.MethodPost)
-	playbookRunsRouter.HandleFunc("/schedule", handler.cancelScheduledRun).Methods(http.MethodDelete)
+
+	scheduledRunsRouter := playbookRunsRouter.PathPrefix("/schedule").Subrouter()
+	scheduledRunsRouter.HandleFunc("", handler.scheduleRun).Methods(http.MethodPost)
+	scheduledRunsRouter.HandleFunc("", handler.cancelScheduledRun).Methods(http.MethodDelete)
+	scheduledRunsRouter.HandleFunc("/{playbookID:[A-Za-z0-9]+}", handler.getScheduledRun).Methods(http.MethodGet)
 
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
@@ -1119,12 +1122,20 @@ func (h *PlaybookRunHandler) scheduleRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.playbookRunService.ScheduleRun(userID, payload.PlaybookID, payload.RunName, payload.FirstRunTime, payload.Frequency); err != nil {
+	// TODO: We should not cancel this every time, but handle conflicting schedules properly.
+	// But this is a hackathon, it's socially accepted to do things this way 😎.
+	if err := h.playbookRunService.CancelScheduledRun(userID, payload.PlaybookID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	scheduledRun, err := h.playbookRunService.ScheduleRun(userID, payload.PlaybookID, payload.RunName, payload.FirstRunTime, payload.Frequency)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, scheduledRun, http.StatusCreated)
 }
 
 func (h *PlaybookRunHandler) cancelScheduledRun(w http.ResponseWriter, r *http.Request) {
@@ -1155,6 +1166,20 @@ func (h *PlaybookRunHandler) cancelScheduledRun(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getScheduledRun(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	vars := mux.Vars(r)
+	playbookID := vars["playbookID"]
+
+	scheduledRun, err := h.playbookRunService.GetScheduledRun(userID, playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, scheduledRun, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {

@@ -189,3 +189,11 @@ export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParams, b: FetchPlayboo
         a.started_gte === b.started_gte &&
         a.started_lt === b.started_lt);
 };
+
+export interface ScheduledRun {
+    id: string;
+    user_id: string;
+    playbook_id: string;
+    run_name: string;
+    frequency: number;
+}

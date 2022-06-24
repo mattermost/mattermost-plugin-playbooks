@@ -11,6 +11,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {DateTime, Duration} from 'luxon';
 
 import {
     FetchPlaybookRunsParams,
@@ -21,6 +22,7 @@ import {
     Metadata,
     RunMetricData,
     StatusPostComplete,
+    ScheduledRun,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -717,6 +719,40 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
     } catch (error) {
         return {error};
     }
+};
+
+export const scheduleRun = async (playbookID: string, runName: string) => {
+    const data = await doPost(`${apiUrl}/runs/schedule`, JSON.stringify({
+        playbook_id: playbookID,
+        run_name: runName,
+        first_run_time: DateTime.now().plus({seconds: 2}),
+        frequency: Duration.fromObject({seconds: 2}).toMillis() * 1e6,
+    }));
+
+    if (!data) {
+        return null;
+    }
+
+    return data as ScheduledRun;
+};
+
+export const cancelScheduledRun = async (playbookID: string) => {
+    try {
+        return await doDelete(`${apiUrl}/runs/schedule`, JSON.stringify({
+            playbook_id: playbookID,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const getMyScheduledRuns = async (playbookID: string) => {
+    const data = await doGet(`${apiUrl}/runs/schedule/${playbookID}`);
+    if (!data) {
+        return null;
+    }
+
+    return data as ScheduledRun;
 };
 
 export const doGet = async <TData = any>(url: string) => {

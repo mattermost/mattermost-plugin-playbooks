@@ -2033,6 +2033,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_RecurringRuns (
 						ID VARCHAR(26) PRIMARY KEY,
 						UserID VARCHAR(26),
+						RunName TEXT,
 						PlaybookID VARCHAR(26),
 						Frequency BIGINT NOT NULL DEFAULT 0,
 						INDEX IR_RecurringRuns_PlaybookID (PlaybookID)
@@ -2045,6 +2046,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_RecurringRuns (
 						ID VARCHAR(26) PRIMARY KEY,
 						UserID VARCHAR(26),
+						RunName TEXT NOT NULL DEFAULT '',
 						PlaybookID VARCHAR(26),
 						Frequency BIGINT NOT NULL DEFAULT 0
 					)

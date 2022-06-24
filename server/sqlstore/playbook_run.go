@@ -1284,12 +1284,12 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 }
 
 // ScheduleRun stores the scheduling of a recurring run
-func (p *playbookRunStore) ScheduleRun(run app.ScheduledRun) error {
+func (s *playbookRunStore) ScheduleRun(run app.ScheduledRun) error {
 	if run.ID == "" {
 		return errors.New("id should not be empty")
 	}
 
-	_, err := p.store.execBuilder(p.store.db, sq.
+	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_RecurringRuns").
 		Columns("ID", "UserID", "PlaybookID", "RunName", "Frequency").
 		Values(run.ID, run.UserID, run.PlaybookID, run.RunName, run.Frequency))
@@ -1298,6 +1298,36 @@ func (p *playbookRunStore) ScheduleRun(run app.ScheduledRun) error {
 	}
 
 	return nil
+}
+
+func (s *playbookRunStore) UnscheduleRun(userID, playbookID string) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Delete("IR_RecurringRuns").
+		Where(sq.Eq{
+			"UserID":     userID,
+			"PlaybookID": playbookID,
+		}))
+
+	return err
+}
+
+func (s *playbookRunStore) GetScheduledRun(userID, playbookID string) (*app.ScheduledRun, error) {
+	var run app.ScheduledRun
+	query := s.store.builder.
+		Select("ID", "UserID", "PlaybookID", "RunName", "Frequency").
+		From("IR_RecurringRuns").
+		Where(sq.Eq{"UserID": userID}).
+		Where(sq.Eq{"PlaybookID": playbookID})
+
+	if err := s.store.getBuilder(s.store.db, &run, query); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+
+		return nil, errors.Wrap(err, "failed to execute the query")
+	}
+
+	return &run, nil
 }
 
 // updateRunMetrics updates run metrics values.

@@ -1,50 +1,39 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css} from 'styled-components';
-import React, {useRef, useEffect} from 'react';
-import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
-
-import {useIntl} from 'react-intl';
-
-import {useIntersection} from 'react-use';
-import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import React, {useEffect, useRef, useState} from 'react';
+import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
+import {NavLink, Redirect, Route, Switch, useRouteMatch} from 'react-router-dom';
+import {useIntersection} from 'react-use';
+
+import styled, {css} from 'styled-components';
 
 import {pluginErrorUrl} from 'src/browser_routing';
+import {telemetryEventForPlaybook, getMyScheduledRuns} from 'src/client';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
+import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
+import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
+import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
+import MarkdownEdit from 'src/components/markdown_edit';
+import TextEdit from 'src/components/text_edit';
+import CopyLink from 'src/components/widgets/copy_link';
+import Tooltip from 'src/components/widgets/tooltip';
+import {ErrorPageTypes} from 'src/constants';
+import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
 import {
     useForceDocumentTitle,
     useStats,
 } from 'src/hooks';
-
-import {telemetryEventForPlaybook} from 'src/client';
-import {ErrorPageTypes} from 'src/constants';
-
-import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
-
 import {SemiBoldHeading} from 'src/styles/headings';
-
-import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
-
-import CopyLink from 'src/components/widgets/copy_link';
-
-import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
-
-import MarkdownEdit from 'src/components/markdown_edit';
-import TextEdit from 'src/components/text_edit';
-
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
-import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-
-import Tooltip from 'src/components/widgets/tooltip';
-
-import Outline, {Sections, ScrollNav} from './outline/outline';
+import {ScheduledRun} from 'src/types/playbook_run';
 
 import * as Controls from './controls';
+import Outline, {ScrollNav, Sections} from './outline/outline';
 
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
@@ -54,6 +43,8 @@ const PlaybookEditor = () => {
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const stats = useStats(playbookId);
+
+    const [scheduledRun, setScheduledRun] = useState<ScheduledRun | null>(null);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -71,6 +62,12 @@ const PlaybookEditor = () => {
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id]);
+
+    useEffect(() => {
+        getMyScheduledRuns(playbookId)
+            .then(setScheduledRun)
+            .catch(() => setScheduledRun(null));
+    }, [playbookId]);
 
     if (error) {
         // not found
@@ -155,6 +152,11 @@ const PlaybookEditor = () => {
                     />
                     <Controls.AutoFollowToggle playbook={playbook}/>
                     <Controls.RunPlaybook playbook={playbook}/>
+                    <Controls.ScheduleRun
+                        playbook={playbook}
+                        scheduledRun={scheduledRun}
+                        setScheduledRun={setScheduledRun}
+                    />
                 </div>
             </TitleBar>
             <Header ref={headingRef}>
@@ -199,6 +201,11 @@ const PlaybookEditor = () => {
                         </Heading>
                     )}
                 </TextEdit>
+                <Controls.ScheduledChip
+                    playbook={playbook}
+                    scheduledRun={scheduledRun}
+                    setScheduledRun={setScheduledRun}
+                />
                 <Description>
                     <MarkdownEdit
                         disabled={archived}

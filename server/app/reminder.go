@@ -101,7 +101,122 @@ func (s *PlaybookRunServiceImpl) HandleStatusUpdateReminder(playbookRunID string
 	}
 }
 
-func (s *PlaybookRunServiceImpl) HandleScheduledRun(playbookID string) {
+func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
+	scheduledRun, err := s.store.GetScheduledRun(userID, playbookID)
+	if err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "failed getting the scheduled run from playbook with ID %q", playbookID).Error())
+		return
+	}
+
+	s.logger.Debugf("Starting scheduled run: %#v", scheduledRun)
+
+	playbook, err := s.playbookService.Get(playbookID)
+	if err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "failed getting the playbook with ID %q", playbookID).Error())
+		return
+	}
+
+	if err := s.permissions.RunCreate(userID, playbook); err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "scheduler user has no permissions to create runs").Error())
+		return
+	}
+
+	run := PlaybookRun{
+		OwnerUserID: userID,
+		TeamID:      playbook.TeamID,
+		Name:        scheduledRun.RunName,
+		PlaybookID:  playbook.ID,
+	}
+
+	// The following block is copied from api/playbook_runs.go:createPlaybookRun
+	{
+		if playbook.DeleteAt != 0 {
+			s.logger.Errorf("playbook is archived, cannot create a new run using an archived playbook")
+			return
+		}
+
+		run.Checklists = playbook.Checklists
+
+		// The following block is copied from api/playbook_runs.go:setPlaybookRunChecklist
+		{
+			// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
+			now := model.GetMillis()
+			for i := range run.Checklists {
+				for j := range run.Checklists[i].Items {
+					if run.Checklists[i].Items[j].DueDate > 0 {
+						run.Checklists[i].Items[j].DueDate += now
+					}
+				}
+			}
+		}
+
+		public := playbook.CreatePublicPlaybookRun
+
+		if playbook.RunSummaryTemplateEnabled {
+			run.Summary = playbook.RunSummaryTemplate
+		}
+		run.ReminderMessageTemplate = playbook.ReminderMessageTemplate
+		run.StatusUpdateEnabled = playbook.StatusUpdateEnabled
+		run.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
+		run.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
+
+		run.InvitedUserIDs = []string{}
+		run.InvitedGroupIDs = []string{}
+		if playbook.InviteUsersEnabled {
+			run.InvitedUserIDs = playbook.InvitedUserIDs
+			run.InvitedGroupIDs = playbook.InvitedGroupIDs
+		}
+
+		if playbook.DefaultOwnerEnabled {
+			run.DefaultOwnerID = playbook.DefaultOwnerID
+		}
+
+		run.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+		run.BroadcastChannelIDs = playbook.BroadcastChannelIDs
+
+		run.WebhookOnCreationURLs = []string{}
+		if playbook.WebhookOnCreationEnabled {
+			run.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
+		}
+
+		run.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+		run.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
+
+		run.RetrospectiveEnabled = playbook.RetrospectiveEnabled
+		if playbook.RetrospectiveEnabled {
+			run.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
+			run.Retrospective = playbook.RetrospectiveTemplate
+		}
+
+		permission := model.PermissionCreatePrivateChannel
+		permissionMessage := "You are not able to create a private channel"
+		if public {
+			permission = model.PermissionCreatePublicChannel
+			permissionMessage = "You are not able to create a public channel"
+		}
+		if !s.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission) {
+			s.logger.Errorf(errors.Wrap(ErrNoPermissions, permissionMessage).Error())
+			return
+		}
+
+		s.CreatePlaybookRun(&run, &playbook, userID, public)
+	}
+
+	if scheduledRun.Frequency != 0 {
+		s.logger.Debugf("scheduling next run, for time %s",
+			time.Now().Add(scheduledRun.Frequency).Format("Mon Jan 2 15:04:05 CEST 2006"))
+
+		// TODO: Jobs can't be rescheduled within themselves with the same key.
+		// As a temporary workaround do it in a delayed goroutine. We should probably fix this.
+		go func() {
+			time.Sleep(time.Second * 2)
+			_, err = s.scheduler.ScheduleOnce(EncodeScheduledRunKey(userID, playbookID), time.Now().Add(scheduledRun.Frequency))
+			if err != nil {
+				s.logger.Errorf(errors.Wrapf(err, "next run could not be scheduled").Error())
+				return
+			}
+		}()
+	}
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {
