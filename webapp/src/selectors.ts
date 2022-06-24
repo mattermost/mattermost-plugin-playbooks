@@ -13,6 +13,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {DateTime} from 'luxon';
 
 import {
     haveIChannelPermission,
@@ -29,7 +30,12 @@ import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/pla
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter, ChecklistItemsFilterDefault} from 'src/types/playbook';
+import {
+    ChecklistItem,
+    ChecklistItemState,
+    ChecklistItemsFilter,
+    ChecklistItemsFilterDefault,
+} from 'src/types/playbook';
 import {PlaybooksPluginState} from 'src/reducer';
 
 // Assert known typing
@@ -314,4 +320,24 @@ export const selectMyTasks = createSelector(
             checklistItem.assignee_id === currentUser.id ||
             (!checklistItem.assignee_id && checklistItem.playbook_run_owner_user_id === currentUser.id)
         )
+);
+
+export const isTaskOverdue = (item: ChecklistItem) => {
+    if (item.due_date === 0 || DateTime.fromMillis(item.due_date) > DateTime.now()) {
+        return false;
+    }
+
+    if (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip) {
+        return false;
+    }
+
+    return true;
+};
+
+// Determine if there are overdue tasks assigned to the current user, or unassigned but belonging
+// to a run owned by the current user.
+export const selectHasOverdueTasks = createSelector(
+    'hasOverdueTasks',
+    selectMyTasks,
+    (myTasks) => myTasks.some((checklistItem) => isTaskOverdue(checklistItem))
 );

@@ -6,14 +6,13 @@ import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';
-import {DateTime} from 'luxon';
 
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 
 import {fetchPlaybookRuns} from 'src/client';
 import {PlaybookRunStatus, PlaybookRunChecklistItem} from 'src/types/playbook_run';
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {selectMyTasks} from 'src/selectors';
+import {ChecklistItemState} from 'src/types/playbook';
+import {selectMyTasks, isTaskOverdue} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
@@ -53,17 +52,6 @@ const filterTasks = (checklistItems: PlaybookRunChecklistItem[], userId: string,
             }
             return -1 * (b.playbook_run_create_at - a.playbook_run_create_at);
         });
-};
-
-const isOverdue = (item: ChecklistItem) => {
-    if (item.due_date === 0 || DateTime.fromMillis(item.due_date) > DateTime.now()) {
-        return false;
-    }
-
-    if (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip) {
-        return false;
-    }
-    return true;
 };
 
 const TaskInbox = () => {
@@ -110,7 +98,7 @@ const TaskInbox = () => {
 
     const tasks = filterTasks(myTasks, currentUserId, filters);
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
-    const overdueNum = tasks.filter((item) => isOverdue(item)).length;
+    const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
 
     return (
