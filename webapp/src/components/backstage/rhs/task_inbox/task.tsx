@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiCheckAll, mdiPlayOutline, mdiCircleSmall} from '@mdi/js';
@@ -39,7 +40,9 @@ const Task = (props: Props) => {
                     path={mdiPlayOutline}
                     size={1}
                 />
-                <HeaderText>{props.item.playbook_run_name}</HeaderText>
+                <HeaderText>
+                    <NavLink to={`/playbooks/runs/${props.item.playbook_run_id}`}>{props.item.playbook_run_name}</NavLink>
+                </HeaderText>
                 <Icon
                     path={mdiCircleSmall}
                     size={1}
