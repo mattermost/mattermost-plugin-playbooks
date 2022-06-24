@@ -72,6 +72,9 @@ const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
     @media screen and (min-width: 1600px) {
         width: 500px;
     }
+
+    border-radius: 12px 0px 0px 12px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
 `;
 
 const Header = styled.div`
