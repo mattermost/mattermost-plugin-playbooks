@@ -49,7 +49,7 @@ const GlobalHeaderRight = () => {
         >
             <IconButton
                 size={'sm'}
-                icon={'bookmark-outline'}
+                icon={'icon-checkbox-multiple-marked-outline'}
                 toggled={isTasksOpen}
                 onClick={onClick}
                 inverted={true}
