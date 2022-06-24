@@ -25,7 +25,7 @@ const Task = (props: Props) => {
             setRemoved(true);
             setTimeout(() => {
                 prom = setChecklistItemState(props.item.playbook_run_id, props.item.checklist_num, props.item.item_num, newState);
-            }, 700);
+            }, 500);
         } else {
             prom = setChecklistItemState(props.item.playbook_run_id, props.item.checklist_num, props.item.item_num, newState);
         }
@@ -70,15 +70,15 @@ const Task = (props: Props) => {
 export default Task;
 
 const Container = styled.div`
+    padding: 10px 10px 10px 0;
     display: flex;
     flex-direction: column;
-    padding: 10px;
 
 
     &.removed {
-        -webkit-animation: disapear 1s;
+        -webkit-animation: disapear 0.7s;
         -webkit-animation-fill-mode: forwards;
-        animation: disapear 1s;
+        animation: disapear 0.7s;
         animation-fill-mode: forwards;
     }
 
@@ -87,7 +87,6 @@ const Container = styled.div`
             -webkit-transform: translateX(-5%);
             transform: translateX(-5%);
         }
-
         100% {
             -webkit-transform: translateX(200%);
             transform: translateX(200%);
@@ -99,7 +98,6 @@ const Container = styled.div`
             -webkit-transform: translateX(-5%);
             transform: translateX(-5%);
         }
-
         100% {
             -webkit-transform: translateX(200%);
             transform: translateX(200%);
@@ -111,17 +109,20 @@ const Header = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
+    padding: 0 10px;
 `;
 const HeaderText = styled.div`
     font-size: 12px;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-weight: 600;
+    font-weight: 400;
     margin: 0 4px;
 `;
 
 // Necessary hack to use Checklist without DraggableProvider and use HoverMenu
 const Body = styled.div`
+    left: -10px;
+
     &:hover,
     &:focus-within {
         ${HoverMenu} {
