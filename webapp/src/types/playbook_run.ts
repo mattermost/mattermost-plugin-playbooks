@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {DateTime} from 'luxon';
+
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {Checklist, isChecklist} from 'src/types/playbook';
 
@@ -195,6 +197,6 @@ export interface ScheduledRun {
     user_id: string;
     playbook_id: string;
     run_name: string;
-    first_run: string;
+    first_run: DateTime;
     frequency: string;
 }

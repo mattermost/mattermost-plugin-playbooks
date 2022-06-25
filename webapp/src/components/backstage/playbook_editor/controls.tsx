@@ -7,7 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiClockOutline} from '@mdi/js';
+import {mdiClipboardPlayOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Client4} from 'mattermost-redux/client';
@@ -25,6 +25,7 @@ import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing
 import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToasts} from '../toast_banner';
 import {ScheduledRun} from 'src/types/playbook_run';
+import {Frequency, frequencyText} from 'src/components/schedule_run_dialog';
 
 import {
     duplicatePlaybook as clientDuplicatePlaybook,
@@ -52,6 +53,7 @@ import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
 
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import TooltipWidget from 'src/components/widgets/tooltip';
 
 type ControlProps = {playbook: {
     id: string,
@@ -274,7 +276,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     };
 
     return (
-        <PrimaryButtonLarger
+        <MainRunButton
             onClick={runPlaybook}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
@@ -289,7 +291,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             ) : (
                 <FormattedMessage defaultMessage='Run'/>
             )}
-        </PrimaryButtonLarger>
+        </MainRunButton>
     );
 };
 
@@ -320,21 +322,44 @@ export const ScheduleRun = ({playbook, scheduledRun, setScheduledRun}: ControlPr
         }));
     };
 
+    if (!enableRunPlaybook) {
+        return null;
+    }
+
     return (
-        <PrimaryButtonLarger
-            onClick={onClickHandler}
-            disabled={!enableRunPlaybook}
-            title={enableRunPlaybook ? formatMessage({defaultMessage: 'Schedule run'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
-            data-testid='run-playbook'
+        <TooltipWidget
+            id={'playbook_editor_schedule_run'}
+            content={formatMessage({defaultMessage: 'Schedule a run'})}
+            placement={'bottom'}
         >
-            <Icon
-                path={mdiClockOutline}
-                size={1.25}
-            />
-            <FormattedMessage defaultMessage='Schedule'/>
-        </PrimaryButtonLarger>
+            <ScheduleRunButton
+                onClick={onClickHandler}
+                disabled={!enableRunPlaybook}
+                data-testid='run-playbook'
+            >
+                <ScheduleRunButtonIcon className={'icon-12 icon-chevron-down'}/>
+            </ScheduleRunButton>
+        </TooltipWidget>
     );
 };
+
+const ScheduleRunButtonIcon = styled.i`
+    color: var(--button-color);
+`;
+
+export const RunSchedulePlaybook = (props: ControlProps & ScheduleRunProps) => {
+    return (
+        <RunScheduleButton>
+            <RunPlaybook playbook={props.playbook}/>
+            <ScheduleRun {...props}/>
+        </RunScheduleButton>
+    );
+};
+
+const RunScheduleButton = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
 
 export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: ControlProps & ScheduleRunProps) => {
     const dispatch = useDispatch();
@@ -352,13 +377,27 @@ export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: Control
         return null;
     }
 
+    const freq = scheduledRun.frequency as Frequency || Frequency.Never;
+    const jsDate = scheduledRun.first_run.toJSDate();
+
+    let content = formatMessage(
+        {defaultMessage: 'Scheduled to run on {jsDate, date} at {jsDate, time, short}'},
+        {jsDate},
+    );
+    if (scheduledRun.frequency !== '' && scheduledRun.frequency !== Frequency.Never) {
+        content = formatMessage(
+            {defaultMessage: 'Scheduled to run {freqText} at {jsDate, time, short}'},
+            {freqText: frequencyText(freq, jsDate, formatMessage), jsDate},
+        );
+    }
+
     return (
         <ScheduledChipContainer
             onClick={onClickHandler}
         >
             <ScheduledIcon className={'icon-10 icon-calendar-check-outline'}/>
             <ScheduledText>
-                {formatMessage({defaultMessage: 'Scheduled to run every {frequency, number} nanoseconds'}, {frequency: scheduledRun.frequency})}
+                {content}
             </ScheduledText>
             <RemoveScheduledIcon
                 className={'icon-12 icon-trash-can-outline'}
@@ -388,6 +427,7 @@ const ScheduledChipContainer = styled.div`
     padding: 4px 6px 4px 4px;
     gap: 6px;
     margin-left: 16px;
+    margin-bottom: 6px;
     width: max-content;
     cursor: pointer;
 
@@ -540,6 +580,16 @@ const buttonCommon = css`
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
+`;
+
+const MainRunButton = styled(PrimaryButtonLarger)`
+    border-radius: 4px 0 0 4px;
+`;
+
+const ScheduleRunButton = styled(PrimaryButtonLarger)`
+    border-radius: 0 4px 4px 0;
+    padding: 9px;
+    border-left: 1px solid rgba(var(--center-channel-bg-rgb), 0.32);
 `;
 
 const SecondaryButtonLarger = styled(SecondaryButton)`

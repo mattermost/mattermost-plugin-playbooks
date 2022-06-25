@@ -151,8 +151,7 @@ const PlaybookEditor = () => {
                         numMembers={playbook.members.length}
                     />
                     <Controls.AutoFollowToggle playbook={playbook}/>
-                    <Controls.RunPlaybook playbook={playbook}/>
-                    <Controls.ScheduleRun
+                    <Controls.RunSchedulePlaybook
                         playbook={playbook}
                         scheduledRun={scheduledRun}
                         setScheduledRun={setScheduledRun}

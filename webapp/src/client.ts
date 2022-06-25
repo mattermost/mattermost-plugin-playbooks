@@ -11,7 +11,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {DateTime, Duration} from 'luxon';
+import {DateTime} from 'luxon';
 
 import {
     FetchPlaybookRunsParams,
@@ -733,6 +733,7 @@ export const scheduleRun = async (playbookID: string, runName: string, firstRun:
         return null;
     }
 
+    data.first_run = DateTime.fromISO(data.first_run);
     return data as ScheduledRun;
 };
 
@@ -752,6 +753,7 @@ export const getMyScheduledRuns = async (playbookID: string) => {
         return null;
     }
 
+    data.first_run = DateTime.fromISO(data.first_run);
     return data as ScheduledRun;
 };
 

@@ -35,16 +35,39 @@ type Props = {
 // m.3.28 > every three months, on the 28th
 // y.1.0113 > every year, on January 13
 
+export enum Frequency {
+    Never = 'never',
+    Daily = 'daily',
+    Weekly = 'weekly',
+    Monthly = 'monthly',
+    Annually = 'annually',
+    EveryWeekday = 'everyweekday'
+}
+
+export const frequencyText = (freq: Frequency, date: Date, formatMessage: any) => {
+    switch (freq) {
+    case Frequency.Never:
+        return formatMessage({defaultMessage: 'never'});
+    case Frequency.Daily:
+        return formatMessage({defaultMessage: 'every day'});
+    case Frequency.Weekly:
+        return formatMessage({defaultMessage: 'weekly on {date, date, ::EEEE}'}, {date});
+    case Frequency.Monthly:
+        return formatMessage({defaultMessage: 'monthly on the {date, date, ::dd}'}, {date});
+    case Frequency.Annually:
+        return formatMessage({defaultMessage: 'annually on {date, date, ::MM/dd}'}, {date});
+    case Frequency.EveryWeekday:
+        return formatMessage({defaultMessage: 'every weekday (Monday to Friday)'});
+    }
+
+    return '';
+};
+
 const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalProps}: Props) => {
     const {formatMessage} = useIntl();
 
-    let firstRun : DateTime | null = null;
-    if (scheduledRun) {
-        firstRun = DateTime.fromISO(scheduledRun.first_run);
-    }
-
     const tomorrow = DateTime.now().plus({days: 1});
-    const initialDateTime = firstRun ?? tomorrow;
+    const initialDateTime = scheduledRun?.first_run ?? tomorrow;
 
     const initialDate = () => {
         const year = String(initialDateTime.year).padStart(4, '0');
@@ -97,8 +120,8 @@ const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalPro
                 <DateTimeWrapper>
                     <DateTimeInput>
                         <InlineLabel>{formatMessage({defaultMessage: 'Date'})}</InlineLabel>
+                        <InputIcon className={'icon-18 icon-calendar-outline'}/>
                         <DateInput
-                            autoFocus={true}
                             type={'text'}
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
@@ -106,8 +129,8 @@ const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalPro
                     </DateTimeInput>
                     <DateTimeInput>
                         <InlineLabel>{formatMessage({defaultMessage: 'Time'})}</InlineLabel>
+                        <InputIcon className={'icon-18 icon-clock-outline'}/>
                         <TimeInput
-                            autoFocus={true}
                             type={'text'}
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
@@ -115,7 +138,7 @@ const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalPro
                     </DateTimeInput>
                 </DateTimeWrapper>
                 <RecurringChip
-                    frequency={frequency}
+                    frequency={frequency as Frequency || Frequency.Never}
                     setFrequency={setFrequency}
                     date={DateTime.fromFormat(date, 'yyyy/MM/dd')}
                 />
@@ -125,21 +148,12 @@ const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalPro
 };
 
 interface RecurringChipProps {
-    frequency: string;
-    setFrequency: (f: string) => void;
+    frequency: Frequency;
+    setFrequency: (f: Frequency) => void;
     date: DateTime;
 }
 
-enum Frequency {
-    Never = 'never',
-    Daily = 'daily',
-    Weekly = 'weekly',
-    Monthly = 'monthly',
-    Annually = 'annually',
-    EveryWeekday = 'everyweekday'
-}
-
-const RecurringChip = (props: RecurringChipProps) => {
+export const RecurringChip = (props: RecurringChipProps) => {
     const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -147,27 +161,11 @@ const RecurringChip = (props: RecurringChipProps) => {
     };
 
     const jsDate = props.date.toJSDate();
-
-    const chipText = (freq) => {
-        switch (freq) {
-        case Frequency.Never:
-            return formatMessage({defaultMessage: 'Never repeats'});
-        case Frequency.Daily:
-            return formatMessage({defaultMessage: 'Repeats every day'});
-        case Frequency.Weekly:
-            return formatMessage({defaultMessage: 'Repeats weekly on {jsDate, date, ::E}'}, {jsDate});
-        case Frequency.Monthly:
-            return formatMessage({defaultMessage: 'Repeats monthly on the {jsDate, date, ::dd}'}, {jsDate});
-        case Frequency.Annually:
-            return formatMessage({defaultMessage: 'Repeats annually on {jsDate, date, ::MM/dd}'}, {jsDate});
-        case Frequency.EveryWeekday:
-            return formatMessage({defaultMessage: 'Every weekday (Monday to Friday)'});
-        }
-    };
+    const freq = props.frequency || Frequency.Never;
 
     const target = (
         <RecurringChipContainer onClick={toggleOpen}>
-            {chipText(props.frequency || Frequency.Never)}
+            {freq === Frequency.Never ? formatMessage({defaultMessage: 'Never repeats'}) : formatMessage({defaultMessage: 'Repeats {freqText}'}, {freqText: frequencyText(freq, jsDate, formatMessage)})}
             <ChevronDown className={'icon-12 icon-chevron-down'}/>
         </RecurringChipContainer>
     );
@@ -179,15 +177,15 @@ const RecurringChip = (props: RecurringChipProps) => {
             target={target}
         >
             <FrequencyMenu>
-                {Object.values(Frequency).map((freq) => (
+                {Object.values(Frequency).map((freqOption) => (
                     <FrequencyItem
-                        key={freq}
+                        key={freqOption}
                         onClick={() => {
-                            props.setFrequency(freq);
+                            props.setFrequency(freqOption);
                             toggleOpen();
                         }}
                     >
-                        {chipText(freq)}
+                        {frequencyText(freqOption, jsDate, formatMessage)}
                     </FrequencyItem>
                 ))}
             </FrequencyMenu>
@@ -225,6 +223,10 @@ const FrequencyItem = styled.div`
 
     :hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    :first-letter {
+        text-transform: uppercase;
     }
 `;
 
@@ -267,9 +269,22 @@ const DateTimeInput = styled.div`
 `;
 
 const DateInput = styled(BaseInput)`
+    padding-left: 40px;
 `;
 
 const TimeInput = styled(BaseInput)`
+    padding-left: 40px;
+`;
+
+const InputIcon = styled.i`
+    font-weight: 400;
+    font-size: 18px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+
+    position: absolute;
+    margin-top: 13px;
+    margin-left: 10px;
 `;
 
 const DialogModal = styled(GenericModal)`
