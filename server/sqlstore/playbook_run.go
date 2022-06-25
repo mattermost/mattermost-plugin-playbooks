@@ -1291,10 +1291,10 @@ func (s *playbookRunStore) ScheduleRun(run app.ScheduledRun) error {
 
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_RecurringRuns").
-		Columns("ID", "UserID", "PlaybookID", "RunName", "Frequency").
-		Values(run.ID, run.UserID, run.PlaybookID, run.RunName, run.Frequency))
+		Columns("ID", "UserID", "PlaybookID", "RunName", "FirstRun", "Frequency").
+		Values(run.ID, run.UserID, run.PlaybookID, run.RunName, model.GetMillisForTime(run.FirstRun), run.Frequency))
 	if err != nil {
-		return errors.Wrapf(err, "failed to create scheduled run from playbook %q (user: %q, run name: %q, frequency: %q)", run.PlaybookID, run.UserID, run.RunName, run.Frequency)
+		return errors.Wrapf(err, "failed to create scheduled run from playbook %q (run: %#v)", run.PlaybookID, run)
 	}
 
 	return nil
@@ -1312,14 +1312,22 @@ func (s *playbookRunStore) UnscheduleRun(userID, playbookID string) error {
 }
 
 func (s *playbookRunStore) GetScheduledRun(userID, playbookID string) (*app.ScheduledRun, error) {
-	var run app.ScheduledRun
+	var sqlRun struct {
+		ID         string
+		UserID     string
+		PlaybookID string
+		RunName    string
+		FirstRun   int64
+		Frequency  string
+	}
+
 	query := s.store.builder.
-		Select("ID", "UserID", "PlaybookID", "RunName", "Frequency").
+		Select("ID", "UserID", "PlaybookID", "RunName", "FirstRun", "Frequency").
 		From("IR_RecurringRuns").
 		Where(sq.Eq{"UserID": userID}).
 		Where(sq.Eq{"PlaybookID": playbookID})
 
-	if err := s.store.getBuilder(s.store.db, &run, query); err != nil {
+	if err := s.store.getBuilder(s.store.db, &sqlRun, query); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}
@@ -1327,7 +1335,16 @@ func (s *playbookRunStore) GetScheduledRun(userID, playbookID string) (*app.Sche
 		return nil, errors.Wrap(err, "failed to execute the query")
 	}
 
-	return &run, nil
+	run := &app.ScheduledRun{
+		ID:         sqlRun.ID,
+		UserID:     sqlRun.UserID,
+		PlaybookID: sqlRun.PlaybookID,
+		RunName:    sqlRun.RunName,
+		FirstRun:   model.GetTimeForMillis(sqlRun.FirstRun),
+		Frequency:  sqlRun.Frequency,
+	}
+
+	return run, nil
 }
 
 // updateRunMetrics updates run metrics values.

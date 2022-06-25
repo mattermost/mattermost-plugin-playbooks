@@ -739,7 +739,7 @@ type PlaybookRunService interface {
 	GetScheduledRun(userID, playbookID string) (*ScheduledRun, error)
 
 	// ScheduleRun schedules a new run
-	ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency time.Duration) (*ScheduledRun, error)
+	ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency string) (*ScheduledRun, error)
 
 	// CancelScheduledRun cancels a scheduled run
 	CancelScheduledRun(userID, playbookID string) error

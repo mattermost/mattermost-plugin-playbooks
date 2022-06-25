@@ -1101,10 +1101,10 @@ func (h *PlaybookRunHandler) scheduleRun(w http.ResponseWriter, r *http.Request)
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var payload struct {
-		PlaybookID   string        `json:"playbook_id"`
-		RunName      string        `json:"run_name"`
-		FirstRunTime time.Time     `json:"first_run_time"`
-		Frequency    time.Duration `json:"frequency"`
+		PlaybookID string    `json:"playbook_id"`
+		RunName    string    `json:"run_name"`
+		FirstRun   time.Time `json:"first_run"`
+		Frequency  string    `json:"frequency"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -1129,7 +1129,7 @@ func (h *PlaybookRunHandler) scheduleRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	scheduledRun, err := h.playbookRunService.ScheduleRun(userID, payload.PlaybookID, payload.RunName, payload.FirstRunTime, payload.Frequency)
+	scheduledRun, err := h.playbookRunService.ScheduleRun(userID, payload.PlaybookID, payload.RunName, payload.FirstRun, payload.Frequency)
 	if err != nil {
 		h.HandleError(w, err)
 		return

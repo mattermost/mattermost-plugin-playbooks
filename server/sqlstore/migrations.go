@@ -2035,7 +2035,8 @@ var migrations = []Migration{
 						UserID VARCHAR(26),
 						RunName TEXT,
 						PlaybookID VARCHAR(26),
-						Frequency BIGINT NOT NULL DEFAULT 0,
+						FirstRun BIGINT NOT NULL DEFAULT 0,
+						Frequency TEXT,
 						INDEX IR_RecurringRuns_PlaybookID (PlaybookID)
 					)
 				` + MySQLCharset); err != nil {
@@ -2048,7 +2049,8 @@ var migrations = []Migration{
 						UserID VARCHAR(26),
 						RunName TEXT NOT NULL DEFAULT '',
 						PlaybookID VARCHAR(26),
-						Frequency BIGINT NOT NULL DEFAULT 0
+						FirstRun BIGINT NOT NULL DEFAULT 0,
+						Frequency TEXT NOT NULL DEFAULT ''
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_RecurringRuns")

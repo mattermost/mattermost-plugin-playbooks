@@ -3049,18 +3049,19 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 }
 
 type ScheduledRun struct {
-	ID         string        `json:"id"`
-	UserID     string        `json:"user_id"`
-	PlaybookID string        `json:"playbook_id"`
-	RunName    string        `json:"run_name"`
-	Frequency  time.Duration `json:"frequency"`
+	ID         string    `json:"id"`
+	UserID     string    `json:"user_id"`
+	PlaybookID string    `json:"playbook_id"`
+	RunName    string    `json:"run_name"`
+	FirstRun   time.Time `json:"first_run"`
+	Frequency  string    `json:"frequency"`
 }
 
 func (s *PlaybookRunServiceImpl) GetScheduledRun(userID, playbookID string) (*ScheduledRun, error) {
 	return s.store.GetScheduledRun(userID, playbookID)
 }
 
-func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency time.Duration) (*ScheduledRun, error) {
+func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string, firstRunTime time.Time, frequency string) (*ScheduledRun, error) {
 	id := model.NewId()
 
 	if !model.IsValidId(userID) {
@@ -3080,6 +3081,7 @@ func (s *PlaybookRunServiceImpl) ScheduleRun(userID, playbookID, runName string,
 		UserID:     userID,
 		PlaybookID: playbookID,
 		RunName:    runName,
+		FirstRun:   firstRunTime,
 		Frequency:  frequency,
 	}
 

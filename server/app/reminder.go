@@ -202,21 +202,23 @@ func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
 		s.CreatePlaybookRun(&run, &playbook, userID, public)
 	}
 
-	if scheduledRun.Frequency != 0 {
-		s.logger.Debugf("scheduling next run, for time %s",
-			time.Now().Add(scheduledRun.Frequency).Format("Mon Jan 2 15:04:05 CEST 2006"))
-
+	if scheduledRun.Frequency != "" {
 		// TODO: Jobs can't be rescheduled within themselves with the same key.
 		// As a temporary workaround do it in a delayed goroutine. We should probably fix this.
 		go func() {
 			time.Sleep(time.Second * 2)
-			_, err = s.scheduler.ScheduleOnce(EncodeScheduledRunKey(userID, playbookID), time.Now().Add(scheduledRun.Frequency))
+			nextTime := getNextTime(scheduledRun.FirstRun, scheduledRun.Frequency)
+			_, err = s.scheduler.ScheduleOnce(EncodeScheduledRunKey(userID, playbookID), nextTime)
 			if err != nil {
 				s.logger.Errorf(errors.Wrapf(err, "next run could not be scheduled").Error())
 				return
 			}
 		}()
 	}
+}
+
+func getNextTime(firstRun time.Time, frequency string) time.Time {
+	return time.Now()
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {

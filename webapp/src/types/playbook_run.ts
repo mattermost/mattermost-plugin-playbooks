@@ -195,5 +195,6 @@ export interface ScheduledRun {
     user_id: string;
     playbook_id: string;
     run_name: string;
-    frequency: number;
+    first_run: string;
+    frequency: string;
 }

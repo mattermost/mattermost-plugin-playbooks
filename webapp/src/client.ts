@@ -721,12 +721,12 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
     }
 };
 
-export const scheduleRun = async (playbookID: string, runName: string) => {
+export const scheduleRun = async (playbookID: string, runName: string, firstRun: DateTime, frequency: string) => {
     const data = await doPost(`${apiUrl}/runs/schedule`, JSON.stringify({
         playbook_id: playbookID,
         run_name: runName,
-        first_run_time: DateTime.now().plus({seconds: 2}),
-        frequency: Duration.fromObject({seconds: 2}).toMillis() * 1e6,
+        first_run: firstRun,
+        frequency,
     }));
 
     if (!data) {

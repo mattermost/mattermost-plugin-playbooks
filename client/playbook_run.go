@@ -266,8 +266,8 @@ type RunMetricData struct {
 }
 
 type ScheduledRun struct {
-	PlaybookID   string        `json:"playbook_id"`
-	RunName      string        `json:"run_name"`
-	FirstRunTime time.Time     `json:"first_run_time"`
-	Frequency    time.Duration `json:"frequency"`
+	PlaybookID string    `json:"playbook_id"`
+	RunName    string    `json:"run_name"`
+	FirstRun   time.Time `json:"first_run"`
+	Frequency  string    `json:"frequency"`
 }
