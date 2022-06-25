@@ -202,12 +202,20 @@ func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
 		s.CreatePlaybookRun(&run, &playbook, userID, public)
 	}
 
-	if scheduledRun.Frequency != "" {
+	if scheduledRun.Frequency != "" && scheduledRun.Frequency != FreqNever {
 		// TODO: Jobs can't be rescheduled within themselves with the same key.
 		// As a temporary workaround do it in a delayed goroutine. We should probably fix this.
 		go func() {
 			time.Sleep(time.Second * 2)
-			nextTime := getNextTime(scheduledRun.FirstRun, scheduledRun.Frequency)
+
+			nextTime, err := getNextTime(scheduledRun.FirstRun, scheduledRun.Frequency)
+			if err != nil {
+				s.logger.Errorf(errors.Wrapf(err, "next time could not be computed").Error())
+				return
+			}
+
+			s.logger.Debugf("Scheduling next run at %s", nextTime.Format("2006/01/02, 15:04"))
+
 			_, err = s.scheduler.ScheduleOnce(EncodeScheduledRunKey(userID, playbookID), nextTime)
 			if err != nil {
 				s.logger.Errorf(errors.Wrapf(err, "next run could not be scheduled").Error())
@@ -217,8 +225,51 @@ func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
 	}
 }
 
-func getNextTime(firstRun time.Time, frequency string) time.Time {
-	return time.Now()
+const (
+	FreqNever        = "never"
+	FreqDaily        = "daily"
+	FreqWeekly       = "weekly"
+	FreqMonthly      = "monthly"
+	FreqAnnually     = "annually"
+	FreqEveryWeekday = "everyweekday"
+)
+
+func getNextTime(firstRun time.Time, frequency string) (time.Time, error) {
+	now := time.Now()
+
+	var date time.Time
+
+	switch frequency {
+	case FreqDaily:
+		date = now.AddDate(0, 0, 1)
+	case FreqWeekly:
+		date = now.AddDate(0, 0, 7)
+	case FreqMonthly:
+		date = now.AddDate(0, 1, 0)
+	case FreqAnnually:
+		date = now.AddDate(1, 0, 0)
+	case FreqEveryWeekday:
+		weekday := now.Weekday()
+		switch {
+		case weekday < time.Friday:
+			date = now.AddDate(0, 0, 1)
+		case weekday == time.Friday:
+			date = now.AddDate(0, 0, 3)
+		case weekday == time.Saturday:
+			date = now.AddDate(0, 0, 2)
+		case weekday == time.Sunday:
+			date = now.AddDate(0, 0, 1)
+		}
+
+	default:
+		return date, errors.Errorf("frequency value %q unknown", frequency)
+	}
+
+	// Get the year, month and day from the new computed date,
+	// but the hour and minute from the first run, so we don't accumulate errors
+	dateTime := time.Date(date.Year(), date.Month(), date.Day(), firstRun.Hour(), firstRun.Minute(), 0, 0, date.Location())
+
+	return dateTime, nil
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {

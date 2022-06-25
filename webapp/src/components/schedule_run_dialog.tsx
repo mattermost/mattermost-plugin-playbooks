@@ -11,6 +11,7 @@ import styled from 'styled-components';
 import {scheduleRun} from 'src/client';
 import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import Dropdown from 'src/components/dropdown';
 
 import {ScheduledRun} from 'src/types/playbook_run';
 
@@ -113,16 +114,121 @@ const ScheduleRunDialog = ({scheduledRun, setScheduledRun, playbook, ...modalPro
                         />
                     </DateTimeInput>
                 </DateTimeWrapper>
-                <RecurringChip>
-                    {formatMessage({defaultMessage: 'Repeat every x seconds'})}
-                    <ChevronDown className={'icon-12 icon-chevron-down'}/>
-                </RecurringChip>
+                <RecurringChip
+                    frequency={frequency}
+                    setFrequency={setFrequency}
+                    date={DateTime.fromFormat(date, 'yyyy/MM/dd')}
+                />
             </Form>
         </DialogModal>
     );
 };
 
-const RecurringChip = styled.div`
+interface RecurringChipProps {
+    frequency: string;
+    setFrequency: (f: string) => void;
+    date: DateTime;
+}
+
+enum Frequency {
+    Never = 'never',
+    Daily = 'daily',
+    Weekly = 'weekly',
+    Monthly = 'monthly',
+    Annually = 'annually',
+    EveryWeekday = 'everyweekday'
+}
+
+const RecurringChip = (props: RecurringChipProps) => {
+    const {formatMessage} = useIntl();
+    const [isOpen, setOpen] = useState(false);
+    const toggleOpen = () => {
+        setOpen(!isOpen);
+    };
+
+    const jsDate = props.date.toJSDate();
+
+    const chipText = (freq) => {
+        switch (freq) {
+        case Frequency.Never:
+            return formatMessage({defaultMessage: 'Never repeats'});
+        case Frequency.Daily:
+            return formatMessage({defaultMessage: 'Repeats every day'});
+        case Frequency.Weekly:
+            return formatMessage({defaultMessage: 'Repeats weekly on {jsDate, date, ::E}'}, {jsDate});
+        case Frequency.Monthly:
+            return formatMessage({defaultMessage: 'Repeats monthly on the {jsDate, date, ::dd}'}, {jsDate});
+        case Frequency.Annually:
+            return formatMessage({defaultMessage: 'Repeats annually on {jsDate, date, ::MM/dd}'}, {jsDate});
+        case Frequency.EveryWeekday:
+            return formatMessage({defaultMessage: 'Every weekday (Monday to Friday)'});
+        }
+    };
+
+    const target = (
+        <RecurringChipContainer onClick={toggleOpen}>
+            {chipText(props.frequency || Frequency.Never)}
+            <ChevronDown className={'icon-12 icon-chevron-down'}/>
+        </RecurringChipContainer>
+    );
+
+    return (
+        <Dropdown
+            isOpen={isOpen}
+            onClose={toggleOpen}
+            target={target}
+        >
+            <FrequencyMenu>
+                {Object.values(Frequency).map((freq) => (
+                    <FrequencyItem
+                        key={freq}
+                        onClick={() => {
+                            props.setFrequency(freq);
+                            toggleOpen();
+                        }}
+                    >
+                        {chipText(freq)}
+                    </FrequencyItem>
+                ))}
+            </FrequencyMenu>
+        </Dropdown>
+    );
+};
+
+const FrequencyMenu = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 0px;
+
+    width: 268px;
+
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color), 0.16);
+
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+`;
+
+const FrequencyItem = styled.div`
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+
+    color: var(--center-channel-color);
+
+    width: 100%;
+    padding: 6px 20px;
+
+    cursor: pointer;
+
+    :hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
+const RecurringChipContainer = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
