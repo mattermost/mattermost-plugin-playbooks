@@ -59,6 +59,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
+                    dropdownMoveRightPx={-76}
                 />
             }
             <DueDateHoverMenuButton
