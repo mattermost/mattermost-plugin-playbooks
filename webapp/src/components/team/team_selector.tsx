@@ -266,17 +266,11 @@ const selectStyles: StylesConfig<Option, boolean> = {
 };
 
 export const SelectedButton = styled.button`
-	flex-grow: 1;
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
     border-radius: 4px;
     color: var(--center-channel-color);
-
-    -webkit-transition: all 0.15s ease;
-    -webkit-transition-delay: 0s;
-    -moz-transition: all 0.15s ease;
-    -o-transition: all 0.15s ease;
     transition: all 0.15s ease;
 
     border: none;

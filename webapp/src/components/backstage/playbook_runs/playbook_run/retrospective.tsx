@@ -1,7 +1,6 @@
 import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {DateTime} from 'luxon';
 import debounce from 'debounce';
 
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
@@ -21,7 +20,6 @@ import {PAST_TIME_SPEC} from 'src/components/time_spec';
 interface Props {
     playbookRun: PlaybookRun;
     playbook: PlaybookWithChecklist | null;
-    onChange: (playbookRun: PlaybookRun) => void;
     role: Role;
 }
 
@@ -30,7 +28,6 @@ const DEBOUNCE_2_SECS = 2000;
 const Retrospective = ({
     playbookRun,
     playbook,
-    onChange,
     role,
 }: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
@@ -66,11 +63,6 @@ const Retrospective = ({
 
     const onConfirmPublish = () => {
         publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
-        onChange({
-            ...playbookRun,
-            retrospective_published_at: DateTime.now().valueOf(),
-            retrospective_was_canceled: false,
-        });
         setShowConfirmation(false);
     };
 
@@ -116,17 +108,9 @@ const Retrospective = ({
     };
 
     const onMetricsChange = debounce((metrics_data: RunMetricData[]) => {
-        onChange({
-            ...playbookRun,
-            metrics_data,
-        });
         updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
     }, DEBOUNCE_2_SECS);
     const onReportChange = debounce((retrospective: string) => {
-        onChange({
-            ...playbookRun,
-            retrospective,
-        });
         updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
     }, DEBOUNCE_2_SECS);
 

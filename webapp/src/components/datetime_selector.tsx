@@ -94,7 +94,7 @@ export const DateTimeSelector = ({
     const [moveUp, setMoveUp] = useState(0);
 
     useEffect(() => {
-        if (!rect) {
+        if (!rect || !isOpen) {
             setMoveUp(0);
             return;
         }
