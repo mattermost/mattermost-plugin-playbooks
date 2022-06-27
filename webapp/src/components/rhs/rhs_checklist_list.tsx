@@ -56,7 +56,7 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
-    const stateKey = parentContainer + '_' + parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id;
+    const stateKey = parentContainer + '_' + (parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id);
     const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
     const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
     const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));

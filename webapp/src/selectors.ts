@@ -118,6 +118,10 @@ export const currentChecklistAllCollapsed = (stateKey: string) => createSelector
     'currentChecklistAllCollapsed',
     currentChecklistCollapsedState(stateKey),
     (checklistsState) => {
+        if (Object.entries(checklistsState).length === 0) {
+            return false;
+        }
+
         for (const key in checklistsState) {
             if (!checklistsState[key]) {
                 return false;
