@@ -635,7 +635,7 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
-			h.HandleWarningWithCode(w, logger, http.StatusNotFound, "Not found",
+			h.HandleErrorWithCode(w, logger, http.StatusNotFound, "Not found",
 				errors.Errorf("playbook run for channel id %s not found", channelID))
 
 			return

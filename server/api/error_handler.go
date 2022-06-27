@@ -23,12 +23,6 @@ func (h *ErrorHandler) HandleErrorWithCode(w http.ResponseWriter, logger logrus.
 	HandleErrorWithCode(logger, w, code, publicErrorMsg, internalErr)
 }
 
-// HandleWarningWithCode logs the internal warning and sends the public facing error
-// message as JSON in a response with the provided code.
-func (h *ErrorHandler) HandleWarningWithCode(w http.ResponseWriter, logger logrus.FieldLogger, code int, publicWarningMsg string, internalErr error) {
-	HandleWarningWithCode(logger, w, code, publicWarningMsg, internalErr)
-}
-
 // PermissionsCheck handles the output of a permisions check
 // Automatically does the proper error handling.
 // Returns true if the check passed and false on failure. Correct use is: if !h.PermissionsCheck(w, check) { return }

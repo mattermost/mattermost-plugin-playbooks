@@ -74,18 +74,6 @@ func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code 
 	handleResponseWithCode(w, code, publicErrorMsg)
 }
 
-// HandleWarningWithCode logs the internal warning and sends the public facing error
-// message as JSON in a response with the provided code.
-func HandleWarningWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code int, publicWarningMsg string, internalErr error) {
-	if internalErr != nil {
-		logger = logger.WithError(internalErr)
-	}
-
-	logger.Warn(publicWarningMsg)
-
-	handleResponseWithCode(w, code, publicWarningMsg)
-}
-
 // ReturnJSON writes the given pointerToObject as json with the provided httpStatus
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
