@@ -69,7 +69,11 @@ func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code 
 		logger = logger.WithError(internalErr)
 	}
 
-	logger.Warn(publicErrorMsg)
+	if code >= http.StatusInternalServerError {
+		logger.Error(publicErrorMsg)
+	} else {
+		logger.Warn(publicErrorMsg)
+	}
 
 	handleResponseWithCode(w, code, publicErrorMsg)
 }
