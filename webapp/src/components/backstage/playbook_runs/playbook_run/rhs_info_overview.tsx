@@ -7,8 +7,8 @@ import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import Icon from '@mdi/react';
-import {mdiAccountOutline, mdiAccountMultipleOutline, mdiBookOutline, mdiBullhornOutline} from '@mdi/js';
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
+import CompassIconProps from '@mattermost/compass-icons/components/props';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -67,14 +67,14 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
         <Section>
             <SectionTitle>{formatMessage({defaultMessage: 'Overview'})}</SectionTitle>
             <Item
-                iconPath={mdiBookOutline}
+                icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
                 {playbook && <Link to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</Link>}
             </Item>
             <Item
-                iconPath={mdiAccountOutline}
+                icon={AccountOutlineIcon}
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
                 <AssignTo
@@ -85,7 +85,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
                 />
             </Item>
             <Item
-                iconPath={mdiAccountMultipleOutline}
+                icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={() => {/* implement the participants list view */}}
             >
@@ -97,7 +97,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
                 </Participants>
             </Item>
             <Item
-                iconPath={mdiBullhornOutline}
+                icon={BullhornOutlineIcon}
                 name={formatMessage({defaultMessage: 'Following'})}
             >
                 <FollowersWrapper>
@@ -155,27 +155,35 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
     return [FollowingButton, followers] as const;
 };
 
+type CompassIcon = React.FC<CompassIconProps>;
+
 interface ItemProps {
-    iconPath: string;
+    icon: CompassIcon;
     name: string;
     children: React.ReactNode;
     onClick?: () => void;
 }
 
-const Item = (props: ItemProps) => (
-    <OverviewRow onClick={props.onClick}>
-        <OverviewItemName>
-            <OverviewIcon
-                path={props.iconPath}
-                size={'18px'}
-            />
-            {props.name}
-        </OverviewItemName>
-        {props.children}
-    </OverviewRow>
-);
+const Item = (props: ItemProps) => {
+    const StyledIcon = styled(props.icon)`
+        margin-right: 11px;
+    `;
 
-const OverviewRow = styled.div<{onClick: () => void}>`
+    return (
+        <OverviewRow onClick={props.onClick}>
+            <OverviewItemName>
+                <StyledIcon
+                    size={18}
+                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                />
+                {props.name}
+            </OverviewItemName>
+            {props.children}
+        </OverviewRow>
+    );
+};
+
+const OverviewRow = styled.div<{onClick?: () => void}>`
     padding: 10px 24px;
     display: flex;
     justify-content: space-between;
@@ -192,11 +200,6 @@ const OverviewRow = styled.div<{onClick: () => void}>`
 const OverviewItemName = styled.div`
     display: flex;
     align-items: center;
-`;
-
-const OverviewIcon = styled(Icon)`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    margin-right: 11px;
 `;
 
 const Participants = styled.div`
