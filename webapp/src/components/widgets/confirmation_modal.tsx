@@ -75,6 +75,8 @@ type Props = {
      * Set to hide the cancel button
      */
     hideCancel?: boolean;
+
+    isConfirmDestructive?: boolean,
 };
 
 type State = {
@@ -102,6 +104,7 @@ const UncontrolledConfirmModal = (props: Props) => {
                 setShow(false);
                 props.onCancel(checked);
             }}
+            isConfirmDestructive={props.isConfirmDestructive}
         />
     );
 };
@@ -113,6 +116,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
         confirmButtonClass: 'btn btn-primary',
         confirmButtonText: '',
         modalClass: '',
+        isConfirmDestructive: false,
     };
 
     constructor(props: Props) {
@@ -219,6 +223,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
                 aria-modal={true}
                 aria-labelledby='confirmModalLabel'
                 aria-describedby='confirmModalBody'
+                isConfirmDestructive={this.props.isConfirmDestructive}
             >
                 <Modal.Header
                     className='GenericModal__header'

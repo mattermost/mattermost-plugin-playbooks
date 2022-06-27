@@ -2,11 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {PropsWithChildren, useEffect} from 'react';
+import React, {PropsWithChildren, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
+import {DateTime} from 'luxon';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -364,6 +365,7 @@ const RunScheduleButton = styled.div`
 export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: ControlProps & ScheduleRunProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const [hovered, setHovered] = useState(false);
 
     const onClickHandler = async () => {
         dispatch(displayScheduleRunDialog({
@@ -373,18 +375,14 @@ export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: Control
         }));
     };
 
-    if (!scheduledRun) {
-        return null;
-    }
-
-    const freq = scheduledRun.frequency as Frequency || Frequency.Never;
-    const jsDate = scheduledRun.first_run.toJSDate();
+    const freq = scheduledRun?.frequency as Frequency || Frequency.Never;
+    const jsDate = scheduledRun?.first_run.toJSDate() || DateTime.now().toJSDate();
 
     let content = formatMessage(
         {defaultMessage: 'Scheduled to run on {jsDate, date} at {jsDate, time, short}'},
         {jsDate},
     );
-    if (scheduledRun.frequency !== '' && scheduledRun.frequency !== Frequency.Never) {
+    if (scheduledRun?.frequency !== '' && scheduledRun?.frequency !== Frequency.Never) {
         content = formatMessage(
             {defaultMessage: 'Scheduled to run {freqText} at {jsDate, time, short}'},
             {freqText: frequencyText(freq, jsDate, formatMessage), jsDate},
@@ -394,22 +392,27 @@ export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: Control
     return (
         <ScheduledChipContainer
             onClick={onClickHandler}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            visible={Boolean(scheduledRun)}
         >
             <ScheduledIcon className={'icon-10 icon-calendar-check-outline'}/>
             <ScheduledText>
                 {content}
             </ScheduledText>
             <RemoveScheduledIcon
+                visible={hovered}
                 className={'icon-12 icon-trash-can-outline'}
                 onClick={(e) => {
                     e.stopPropagation();
 
                     dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
                         show: true,
-                        title: formatMessage({defaultMessage: 'Cancelling all scheduled runs'}),
-                        message: formatMessage({defaultMessage: 'Are you sure you want to cancel all scheduled runs? This cannot be undone.'}),
-                        confirmButtonText: formatMessage({defaultMessage: 'Yes, cancel all scheduled runs'}),
-                        cancelButtonText: formatMessage({defaultMessage: 'Do not cancel'}),
+                        title: formatMessage({defaultMessage: 'Delete scheduled runs?'}),
+                        message: formatMessage({defaultMessage: 'Are you sure you want to delete <strong>all</strong> scheduled runs? This can\'t be undone.'}, {strong: chunk => <strong>{chunk}</strong>}),
+                        confirmButtonText: formatMessage({defaultMessage: 'Delete'}),
+                        cancelButtonText: formatMessage({defaultMessage: 'Cancel'}),
+                        isConfirmDestructive: true,
                         onConfirm: () => cancelScheduledRun(playbook.id).then(() => setScheduledRun(null)),
                         // eslint-disable-next-line @typescript-eslint/no-empty-function
                         onCancel: () => {},
@@ -420,7 +423,7 @@ export const ScheduledChip = ({playbook, scheduledRun, setScheduledRun}: Control
     );
 };
 
-const ScheduledChipContainer = styled.div`
+const ScheduledChipContainer = styled.div<{visible: boolean}>`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -428,13 +431,18 @@ const ScheduledChipContainer = styled.div`
     gap: 6px;
     margin-left: 16px;
     margin-bottom: 6px;
-    width: max-content;
+    max-width: max-content;
     cursor: pointer;
 
     height: 24px;
 
     background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 12px;
+
+    margin-top: ${({visible}) => (visible ? '0' : '-30px')};
+    opacity: ${({visible}) => (visible ? '100%' : '0')};
+
+    transition: margin .3s, opacity ${({visible}) => (visible ? '.5s' : '.2s')};
 `;
 
 const ScheduledIcon = styled.i`
@@ -450,9 +458,13 @@ const ScheduledIcon = styled.i`
     height: 16px;
 `;
 
-const RemoveScheduledIcon = styled.i`
+const RemoveScheduledIcon = styled.i<{visible: boolean}>`
     color: var(--dnd-indicator);
 
+    transition: margin .3s, opacity ${({visible}) => (visible ? '.5s' : '.2s')};
+
+    margin-left: ${({visible}) => (visible ? '-4px' : '-18px')};
+    opacity: ${({visible}) => (visible ? '100%' : '0')};
     display: flex;
     align-items: center;
     justify-content: center;

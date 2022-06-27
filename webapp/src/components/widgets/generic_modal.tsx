@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
@@ -158,7 +158,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-export const StyledModal = styled(Modal)<{$adjustTop: number}>`
+export const StyledModal = styled(Modal)<{$adjustTop: number, isConfirmDestructive: boolean}>`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -178,6 +178,15 @@ export const StyledModal = styled(Modal)<{$adjustTop: number}>`
         }
         .modal-dialog {
             margin-top: calc(50vh - ${({$adjustTop}) => $adjustTop}px);
+        }
+    }
+
+
+    &&&&&& {
+        #confirmModalButton{
+            ${({isConfirmDestructive}) => isConfirmDestructive && css`
+                background-color: var(--dnd-indicator) !important;
+            `}
         }
     }
 
