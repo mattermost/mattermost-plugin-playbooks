@@ -44,7 +44,7 @@ const Outline = ({playbook, refetch}: Props) => {
             [checklistIndex]: state,
         });
     };
-    const onEachChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
     };
 
@@ -103,7 +103,7 @@ const Outline = ({playbook, refetch}: Props) => {
                     isReadOnly={false}
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
-                    onEachChecklistCollapsedStateChange={onEachChecklistCollapsedStateChange}
+                    onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 />
             </Section>
             <Section

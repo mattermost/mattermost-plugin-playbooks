@@ -30,7 +30,7 @@ export const SHOW_RUN_ACTIONS_MODAL = pluginId + '_show_run_actions_modal';
 export const HIDE_RUN_ACTIONS_MODAL = pluginId + '_hide_run_actions_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
 export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
-export const SET_EACH_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
+export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
@@ -149,8 +149,8 @@ export interface SetChecklistCollapsedState {
     collapsed: boolean;
 }
 
-export interface SetEachChecklistCollapsedState {
-    type: typeof SET_EACH_CHECKLIST_COLLAPSED_STATE;
+export interface SetEveryChecklistCollapsedState {
+    type: typeof SET_EVERY_CHECKLIST_COLLAPSED_STATE;
     key: string;
     state: Record<number, boolean>;
 }

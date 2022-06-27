@@ -54,7 +54,7 @@ interface Props {
     isReadOnly: boolean;
     checklistsCollapseState: Record<number, boolean>;
     onChecklistCollapsedStateChange: (checklistIndex: number, state: boolean) => void;
-    onEachChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
+    onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
 }
 
@@ -65,7 +65,7 @@ const ChecklistList = ({
     isReadOnly,
     checklistsCollapseState,
     onChecklistCollapsedStateChange,
-    onEachChecklistCollapsedStateChange,
+    onEveryChecklistCollapsedStateChange,
     showItem,
 }: Props) => {
     const dispatch = useDispatch();
@@ -235,7 +235,7 @@ const ChecklistList = ({
                 }
                 newState[dstIdx] = checklistsCollapseState[srcIdx];
 
-                onEachChecklistCollapsedStateChange(newState);
+                onEveryChecklistCollapsedStateChange(newState);
 
                 // Persist the new data in the server
                 clientMoveChecklist(playbookRun.id, srcIdx, dstIdx);

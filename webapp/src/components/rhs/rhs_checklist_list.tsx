@@ -18,7 +18,7 @@ import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
-    setEachChecklistCollapsedState,
+    setEveryChecklistCollapsedStateChange,
 } from 'src/actions';
 import {
     Checklist,
@@ -72,8 +72,8 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         dispatch(setChecklistCollapsedState(stateKey, checklistIndex, state));
     };
-    const onEachChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
-        dispatch(setEachChecklistCollapsedState(stateKey, state));
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+        dispatch(setEveryChecklistCollapsedStateChange(stateKey, state));
     };
 
     const showItem = (checklistItem: ChecklistItem, myId: string) => {
@@ -198,7 +198,7 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
                 isReadOnly={viewerMode}
                 checklistsCollapseState={checklistsState}
                 onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
-                onEachChecklistCollapsedStateChange={onEachChecklistCollapsedStateChange}
+                onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 showItem={showItem}
             />
         </InnerContainer>

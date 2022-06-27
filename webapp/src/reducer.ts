@@ -48,8 +48,8 @@ import {
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SetEachChecklistCollapsedState,
-    SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    SetEveryChecklistCollapsedState,
+    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
@@ -258,7 +258,7 @@ const checklistCollapsedState = (
     action:
     | SetChecklistCollapsedState
     | SetAllChecklistsCollapsedState
-    | SetEachChecklistCollapsedState
+    | SetEveryChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
@@ -282,8 +282,8 @@ const checklistCollapsedState = (
             [setAction.key]: newState,
         };
     }
-    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
-        const setAction = action as SetEachChecklistCollapsedState;
+    case SET_EVERY_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEveryChecklistCollapsedState;
         return {
             ...state,
             [setAction.key]: setAction.state,
