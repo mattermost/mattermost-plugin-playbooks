@@ -68,6 +68,11 @@ const Button = styled.button`
         color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
+    cursor: default;
+    &.active {
+        cursor: pointer;
+    }
+
     .PlaybookRunProfile {
         &:active {
             background: rgba(var(--button-bg-rgb), 0.08);

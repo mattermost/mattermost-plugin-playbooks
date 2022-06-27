@@ -82,7 +82,6 @@ export const WebhooksInput = (props: Props) => {
             isOpen={isOpen}
             onClose={toggleOpen}
             target={target}
-            showOnRight={false}
             moveUp={moveUp}
         >
             <SelectorWrapper>

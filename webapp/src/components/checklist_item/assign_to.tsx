@@ -13,6 +13,7 @@ interface AssignedToProps {
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
+    dropdownMoveRightPx?: number;
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
 }
@@ -54,7 +55,7 @@ const AssignTo = (props: AssignedToProps) => {
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                showOnRight={true}
+                dropdownMoveRightPx={props.dropdownMoveRightPx}
             />
         );
     }
@@ -97,6 +98,7 @@ const AssignTo = (props: AssignedToProps) => {
                 }}
                 selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
+                dropdownMoveRightPx={props.dropdownMoveRightPx}
             />
         </AssignToContainer>
     );
