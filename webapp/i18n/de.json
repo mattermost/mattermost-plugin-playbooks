@@ -605,5 +605,10 @@
     "lbr3Lq": "Kopiere Link",
     "bf5rs0": "Zeige Info",
     "kEMvwX": "Es gibt keine Durchläufe auf welche die Filter zutreffen.",
-    "GXjP8g": "Alle Durchläufe auf die du Zugriff hast, werden hier angezeigt"
+    "GXjP8g": "Alle Durchläufe auf die du Zugriff hast, werden hier angezeigt",
+    "ocYb9S": "Schlüssel-Metriken",
+    "nc8QpJ": "Letzte Aktivitäten",
+    "m/KtHt": "Du hast keine Berechtigung den Besitzer zu ändern",
+    "RnOiCg": "Es war nicht möglich dem Durchlauf {isFollowing, select, true {nicht mehr zu folgen} other {zu folgen}}",
+    "4mCpAv": "Der Besitzer konnte nicht geändert werden"
 }
