@@ -1,107 +1,77 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, ReactNode} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
-import {useRouteMatch} from 'react-router-dom';
+import {useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {
-    fetchPlaybookRun,
-    fetchPlaybookRunMetadata,
-    fetchPlaybookRunStatusUpdates,
-} from 'src/client';
-import {useRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata, StatusPostComplete} from 'src/types/playbook_run';
+import {useUpdateEffect} from 'react-use';
+
+import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {pluginErrorUrl} from 'src/browser_routing';
+import {ErrorPageTypes} from 'src/constants';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
 import FinishRun from './finish_run';
 import Retrospective from './retrospective';
+import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
+import RHSInfo from './rhs_info';
 
-const FetchingStateType = {
-    loading: 'loading',
-    fetched: 'fetched',
-    notFound: 'notfound',
+const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
+
+const useRHS = (playbookRun?: PlaybookRun|null) => {
+    const [isOpen, setIsOpen] = useState(true);
+    const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
+    const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
+
+    useUpdateEffect(() => {
+        setSubtitle(playbookRun?.name);
+    }, [playbookRun?.name]);
+
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
+        setIsOpen(true);
+        setSection(_section);
+        setTitle(_title);
+        setSubtitle(_subtitle);
+    };
+    const close = () => {
+        setIsOpen(false);
+    };
+
+    return {isOpen, section, title, subtitle, open, close};
 };
 
 const PlaybookRunDetails = () => {
-    const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
-    const currentRun = useRun(match.params.playbookRunId);
-    const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
-    const [following, setFollowing] = useState<string[]>([]);
-    const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
-    const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-    const [isRHSOpen, setIsRHSOpen] = useState(false);
-    const [statusUpdates, setStatusUpdates] = useState<StatusPostComplete[]>([]);
-    const [RHSData, setRHSData] = useState<{title: ReactNode, content: ReactNode} | null>(null);
-
+    const playbookRunId = match.params.playbookRunId;
+    const playbookRun = useRun(playbookRunId);
+    const playbook = usePlaybook(playbookRun?.playbook_id);
+    const [metadata, metadataResult] = useRunMetadata(playbookRunId);
+    const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);
 
-    const openRHS = (section: RHSContent) => {
-        if (!playbookRun) {
-            return;
-        }
-        let title = null;
-        let content = null;
-        switch (section) {
-        case RHSContent.RunInfo:
-            title = formatMessage({defaultMessage: 'Run info'});
-            break;
-        case RHSContent.RunTimeline:
-            title = formatMessage({defaultMessage: 'Timeline'});
-            break;
-        case RHSContent.RunParticipants:
-            title = formatMessage({defaultMessage: 'Participants'});
-            break;
-        case RHSContent.RunStatusUpdates:
-            title = formatMessage({defaultMessage: 'Status updates'});
-            content = (
-                <RHSStatusUpdates
-                    playbookRun={playbookRun}
-                    statusUpdates={statusUpdates}
-                />
-            );
-            break;
-        }
-
-        setRHSData({content, title});
-        setIsRHSOpen(true);
-    };
+    const RHS = useRHS(playbookRun);
 
     useEffect(() => {
-        const playbookRunId = match.params.playbookRunId;
-
-        if (currentRun) {
-            setPlaybookRun(currentRun);
-        } else {
-            Promise
-                .all([
-                    fetchPlaybookRun(playbookRunId),
-                    fetchPlaybookRunMetadata(playbookRunId),
-                    fetchPlaybookRunStatusUpdates(playbookRunId),
-                ])
-                .then(([playbookRunResult, playbookRunMetadataResult, statusUpdatesResult]) => {
-                    setPlaybookRun(playbookRunResult);
-                    setPlaybookRunMetadata(playbookRunMetadataResult || null);
-                    setFetchingState(FetchingStateType.fetched);
-                    setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-                    setStatusUpdates(statusUpdatesResult || []);
-                }).catch(() => {
-                    setFetchingState(FetchingStateType.notFound);
-                });
+        const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
+        const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
+        if (RHSUpdatesOpened && emptyUpdates) {
+            RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
-    }, [match.params.playbookRunId, currentRun]);
+    }, [playbookRun, RHS.section, RHS.isOpen]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
@@ -112,21 +82,53 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
-    if (!playbookRun) {
+    // loading state
+    if (playbookRun === undefined) {
         return null;
+    }
+
+    // not found or error
+    if (playbookRun === null || metadataResult.state === FetchState.error) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
+    let rhsComponent = null;
+    switch (RHS.section) {
+    case RHSContent.RunStatusUpdates:
+        rhsComponent = (
+            <RHSStatusUpdates
+                playbookRun={playbookRun}
+                statusUpdates={statusUpdates ?? null}
+            />
+        );
+        break;
+    case RHSContent.RunInfo:
+        rhsComponent = (
+            <RHSInfo
+                run={playbookRun}
+                runMetadata={metadata ?? null}
+                role={role}
+            />
+        );
+        break;
+    default:
+        rhsComponent = null;
+    }
+
     return (
         <Container>
-            <MainWrapper isRHSOpen={isRHSOpen}>
-                <Main isRHSOpen={isRHSOpen}>
-                    <Header>
-                        {/* {'HEADER' + currentRun?.name}
-                        <button onClick={() => setIsRHSOpen(!isRHSOpen)}> Toogle RHS</button> */}
-                    </Header>
+            <MainWrapper isRHSOpen={RHS.isOpen}>
+                <Header isRHSOpen={RHS.isOpen}>
+                    <RunHeader
+                        playbookRun={playbookRun}
+                        playbookRunMetadata={metadata ?? null}
+                        openRHS={RHS.open}
+                    />
+                </Header>
+                <Main isRHSOpen={RHS.isOpen}>
                     <Body>
                         <Summary
                             playbookRun={playbookRun}
@@ -134,28 +136,33 @@ const PlaybookRunDetails = () => {
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
+                                openRHS={RHS.open}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
-                                onViewAllUpdates={() => openRHS(RHSContent.RunStatusUpdates)}
-                                lastStatusUpdate={statusUpdates.length ? statusUpdates[0] : undefined}
+                                openRHS={RHS.open}
+                                lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
                         <Checklists playbookRun={playbookRun}/>
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
-                        <Retrospective/>
+                        <Retrospective
+                            playbookRun={playbookRun}
+                            playbook={playbook ?? null}
+                            role={role}
+                        />
                     </Body>
                 </Main>
             </MainWrapper>
             <RightHandSidebar
-                isOpen={isRHSOpen}
-                title={RHSData?.title}
-                onClose={() => setIsRHSOpen(false)}
+                isOpen={RHS.isOpen}
+                title={RHS.title}
+                subtitle={RHS.subtitle}
+                onClose={RHS.close}
             >
-                {RHSData?.content}
+                {rhsComponent}
             </RightHandSidebar>
         </Container>
     );
@@ -176,26 +183,39 @@ const Container = styled(ColumnContainer)`
     flex: 1;
 `;
 
-const MainWrapper = styled.main<{isRHSOpen: boolean}>`
+const MainWrapper = styled.div<{isRHSOpen: boolean}>`
     flex: 1;
     display: flex;
-    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+    flex-direction: column;
+    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+
+    @media screen and (min-width: 1600px) {
+        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+    }
 `;
 
 const Main = styled.main<{isRHSOpen: boolean}>`
     max-width: 780px;
-    min-width: 500px;
+    width: min(780px, 100%);
     padding: 20px;
     flex: 1;
-    margin: 0 auto;
+    margin: 40px auto;
     display: flex;
     flex-direction: column;
 `;
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header`
+const Header = styled.header<{isRHSOpen: boolean}>`
+    height: 56px;
     min-height: 56px;
-    width: 100%;
-`;
+    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 639px)' : 'calc(100% - 239px)')};
+    z-index: 2;
+    position: fixed;
+    background-color: var(--center-channel-bg);
+    display:flex;
 
+    @media screen and (min-width: 1600px) {
+        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 739px)' : 'calc(100% - 239px)')};
+    }
+`;

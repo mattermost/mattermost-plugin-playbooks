@@ -27,9 +27,13 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @remarks lightweight alternative to {@link usePlaybooksCrud}
  * @returns undefined == loading; null == not found
  */
-export function usePlaybook(id: Playbook['id']) {
+export function usePlaybook(id: Playbook['id'] | undefined) {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined | null>();
     useEffect(() => {
+        if (!id) {
+            setPlaybook(null);
+            return;
+        }
         clientFetchPlaybook(id)
             .then(setPlaybook)
             .catch(() => setPlaybook(null));

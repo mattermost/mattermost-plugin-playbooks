@@ -63,6 +63,7 @@ export default Summary;
 const Header = styled.div`
     display: flex;
     flex: 1;
+    margin-bottom: 8px;
 `;
 
 const TimestampContainer = styled.div`
@@ -80,4 +81,5 @@ const Container = styled.div`
     width: 100%;
     display: flex;
     flex-direction: column;
+    margin-top: 24px;
 `;

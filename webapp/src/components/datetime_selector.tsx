@@ -36,7 +36,7 @@ type Props = {
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
+    dropdownMoveRightPx?: number;
     className?: string;
     makeOptions?: (
         query: string,
@@ -94,7 +94,7 @@ export const DateTimeSelector = ({
     const [moveUp, setMoveUp] = useState(0);
 
     useEffect(() => {
-        if (!rect) {
+        if (!rect || !isOpen) {
             setMoveUp(0);
             return;
         }
@@ -147,7 +147,7 @@ export const DateTimeSelector = ({
             isOpen={isOpen}
             onClose={toggleOpen}
             target={targetWrapped}
-            showOnRight={props.showOnRight}
+            moveRight={props.dropdownMoveRightPx}
             moveUp={moveUp}
         >
             <ReactSelect

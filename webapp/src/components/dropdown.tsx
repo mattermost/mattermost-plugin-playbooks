@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 const ProfileDropdown = styled.div`
     position: relative;
@@ -19,7 +19,7 @@ const Blanket = styled.div`
 
 interface ChildContainerProps {
     moveUp?: number;
-    showOnRight?: boolean;
+    moveRight?: number;
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
@@ -28,9 +28,7 @@ const ChildContainer = styled.div<ChildContainerProps>`
 	z-index: 50;
 	position: absolute;
     top: ${(props) => 27 - (props.moveUp || 0)}px;
-    ${(props) => props.showOnRight && css`
-        right: -55px;
-    `}
+    right: ${({moveRight}) => ((moveRight !== undefined && moveRight !== null) ? `${moveRight}px` : 'auto')};
 
 	.PlaybookRunProfileButton {
 		.Profile {
@@ -58,13 +56,13 @@ const ChildContainer = styled.div<ChildContainerProps>`
 interface DropdownProps {
     children: JSX.Element;
     isOpen: boolean;
-    showOnRight?: boolean;
+    moveRight?: number;
     moveUp?: number;
     target: JSX.Element;
     onClose: () => void;
 }
 
-const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
+const Dropdown = ({children, isOpen, moveRight, moveUp, target, onClose}: DropdownProps) => {
     if (!isOpen) {
         return target;
     }
@@ -74,7 +72,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
             {target}
             <ChildContainer
                 moveUp={moveUp}
-                showOnRight={showOnRight}
+                moveRight={moveRight}
             >
                 {children}
             </ChildContainer>

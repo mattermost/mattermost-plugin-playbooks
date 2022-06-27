@@ -146,7 +146,7 @@ export const Retrospective = (props: Props) => {
                                     ref={childRef}
                                     metricsData={props.playbookRun.metrics_data}
                                     metricsConfigs={props.metricsConfigs}
-                                    isPublished={isPublished}
+                                    notEditable={isPublished}
                                     onEdit={debouncedPersistMetricEditEvent}
                                     flushChanges={() => debouncedPersistMetricEditEvent.flush()}
                                 />}
@@ -154,7 +154,7 @@ export const Retrospective = (props: Props) => {
                                 playbookRun={props.playbookRun}
                                 onEdit={debouncedPersistReportEditEvent}
                                 flushChanges={() => debouncedPersistReportEditEvent.flush()}
-                                isPublished={isPublished}
+                                notEditable={isPublished}
                             />
                         </StyledContent>
                     </div>
