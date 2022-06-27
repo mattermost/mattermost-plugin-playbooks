@@ -36,7 +36,7 @@ const Outline = ({playbook, refetch}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const [checklistCollapseState, setChecklistCollapseState] = useState({} as Record<number, boolean>);
+    const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({

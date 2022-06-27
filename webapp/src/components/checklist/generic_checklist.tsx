@@ -124,7 +124,7 @@ const GenericChecklist = (props: Props) => {
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {!props.disabled &&
+                    {props.disabled ? null : (
                         <AddTaskLink
                             disabled={props.disabled}
                             onClick={() => {
@@ -137,7 +137,7 @@ const GenericChecklist = (props: Props) => {
                             </IconWrapper>
                             {formatMessage({defaultMessage: 'Add a task'})}
                         </AddTaskLink>
-                    }
+                    )}
                 </ChecklistContainer>
             )}
         </Droppable>
