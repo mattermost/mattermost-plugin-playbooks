@@ -95,7 +95,6 @@ const PlaybookRunDetails = () => {
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
-
     let rhsComponent = null;
     switch (RHS.section) {
     case RHSContent.RunStatusUpdates:
@@ -110,7 +109,7 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <RHSInfo
                 run={playbookRun}
-                runMetadata={playbookRunMetadata}
+                runMetadata={metadata ?? null}
                 role={role}
             />
         );
