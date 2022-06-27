@@ -106,8 +106,18 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
                             size={14}
                         />
                     </IconWrapper>
-                    <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
-                    <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
+                    <TextDateViewer
+                        data-testid={'update-due-date-text'}
+                        type={dueInfo.type}
+                    >
+                        {dueInfo.text}
+                    </TextDateViewer>
+                    <DueDateViewer
+                        data-testid={'update-due-date-time'}
+                        type={dueInfo.type}
+                    >
+                        {dueInfo.time}
+                    </DueDateViewer>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
                         <ActionButton
                             data-testid={'request-update-button'}
