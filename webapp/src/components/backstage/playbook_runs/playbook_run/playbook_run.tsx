@@ -126,6 +126,7 @@ const PlaybookRunDetails = () => {
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
                         openRHS={RHS.open}
+                        role={role}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>
@@ -146,7 +147,10 @@ const PlaybookRunDetails = () => {
                                 playbookRun={playbookRun}
                             />
                         )}
-                        <Checklists playbookRun={playbookRun}/>
+                        <Checklists
+                            playbookRun={playbookRun}
+                            role={role}
+                        />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
                             playbookRun={playbookRun}

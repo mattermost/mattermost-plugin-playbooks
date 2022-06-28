@@ -106,25 +106,24 @@ export const currentPlaybookRun = createSelector(
 
 const emptyChecklistState = {} as Record<number, boolean>;
 
-export const currentChecklistCollapsedState = createSelector(
+export const currentChecklistCollapsedState = (stateKey: string) => createSelector(
     'currentChecklistCollapsedState',
-    getCurrentChannelId,
     pluginState,
-    (channelId, plugin) => {
-        return plugin.checklistCollapsedState[channelId] ?? emptyChecklistState;
+    (plugin) => {
+        return plugin.checklistCollapsedState[stateKey] ?? emptyChecklistState;
     },
 );
 
-export const currentChecklistAllCollapsed = createSelector(
+export const currentChecklistAllCollapsed = (stateKey: string) => createSelector(
     'currentChecklistAllCollapsed',
-    currentPlaybookRun,
-    currentChecklistCollapsedState,
-    (playbookRun, checklistsState) => {
-        if (!playbookRun) {
-            return true;
+    currentChecklistCollapsedState(stateKey),
+    (checklistsState) => {
+        if (Object.entries(checklistsState).length === 0) {
+            return false;
         }
-        for (let i = 0; i < playbookRun.checklists.length; i++) {
-            if (!checklistsState[i]) {
+
+        for (const key in checklistsState) {
+            if (!checklistsState[key]) {
                 return false;
             }
         }
@@ -132,9 +131,8 @@ export const currentChecklistAllCollapsed = createSelector(
     },
 );
 
-export const currentChecklistItemsFilter = (state: GlobalState): ChecklistItemsFilter => {
-    const channelId = getCurrentChannelId(state);
-    return pluginState(state).checklistItemsFilterByChannel[channelId] || ChecklistItemsFilterDefault;
+export const currentChecklistItemsFilter = (state: GlobalState, stateKey: string): ChecklistItemsFilter => {
+    return pluginState(state).checklistItemsFilterByChannel[stateKey] || ChecklistItemsFilterDefault;
 };
 
 export const myActivePlaybookRunsList = createSelector(
