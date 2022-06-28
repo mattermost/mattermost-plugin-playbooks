@@ -18,7 +18,7 @@ import {useToasts, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
@@ -65,7 +65,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
 
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Overview'})}</SectionTitle>
+            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}

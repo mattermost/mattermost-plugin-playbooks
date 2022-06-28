@@ -4,14 +4,20 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 
 const RHSInfoMetrics = () => {
     const {formatMessage} = useIntl();
 
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Key Metrics'})}</SectionTitle>
+            <SectionHeader
+                title={formatMessage({defaultMessage: 'Key Metrics'})}
+                link={{
+                    to: '#',
+                    name: formatMessage({defaultMessage: 'View Retrospective'}),
+                }}
+            />
         </Section>
     );
 };

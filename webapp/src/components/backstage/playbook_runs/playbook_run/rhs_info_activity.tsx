@@ -4,14 +4,14 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 
 const RHSInfoActivity = () => {
     const {formatMessage} = useIntl();
 
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Recent Activity'})}</SectionTitle>
+            <SectionHeader title={formatMessage({defaultMessage: 'Recent Activity'})}/>
         </Section>
     );
 };
