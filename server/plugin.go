@@ -169,7 +169,7 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config, logger)
+	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 

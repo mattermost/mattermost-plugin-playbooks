@@ -22,7 +22,7 @@ type Handler struct {
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(pluginAPI *pluginapi.Client, config config.Service, logger logrus.FieldLogger) *Handler {
+func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	handler := &Handler{
 		ErrorHandler: &ErrorHandler{},
 		pluginAPI:    pluginAPI,
