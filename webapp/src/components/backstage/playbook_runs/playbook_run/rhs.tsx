@@ -23,9 +23,10 @@ interface Props {
     title: ReactNode;
     children: ReactNode;
     subtitle?: ReactNode;
+    onBack?: () => void;
 }
 
-const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack}: Props) => {
     const sidebarRef = React.useRef(null);
 
     if (!isOpen) {
@@ -40,6 +41,14 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
             isOpen={isOpen}
         >
             <Header>
+                {
+                    onBack ? <BackIcon>
+                        <i
+                            className='icon icon-arrow-back-ios'
+                            onClick={onBack}
+                        />
+                    </BackIcon> : null
+                }
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderVerticalDivider/>
                 {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
@@ -107,7 +116,7 @@ const HeaderIcon = styled.div`
 `;
 
 const HeaderTitle = styled.div`
-    margin: auto 0 auto 20px;
+    margin: auto 0;
     line-height: 32px;
     font-size: 16px;
     font-weight: 600;
@@ -136,4 +145,9 @@ const Body = styled.div`
     display: flex;
     flex: 1;
     flex-direction: column;
+`;
+
+const BackIcon = styled(HeaderIcon)`
+    margin-left: 10px;
+    margin-right: 0;
 `;

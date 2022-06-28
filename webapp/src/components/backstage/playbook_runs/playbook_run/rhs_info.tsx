@@ -14,6 +14,7 @@ interface Props {
     run: PlaybookRun;
     runMetadata: Metadata | null;
     role: Role;
+    onViewParticipants: () => void;
 }
 
 const RHSInfo = (props: Props) => {
@@ -23,6 +24,7 @@ const RHSInfo = (props: Props) => {
                 run={props.run}
                 runMetadata={props.runMetadata}
                 role={props.role}
+                onViewParticipants={props.onViewParticipants}
             />
             <RHSInfoMetrics/>
             <RHSInfoActivity/>
