@@ -31,7 +31,7 @@ func getAPIBaseURL(pluginAPI *pluginapi.Client) (string, error) {
 func makeAPIURL(pluginAPI *pluginapi.Client, apiPath string, args ...interface{}) string {
 	apiBaseURL, err := getAPIBaseURL(pluginAPI)
 	if err != nil {
-		logrus.WithError(err).Warn("failed to build api base url")
+		logrus.WithError(err).Error("failed to build api base url")
 		apiBaseURL = defaultBaseAPIURL
 	}
 

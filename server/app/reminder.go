@@ -107,9 +107,12 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	// broadcast to followers
 	message, err := s.buildOverdueStatusUpdateMessage(playbookRunToModify, owner.Username)
 	if err != nil {
-		logger.WithError(err).Warn("failed to build overdue status update message")
+		logger.WithError(err).Error("failed to build overdue status update message")
 	} else {
-		s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
+		err = s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
+		if err != nil {
+			logger.WithError(err).Error("failed to dm post to run followers")
+		}
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id

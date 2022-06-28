@@ -264,7 +264,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 			}
 
 			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
-				logrus.WithError(err).WithField("user_id", adminID).Warn("failed to send a DM to user")
+				logrus.WithError(err).WithField("user_id", adminID).Error("failed to send a DM to user")
 			}
 		}(admin.Id)
 	}

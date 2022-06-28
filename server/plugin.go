@@ -141,7 +141,7 @@ func (p *Plugin) OnActivate() error {
 
 		if telemetryEnabled {
 			if err = p.telemetryClient.Enable(); err != nil {
-				logrus.WithError(err).Warn("Telemetry could not be enabled")
+				logrus.WithError(err).Error("Telemetry could not be enabled")
 			}
 			return
 		}

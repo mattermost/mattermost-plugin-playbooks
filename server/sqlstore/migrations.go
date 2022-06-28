@@ -1238,12 +1238,12 @@ var migrations = []Migration{
 			// Best effort migration so we just log the error to avoid killing the plugin.
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
-					logrus.WithError(err).Warn("failed to migrate KV store plugin id")
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			} else {
 
 				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
-					logrus.WithError(err).Warn("failed to migrate KV store plugin id")
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			}
 

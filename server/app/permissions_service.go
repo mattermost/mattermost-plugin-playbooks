@@ -269,7 +269,7 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 		var group *model.Group
 		group, err := p.pluginAPI.Group.Get(groupID)
 		if err != nil {
-			logrus.WithField("group_id", groupID).Warn("failed to query group")
+			logrus.WithField("group_id", groupID).Error("failed to query group")
 			continue
 		}
 

@@ -82,7 +82,7 @@ func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code 
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
-		logrus.WithError(err).Warn("Unable to marshall JSON")
+		logrus.WithError(err).Error("Unable to marshal JSON")
 		return
 	}
 
