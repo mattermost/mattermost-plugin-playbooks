@@ -61,6 +61,7 @@ func LogRequest(next http.Handler) http.Handler {
 			"url":        r.URL.String(),
 			"user_id":    r.Header.Get("Mattermost-User-Id"),
 			"request_id": requestID,
+			"user_agent": r.Header.Get("User-Agent"),
 		})
 		r = r.WithContext(context.WithValue(r.Context(), requestIDContextKey, requestID))
 
