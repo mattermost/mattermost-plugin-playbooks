@@ -122,6 +122,9 @@ const HeaderTitle = styled.div`
     font-weight: 600;
     color: var(--center-channel-color);
     white-space: nowrap;
+    :first-child {
+        margin-left: 20px;
+    }    
 `;
 
 const HeaderVerticalDivider = styled.div`
