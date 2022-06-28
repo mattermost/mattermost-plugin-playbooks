@@ -602,5 +602,10 @@
     "GDCpPr": "Ostatnia aktualizacja statusu",
     "+qDKgW": "Wyświetl wszystkie aktualizacje",
     "kEMvwX": "Nie ma żadnych przebiegów pasujących do tych filtrów.",
-    "GXjP8g": "Wszystkie dostępne przebiegi będą wyświetlane tutaj"
+    "GXjP8g": "Wszystkie dostępne przebiegi będą wyświetlane tutaj",
+    "ocYb9S": "Kluczowe Wskaźniki",
+    "nc8QpJ": "Ostatnia Aktywność",
+    "m/KtHt": "Nie masz uprawnień do zmiany właściciela",
+    "RnOiCg": "Nie można było {isFollowing, select, true {wyłaczyć obserwowanie} other {właczyć obserwowanie}} przebiegu",
+    "4mCpAv": "Nie można było zmienić właściciela"
 }
