@@ -44,12 +44,13 @@ const TimelineItem = styled.li`
     margin: 27px 0 0 0;
 `;
 
-const TimeContainer = styled.div`
+const TimeContainer = styled.div<{position: 'top'|'bottom'}>`
     position: absolute;
     width: 75px;
     line-height: 16px;
     text-align: left;
     left: 4px;
+    bottom: ${({position}) => (position === 'bottom' ? '-28px' : 'auto')};
 `;
 
 const TimeStamp = styled.time`
@@ -127,7 +128,7 @@ const SummaryDeleted = styled.span`
 const SummaryDetail = styled.div`
     font-size: 11px;
     margin: 4px 0 0 0;
-    color: rgba(var(--center-channel-color-rgb), 0.64)
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const DATETIME_FORMAT = {
@@ -138,6 +139,7 @@ const DATETIME_FORMAT = {
 interface Props {
     event: TimelineEvent;
     prevEventAt?: DateTime;
+    prevEventAtPosition: 'top' | 'bottom';
     runCreateAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
@@ -182,6 +184,7 @@ const TimelineEventItem = (props: Props) => {
     if (diff.toMillis() < 0) {
         timeSinceStart = formatMessage({defaultMessage: '{duration} before run started'}, {duration: formatDuration(diff.negate())});
     }
+
     const timeSincePrevEvent: ReactNode = props.prevEventAt && (
         <TimeBetween>
             <FormattedDuration
@@ -270,9 +273,11 @@ const TimelineEventItem = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <TimeContainer>
-                {timeSincePrevEvent}
-            </TimeContainer>
+            {props.prevEventAtPosition === 'top' ? (
+                <TimeContainer position={props.prevEventAtPosition}>
+                    {timeSincePrevEvent}
+                </TimeContainer>
+            ) : null}
             <Circle>
                 <i className={iconClass}/>
             </Circle>
@@ -335,6 +340,11 @@ const TimelineEventItem = (props: Props) => {
                 }}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+            {props.prevEventAtPosition === 'bottom' ? (
+                <TimeContainer position={props.prevEventAtPosition}>
+                    {timeSincePrevEvent}
+                </TimeContainer>
+            ) : null}
         </TimelineItem>
     );
 };

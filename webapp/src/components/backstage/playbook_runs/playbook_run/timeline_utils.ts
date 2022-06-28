@@ -62,6 +62,7 @@ export const useTimelineEvents = (playbookRun: PlaybookRun) => {
                 subject_display_name: displayUsername(user, displayPreference),
             } as TimelineEvent;
         })).then((eventArray) => {
+            eventArray.reverse();
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
     }, [playbookRun.timeline_events, displayPreference, playbookRun.status_posts]);

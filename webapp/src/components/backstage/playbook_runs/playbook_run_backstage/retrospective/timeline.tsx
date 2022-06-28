@@ -79,6 +79,7 @@ const Timeline = (props: Props) => {
                     <TimelineEventItem
                         key={event.id}
                         event={event}
+                        prevEventAtPosition={'top'}
                         prevEventAt={prevEventAt}
                         runCreateAt={DateTime.fromMillis(props.playbookRun.create_at)}
                         channelNames={channelNamesMap}
