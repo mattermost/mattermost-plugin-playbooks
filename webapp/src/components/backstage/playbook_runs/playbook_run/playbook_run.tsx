@@ -27,6 +27,7 @@ import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 import RHSInfo from './rhs_info';
+import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
@@ -111,6 +112,14 @@ const PlaybookRunDetails = () => {
                 run={playbookRun}
                 runMetadata={metadata ?? null}
                 role={role}
+            />
+        );
+        break;
+    case RHSContent.RunTimeline:
+        rhsComponent = (
+            <RHSTimeline
+                playbookRun={playbookRun}
+                deleteTimelineEvent={(id: string) => console.log('delete ', id)}
             />
         );
         break;
