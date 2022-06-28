@@ -44,13 +44,13 @@ const TimelineItem = styled.li`
     margin: 27px 0 0 0;
 `;
 
-const TimeContainer = styled.div<{position: 'top'|'bottom'}>`
+const TimeContainer = styled.div<{parent: 'rhs'|'retro'}>`
     position: absolute;
     width: 75px;
     line-height: 16px;
     text-align: left;
     left: 4px;
-    bottom: ${({position}) => (position === 'bottom' ? '-28px' : 'auto')};
+    bottom: ${({parent}) => (parent === 'rhs' ? '-28px' : 'auto')};
 `;
 
 const TimeStamp = styled.time`
@@ -131,6 +131,10 @@ const SummaryDetail = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
+const StyledHoverMenu = styled(HoverMenu)<{parent: 'rhs'|'retro'}>`
+    right: ${({parent}) => (parent === 'rhs' ? '20px' : '0')};
+`;
+
 const DATETIME_FORMAT = {
     ...DateTime.DATE_MED,
     ...DateTime.TIME_24_WITH_SHORT_OFFSET,
@@ -139,7 +143,7 @@ const DATETIME_FORMAT = {
 interface Props {
     event: TimelineEvent;
     prevEventAt?: DateTime;
-    prevEventAtPosition: 'top' | 'bottom';
+    parent: 'rhs' | 'retro';
     runCreateAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
@@ -184,7 +188,6 @@ const TimelineEventItem = (props: Props) => {
     if (diff.toMillis() < 0) {
         timeSinceStart = formatMessage({defaultMessage: '{duration} before run started'}, {duration: formatDuration(diff.negate())});
     }
-
     const timeSincePrevEvent: ReactNode = props.prevEventAt && (
         <TimeBetween>
             <FormattedDuration
@@ -273,8 +276,8 @@ const TimelineEventItem = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            {props.prevEventAtPosition === 'top' ? (
-                <TimeContainer position={props.prevEventAtPosition}>
+            {props.parent === 'retro' ? (
+                <TimeContainer parent={props.parent}>
                     {timeSincePrevEvent}
                 </TimeContainer>
             ) : null}
@@ -320,14 +323,14 @@ const TimelineEventItem = (props: Props) => {
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
             {showMenu &&
-                <HoverMenu>
+                <StyledHoverMenu parent={props.parent}>
                     <HoverMenuButton
                         className={'icon-trash-can-outline icon-16 btn-icon'}
                         onClick={() => {
                             setShowDeleteConfirm(true);
                         }}
                     />
-                </HoverMenu>
+                </StyledHoverMenu>
             }
             <ConfirmModal
                 show={showDeleteConfirm}
@@ -340,8 +343,8 @@ const TimelineEventItem = (props: Props) => {
                 }}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
-            {props.prevEventAtPosition === 'bottom' ? (
-                <TimeContainer position={props.prevEventAtPosition}>
+            {props.parent === 'rhs' ? (
+                <TimeContainer parent={props.parent}>
                     {timeSincePrevEvent}
                 </TimeContainer>
             ) : null}

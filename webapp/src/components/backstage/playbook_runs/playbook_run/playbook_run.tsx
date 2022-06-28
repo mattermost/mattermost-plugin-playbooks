@@ -119,7 +119,6 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <RHSTimeline
                 playbookRun={playbookRun}
-                deleteTimelineEvent={(id: string) => console.log('delete ', id)}
             />
         );
         break;

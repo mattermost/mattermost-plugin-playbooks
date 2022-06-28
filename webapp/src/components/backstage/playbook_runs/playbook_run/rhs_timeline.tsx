@@ -13,15 +13,15 @@ import {DateTime} from 'luxon';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {ChannelNamesMap} from 'src/types/backstage';
+import {clientRemoveTimelineEvent} from 'src/client';
 
 import {useTimelineEvents} from './timeline_utils';
 
 interface Props {
     playbookRun: PlaybookRun;
-    deleteTimelineEvent: (id: string) => void;
 }
 
-const RHSTimeline = ({playbookRun, deleteTimelineEvent}: Props) => {
+const RHSTimeline = ({playbookRun}: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbookRun.team_id));
 
@@ -39,11 +39,11 @@ const RHSTimeline = ({playbookRun, deleteTimelineEvent}: Props) => {
                         key={event.id}
                         event={event}
                         prevEventAt={prevEventAt}
-                        prevEventAtPosition={'bottom'}
+                        parent={'rhs'}
                         runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
                         channelNames={channelNamesMap}
                         team={team}
-                        deleteEvent={() => deleteTimelineEvent(event.id)}
+                        deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
                     />
                 );
             })}
