@@ -602,5 +602,10 @@
     "Q15rLN": "Vraag een update...",
     "GXjP8g": "Alle uitvoeringen waartoe je toegang hebt worden hier getoond",
     "GDCpPr": "Recente status update",
-    "+qDKgW": "Bekijk alle updates"
+    "+qDKgW": "Bekijk alle updates",
+    "ocYb9S": "Belangrijkste meetwaarden",
+    "nc8QpJ": "Recente activiteit",
+    "m/KtHt": "Je hebt geen rechten om de eigenaar te wijzigen",
+    "RnOiCg": "Het was niet mogelijk om {isFollowing, select, true {unfollow} other {follow}} de uitvoering",
+    "4mCpAv": "Het was niet mogelijk om de eigenaar te wijzigen"
 }
