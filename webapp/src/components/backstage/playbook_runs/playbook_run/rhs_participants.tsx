@@ -20,17 +20,18 @@ interface Props {
 
 export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
     const {formatMessage} = useIntl();
-    const setSearchTerm = (term: string) => {};
+
+    // const setSearchTerm = (term: string) => {};
 
     return (
         <Container>
             <SearchSection>
-                <StyledSearchInput
+                {/* <StyledSearchInput
                     testId={'search-filter'}
                     default={''}
                     onSearch={setSearchTerm}
                     placeholder={formatMessage({defaultMessage: 'Search'})}
-                />
+                /> */}
                 <ParticipantsNumber>
                     {formatMessage({defaultMessage: '{num} Participants'}, {num: participantsIds.length})}
                 </ParticipantsNumber>
