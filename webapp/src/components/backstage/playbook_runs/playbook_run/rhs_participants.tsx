@@ -7,14 +7,18 @@ import styled from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
 import SearchInput from '../../search_input';
-import {ButtonIcon} from 'src/components/assets/buttons';
 import Tooltip from 'src/components/widgets/tooltip';
+import {formatProfileName} from 'src/components/profile/profile_selector';
+import {Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+
+import {SendMessageButton} from './send_message_button';
 
 interface Props {
     participantsIds: string[];
+    playbookRunMetadata: PlaybookRunMetadata | null;
 }
 
-export const Participants = ({participantsIds}: Props) => {
+export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
     const {formatMessage} = useIntl();
     const setSearchTerm = (term: string) => {};
 
@@ -38,18 +42,20 @@ export const Participants = ({participantsIds}: Props) => {
                             <ProfileWrapper key={id}>
                                 <StyledProfile
                                     userId={id}
+                                    nameFormatter={formatProfileName('')}
                                 />
-                                <Tooltip
-                                    id={`${id}-tooltip`}
-                                    shouldUpdatePosition={true}
-                                    content={formatMessage({defaultMessage: 'Send message'})}
-                                >
-                                    <ButtonIcon
-                                        style={{margin: 'auto 0'}}
-                                        className={'icon-send'}
-                                        onClick={() => {}}
-                                    />
-                                </Tooltip>
+                                <HoverButtonContainer>
+                                    <Tooltip
+                                        id={`${id}-tooltip`}
+                                        shouldUpdatePosition={true}
+                                        content={formatMessage({defaultMessage: 'Send message'})}
+                                    >
+                                        <SendMessageButton
+                                            userId={id}
+                                            teamName={playbookRunMetadata ? playbookRunMetadata.team_name : null}
+                                        />
+                                    </Tooltip>
+                                </HoverButtonContainer>
                             </ProfileWrapper>
                         );
                     })
@@ -97,6 +103,8 @@ const StyledSearchInput = styled(SearchInput)`
     }
 `;
 
+const HoverButtonContainer = styled.div``;
+
 const ProfileWrapper = styled.div`
     display: flex;
     flex-direction: row;
@@ -104,7 +112,18 @@ const ProfileWrapper = styled.div`
     :hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         border-radius: 5px;
+    }
+
+    ${HoverButtonContainer} {
+        opacity: 0;
     }    
+    :hover,
+    :focus-within {
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        ${HoverButtonContainer} {
+            opacity: 1;
+        }
+    }
 `;
 
 const StyledProfile = styled(Profile)`

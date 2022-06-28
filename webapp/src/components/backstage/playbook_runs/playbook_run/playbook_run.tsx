@@ -123,7 +123,10 @@ const PlaybookRunDetails = () => {
         break;
     case RHSContent.RunParticipants:
         rhsComponent = (
-            <Participants participantsIds={playbookRun.participant_ids}/>
+            <Participants
+                participantsIds={playbookRun.participant_ids}
+                playbookRunMetadata={metadata ?? null}
+            />
         );
         break;
 

@@ -23,8 +23,8 @@ import {RHSContent} from './rhs';
 
 interface Props {
     playbookRun: PlaybookRun;
-    playbookRunMetadata: PlaybookRunMetadata | null
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
+    playbookRunMetadata: PlaybookRunMetadata | null;
+    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
 export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) => {
