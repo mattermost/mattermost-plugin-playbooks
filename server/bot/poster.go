@@ -91,8 +91,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 func (b *Bot) DM(userID string, post *model.Post) error {
 	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
 	if err != nil {
-		logrus.WithError(err).WithField("user_id", userID).Info("Couldn't get bot's DM channel")
-		return err
+		return errors.Wrapf(err, "failed to get bot DM channel with user_id %s", userID)
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
