@@ -598,5 +598,10 @@
     "lbr3Lq": "Kopiraj poveznicu",
     "bf5rs0": "Pogledaj informacije",
     "kEMvwX": "Nema izvođenja koja odgovaraju tim filtrima.",
-    "GXjP8g": "Sva izvođenja kojima možeš pristupiti prikazat će se ovdje"
+    "GXjP8g": "Sva izvođenja kojima možeš pristupiti prikazat će se ovdje",
+    "ocYb9S": "Ključni mjerni podaci",
+    "nc8QpJ": "Nedavne aktivnosti",
+    "m/KtHt": "Nemaš dozvole za mijenjanje vlasnika",
+    "RnOiCg": "Nije bilo moguće {isFollowing, select, true {ne pratiti} other {pratiti}} izvođenje",
+    "4mCpAv": "Nije biilo moguće prominijeti vlasnika"
 }
