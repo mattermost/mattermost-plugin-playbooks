@@ -19,15 +19,15 @@ import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
-import {RHSContent} from './rhs';
 
 interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
+    onViewInfo: () => void;
+    onViewTimeline: () => void;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, onViewInfo, onViewTimeline}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
@@ -68,13 +68,13 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS}: Props) =>
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name)}
+                onClick={() => onViewTimeline()}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
+                onClick={() => onViewInfo()}
             />
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>

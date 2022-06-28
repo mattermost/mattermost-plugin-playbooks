@@ -100,6 +100,7 @@ const PlaybookRunDetails = () => {
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
+    const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name);
 
     let rhsComponent = null;
     switch (RHS.section) {
@@ -141,7 +142,8 @@ const PlaybookRunDetails = () => {
                     <RunHeader
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
-                        openRHS={RHS.open}
+                        onViewInfo={onViewInfo}
+                        onViewTimeline={onViewTimeline}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>
