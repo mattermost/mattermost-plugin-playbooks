@@ -9,11 +9,11 @@ import {useIntl, FormattedMessage} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
+import FormattedDuration from 'src/components/formatted_duration';
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
-import {useNow} from 'src/hooks';
 import {toggleRHS} from 'src/actions';
-import {messageHtmlToComponent, formatText, browserHistory} from 'src/webapp_globals';
+import {browserHistory} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -42,9 +42,10 @@ const useEvent = (event: TimelineEvent) => {
         break;
     case TimelineEventType.RunFinished:
         iconClass = 'icon icon-shield-alert-outline';
-        title = (
+        title = <FormattedMessage defaultMessage={'Run finished'}/>;
+        subtitle = (
             <FormattedMessage
-                defaultMessage={'Run finished by {name}'}
+                defaultMessage={'{name} finished the run'}
                 values={{name: event.subject_display_name}}
             />
         );
@@ -52,31 +53,27 @@ const useEvent = (event: TimelineEvent) => {
         break;
     case TimelineEventType.RunRestored:
         iconClass = 'icon icon-shield-alert-outline';
-        title = (
+        title = <FormattedMessage defaultMessage={'Run restored'}/>;
+        subtitle = (
             <FormattedMessage
-                defaultMessage={'Run restored by {name}'}
+                defaultMessage={'{name} restored the run'}
                 values={{name: event.subject_display_name}}
             />
         );
         testid = TimelineEventType.RunRestored;
         break;
+
+    // TODO check removed case
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
-        if (event.summary === '') {
-            title = (
-                <FormattedMessage
-                    defaultMessage={'{name} posted a status update'}
-                    values={{name: event.subject_display_name}}
-                />
-            );
-        } else {
-            title = (
-                <FormattedMessage
-                    defaultMessage={'{name} changed status from {summary}'}
-                    values={{name: event.subject_display_name, summary: event.summary}}
-                />
-            );
-        }
+
+        title = <FormattedMessage defaultMessage={'Status update posted'}/>;
+        subtitle = (
+            <FormattedMessage
+                defaultMessage={'{name} posted a status update'}
+                values={{name: event.subject_display_name}}
+            />
+        );
         testid = TimelineEventType.StatusUpdated;
         break;
     case TimelineEventType.OwnerChanged:
@@ -138,6 +135,8 @@ const useEvent = (event: TimelineEvent) => {
         testid = TimelineEventType.CanceledRetrospective;
         break;
     }
+
+    // {messageHtmlToComponent(formatText(subtitle, markdownOptions), true, {})}
     return {iconClass, title, subtitle, testid};
 };
 
@@ -177,42 +176,30 @@ const TimelineEventItem = ({event, team, deleteEvent, channelNames}: Props) => {
 
     const {iconClass, title, subtitle, testid} = useEvent(event);
 
-    const now = useNow();
-    const eventTime = DateTime.fromMillis(event.event_at);
-    const diff = DateTime.fromMillis(event.event_at).diff(now);
-
     return (
         <TimelineItem
             data-testid={'timeline-item ' + testid}
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            {/* <TimeContainer>
-                {diff}
-            </TimeContainer> */}
             <Circle>
                 <i className={iconClass}/>
             </Circle>
 
             <SummaryContainer>
-                {/* <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO()}>
-                    {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
-                    <Tooltip
-                        id={`timeline-${event.id}`}
-                        content={eventTime.toLocaleString(DATETIME_FORMAT)}
-                    >
-                        <Icon
-                            path={mdiClockOutline}
-                            size={0.85}
-                        />
-                    </Tooltip>
-                </TimeStamp> */}
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, event.post_id)}
                     deleted={statusPostDeleted}
                     postIdExists={event.post_id !== ''}
                 >
                     {title}
+                    <TimeContainer>
+                        <FormattedDuration
+                            from={event.event_at}
+                            truncate={'truncate'}
+                        />
+                        <span>{formatMessage({defaultMessage: 'ago'})}</span>
+                    </TimeContainer>
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
@@ -223,7 +210,7 @@ const TimelineEventItem = ({event, team, deleteEvent, channelNames}: Props) => {
                         })}
                     </SummaryDeleted>
                 )}
-                <SummaryDetail>{messageHtmlToComponent(formatText(/*subtitle*/ '', markdownOptions), true, {})}</SummaryDetail>
+                <SummaryDetail>{subtitle}</SummaryDetail>
             </SummaryContainer>
             {showMenu &&
                 <HoverMenu>
@@ -252,8 +239,15 @@ const TimelineEventItem = ({event, team, deleteEvent, channelNames}: Props) => {
 
 export default TimelineEventItem;
 
+const TimelineItem = styled.div`
+    display: flex;
+    flex-direction: row;
+    margin: 13px 0 0 0;
+    `;
+
 const Circle = styled.div`
-    position: absolute;
+    /* position: absolute; */
+    margin-left: 25px;
     width: 24px;
     height: 24px;
     color: var(--button-bg);
@@ -268,73 +262,35 @@ const Circle = styled.div`
     }
 `;
 
-const TimelineItem = styled.li`
-    position: relative;
-    margin: 27px 0 0 0;
-`;
-
 const TimeContainer = styled.div`
-    position: absolute;
+    display: flex;
+    flex-direction: row;
     width: 75px;
     line-height: 16px;
     text-align: left;
-    left: 4px;
-`;
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 
-const TimeStamp = styled.time`
-    font-size: 11px;
-    margin: 0px;
-    line-height: 1;
-    font-weight: 500;
-    svg {
-        vertical-align: middle;
-        margin: 0px 3px;
-        position: relative;
-        top: -1px;
+    span {
+        margin-left: 3px;
     }
 `;
 
-// const TimeSinceStart = styled.span`
-//     font-size: 11px;
-//     display: inline-block;
-//     white-space: nowrap;
-//     border: 1px solid #EFF1F5;
-//     padding: 0.1rem .25rem;
-//     border-radius: 5px;
-//     margin-left: 1rem;
-// `;
-
-// const TimeBetween = styled.div`
-//     font-size: 10px;
-//     position: absolute;
-//     top: -23px;
-//     left: -10px;
-//     white-space: nowrap;
-//     text-align: right;
-//     width: 3rem;
-
-//     &::after {
-//         content: '';
-//         background: #EFF1F5;
-//         width: 7px;
-//         height: 7px;
-//         position: absolute;
-//         top: 5px;
-//         right: -12px;
-//         border-radius: 50%;
-//     }
-// `;
-
 const SummaryContainer = styled.div`
-    position: relative;
-    padding: 0 5px 0 55px;
-    line-height: 16px;
+    flex-direction: column;
+    flex: 1;
+    padding: 0 5px;
     min-height: 36px;
 `;
 
 const SummaryTitle = styled.div<{deleted: boolean, postIdExists: boolean}>`
     font-size: 12px;
     font-weight: 600;
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    justify-content: space-between;
 
     ${({deleted, postIdExists}) => (deleted ? css`
         text-decoration: line-through;
