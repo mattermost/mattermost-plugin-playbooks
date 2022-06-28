@@ -85,6 +85,7 @@ const RHSRunDetails = () => {
                     <RHSChecklistList
                         playbookRun={playbookRun}
                         parentContainer={ChecklistParent.RHS}
+                        viewerMode={false}
                     />
                 </Scrollbars>
             </RHSContent>
