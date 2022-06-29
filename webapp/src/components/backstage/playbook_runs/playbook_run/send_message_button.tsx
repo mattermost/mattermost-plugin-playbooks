@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -20,22 +20,32 @@ export const SendMessageButton = (props: Props) => {
     const dispatch = useDispatch();
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
 
-    useEffect(() => {
-        if (!user) {
-            dispatch(fetchUser(props.userId));
+    const onClick = () => {
+        if (!props.teamName) {
+            return;
         }
-    }, [props.userId]);
+        if (user) {
+            navigateToUrl(`/${props.teamName}/messages/@${user.username}`);
+            return;
+        }
+
+        // if user profile is missing fetch it
+        const actionFunc = dispatch(fetchUser(props.userId));
+
+        //@ts-ignore
+        actionFunc.then((data) => {
+            navigateToUrl(`/${props.teamName}/messages/@${data.data.username}`);
+        }).catch(() => {
+            // eslint-disable-next-line no-console
+            console.error('Error getting user profiles');
+        });
+    };
 
     return (
         <ButtonIcon
             style={{margin: 'auto 0'}}
             className={'icon-send'}
-            onClick={() => {
-                if (!props.teamName || !user) {
-                    return;
-                }
-                navigateToUrl(`/${props.teamName}/messages/@${user.username}`);
-            }}
+            onClick={onClick}
         />
     );
 };
