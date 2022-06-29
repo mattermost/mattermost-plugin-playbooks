@@ -38,28 +38,26 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
             </SearchSection>
             <ListSection>
                 {
-                    participantsIds.map((id) => {
-                        return (
-                            <ProfileWrapper key={id}>
-                                <StyledProfile
-                                    userId={id}
-                                    nameFormatter={formatProfileName('')}
-                                />
-                                <HoverButtonContainer>
-                                    <Tooltip
-                                        id={`${id}-tooltip`}
-                                        shouldUpdatePosition={true}
-                                        content={formatMessage({defaultMessage: 'Send message'})}
-                                    >
-                                        <SendMessageButton
-                                            userId={id}
-                                            teamName={playbookRunMetadata ? playbookRunMetadata.team_name : null}
-                                        />
-                                    </Tooltip>
-                                </HoverButtonContainer>
-                            </ProfileWrapper>
-                        );
-                    })
+                    participantsIds.map((id) => (
+                        <ProfileWrapper key={id}>
+                            <StyledProfile
+                                userId={id}
+                                nameFormatter={formatProfileName('')}
+                            />
+                            <HoverButtonContainer>
+                                <Tooltip
+                                    id={`${id}-tooltip`}
+                                    shouldUpdatePosition={true}
+                                    content={formatMessage({defaultMessage: 'Send message'})}
+                                >
+                                    <SendMessageButton
+                                        userId={id}
+                                        teamName={playbookRunMetadata ? playbookRunMetadata.team_name : null}
+                                    />
+                                </Tooltip>
+                            </HoverButtonContainer>
+                        </ProfileWrapper>
+                    ))
                 }
             </ListSection>
         </Container>

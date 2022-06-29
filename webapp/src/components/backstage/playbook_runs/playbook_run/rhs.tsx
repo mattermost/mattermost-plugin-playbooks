@@ -41,14 +41,14 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack}: 
             isOpen={isOpen}
         >
             <Header>
-                {
-                    onBack ? <BackIcon>
+                {onBack ? (
+                    <BackIcon>
                         <i
                             className='icon icon-arrow-back-ios'
                             onClick={onBack}
                         />
-                    </BackIcon> : null
-                }
+                    </BackIcon>
+                ) : null}
                 <HeaderTitle>{title}</HeaderTitle>
                 <HeaderVerticalDivider/>
                 {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}

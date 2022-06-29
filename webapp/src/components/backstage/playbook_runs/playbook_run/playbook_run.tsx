@@ -31,7 +31,7 @@ import {Participants} from './rhs_participants';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
-export const useRHS = (playbookRun?: PlaybookRun|null) => {
+const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);

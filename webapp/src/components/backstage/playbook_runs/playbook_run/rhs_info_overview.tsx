@@ -93,7 +93,7 @@ const RHSInfoOverview = ({
             <Item
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
-                onClick={() => onViewParticipants()}
+                onClick={onViewParticipants}
             >
                 <Participants>
                     <UserList
