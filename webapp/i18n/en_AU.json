@@ -600,5 +600,16 @@
     "GDCpPr": "Recent status update",
     "+qDKgW": "View all updates",
     "kEMvwX": "There are no runs matching those filters.",
-    "GXjP8g": "All the runs that you can access will show here"
+    "GXjP8g": "All the runs that you can access will show here",
+    "ocYb9S": "Key Metrics",
+    "nc8QpJ": "Recent Activity",
+    "m/KtHt": "You have insufficient permissions to change the owner",
+    "lr1CUA": "Browse Playbooks",
+    "Ul0aFX": "Import Playbook",
+    "RnOiCg": "It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run",
+    "LfhTNW": "Browse or create Playbooks and Runs",
+    "GVpA4Q": "Create New Playbook",
+    "CFysvS": "Create Playbook Dropdown",
+    "4mCpAv": "It was not possible to change the owner",
+    "/qDObA": "Browse Runs"
 }
