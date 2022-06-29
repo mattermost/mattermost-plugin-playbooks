@@ -41,15 +41,22 @@ const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
                 }}
             />
             <Wrapper>
-                {metricsConfig.map((metricInfo) => (
-                    <Item
-                        key={metricInfo.id}
-                        to={'#'}
-                        data={metricDataByID[metricInfo.id]}
-                        info={metricInfo}
-                        editable={editable}
-                    />
-                ))}
+                {metricsConfig.map((metricInfo) => {
+                    const metricData = metricDataByID[metricInfo.id];
+                    if (!metricData) {
+                        return null;
+                    }
+
+                    return (
+                        <Item
+                            key={metricInfo.id}
+                            to={'#'}
+                            data={metricData}
+                            info={metricInfo}
+                            editable={editable}
+                        />
+                    );
+                })}
             </Wrapper>
         </Section>
     );
@@ -61,7 +68,7 @@ const Wrapper = styled.div`
 `;
 
 interface ItemProps {
-    data?: RunMetricData;
+    data: RunMetricData;
     info: Metric;
     editable: boolean;
     to: string;
@@ -71,7 +78,7 @@ const Item = ({data, info, editable, to}: ItemProps) => (
     <Row to={to}>
         <Name>{info.title}</Name>
         <Value
-            metricValue={data?.value ?? undefined}
+            metricValue={data.value}
             metricType={info.type}
             editable={editable}
         />
@@ -105,7 +112,7 @@ const Name = styled.div`
 `;
 
 interface ValueProps {
-    metricValue?: number;
+    metricValue: number | null;
     metricType: MetricType;
     editable: boolean;
 }
@@ -113,7 +120,7 @@ interface ValueProps {
 const Value = ({metricValue, metricType, editable}: ValueProps) => {
     const {formatMessage} = useIntl();
 
-    if (!metricValue) {
+    if (metricValue === null) {
         return (
             <ValuePlaceholder>
                 {editable ? formatMessage({defaultMessage: 'Add value...'}) : '-'}
