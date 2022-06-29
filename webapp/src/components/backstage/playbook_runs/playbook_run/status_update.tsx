@@ -7,7 +7,6 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
-import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
@@ -155,15 +154,11 @@ export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps
                     <ActionButton onClick={postUpdate}>
                         {formatMessage({defaultMessage: 'Post update'})}
                     </ActionButton>
-                    <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
-                            <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
-                                <FormattedMessage defaultMessage='View all updates'/>
-                            </DropdownMenuItemStyled>
-                        </DotMenu>
-                    </Kebab>
                 </RightWrapper>
             </Content>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
+                {formatMessage({defaultMessage: 'View all updates'})}
+            </ViewAllUpdates> : null}
         </Container>
     );
 };
