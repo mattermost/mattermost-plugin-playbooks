@@ -9,10 +9,12 @@ import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun, PlaybookRunStatus, Metadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 interface Props {
     run: PlaybookRun;
-    runMetadata: Metadata | null;
+    playbook?: PlaybookWithChecklist;
+    runMetadata?: Metadata;
     role: Role;
 }
 
@@ -28,7 +30,11 @@ const RHSInfo = (props: Props) => {
                 runMetadata={props.runMetadata}
                 editable={editable}
             />
-            <RHSInfoMetrics/>
+            <RHSInfoMetrics
+                metricsData={props.run.metrics_data}
+                metricsConfig={props.playbook?.metrics}
+                editable={editable}
+            />
             <RHSInfoActivity/>
         </Container>
     );

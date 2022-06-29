@@ -27,7 +27,7 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
 interface Props {
     run: PlaybookRun;
-    runMetadata: Metadata | null;
+    runMetadata?: Metadata;
     editable: boolean;
 }
 
