@@ -9,52 +9,103 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {DateTime} from 'luxon';
+import {useIntl} from 'react-intl';
 
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {clientRemoveTimelineEvent} from 'src/client';
+import MultiCheckbox from 'src/components/multi_checkbox';
 
-import {useTimelineEvents} from './timeline_utils';
+import {useTimelineEvents, useFilter} from './timeline_utils';
 
 interface Props {
     playbookRun: PlaybookRun;
 }
 
 const RHSTimeline = ({playbookRun}: Props) => {
+    const {formatMessage} = useIntl();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbookRun.team_id));
 
+    const {options, selectOption} = useFilter(playbookRun);
     const [filteredEvents] = useTimelineEvents(playbookRun);
 
     return (
         <Container data-testid='timeline-view'>
-            {filteredEvents.map((event, i, events) => {
-                let prevEventAt;
-                if (i !== events.length - 1) {
-                    prevEventAt = DateTime.fromMillis(events[i + 1].event_at);
-                }
-                return (
-                    <TimelineEventItem
-                        key={event.id}
-                        event={event}
-                        prevEventAt={prevEventAt}
-                        parent={'rhs'}
-                        runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
-                        channelNames={channelNamesMap}
-                        team={team}
-                        deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
+            <Filters>
+                <FilterText>
+                    {formatMessage(
+                        {defaultMessage: 'Showing {filteredNum} of {totalNum} events'},
+                        {filteredNum: filteredEvents.length, totalNum: playbookRun.timeline_events.length}
+                    )}
+                </FilterText>
+                <FilterButton>
+                    <MultiCheckbox
+                        dotMenuButton={FakeButton}
+                        options={options}
+                        onselect={selectOption}
+                        placement='bottom-end'
+                        icon={
+                            <TextContainer>
+                                <i className='icon icon-filter-variant'/>
+                                {formatMessage({defaultMessage: 'Filter'})}
+                            </TextContainer>
+                        }
                     />
-                );
-            })}
+                </FilterButton>
+            </Filters>
+            <ItemList>
+                {filteredEvents.map((event, i, events) => {
+                    let prevEventAt;
+                    if (i !== events.length - 1) {
+                        prevEventAt = DateTime.fromMillis(events[i + 1].event_at);
+                    }
+                    return (
+                        <TimelineEventItem
+                            key={event.id}
+                            event={event}
+                            prevEventAt={prevEventAt}
+                            parent={'rhs'}
+                            runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
+                            channelNames={channelNamesMap}
+                            team={team}
+                            deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
+                        />
+                    );
+                })}
+            </ItemList>
         </Container>
     );
 };
 
 export default RHSTimeline;
 
-const Container = styled.ul`
-    margin: 24px 0;
+const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const Filters = styled.div`
+    display: flex;
+    flex-direction: row;
+    height: 40px;
+    min-height: 40px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 22px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+`;
+
+const FilterText = styled.div`
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+const FilterButton = styled.div``;
+
+const ItemList = styled.ul`
     padding: 0 0 40px 0;
     list-style: none;
     position: relative;
@@ -62,10 +113,42 @@ const Container = styled.ul`
     :before {
         content: '';
         position: absolute;
-        top: 5px;
+        top: 32px;
         left: 32px;
         width: 1px;
-        bottom: -10px;
+        bottom: 0px;
         background: #EFF1F5;
     }
+`;
+
+const FakeButton = styled.div`
+    display: inline-flex;
+    align-items: center;
+    color: var(--button-bg);
+    background: var(--button-color-rgb);
+    padding: 5px 10px;
+    font-weight: 600;
+    font-size: 11px;
+    transition: all 0.15s ease-out;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.12);
+    }
+
+    &:active  {
+        background: rgba(var(--button-bg-rgb), 0.16);
+    }
+
+    i {
+        display: flex;
+        font-size: 12px;
+
+        &:before {
+            margin: 0 5px 0 0;
+        }
+    }
+`;
+
+const TextContainer = styled.span`
+    display: flex;
 `;

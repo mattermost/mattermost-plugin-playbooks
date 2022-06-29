@@ -3,6 +3,7 @@
 
 import {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -15,6 +16,8 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
 import {rhsEventsFilterForChannel} from 'src/selectors';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {CheckboxOption} from 'src/components/multi_checkbox';
+import {setRHSEventsFilter} from 'src/actions';
 
 type IdToUserFn = (userId: string) => UserProfile;
 
@@ -79,4 +82,70 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
         (eventType === TimelineEventType.RunCreated && filterRecord[TimelineEventType.StatusUpdated]) ||
         (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]) ||
         (eventType === TimelineEventType.RunRestored && filterRecord[TimelineEventType.StatusUpdated]);
+};
+
+export const useFilter = (playbookRun: PlaybookRun) => {
+    const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
+    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => rhsEventsFilterForChannel(state, playbookRun.channel_id));
+
+    const selectOption = (value: string, checked: boolean) => {
+        if (eventsFilter.all && value !== 'all') {
+            return;
+        }
+
+        dispatch(setRHSEventsFilter(playbookRun.channel_id, {
+            ...eventsFilter,
+            [value]: checked,
+        }));
+    };
+
+    const options = [
+        {
+            display: formatMessage({defaultMessage: 'All events'}),
+            value: 'all',
+            selected: eventsFilter.all,
+            disabled: false,
+        },
+        {
+            value: 'divider',
+        } as CheckboxOption,
+        {
+            display: formatMessage({defaultMessage: 'Role changes'}),
+            value: TimelineEventType.OwnerChanged,
+            selected: eventsFilter.owner_changed,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Status updates'}),
+            value: TimelineEventType.StatusUpdated,
+            selected: eventsFilter.status_updated,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Saved messages'}),
+            value: TimelineEventType.EventFromPost,
+            selected: eventsFilter.event_from_post,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Task state changes'}),
+            value: TimelineEventType.TaskStateModified,
+            selected: eventsFilter.task_state_modified,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Task assignments'}),
+            value: TimelineEventType.AssigneeChanged,
+            selected: eventsFilter.assignee_changed,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Slash commands'}),
+            value: TimelineEventType.RanSlashCommand,
+            selected: eventsFilter.ran_slash_command,
+            disabled: eventsFilter.all,
+        },
+    ];
+    return {options, selectOption};
 };
