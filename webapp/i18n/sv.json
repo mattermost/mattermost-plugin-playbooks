@@ -281,7 +281,7 @@
     "0oL1zz": "Kopierad!",
     "K3r6DQ": "Radera",
     "Vhnd2J": "Växla beskrivningen",
-    "ZdWYcm": "",
+    "ZdWYcm": "Nej, hoppa över retrospekt",
     "YMrTRm": "Sammanfattning av körning",
     "X/koAN": "Ogiltig post: det högsta tillåtna antalet webhooks är 64",
     "7VTSeD": "",
@@ -426,7 +426,7 @@
     "R5Zh+l": "Här kan du först uppleva ett exempel på en playbook innan du lägger tid på att skapa din egen.",
     "QbGfqo": "Sänd till intressenter på flera olika ställen och behåll spårning för retrospektiv med ett enda inlägg.",
     "lgZf0l": "",
-    "ZkhArX": "",
+    "ZkhArX": "Kör igång!",
     "GjCS6U": "Välj en mall",
     "dZmYk6": "",
     "1ikfp3": "Om du raderar den här mätningen kommer värdena för den inte att samlas in för framtida körningar.",
@@ -529,5 +529,9 @@
     "JcefuP": "Lägg till en beskrivning (valfritt)",
     "4mCpAv": "Det gick inte att byta ägare",
     "OqCzNb": "Lägg till en uppgift",
-    "MtrTNy": "Imorgon"
+    "MtrTNy": "Imorgon",
+    "Ul0aFX": "Importera playbook",
+    "LfhTNW": "Bläddra bland eller skapa playbooks och körningar",
+    "GVpA4Q": "Skapa en ny playbook",
+    "/qDObA": "Bläddra bland körningar"
 }
