@@ -2056,8 +2056,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_Category_Item")
 				}
 
-				// Item can't be in 2 categories simultaneously
-				if err := addPrimaryKey(e, sqlStore, "IR_Category_Item", "(ItemID, Type)"); err != nil {
+				if err := addPrimaryKey(e, sqlStore, "IR_Category_Item", "(CategoryID, ItemID, Type)"); err != nil {
 					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
 				}
 			} else {
@@ -2094,8 +2093,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating index IR_Category_Item_CategoryID")
 				}
 
-				// Item can't be in 2 categories simultaneously
-				if err := addPrimaryKey(e, sqlStore, "ir_category_item", "(ItemID, Type)"); err != nil {
+				if err := addPrimaryKey(e, sqlStore, "ir_category_item", "(CategoryID, ItemID, Type)"); err != nil {
 					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
 				}
 			}
