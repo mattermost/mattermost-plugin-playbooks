@@ -159,13 +159,8 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
 
-export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {
-    const channelId = getCurrentChannelId(state);
-    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
-};
-
-export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string): TimelineEventsFilter => {
-    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
+export const eventsFilterForPlaybookRun = (state: GlobalState, playbookRunId: string): TimelineEventsFilter => {
+    return pluginState(state).eventsFilterByPlaybookRun[playbookRunId] || TimelineEventsFilterDefault;
 };
 
 export const lastUpdatedByPlaybookRunId = createSelector(

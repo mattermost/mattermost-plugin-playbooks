@@ -14,10 +14,10 @@ import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
-import {rhsEventsFilterForChannel} from 'src/selectors';
+import {eventsFilterForPlaybookRun} from 'src/selectors';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
-import {setRHSEventsFilter} from 'src/actions';
+import {setPlaybookRunEventsFilter} from 'src/actions';
 
 type IdToUserFn = (userId: string) => UserProfile;
 
@@ -26,7 +26,7 @@ export const useTimelineEvents = (playbookRun: PlaybookRun) => {
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => rhsEventsFilterForChannel(state, playbookRun.channel_id));
+    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => eventsFilterForPlaybookRun(state, playbookRun.id));
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
@@ -87,14 +87,14 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
 export const useFilter = (playbookRun: PlaybookRun) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => rhsEventsFilterForChannel(state, playbookRun.channel_id));
+    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => eventsFilterForPlaybookRun(state, playbookRun.id));
 
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {
             return;
         }
 
-        dispatch(setRHSEventsFilter(playbookRun.channel_id, {
+        dispatch(setPlaybookRunEventsFilter(playbookRun.id, {
             ...eventsFilter,
             [value]: checked,
         }));
