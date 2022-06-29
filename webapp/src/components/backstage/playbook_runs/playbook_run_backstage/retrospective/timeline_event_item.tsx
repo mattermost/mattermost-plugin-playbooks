@@ -23,11 +23,11 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import Tooltip from 'src/components/widgets/tooltip';
 
-const Circle = styled.div`
+const Circle = styled.div<{colored: boolean}>`
     position: absolute;
     width: 24px;
     height: 24px;
-    color: var(--button-bg);
+    color: ${({colored}) => (colored ? 'var(--button-bg)' : 'inherit')};
     background: #EFF1F5;
     border-radius: 50%;
     left: 21px;
@@ -148,6 +148,8 @@ interface Props {
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
+    coloredIcon?: boolean;
+    disableLinks?: boolean;
 }
 
 const TimelineEventItem = (props: Props) => {
@@ -281,7 +283,7 @@ const TimelineEventItem = (props: Props) => {
                     {timeSincePrevEvent}
                 </TimeContainer>
             ) : null}
-            <Circle>
+            <Circle colored={props.coloredIcon !== false}>
                 <i className={iconClass}/>
             </Circle>
 
@@ -305,9 +307,9 @@ const TimelineEventItem = (props: Props) => {
                     </Tooltip>
                 </TimeStamp>
                 <SummaryTitle
-                    onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
+                    onClick={(e) => props.disableLinks !== false && !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
-                    postIdExists={props.event.post_id !== ''}
+                    postIdExists={props.event.post_id !== '' && props.disableLinks !== false}
                 >
                     {summaryTitle}
                 </SummaryTitle>

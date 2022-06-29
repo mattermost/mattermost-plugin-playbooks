@@ -25,7 +25,7 @@ const RHSInfo = (props: Props) => {
                 role={props.role}
             />
             <RHSInfoMetrics/>
-            <RHSInfoActivity/>
+            <RHSInfoActivity run={props.run}/>
         </Container>
     );
 };

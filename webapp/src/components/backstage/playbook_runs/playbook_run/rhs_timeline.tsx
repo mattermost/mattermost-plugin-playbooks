@@ -82,6 +82,7 @@ const RHSTimeline = ({playbookRun}: Props) => {
                                     runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
                                     channelNames={channelNamesMap}
                                     team={team}
+                                    disableLinks={true}
                                     deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
                                 />
                             );
