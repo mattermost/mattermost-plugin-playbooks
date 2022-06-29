@@ -75,17 +75,17 @@ describe('runs > run details page > summary', () => {
     });
 
     it('can be edited', () => {
-        // * Mouseover the summary
+        // # Mouseover the summary
         cy.findByTestId('run-summary-section').trigger('mouseover');
 
         cy.findByTestId('run-summary-section').within(() => {
-            // * Click the edit icon
+            // # Click the edit icon
             cy.findByTestId('hover-menu-edit-button').click();
 
-            // * Write a summary
+            // # Write a summary
             cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
 
-            // * Save changes
+            // # Save changes
             cy.findByTestId('checklist-item-save-button').click();
 
             // * Assert that data has changed
@@ -97,17 +97,17 @@ describe('runs > run details page > summary', () => {
     });
 
     it('can be canceled', () => {
-        // * Mouseover the summary
+        // # Mouseover the summary
         cy.findByTestId('run-summary-section').trigger('mouseover');
 
         cy.findByTestId('run-summary-section').within(() => {
-            // * Click the edit icon
+            // # Click the edit icon
             cy.findByTestId('hover-menu-edit-button').click();
 
-            // * Write a summary
+            // # Write a summary
             cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
 
-            // * Cancel changes
+            // # Cancel changes
             cy.findByText('Cancel').click();
 
             // * Assert that data has changed
