@@ -64,7 +64,7 @@ describe('runs > run details page > finish', () => {
             cy.visit(`/playbooks/run_details/${testPlaybookRun.id}`);
         });
 
-        // * assert that finish section does not exist
+        // * Assert that finish section does not exist
         cy.findByTestId('run-finish-section').should('not.exist');
     });
 
