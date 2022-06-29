@@ -7,15 +7,19 @@ import styled from 'styled-components';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
-const Checklists = (props: Props) => {
+const Checklists = ({playbookRun, role}: Props) => {
     return (
         <Container>
             <RHSChecklistList
-                playbookRun={props.playbookRun}
+                playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
+                viewerMode={role === Role.Viewer}
             />
         </Container>);
 };

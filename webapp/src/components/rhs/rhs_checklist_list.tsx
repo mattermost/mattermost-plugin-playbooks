@@ -11,14 +11,18 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
+import {GlobalState} from 'mattermost-webapp/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {
     setAllChecklistsCollapsedState,
+    setChecklistCollapsedState,
     setChecklistItemsFilter,
+    setEveryChecklistCollapsedStateChange,
 } from 'src/actions';
 import {
     Checklist,
+    ChecklistItem,
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
@@ -28,6 +32,7 @@ import {
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {
     currentChecklistAllCollapsed,
+    currentChecklistCollapsedState,
     currentChecklistItemsFilter,
 } from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
@@ -39,6 +44,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 interface Props {
     playbookRun: PlaybookRun;
     parentContainer: ChecklistParent;
+    viewerMode: boolean;
 }
 
 export enum ChecklistParent {
@@ -46,31 +52,82 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const RHSChecklistList = (props: Props) => {
+const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
-    const allCollapsed = useSelector(currentChecklistAllCollapsed);
-    const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
+    const stateKey = parentContainer + '_' + (parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id);
+    const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
+    const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
+    const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
     const myUser = useSelector(getCurrentUser);
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
 
-    const checklists = props.playbookRun.checklists || [];
+    const checklists = playbookRun.checklists || [];
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(checklists);
 
+    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
+        dispatch(setChecklistCollapsedState(stateKey, checklistIndex, state));
+    };
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+        dispatch(setEveryChecklistCollapsedStateChange(stateKey, state));
+    };
+
+    const showItem = (checklistItem: ChecklistItem, myId: string) => {
+        if (checklistItemsFilter.all) {
+            return true;
+        }
+
+        // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
+        if (!checklistItemsFilter.checked && checklistItem.state === ChecklistItemState.Closed) {
+            return false;
+        }
+
+        // "Me" is not checked, so if assignee_id is me, don't show it.
+        if (!checklistItemsFilter.me && checklistItem.assignee_id === myId) {
+            return false;
+        }
+
+        // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
+        if (!checklistItemsFilter.unassigned && checklistItem.assignee_id === '') {
+            return false;
+        }
+
+        // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+        if (!checklistItemsFilter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
+            return false;
+        }
+
+        // "Overdue" is checked
+        if (checklistItemsFilter.overdueOnly) {
+            // if an item doesn't have a due date or is due in the future, don't show it.
+            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
+                return false;
+            }
+
+            // if an item is skipped or closed, don't show it.
+            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
+                return false;
+            }
+        }
+
+        // We should show it!
+        return true;
+    };
+
     // Cancel overdueOnly filter if there are no overdue tasks anymore
     if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
-        dispatch(setChecklistItemsFilter(channelId, {
+        dispatch(setChecklistItemsFilter(stateKey, {
             ...checklistItemsFilter,
             overdueOnly: false,
         }));
     }
 
     const selectOption = (value: string, checked: boolean) => {
-        telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
+        telemetryEventForPlaybookRun(playbookRun.id, 'checklists_filter_selected');
 
         if (checklistItemsFilter.all && value !== 'all') {
             return;
@@ -79,13 +136,13 @@ const RHSChecklistList = (props: Props) => {
             return;
         }
 
-        dispatch(setChecklistItemsFilter(channelId, {
+        dispatch(setChecklistItemsFilter(stateKey, {
             ...checklistItemsFilter,
             [value]: checked,
         }));
     };
 
-    const title = props.parentContainer === ChecklistParent.RunDetails ? (
+    const title = parentContainer === ChecklistParent.RunDetails ? (
         <AnchorLinkTitle
             title={formatMessage({defaultMessage: 'Tasks'})}
             id={'checklist'}
@@ -97,10 +154,10 @@ const RHSChecklistList = (props: Props) => {
             id='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
-            parentContainer={props.parentContainer}
+            parentContainer={parentContainer}
         >
             <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle parentContainer={props.parentContainer}>
+                <MainTitle parentContainer={parentContainer}>
                     {title}
                     {
                         overdueTasksNum > 0 &&
@@ -118,7 +175,7 @@ const RHSChecklistList = (props: Props) => {
                             <ExpandHoverButton
                                 title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                                onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                                onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
                             />
                             <MultiCheckbox
                                 options={filterOptions}
@@ -136,8 +193,13 @@ const RHSChecklistList = (props: Props) => {
                 </MainTitle>
             </MainTitleBG>
             <ChecklistList
-                playbookRun={props.playbookRun}
-                enableFinishRun={props.parentContainer === ChecklistParent.RHS}
+                playbookRun={playbookRun}
+                enableFinishRun={parentContainer === ChecklistParent.RHS}
+                isReadOnly={viewerMode}
+                checklistsCollapseState={checklistsState}
+                onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
+                onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
+                showItem={showItem}
             />
         </InnerContainer>
     );
@@ -176,7 +238,7 @@ const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
 
     font-size: 16px;
     line-height: 24px;
-    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0' : '12px 0 12px 8px')};
+    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0 8px 0' : '12px 0 12px 8px')};
 `;
 
 const HoverRow = styled(HoverMenu)`

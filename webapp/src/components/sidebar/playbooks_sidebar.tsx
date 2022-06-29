@@ -12,6 +12,7 @@ import {useRunsList} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
+import CreatePlaybookDropdown from './create_playbook_dropdown';
 
 const defaultRunsFetchParams = {
     page: 0,
@@ -29,7 +30,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const groups: Array<SidebarGroup> = [];
 
     const [playbooks] = usePlaybooksCrud({team_id: props.team_id, per_page: 20});
-    const [playbookRuns] = useRunsList(defaultRunsFetchParams);
+    const [playbookRuns] = useRunsList(defaultRunsFetchParams, false);
 
     // Not a correct list of playbooks, should be changed
     const playbooksItems = playbooks ? playbooks.map((playbook) => {
@@ -106,7 +107,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     return (
         <Sidebar
             groups={groups}
-            headerDropdown={null}
+            headerDropdown={<CreatePlaybookDropdown team_id={props.team_id}/>}
             onGroupClick={() => {/*empty*/}}
             team_id={props.team_id}
         />

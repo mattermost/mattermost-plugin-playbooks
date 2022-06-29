@@ -32,7 +32,6 @@ interface Props {
     getPlaybooks: () => Promise<Playbook[]>;
     onSelectedChange?: (playbookId?: string) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
     className?: string;
 }
 
@@ -170,7 +169,6 @@ export default function PlaybookSelector(props: Props) {
             isOpen={isOpen}
             onClose={toggleOpen}
             target={targetWrapped}
-            showOnRight={props.showOnRight}
             moveUp={moveUp}
         >
             <ReactSelect
