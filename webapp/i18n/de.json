@@ -610,5 +610,11 @@
     "nc8QpJ": "Letzte Aktivitäten",
     "m/KtHt": "Du hast keine Berechtigung den Besitzer zu ändern",
     "RnOiCg": "Es war nicht möglich dem Durchlauf {isFollowing, select, true {nicht mehr zu folgen} other {zu folgen}}",
-    "4mCpAv": "Der Besitzer konnte nicht geändert werden"
+    "4mCpAv": "Der Besitzer konnte nicht geändert werden",
+    "lr1CUA": "Durchsuche Playbooks",
+    "Ul0aFX": "Importiere Playbook",
+    "LfhTNW": "Durchsuche oder erstelle Playbooks und Durchläufe",
+    "GVpA4Q": "Erstelle neues Playbook",
+    "CFysvS": "Erstelle Playbook Dropdown",
+    "/qDObA": "Durchläufe durchsuchen"
 }
