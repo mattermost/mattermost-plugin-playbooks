@@ -33,6 +33,7 @@ const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
+    const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
     const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
@@ -41,17 +42,18 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
         setSubtitle(playbookRun?.name);
     }, [playbookRun?.name]);
 
-    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode, _scrollable = true) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
         setSubtitle(_subtitle);
+        setScrollable(_scrollable);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, subtitle, open, close};
+    return {isOpen, section, title, subtitle, scrollable, open, close};
 };
 
 const PlaybookRunDetails = () => {
@@ -173,6 +175,7 @@ const PlaybookRunDetails = () => {
                 title={RHS.title}
                 subtitle={RHS.subtitle}
                 onClose={RHS.close}
+                scrollable={RHS.scrollable}
             >
                 {rhsComponent}
             </RightHandSidebar>

@@ -10,7 +10,9 @@ import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {DateTime} from 'luxon';
 import {useIntl} from 'react-intl';
+import Scrollbars from 'react-custom-scrollbars';
 
+import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -55,26 +57,38 @@ const RHSTimeline = ({playbookRun}: Props) => {
                     />
                 </FilterButton>
             </Filters>
-            <ItemList>
-                {filteredEvents.map((event, i, events) => {
-                    let prevEventAt;
-                    if (i !== events.length - 1) {
-                        prevEventAt = DateTime.fromMillis(events[i + 1].event_at);
-                    }
-                    return (
-                        <TimelineEventItem
-                            key={event.id}
-                            event={event}
-                            prevEventAt={prevEventAt}
-                            parent={'rhs'}
-                            runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
-                            channelNames={channelNamesMap}
-                            team={team}
-                            deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
-                        />
-                    );
-                })}
-            </ItemList>
+            <Body>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                    renderTrackHorizontal={renderTrackHorizontal}
+                    style={{position: 'relative'}}
+                >
+                    <ItemList>
+                        {filteredEvents.map((event, i, events) => {
+                            let prevEventAt;
+                            if (i !== events.length - 1) {
+                                prevEventAt = DateTime.fromMillis(events[i + 1].event_at);
+                            }
+                            return (
+                                <TimelineEventItem
+                                    key={event.id}
+                                    event={event}
+                                    prevEventAt={prevEventAt}
+                                    parent={'rhs'}
+                                    runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
+                                    channelNames={channelNamesMap}
+                                    team={team}
+                                    deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
+                                />
+                            );
+                        })}
+                    </ItemList>
+                </Scrollbars>
+            </Body>
         </Container>
     );
 };
@@ -84,6 +98,7 @@ export default RHSTimeline;
 const Container = styled.div`
     display: flex;
     flex-direction: column;
+    flex: 1;
 `;
 
 const Filters = styled.div`
@@ -104,6 +119,12 @@ const FilterText = styled.div`
 `;
 
 const FilterButton = styled.div``;
+
+const Body = styled.div`
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+`;
 
 const ItemList = styled.ul`
     padding: 0 0 40px 0;
