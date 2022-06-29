@@ -7,7 +7,7 @@ import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beauti
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
     playbookRun?: PlaybookRun;
@@ -24,8 +24,6 @@ interface Props {
 }
 
 const DraggableChecklistItem = (props: Props) => {
-    const finished = props.playbookRun?.current_status === PlaybookRunStatus.Finished;
-
     return (
         <Draggable
             draggableId={props.item.title + props.itemIndex}
@@ -40,7 +38,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
-                    disabled={props.disabled || finished}
+                    disabled={props.disabled ?? false}
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}

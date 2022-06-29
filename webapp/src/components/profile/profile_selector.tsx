@@ -45,7 +45,7 @@ interface Props {
     getUsersInTeam: () => Promise<UserProfile[]>;
     onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
+    dropdownMoveRightPx?: number;
     className?: string;
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
@@ -275,7 +275,7 @@ export default function ProfileSelector(props: Props) {
             isOpen={isOpen}
             onClose={toggleOpen}
             target={targetWrapped}
-            showOnRight={props.showOnRight}
+            moveRight={props.dropdownMoveRightPx}
             moveUp={moveUp}
         >
             <ReactSelect

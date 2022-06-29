@@ -19,14 +19,16 @@ import {useToasts} from '../../toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
+import {Role} from '../shared';
 
 import {useOnFinishRun} from './finish_run';
 
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
 
-export const ContextMenu = ({playbookRun}: Props) => {
+export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToasts();
@@ -79,7 +81,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
                 {
-                    playbookRunIsActive(playbookRun) &&
+                    playbookRunIsActive(playbookRun) && role === Role.Participant &&
                     <DropdownMenuItem
                         onClick={onFinishRun}
                     >

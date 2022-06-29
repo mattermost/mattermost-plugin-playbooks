@@ -26,6 +26,7 @@ import Retrospective from './retrospective';
 import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
+import RHSInfo from './rhs_info';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
@@ -94,6 +95,29 @@ const PlaybookRunDetails = () => {
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
+    let rhsComponent = null;
+    switch (RHS.section) {
+    case RHSContent.RunStatusUpdates:
+        rhsComponent = (
+            <RHSStatusUpdates
+                playbookRun={playbookRun}
+                statusUpdates={statusUpdates ?? null}
+            />
+        );
+        break;
+    case RHSContent.RunInfo:
+        rhsComponent = (
+            <RHSInfo
+                run={playbookRun}
+                runMetadata={metadata ?? null}
+                role={role}
+            />
+        );
+        break;
+    default:
+        rhsComponent = null;
+    }
+
     return (
         <Container>
             <MainWrapper isRHSOpen={RHS.isOpen}>
@@ -102,6 +126,7 @@ const PlaybookRunDetails = () => {
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
                         openRHS={RHS.open}
+                        role={role}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>
@@ -122,7 +147,10 @@ const PlaybookRunDetails = () => {
                                 playbookRun={playbookRun}
                             />
                         )}
-                        <Checklists playbookRun={playbookRun}/>
+                        <Checklists
+                            playbookRun={playbookRun}
+                            role={role}
+                        />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
                             playbookRun={playbookRun}
@@ -138,12 +166,7 @@ const PlaybookRunDetails = () => {
                 subtitle={RHS.subtitle}
                 onClose={RHS.close}
             >
-                {RHSContent.RunStatusUpdates === RHS.section ? (
-                    <RHSStatusUpdates
-                        playbookRun={playbookRun}
-                        statusUpdates={statusUpdates ?? null}
-                    />
-                ) : null}
+                {rhsComponent}
             </RightHandSidebar>
         </Container>
     );
