@@ -26,12 +26,14 @@ describe('playbooks > list pagination', () => {
                 memberIDs: [],
             });
 
-            // # Create an archived public playbook
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Playbook archived',
-                memberIDs: [],
-            }).then(({id}) => cy.apiArchivePlaybook(id));
+            // # Populate the DB with more elements to force the pagination
+            for (let i = 0; i < ExtraPlaybooks; i++) {
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Elements before',
+                    memberIDs: [],
+                });
+            }
         });
     });
 
@@ -41,15 +43,6 @@ describe('playbooks > list pagination', () => {
     });
 
     it('reset page to 0 after search for an name with one value', () => {
-        // # Populate the DB with more elements to force the pagination
-        for (let i = 0; i < ExtraPlaybooks; i++) {
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Elements before',
-                memberIDs: [],
-            });
-        }
-
         // # Open the product
         cy.visit('/playbooks');
 
