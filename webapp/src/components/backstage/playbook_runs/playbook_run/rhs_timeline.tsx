@@ -81,7 +81,6 @@ const RHSTimeline = ({playbookRun, role}: Props) => {
                                     runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
                                     channelNames={channelNamesMap}
                                     team={team}
-                                    disableLinks={true}
                                     deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
                                     editable={role === Role.Participant}
                                 />
