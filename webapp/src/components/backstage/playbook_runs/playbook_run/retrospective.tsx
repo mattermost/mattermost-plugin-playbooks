@@ -18,6 +18,7 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
+    id: string;
     playbookRun: PlaybookRun;
     playbook: PlaybookWithChecklist | null;
     role: Role;
@@ -26,6 +27,7 @@ interface Props {
 const DEBOUNCE_2_SECS = 2000;
 
 const Retrospective = ({
+    id,
     playbookRun,
     playbook,
     role,
@@ -42,7 +44,7 @@ const Retrospective = ({
 
     if (!allowRetrospectiveAccess) {
         return (
-            <Container>
+            <Container id={id}>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Retrospective'})}
                     id='retrospective'
@@ -115,7 +117,7 @@ const Retrospective = ({
     }, DEBOUNCE_2_SECS);
 
     return (
-        <Container>
+        <Container id={id}>
             <div>
                 <Header>
                     <AnchorLinkTitle

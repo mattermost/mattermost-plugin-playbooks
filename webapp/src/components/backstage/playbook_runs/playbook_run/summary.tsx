@@ -14,12 +14,13 @@ import {AnchorLinkTitle, Role} from 'src/components/backstage/playbook_runs/shar
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
+    id: string;
     playbookRun: PlaybookRun;
     role: Role,
 }
 
 const Summary = ({
-    playbookRun, role,
+    id, playbookRun, role,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -38,7 +39,7 @@ const Summary = ({
     );
 
     return (
-        <Container>
+        <Container id={id}>
             <Header>
                 <AnchorLinkTitle
                     title={title}

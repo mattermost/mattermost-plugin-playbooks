@@ -53,6 +53,13 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close};
 };
 
+export enum PlaybookRunIDs {
+    SectionSummary = 'playbook-run-summary',
+    SectionStatusUpdate = 'playbook-run-status-update',
+    SectionChecklists = 'playbook-run-checklists',
+    SectionRetrospective = 'playbook-run-retrospective',
+}
+
 const PlaybookRunDetails = () => {
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
@@ -132,27 +139,32 @@ const PlaybookRunDetails = () => {
                 <Main isRHSOpen={RHS.isOpen}>
                     <Body>
                         <Summary
+                            id={PlaybookRunIDs.SectionSummary}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
                         <Checklists
+                            id={PlaybookRunIDs.SectionChecklists}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
+                            id={PlaybookRunIDs.SectionRetrospective}
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
                             role={role}
