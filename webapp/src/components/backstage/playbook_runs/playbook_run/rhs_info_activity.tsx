@@ -49,7 +49,6 @@ const RHSInfoActivity = ({run}: Props) => {
                             channelNames={channelNamesMap}
                             team={team}
                             deleteEvent={() => clientRemoveTimelineEvent(run.id, event.id)}
-                            coloredIcon={false}
                             disableLinks={true}
                         />
                     );
@@ -69,10 +68,10 @@ const ItemList = styled.ul`
     :before {
         content: '';
         position: absolute;
-        top: 32px;
+        top: 26px;
         left: 32px;
         width: 1px;
-        bottom: 0px;
+        bottom: 50px;
         background: #EFF1F5;
     }
 `;

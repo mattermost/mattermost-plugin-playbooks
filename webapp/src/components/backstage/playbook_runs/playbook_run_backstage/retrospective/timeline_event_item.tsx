@@ -23,11 +23,11 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import Tooltip from 'src/components/widgets/tooltip';
 
-const Circle = styled.div<{colored: boolean}>`
+const Circle = styled.div`
     position: absolute;
     width: 24px;
     height: 24px;
-    color: ${({colored}) => (colored ? 'var(--button-bg)' : 'inherit')};
+    color: var(--button-bg);
     background: #EFF1F5;
     border-radius: 50%;
     left: 21px;
@@ -148,7 +148,6 @@ interface Props {
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
-    coloredIcon?: boolean;
     disableLinks?: boolean;
 }
 
@@ -283,7 +282,7 @@ const TimelineEventItem = (props: Props) => {
                     {timeSincePrevEvent}
                 </TimeContainer>
             ) : null}
-            <Circle colored={props.coloredIcon !== false}>
+            <Circle>
                 <i className={iconClass}/>
             </Circle>
 
