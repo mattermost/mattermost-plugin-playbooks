@@ -109,7 +109,7 @@ describe('runs > run details page > status update', () => {
         });
     });
 
-    describe('viewer', () => {
+    describe('as viewer', () => {
         beforeEach(() => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/run_details/${testRun.id}`);
