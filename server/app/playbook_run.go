@@ -672,6 +672,9 @@ type PlaybookRunService interface {
 
 	// UpdateRunActions updates status update broadcast settings
 	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
+
+	// RequestUpdate posts a status update request message in the run's channel
+	RequestUpdate(playbookRunID, requesterID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

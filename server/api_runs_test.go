@@ -1134,3 +1134,10 @@ func TestRunGetStatusUpdates(t *testing.T) {
 		assert.Len(t, statusUpdates, 0)
 	})
 }
+
+func TestRequestUpdate(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	//TODO: add tests
+}

@@ -90,6 +90,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -894,6 +895,22 @@ func (h *PlaybookRunHandler) updateRunActions(w http.ResponseWriter, r *http.Req
 	}
 
 	if err := h.playbookRunService.UpdateRunActions(playbookRunID, userID, params); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+}
+
+// RequestUpdate posts a status update request message in the run's channel
+func (h *PlaybookRunHandler) requestUpdate(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to post update request", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RequestUpdate(playbookRunID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
