@@ -74,6 +74,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", handler.getPlaybookRunMetadata).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -90,7 +91,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)

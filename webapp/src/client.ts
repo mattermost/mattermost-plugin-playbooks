@@ -719,6 +719,12 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
     }
 };
 
+export const requestUpdate = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/request-update`, {
+        method: 'POST',
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

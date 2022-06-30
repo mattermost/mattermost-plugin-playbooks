@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -18,6 +18,8 @@ import {useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
+import {requestUpdate} from 'src/client';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -70,6 +72,7 @@ interface ViewerProps {
 
 export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
+    const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -84,6 +87,10 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
             return null;
         }
         return <StatusUpdateCard post={lastStatusUpdate}/>;
+    };
+
+    const requestStatusUpdate = () => {
+        requestUpdate(playbookRun.id);
     };
 
     return (
@@ -102,7 +109,11 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
                     </IconWrapper>
                     <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
                     <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
-                    <ActionButton onClick={() => null}>
+                    <ActionButton
+                        onClick={() => {
+                            setShowRequestUpdateConfirm(true);
+                        }}
+                    >
                         {formatMessage({defaultMessage: 'Request update...'})}
                     </ActionButton>
                 </RightWrapper>
@@ -113,6 +124,17 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
             {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
+            <ConfirmModal
+                show={showRequestUpdateConfirm}
+                title={formatMessage({defaultMessage: 'Confirm request update'})}
+                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
+                onConfirm={() => {
+                    requestStatusUpdate();
+                    setShowRequestUpdateConfirm(false);
+                }}
+                onCancel={() => setShowRequestUpdateConfirm(false)}
+            />
         </Container>
     );
 };
