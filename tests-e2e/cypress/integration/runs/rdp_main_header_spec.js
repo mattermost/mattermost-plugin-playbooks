@@ -63,7 +63,7 @@ describe('runs > run details page > header', () => {
         return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
     };
 
-    describe('participant', () => {
+    describe('as participant', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
