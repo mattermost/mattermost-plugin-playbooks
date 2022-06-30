@@ -123,6 +123,7 @@ const PlaybookRunDetails = () => {
             <MainWrapper isRHSOpen={RHS.isOpen}>
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
+                        playbook={playbook}
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
                         openRHS={RHS.open}

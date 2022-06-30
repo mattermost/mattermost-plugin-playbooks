@@ -2,19 +2,24 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+import {joinChannel} from 'mattermost-redux/actions/channels';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
+import {Playbook} from 'src/types/playbook';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
+
 import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
@@ -22,15 +27,42 @@ import HeaderButton from './header_button';
 import {RHSContent} from './rhs';
 
 interface Props {
+    playbook: Playbook;
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
     role: Role;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
+export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const currentUserId = useSelector(getCurrentUserId);
+
+    const onGetInvolved = async () => {
+        if (role === Role.Participant || !playbookRunMetadata) {
+            return;
+        }
+
+        if (playbook.public) {
+            // await dispatch(getChannel(playbookRun.channel_id));
+
+            await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
+
+            // navigateToChannel();
+            return;
+        }
+
+        console.log('private!');
+    };
+
+    const navigateToChannel = () => {
+        if (!playbookRunMetadata) {
+            return;
+        }
+        console.log(`navigate to /${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+    };
 
     return (
         <Container>
@@ -57,18 +89,12 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
             />
             <ExpandRight/>
 
-            {//TODO: for viewers we should show 'Get involved' button
-                role === Role.Participant &&
+            {role === Role.Participant &&
                 <HeaderButton
                     tooltipId={'go-to-channel-button-tooltip'}
                     tooltipMessage={formatMessage({defaultMessage: 'Go to channel'})}
                     className={'icon-product-channels'}
-                    onClick={() => {
-                        if (!playbookRunMetadata) {
-                            return;
-                        }
-                        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
-                    }}
+                    onClick={navigateToChannel}
                 />
             }
             <HeaderButton
@@ -83,6 +109,12 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
                 className={'icon-information-outline'}
                 onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
             />
+            {role === Role.Viewer &&
+                <GetInvolved onClick={onGetInvolved}>
+                    <GetInvolvedIcon color={'var(--button-color)'}/>
+                    {formatMessage({defaultMessage: 'Get involved'})}
+                </GetInvolved>
+            }
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>
     );
@@ -117,4 +149,15 @@ const StyledBadge = styled(Badge)`
     margin-left: 8px;
     margin-right: 6px;
     text-transform: uppercase;
+`;
+
+const GetInvolved = styled(PrimaryButton)`
+    height: 28px;
+    padding: 0 12px;
+`;
+
+const GetInvolvedIcon = styled(AccountPlusOutlineIcon)`
+    height: 14px;
+    width: 14px;
+    margin-right: 3px;
 `;
