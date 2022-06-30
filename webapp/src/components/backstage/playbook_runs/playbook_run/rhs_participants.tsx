@@ -6,7 +6,6 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
-import SearchInput from '../../search_input';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
 import {Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
