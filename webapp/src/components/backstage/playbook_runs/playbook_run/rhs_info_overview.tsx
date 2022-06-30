@@ -77,7 +77,7 @@ const RHSInfoOverview = ({
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
-                {playbook && <Link to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</Link>}
+                {playbook && <PlaybookLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</PlaybookLink>}
             </Item>
             <Item
                 icon={AccountOutlineIcon}
@@ -188,6 +188,14 @@ const Item = (props: ItemProps) => {
         </OverviewRow>
     );
 };
+
+const PlaybookLink = styled(Link)`
+    max-width: 230px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
     padding: 10px 24px;
