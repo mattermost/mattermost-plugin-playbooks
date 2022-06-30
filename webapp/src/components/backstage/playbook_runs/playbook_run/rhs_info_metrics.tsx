@@ -41,22 +41,15 @@ const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
                 }}
             />
             <Wrapper>
-                {metricsConfig.map((metricInfo) => {
-                    const metricData = metricDataByID[metricInfo.id];
-                    if (!metricData) {
-                        return null;
-                    }
-
-                    return (
-                        <Item
-                            key={metricInfo.id}
-                            to={'#'}
-                            data={metricData}
-                            info={metricInfo}
-                            editable={editable}
-                        />
-                    );
-                })}
+                {metricsConfig.map((metricInfo) => (
+                    <Item
+                        key={metricInfo.id}
+                        to={'#'}
+                        data={metricDataByID[metricInfo.id]}
+                        info={metricInfo}
+                        editable={editable}
+                    />
+                ))}
             </Wrapper>
         </Section>
     );
@@ -68,7 +61,7 @@ const Wrapper = styled.div`
 `;
 
 interface ItemProps {
-    data: RunMetricData;
+    data: RunMetricData | null;
     info: Metric;
     editable: boolean;
     to: string;
@@ -78,7 +71,7 @@ const Item = ({data, info, editable, to}: ItemProps) => (
     <Row to={to}>
         <Name>{info.title}</Name>
         <Value
-            metricValue={data.value}
+            metricValue={data?.value ?? null}
             metricType={info.type}
             editable={editable}
         />
