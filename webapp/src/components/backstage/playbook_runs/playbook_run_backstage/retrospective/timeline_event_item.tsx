@@ -4,7 +4,7 @@
 import React, {ReactNode, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';

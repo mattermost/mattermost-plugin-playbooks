@@ -5,8 +5,8 @@ import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {useClickOutsideRef} from 'src/hooks';

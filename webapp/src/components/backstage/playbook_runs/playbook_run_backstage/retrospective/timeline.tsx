@@ -7,9 +7,9 @@ import styled from 'styled-components';
 import {DateTime} from 'luxon';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';

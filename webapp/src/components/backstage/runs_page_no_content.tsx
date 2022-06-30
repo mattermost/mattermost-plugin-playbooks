@@ -7,9 +7,9 @@ import styled from 'styled-components';
 
 import {useDispatch, useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
