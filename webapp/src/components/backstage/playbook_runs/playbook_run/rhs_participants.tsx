@@ -99,11 +99,11 @@ const ListSection = styled.div`
     margin: 8px 4px;
 `;
 
-const StyledSearchInput = styled(SearchInput)`
-    input {
-        width: 100% !important;
-    }
-`;
+// const StyledSearchInput = styled(SearchInput)`
+//     &&&input {
+//         width: 100%;
+//     }
+// `;
 
 const HoverButtonContainer = styled.div``;
 
