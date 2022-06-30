@@ -125,10 +125,11 @@ const Body = styled.div`
     display: flex;
     flex: 1;
     flex-direction: column;
+    margin-bottom: 20px;
 `;
 
 export const ItemList = styled.ul`
-    padding: 0;
+    padding: 0 0 40px 0;
     list-style: none;
     position: relative;
 
