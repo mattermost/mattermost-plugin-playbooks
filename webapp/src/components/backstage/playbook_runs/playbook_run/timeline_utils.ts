@@ -19,17 +19,15 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 import {setPlaybookRunEventsFilter} from 'src/actions';
 
-type IdToUserFn = (userId: string) => UserProfile;
-
 export const useTimelineEvents = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
-    const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
+    const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => eventsFilterForPlaybookRun(state, playbookRun.id));
+    const eventsFilter = useSelector((state: GlobalState) => eventsFilterForPlaybookRun(state, playbookRun.id));
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
-    const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
+    const selectUser = useSelector((state: GlobalState) => (userId: string) => getUser(state, userId));
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
@@ -87,7 +85,7 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
 export const useFilter = (playbookRun: PlaybookRun) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => eventsFilterForPlaybookRun(state, playbookRun.id));
+    const eventsFilter = useSelector((state: GlobalState) => eventsFilterForPlaybookRun(state, playbookRun.id));
 
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {

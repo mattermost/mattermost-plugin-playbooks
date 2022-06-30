@@ -9,10 +9,8 @@ import {DateTime} from 'luxon';
 import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {ChannelNamesMap} from 'src/types/backstage';
 import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {PlaybookRun} from 'src/types/playbook_run';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
@@ -29,8 +27,8 @@ interface Props {
 const RHSInfoActivity = ({run}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run);
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, run.team_id));
+    const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
+    const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
 
     return (
         <Section>

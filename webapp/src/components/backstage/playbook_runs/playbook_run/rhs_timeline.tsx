@@ -6,7 +6,6 @@ import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {DateTime} from 'luxon';
 import {useIntl} from 'react-intl';
@@ -15,7 +14,6 @@ import Scrollbars from 'react-custom-scrollbars';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {ChannelNamesMap} from 'src/types/backstage';
 import {clientRemoveTimelineEvent} from 'src/client';
 import MultiCheckbox from 'src/components/multi_checkbox';
 
@@ -27,8 +25,8 @@ interface Props {
 
 const RHSTimeline = ({playbookRun}: Props) => {
     const {formatMessage} = useIntl();
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbookRun.team_id));
+    const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
+    const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
 
     const {options, selectOption} = useFilter(playbookRun);
     const [filteredEvents] = useTimelineEvents(playbookRun);
