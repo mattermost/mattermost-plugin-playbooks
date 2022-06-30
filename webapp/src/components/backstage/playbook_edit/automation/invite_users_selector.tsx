@@ -8,8 +8,8 @@ import ReactSelect, {
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {UserProfile} from '@mattermost/types/users';
+import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {useIntl} from 'react-intl';

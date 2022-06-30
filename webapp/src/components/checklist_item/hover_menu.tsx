@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon, StyledDropdownMenuItemRed, DropdownIconRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';

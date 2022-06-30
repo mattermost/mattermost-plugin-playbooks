@@ -4,9 +4,9 @@
 import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -36,8 +36,7 @@ const Updates = (props: Props) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) :
-        formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
+    const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) : formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
 
     let updates: ReactNode = <EmptyBody id={'status-update-msg'}>{noUpdatesText}</EmptyBody>;
 

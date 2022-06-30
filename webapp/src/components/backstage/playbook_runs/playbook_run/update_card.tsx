@@ -6,8 +6,8 @@ import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import React from 'react';
 
-import {UserProfile} from 'mattermost-redux/types/users';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {UserProfile} from '@mattermost/types/users';
+import {GlobalState} from '@mattermost/types/store';
 import {getUserByUsername} from 'mattermost-redux/selectors/entities/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';

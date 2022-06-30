@@ -9,7 +9,7 @@ import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';

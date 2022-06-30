@@ -6,12 +6,12 @@ import {useSelector, useDispatch} from 'react-redux';
 
 import styled from 'styled-components';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Post} from 'mattermost-redux/types/posts';
+import {GlobalState} from '@mattermost/types/store';
+import {Post} from '@mattermost/types/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {Channel} from 'mattermost-redux/types/channels';
+import {Channel} from '@mattermost/types/channels';
 
 import {FormattedMessage} from 'react-intl';
 
