@@ -43,9 +43,12 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
                 {
                     participantsIds.map((id) => (
                         <ProfileWrapper key={id}>
-                            <StyledProfile
+                            <Profile
                                 userId={id}
                                 nameFormatter={formatProfileName('')}
+                                css={`
+                                    margin-right: auto;
+                                `}
                             />
                             <HoverButtonContainer>
                                 <Tooltip
@@ -126,8 +129,4 @@ const ProfileWrapper = styled.div`
             opacity: 1;
         }
     }
-`;
-
-const StyledProfile = styled(Profile)`
-    margin-right: auto;
 `;
