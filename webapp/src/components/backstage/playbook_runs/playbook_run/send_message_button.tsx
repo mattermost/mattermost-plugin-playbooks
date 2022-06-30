@@ -1,10 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 
@@ -18,27 +17,19 @@ interface Props {
 
 export const SendMessageButton = (props: Props) => {
     const dispatch = useDispatch();
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
+    const user = useSelector((state: GlobalState) => getUser(state, props.userId));
+
+    useEffect(() => {
+        if (!user) {
+            dispatch(fetchUser(props.userId));
+        }
+    }, [props.userId]);
 
     const onClick = () => {
-        if (!props.teamName) {
+        if (!props.teamName || !user) {
             return;
         }
-        if (user) {
-            navigateToUrl(`/${props.teamName}/messages/@${user.username}`);
-            return;
-        }
-
-        // if user profile is missing fetch it
-        const actionFunc = dispatch(fetchUser(props.userId));
-
-        //@ts-ignore
-        actionFunc.then((data) => {
-            navigateToUrl(`/${props.teamName}/messages/@${data.data.username}`);
-        }).catch(() => {
-            // eslint-disable-next-line no-console
-            console.error('Error getting user profiles');
-        });
+        navigateToUrl(`/${props.teamName}/messages/@${user.username}`);
     };
 
     return (

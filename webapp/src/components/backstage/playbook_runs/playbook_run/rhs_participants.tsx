@@ -33,7 +33,10 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
                     placeholder={formatMessage({defaultMessage: 'Search'})}
                 /> */}
                 <ParticipantsNumber>
-                    {formatMessage({defaultMessage: '{num} Participants'}, {num: participantsIds.length})}
+                    {formatMessage(
+                        {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
+                        {num: participantsIds.length}
+                    )}
                 </ParticipantsNumber>
             </SearchSection>
             <ListSection>
@@ -52,7 +55,7 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
                                 >
                                     <SendMessageButton
                                         userId={id}
-                                        teamName={playbookRunMetadata ? playbookRunMetadata.team_name : null}
+                                        teamName={playbookRunMetadata?.team_name ?? null}
                                     />
                                 </Tooltip>
                             </HoverButtonContainer>
