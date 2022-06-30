@@ -58,7 +58,7 @@ describe('runs > run details page > status update', () => {
         });
     });
 
-    describe('participant', () => {
+    describe('as participant', () => {
         it('is visible', () => {
             // * Verify the status update section is present
             cy.findByTestId('run-statusupdate-section').should('be.visible');
