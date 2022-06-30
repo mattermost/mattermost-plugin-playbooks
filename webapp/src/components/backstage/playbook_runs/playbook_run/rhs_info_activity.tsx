@@ -3,7 +3,6 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
 import {DateTime} from 'luxon';
 
 import {useSelector} from 'react-redux';
@@ -12,8 +11,10 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun} from 'src/types/playbook_run';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
+import {ItemList} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
 import {clientRemoveTimelineEvent} from 'src/client';
 
 import {useTimelineEvents} from './timeline_utils';
@@ -22,9 +23,10 @@ const SHOWED_EVENTS = 5;
 
 interface Props {
     run: PlaybookRun;
+    role: Role;
 }
 
-const RHSInfoActivity = ({run}: Props) => {
+const RHSInfoActivity = ({run, role}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
@@ -50,6 +52,7 @@ const RHSInfoActivity = ({run}: Props) => {
                             team={team}
                             deleteEvent={() => clientRemoveTimelineEvent(run.id, event.id)}
                             disableLinks={true}
+                            editable={role === Role.Participant}
                         />
                     );
                 })}
@@ -60,18 +63,3 @@ const RHSInfoActivity = ({run}: Props) => {
 
 export default RHSInfoActivity;
 
-const ItemList = styled.ul`
-    padding: 0 0 40px 0;
-    list-style: none;
-    position: relative;
-
-    :before {
-        content: '';
-        position: absolute;
-        top: 26px;
-        left: 32px;
-        width: 1px;
-        bottom: 50px;
-        background: #EFF1F5;
-    }
-`;

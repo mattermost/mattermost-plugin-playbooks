@@ -16,14 +16,15 @@ import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_r
 import {PlaybookRun} from 'src/types/playbook_run';
 import {clientRemoveTimelineEvent} from 'src/client';
 import MultiCheckbox from 'src/components/multi_checkbox';
-
-import {useTimelineEvents, useFilter} from './timeline_utils';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {useTimelineEvents, useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
 
-const RHSTimeline = ({playbookRun}: Props) => {
+const RHSTimeline = ({playbookRun, role}: Props) => {
     const {formatMessage} = useIntl();
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
     const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
@@ -82,6 +83,7 @@ const RHSTimeline = ({playbookRun}: Props) => {
                                     team={team}
                                     disableLinks={true}
                                     deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
+                                    editable={role === Role.Participant}
                                 />
                             );
                         })}
@@ -125,18 +127,18 @@ const Body = styled.div`
     flex-direction: column;
 `;
 
-const ItemList = styled.ul`
-    padding: 0 0 40px 0;
+export const ItemList = styled.ul`
+    padding: 0;
     list-style: none;
     position: relative;
 
     :before {
         content: '';
         position: absolute;
-        top: 32px;
+        top: 26px;
         left: 32px;
         width: 1px;
-        bottom: 0px;
+        bottom: 50px;
         background: #EFF1F5;
     }
 `;

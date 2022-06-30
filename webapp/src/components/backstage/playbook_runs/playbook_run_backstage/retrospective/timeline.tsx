@@ -85,6 +85,7 @@ const Timeline = (props: Props) => {
                         channelNames={channelNamesMap}
                         team={team}
                         deleteEvent={() => props.deleteTimelineEvent(event.id)}
+                        editable={true}
                     />
                 );
             })}

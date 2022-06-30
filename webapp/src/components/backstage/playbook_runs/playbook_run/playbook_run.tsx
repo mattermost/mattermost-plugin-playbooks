@@ -121,6 +121,7 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <RHSTimeline
                 playbookRun={playbookRun}
+                role={role}
             />
         );
         break;

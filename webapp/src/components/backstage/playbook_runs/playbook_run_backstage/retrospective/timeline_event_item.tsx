@@ -149,6 +149,7 @@ interface Props {
     team: Team;
     deleteEvent: () => void;
     disableLinks?: boolean;
+    editable: boolean;
 }
 
 const TimelineEventItem = (props: Props) => {
@@ -323,7 +324,7 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
-            {showMenu &&
+            {showMenu && props.editable &&
                 <StyledHoverMenu parent={props.parent}>
                     <HoverMenuButton
                         className={'icon-trash-can-outline icon-16 btn-icon'}
