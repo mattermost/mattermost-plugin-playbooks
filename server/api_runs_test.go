@@ -1163,7 +1163,7 @@ func TestScheduleRecurringRuns(t *testing.T) {
 			PlaybookID:   e.BasicPlaybook.ID,
 			RunName:      "Run name",
 			FirstRunTime: time.Now().Add(24 * time.Hour),
-			Frequency:    0,
+			Frequency:    "daily",
 		})
 		require.NoError(t, err)
 	})

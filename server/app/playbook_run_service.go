@@ -3110,7 +3110,6 @@ func (s *PlaybookRunServiceImpl) CancelScheduledRun(userID, playbookID string) e
 
 	s.scheduler.Cancel(EncodeScheduledRunKey(userID, playbookID))
 
-	// TODO: Also remove from database
 	if err := s.store.UnscheduleRun(userID, playbookID); err != nil {
 		return errors.Wrapf(err, "unable to unschedule runs with userID %q and playbookID %q", userID, playbookID)
 	}
