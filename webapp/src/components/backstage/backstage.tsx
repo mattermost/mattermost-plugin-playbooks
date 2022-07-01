@@ -37,6 +37,8 @@ const BackstageContainer = styled.div<{isRunDetailsPage: boolean}>`
         // Accounts for the run header, so when scrolling with
         // anchor links, the sections are not hidden under it.
         scroll-padding-top: 64px;
+
+        scroll-behavior: smooth;
     `}
 `;
 

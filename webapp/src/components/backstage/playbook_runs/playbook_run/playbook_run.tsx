@@ -5,7 +5,7 @@ import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
-import {useRouteMatch, Redirect} from 'react-router-dom';
+import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -63,6 +63,7 @@ export enum PlaybookRunIDs {
 const PlaybookRunDetails = () => {
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
+    const {hash: urlHash} = useLocation();
     const playbookRunId = match.params.playbookRunId;
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
@@ -88,6 +89,17 @@ const PlaybookRunDetails = () => {
 
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
+
+    // When first loading the page, the element with the ID corresponding to the URL
+    // hash is not mounted, so the browser fails to automatically scroll to such section.
+    // To fix this, we need to manually scroll to the component
+    useEffect(() => {
+        if (urlHash !== '') {
+            setTimeout(() => {
+                document.querySelector(urlHash)?.scrollIntoView();
+            }, 300);
+        }
+    }, [urlHash]);
 
     // loading state
     if (playbookRun === undefined) {
