@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import {usePlaybookRunNavigationTelemetry} from 'src/hooks/telemetry';
+
 import Description from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/description';
 import Updates from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/updates';
 import Participants from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/participants';
@@ -13,6 +15,8 @@ import {Container, Left, Right} from 'src/components/backstage/playbook_runs/sha
 import {PlaybookRun} from 'src/types/playbook_run';
 
 export const Overview = (props: {playbookRun: PlaybookRun}) => {
+    usePlaybookRunNavigationTelemetry('overview', props.playbookRun.id);
+
     return (
         <Container>
             <Left>
