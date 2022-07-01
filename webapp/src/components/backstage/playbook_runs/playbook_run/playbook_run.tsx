@@ -112,7 +112,8 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <RHSInfo
                 run={playbookRun}
-                runMetadata={metadata ?? null}
+                playbook={playbook ?? undefined}
+                runMetadata={metadata ?? undefined}
                 role={role}
             />
         );
