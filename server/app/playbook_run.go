@@ -175,30 +175,30 @@ type PlaybookRun struct {
 	MetricsData []RunMetricData `json:"metrics_data"`
 }
 
-func (i *PlaybookRun) Clone() *PlaybookRun {
-	newPlaybookRun := *i
+func (r *PlaybookRun) Clone() *PlaybookRun {
+	newPlaybookRun := *r
 	var newChecklists []Checklist
-	for _, c := range i.Checklists {
+	for _, c := range r.Checklists {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybookRun.Checklists = newChecklists
 
-	newPlaybookRun.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
-	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
-	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
-	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
-	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
-	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
-	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
-	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
+	newPlaybookRun.StatusPosts = append([]StatusPost(nil), r.StatusPosts...)
+	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), r.TimelineEvents...)
+	newPlaybookRun.InvitedUserIDs = append([]string(nil), r.InvitedUserIDs...)
+	newPlaybookRun.InvitedGroupIDs = append([]string(nil), r.InvitedGroupIDs...)
+	newPlaybookRun.ParticipantIDs = append([]string(nil), r.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
+	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 
 	return &newPlaybookRun
 }
 
-func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
+func (r *PlaybookRun) MarshalJSON() ([]byte, error) {
 	type Alias PlaybookRun
 
-	old := (*Alias)(i.Clone())
+	old := (*Alias)(r.Clone())
 	// replace nils with empty slices for the frontend
 	if old.Checklists == nil {
 		old.Checklists = []Checklist{}
