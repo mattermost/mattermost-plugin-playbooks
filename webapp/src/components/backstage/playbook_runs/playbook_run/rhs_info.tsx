@@ -35,7 +35,10 @@ const RHSInfo = (props: Props) => {
                 metricsConfig={props.playbook?.metrics}
                 editable={editable}
             />
-            <RHSInfoActivity/>
+            <RHSInfoActivity
+                run={props.run}
+                role={props.role}
+            />
         </Container>
     );
 };
