@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import styled from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';

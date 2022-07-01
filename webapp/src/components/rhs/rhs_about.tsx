@@ -7,8 +7,8 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {getCurrentChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {UserProfile} from '@mattermost/types/users';
+import {GlobalState} from '@mattermost/types/store';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
@@ -170,7 +170,7 @@ const RHSAbout = (props: Props) => {
                     />
                 )}
             </Container>
-            {(currentUserSelect?.id) ?
+            {(currentUserSelect?.id) ? (
                 <ConfirmModal
                     show={showAddToChannel}
                     title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
@@ -185,8 +185,8 @@ const RHSAbout = (props: Props) => {
                     }
                     }
                     onCancel={() => setShowAddToChannelConfirm(false)}
-                /> : null
-            }
+                />
+            ) : null}
         </>
     );
 };

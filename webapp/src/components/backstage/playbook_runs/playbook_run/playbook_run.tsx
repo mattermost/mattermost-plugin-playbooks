@@ -28,11 +28,13 @@ import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 import RHSInfo from './rhs_info';
 import {Participants} from './rhs_participants';
+import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
+    const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
     const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
@@ -42,18 +44,19 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
         setSubtitle(playbookRun?.name);
     }, [playbookRun?.name]);
 
-    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode, _onBack?: () => void) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode, _onBack?: () => void, _scrollable = true) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
         setSubtitle(_subtitle);
         setOnBack(_onBack);
+        setScrollable(_scrollable);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, subtitle, open, close, onBack};
+    return {isOpen, section, title, subtitle, open, close,onBack, scrollable};
 };
 
 const PlaybookRunDetails = () => {
@@ -130,7 +133,14 @@ const PlaybookRunDetails = () => {
             />
         );
         break;
-
+    case RHSContent.RunTimeline:
+        rhsComponent = (
+            <RHSTimeline
+                playbookRun={playbookRun}
+                role={role}
+            />
+        );
+        break;
     default:
         rhsComponent = null;
     }
@@ -184,6 +194,7 @@ const PlaybookRunDetails = () => {
                 subtitle={RHS.subtitle}
                 onClose={RHS.close}
                 onBack={RHS.onBack}
+                scrollable={RHS.scrollable}
             >
                 {rhsComponent}
             </RightHandSidebar>

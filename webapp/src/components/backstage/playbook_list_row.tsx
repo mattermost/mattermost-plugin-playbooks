@@ -4,7 +4,7 @@
 import React, {Fragment} from 'react';
 import styled from 'styled-components';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';

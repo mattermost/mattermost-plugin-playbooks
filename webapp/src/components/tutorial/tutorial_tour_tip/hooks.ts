@@ -8,7 +8,7 @@ import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {TutorialTourTipPunchout} from './backdrop';
 

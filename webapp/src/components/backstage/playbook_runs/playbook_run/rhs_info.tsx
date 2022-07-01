@@ -27,7 +27,10 @@ const RHSInfo = (props: Props) => {
                 onViewParticipants={props.onViewParticipants}
             />
             <RHSInfoMetrics/>
-            <RHSInfoActivity/>
+            <RHSInfoActivity
+                run={props.run}
+                role={props.role}
+            />
         </Container>
     );
 };

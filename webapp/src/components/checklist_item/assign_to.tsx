@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';

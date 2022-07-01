@@ -13,8 +13,8 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from '@mattermost/types/teams';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
