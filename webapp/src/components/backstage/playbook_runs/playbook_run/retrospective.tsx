@@ -47,7 +47,7 @@ const Retrospective = ({
             <Container id={id}>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Retrospective'})}
-                    id='retrospective'
+                    id={id}
                 />
                 <BannerWrapper>
                     <UpgradeBanner
@@ -122,7 +122,7 @@ const Retrospective = ({
                 <Header>
                     <AnchorLinkTitle
                         title={formatMessage({defaultMessage: 'Retrospective'})}
-                        id='retrospective'
+                        id={id}
                     />
                     <HeaderButtonsRight>
                         {renderPublishComponent()}

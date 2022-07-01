@@ -43,7 +43,7 @@ const Summary = ({
             <Header>
                 <AnchorLinkTitle
                     title={title}
-                    id='summary'
+                    id={id}
                 />
                 {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
             </Header>

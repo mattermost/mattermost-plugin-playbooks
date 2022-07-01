@@ -18,6 +18,7 @@ const Checklists = ({id, playbookRun, role}: Props) => {
     return (
         <Container id={id}>
             <RHSChecklistList
+                id={id}
                 playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
                 viewerMode={role === Role.Viewer}

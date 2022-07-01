@@ -92,7 +92,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
             <Header>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Recent status update'})}
-                    id='recent-update'
+                    id={id}
                 />
                 <RightWrapper>
                     <IconWrapper>
