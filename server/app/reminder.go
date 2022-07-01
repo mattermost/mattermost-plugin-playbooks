@@ -102,17 +102,39 @@ func (s *PlaybookRunServiceImpl) HandleStatusUpdateReminder(playbookRunID string
 }
 
 func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
+	// 1. Retrieve the scheduled run.
 	scheduledRun, err := s.store.GetScheduledRun(userID, playbookID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "failed getting the scheduled run from playbook with ID %q", playbookID).Error())
 		return
 	}
 
-	s.logger.Debugf("Starting scheduled run: %#v", scheduledRun)
-
+	// 2. Retrieve the playbook.
 	playbook, err := s.playbookService.Get(playbookID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "failed getting the playbook with ID %q", playbookID).Error())
+		return
+	}
+
+	if playbook.DeleteAt != 0 {
+		s.logger.Errorf("playbook is archived, cannot create a new run using an archived playbook")
+		return
+	}
+
+	isCreatedChannelPublic := playbook.CreatePublicPlaybookRun
+
+	// 3. Compute the appropriate permissions depending on whether the channel
+	// to be created is public or private.
+	permission := model.PermissionCreatePrivateChannel
+	permissionMessage := "You are not able to create a private channel"
+	if isCreatedChannelPublic {
+		permission = model.PermissionCreatePublicChannel
+		permissionMessage = "You are not able to create a public channel"
+	}
+
+	// 4. Check permissions.
+	if !s.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
+		s.logger.Errorf(errors.Wrap(ErrNoPermissions, permissionMessage).Error())
 		return
 	}
 
@@ -121,87 +143,19 @@ func (s *PlaybookRunServiceImpl) HandleScheduledRun(userID, playbookID string) {
 		return
 	}
 
+	// 5. Create the run.
 	run := PlaybookRun{
 		OwnerUserID: userID,
 		TeamID:      playbook.TeamID,
 		Name:        scheduledRun.RunName,
 		PlaybookID:  playbook.ID,
 	}
+	run.SetChecklistFromPlaybook(playbook)
+	run.SetConfigurationFromPlaybook(playbook)
 
-	// The following block is copied from api/playbook_runs.go:createPlaybookRun
-	{
-		if playbook.DeleteAt != 0 {
-			s.logger.Errorf("playbook is archived, cannot create a new run using an archived playbook")
-			return
-		}
+	s.CreatePlaybookRun(&run, &playbook, userID, isCreatedChannelPublic)
 
-		run.Checklists = playbook.Checklists
-
-		// The following block is copied from api/playbook_runs.go:setPlaybookRunChecklist
-		{
-			// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
-			now := model.GetMillis()
-			for i := range run.Checklists {
-				for j := range run.Checklists[i].Items {
-					if run.Checklists[i].Items[j].DueDate > 0 {
-						run.Checklists[i].Items[j].DueDate += now
-					}
-				}
-			}
-		}
-
-		public := playbook.CreatePublicPlaybookRun
-
-		if playbook.RunSummaryTemplateEnabled {
-			run.Summary = playbook.RunSummaryTemplate
-		}
-		run.ReminderMessageTemplate = playbook.ReminderMessageTemplate
-		run.StatusUpdateEnabled = playbook.StatusUpdateEnabled
-		run.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
-		run.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
-
-		run.InvitedUserIDs = []string{}
-		run.InvitedGroupIDs = []string{}
-		if playbook.InviteUsersEnabled {
-			run.InvitedUserIDs = playbook.InvitedUserIDs
-			run.InvitedGroupIDs = playbook.InvitedGroupIDs
-		}
-
-		if playbook.DefaultOwnerEnabled {
-			run.DefaultOwnerID = playbook.DefaultOwnerID
-		}
-
-		run.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
-		run.BroadcastChannelIDs = playbook.BroadcastChannelIDs
-
-		run.WebhookOnCreationURLs = []string{}
-		if playbook.WebhookOnCreationEnabled {
-			run.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
-		}
-
-		run.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
-		run.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
-
-		run.RetrospectiveEnabled = playbook.RetrospectiveEnabled
-		if playbook.RetrospectiveEnabled {
-			run.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
-			run.Retrospective = playbook.RetrospectiveTemplate
-		}
-
-		permission := model.PermissionCreatePrivateChannel
-		permissionMessage := "You are not able to create a private channel"
-		if public {
-			permission = model.PermissionCreatePublicChannel
-			permissionMessage = "You are not able to create a public channel"
-		}
-		if !s.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission) {
-			s.logger.Errorf(errors.Wrap(ErrNoPermissions, permissionMessage).Error())
-			return
-		}
-
-		s.CreatePlaybookRun(&run, &playbook, userID, public)
-	}
-
+	// 6. Schedule a job for the next run if needed
 	if scheduledRun.Frequency != "" && scheduledRun.Frequency != FreqNever {
 		// TODO: Jobs can't be rescheduled within themselves with the same key.
 		// As a temporary workaround do it in a delayed goroutine. We should probably fix this.
@@ -266,7 +220,8 @@ func getNextTime(firstRun time.Time, frequency string) (time.Time, error) {
 	}
 
 	// Get the year, month and day from the new computed date,
-	// but the hour and minute from the first run, so we don't accumulate errors
+	// but the hour and minute from the first run, so that we
+	// don't accumulate errors
 	dateTime := time.Date(date.Year(), date.Month(), date.Day(), firstRun.Hour(), firstRun.Minute(), 0, 0, date.Location())
 
 	return dateTime, nil
