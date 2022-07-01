@@ -56,7 +56,7 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, subtitle, open, close,onBack, scrollable};
+    return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
 const PlaybookRunDetails = () => {
