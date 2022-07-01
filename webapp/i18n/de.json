@@ -616,5 +616,6 @@
     "LfhTNW": "Durchsuche oder erstelle Playbooks und Durchläufe",
     "GVpA4Q": "Erstelle neues Playbook",
     "CFysvS": "Erstelle Playbook Dropdown",
-    "/qDObA": "Durchläufe durchsuchen"
+    "/qDObA": "Durchläufe durchsuchen",
+    "/+8SGX": "Zeige {filteredNum} von {totalNum} Ereignissen"
 }
