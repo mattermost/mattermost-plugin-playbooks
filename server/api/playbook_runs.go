@@ -460,21 +460,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
+		playbook = &pb
 
-		if pb.DeleteAt != 0 {
+		if playbook.DeleteAt != 0 {
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err := h.permissions.RunCreate(userID, pb); err != nil {
+		if err := h.permissions.RunCreate(userID, *playbook); err != nil {
 			return nil, err
 		}
 
 		public = pb.CreatePublicPlaybookRun
 
-		h.setPlaybookRunChecklist(&playbookRun, &pb)
-		h.copyPlaybookConfiguration(&playbookRun, &pb)
-
-		playbook = &pb
+		playbookRun.SetChecklistFromPlaybook(*playbook)
+		playbookRun.SetConfigurationFromPlaybook(*playbook)
 	}
 
 	// 4. Check the permissions on the channel: the user must be able to create it or,
@@ -517,58 +516,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
-}
-
-func (h *PlaybookRunHandler) setPlaybookRunChecklist(playbookRun *app.PlaybookRun, playbook *app.Playbook) {
-	playbookRun.Checklists = playbook.Checklists
-
-	// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
-	now := model.GetMillis()
-	for i := range playbookRun.Checklists {
-		for j := range playbookRun.Checklists[i].Items {
-			if playbookRun.Checklists[i].Items[j].DueDate > 0 {
-				playbookRun.Checklists[i].Items[j].DueDate += now
-			}
-		}
-	}
-}
-
-func (h *PlaybookRunHandler) copyPlaybookConfiguration(run *app.PlaybookRun, playbook *app.Playbook) {
-	if playbook.RunSummaryTemplateEnabled {
-		run.Summary = playbook.RunSummaryTemplate
-	}
-	run.ReminderMessageTemplate = playbook.ReminderMessageTemplate
-	run.StatusUpdateEnabled = playbook.StatusUpdateEnabled
-	run.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
-	run.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
-
-	run.InvitedUserIDs = []string{}
-	run.InvitedGroupIDs = []string{}
-	if playbook.InviteUsersEnabled {
-		run.InvitedUserIDs = playbook.InvitedUserIDs
-		run.InvitedGroupIDs = playbook.InvitedGroupIDs
-	}
-
-	if playbook.DefaultOwnerEnabled {
-		run.DefaultOwnerID = playbook.DefaultOwnerID
-	}
-
-	run.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
-	run.BroadcastChannelIDs = playbook.BroadcastChannelIDs
-
-	run.WebhookOnCreationURLs = []string{}
-	if playbook.WebhookOnCreationEnabled {
-		run.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
-	}
-
-	run.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
-	run.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
-
-	run.RetrospectiveEnabled = playbook.RetrospectiveEnabled
-	if playbook.RetrospectiveEnabled {
-		run.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
-		run.Retrospective = playbook.RetrospectiveTemplate
-	}
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {

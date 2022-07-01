@@ -239,6 +239,62 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+// SetChecklistFromPlaybook overwrites this run's checklists with the ones in the provided playbook.
+func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
+	r.Checklists = playbook.Checklists
+
+	// Playbooks can only have due dates relative to when a run starts,
+	// so we should convert them to absolute timestamp.
+	now := model.GetMillis()
+	for i := range r.Checklists {
+		for j := range r.Checklists[i].Items {
+			if r.Checklists[i].Items[j].DueDate > 0 {
+				r.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
+}
+
+// SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
+// effectively snapshoting the playbook's configuration in this moment of time.
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
+	if playbook.RunSummaryTemplateEnabled {
+		r.Summary = playbook.RunSummaryTemplate
+	}
+	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
+	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
+	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
+	r.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
+
+	r.InvitedUserIDs = []string{}
+	r.InvitedGroupIDs = []string{}
+	if playbook.InviteUsersEnabled {
+		r.InvitedUserIDs = playbook.InvitedUserIDs
+		r.InvitedGroupIDs = playbook.InvitedGroupIDs
+	}
+
+	if playbook.DefaultOwnerEnabled {
+		r.DefaultOwnerID = playbook.DefaultOwnerID
+	}
+
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
+
+	r.WebhookOnCreationURLs = []string{}
+	if playbook.WebhookOnCreationEnabled {
+		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
+	}
+
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
+
+	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
+	if playbook.RetrospectiveEnabled {
+		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
+		r.Retrospective = playbook.RetrospectiveTemplate
+	}
+}
+
 type StatusPost struct {
 	// ID is the identifier of the post containing the status update.
 	ID string `json:"id"`
