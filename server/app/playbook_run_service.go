@@ -2685,7 +2685,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
-	if _, err = s.poster.PostMessage(playbookRun.ChannelID, "@here — @%s requested a status update.\n", requesterUser.Username); err != nil {
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data)); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
