@@ -617,5 +617,9 @@
     "GVpA4Q": "Erstelle neues Playbook",
     "CFysvS": "Erstelle Playbook Dropdown",
     "/qDObA": "Durchläufe durchsuchen",
-    "/+8SGX": "Zeige {filteredNum} von {totalNum} Ereignissen"
+    "/+8SGX": "Zeige {filteredNum} von {totalNum} Ereignissen",
+    "Xx0WZV": "Sende Nachricht",
+    "UePrSL": "{num} {num, plural, one {Teilnehmer} other {Teilnehmer}}",
+    "UMFnWV": "Retrospektive anzeigen",
+    "9xs0pp": "Wert hinzufügen..."
 }
