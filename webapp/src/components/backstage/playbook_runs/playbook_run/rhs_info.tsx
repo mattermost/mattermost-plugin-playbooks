@@ -16,6 +16,7 @@ interface Props {
     playbook?: PlaybookWithChecklist;
     runMetadata?: Metadata;
     role: Role;
+    onViewParticipants: () => void;
 }
 
 const RHSInfo = (props: Props) => {
@@ -28,6 +29,7 @@ const RHSInfo = (props: Props) => {
             <RHSInfoOverview
                 run={props.run}
                 runMetadata={props.runMetadata}
+                onViewParticipants={props.onViewParticipants}
                 editable={editable}
             />
             <RHSInfoMetrics

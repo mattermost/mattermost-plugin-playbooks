@@ -29,9 +29,10 @@ interface Props {
     run: PlaybookRun;
     runMetadata?: Metadata;
     editable: boolean;
+    onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, runMetadata, editable}: Props) => {
+const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
     const addToast = useToasts().add;
@@ -86,7 +87,7 @@ const RHSInfoOverview = ({run, runMetadata, editable}: Props) => {
             <Item
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
-                onClick={() => {/* implement the participants list view */}}
+                onClick={onViewParticipants}
             >
                 <Participants>
                     <UserList
