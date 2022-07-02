@@ -720,9 +720,11 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
 };
 
 export const requestUpdate = async (playbookRunId: string) => {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/request-update`, {
-        method: 'POST',
-    });
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+    } catch (error) {
+        return {error};
+    }
 };
 
 export const doGet = async <TData = any>(url: string) => {

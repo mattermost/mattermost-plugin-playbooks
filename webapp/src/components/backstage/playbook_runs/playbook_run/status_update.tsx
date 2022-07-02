@@ -20,6 +20,7 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {ToastType, useToasts} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -72,6 +73,7 @@ interface ViewerProps {
 
 export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
+    const addToast = useToasts().add;
     const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
@@ -89,8 +91,13 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
         return <StatusUpdateCard post={lastStatusUpdate}/>;
     };
 
-    const requestStatusUpdate = () => {
-        requestUpdate(playbookRun.id);
+    const requestStatusUpdate = async () => {
+        const response = await requestUpdate(playbookRun.id);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
+        } else {
+            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
+        }
     };
 
     return (
