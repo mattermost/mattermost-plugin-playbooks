@@ -11,15 +11,14 @@ import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, Bullhor
 import CompassIconProps from '@mattermost/compass-icons/components/props';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {useToasts, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
-import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
@@ -28,11 +27,11 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
 interface Props {
     run: PlaybookRun;
-    runMetadata: Metadata | null;
-    role: Role;
+    runMetadata?: Metadata;
+    editable: boolean;
 }
 
-const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
+const RHSInfoOverview = ({run, runMetadata, editable}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
     const addToast = useToasts().add;
@@ -65,7 +64,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
 
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Overview'})}</SectionTitle>
+            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
@@ -79,7 +78,7 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
             >
                 <AssignTo
                     assignee_id={run.owner_user_id}
-                    editable={role === Role.Participant}
+                    editable={editable}
                     onSelectedChange={onOwnerChange}
                     dropdownMoveRightPx={0}
                 />

@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 

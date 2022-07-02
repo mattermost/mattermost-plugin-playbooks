@@ -7,9 +7,9 @@ import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {Team} from '@mattermost/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import ProfileWithPosition

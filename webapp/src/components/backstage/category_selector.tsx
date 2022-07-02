@@ -3,8 +3,8 @@ import {SelectComponentsConfig, components as defaultComponents} from 'react-sel
 import {useSelector} from 'react-redux';
 import {makeGetCategoriesForTeam} from 'mattermost-redux/selectors/entities/channel_categories';
 
-import {ChannelCategory} from 'mattermost-redux/types/channel_categories';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {ChannelCategory} from '@mattermost/types/channel_categories';
+import {GlobalState} from '@mattermost/types/store';
 
 import {StyledCreatable} from './styles';
 

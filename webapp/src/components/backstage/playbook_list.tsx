@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';

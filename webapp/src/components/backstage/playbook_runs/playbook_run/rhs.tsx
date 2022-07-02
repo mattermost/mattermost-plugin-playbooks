@@ -16,16 +16,15 @@ export enum RHSContent {
 }
 
 interface Props {
-
-    // playbookRun: PlaybookRun;
     isOpen: boolean;
     onClose: () => void;
     title: ReactNode;
     children: ReactNode;
     subtitle?: ReactNode;
+    scrollable: boolean;
 }
 
-const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, scrollable}: Props) => {
     const sidebarRef = React.useRef(null);
 
     if (!isOpen) {
@@ -52,17 +51,19 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
                 </HeaderIcon>
             </Header>
             <Body>
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'relative'}}
-                >
-                    {children}
-                </Scrollbars>
+                {scrollable ? (
+                    <Scrollbars
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                        renderThumbVertical={renderThumbVertical}
+                        renderView={renderView}
+                        renderTrackHorizontal={renderTrackHorizontal}
+                        style={{position: 'relative'}}
+                    >
+                        {children}
+                    </Scrollbars>
+                ) : children}
             </Body>
         </Container>);
 };

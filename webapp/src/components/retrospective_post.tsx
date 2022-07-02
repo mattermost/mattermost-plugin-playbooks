@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {Post} from 'mattermost-redux/types/posts';
+import {Post} from '@mattermost/types/posts';
 
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';

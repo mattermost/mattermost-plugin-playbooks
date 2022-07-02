@@ -25,7 +25,7 @@ interface Props {
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null
     role: Role;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
+    openRHS: (section: RHSContent, title: React.ReactNode, subtitle: React.ReactNode, scrollable: boolean) => void
 }
 
 export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
@@ -75,13 +75,13 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name)}
+                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, false)}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
+                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name, true)}
             />
             <RunActionsModal playbookRun={playbookRun}/>
         </Container>
