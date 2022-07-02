@@ -10,7 +10,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun} from 'src/types/playbook_run';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
@@ -34,7 +34,7 @@ const RHSInfoActivity = ({run, role}: Props) => {
 
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Recent Activity'})}</SectionTitle>
+            <SectionHeader title={formatMessage({defaultMessage: 'Recent Activity'})}/>
             <ItemList>
                 {filteredEvents.slice(0, SHOWED_EVENTS).map((event, i, events) => {
                     let prevEventAt;
