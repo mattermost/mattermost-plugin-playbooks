@@ -156,6 +156,7 @@ const PlaybookRunDetails = () => {
                         onViewInfo={onViewInfo}
                         onViewTimeline={onViewTimeline}
                         role={role}
+                        rhsSection={RHS.isOpen ? RHS.section : null}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>

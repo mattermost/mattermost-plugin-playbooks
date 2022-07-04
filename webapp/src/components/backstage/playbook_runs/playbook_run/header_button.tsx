@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import React from 'react';
 
 import Tooltip from 'src/components/widgets/tooltip';
@@ -12,12 +12,13 @@ interface HeaderButtonProps {
     tooltipMessage: string
     className: string;
     onClick: () => void;
+    isActive?: boolean;
     clicked?: boolean;
     size?: number;
     iconSize?: number;
 }
 
-const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, size, iconSize}: HeaderButtonProps) => {
+const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, isActive, clicked, size, iconSize}: HeaderButtonProps) => {
     return (
         <Tooltip
             id={tooltipId}
@@ -28,6 +29,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, s
             <StyledHeaderIcon
                 onClick={() => onClick()}
                 clicked={clicked ?? false}
+                isActive={isActive ?? false}
                 size={size}
             >
 
@@ -44,10 +46,14 @@ const Icon = styled.i<{fontSize?: number}>`
     font-size: ${(props) => (`${props.fontSize}px` ?? '18px')};
 `;
 
-const StyledHeaderIcon = styled(HeaderIcon)<{size?: number}>`
+const StyledHeaderIcon = styled(HeaderIcon)<{isActive: boolean; size?: number}>`
     margin-left: 4px;
     width: ${(props) => (`${props.size}px` ?? '28px')};
     height: ${(props) => (`${props.size}px` ?? '28px')};
+    ${({isActive: active}) => active && css`
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    `}
 `;
 
 export default HeaderButton;
