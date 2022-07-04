@@ -75,7 +75,7 @@ type ChannelActionService interface {
 	Validate(action GenericChannelAction) error
 
 	// Update updates an existing action identified by action.ID
-	Update(action GenericChannelAction) error
+	Update(action GenericChannelAction, userID string) error
 
 	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
 	// was invited by actorID.
@@ -119,4 +119,7 @@ type ChannelActionStore interface {
 type ChannelActionTelemetry interface {
 	// RunChannelAction tracks the execution of a channel action
 	RunChannelAction(action GenericChannelAction, userID string)
+
+	// UpdateChannelAction tracks the update of a channel action
+	UpdateChannelAction(action GenericChannelAction, userID string)
 }
