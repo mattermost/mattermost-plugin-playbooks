@@ -595,6 +595,7 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
+		"ChannelID":    action.ChannelID,
 		"ActionType":   action.ActionType,
 		"TriggerType":  action.TriggerType,
 	}
