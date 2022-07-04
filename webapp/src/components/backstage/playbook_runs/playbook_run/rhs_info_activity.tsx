@@ -51,7 +51,6 @@ const RHSInfoActivity = ({run, role}: Props) => {
                             channelNames={channelNamesMap}
                             team={team}
                             deleteEvent={() => clientRemoveTimelineEvent(run.id, event.id)}
-                            disableLinks={true}
                             editable={role === Role.Participant}
                         />
                     );
