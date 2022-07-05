@@ -109,11 +109,11 @@ describe('runs > run details page > summary', () => {
             // # Cancel changes
             cy.findByText('Cancel').click();
 
-            // * Assert that data has changed
+            // * Assert that data has not changed
             cy.findByTestId('rendered-text').contains('Add a run summary');
         });
 
-        // * Assert last edition date is visible
+        // * Assert last edition date is not visible
         cy.findByTestId('run-summary-section').should('not.contain', 'Last edited');
     });
 });

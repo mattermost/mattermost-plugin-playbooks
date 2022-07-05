@@ -185,7 +185,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
 
     const dueInfo = getDueInfo(playbookRun, now);
 
-    // We assumed that user permissions have been checked before
+    // We assume that user permissions have been checked before
     const postUpdate = () => dispatch(openUpdateRunStatusModal(playbookRun.id, playbookRun.channel_id, true));
 
     const onClickViewAllUpdates = () => {
@@ -226,12 +226,12 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                     ) : null}
                     <Kebab>
                         <DotMenu icon={<ThreeDotsIcon/>}>
-                            <VIewAllLink
+                            <ViewAllLink
                                 onClick={onClickViewAllUpdates}
                                 disabled={playbookRun.status_posts.length === 0}
                             >
                                 {openRHSText}
-                            </VIewAllLink>
+                            </ViewAllLink>
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
@@ -337,7 +337,7 @@ const ThreeDotsIcon = styled(HamburgerButton)`
     margin-left: 4px;
 `;
 
-const VIewAllLink = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
+const ViewAllLink = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
     opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
     cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
 `;
