@@ -25,11 +25,11 @@ import {
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
     SET_CLIENT_ID,
-    SET_RHS_EVENTS_FILTER,
+    SET_PLAYBOOK_RUN_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
     SetClientId,
-    SetRHSEventsFilter,
+    SetPlaybookRunEventsFilter,
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
@@ -278,9 +278,9 @@ export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromCha
     channelId,
 });
 
-export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
-    type: SET_RHS_EVENTS_FILTER,
-    channelId,
+export const setPlaybookRunEventsFilter = (playbookRunId: string, nextState: TimelineEventsFilter): SetPlaybookRunEventsFilter => ({
+    type: SET_PLAYBOOK_RUN_EVENTS_FILTER,
+    playbookRunId,
     nextState,
 });
 

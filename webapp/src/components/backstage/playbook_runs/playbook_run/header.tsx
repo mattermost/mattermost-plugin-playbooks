@@ -24,17 +24,17 @@ import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
-import {RHSContent} from './rhs';
 
 interface Props {
     playbook: Playbook;
     playbookRun: PlaybookRun;
-    playbookRunMetadata: PlaybookRunMetadata | null
+    playbookRunMetadata: PlaybookRunMetadata | null;
     role: Role;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
+    onViewInfo: () => void;
+    onViewTimeline: () => void;
 }
 
-export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
+export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
@@ -50,17 +50,13 @@ export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, openRHS, 
             await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
 
             // navigateToChannel();
-            return;
         }
-
-        console.log('private!');
     };
 
     const navigateToChannel = () => {
         if (!playbookRunMetadata) {
             return;
         }
-        console.log(`navigate to /${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
         navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
     };
 
@@ -101,13 +97,13 @@ export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, openRHS, 
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name)}
+                onClick={onViewTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
+                onClick={onViewInfo}
             />
             {role === Role.Viewer &&
                 <GetInvolved onClick={onGetInvolved}>

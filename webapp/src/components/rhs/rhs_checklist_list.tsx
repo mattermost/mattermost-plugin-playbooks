@@ -44,6 +44,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 interface Props {
     playbookRun: PlaybookRun;
     parentContainer: ChecklistParent;
+    id?: string;
     viewerMode: boolean;
 }
 
@@ -52,7 +53,7 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -145,7 +146,7 @@ const RHSChecklistList = ({playbookRun, parentContainer, viewerMode}: Props) => 
     const title = parentContainer === ChecklistParent.RunDetails ? (
         <AnchorLinkTitle
             title={formatMessage({defaultMessage: 'Tasks'})}
-            id={'checklist'}
+            id={id || ''}
         />
     ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
 

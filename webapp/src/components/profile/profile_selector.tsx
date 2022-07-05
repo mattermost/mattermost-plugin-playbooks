@@ -77,19 +77,6 @@ export default function ProfileSelector(props: Props) {
     const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        const formatName = (descriptionSuffix: string) => {
-            return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-                const name = '@' + userName;
-                const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
-                return (
-                    <>
-                        <span>{name}</span>
-                        {description && <span className={'description'}>{description}</span>}
-                    </>
-                );
-            };
-        };
-
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
@@ -107,7 +94,7 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
                 userType: 'NonMember',
@@ -121,7 +108,7 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
                 userType: 'Member',
@@ -329,4 +316,17 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
     }
 
     return '';
+};
+
+export const formatProfileName = (descriptionSuffix: string) => {
+    return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+        const name = '@' + userName;
+        const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+        return (
+            <>
+                <span>{name}</span>
+                {description && <span className={'description'}>{description}</span>}
+            </>
+        );
+    };
 };
