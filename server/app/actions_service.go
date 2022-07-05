@@ -178,7 +178,7 @@ func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFro
 	return nil
 }
 
-func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
+func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID string) error {
 	oldAction, err := a.Get(action.ID)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve existing action with ID %q", action.ID)
@@ -190,7 +190,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 		}
 	}
 
-	return a.store.Update(action)
+	if err := a.store.Update(action); err != nil {
+		return err
+	}
+
+	a.telemetry.UpdateChannelAction(action, userID)
+
+	return nil
 }
 
 // UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
