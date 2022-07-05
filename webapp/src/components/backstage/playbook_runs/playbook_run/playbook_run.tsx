@@ -5,7 +5,7 @@ import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useRouteMatch, Redirect} from 'react-router-dom';
+import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -59,10 +59,18 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+export enum PlaybookRunIDs {
+    SectionSummary = 'playbook-run-summary',
+    SectionStatusUpdate = 'playbook-run-status-update',
+    SectionChecklists = 'playbook-run-checklists',
+    SectionRetrospective = 'playbook-run-retrospective',
+}
+
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
+    const {hash: urlHash} = useLocation();
     const playbookRunId = match.params.playbookRunId;
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
@@ -88,6 +96,17 @@ const PlaybookRunDetails = () => {
 
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
+
+    // When first loading the page, the element with the ID corresponding to the URL
+    // hash is not mounted, so the browser fails to automatically scroll to such section.
+    // To fix this, we need to manually scroll to the component
+    useEffect(() => {
+        if (urlHash !== '') {
+            setTimeout(() => {
+                document.querySelector(urlHash)?.scrollIntoView();
+            }, 300);
+        }
+    }, [urlHash]);
 
     // loading state
     if (playbookRun === undefined) {
@@ -161,27 +180,32 @@ const PlaybookRunDetails = () => {
                 <Main isRHSOpen={RHS.isOpen}>
                     <Body>
                         <Summary
+                            id={PlaybookRunIDs.SectionSummary}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
                         <Checklists
+                            id={PlaybookRunIDs.SectionChecklists}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
+                            id={PlaybookRunIDs.SectionRetrospective}
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
                             role={role}

@@ -63,12 +63,13 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
 };
 
 interface ViewerProps {
+    id: string;
     playbookRun: PlaybookRun;
     lastStatusUpdate?: StatusPostComplete;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
+export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
@@ -87,11 +88,11 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
     };
 
     return (
-        <Container>
+        <Container id={id}>
             <Header>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Recent status update'})}
-                    id='recent-update'
+                    id={id}
                 />
                 <RightWrapper>
                     <IconWrapper>
@@ -118,11 +119,12 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
 };
 
 interface ParticipantProps {
+    id: string;
     playbookRun: PlaybookRun;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps) => {
+export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
@@ -141,7 +143,7 @@ export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps
     ));
 
     return (
-        <Container>
+        <Container id={id}>
             <Content isShort={true}>
                 <IconWrapper>
                     <IconClock
