@@ -446,13 +446,18 @@ describe('runs > run details page > header', () => {
                         // * Assert modal pop up
                         cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
 
-                        // TODO: check read-only
+                        // * Assert there are no buttons
+                        cy.findByRole('dialog', {name: /Run Actions/i}).findByTestId('modal-cancel-button').should('not.exist');
+                        cy.findByRole('button', {name: /Save/i}).should('not.exist');
+
+                        // # Close modal
+                        cy.findByRole('dialog', {name: /Run Actions/i}).find('.close').click();
                     });
                 });
             });
         });
 
-        describe.only('context menu', () => {
+        describe('context menu', () => {
             commonContextDropdownTests();
 
             describe('finish run', () => {
@@ -466,7 +471,7 @@ describe('runs > run details page > header', () => {
             });
 
             describe('run actions', () => {
-                it('modal can not be opened read-only', () => {
+                it('modal can be opened read-only', () => {
                     // # Open dropdown
                     cy.findByTestId('run-header-section').find('h1').click();
 
@@ -475,6 +480,13 @@ describe('runs > run details page > header', () => {
 
                     // * Assert modal pop up
                     cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
+
+                    // * Assert there are no buttons
+                    cy.findByRole('dialog', {name: /Run Actions/i}).findByTestId('modal-cancel-button').should('not.exist');
+                    cy.findByRole('button', {name: /Save/i}).should('not.exist');
+
+                    // # Close modal
+                    cy.findByRole('dialog', {name: /Run Actions/i}).find('.close').click();
                 });
             });
         });
