@@ -84,5 +84,9 @@
     {
         "id": "app.command.execute.error",
         "translation": "Komut yürütülemedi."
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} bir durum güncellemesi istedi.\n"
     }
 ]
