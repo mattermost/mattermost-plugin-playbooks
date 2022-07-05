@@ -63,6 +63,57 @@ describe('runs > run details page > header', () => {
         return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
     };
 
+    const commonHeaderTests = () => {
+        it('shows the title', () => {
+            // * Assert title is shown in h1 inside header
+            cy.findByTestId('run-header-section').find('h1').contains(playbookRun.name);
+        });
+
+        it('shows the in-progress status badge', () => {
+            // * Assert in progress status badge
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+        });
+
+        it('has a copy-link icon', () => {
+            // # Mouseover on the icon
+            getHeaderIcon('.icon-link-variant').trigger('mouseover');
+
+            // * Assert tooltip is shown
+            cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
+
+            stubClipboard().as('clipboard');
+            getHeaderIcon('.icon-link-variant').click().then(() => {
+                // * Verify that tooltip text changed
+                cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+
+                // * Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+            });
+        });
+    };
+
+    const commonContextDropdownTests = () => {
+        it('shows on click', () => {
+            // # Click title
+            cy.findByTestId('run-header-section').find('h1').click();
+
+            // * Assert context menu is opened
+            cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
+        });
+
+        it('can copy link', () => {
+            stubClipboard().as('clipboard');
+
+            // * Open dropdown
+            cy.findByTestId('run-header-section').find('h1').click();
+
+            getDropdownItemByText('Copy link').click().then(() => {
+                // * Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+            });
+        });
+    };
+
     describe('as participant', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
@@ -85,32 +136,7 @@ describe('runs > run details page > header', () => {
         });
 
         describe('title and icons', () => {
-            it('shows the title', () => {
-                // * Assert title is shown in h1 inside header
-                cy.findByTestId('run-header-section').find('h1').contains(playbookRun.name);
-            });
-
-            it('shows the in-progress status badge', () => {
-                // * Assert in progress status badge
-                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
-            });
-
-            it('has a copy-link icon', () => {
-                // # Mouseover on the icon
-                getHeaderIcon('.icon-link-variant').trigger('mouseover');
-
-                // * Assert tooltip is shown
-                cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
-
-                stubClipboard().as('clipboard');
-                getHeaderIcon('.icon-link-variant').click().then(() => {
-                    // * Verify that tooltip text changed
-                    cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
-
-                    // * Verify clipboard content
-                    cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
-                });
-            });
+            commonHeaderTests();
 
             it('has a go-to-channel icon', () => {
                 // # Click on go to channel
@@ -298,25 +324,7 @@ describe('runs > run details page > header', () => {
         });
 
         describe('context menu', () => {
-            it('shows on click', () => {
-                // # Click title
-                cy.findByTestId('run-header-section').find('h1').click();
-
-                // * Assert context menu is opened
-                cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
-            });
-
-            it('can copy link', () => {
-                stubClipboard().as('clipboard');
-
-                // * Open dropdown
-                cy.findByTestId('run-header-section').find('h1').click();
-
-                getDropdownItemByText('Copy link').click().then(() => {
-                    // * Verify clipboard content
-                    cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
-                });
-            });
+            commonContextDropdownTests();
 
             describe('finish run', () => {
                 it('can be confirmed', () => {
@@ -395,8 +403,7 @@ describe('runs > run details page > header', () => {
         });
     });
 
-    // waiting for https://github.com/mattermost/mattermost-plugin-playbooks/pull/1259
-    describe.skip('viewer', () => {
+    describe.only('as viewer', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -420,80 +427,54 @@ describe('runs > run details page > header', () => {
         });
 
         describe('title and icons', () => {
-            it('shows the title', () => {
-                // * Assert title is shown in h1 inside header
-                cy.findByTestId('run-header-section').find('h1').contains(playbookRun.name);
-            });
+            commonHeaderTests();
 
-            it('shows the in-progress status badge', () => {
-                // * Assert in progress status badge
-                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
-            });
-
-            it('has a copy-link icon', () => {
-                // # Mouseover on the icon
-                getHeaderIcon('.icon-link-variant').trigger('mouseover');
-
-                // * Assert tooltip is shown
-                cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
-
-                stubClipboard().as('clipboard');
-                getHeaderIcon('.icon-link-variant').click().then(() => {
-                    // * Verify that tooltip text changed
-                    cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
-
-                    // * Verify clipboard content
-                    cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
-                });
-            });
-
-            it('has a go-to-channel icon', () => {
-                // # Click on go to channel
-                getHeaderIcon('.icon-product-channels').click();
-
-                // * Assert we navigated correctly
-                cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+            it('has not a go-to-channel icon', () => {
+                // * Verify there's no go-to-channel icon
+                getHeaderIcon('.icon-product-channels').should('not.exist');
             });
 
             describe('run actions', () => {
                 describe('modal behaviour', () => {
-                    it('shows and hides as expected', () => {
-                        // should be disabled
+                    it('modal can be opened read-only', () => {
+                        // # Open dropdown
+                        cy.findByTestId('run-header-section').find('h1').click();
+
+                        // # Click on finish run
+                        getDropdownItemByText('Run actions').click();
+
+                        // * Assert modal pop up
+                        cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
+
+                        // TODO: check read-only
                     });
                 });
             });
         });
 
-        describe('context menu', () => {
-            it('shows on click', () => {
-                // # Click title
-                cy.findByTestId('run-header-section').find('h1').click();
-
-                // * Assert context menu is opened
-                cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
-            });
-
-            it('can copy link', () => {
-                stubClipboard().as('clipboard');
-
-                // # Open dropdown
-                cy.findByTestId('run-header-section').find('h1').click();
-
-                getDropdownItemByText('Copy link').click().then(() => {
-                    // * Verify clipboard content
-                    cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
-                });
-            });
+        describe.only('context menu', () => {
+            commonContextDropdownTests();
 
             describe('finish run', () => {
-                it('can be confirmed', () => {
-                    // do sth
+                it('does not exist', () => {
+                    // # Open dropdown
+                    cy.findByTestId('run-header-section').find('h1').click();
+
+                    // * There's no finish run item
+                    getDropdownItemByText('Finish run').should('not.exist');
                 });
             });
 
             describe('run actions', () => {
-                it('modal can not be opened', () => {
-                    // do sth
+                it('modal can not be opened read-only', () => {
+                    // # Open dropdown
+                    cy.findByTestId('run-header-section').find('h1').click();
+
+                    // # Click on finish run
+                    getDropdownItemByText('Run actions').click();
+
+                    // * Assert modal pop up
+                    cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
                 });
             });
         });

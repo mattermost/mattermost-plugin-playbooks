@@ -84,7 +84,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 className={'icon-information-outline'}
                 onClick={onViewInfo}
             />
-            <RunActionsModal playbookRun={playbookRun}/>
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={role === Role.Viewer}
+            />
         </Container>
     );
 };

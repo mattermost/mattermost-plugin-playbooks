@@ -51,7 +51,7 @@ const ActionsModal = (props: Props) => {
             onHide={props.onHide}
             onExited={() => {/* do nothing else after the modal has exited */}}
             handleCancel={props.editable ? props.onHide : null}
-            handleConfirm={props.editable ? props.onSave : null}
+            handleConfirm={props.editable ? props.onSave : undefined}
             confirmButtonText={formatMessage({defaultMessage: 'Save'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             isConfirmDisabled={!props.editable}

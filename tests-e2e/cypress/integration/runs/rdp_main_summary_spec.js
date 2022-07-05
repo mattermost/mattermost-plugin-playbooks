@@ -48,8 +48,7 @@ describe('runs > run details page > summary', () => {
         });
     });
 
-    // UnSkip after giorgi's merge
-    it.skip('redirects to not found error if the playbook run is unknown', () => {
+    it('redirects to not found error if the playbook run is unknown', () => {
         // # Visit the URL of a non-existing playbook run
         cy.visit('/playbooks/run_details/an_unknown_id');
 
