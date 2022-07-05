@@ -140,16 +140,12 @@ func (c *categoryStore) Update(category app.Category) error {
 }
 
 // Delete deletes a category
-func (c *categoryStore) Delete(category app.Category) error {
+func (c *categoryStore) Delete(categoryID string) error {
 	if _, err := c.store.execBuilder(c.store.db, sq.
 		Update("IR_Category").
 		Set("delete_at", model.GetMillis()).
-		Where(sq.Eq{
-			"id":      category.ID,
-			"user_id": category.UserID,
-			"team_id": category.TeamID,
-		})); err != nil {
-		return errors.Wrapf(err, "failed to delete category with id '%s'", category.ID)
+		Where(sq.Eq{"id": categoryID})); err != nil {
+		return errors.Wrapf(err, "failed to delete category with id '%s'", categoryID)
 	}
 	return nil
 }

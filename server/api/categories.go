@@ -49,9 +49,7 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 }
 
 func (h *CategoryHandler) createMyCategory(w http.ResponseWriter, r *http.Request) {
-	params := r.URL.Query()
 	userID := r.Header.Get("Mattermost-User-ID")
-	teamID := params.Get("team_id")
 
 	var category app.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
@@ -70,11 +68,6 @@ func (h *CategoryHandler) createMyCategory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if category.TeamID != teamID {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "teamID mismatch", nil)
-		return
-	}
-
 	createdCategory, err := h.categoryService.Create(category)
 	if err != nil {
 		h.HandleError(w, err)
@@ -88,8 +81,6 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 	vars := mux.Vars(r)
 	categoryID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-	params := r.URL.Query()
-	teamID := params.Get("team_id")
 
 	var category app.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
@@ -108,8 +99,20 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if category.TeamID != teamID {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "teamID mismatch", nil)
+	// verify if category belongs to the user
+	existingCategory, err := h.categoryService.Get(category.ID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Can't get category", err)
+		return
+	}
+
+	if existingCategory.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		return
+	}
+
+	if existingCategory.UserID != category.UserID {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "UserID mismatch", nil)
 		return
 	}
 
@@ -122,10 +125,27 @@ func (h *CategoryHandler) deleteMyCategory(w http.ResponseWriter, r *http.Reques
 	vars := mux.Vars(r)
 	categoryID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-	params := r.URL.Query()
-	teamID := params.Get("team_id")
 
-	if err := h.categoryService.Delete(categoryID, teamID, userID); err != nil {
+	existingCategory, err := h.categoryService.Get(categoryID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Can't get category", err)
+		return
+	}
+
+	// category is already deleted. This avoids
+	// overriding the original deleted at timestamp
+	if existingCategory.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		return
+	}
+
+	// verify if category belongs to the user
+	if existingCategory.UserID != userID {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "UserID mismatch", nil)
+		return
+	}
+
+	if err := h.categoryService.Delete(categoryID); err != nil {
 		h.HandleError(w, err)
 	}
 }

@@ -38,6 +38,14 @@ func (c *categoryService) Create(category Category) (string, error) {
 	return category.ID, nil
 }
 
+func (c *categoryService) Get(categoryID string) (Category, error) {
+	category, err := c.store.Get(categoryID)
+	if err != nil {
+		return Category{}, errors.Wrap(err, "Can't get category")
+	}
+	return category, nil
+}
+
 // GetCategories retrieves all categories for user for team
 func (c *categoryService) GetCategories(teamID, userID string) ([]Category, error) {
 	if !model.IsValidId(teamID) {
@@ -57,54 +65,20 @@ func (c *categoryService) Update(category Category) error {
 	if category.Name == "" {
 		return errors.New("name should not be empty")
 	}
-	// verify if category belongs to the user
-	existingCategory, err := c.store.Get(category.ID)
-	if err != nil {
-		return errors.Wrap(err, "Can't get category")
-	}
-
-	if existingCategory.DeleteAt != 0 {
-		return errors.New("Category deleted")
-	}
-
-	if existingCategory.UserID != category.UserID {
-		return errors.New("UserID mismatch")
-	}
 
 	category.UpdateAt = model.GetMillis()
-	if err = category.IsValid(); err != nil {
+	if err := category.IsValid(); err != nil {
 		return errors.Wrap(err, "invalid category")
 	}
-	if err = c.store.Update(category); err != nil {
+	if err := c.store.Update(category); err != nil {
 		return errors.Wrap(err, "can't update category")
 	}
 	return nil
 }
 
 // Delete deletes a category
-func (c *categoryService) Delete(id, teamID, userID string) error {
-	existingCategory, err := c.store.Get(id)
-	if err != nil {
-		return errors.Wrap(err, "can't get category")
-	}
-
-	// category is already deleted. This avoids
-	// overriding the original deleted at timestamp
-	if existingCategory.DeleteAt != 0 {
-		return nil
-	}
-
-	// verify if category belongs to the user
-	if existingCategory.UserID != userID {
-		return errors.Wrap(err, "userID mismatch")
-	}
-
-	// verify if category belongs to the team
-	if existingCategory.TeamID != teamID {
-		return errors.Wrap(err, "teamID mismatch")
-	}
-
-	if err = c.store.Delete(existingCategory); err != nil {
+func (c *categoryService) Delete(categoryID string) error {
+	if err := c.store.Delete(categoryID); err != nil {
 		return errors.Wrap(err, "can't delete category")
 	}
 

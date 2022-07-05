@@ -64,6 +64,9 @@ type CategoryService interface {
 	// Create creates a new Category
 	Create(category Category) (string, error)
 
+	// Get retrieves category with categoryID for user for team
+	Get(categoryID string) (Category, error)
+
 	// GetCategories retrieves all categories for user for team
 	GetCategories(teamID, userID string) ([]Category, error)
 
@@ -71,7 +74,7 @@ type CategoryService interface {
 	Update(category Category) error
 
 	// Delete deletes a category
-	Delete(id, teamID, userID string) error
+	Delete(categoryID string) error
 }
 
 type CategoryStore interface {
@@ -88,5 +91,5 @@ type CategoryStore interface {
 	Update(category Category) error
 
 	// Delete deletes a category
-	Delete(category Category) error
+	Delete(categoryID string) error
 }
