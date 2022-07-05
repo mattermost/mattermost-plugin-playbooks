@@ -124,7 +124,6 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 </FollowersWrapper>
             </Item>
             <AddToChannelModal
-                editable={editable}
                 user={selectedUser}
                 channelId={run.channel_id}
                 setOwner={setOwner}
@@ -141,7 +140,6 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
 export default RHSInfoOverview;
 
 interface AddToChannelModalProps {
-    editable: boolean;
     user: UserProfile | null;
     channelId: string;
     setOwner: (id: string) => void;
@@ -149,7 +147,7 @@ interface AddToChannelModalProps {
     onHide: () => void;
 }
 
-const AddToChannelModal = ({editable, user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
+const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
     const dispatch = useDispatch();
 
     const {formatMessage} = useIntl();
@@ -161,7 +159,7 @@ const AddToChannelModal = ({editable, user, channelId, setOwner, show, onHide}: 
     };
     const mdText = useMarkdownFormatter(markdownOptions);
 
-    if (!editable || !user) {
+    if (!user) {
         return null;
     }
 
