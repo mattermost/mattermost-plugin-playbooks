@@ -117,9 +117,9 @@ type ChannelActionStore interface {
 // ChannelActionTelemetry defines the methods that the ChannelAction service needs from RudderTelemetry.
 // userID is the user initiating the event.
 type ChannelActionTelemetry interface {
-	// RunChannelAction tracks the execution of a channel action
+	// RunChannelAction tracks the execution of a channel action, performed by the specified user.
 	RunChannelAction(action GenericChannelAction, userID string)
 
-	// UpdateChannelAction tracks the update of a channel action
+	// UpdateChannelAction tracks the update of a channel action, performed by the specified user.
 	UpdateChannelAction(action GenericChannelAction, userID string)
 }
