@@ -75,7 +75,7 @@ type ChannelActionService interface {
 	Validate(action GenericChannelAction) error
 
 	// Update updates an existing action identified by action.ID
-	Update(action GenericChannelAction) error
+	Update(action GenericChannelAction, userID string) error
 
 	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
 	// was invited by actorID.
@@ -117,6 +117,9 @@ type ChannelActionStore interface {
 // ChannelActionTelemetry defines the methods that the ChannelAction service needs from RudderTelemetry.
 // userID is the user initiating the event.
 type ChannelActionTelemetry interface {
-	// RunChannelAction tracks the execution of a channel action
+	// RunChannelAction tracks the execution of a channel action, performed by the specified user.
 	RunChannelAction(action GenericChannelAction, userID string)
+
+	// UpdateChannelAction tracks the update of a channel action, performed by the specified user.
+	UpdateChannelAction(action GenericChannelAction, userID string)
 }

@@ -58,7 +58,7 @@ const StyledText = styled.div<{toastType: ToastType}>`
     text-align: center;
 
     margin: 0px 8px;
-    color: ${({toastType}) => (toastType === ToastType.Failure ? 'var(--center-channel-bg)' : 'var(--center-channel-color)')};
+    color: var(--center-channel-bg);
 `;
 
 const ToastContainer = styled.div`

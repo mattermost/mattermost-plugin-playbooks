@@ -6,12 +6,12 @@ import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiCheckAll} from '@mdi/js';
 
-import {Post} from 'mattermost-redux/types/posts';
+import {Post} from '@mattermost/types/posts';
 import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {Channel} from 'mattermost-redux/types/channels';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {Channel} from '@mattermost/types/channels';
+import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';

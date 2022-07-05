@@ -201,7 +201,7 @@ func (a *ActionsHandler) updateChannelAction(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := a.channelActionsService.Update(newChannelAction)
+	err := a.channelActionsService.Update(newChannelAction, userID)
 	if err != nil {
 		a.HandleErrorWithCode(w, http.StatusInternalServerError, fmt.Sprintf("unable to update action with ID %q", newChannelAction.ID), err)
 		return

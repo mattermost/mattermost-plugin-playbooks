@@ -3,9 +3,9 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useRouteMatch, Redirect} from 'react-router-dom';
+import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -27,35 +27,50 @@ import {RunHeader} from './header';
 import RightHandSidebar, {RHSContent} from './rhs';
 import RHSStatusUpdates from './rhs_status_updates';
 import RHSInfo from './rhs_info';
+import {Participants} from './rhs_participants';
+import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
+    const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
     const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
+    const [onBack, setOnBack] = useState<() => void>();
 
     useUpdateEffect(() => {
         setSubtitle(playbookRun?.name);
     }, [playbookRun?.name]);
 
-    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode) => {
+    const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode, _onBack?: () => void, _scrollable = true) => {
         setIsOpen(true);
         setSection(_section);
         setTitle(_title);
         setSubtitle(_subtitle);
+        setOnBack(_onBack);
+        setScrollable(_scrollable);
     };
     const close = () => {
         setIsOpen(false);
     };
 
-    return {isOpen, section, title, subtitle, open, close};
+    return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+export enum PlaybookRunIDs {
+    SectionSummary = 'playbook-run-summary',
+    SectionStatusUpdate = 'playbook-run-status-update',
+    SectionChecklists = 'playbook-run-checklists',
+    SectionRetrospective = 'playbook-run-retrospective',
+}
+
 const PlaybookRunDetails = () => {
+    const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
+    const {hash: urlHash} = useLocation();
     const playbookRunId = match.params.playbookRunId;
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
@@ -82,6 +97,17 @@ const PlaybookRunDetails = () => {
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
+    // When first loading the page, the element with the ID corresponding to the URL
+    // hash is not mounted, so the browser fails to automatically scroll to such section.
+    // To fix this, we need to manually scroll to the component
+    useEffect(() => {
+        if (urlHash !== '') {
+            setTimeout(() => {
+                document.querySelector(urlHash)?.scrollIntoView();
+            }, 300);
+        }
+    }, [urlHash]);
+
     // loading state
     if (playbookRun === undefined) {
         return null;
@@ -94,6 +120,9 @@ const PlaybookRunDetails = () => {
 
     // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
+
+    const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
+    const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
 
     let rhsComponent = null;
     switch (RHS.section) {
@@ -109,7 +138,25 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <RHSInfo
                 run={playbookRun}
-                runMetadata={metadata ?? null}
+                playbook={playbook ?? undefined}
+                runMetadata={metadata ?? undefined}
+                role={role}
+                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+            />
+        );
+        break;
+    case RHSContent.RunParticipants:
+        rhsComponent = (
+            <Participants
+                participantsIds={playbookRun.participant_ids}
+                playbookRunMetadata={metadata ?? null}
+            />
+        );
+        break;
+    case RHSContent.RunTimeline:
+        rhsComponent = (
+            <RHSTimeline
+                playbookRun={playbookRun}
                 role={role}
             />
         );
@@ -125,34 +172,40 @@ const PlaybookRunDetails = () => {
                     <RunHeader
                         playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
-                        openRHS={RHS.open}
+                        onViewInfo={onViewInfo}
+                        onViewTimeline={onViewTimeline}
                         role={role}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>
                     <Body>
                         <Summary
+                            id={PlaybookRunIDs.SectionSummary}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 playbookRun={playbookRun}
                             />
                         ) : (
                             <ViewerStatusUpdate
+                                id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
                                 lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
                         <Checklists
+                            id={PlaybookRunIDs.SectionChecklists}
                             playbookRun={playbookRun}
                             role={role}
                         />
                         {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
+                            id={PlaybookRunIDs.SectionRetrospective}
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
                             role={role}
@@ -165,6 +218,8 @@ const PlaybookRunDetails = () => {
                 title={RHS.title}
                 subtitle={RHS.subtitle}
                 onClose={RHS.close}
+                onBack={RHS.onBack}
+                scrollable={RHS.scrollable}
             >
                 {rhsComponent}
             </RightHandSidebar>

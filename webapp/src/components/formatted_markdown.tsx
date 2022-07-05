@@ -3,7 +3,7 @@
 
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 
 import {getChannelsNameMapInTeam} from 'mattermost-redux/selectors/entities/channels';

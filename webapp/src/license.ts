@@ -1,4 +1,4 @@
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getLicense, getConfig} from 'mattermost-redux/selectors/entities/general';
 
 const e10 = 'E10';
