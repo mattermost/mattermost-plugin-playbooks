@@ -82,6 +82,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     editable={editable}
                     onSelectedChange={onOwnerChange}
                     dropdownMoveRightPx={0}
+                    channelId={run.channel_id}
                 />
             </Item>
             <Item
