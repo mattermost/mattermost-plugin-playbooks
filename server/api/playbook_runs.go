@@ -413,7 +413,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.
 }
 
 func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
-	// 1. Validate initial data
+	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
 	}
@@ -434,7 +434,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
-	// 2. Retrieve channel if needed and validate it
+	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
 	var channel *model.Channel
@@ -452,7 +452,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// 3. Copy data from playbook if needed
+	// Copy data from playbook if needed
 	public := true
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
@@ -476,7 +476,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.SetConfigurationFromPlaybook(*playbook)
 	}
 
-	// 4. Check the permissions on the channel: the user must be able to create it or,
+	// Check the permissions on the channel: the user must be able to create it or,
 	// if one's already provided, they need to be able to manage it.
 	if channel == nil {
 		permission := model.PermissionCreatePrivateChannel
@@ -504,7 +504,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// 5. Check the permissions on the provided post: the user must have access to the post's channel
+	// Check the permissions on the provided post: the user must have access to the post's channel
 	if playbookRun.PostID != "" {
 		post, err := h.pluginAPI.Post.GetPost(playbookRun.PostID)
 		if err != nil {
