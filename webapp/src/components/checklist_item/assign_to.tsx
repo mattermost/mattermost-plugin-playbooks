@@ -1,11 +1,14 @@
 import React, {useState} from 'react';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
+
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
-import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
+import {useProfilesInChannel, useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
@@ -14,13 +17,16 @@ interface AssignedToProps {
     withoutName?: boolean;
     inHoverMenu?: boolean;
     dropdownMoveRightPx?: number;
+    channelId?: string; // If not provided, the ID of the current channel will be used
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const profilesInChannel = useProfilesInCurrentChannel();
+    const currentChannelID = useSelector(getCurrentChannelId);
+    const channelID = props.channelId || currentChannelID;
+    const profilesInChannel = useProfilesInChannel(channelID);
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 

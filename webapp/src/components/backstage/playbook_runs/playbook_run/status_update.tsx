@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -18,6 +18,9 @@ import {useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
+import {requestUpdate} from 'src/client';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {ToastType, useToasts} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -65,13 +68,16 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
 const RHSTitle = <FormattedMessage defaultMessage={'Status updates'}/>;
 const openRHSText = <FormattedMessage defaultMessage={'View all updates'}/>;
 interface ViewerProps {
+    id: string;
     playbookRun: PlaybookRun;
     lastStatusUpdate?: StatusPostComplete;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
+export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
+    const addToast = useToasts().add;
+    const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -92,12 +98,24 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
         return <StatusUpdateCard post={lastStatusUpdate}/>;
     };
 
+    const requestStatusUpdate = async () => {
+        const response = await requestUpdate(playbookRun.id);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
+        } else {
+            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
+        }
+    };
+
     return (
-        <Container data-testid={'run-statusupdate-section'}>
+        <Container
+            id={id}
+            data-testid={'run-statusupdate-section'}
+        >
             <Header>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Recent status update'})}
-                    id='recent-update'
+                    id={id}
                 />
                 <RightWrapper>
                     <IconWrapper>
@@ -121,7 +139,7 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
                         <ActionButton
                             data-testid={'request-update-button'}
-                            onClick={() => null}
+                            onClick={() => setShowRequestUpdateConfirm(true)}
                         >
                             {formatMessage({defaultMessage: 'Request update...'})}
                         </ActionButton>
@@ -134,16 +152,28 @@ export const ViewerStatusUpdate = ({playbookRun, openRHS, lastStatusUpdate}: Vie
             {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                 {openRHSText}
             </ViewAllUpdates> : null}
+            <ConfirmModal
+                show={showRequestUpdateConfirm}
+                title={formatMessage({defaultMessage: 'Confirm request update'})}
+                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
+                onConfirm={() => {
+                    requestStatusUpdate();
+                    setShowRequestUpdateConfirm(false);
+                }}
+                onCancel={() => setShowRequestUpdateConfirm(false)}
+            />
         </Container>
     );
 };
 
 interface ParticipantProps {
+    id: string;
     playbookRun: PlaybookRun;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps) => {
+export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
@@ -166,7 +196,10 @@ export const ParticipantStatusUpdate = ({playbookRun, openRHS}: ParticipantProps
     };
 
     return (
-        <Container data-testid={'run-statusupdate-section'}>
+        <Container
+            id={id}
+            data-testid={'run-statusupdate-section'}
+        >
             <Content isShort={true}>
                 <IconWrapper>
                     <IconClock
