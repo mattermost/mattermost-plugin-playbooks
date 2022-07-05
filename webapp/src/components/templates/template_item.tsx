@@ -64,7 +64,7 @@ type ThumbnailProps = {$color?: string;}
 const Thumbnail = styled.div<ThumbnailProps>`
     display: grid;
     place-items: center;
-    padding: 15%;
+    padding: 15% 0;
     background: ${({$color}) => $color};
     height: 50%;
     border-radius: 8px 8px 0 0;
