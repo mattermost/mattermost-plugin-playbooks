@@ -11,7 +11,7 @@ import {
     savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
-import {useToasts} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -90,7 +90,7 @@ export function usePlaybooksCrud(
         fetchPlaybooks();
     }, [params]);
 
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
 
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {

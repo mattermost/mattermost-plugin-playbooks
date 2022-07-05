@@ -20,7 +20,7 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {ToastType, useToasts} from '../../toast_banner';
+import {ToastType, useToaster} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -74,7 +74,7 @@ interface ViewerProps {
 
 export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);

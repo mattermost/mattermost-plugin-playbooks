@@ -14,7 +14,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {useToasts, ToastType} from 'src/components/backstage/toast_banner';
+import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
@@ -35,7 +35,7 @@ interface Props {
 const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
 
     const onOwnerChange = async (userType?: string, user?: UserProfile) => {
@@ -118,7 +118,7 @@ export default RHSInfoOverview;
 
 const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const {formatMessage} = useIntl();
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const currentUser = useSelector(getCurrentUser);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
