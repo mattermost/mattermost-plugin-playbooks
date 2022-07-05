@@ -675,6 +675,9 @@ type PlaybookRunService interface {
 
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
+
+	// RequestGetInvolved posts a join request message in the run's channel
+	RequestGetInvolved(playbookRunID, requesterID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

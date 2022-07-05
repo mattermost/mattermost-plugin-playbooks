@@ -727,6 +727,14 @@ export const requestUpdate = async (playbookRunId: string) => {
     }
 };
 
+export const requestGetInvolved = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
