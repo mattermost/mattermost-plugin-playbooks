@@ -175,30 +175,30 @@ type PlaybookRun struct {
 	MetricsData []RunMetricData `json:"metrics_data"`
 }
 
-func (i *PlaybookRun) Clone() *PlaybookRun {
-	newPlaybookRun := *i
+func (r *PlaybookRun) Clone() *PlaybookRun {
+	newPlaybookRun := *r
 	var newChecklists []Checklist
-	for _, c := range i.Checklists {
+	for _, c := range r.Checklists {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybookRun.Checklists = newChecklists
 
-	newPlaybookRun.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
-	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
-	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
-	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
-	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
-	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
-	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
-	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
+	newPlaybookRun.StatusPosts = append([]StatusPost(nil), r.StatusPosts...)
+	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), r.TimelineEvents...)
+	newPlaybookRun.InvitedUserIDs = append([]string(nil), r.InvitedUserIDs...)
+	newPlaybookRun.InvitedGroupIDs = append([]string(nil), r.InvitedGroupIDs...)
+	newPlaybookRun.ParticipantIDs = append([]string(nil), r.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
+	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 
 	return &newPlaybookRun
 }
 
-func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
+func (r *PlaybookRun) MarshalJSON() ([]byte, error) {
 	type Alias PlaybookRun
 
-	old := (*Alias)(i.Clone())
+	old := (*Alias)(r.Clone())
 	// replace nils with empty slices for the frontend
 	if old.Checklists == nil {
 		old.Checklists = []Checklist{}
@@ -237,6 +237,62 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(old)
+}
+
+// SetChecklistFromPlaybook overwrites this run's checklists with the ones in the provided playbook.
+func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
+	r.Checklists = playbook.Checklists
+
+	// Playbooks can only have due dates relative to when a run starts,
+	// so we should convert them to absolute timestamp.
+	now := model.GetMillis()
+	for i := range r.Checklists {
+		for j := range r.Checklists[i].Items {
+			if r.Checklists[i].Items[j].DueDate > 0 {
+				r.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
+}
+
+// SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
+// effectively snapshoting the playbook's configuration in this moment of time.
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
+	if playbook.RunSummaryTemplateEnabled {
+		r.Summary = playbook.RunSummaryTemplate
+	}
+	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
+	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
+	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
+	r.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
+
+	r.InvitedUserIDs = []string{}
+	r.InvitedGroupIDs = []string{}
+	if playbook.InviteUsersEnabled {
+		r.InvitedUserIDs = playbook.InvitedUserIDs
+		r.InvitedGroupIDs = playbook.InvitedGroupIDs
+	}
+
+	if playbook.DefaultOwnerEnabled {
+		r.DefaultOwnerID = playbook.DefaultOwnerID
+	}
+
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
+
+	r.WebhookOnCreationURLs = []string{}
+	if playbook.WebhookOnCreationEnabled {
+		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
+	}
+
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
+
+	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
+	if playbook.RetrospectiveEnabled {
+		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
+		r.Retrospective = playbook.RetrospectiveTemplate
+	}
 }
 
 type StatusPost struct {

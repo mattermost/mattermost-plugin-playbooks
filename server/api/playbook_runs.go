@@ -414,6 +414,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.
 }
 
 func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
+	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
 	}
@@ -426,6 +427,15 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
+
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
+	}
+
+	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
 	var channel *model.Channel
@@ -443,14 +453,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
-	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
-	}
-
+	// Copy data from playbook if needed
 	public := true
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
@@ -458,57 +461,24 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
+		playbook = &pb
 
-		if pb.DeleteAt != 0 {
+		if playbook.DeleteAt != 0 {
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err := h.permissions.RunCreate(userID, pb); err != nil {
+		if err := h.permissions.RunCreate(userID, *playbook); err != nil {
 			return nil, err
 		}
 
-		h.setPlaybookRunChecklist(&playbookRun, &pb)
 		public = pb.CreatePublicPlaybookRun
 
-		if pb.RunSummaryTemplateEnabled {
-			playbookRun.Summary = pb.RunSummaryTemplate
-		}
-		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
-		playbookRun.StatusUpdateEnabled = pb.StatusUpdateEnabled
-		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
-		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
-
-		playbookRun.InvitedUserIDs = []string{}
-		playbookRun.InvitedGroupIDs = []string{}
-		if pb.InviteUsersEnabled {
-			playbookRun.InvitedUserIDs = pb.InvitedUserIDs
-			playbookRun.InvitedGroupIDs = pb.InvitedGroupIDs
-		}
-
-		if pb.DefaultOwnerEnabled {
-			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
-		}
-
-		playbookRun.StatusUpdateBroadcastChannelsEnabled = pb.BroadcastEnabled
-		playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
-
-		playbookRun.WebhookOnCreationURLs = []string{}
-		if pb.WebhookOnCreationEnabled {
-			playbookRun.WebhookOnCreationURLs = pb.WebhookOnCreationURLs
-		}
-
-		playbookRun.StatusUpdateBroadcastWebhooksEnabled = pb.WebhookOnStatusUpdateEnabled
-		playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
-
-		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
-		if pb.RetrospectiveEnabled {
-			playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-			playbookRun.Retrospective = pb.RetrospectiveTemplate
-		}
-
-		playbook = &pb
+		playbookRun.SetChecklistFromPlaybook(*playbook)
+		playbookRun.SetConfigurationFromPlaybook(*playbook)
 	}
 
+	// Check the permissions on the channel: the user must be able to create it or,
+	// if one's already provided, they need to be able to manage it.
 	if channel == nil {
 		permission := model.PermissionCreatePrivateChannel
 		permissionMessage := "You are not able to create a private channel"
@@ -535,6 +505,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
+	// Check the permissions on the provided post: the user must have access to the post's channel
 	if playbookRun.PostID != "" {
 		post, err := h.pluginAPI.Post.GetPost(playbookRun.PostID)
 		if err != nil {
@@ -546,20 +517,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
-}
-
-func (h *PlaybookRunHandler) setPlaybookRunChecklist(playbookRun *app.PlaybookRun, playbook *app.Playbook) {
-	playbookRun.Checklists = playbook.Checklists
-
-	// playbooks can only have due dates relative to when a run starts, so we should convert them to absolute timestamp
-	now := model.GetMillis()
-	for i := range playbookRun.Checklists {
-		for j := range playbookRun.Checklists[i].Items {
-			if playbookRun.Checklists[i].Items[j].DueDate > 0 {
-				playbookRun.Checklists[i].Items[j].DueDate += now
-			}
-		}
-	}
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
