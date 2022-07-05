@@ -84,5 +84,9 @@
     {
         "id": "app.command.execute.error",
         "translation": "Kann Befehl nicht ausführen."
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} hat eine Statusaktualisierung angefordert.\n"
     }
 ]
