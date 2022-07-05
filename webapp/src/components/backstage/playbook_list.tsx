@@ -62,8 +62,8 @@ const PlaybookListContainer = styled.div`
 `;
 
 const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
-    overflow: hidden;
-    overflow: clip;
+    overflow-x: hidden;
+    overflow-x: clip;
     ${({$newLHSEnabled}) => !$newLHSEnabled && css`
         margin: 0 auto;
         max-width: 1160px;

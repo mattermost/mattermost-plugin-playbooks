@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
+import {Switch, Route, NavLink, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
@@ -26,12 +26,20 @@ import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
 
-const BackstageContainer = styled.div`
+const BackstageContainer = styled.div<{isRunDetailsPage: boolean}>`
     background: var(--center-channel-bg);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     height: 100%;
+
+    ${({isRunDetailsPage}) => isRunDetailsPage && css`
+        // Accounts for the run header, so when scrolling with
+        // anchor links, the sections are not hidden under it.
+        scroll-padding-top: 64px;
+
+        scroll-behavior: smooth;
+    `}
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
@@ -75,6 +83,11 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    const {pathname} = useLocation();
+
+    // TODO: Change  to /playbooks/runs when we get the new run details page to production
+    const isRunDetailsPage = pathname.startsWith('/playbooks/run_details');
+
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
@@ -98,6 +111,7 @@ const Backstage = () => {
     return (
         <BackstageContainer
             id={BackstageID}
+            isRunDetailsPage={isRunDetailsPage}
         >
             <ToastProvider>
                 {!newLHSEnabled &&

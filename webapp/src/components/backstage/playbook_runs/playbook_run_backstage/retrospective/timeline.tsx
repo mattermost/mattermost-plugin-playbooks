@@ -79,11 +79,13 @@ const Timeline = (props: Props) => {
                     <TimelineEventItem
                         key={event.id}
                         event={event}
+                        parent={'retro'}
                         prevEventAt={prevEventAt}
                         runCreateAt={DateTime.fromMillis(props.playbookRun.create_at)}
                         channelNames={channelNamesMap}
                         team={team}
                         deleteEvent={() => props.deleteTimelineEvent(event.id)}
+                        editable={true}
                     />
                 );
             })}

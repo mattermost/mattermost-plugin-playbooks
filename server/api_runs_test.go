@@ -1134,3 +1134,77 @@ func TestRunGetStatusUpdates(t *testing.T) {
 		assert.Len(t, statusUpdates, 0)
 	})
 }
+
+func TestRequestUpdate(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("private - no viewer access ", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.Error(t, err)
+
+		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUserNotInTeam.Id)
+		assert.Error(t, err)
+	})
+
+	t.Run("private - viewer access ", func(t *testing.T) {
+		privatePlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privatePlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(e.T, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		assert.NoError(t, err)
+
+		// No access, RegularUser2 is not a Viewer
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.Error(t, err)
+
+		// Add RegularUser2 as a Viewer
+		privatePlaybook.Members = append(privatePlaybook.Members, client.PlaybookMember{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}})
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *privatePlaybook)
+		assert.NoError(t, err)
+
+		// Gained Viewer access
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.NoError(t, err)
+	})
+
+	t.Run("public - viewer access ", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUserNotInTeam.Id)
+		assert.Error(t, err)
+	})
+
+}
