@@ -11,7 +11,7 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import {
@@ -22,7 +22,6 @@ import {
 import {
     getCurrentChannelId,
     getChannel as getChannelFromState,
-    getChannelsNameMapInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
@@ -41,11 +40,8 @@ import {useUpdateEffect} from 'react-use';
 
 import {debounce, isEqual} from 'lodash';
 
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
-
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
-import {ChannelNamesMap} from 'src/types/backstage';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
@@ -777,23 +773,4 @@ export const useProxyState = <T>(
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
     return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
-};
-
-interface MarkdownOptions {
-    singleline: boolean;
-    mentionHighlight: boolean;
-    atMentions: boolean;
-}
-
-export const useMarkdownFormatter = (options: MarkdownOptions) => {
-    const team = useSelector(getCurrentTeam);
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-
-    const formatTextOptions = {
-        ...options,
-        team,
-        channelNamesMap,
-    };
-
-    return (text: string) => messageHtmlToComponent(formatText(text, formatTextOptions), true, {});
 };

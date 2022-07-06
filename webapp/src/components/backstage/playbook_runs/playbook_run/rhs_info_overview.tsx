@@ -24,7 +24,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {usePlaybook, useMarkdownFormatter} from 'src/hooks';
+import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
 interface Props {
@@ -123,6 +123,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     />
                 </FollowersWrapper>
             </Item>
+            {selectedUser &&
             <AddToChannelModal
                 user={selectedUser}
                 channelId={run.channel_id}
@@ -133,6 +134,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     setSelectedUser(null);
                 }}
             />
+            }
         </Section>
     );
 };
@@ -140,7 +142,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
 export default RHSInfoOverview;
 
 interface AddToChannelModalProps {
-    user: UserProfile | null;
+    user: UserProfile;
     channelId: string;
     setOwner: (id: string) => void;
     show: boolean;
@@ -149,15 +151,8 @@ interface AddToChannelModalProps {
 
 const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
     const dispatch = useDispatch();
-
     const {formatMessage} = useIntl();
-
-    const markdownOptions = {
-        singleline: true,
-        mentionHighlight: true,
-        atMentions: true,
-    };
-    const mdText = useMarkdownFormatter(markdownOptions);
+    const displayName = useFormattedUsername(user);
 
     if (!user) {
         return null;
@@ -166,14 +161,14 @@ const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChann
     return (
         <ConfirmModal
             show={show}
-            title={mdText(formatMessage(
-                {defaultMessage: 'Add @{displayName} to Channel'},
-                {displayName: user.username},
-            ))}
-            message={mdText(formatMessage(
-                {defaultMessage: '@{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.'},
-                {displayName: user.username},
-            ))}
+            title={formatMessage(
+                {defaultMessage: 'Add {displayName} to Channel'},
+                {displayName},
+            )}
+            message={formatMessage(
+                {defaultMessage: '{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.'},
+                {displayName},
+            )}
             confirmButtonText={formatMessage({defaultMessage: 'Add'})}
             onConfirm={() => {
                 dispatch(addChannelMember(channelId, user.id));
