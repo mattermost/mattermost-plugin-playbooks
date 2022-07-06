@@ -187,7 +187,10 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                         {formatMessage({defaultMessage: 'Post update'})}
                     </ActionButton>
                     <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
+                        <DotMenu
+                            icon={<ThreeDotsIcon/>}
+                            placement={'bottom-end'}
+                        >
                             <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                                 <FormattedMessage defaultMessage='View all updates'/>
                             </DropdownMenuItemStyled>

@@ -9,7 +9,8 @@ import styled from 'styled-components';
 import {DateTime, Duration} from 'luxon';
 import debounce from 'debounce';
 
-import {useClientRect} from 'src/hooks';
+import {Placement} from '@floating-ui/react-dom-interactions';
+
 import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
@@ -36,8 +37,9 @@ type Props = {
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
     customControlProps?: any;
-    dropdownMoveRightPx?: number;
+    placement?: Placement;
     className?: string;
+
     makeOptions?: (
         query: string,
         datetimeResults: DateTime[],
@@ -89,26 +91,6 @@ export const DateTimeSelector = ({
         setOptionsDateTime(suggestedOptions);
     }, [suggestedOptions]);
 
-    // Decide where to open the datetime selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect || !isOpen) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, options.length);
-        const spacePerProfile = 48;
-        const dropdownYShift = 27;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, options.length]);
-
     let target;
     if (props.onlyPlaceholder) {
         target = (
@@ -122,7 +104,6 @@ export const DateTimeSelector = ({
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            ref={ref}
             className={props.className}
         >
             {target}
@@ -145,10 +126,9 @@ export const DateTimeSelector = ({
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={targetWrapped}
-            moveRight={props.dropdownMoveRightPx}
-            moveUp={moveUp}
+            placement={props.placement}
         >
             <ReactSelect
                 isMulti={false}

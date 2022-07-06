@@ -59,13 +59,14 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
-                    dropdownMoveRightPx={-76}
+                    placement={'bottom-end'}
                 />
             }
             <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={props.onDueDateChange}
+                placement={'bottom-end'}
             />
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'

@@ -52,7 +52,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
         <>
             <DotMenu
                 dotMenuButton={TitleButton}
-                placement='bottom-end'
+                placement='bottom-start'
                 icon={
                     <>
                         <Title>{playbookRun.name}</Title>

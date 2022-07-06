@@ -154,6 +154,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
+                placement={'bottom-start'}
             />
         );
     };
@@ -188,6 +189,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 date={dueDate}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
+                placement={'bottom-start'}
             />
         );
     };

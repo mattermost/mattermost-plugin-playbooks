@@ -1,14 +1,25 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {cloneElement, useState} from 'react';
 import styled from 'styled-components';
+import {
+    offset,
+    flip,
+    shift,
+    Placement,
+    autoUpdate,
+    useFloating,
+    FloatingFocusManager,
+    useClick,
+    useDismiss,
+    useInteractions,
+    useRole,
+} from '@floating-ui/react-dom-interactions';
 
-const ProfileDropdown = styled.div`
-    position: relative;
-`;
+import Portal from './portal';
 
-const Blanket = styled.div`
+const Backdrop = styled.div`
     bottom: 0;
     left: 0;
     top: 0;
@@ -17,18 +28,9 @@ const Blanket = styled.div`
     z-index: 1;
 `;
 
-interface ChildContainerProps {
-    moveUp?: number;
-    moveRight?: number;
-}
-
-const ChildContainer = styled.div<ChildContainerProps>`
-    margin: 4px 0 0;
+const FloatingContainer = styled.div`
     min-width: 20rem;
 	z-index: 50;
-	position: absolute;
-    top: ${(props) => 27 - (props.moveUp || 0)}px;
-    right: ${({moveRight}) => ((moveRight !== undefined && moveRight !== null) ? `${moveRight}px` : 'auto')};
 
 	.PlaybookRunProfileButton {
 		.Profile {
@@ -53,31 +55,70 @@ const ChildContainer = styled.div<ChildContainerProps>`
     }
 `;
 
-interface DropdownProps {
-    children: JSX.Element;
-    isOpen: boolean;
-    moveRight?: number;
-    moveUp?: number;
+type DropdownProps = {
+    children: React.ReactNode;
+    placement?: Placement;
+    offset?: Parameters<typeof offset>[0];
+    flip?: Parameters<typeof flip>[0];
+    shift?: Parameters<typeof shift>[0];
     target: JSX.Element;
-    onClose: () => void;
-}
+} & ({
+    isOpen: boolean;
+    onOpenChange: undefined | ((open: boolean) => void);
+} | {
+    isOpen?: never;
+    onOpenChange?: (open: boolean) => void;
+})
 
-const Dropdown = ({children, isOpen, moveRight, moveUp, target, onClose}: DropdownProps) => {
-    if (!isOpen) {
-        return target;
-    }
+const Dropdown = (props: DropdownProps) => {
+    const [isOpen, setIsOpen] = useState(props.isOpen);
+
+    const open = props.isOpen ?? isOpen;
+
+    const setOpen = (updatedOpen: boolean) => {
+        props.onOpenChange?.(updatedOpen);
+        setIsOpen(updatedOpen);
+    };
+
+    const {strategy, x, y, reference, floating, context} = useFloating<HTMLElement>({
+        open,
+        onOpenChange: setOpen,
+        placement: props.placement ?? 'bottom-start',
+        middleware: [offset(props.offset ?? 2), flip(props.flip), shift(props.shift ?? {padding: 2})],
+        whileElementsMounted: autoUpdate,
+    });
+
+    const {getReferenceProps, getFloatingProps} = useInteractions([
+        useClick(context, {enabled: props.isOpen === undefined}),
+        useRole(context),
+        useDismiss(context),
+    ]);
 
     return (
-        <ProfileDropdown>
-            {target}
-            <ChildContainer
-                moveUp={moveUp}
-                moveRight={moveRight}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <>
+            {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
+            <Portal>
+                {open && (
+                    <>
+                        <FloatingFocusManager context={context}>
+                            <FloatingContainer
+                                {...getFloatingProps({
+                                    ref: floating,
+                                    style: {
+                                        position: strategy,
+                                        top: y ?? 0,
+                                        left: x ?? 0,
+                                    },
+                                })}
+                            >
+                                {props.children}
+                            </FloatingContainer>
+                        </FloatingFocusManager>
+                        <Backdrop onClick={() => setOpen(false)}/>
+                    </>
+                )}
+            </Portal>
+        </>
     );
 };
 
