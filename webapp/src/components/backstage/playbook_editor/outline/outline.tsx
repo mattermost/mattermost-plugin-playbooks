@@ -9,7 +9,7 @@ import {useIntl} from 'react-intl';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
-import {usePlaybookNavigationTelemetry} from 'src/hooks/telemetry';
+import {usePlaybookViewTelemetry, PlaybookTarget} from 'src/hooks/telemetry';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
@@ -33,7 +33,7 @@ interface Props {
 type StyledAttrs = {className?: string};
 
 const Outline = ({playbook, refetch}: Props) => {
-    usePlaybookNavigationTelemetry('outline', playbook.id);
+    usePlaybookViewTelemetry(PlaybookTarget.Outline, playbook.id);
 
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
