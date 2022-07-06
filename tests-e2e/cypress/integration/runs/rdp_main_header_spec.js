@@ -163,7 +163,7 @@ describe('runs > run details page > header', () => {
                         saveRunActionsModal();
                     });
 
-                    it.only('honours the settings from the playbook', () => {
+                    it('honours the settings from the playbook', () => {
                         cy.apiCreateChannel(
                             testTeam.id,
                             'action-channel',
