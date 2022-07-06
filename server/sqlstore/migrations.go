@@ -2098,31 +2098,6 @@ var migrations = []Migration{
 				}
 			}
 
-			idString := "REPLACE(uuid_in(md5(random()::text || clock_timestamp()::text)::cstring)::varchar, '-', '')"
-			timeNowString := "(extract(epoch from now())*1000)::bigint"
-			if e.DriverName() == model.DatabaseDriverMysql {
-				idString = "LEFT(MD5(RAND()), 26)"
-				timeNowString = "UNIX_TIMESTAMP() * 1000"
-			}
-
-			// Create `Favorite` category for every user in every team
-			insertQuery := sqlStore.builder.
-				Insert("IR_Category").
-				Columns("ID", "Name", "TeamID", "UserID", "Collapsed", "CreateAt", "UpdateAt").
-				Select(sqlStore.builder.
-					Select(
-						idString,
-						"'Favorite'",
-						"tm.TeamId",
-						"tm.UserId",
-						"false",
-						timeNowString,
-						timeNowString).
-					From("TeamMembers as tm").
-					Where(sq.Eq{"tm.DeleteAt": 0}))
-			if _, err := sqlStore.execBuilder(e, insertQuery); err != nil {
-				return errors.Wrapf(err, "failed to populate categories table with favorite category for every user in every team")
-			}
 			return nil
 		},
 	},
