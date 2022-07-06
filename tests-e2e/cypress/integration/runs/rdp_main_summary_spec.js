@@ -48,14 +48,6 @@ describe('runs > run details page > summary', () => {
         });
     });
 
-    it('redirects to not found error if the playbook run is unknown', () => {
-        // # Visit the URL of a non-existing playbook run
-        cy.visit('/playbooks/run_details/an_unknown_id');
-
-        // * Verify that the user has been redirected to the playbook runs not found error page
-        cy.url().should('include', '/playbooks/error?type=playbook_runs');
-    });
-
     it('is visible', () => {
         // * Verify the summary section is present
         cy.findByTestId('run-summary-section').should('be.visible');
