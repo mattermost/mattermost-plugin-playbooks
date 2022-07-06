@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -49,6 +49,8 @@ import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tu
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
+import {useProxyState} from 'src/hooks';
+
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
 
@@ -80,27 +82,12 @@ const ChecklistList = (props: Props) => {
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
 
-    const playbook = props.playbook;
-    const updatePlaybook = useUpdatePlaybook(playbook?.id);
-    const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
-    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
-    const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
-    const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
-
-    if (!playbook && !props.playbookRun) {
-        return null;
-    }
-
-    const updateChecklistsForPlaybook = (newChecklists: Checklist[]) => {
-        if (!playbook) {
-            return;
-        }
-
-        const updated = newChecklists.map((cl: Checklist) => {
+    const updatePlaybook = useUpdatePlaybook(props.playbook?.id);
+    const [playbook, setPlaybook] = useProxyState(props.playbook, useCallback((updatedPlaybook) => {
+        const updated = updatedPlaybook?.checklists.map((cl) => {
             return {
                 ...cl,
-                items: cl.items.map((ci: ChecklistItem) => {
+                items: cl.items.map((ci) => {
                     return {
                         title: ci.title,
                         description: ci.description,
@@ -117,30 +104,61 @@ const ChecklistList = (props: Props) => {
         });
 
         updatePlaybook({checklists: updated});
+    }, [updatePlaybook]), 0);
+    const checklists = props.playbookRun?.checklists || playbook?.checklists || [];
+    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
+    const active = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.InProgress);
+    const finished = (props.playbookRun !== undefined) && (props.playbookRun.current_status === PlaybookRunStatus.Finished);
+    const archived = playbook != null && playbook.delete_at !== 0 && !props.playbookRun;
+
+    if (!playbook && !props.playbookRun) {
+        return null;
+    }
+
+    const setChecklistsForPlaybook = (newChecklists: Checklist[]) => {
+        if (!playbook) {
+            return;
+        }
+
+        const updated = newChecklists.map((cl) => {
+            return {
+                ...cl,
+                items: cl.items.map((ci) => {
+                    return {
+                        ...ci,
+                        state_modified: ci.state_modified || 0,
+                        assignee_id: ci.assignee_id || '',
+                        assignee_modified: ci.assignee_modified || 0,
+                    };
+                }),
+            };
+        });
+
+        setPlaybook({...playbook, checklists: updated});
     };
 
     const onRenameChecklist = (index: number, title: string) => {
         const newChecklists = [...checklists];
         newChecklists[index].title = title;
-        updateChecklistsForPlaybook(newChecklists);
+        setChecklistsForPlaybook(newChecklists);
     };
 
     const onDuplicateChecklist = (index: number) => {
         const newChecklist = {...checklists[index]};
         const newChecklists = [...checklists, newChecklist];
-        updateChecklistsForPlaybook(newChecklists);
+        setChecklistsForPlaybook(newChecklists);
     };
 
     const onDeleteChecklist = (index: number) => {
         const newChecklists = [...checklists];
         newChecklists.splice(index, 1);
-        updateChecklistsForPlaybook(newChecklists);
+        setChecklistsForPlaybook(newChecklists);
     };
 
     const onUpdateChecklist = (index: number, newChecklist: Checklist) => {
         const newChecklists = [...checklists];
         newChecklists[index] = {...newChecklist};
-        updateChecklistsForPlaybook(newChecklists);
+        setChecklistsForPlaybook(newChecklists);
     };
 
     const onDragStart = () => {
@@ -244,7 +262,7 @@ const ChecklistList = (props: Props) => {
                 checklists: newChecklists,
             }));
         } else {
-            updateChecklistsForPlaybook(newChecklists);
+            setChecklistsForPlaybook(newChecklists);
         }
     };
 
@@ -280,7 +298,7 @@ const ChecklistList = (props: Props) => {
                         if (props.playbookRun) {
                             clientAddChecklist(props.playbookRun.id, newChecklist);
                         } else {
-                            updateChecklistsForPlaybook([...checklists, newChecklist]);
+                            setChecklistsForPlaybook([...checklists, newChecklist]);
                         }
                         setTimeout(() => setNewChecklistName(''), 300);
                         setAddingChecklist(false);
