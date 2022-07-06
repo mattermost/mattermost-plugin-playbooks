@@ -6,14 +6,14 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
-import {joinChannel} from 'mattermost-redux/actions/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {joinChannel} from 'mattermost-redux/actions/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
-import {getSiteUrl} from 'src/client';
-import {Playbook} from 'src/types/playbook';
+import {getSiteUrl, requestGetInvolved} from 'src/client';
+import {useChannel} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -21,12 +21,12 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
 
 import {BadgeType} from '../../status_badge';
+import {ToastType, useToasts} from '../../toast_banner';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
 
 interface Props {
-    playbook: Playbook;
     playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null;
     role: Role;
@@ -34,22 +34,27 @@ interface Props {
     onViewTimeline: () => void;
 }
 
-export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
+    const channel = useChannel(playbookRun.channel_id);
+    const addToast = useToasts().add;
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-
-        if (playbook.public) {
-            // await dispatch(getChannel(playbookRun.channel_id));
-
+        if (channel === null) {
+            const response = await requestGetInvolved(playbookRun.id);
+            if (response?.error) {
+                addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
+            } else {
+                addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
+            }
+        } else {
             await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
-
-            // navigateToChannel();
+            navigateToChannel();
         }
     };
 
