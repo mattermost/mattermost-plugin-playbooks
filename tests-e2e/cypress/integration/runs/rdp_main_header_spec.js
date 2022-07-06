@@ -60,6 +60,7 @@ describe('runs > run details page > header', () => {
     };
 
     const getDropdownItemByText = (text) => {
+        cy.findByTestId('run-header-section').find('h1').click();
         return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
     };
 
@@ -103,9 +104,6 @@ describe('runs > run details page > header', () => {
 
         it('can copy link', () => {
             stubClipboard().as('clipboard');
-
-            // * Open dropdown
-            cy.findByTestId('run-header-section').find('h1').click();
 
             getDropdownItemByText('Copy link').click().then(() => {
                 // * Verify clipboard content
@@ -165,7 +163,7 @@ describe('runs > run details page > header', () => {
                         saveRunActionsModal();
                     });
 
-                    it('honours the settings from the playbook', () => {
+                    it.only('honours the settings from the playbook', () => {
                         cy.apiCreateChannel(
                             testTeam.id,
                             'action-channel',
@@ -328,14 +326,11 @@ describe('runs > run details page > header', () => {
 
             describe('finish run', () => {
                 it('can be confirmed', () => {
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
+                    // * Check that status badge is in-progress
+                    cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
                     // # Click on finish run
                     getDropdownItemByText('Finish run').click();
-
-                    // * Check that status badge is in-progress
-                    cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
                     // # Check that finish run modal is open
                     cy.get('#confirmModal').should('be.visible');
@@ -343,9 +338,6 @@ describe('runs > run details page > header', () => {
 
                     // # Click on confirm
                     cy.get('#confirmModal').get('#confirmModalButton').click();
-
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
 
                     // * Assert option is not anymore in context dropdown
                     getDropdownItemByText('Finish run').should('not.exist');
@@ -355,14 +347,11 @@ describe('runs > run details page > header', () => {
                 });
 
                 it('can be canceled', () => {
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
+                    // * Check that status badge is in-progress
+                    cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
                     // # Click on finish run
                     getDropdownItemByText('Finish run').click();
-
-                    // * Check that status badge is in-progress
-                    cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
                     // * Check that finish run modal is open
                     cy.get('#confirmModal').should('be.visible');
@@ -370,9 +359,6 @@ describe('runs > run details page > header', () => {
 
                     // # Click on cancel
                     cy.get('#confirmModal').get('#cancelModalButton').click();
-
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
 
                     // * Assert option is not anymore in context dropdown
                     getDropdownItemByText('Finish run').should('be.visible');
@@ -384,9 +370,6 @@ describe('runs > run details page > header', () => {
 
             describe('run actions', () => {
                 it('modal can be opened', () => {
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
-
                     // # Click on finish run
                     getDropdownItemByText('Run actions').click();
 
@@ -403,7 +386,7 @@ describe('runs > run details page > header', () => {
         });
     });
 
-    describe.only('as viewer', () => {
+    describe('as viewer', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -437,10 +420,7 @@ describe('runs > run details page > header', () => {
             describe('run actions', () => {
                 describe('modal behaviour', () => {
                     it('modal can be opened read-only', () => {
-                        // # Open dropdown
-                        cy.findByTestId('run-header-section').find('h1').click();
-
-                        // # Click on finish run
+                        // # Click on run actions
                         getDropdownItemByText('Run actions').click();
 
                         // * Assert modal pop up
@@ -462,9 +442,6 @@ describe('runs > run details page > header', () => {
 
             describe('finish run', () => {
                 it('does not exist', () => {
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
-
                     // * There's no finish run item
                     getDropdownItemByText('Finish run').should('not.exist');
                 });
@@ -472,9 +449,6 @@ describe('runs > run details page > header', () => {
 
             describe('run actions', () => {
                 it('modal can be opened read-only', () => {
-                    // # Open dropdown
-                    cy.findByTestId('run-header-section').find('h1').click();
-
                     // # Click on finish run
                     getDropdownItemByText('Run actions').click();
 
