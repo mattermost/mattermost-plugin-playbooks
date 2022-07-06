@@ -48,9 +48,9 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack, s
                         />
                     </BackIcon>
                 ) : null}
-                <HeaderTitle>{title}</HeaderTitle>
+                <HeaderTitle data-testid='rhs-title'>{title}</HeaderTitle>
                 <HeaderVerticalDivider/>
-                {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
+                {subtitle && <HeaderSubtitle data-testid='rhs-subtitle'>{subtitle}</HeaderSubtitle>}
                 <ExpandRight/>
                 <HeaderIcon>
                     <i
@@ -125,7 +125,7 @@ const HeaderTitle = styled.div`
     white-space: nowrap;
     :first-child {
         margin-left: 20px;
-    }    
+    }
 `;
 
 const HeaderVerticalDivider = styled.div`
