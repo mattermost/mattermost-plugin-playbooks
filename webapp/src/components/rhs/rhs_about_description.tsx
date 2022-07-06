@@ -6,9 +6,9 @@ import styled, {css} from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 import {useSelector} from 'react-redux';
 
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
 

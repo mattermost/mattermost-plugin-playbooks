@@ -6,8 +6,8 @@ import {useSelector} from 'react-redux';
 import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
 import General from 'mattermost-redux/constants/general';
 
-import {Channel} from 'mattermost-redux/types/channels';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {Channel} from '@mattermost/types/channels';
+import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
 

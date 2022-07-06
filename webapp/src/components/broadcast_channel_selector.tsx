@@ -28,7 +28,7 @@ const BroadcastChannelSelector = (props: Props) => {
             selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList, MultiValueRemove}}
             isDisabled={!props.enabled}
             captureMenuScroll={false}
-            shouldRenderValue={props.enabled}
+            shouldRenderValue={true}
             placeholder={'Select channels'}
             teamId={props.teamId}
         />

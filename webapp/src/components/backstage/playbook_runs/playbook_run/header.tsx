@@ -19,21 +19,21 @@ import {BadgeType} from '../../status_badge';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
-import {RHSContent} from './rhs';
 
 interface Props {
     playbookRun: PlaybookRun;
-    playbookRunMetadata: PlaybookRunMetadata | null
+    playbookRunMetadata: PlaybookRunMetadata | null;
     role: Role;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void
+    onViewInfo: () => void;
+    onViewTimeline: () => void;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
     return (
-        <Container>
+        <Container data-testid={'run-header-section'}>
             {/* <Icon className={'icon-star'}/> */}
             <ContextMenu
                 playbookRun={playbookRun}
@@ -46,13 +46,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
 
                 //TODO: replace icon to 'icon-lightning-bolt-outline'
                 className={'icon-hammer'}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                to={getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id}
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
@@ -75,15 +76,18 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, openRHS, role}: Pro
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 className={'icon-update'}
-                onClick={() => openRHS(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name)}
+                onClick={onViewTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 className={'icon-information-outline'}
-                onClick={() => openRHS(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name)}
+                onClick={onViewInfo}
             />
-            <RunActionsModal playbookRun={playbookRun}/>
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={role === Role.Viewer}
+            />
         </Container>
     );
 };

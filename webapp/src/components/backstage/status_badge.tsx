@@ -75,7 +75,14 @@ const StatusBadge = (props: BadgeProps) => {
         break;
     }
 
-    return <Badge {...props}>{message}</Badge>;
+    return (
+        <Badge
+            data-testid={'badge'}
+            {...props}
+        >
+            {message}
+        </Badge>
+    );
 };
 
 export default StatusBadge;

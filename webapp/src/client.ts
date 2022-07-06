@@ -5,8 +5,8 @@ import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {Channel} from 'mattermost-redux/types/channels';
+import {UserProfile} from '@mattermost/types/users';
+import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -714,6 +714,14 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
 export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestUpdate = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
     } catch (error) {
         return {error};
     }

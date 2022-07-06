@@ -1,4 +1,4 @@
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import configureStore, {MockStoreEnhanced} from 'redux-mock-store';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 

@@ -4,15 +4,15 @@
 import {createSelector} from 'reselect';
 
 import General from 'mattermost-redux/constants/general';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getUsers, getMyCurrentChannelMembership} from 'mattermost-redux/selectors/entities/common';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
-import {IDMappedObjects} from 'mattermost-redux/types/utilities';
+import {IDMappedObjects} from '@mattermost/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {
@@ -68,6 +68,7 @@ export const getRun = (playbookRunId: string, teamId?: string, channelId?: strin
     };
 };
 
+// @deprecated: now we should check playbookRun.participants and ignore channel members
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
     const canPost = haveIChannelPermission(state, teamId, channelId, Permissions.READ_CHANNEL);
 
@@ -159,13 +160,8 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
 
-export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {
-    const channelId = getCurrentChannelId(state);
-    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
-};
-
-export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string): TimelineEventsFilter => {
-    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
+export const eventsFilterForPlaybookRun = (state: GlobalState, playbookRunId: string): TimelineEventsFilter => {
+    return pluginState(state).eventsFilterByPlaybookRun[playbookRunId] || TimelineEventsFilterDefault;
 };
 
 export const lastUpdatedByPlaybookRunId = createSelector(

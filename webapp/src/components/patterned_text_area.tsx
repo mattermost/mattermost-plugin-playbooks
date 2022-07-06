@@ -61,7 +61,7 @@ const PatternedTextArea = (props: Props) => {
                 disabled={!props.enabled}
                 required={true}
                 rows={props.rows}
-                value={props.enabled ? value : ''}
+                value={value}
                 onChange={(e) => {
                     setValue(e.target.value);
                     props.onChange?.(e.target.value);
