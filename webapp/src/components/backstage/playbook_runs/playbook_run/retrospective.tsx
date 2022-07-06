@@ -34,6 +34,7 @@ const Retrospective = ({
     role,
 }: Props) => {
     usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, playbookRun.id);
+
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
