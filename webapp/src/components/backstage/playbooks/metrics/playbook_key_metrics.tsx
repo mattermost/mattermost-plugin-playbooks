@@ -13,7 +13,7 @@ import {PlaybookRunStatus} from 'src/types/playbook_run';
 import MetricsRunList from 'src/components/backstage/playbooks/metrics/metrics_run_list';
 import NoMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/no_metrics_placeholder';
 import {Metric} from 'src/types/playbook';
-import {usePlaybookNavigationTelemetry} from 'src/hooks/telemetry';
+import {usePlaybookViewTelemetry, PlaybookTarget} from 'src/hooks/telemetry';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -37,7 +37,7 @@ const PlaybookKeyMetrics = ({
     stats,
     ...attrs
 }: Props & Attrs) => {
-    usePlaybookNavigationTelemetry('reports', playbookID);
+    usePlaybookViewTelemetry(PlaybookTarget.Reports, playbookID);
     const allowStatsView = useAllowPlaybookAndRunMetrics();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 

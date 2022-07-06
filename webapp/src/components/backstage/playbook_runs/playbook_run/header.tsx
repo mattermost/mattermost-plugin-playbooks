@@ -33,7 +33,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
     const {formatMessage} = useIntl();
 
     return (
-        <Container>
+        <Container data-testid={'run-header-section'}>
             {/* <Icon className={'icon-star'}/> */}
             <ContextMenu
                 playbookRun={playbookRun}
@@ -46,13 +46,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
 
                 //TODO: replace icon to 'icon-lightning-bolt-outline'
                 className={'icon-hammer'}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                to={getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id}
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
@@ -83,7 +84,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 className={'icon-information-outline'}
                 onClick={onViewInfo}
             />
-            <RunActionsModal playbookRun={playbookRun}/>
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={role === Role.Viewer}
+            />
         </Container>
     );
 };

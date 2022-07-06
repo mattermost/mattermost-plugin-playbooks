@@ -469,7 +469,10 @@ const PlaybookRunBackstage = () => {
                     </Switch>
                 </InnerContainer>
             </BottomContainer>
-            <RunActionsModal playbookRun={playbookRun}/>
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={false}
+            />
         </OuterContainer>
     );
 };
