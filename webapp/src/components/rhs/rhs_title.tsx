@@ -6,21 +6,18 @@ import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from '@mattermost/types/store';
 
-import {useIntl} from 'react-intl';
-
 import {PlaybookRun} from 'src/types/playbook_run';
-
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
-
 import {pluginUrl} from 'src/browser_routing';
-
 import {OVERLAY_DELAY} from 'src/constants';
 
 const RHSTitle = () => {
@@ -29,6 +26,7 @@ const RHSTitle = () => {
 
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
+    const runLink = useExperimentalFeaturesEnabled() ? `/run_details/${playbookRun?.id}` : `/runs/${playbookRun?.id}`;
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -54,7 +52,7 @@ const RHSTitle = () => {
                     <RHSTitleLink
                         data-testid='rhs-title'
                         role={'button'}
-                        to={pluginUrl(`/runs/${playbookRun?.id}`)}
+                        to={pluginUrl(runLink)}
                     >
                         {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>

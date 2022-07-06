@@ -12,7 +12,7 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
-import {promptUpdateStatus} from 'src/actions';
+import {openUpdateRunStatusModal} from 'src/actions';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
 import {useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
@@ -65,6 +65,8 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     return {time, text, type};
 };
 
+const RHSTitle = <FormattedMessage defaultMessage={'Status updates'}/>;
+const openRHSText = <FormattedMessage defaultMessage={'View all updates'}/>;
 interface ViewerProps {
     id: string;
     playbookRun: PlaybookRun;
@@ -80,6 +82,10 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
     const now = useNow(fiveSeconds);
 
     if (!playbookRun.status_update_enabled) {
+        return null;
+    }
+
+    if (playbookRun.status_posts.length === 0 && playbookRun.current_status === PlaybookRunStatus.Finished) {
         return null;
     }
 
@@ -102,7 +108,10 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
     };
 
     return (
-        <Container id={id}>
+        <Container
+            id={id}
+            data-testid={'run-statusupdate-section'}
+        >
             <Header>
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Recent status update'})}
@@ -115,22 +124,33 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                             size={14}
                         />
                     </IconWrapper>
-                    <TextDateViewer type={dueInfo.type}>{dueInfo.text}</TextDateViewer>
-                    <DueDateViewer type={dueInfo.type}>{dueInfo.time}</DueDateViewer>
-                    <ActionButton
-                        onClick={() => {
-                            setShowRequestUpdateConfirm(true);
-                        }}
+                    <TextDateViewer
+                        data-testid={'update-due-date-text'}
+                        type={dueInfo.type}
                     >
-                        {formatMessage({defaultMessage: 'Request update...'})}
-                    </ActionButton>
+                        {dueInfo.text}
+                    </TextDateViewer>
+                    <DueDateViewer
+                        data-testid={'update-due-date-time'}
+                        type={dueInfo.type}
+                    >
+                        {dueInfo.time}
+                    </DueDateViewer>
+                    {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
+                        <ActionButton
+                            data-testid={'request-update-button'}
+                            onClick={() => setShowRequestUpdateConfirm(true)}
+                        >
+                            {formatMessage({defaultMessage: 'Request update...'})}
+                        </ActionButton>
+                    ) : null}
                 </RightWrapper>
             </Header>
             <Content isShort={false}>
                 {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
             </Content>
             {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
-                {formatMessage({defaultMessage: 'View all updates'})}
+                {openRHSText}
             </ViewAllUpdates> : null}
             <ConfirmModal
                 show={showRequestUpdateConfirm}
@@ -165,14 +185,21 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
 
     const dueInfo = getDueInfo(playbookRun, now);
 
-    const postUpdate = () => dispatch(promptUpdateStatus(
-        playbookRun.team_id,
-        playbookRun.id,
-        playbookRun.channel_id,
-    ));
+    // We assume that user permissions have been checked before
+    const postUpdate = () => dispatch(openUpdateRunStatusModal(playbookRun.id, playbookRun.channel_id, true));
+
+    const onClickViewAllUpdates = () => {
+        if (playbookRun.status_posts.length === 0) {
+            return;
+        }
+        openRHS(RHSContent.RunStatusUpdates, RHSTitle, playbookRun.name);
+    };
 
     return (
-        <Container id={id}>
+        <Container
+            id={id}
+            data-testid={'run-statusupdate-section'}
+        >
             <Content isShort={true}>
                 <IconWrapper>
                     <IconClock
@@ -180,17 +207,31 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                         size={24}
                     />
                 </IconWrapper>
-                <TextDate type={dueInfo.type}>{dueInfo.text}</TextDate>
-                <DueDateParticipant type={dueInfo.type}>{dueInfo.time}</DueDateParticipant>
+                <TextDate
+                    data-testid={'update-due-date-text'}
+                    type={dueInfo.type}
+                >{dueInfo.text}</TextDate>
+                <DueDateParticipant
+                    data-testid={'update-due-date-time'}
+                    type={dueInfo.type}
+                >{dueInfo.time}</DueDateParticipant>
                 <RightWrapper>
-                    <ActionButton onClick={postUpdate}>
-                        {formatMessage({defaultMessage: 'Post update'})}
-                    </ActionButton>
+                    {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
+                        <ActionButton
+                            data-testid={'post-update-button'}
+                            onClick={postUpdate}
+                        >
+                            {formatMessage({defaultMessage: 'Post update'})}
+                        </ActionButton>
+                    ) : null}
                     <Kebab>
                         <DotMenu icon={<ThreeDotsIcon/>}>
-                            <DropdownMenuItemStyled onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
-                                <FormattedMessage defaultMessage='View all updates'/>
-                            </DropdownMenuItemStyled>
+                            <ViewAllLink
+                                onClick={onClickViewAllUpdates}
+                                disabled={playbookRun.status_posts.length === 0}
+                            >
+                                {openRHSText}
+                            </ViewAllLink>
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
@@ -296,3 +337,7 @@ const ThreeDotsIcon = styled(HamburgerButton)`
     margin-left: 4px;
 `;
 
+const ViewAllLink = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
+    opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
+    cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
+`;
