@@ -47,7 +47,10 @@ const Retrospective = ({
 
     if (!allowRetrospectiveAccess) {
         return (
-            <Container id={id}>
+            <Container
+                id={id}
+                data-testid={'run-retrospective-section'}
+            >
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Retrospective'})}
                     id={id}
@@ -120,7 +123,10 @@ const Retrospective = ({
     }, DEBOUNCE_2_SECS);
 
     return (
-        <Container id={id}>
+        <Container
+            id={id}
+            data-testid={'run-retrospective-section'}
+        >
             <div>
                 <Header>
                     <AnchorLinkTitle

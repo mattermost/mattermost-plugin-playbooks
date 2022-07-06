@@ -61,7 +61,7 @@ export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, role, onV
     };
 
     return (
-        <Container>
+        <Container data-testid={'run-header-section'}>
             {/* <Icon className={'icon-star'}/> */}
             <ContextMenu
                 playbookRun={playbookRun}
@@ -74,13 +74,14 @@ export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, role, onV
 
                 //TODO: replace icon to 'icon-lightning-bolt-outline'
                 className={'icon-hammer'}
+                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                to={getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id}
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
@@ -111,7 +112,10 @@ export const RunHeader = ({playbook, playbookRun, playbookRunMetadata, role, onV
                     {formatMessage({defaultMessage: 'Get involved'})}
                 </GetInvolved>
             }
-            <RunActionsModal playbookRun={playbookRun}/>
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={role === Role.Viewer}
+            />
         </Container>
     );
 };

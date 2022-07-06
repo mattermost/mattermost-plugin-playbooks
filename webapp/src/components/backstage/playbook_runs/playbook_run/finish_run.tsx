@@ -59,7 +59,7 @@ const FinishRun = ({playbookRun}: Props) => {
     }
 
     return (
-        <Container>
+        <Container data-testid={'run-finish-section'}>
             <Content>
                 <IconWrapper>
                     <Icon

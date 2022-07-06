@@ -19,9 +19,10 @@ import PatternedTextArea from 'src/components/patterned_text_area';
 
 interface Props {
     playbookRun: PlaybookRun;
+    readOnly: boolean;
 }
 
-const RunActionsModal = ({playbookRun}: Props) => {
+const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const show = useSelector(isRunActionsModalVisible);
@@ -61,7 +62,7 @@ const RunActionsModal = ({playbookRun}: Props) => {
             subtitle={formatMessage({defaultMessage: 'Run actions allow you to automate activities for this channel'})}
             show={show}
             onHide={onHide}
-            editable={true}
+            editable={!readOnly}
             onSave={onSave}
             adjustTop={260}
         >
@@ -73,12 +74,12 @@ const RunActionsModal = ({playbookRun}: Props) => {
                         <Action
                             enabled={broadcastToChannelsEnabled}
                             title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
-                            editable={true}
+                            editable={!readOnly}
                             onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
                         >
                             <BroadcastChannelSelector
                                 id='run-actions-broadcast'
-                                enabled={broadcastToChannelsEnabled}
+                                enabled={!readOnly && broadcastToChannelsEnabled}
                                 channelIds={channelIds}
                                 onChannelsSelected={setChannelIds}
                                 teamId={teamId}
@@ -87,11 +88,11 @@ const RunActionsModal = ({playbookRun}: Props) => {
                         <Action
                             enabled={sendOutgoingWebhookEnabled}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
-                            editable={true}
+                            editable={!readOnly}
                             onToggle={() => setSendOutgoingWebhookEnabled((prev) => !prev)}
                         >
                             <PatternedTextArea
-                                enabled={sendOutgoingWebhookEnabled}
+                                enabled={!readOnly && sendOutgoingWebhookEnabled}
                                 placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
                                 errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
                                 input={webhooks.join('\n')}

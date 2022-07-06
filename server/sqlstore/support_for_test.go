@@ -74,6 +74,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupTeamsTable(t, db)
 	setupRolesTable(t, db)
 	setupSchemesTable(t, db)
+	setupTeamMembersTable(t, db)
 
 	err := sqlStore.RunMigrations()
 	require.NoError(t, err)

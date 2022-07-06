@@ -62,7 +62,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
             >
                 <DropdownMenuItem
                     onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
+                        copyToClipboard(getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >
@@ -98,7 +98,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     );
 };
 
-const Title = styled.div`
+const Title = styled.h1`
     ${SemiBoldHeading}
     letter-spacing: -0.01em;
     font-size: 16px;
