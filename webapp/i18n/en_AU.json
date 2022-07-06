@@ -614,5 +614,14 @@
     "/qDObA": "Browse Runs",
     "UMFnWV": "View Retrospective",
     "9xs0pp": "Add value",
-    "/+8SGX": "Showing {filteredNum} of {totalNum} events"
+    "/+8SGX": "Showing {filteredNum} of {totalNum} events",
+    "jboo9u": "Request update",
+    "Xx0WZV": "Send message",
+    "VpQKQE": "{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.",
+    "UePrSL": "{num} {num, plural, one {Participant} other {Participants}}",
+    "RCT0Px": "Add {displayName} to Channel",
+    "P9PKvb": "A message was sent to the run channel.",
+    "NGqzDU": "Confirm request update",
+    "JvEwg/": "It was not possible to request an update",
+    "Jli9m7": "A message will be sent to the run channel, requesting an update."
 }
