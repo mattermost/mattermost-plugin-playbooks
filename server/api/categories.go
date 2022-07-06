@@ -13,7 +13,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-const maxItemsInRunsAndPlaybooksCategory = 100
+const maxItemsInRunsAndPlaybooksCategory = 1000
 
 type CategoryHandler struct {
 	*ErrorHandler

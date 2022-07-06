@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
@@ -8,7 +8,7 @@ import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
 import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
 import {pluginUrl} from 'src/browser_routing';
 import {CategoryItem, CategoryItemType, Category} from 'src/types/category';
-import {fetchMyCategories} from 'src/client';
+import {useCategories} from 'src/hooks';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -18,8 +18,8 @@ interface PlaybookSidebarProps {
 
 const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const teams = useSelector(getMyTeams);
-    const [categories, setCategories] = useState([] as Category[]);
     const teamID = props.team_id || teams[0].id;
+    const categories = useCategories(teamID);
 
     const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
         const calculatedGroups = cats.map((category): SidebarGroup => {
@@ -49,15 +49,6 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
         });
         return calculatedGroups;
     };
-
-    useEffect(() => {
-        const getCategories = async () => {
-            const fetchedCategories = await fetchMyCategories(teamID);
-            setCategories(fetchedCategories);
-        };
-
-        getCategories();
-    }, [teamID]);
 
     const groups = getGroupsFromCategories(categories);
     return (
