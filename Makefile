@@ -53,6 +53,11 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
+	@if grep -rin -e 'it\.only' -e 'describe\.only' tests-e2e/cypress/integration; then \
+		echo "\nThere are at least one e2e test marked as only, only should be removed.\n"; \
+		exit 1; \
+	fi
+
 ifneq ($(HAS_SERVER),)
 	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
 		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
@@ -63,6 +68,8 @@ ifneq ($(HAS_SERVER),)
 	golangci-lint --version
 	golangci-lint run ./...
 endif
+
+
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
 .PHONY: server
