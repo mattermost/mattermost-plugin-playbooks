@@ -22,6 +22,7 @@ interface AssignedToProps {
     channelId?: string; // If not provided, the ID of the current channel will be used
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -64,6 +65,7 @@ const AssignTo = (props: AssignedToProps) => {
                 }}
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         );
     }
@@ -107,6 +109,7 @@ const AssignTo = (props: AssignedToProps) => {
                 selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         </AssignToContainer>
     );

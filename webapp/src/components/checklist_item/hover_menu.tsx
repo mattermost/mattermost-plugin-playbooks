@@ -36,6 +36,7 @@ export interface Props {
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    onItemOpenChange?: (isOpen: boolean) => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -60,6 +61,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
                     placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
                 />
             }
             <DueDateHoverMenuButton
@@ -67,6 +69,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={props.onDueDateChange}
                 placement={'bottom-end'}
+                onOpenChange={props.onItemOpenChange}
             />
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'

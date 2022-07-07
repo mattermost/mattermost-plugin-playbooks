@@ -12,6 +12,8 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
+import {useUpdateEffect} from 'react-use';
+
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {PlaybookRunFilterButton} from '../backstage/styles';
@@ -50,6 +52,7 @@ interface Props {
     className?: string;
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -63,6 +66,10 @@ export default function ProfileSelector(props: Props) {
         }
         setOpen(!isOpen);
     };
+
+    useUpdateEffect(() => {
+        props.onOpenChange?.(isOpen);
+    }, [isOpen]);
 
     // Allow the parent component to control the open state -- only after mounting.
     const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);

@@ -27,6 +27,7 @@ interface Props {
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
     placement: Placement;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const controlComponentDueDate = (isDateTime: boolean) => (ownProps: ControlProps<DateTimeOption, boolean>) => (
@@ -127,6 +128,7 @@ export const DueDateHoverMenuButton = ({
             }}
             controlledOpenToggle={dateTimeSelectorToggle}
             placement={props.placement}
+            onOpenChange={props.onOpenChange}
         />
     );
 };

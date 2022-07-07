@@ -11,6 +11,8 @@ import debounce from 'debounce';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
+import {useUpdateEffect} from 'react-use';
+
 import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
@@ -36,6 +38,7 @@ type Props = {
     customControl?: (props: ControlProps<DateTimeOption, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
+    onOpenChange?: (isOpen: boolean) => void;
     customControlProps?: any;
     placement?: Placement;
     className?: string;
@@ -65,6 +68,10 @@ export const DateTimeSelector = ({
     const toggleOpen = () => {
         setOpen(!isOpen);
     };
+
+    useUpdateEffect(() => {
+        props.onOpenChange?.(isOpen);
+    }, [isOpen]);
 
     // Allow the parent component to control the open state -- only after mounting.
     const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);

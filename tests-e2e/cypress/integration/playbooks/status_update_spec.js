@@ -81,7 +81,7 @@ describe('playbooks > edit status update', () => {
             // # Select a channel
             cy.findAllByTestId('status-update-broadcast-channels').click();
             cy.get('#playbook-automation-broadcast').contains('Town Square').click({force: true});
-            cy.findAllByTestId('status-update-broadcast-channels').click();
+            cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
@@ -151,7 +151,7 @@ describe('playbooks > edit status update', () => {
                     .should('equal', 'line-through solid rgba(63, 67, 80, 0.48)');
 
                 // # Close select options
-                cy.findAllByTestId('status-update-broadcast-channels').click();
+                cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
 
                 // # Open webhooks text area
                 cy.findAllByTestId('status-update-webhooks').click();
@@ -168,13 +168,13 @@ describe('playbooks > edit status update', () => {
                 // # Select a channel
                 cy.findAllByTestId('status-update-broadcast-channels').click();
                 cy.get('#playbook-automation-broadcast').contains('Town Square').click({force: true});
-                cy.findAllByTestId('status-update-broadcast-channels').click();
+                cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
 
                 // * Verify status update message.
                 cy.findAllByTestId('status-update-section').should('exist').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
-                    cy.contains('4 outgoing webhooks');
+                    cy.contains('5 outgoing webhooks');
                 });
 
                 // # Refresh the page
@@ -184,7 +184,7 @@ describe('playbooks > edit status update', () => {
                 cy.findAllByTestId('status-update-section').should('exist').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
-                    cy.contains('4 outgoing webhooks');
+                    cy.contains('5 outgoing webhooks');
                 });
             });
         });
