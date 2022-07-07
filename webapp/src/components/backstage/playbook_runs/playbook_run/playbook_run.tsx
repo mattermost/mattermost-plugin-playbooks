@@ -144,6 +144,7 @@ const PlaybookRunDetails = () => {
                 runMetadata={metadata ?? undefined}
                 role={role}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
         break;

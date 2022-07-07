@@ -8,18 +8,20 @@ import styled from 'styled-components';
 
 import {Duration} from 'luxon';
 
+import {PlaybookRunIDs} from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {RunMetricData} from 'src/types/playbook_run';
 import {Metric, MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';
 
 interface Props {
+    runID: string;
     metricsData: RunMetricData[];
     metricsConfig?: Metric[];
     editable: boolean;
 }
 
-const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
+const RHSInfoMetrics = ({runID, metricsData, metricsConfig, editable}: Props) => {
     const {formatMessage} = useIntl();
 
     const metricDataByID = {} as Record<string, RunMetricData>;
@@ -36,7 +38,7 @@ const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
             <SectionHeader
                 title={formatMessage({defaultMessage: 'Key Metrics'})}
                 link={{
-                    to: '#',
+                    to: `/playbooks/run_details/${runID}#${PlaybookRunIDs.SectionRetrospective}`,
                     name: formatMessage({defaultMessage: 'View Retrospective'}),
                 }}
             />

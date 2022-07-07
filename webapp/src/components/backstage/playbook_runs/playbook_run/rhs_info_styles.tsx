@@ -15,20 +15,35 @@ export const Section = styled.section`
     padding: 24px 0;
 `;
 
+type LinkType = {to: string, name: string} | {onClick: () => void, name: string};
+
 interface SectionHeaderProps {
     title: string;
-    link?: {
-        to: string,
-        name: string,
-    };
+    link?: LinkType;
 }
 
 export const SectionHeader = ({title, link}: SectionHeaderProps) => (
     <SectionHeaderContainer>
         <SectionTitle>{title}</SectionTitle>
-        {link && <SectionLink to={link.to}>{link.name}</SectionLink>}
+        {link && <SectionLink link={link}/>}
     </SectionHeaderContainer>
 );
+
+const SectionLink = ({link}: {link: LinkType}) => {
+    if ('to' in link) {
+        return (
+            <StyledLink to={link.to}>
+                {link.name}
+            </StyledLink>
+        );
+    }
+
+    return (
+        <StyledSpan onClick={link.onClick}>
+            {link.name}
+        </StyledSpan>
+    );
+};
 
 const SectionHeaderContainer = styled.div`
     display: flex;
@@ -49,10 +64,28 @@ const SectionTitle = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const SectionLink = styled(Link)`
+const StyledLink = styled(Link)`
     font-weight: 600;
     font-size: 12px;
     color: var(--button-bg);
+
+    opacity: 0;
+    ${Section}:hover & {
+        opacity: 100%;
+    }
+
+    transition: opacity .2s;
+`;
+
+const StyledSpan = styled.span`
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--button-bg);
+    cursor: pointer;
+
+    :hover{
+        text-decoration: underline;
+    }
 
     opacity: 0;
     ${Section}:hover & {
