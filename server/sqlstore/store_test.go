@@ -48,6 +48,8 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
 
 			// Apply each migration twice
 			for _, migration := range migrations {
@@ -82,6 +84,8 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
 
 			// Apply the whole set of migrations twice
 			for i := 0; i < 2; i++ {
@@ -116,6 +120,8 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
 
 			// Apply the migrations up to and including 0.36
 			migrateUpTo(t, sqlStore, semver.MustParse("0.36.0"))
@@ -220,6 +226,8 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
 
 			// Apply the migrations up to and including 0.38
 			migrateUpTo(t, sqlStore, semver.MustParse("0.38.0"))
@@ -497,8 +505,21 @@ func TestHasPrimaryKeys(t *testing.T) {
 					  tab.table_name,
 					  tco.constraint_name
 		`)
+		tablesToBeFiltered := []string{"teammembers"}
+		for _, table := range tablesToBeFiltered {
+			tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
+		}
 		require.Len(t, tablesWithoutPrimaryKeys, 0)
 		require.NoError(t, err)
 	})
 
+}
+
+func removeFromSlice(slice []string, item string) []string {
+	for i, elem := range slice {
+		if elem == item {
+			return append(slice[:i], slice[i+1:]...)
+		}
+	}
+	return slice
 }

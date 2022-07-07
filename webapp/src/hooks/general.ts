@@ -42,7 +42,6 @@ import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
-
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';

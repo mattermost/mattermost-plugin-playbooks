@@ -15,9 +15,10 @@ interface HeaderButtonProps {
     clicked?: boolean;
     size?: number;
     iconSize?: number;
+    'aria-label'?: string;
 }
 
-const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, size, iconSize}: HeaderButtonProps) => {
+const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, size, iconSize, 'aria-label': ariaLabel}: HeaderButtonProps) => {
     return (
         <Tooltip
             id={tooltipId}
@@ -29,6 +30,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, s
                 onClick={() => onClick()}
                 clicked={clicked ?? false}
                 size={size}
+                aria-label={ariaLabel}
             >
 
                 <Icon
