@@ -614,5 +614,17 @@
     "/qDObA": "Futások áttekintése",
     "LfhTNW": "Forgatókönyvek és futások áttekintése és létrehozása",
     "GVpA4Q": "Új forgatókönyv létrehozása",
-    "4mCpAv": "Nem volt lehetséges a tulajdonos megváltoztatása"
+    "4mCpAv": "Nem volt lehetséges a tulajdonos megváltoztatása",
+    "/+8SGX": "Megjelenítve {filteredNum} / {totalNum} eseményt",
+    "VpQKQE": "{displayName} nem résztvevője a futásnak. Szeretné őket is résztvevővé tenni? Hozzáférésük lesz a futó csatorna összes üzenet előzményéhez.",
+    "jboo9u": "Frissítés kérése",
+    "Xx0WZV": "Üzenet küldése",
+    "UePrSL": "{num} résztvevő",
+    "UMFnWV": "Visszatekintő megtekintése",
+    "RCT0Px": "{displayName} hozzáadása a Csatornához",
+    "P9PKvb": "Üzenet lett küldve a futó csatornára.",
+    "NGqzDU": "Frissítés kérésének jóváhagyása",
+    "JvEwg/": "Nem volt lehetséges egy frissítést kérni",
+    "Jli9m7": "A rendszer üzenetet küld a futó csatornának, amelyben kéri, hogy tegyen közzé egy frissítést.",
+    "9xs0pp": "Érték hozzáadása..."
 }
