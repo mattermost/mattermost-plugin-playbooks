@@ -12,6 +12,7 @@ describe('runs > run details page > header', () => {
     let testUser;
     let testViewerUser;
     let testPublicPlaybook;
+    let testPublicPlaybookAndChannel;
     let playbookRun;
 
     before(() => {
@@ -36,6 +37,16 @@ describe('runs > run details page > header', () => {
             }).then((playbook) => {
                 testPublicPlaybook = playbook;
             });
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                createPublicPlaybookRun: true,
+                memberIDs: [],
+            }).then((playbook) => {
+                testPublicPlaybookAndChannel = playbook;
+            });
         });
     });
 
@@ -55,8 +66,12 @@ describe('runs > run details page > header', () => {
         cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
     };
 
+    const getHeader = () => {
+        return cy.findByTestId('run-header-section');
+    };
+
     const getHeaderIcon = (selector) => {
-        return cy.findByTestId('run-header-section').find(selector);
+        return getHeader().find(selector);
     };
 
     const getDropdownItemByText = (text) => {
@@ -133,7 +148,7 @@ describe('runs > run details page > header', () => {
             });
         });
 
-        describe('title and icons', () => {
+        describe('title, icons and buttons', () => {
             commonHeaderTests();
 
             it('has a go-to-channel icon', () => {
@@ -142,6 +157,11 @@ describe('runs > run details page > header', () => {
 
                 // * Assert we navigated correctly
                 cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+            });
+
+            it('has not get-involved button', () => {
+                // * Assert button is not showed
+                getHeader().findByText('Get involved').should('not.exist');
             });
 
             describe('run actions', () => {
@@ -387,6 +407,7 @@ describe('runs > run details page > header', () => {
     });
 
     describe('as viewer', () => {
+        let playbookRunChannelName;
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -394,10 +415,13 @@ describe('runs > run details page > header', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
 
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPublicPlaybook.id,
-                playbookRunName: 'the run name',
+                playbookRunName,
                 ownerUserId: testUser.id,
             }).then((run) => {
                 playbookRun = run;
@@ -409,12 +433,101 @@ describe('runs > run details page > header', () => {
             });
         });
 
-        describe('title and icons', () => {
+        describe('title, icons and buttons', () => {
             commonHeaderTests();
 
             it('has not a go-to-channel icon', () => {
                 // * Verify there's no go-to-channel icon
                 getHeaderIcon('.icon-product-channels').should('not.exist');
+            });
+
+            describe('get involved', () => {
+                it('has button', () => {
+                    // * Assert button is not showed
+                    getHeader().findByText('Get involved').should('be.visible');
+                });
+
+                it('click button to show modal and cancel', () => {
+                    // * Assert component is rendered
+                    getHeader().findByText('Get involved').should('be.visible');
+
+                    // # Wait for useChannel
+                    cy.wait(500);
+
+                    // * Assert button is not showed
+                    getHeader().findByText('Get involved').click();
+
+                    // # cancel modal
+                    cy.get('#confirmModal').get('#cancelModalButton').click();
+
+                    // * Assert modal is not showed
+                    cy.get('#confirmModal').should('not.exist');
+
+                    // # Login as testUser
+                    cy.apiLogin(testUser).then(() => {
+                        // # Visit the playbook run
+                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Assert message has not been sent
+                        cy.get('#postListContent').should('not.contain', 'wants to get involved in this run.');
+                    });
+                });
+
+                it('click button to show modal and confirm', () => {
+                    // * Assert component is rendered
+                    getHeader().findByText('Get involved').should('be.visible');
+
+                    // # Wait for useChannel
+                    cy.wait(500);
+
+                    // * Click get involved button
+                    getHeader().findByText('Get involved').click();
+
+                    // # confirm modal
+                    cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                    // * Assert modal is not showed
+                    cy.get('#confirmModal').should('not.exist');
+
+                    // # Login as testUser
+                    cy.apiLogin(testUser).then(() => {
+                        // # Visit the playbook run
+                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Assert message has been sent
+                        cy.get('#postListContent').contains('wants to get involved in this run.');
+                    });
+                });
+
+                it('click button to join channel', () => {
+                    // # Login as testUser
+                    cy.apiLogin(testUser);
+
+                    // Create a run with public chanel
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: testPublicPlaybookAndChannel.id,
+                        playbookRunName: 'the run name',
+                        ownerUserId: testUser.id,
+                    }).then((run) => {
+                        cy.apiLogin(testViewerUser);
+
+                        // # Visit the playbook run
+                        cy.visit(`/playbooks/run_details/${run.id}`);
+
+                        // * Assert component is rendered
+                        getHeader().findByText('Get involved').should('be.visible');
+
+                        // # Wait for useChannel
+                        cy.wait(500);
+
+                        // # Click get involved button
+                        getHeader().findByText('Get involved').click();
+
+                        // * Assert we joined channel and navigated correctly
+                        cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+                    });
+                });
             });
 
             describe('run actions', () => {

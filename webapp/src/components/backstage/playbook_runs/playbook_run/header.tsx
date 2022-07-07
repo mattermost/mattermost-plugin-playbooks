@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
@@ -15,7 +15,7 @@ import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl, requestGetInvolved} from 'src/client';
 import {useChannel} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
-
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
@@ -37,6 +37,7 @@ interface Props {
 export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useChannel(playbookRun.channel_id);
     const addToast = useToaster().add;
@@ -46,19 +47,24 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             return;
         }
 
-        // Channel value comes from error response (and we assumen that is mostly 403)
+        // Channel null value comes from error response (and we assume that is mostly 403)
         // If we don't have access to channel we'll send a request to be added,
         // otherwise we directly join it
         if (channel === null) {
-            const response = await requestGetInvolved(playbookRun.id);
-            if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
-            } else {
-                addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
-            }
+            setShowGetInvolvedConfirm(true);
+            return;
+        }
+
+        await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
+        navigateToChannel();
+    };
+
+    const onConfirmGetInvolved = async () => {
+        const response = await requestGetInvolved(playbookRun.id);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
         } else {
-            await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
-            navigateToChannel();
+            addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
         }
     };
 
@@ -124,6 +130,17 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             <RunActionsModal
                 playbookRun={playbookRun}
                 readOnly={role === Role.Viewer}
+            />
+            <ConfirmModal
+                show={showGetInvolvedConfirm}
+                title={formatMessage({defaultMessage: 'Confirm get involved'})}
+                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a particpant.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
+                onConfirm={() => {
+                    onConfirmGetInvolved();
+                    setShowGetInvolvedConfirm(false);
+                }}
+                onCancel={() => setShowGetInvolvedConfirm(false)}
             />
         </Container>
     );
