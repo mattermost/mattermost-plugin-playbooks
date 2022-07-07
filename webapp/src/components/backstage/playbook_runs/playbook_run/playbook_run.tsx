@@ -173,7 +173,6 @@ const PlaybookRunDetails = () => {
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
                         playbookRun={playbookRun}
-                        playbookRunMetadata={metadata ?? null}
                         onViewInfo={onViewInfo}
                         onViewTimeline={onViewTimeline}
                         role={role}
