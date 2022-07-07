@@ -1,4 +1,5 @@
 import {useEffect} from 'react';
+import {useLocation} from 'react-use';
 
 import {telemetryEventForPlaybook, telemetryEventForPlaybookRun} from 'src/client';
 
@@ -9,8 +10,13 @@ export enum PlaybookTarget {
 }
 
 export enum PlaybookRunTarget {
+
+    // @deprecated triggered at old run details
     Overview = 'view_run_overview',
+
+    // @deprecated triggered at old run details
     Retrospective = 'view_run_retrospective',
+    Details = 'view_run_details',
     ChannelsRHSDetails = 'view_run_channels_rhs_details',
 }
 
@@ -23,7 +29,12 @@ export const usePlaybookViewTelemetry = (target: PlaybookTarget, playbookID?: st
 };
 
 export const usePlaybookRunViewTelemetry = (target: PlaybookRunTarget, playbookRunID?: string) => {
+    const {pathname} = useLocation();
     useEffect(() => {
+        // Needed until we remove the old run details
+        if (pathname?.includes('/playbooks/run_details/') && target === PlaybookRunTarget.Retrospective) {
+            return;
+        }
         if (playbookRunID) {
             telemetryEventForPlaybookRun(playbookRunID, target);
         }

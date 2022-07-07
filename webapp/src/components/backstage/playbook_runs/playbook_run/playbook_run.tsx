@@ -15,6 +15,7 @@ import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks/telemetry';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -31,6 +32,7 @@ import RHSTimeline from './rhs_timeline';
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
+    usePlaybookRunViewTelemetry(PlaybookRunTarget.Details, playbookRun?.id);
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
