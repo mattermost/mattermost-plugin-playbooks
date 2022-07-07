@@ -626,5 +626,7 @@
     "P9PKvb": "Ein Nachricht wurde an den Durchlauf-Kanal gesendet.",
     "NGqzDU": "Aktualisierungsanfrage bestätigen",
     "JvEwg/": "Es war nicht möglich eine Aktualisierung anzufordern",
-    "Jli9m7": "Eine Nachricht wird an den Durchlauf-Kanal gesendet mit der Aufforderung eine Aktualisierung zu senden."
+    "Jli9m7": "Eine Nachricht wird an den Durchlauf-Kanal gesendet mit der Aufforderung eine Aktualisierung zu senden.",
+    "VpQKQE": "{displayName} sind keine Teilnehmer dieses Durchlaufs. Möchtest du sie zu Teilnehmern machen? Sei werden Zugriff auf den kompletten Nachrichtenverlauf im Durchlauf-Kanal haben.",
+    "RCT0Px": "Füge {displayName} zum Kanal hinzu"
 }
