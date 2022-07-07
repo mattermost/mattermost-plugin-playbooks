@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('runs > run details page > status update', () => {
+describe('runs > run details page > run info', () => {
     let testTeam;
     let testUser;
     let testViewerUser;
