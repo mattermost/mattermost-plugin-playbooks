@@ -79,6 +79,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
+                id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
@@ -86,6 +87,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
             <Item
+                id='runinfo-owner'
                 icon={AccountOutlineIcon}
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
@@ -98,6 +100,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 />
             </Item>
             <Item
+                id='runinfo-participants'
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
@@ -110,6 +113,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 </Participants>
             </Item>
             <Item
+                id='runinfo-following'
                 icon={BullhornOutlineIcon}
                 name={formatMessage({defaultMessage: 'Following'})}
             >
@@ -135,6 +139,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
             />}
             {runMetadata && editable && (
                 <Item
+                    id='runinfo-channel'
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
                     onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`)}
@@ -238,6 +243,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
 type CompassIcon = React.FC<CompassIconProps>;
 
 interface ItemProps {
+    id: string;
     icon: CompassIcon;
     name: string;
     children: React.ReactNode;
@@ -250,7 +256,10 @@ const Item = (props: ItemProps) => {
     `;
 
     return (
-        <OverviewRow onClick={props.onClick}>
+        <OverviewRow
+            onClick={props.onClick}
+            data-testid={props.id}
+        >
             <OverviewItemName>
                 <StyledIcon
                     size={18}
