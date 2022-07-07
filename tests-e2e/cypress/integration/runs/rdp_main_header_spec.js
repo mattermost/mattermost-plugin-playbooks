@@ -442,13 +442,13 @@ describe('runs > run details page > header', () => {
             });
 
             describe('get involved', () => {
-                it('has button', () => {
-                    // * Assert button is not showed
+                it('shows button', () => {
+                    // * Assert thst button is showed
                     getHeader().findByText('Get involved').should('be.visible');
                 });
 
                 it('click button to show modal and cancel', () => {
-                    // * Assert component is rendered
+                    // * Assert that component is rendered
                     getHeader().findByText('Get involved').should('be.visible');
 
                     // # Wait for useChannel
@@ -465,7 +465,7 @@ describe('runs > run details page > header', () => {
 
                     // # Login as testUser
                     cy.apiLogin(testUser).then(() => {
-                        // # Visit the playbook run
+                        // # Visit the channel run
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert message has not been sent
@@ -486,15 +486,15 @@ describe('runs > run details page > header', () => {
                     // # confirm modal
                     cy.get('#confirmModal').get('#confirmModalButton').click();
 
-                    // * Assert modal is not showed
+                    // * Assert that modal is not showed
                     cy.get('#confirmModal').should('not.exist');
 
                     // # Login as testUser
                     cy.apiLogin(testUser).then(() => {
-                        // # Visit the playbook run
+                        // # Visit the channel run
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
-                        // * Assert message has been sent
+                        // * Assert that message has been sent
                         cy.get('#postListContent').contains('wants to get involved in this run.');
                     });
                 });
@@ -515,7 +515,7 @@ describe('runs > run details page > header', () => {
                         // # Visit the playbook run
                         cy.visit(`/playbooks/run_details/${run.id}`);
 
-                        // * Assert component is rendered
+                        // * Assert that component is rendered
                         getHeader().findByText('Get involved').should('be.visible');
 
                         // # Wait for useChannel
@@ -524,7 +524,7 @@ describe('runs > run details page > header', () => {
                         // # Click get involved button
                         getHeader().findByText('Get involved').click();
 
-                        // * Assert we joined channel and navigated correctly
+                        // * Assert that we joined channel and navigated correctly
                         cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
                     });
                 });
