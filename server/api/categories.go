@@ -47,7 +47,7 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
-	categories, err := h.categoryService.GetCategories(teamID, userID)
+	customCategories, err := h.categoryService.GetCategories(teamID, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
@@ -58,18 +58,19 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
-	filteredRuns := filterItemsInCategory(runsCategory, categories)
-	categories = append(categories, filteredRuns)
+	filteredRuns := filterDuplicatesFromCategory(runsCategory, customCategories)
+	allCategories := append([]app.Category{}, customCategories...)
+	allCategories = append(allCategories, filteredRuns)
 
 	playbooksCategory, err := h.getPlaybooksCategory(teamID, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
-	filteredPlaybooks := filterItemsInCategory(playbooksCategory, categories)
-	categories = append(categories, filteredPlaybooks)
+	filteredPlaybooks := filterDuplicatesFromCategory(playbooksCategory, customCategories)
+	allCategories = append(allCategories, filteredPlaybooks)
 
-	filteredCategories := filterEmptyCategories(categories)
+	filteredCategories := filterEmptyCategories(allCategories)
 	ReturnJSON(w, filteredCategories, http.StatusOK)
 }
 
@@ -258,7 +259,7 @@ func categoriesContainItem(categories []app.Category, item app.CategoryItem) boo
 	return false
 }
 
-func filterItemsInCategory(category app.Category, categories []app.Category) app.Category {
+func filterDuplicatesFromCategory(category app.Category, categories []app.Category) app.Category {
 	newItems := []app.CategoryItem{}
 	for _, item := range category.Items {
 		if !categoriesContainItem(categories, item) {
