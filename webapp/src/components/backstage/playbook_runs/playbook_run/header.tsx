@@ -21,7 +21,7 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {navigateToUrl} from 'src/browser_routing';
 
 import {BadgeType} from '../../status_badge';
-import {ToastType, useToasts} from '../../toast_banner';
+import {ToastType, useToaster} from '../../toast_banner';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -39,12 +39,16 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useChannel(playbookRun.channel_id);
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
+
+        // Channel value comes from error response (and we assumen that is mostly 403)
+        // If we don't have access to channel we'll send a request to be added,
+        // otherwise we directly join it
         if (channel === null) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {

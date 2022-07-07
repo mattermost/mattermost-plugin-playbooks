@@ -3,16 +3,14 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {useUpdateEffect} from 'react-use';
-
 import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
-
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
