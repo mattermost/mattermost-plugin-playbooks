@@ -151,14 +151,6 @@ describe('runs > run details page > header', () => {
         describe('title, icons and buttons', () => {
             commonHeaderTests();
 
-            it('has a go-to-channel icon', () => {
-                // # Click on go to channel
-                getHeaderIcon('.icon-product-channels').click();
-
-                // * Assert we navigated correctly
-                cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
-            });
-
             it('has not get-involved button', () => {
                 // * Assert button is not showed
                 getHeader().findByText('Get involved').should('not.exist');
@@ -435,11 +427,6 @@ describe('runs > run details page > header', () => {
 
         describe('title, icons and buttons', () => {
             commonHeaderTests();
-
-            it('has not a go-to-channel icon', () => {
-                // * Verify there's no go-to-channel icon
-                getHeaderIcon('.icon-product-channels').should('not.exist');
-            });
 
             describe('get involved', () => {
                 it('shows button', () => {

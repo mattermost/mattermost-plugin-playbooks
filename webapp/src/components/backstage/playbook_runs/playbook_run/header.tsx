@@ -27,8 +27,8 @@ import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
 
 interface Props {
-    playbookRun: PlaybookRun;
     playbookRunMetadata: PlaybookRunMetadata | null;
+    playbookRun: PlaybookRun;
     role: Role;
     onViewInfo: () => void;
     onViewTimeline: () => void;
@@ -101,14 +101,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             />
             <ExpandRight/>
 
-            {role === Role.Participant &&
-                <HeaderButton
-                    tooltipId={'go-to-channel-button-tooltip'}
-                    tooltipMessage={formatMessage({defaultMessage: 'Go to channel'})}
-                    className={'icon-product-channels'}
-                    onClick={navigateToChannel}
-                />
-            }
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}

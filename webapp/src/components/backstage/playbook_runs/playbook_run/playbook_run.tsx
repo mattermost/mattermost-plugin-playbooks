@@ -170,8 +170,8 @@ const PlaybookRunDetails = () => {
             <MainWrapper isRHSOpen={RHS.isOpen}>
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
-                        playbookRun={playbookRun}
                         playbookRunMetadata={metadata ?? null}
+                        playbookRun={playbookRun}
                         onViewInfo={onViewInfo}
                         onViewTimeline={onViewTimeline}
                         role={role}
