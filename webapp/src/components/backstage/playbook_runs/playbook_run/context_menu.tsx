@@ -14,8 +14,7 @@ import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
-
-import {useToasts} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
@@ -31,7 +30,7 @@ interface Props {
 export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const {add: addToast} = useToasts();
+    const {add: addToast} = useToaster();
 
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
