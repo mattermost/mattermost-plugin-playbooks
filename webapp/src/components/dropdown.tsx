@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {cloneElement, useState} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {
     useFloating,
@@ -15,10 +15,9 @@ import {
     useRole,
     useDismiss,
     FloatingFocusManager,
+    FloatingPortal,
     Placement,
 } from '@floating-ui/react-dom-interactions';
-
-import Portal from 'src/components/portal';
 
 const FloatingContainer = styled.div`
     min-width: 20rem;
@@ -55,13 +54,15 @@ type DropdownProps = {
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
     initialFocus?: number;
+    portal?: boolean;
+    containerStyles?: ReturnType<typeof css>;
 } & ({
     isOpen: boolean;
     onOpenChange: undefined | ((open: boolean) => void);
 } | {
     isOpen?: never;
     onOpenChange?: (open: boolean) => void;
-})
+});
 
 const Dropdown = (props: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(props.isOpen);
@@ -87,10 +88,12 @@ const Dropdown = (props: DropdownProps) => {
         useDismiss(context),
     ]);
 
+    const MaybePortal = props.portal ? FloatingPortal : React.Fragment;
+
     return (
         <>
             {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
-            <Portal>
+            <MaybePortal>
                 {open && (
                     <>
                         <FloatingFocusManager
@@ -106,13 +109,16 @@ const Dropdown = (props: DropdownProps) => {
                                         left: x ?? 0,
                                     },
                                 })}
+                                css={`
+                                    ${props.containerStyles};
+                                `}
                             >
                                 {props.children}
                             </FloatingContainer>
                         </FloatingFocusManager>
                     </>
                 )}
-            </Portal>
+            </MaybePortal>
         </>
     );
 };

@@ -4,8 +4,8 @@
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import styled from 'styled-components';
-import {Team} from '@mattermost/types/teams';
+import styled, {css} from 'styled-components';
+import {Team} from 'mattermost-redux/types/teams';
 
 import Dropdown from 'src/components/dropdown';
 
@@ -36,6 +36,8 @@ interface Props {
     teams: Team[];
     onSelectedChange?: (teamId: string) => void;
     customControlProps?: any;
+    showOnRight?: boolean;
+    containerStyles?: ReturnType<typeof css>;
 }
 
 const dropdownYShift = 27;
@@ -202,6 +204,8 @@ export default function TeamSelector(props: Props) {
             isOpen={isOpen}
             onOpenChange={setOpen}
             target={target}
+            portal={false}
+            containerStyles={props.containerStyles}
         >
             <ReactSelect
                 autoFocus={true}

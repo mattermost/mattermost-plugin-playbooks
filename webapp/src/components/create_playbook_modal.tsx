@@ -3,7 +3,7 @@ import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useHasTeamPermission, usePlaybooksRouting} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
@@ -103,6 +103,12 @@ const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, st
                         isClearable={false}
                         teams={teams}
                         onSelectedChange={setTeamId}
+                        containerStyles={css`
+                            width: 100%;
+                            .playbook-run-user-select {
+                                max-width: none;
+                            }
+                        `}
                     />
                 </TeamSelectorBorder>
                 <TemplateDropdown
