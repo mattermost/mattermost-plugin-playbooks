@@ -5,35 +5,36 @@
 package mock_app
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	reflect "reflect"
 )
 
-// MockPlaybookService is a mock of PlaybookService interface
+// MockPlaybookService is a mock of PlaybookService interface.
 type MockPlaybookService struct {
 	ctrl     *gomock.Controller
 	recorder *MockPlaybookServiceMockRecorder
 }
 
-// MockPlaybookServiceMockRecorder is the mock recorder for MockPlaybookService
+// MockPlaybookServiceMockRecorder is the mock recorder for MockPlaybookService.
 type MockPlaybookServiceMockRecorder struct {
 	mock *MockPlaybookService
 }
 
-// NewMockPlaybookService creates a new mock instance
+// NewMockPlaybookService creates a new mock instance.
 func NewMockPlaybookService(ctrl *gomock.Controller) *MockPlaybookService {
 	mock := &MockPlaybookService{ctrl: ctrl}
 	mock.recorder = &MockPlaybookServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPlaybookService) EXPECT() *MockPlaybookServiceMockRecorder {
 	return m.recorder
 }
 
-// Archive mocks base method
+// Archive mocks base method.
 func (m *MockPlaybookService) Archive(arg0 app.Playbook, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Archive", arg0, arg1)
@@ -41,13 +42,13 @@ func (m *MockPlaybookService) Archive(arg0 app.Playbook, arg1 string) error {
 	return ret0
 }
 
-// Archive indicates an expected call of Archive
+// Archive indicates an expected call of Archive.
 func (mr *MockPlaybookServiceMockRecorder) Archive(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Archive", reflect.TypeOf((*MockPlaybookService)(nil).Archive), arg0, arg1)
 }
 
-// AutoFollow mocks base method
+// AutoFollow mocks base method.
 func (m *MockPlaybookService) AutoFollow(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AutoFollow", arg0, arg1)
@@ -55,13 +56,13 @@ func (m *MockPlaybookService) AutoFollow(arg0, arg1 string) error {
 	return ret0
 }
 
-// AutoFollow indicates an expected call of AutoFollow
+// AutoFollow indicates an expected call of AutoFollow.
 func (mr *MockPlaybookServiceMockRecorder) AutoFollow(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoFollow", reflect.TypeOf((*MockPlaybookService)(nil).AutoFollow), arg0, arg1)
 }
 
-// AutoUnfollow mocks base method
+// AutoUnfollow mocks base method.
 func (m *MockPlaybookService) AutoUnfollow(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AutoUnfollow", arg0, arg1)
@@ -69,13 +70,13 @@ func (m *MockPlaybookService) AutoUnfollow(arg0, arg1 string) error {
 	return ret0
 }
 
-// AutoUnfollow indicates an expected call of AutoUnfollow
+// AutoUnfollow indicates an expected call of AutoUnfollow.
 func (mr *MockPlaybookServiceMockRecorder) AutoUnfollow(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoUnfollow", reflect.TypeOf((*MockPlaybookService)(nil).AutoUnfollow), arg0, arg1)
 }
 
-// Create mocks base method
+// Create mocks base method.
 func (m *MockPlaybookService) Create(arg0 app.Playbook, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
@@ -84,13 +85,13 @@ func (m *MockPlaybookService) Create(arg0 app.Playbook, arg1 string) (string, er
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create
+// Create indicates an expected call of Create.
 func (mr *MockPlaybookServiceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPlaybookService)(nil).Create), arg0, arg1)
 }
 
-// Duplicate mocks base method
+// Duplicate mocks base method.
 func (m *MockPlaybookService) Duplicate(arg0 app.Playbook, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Duplicate", arg0, arg1)
@@ -99,13 +100,13 @@ func (m *MockPlaybookService) Duplicate(arg0 app.Playbook, arg1 string) (string,
 	return ret0, ret1
 }
 
-// Duplicate indicates an expected call of Duplicate
+// Duplicate indicates an expected call of Duplicate.
 func (mr *MockPlaybookServiceMockRecorder) Duplicate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Duplicate", reflect.TypeOf((*MockPlaybookService)(nil).Duplicate), arg0, arg1)
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockPlaybookService) Get(arg0 string) (app.Playbook, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -114,13 +115,13 @@ func (m *MockPlaybookService) Get(arg0 string) (app.Playbook, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockPlaybookServiceMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlaybookService)(nil).Get), arg0)
 }
 
-// GetAutoFollows mocks base method
+// GetAutoFollows mocks base method.
 func (m *MockPlaybookService) GetAutoFollows(arg0 string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAutoFollows", arg0)
@@ -129,13 +130,13 @@ func (m *MockPlaybookService) GetAutoFollows(arg0 string) ([]string, error) {
 	return ret0, ret1
 }
 
-// GetAutoFollows indicates an expected call of GetAutoFollows
+// GetAutoFollows indicates an expected call of GetAutoFollows.
 func (mr *MockPlaybookServiceMockRecorder) GetAutoFollows(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutoFollows", reflect.TypeOf((*MockPlaybookService)(nil).GetAutoFollows), arg0)
 }
 
-// GetPlaybooks mocks base method
+// GetPlaybooks mocks base method.
 func (m *MockPlaybookService) GetPlaybooks() ([]app.Playbook, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybooks")
@@ -144,13 +145,13 @@ func (m *MockPlaybookService) GetPlaybooks() ([]app.Playbook, error) {
 	return ret0, ret1
 }
 
-// GetPlaybooks indicates an expected call of GetPlaybooks
+// GetPlaybooks indicates an expected call of GetPlaybooks.
 func (mr *MockPlaybookServiceMockRecorder) GetPlaybooks() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooks", reflect.TypeOf((*MockPlaybookService)(nil).GetPlaybooks))
 }
 
-// GetPlaybooksForTeam mocks base method
+// GetPlaybooksForTeam mocks base method.
 func (m *MockPlaybookService) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 string, arg2 app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybooksForTeam", arg0, arg1, arg2)
@@ -159,13 +160,13 @@ func (m *MockPlaybookService) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 s
 	return ret0, ret1
 }
 
-// GetPlaybooksForTeam indicates an expected call of GetPlaybooksForTeam
+// GetPlaybooksForTeam indicates an expected call of GetPlaybooksForTeam.
 func (mr *MockPlaybookServiceMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockPlaybookService)(nil).GetPlaybooksForTeam), arg0, arg1, arg2)
 }
 
-// Import mocks base method
+// Import mocks base method.
 func (m *MockPlaybookService) Import(arg0 app.Playbook, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Import", arg0, arg1)
@@ -174,13 +175,13 @@ func (m *MockPlaybookService) Import(arg0 app.Playbook, arg1 string) (string, er
 	return ret0, ret1
 }
 
-// Import indicates an expected call of Import
+// Import indicates an expected call of Import.
 func (mr *MockPlaybookServiceMockRecorder) Import(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Import", reflect.TypeOf((*MockPlaybookService)(nil).Import), arg0, arg1)
 }
 
-// Restore mocks base method
+// Restore mocks base method.
 func (m *MockPlaybookService) Restore(arg0 app.Playbook, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Restore", arg0, arg1)
@@ -188,13 +189,13 @@ func (m *MockPlaybookService) Restore(arg0 app.Playbook, arg1 string) error {
 	return ret0
 }
 
-// Restore indicates an expected call of Restore
+// Restore indicates an expected call of Restore.
 func (mr *MockPlaybookServiceMockRecorder) Restore(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockPlaybookService)(nil).Restore), arg0, arg1)
 }
 
-// Update mocks base method
+// Update mocks base method.
 func (m *MockPlaybookService) Update(arg0 app.Playbook, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
@@ -202,7 +203,7 @@ func (m *MockPlaybookService) Update(arg0 app.Playbook, arg1 string) error {
 	return ret0
 }
 
-// Update indicates an expected call of Update
+// Update indicates an expected call of Update.
 func (mr *MockPlaybookServiceMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaybookService)(nil).Update), arg0, arg1)

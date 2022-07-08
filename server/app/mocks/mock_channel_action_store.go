@@ -5,35 +5,36 @@
 package mock_app
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	reflect "reflect"
 )
 
-// MockChannelActionStore is a mock of ChannelActionStore interface
+// MockChannelActionStore is a mock of ChannelActionStore interface.
 type MockChannelActionStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockChannelActionStoreMockRecorder
 }
 
-// MockChannelActionStoreMockRecorder is the mock recorder for MockChannelActionStore
+// MockChannelActionStoreMockRecorder is the mock recorder for MockChannelActionStore.
 type MockChannelActionStoreMockRecorder struct {
 	mock *MockChannelActionStore
 }
 
-// NewMockChannelActionStore creates a new mock instance
+// NewMockChannelActionStore creates a new mock instance.
 func NewMockChannelActionStore(ctrl *gomock.Controller) *MockChannelActionStore {
 	mock := &MockChannelActionStore{ctrl: ctrl}
 	mock.recorder = &MockChannelActionStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockChannelActionStore) EXPECT() *MockChannelActionStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// Create mocks base method.
 func (m *MockChannelActionStore) Create(arg0 app.GenericChannelAction) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -42,13 +43,13 @@ func (m *MockChannelActionStore) Create(arg0 app.GenericChannelAction) (string, 
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create
+// Create indicates an expected call of Create.
 func (mr *MockChannelActionStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockChannelActionStore)(nil).Create), arg0)
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockChannelActionStore) Get(arg0 string) (app.GenericChannelAction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -57,13 +58,13 @@ func (m *MockChannelActionStore) Get(arg0 string) (app.GenericChannelAction, err
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockChannelActionStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockChannelActionStore)(nil).Get), arg0)
 }
 
-// GetChannelActions mocks base method
+// GetChannelActions mocks base method.
 func (m *MockChannelActionStore) GetChannelActions(arg0 string, arg1 app.GetChannelActionOptions) ([]app.GenericChannelAction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChannelActions", arg0, arg1)
@@ -72,13 +73,13 @@ func (m *MockChannelActionStore) GetChannelActions(arg0 string, arg1 app.GetChan
 	return ret0, ret1
 }
 
-// GetChannelActions indicates an expected call of GetChannelActions
+// GetChannelActions indicates an expected call of GetChannelActions.
 func (mr *MockChannelActionStoreMockRecorder) GetChannelActions(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelActions", reflect.TypeOf((*MockChannelActionStore)(nil).GetChannelActions), arg0, arg1)
 }
 
-// HasViewedChannel mocks base method
+// HasViewedChannel mocks base method.
 func (m *MockChannelActionStore) HasViewedChannel(arg0, arg1 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasViewedChannel", arg0, arg1)
@@ -86,13 +87,13 @@ func (m *MockChannelActionStore) HasViewedChannel(arg0, arg1 string) bool {
 	return ret0
 }
 
-// HasViewedChannel indicates an expected call of HasViewedChannel
+// HasViewedChannel indicates an expected call of HasViewedChannel.
 func (mr *MockChannelActionStoreMockRecorder) HasViewedChannel(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasViewedChannel", reflect.TypeOf((*MockChannelActionStore)(nil).HasViewedChannel), arg0, arg1)
 }
 
-// SetMultipleViewedChannel mocks base method
+// SetMultipleViewedChannel mocks base method.
 func (m *MockChannelActionStore) SetMultipleViewedChannel(arg0 []string, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetMultipleViewedChannel", arg0, arg1)
@@ -100,13 +101,13 @@ func (m *MockChannelActionStore) SetMultipleViewedChannel(arg0 []string, arg1 st
 	return ret0
 }
 
-// SetMultipleViewedChannel indicates an expected call of SetMultipleViewedChannel
+// SetMultipleViewedChannel indicates an expected call of SetMultipleViewedChannel.
 func (mr *MockChannelActionStoreMockRecorder) SetMultipleViewedChannel(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMultipleViewedChannel", reflect.TypeOf((*MockChannelActionStore)(nil).SetMultipleViewedChannel), arg0, arg1)
 }
 
-// SetViewedChannel mocks base method
+// SetViewedChannel mocks base method.
 func (m *MockChannelActionStore) SetViewedChannel(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetViewedChannel", arg0, arg1)
@@ -114,13 +115,13 @@ func (m *MockChannelActionStore) SetViewedChannel(arg0, arg1 string) error {
 	return ret0
 }
 
-// SetViewedChannel indicates an expected call of SetViewedChannel
+// SetViewedChannel indicates an expected call of SetViewedChannel.
 func (mr *MockChannelActionStoreMockRecorder) SetViewedChannel(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetViewedChannel", reflect.TypeOf((*MockChannelActionStore)(nil).SetViewedChannel), arg0, arg1)
 }
 
-// Update mocks base method
+// Update mocks base method.
 func (m *MockChannelActionStore) Update(arg0 app.GenericChannelAction) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0)
@@ -128,7 +129,7 @@ func (m *MockChannelActionStore) Update(arg0 app.GenericChannelAction) error {
 	return ret0
 }
 
-// Update indicates an expected call of Update
+// Update indicates an expected call of Update.
 func (mr *MockChannelActionStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChannelActionStore)(nil).Update), arg0)

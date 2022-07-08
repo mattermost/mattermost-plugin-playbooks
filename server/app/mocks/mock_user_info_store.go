@@ -5,35 +5,36 @@
 package mock_app
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	reflect "reflect"
 )
 
-// MockUserInfoStore is a mock of UserInfoStore interface
+// MockUserInfoStore is a mock of UserInfoStore interface.
 type MockUserInfoStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUserInfoStoreMockRecorder
 }
 
-// MockUserInfoStoreMockRecorder is the mock recorder for MockUserInfoStore
+// MockUserInfoStoreMockRecorder is the mock recorder for MockUserInfoStore.
 type MockUserInfoStoreMockRecorder struct {
 	mock *MockUserInfoStore
 }
 
-// NewMockUserInfoStore creates a new mock instance
+// NewMockUserInfoStore creates a new mock instance.
 func NewMockUserInfoStore(ctrl *gomock.Controller) *MockUserInfoStore {
 	mock := &MockUserInfoStore{ctrl: ctrl}
 	mock.recorder = &MockUserInfoStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUserInfoStore) EXPECT() *MockUserInfoStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockUserInfoStore) Get(arg0 string) (app.UserInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -42,13 +43,13 @@ func (m *MockUserInfoStore) Get(arg0 string) (app.UserInfo, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockUserInfoStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserInfoStore)(nil).Get), arg0)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockUserInfoStore) Upsert(arg0 app.UserInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", arg0)
@@ -56,7 +57,7 @@ func (m *MockUserInfoStore) Upsert(arg0 app.UserInfo) error {
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockUserInfoStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUserInfoStore)(nil).Upsert), arg0)
