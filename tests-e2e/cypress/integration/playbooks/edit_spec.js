@@ -63,12 +63,13 @@ describe('playbooks > edit', () => {
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
-                    cy.findByPlaceholderText('Slash Command').should('have.focus');
-                    cy.findByPlaceholderText('Slash Command').should('have.value', '/');
-
-                    // * Verify the autocomplete prompt is open
-                    cy.get('#suggestionList').should('exist');
+                    cy.focused()
+                        .should('have.attr', 'placeholder', 'Slash Command')
+                        .should('have.value', '/');
                 });
+
+                // * Verify the autocomplete prompt is open
+                cy.get('#suggestionList').should('exist');
             });
 
             // current regression in BPE

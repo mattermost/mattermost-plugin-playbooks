@@ -81,7 +81,7 @@ describe('playbooks > edit status update', () => {
             // # Select a channel
             cy.findAllByTestId('status-update-broadcast-channels').click();
             cy.get('#playbook-automation-broadcast').contains('Town Square').click({force: true});
-            cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
+            cy.findAllByTestId('status-update-broadcast-channels').click();
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
@@ -151,7 +151,7 @@ describe('playbooks > edit status update', () => {
                     .should('equal', 'line-through solid rgba(63, 67, 80, 0.48)');
 
                 // # Close select options
-                cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
+                cy.findAllByTestId('status-update-broadcast-channels').click();
 
                 // # Open webhooks text area
                 cy.findAllByTestId('status-update-webhooks').click();
@@ -168,7 +168,7 @@ describe('playbooks > edit status update', () => {
                 // # Select a channel
                 cy.findAllByTestId('status-update-broadcast-channels').click();
                 cy.get('#playbook-automation-broadcast').contains('Town Square').click({force: true});
-                cy.findAllByTestId('status-update-broadcast-channels').click({force: true});
+                cy.findAllByTestId('status-update-broadcast-channels').click();
 
                 // * Verify status update message.
                 cy.findAllByTestId('status-update-section').should('exist').within(() => {
