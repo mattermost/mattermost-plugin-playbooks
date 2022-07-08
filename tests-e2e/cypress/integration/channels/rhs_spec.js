@@ -140,9 +140,6 @@ describe('channels > rhs', () => {
             // # Navigate to a channel without a playbook run.
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
 
@@ -156,9 +153,6 @@ describe('channels > rhs', () => {
         it('for a new, finished playbook run channel opened from the lhs', () => {
             // # Navigate to the application.
             cy.visit(`/${testTeam.name}/`);
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -223,9 +217,6 @@ describe('channels > rhs', () => {
             // # Navigate to the application.
             cy.visit(`/${testTeam.name}/`);
 
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
 
@@ -263,9 +254,6 @@ describe('channels > rhs', () => {
 
             // # Navigate to a channel without a playbook run.
             cy.visit(`/${testTeam.name}/channels/off-topic`);
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
