@@ -3,30 +3,22 @@
 
 import React, {cloneElement, useState} from 'react';
 import styled from 'styled-components';
+
 import {
+    useFloating,
     offset,
     flip,
     shift,
-    Placement,
     autoUpdate,
-    useFloating,
-    FloatingFocusManager,
-    useClick,
-    useDismiss,
     useInteractions,
+    useClick,
     useRole,
+    useDismiss,
+    FloatingFocusManager,
+    Placement,
 } from '@floating-ui/react-dom-interactions';
 
-import Portal from './portal';
-
-const Backdrop = styled.div`
-    bottom: 0;
-    left: 0;
-    top: 0;
-    right: 0;
-    position: fixed;
-    z-index: 1;
-`;
+import Portal from 'src/components/portal';
 
 const FloatingContainer = styled.div`
     min-width: 20rem;
@@ -56,12 +48,12 @@ const FloatingContainer = styled.div`
 `;
 
 type DropdownProps = {
+    target: JSX.Element;
     children: React.ReactNode;
     placement?: Placement;
     offset?: Parameters<typeof offset>[0];
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
-    target: JSX.Element;
 } & ({
     isOpen: boolean;
     onOpenChange: undefined | ((open: boolean) => void);
@@ -114,7 +106,6 @@ const Dropdown = (props: DropdownProps) => {
                                 {props.children}
                             </FloatingContainer>
                         </FloatingFocusManager>
-                        <Backdrop onClick={() => setOpen(false)}/>
                     </>
                 )}
             </Portal>
