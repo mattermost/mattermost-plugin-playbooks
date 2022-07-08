@@ -107,7 +107,7 @@ const Retrospective = ({
                 }
                 <PublishButton
                     onClick={onPublishClick}
-                    disabled={notEditable}
+                    disabled={isPublished}
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
@@ -133,9 +133,11 @@ const Retrospective = ({
                         title={formatMessage({defaultMessage: 'Retrospective'})}
                         id={id}
                     />
-                    <HeaderButtonsRight>
-                        {renderPublishComponent()}
-                    </HeaderButtonsRight>
+                    {role === Role.Participant ? (
+                        <HeaderButtonsRight>
+                            {renderPublishComponent()}
+                        </HeaderButtonsRight>
+                    ) : null}
                 </Header>
                 <StyledContent>
                     {playbook?.metrics && metricsAvailable &&
