@@ -180,6 +180,16 @@ export const UpgradeButton = (props: UpgradeButtonProps) => {
     );
 };
 
+export const UpgradeTertiaryButton = (props: UpgradeButtonProps & {className?: string}) => {
+    const {children, ...rest} = props;
+    return (
+        <TertiaryButton {...rest}>
+            {children}
+            <PositionedUpgradeBadge/>
+        </TertiaryButton>
+    );
+};
+
 const PositionedUpgradeBadge = styled(UpgradeBadge)`
     position: absolute;
     top: -4px;
