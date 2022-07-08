@@ -16,7 +16,7 @@ import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-import {usePlaybookRunNavigationTelemetry} from 'src/hooks/telemetry';
+import {usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks/telemetry';
 
 interface Props {
     id: string;
@@ -33,7 +33,7 @@ const Retrospective = ({
     playbook,
     role,
 }: Props) => {
-    usePlaybookRunNavigationTelemetry('retrospective', playbookRun.id);
+    usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, playbookRun.id);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
@@ -47,7 +47,10 @@ const Retrospective = ({
 
     if (!allowRetrospectiveAccess) {
         return (
-            <Container id={id}>
+            <Container
+                id={id}
+                data-testid={'run-retrospective-section'}
+            >
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Retrospective'})}
                     id={id}
@@ -120,7 +123,10 @@ const Retrospective = ({
     }, DEBOUNCE_2_SECS);
 
     return (
-        <Container id={id}>
+        <Container
+            id={id}
+            data-testid={'run-retrospective-section'}
+        >
             <div>
                 <Header>
                     <AnchorLinkTitle

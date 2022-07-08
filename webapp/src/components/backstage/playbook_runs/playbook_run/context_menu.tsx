@@ -15,7 +15,7 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 
 import {copyToClipboard} from 'src/utils';
-import {useToasts} from '../../toast_banner';
+import {useToaster} from '../../toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from '../../upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
@@ -31,7 +31,7 @@ interface Props {
 export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const {add: addToast} = useToasts();
+    const {add: addToast} = useToaster();
 
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
@@ -62,7 +62,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
             >
                 <DropdownMenuItem
                     onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
+                        copyToClipboard(getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >
@@ -98,7 +98,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     );
 };
 
-const Title = styled.div`
+const Title = styled.h1`
     ${SemiBoldHeading}
     letter-spacing: -0.01em;
     font-size: 16px;

@@ -2,27 +2,28 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import CompassIconProps from '@mattermost/compass-icons/components/props';
-
+import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {useToasts, ToastType} from 'src/components/backstage/toast_banner';
+import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {usePlaybook} from 'src/hooks';
+import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 
 interface Props {
@@ -35,16 +36,14 @@ interface Props {
 const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
+    const [showAddToChannel, setShowAddToChannel] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
 
-    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
-        if (!user) {
-            return;
-        }
-
+    const setOwner = async (userID: string) => {
         try {
-            const response = await clientSetOwner(run.id, user.id);
+            const response = await clientSetOwner(run.id, userID);
 
             if (response.error) {
                 let message;
@@ -63,17 +62,32 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
         }
     };
 
+    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
+        if (!user || !userType) {
+            return;
+        }
+
+        if (userType === 'Member') {
+            setOwner(user.id);
+        } else {
+            setSelectedUser(user);
+            setShowAddToChannel(true);
+        }
+    };
+
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
+                id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
-                {playbook && <PlaybookLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</PlaybookLink>}
+                {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
             <Item
+                id='runinfo-owner'
                 icon={AccountOutlineIcon}
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
@@ -86,6 +100,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 />
             </Item>
             <Item
+                id='runinfo-participants'
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
@@ -98,6 +113,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 </Participants>
             </Item>
             <Item
+                id='runinfo-following'
                 icon={BullhornOutlineIcon}
                 name={formatMessage({defaultMessage: 'Following'})}
             >
@@ -110,15 +126,83 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     />
                 </FollowersWrapper>
             </Item>
+            {selectedUser &&
+            <AddToChannelModal
+                user={selectedUser}
+                channelId={run.channel_id}
+                setOwner={setOwner}
+                show={showAddToChannel}
+                onHide={() => {
+                    setShowAddToChannel(false);
+                    setSelectedUser(null);
+                }}
+            />}
+            {runMetadata && editable && (
+                <Item
+                    id='runinfo-channel'
+                    icon={ProductChannelsIcon}
+                    name={formatMessage({defaultMessage: 'Channel'})}
+                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`)}
+                >
+                    <ItemLink to={`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`}>
+                        <ItemContent >
+                            {runMetadata.channel_name}
+                            <OpenInNewIcon
+                                size={14}
+                                color={'var(--button-bg)'}
+                            />
+                        </ItemContent>
+                    </ItemLink>
+                </Item>
+            )}
         </Section>
     );
 };
 
 export default RHSInfoOverview;
 
+interface AddToChannelModalProps {
+    user: UserProfile;
+    channelId: string;
+    setOwner: (id: string) => void;
+    show: boolean;
+    onHide: () => void;
+}
+
+const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+    const displayName = useFormattedUsername(user);
+
+    if (!user) {
+        return null;
+    }
+
+    return (
+        <ConfirmModal
+            show={show}
+            title={formatMessage(
+                {defaultMessage: 'Add {displayName} to Channel'},
+                {displayName},
+            )}
+            message={formatMessage(
+                {defaultMessage: '{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.'},
+                {displayName},
+            )}
+            confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+            onConfirm={() => {
+                dispatch(addChannelMember(channelId, user.id));
+                setOwner(user.id);
+                onHide();
+            }}
+            onCancel={onHide}
+        />
+    );
+};
+
 const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const {formatMessage} = useIntl();
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const currentUser = useSelector(getCurrentUser);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
@@ -159,6 +243,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
 type CompassIcon = React.FC<CompassIconProps>;
 
 interface ItemProps {
+    id: string;
     icon: CompassIcon;
     name: string;
     children: React.ReactNode;
@@ -171,7 +256,10 @@ const Item = (props: ItemProps) => {
     `;
 
     return (
-        <OverviewRow onClick={props.onClick}>
+        <OverviewRow
+            onClick={props.onClick}
+            data-testid={props.id}
+        >
             <OverviewItemName>
                 <StyledIcon
                     size={18}
@@ -184,12 +272,22 @@ const Item = (props: ItemProps) => {
     );
 };
 
-const PlaybookLink = styled(Link)`
+const ItemLink = styled(Link)`
     max-width: 230px;
 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+`;
+
+const ItemContent = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    svg {
+        margin-left: 3px;
+    }
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
