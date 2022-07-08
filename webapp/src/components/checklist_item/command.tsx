@@ -51,7 +51,7 @@ const Command = (props: CommandProps) => {
     const placeholder = (
         <PlaceholderDiv
             onClick={() => {
-                setCommandOpen(true);
+                setCommandOpen((open) => !open);
             }}
         >
             <CommandIcon
@@ -83,7 +83,7 @@ const Command = (props: CommandProps) => {
     const commandButton = (
         <CommandText
             onClick={() => {
-                setCommandOpen(true);
+                setCommandOpen((open) => !open);
             }}
         >
             <TextWithTooltipWhenEllipsis
