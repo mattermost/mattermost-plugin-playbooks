@@ -359,7 +359,7 @@ describe('runs > run details page', () => {
                 });
             });
 
-            it.only('publish retro', () => {
+            it('publish retro', () => {
                 getRetro().within(() => {
                     //# Enter metric invalid values
                     cy.get('input[type=text]').eq(0).click();
