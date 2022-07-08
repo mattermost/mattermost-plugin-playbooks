@@ -196,13 +196,10 @@ const RHSHome = () => {
 
     const permissionForPublic = useHasTeamPermission(currentTeam.id || '', 'playbook_public_create');
     const permissionForPrivate = useHasTeamPermission(currentTeam.id || '', 'playbook_private_create');
-    const hasCreationRestrictions = !(permissionForPublic && permissionForPrivate) && Boolean(currentTeam.id);
-    const makePublicWithPermission = hasCreationRestrictions ? permissionForPublic : true;
+    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
 
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
-
-    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {
