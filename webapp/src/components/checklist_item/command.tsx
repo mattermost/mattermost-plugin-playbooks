@@ -39,7 +39,6 @@ const Command = (props: CommandProps) => {
     const dispatch = useDispatch();
 
     const [commandOpen, setCommandOpen] = useState(false);
-    const [wasOpened, setWasOpened] = useState(false);
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
@@ -52,7 +51,6 @@ const Command = (props: CommandProps) => {
     const placeholder = (
         <PlaceholderDiv
             onClick={() => {
-                setWasOpened(true);
                 setCommandOpen(true);
             }}
         >
@@ -85,7 +83,6 @@ const Command = (props: CommandProps) => {
     const commandButton = (
         <CommandText
             onClick={() => {
-                setWasOpened(true);
                 setCommandOpen(true);
             }}
         >
@@ -130,7 +127,6 @@ const Command = (props: CommandProps) => {
                         command={command === '' ? '/' : command}
                         setCommand={setCommand}
                         autocompleteOnBottom={true}
-                        grabFocus={wasOpened}
                     />
                 </CommandInputContainer>
                 <CancelSaveButtons
