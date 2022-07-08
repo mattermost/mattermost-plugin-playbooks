@@ -534,7 +534,7 @@ describe('playbooks > edit', () => {
                 });
             });
 
-            describe.only('assign owner setting', () => {
+            describe('assign owner setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
