@@ -70,6 +70,7 @@ export const WebhooksInput = (props: Props) => {
             isOpen={isOpen}
             onOpenChange={setOpen}
             target={target}
+            initialFocus={props.webhooksDisabled ? -1 : undefined}
         >
             <SelectorWrapper>
                 <TextArea
@@ -177,7 +178,7 @@ const TextArea = styled.textarea<TextAreaProps>`
             }
         }
     `}
-    ${(props) => props.webhooksDisabled && `
+    ${(props) => props.webhooksDisabled && css`
         :not(:focus):not(:placeholder-shown) {
             text-decoration: line-through;
             color: rgba(var(--center-channel-color-rgb), 0.48);

@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
@@ -180,7 +180,7 @@ const Run = styled.div<RunProps>`
         text-decoration: underline;
     }
 
-    ${({running}) => running && `
+    ${({running}) => running && css`
         color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 

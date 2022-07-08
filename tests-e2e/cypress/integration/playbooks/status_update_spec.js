@@ -174,7 +174,7 @@ describe('playbooks > edit status update', () => {
                 cy.findAllByTestId('status-update-section').should('exist').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
-                    cy.contains('5 outgoing webhooks');
+                    cy.contains('4 outgoing webhooks');
                 });
 
                 // # Refresh the page
@@ -184,7 +184,7 @@ describe('playbooks > edit status update', () => {
                 cy.findAllByTestId('status-update-section').should('exist').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
-                    cy.contains('5 outgoing webhooks');
+                    cy.contains('4 outgoing webhooks');
                 });
             });
         });

@@ -54,6 +54,7 @@ type DropdownProps = {
     offset?: Parameters<typeof offset>[0];
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
+    initialFocus?: number;
 } & ({
     isOpen: boolean;
     onOpenChange: undefined | ((open: boolean) => void);
@@ -92,7 +93,10 @@ const Dropdown = (props: DropdownProps) => {
             <Portal>
                 {open && (
                     <>
-                        <FloatingFocusManager context={context}>
+                        <FloatingFocusManager
+                            context={context}
+                            initialFocus={props.initialFocus}
+                        >
                             <FloatingContainer
                                 {...getFloatingProps({
                                     ref: floating,
