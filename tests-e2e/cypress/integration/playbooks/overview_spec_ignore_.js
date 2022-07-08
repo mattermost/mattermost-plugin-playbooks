@@ -13,7 +13,9 @@ describe('playbooks > overview', () => {
     let testUser;
     let testUserFollower;
     let testPublicPlaybook;
+    // eslint-disable-next-line no-unused-vars
     let testPrivateOnlyMinePlaybook;
+    // eslint-disable-next-line no-unused-vars
     let testPrivateSharedPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
@@ -110,7 +112,7 @@ describe('playbooks > overview', () => {
     });
 
     describe('should switch to channels and prompt to run when clicking run', () => {
-        const openAndRunPlaybook = (team, playbook) => {
+        const openAndRunPlaybook = (team) => {
             // # Navigate directly to town square on the team
             cy.visit(`${team.name}/channels/town-square`);
 
@@ -229,6 +231,7 @@ describe('playbooks > overview', () => {
     });
 
     it('shows followers in actions preview', () => {
+        // eslint-disable-next-line no-unused-vars
         let playbookId;
         cy.apiCreatePlaybook({
             teamId: testTeam.id,

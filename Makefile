@@ -53,10 +53,7 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
-	@if grep -rin -e 'it\.only' -e 'describe\.only' tests-e2e/cypress/integration; then \
-		echo "\nThere are at least one e2e test marked as only, only should be removed.\n"; \
-		exit 1; \
-	fi
+	cd tests-e2e && npm run check
 
 ifneq ($(HAS_SERVER),)
 	@if ! [ -x "$$(command -v golangci-lint)" ]; then \

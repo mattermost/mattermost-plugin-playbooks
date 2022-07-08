@@ -130,7 +130,6 @@ describe('playbooks > edit', () => {
     });
 
     describe('actions', () => {
-        let testPublicChannel;
         let testPrivateChannel;
         let testPlaybook;
 
@@ -144,9 +143,7 @@ describe('playbooks > edit', () => {
                 'public-channel',
                 'Public Channel',
                 'O'
-            ).then(({channel}) => {
-                testPublicChannel = channel;
-            });
+            );
 
             // # Create a private channel
             cy.apiCreateChannel(
@@ -727,7 +724,6 @@ describe('playbooks > edit', () => {
                 // MM-44678
                 it.skip('removes the owner and disables the setting if the user is no longer in the team', () => {
                     let userToRemove;
-                    let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
@@ -750,8 +746,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     defaultOwnerId: userToRemove.id,
                                     defaultOwnerEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Remove user from the team
@@ -843,8 +837,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
-                    let playbookId;
-
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
                         .then(() => {
@@ -867,8 +859,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     announcementChannelId: channel.id,
                                     announcementChannelEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Delete channel
