@@ -251,10 +251,15 @@ describe('runs > run details page', () => {
                     // # Navigate directly to the retro tab
                     cy.visit(`/playbooks/run_details/${testRun.id}`);
 
-                    // * Verify if Target text(top | left) is removed
+                    // * Verify changes are reflected
                     verifyMetricInput(0, 'title1', null, 'description1');
                     verifyMetricInput(1, 'title2', '0', 'description2');
                     verifyMetricInput(2, 'title3', '30', 'description3');
+
+                    // # recover the original data for playbook
+                    testPublicPlaybookWithMetrics.metrics[0].target = 720000;
+                    testPublicPlaybookWithMetrics.metrics[1].target = 40;
+                    cy.apiUpdatePlaybook(testPublicPlaybookWithMetrics);
                 });
             });
 
