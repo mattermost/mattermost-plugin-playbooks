@@ -51,18 +51,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const {formatMessage} = useIntl();
     const [showDescription, setShowDescription] = useState(true);
     const [isEditing, setIsEditing] = useState(props.newItem);
+    const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
 
-    const [showMenu, setShowMenu] = useState(false);
-
     const toggleDescription = () => setShowDescription(!showDescription);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
-        setShowMenu(false);
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -81,7 +79,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
-        setShowMenu(false);
         let timestamp = 0;
         if (value?.value) {
             timestamp = value?.value.toMillis();
@@ -103,7 +100,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const onCommandChange = async (newCommand: string) => {
-        setShowMenu(false);
         setCommand(newCommand);
         if (props.newItem) {
             return;
@@ -147,6 +143,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
+                placement={'bottom-start'}
             />
         );
     };
@@ -181,6 +178,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 date={dueDate}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
+                placement={'bottom-start'}
             />
         );
     };
@@ -204,6 +202,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {...props.draggableProvided?.draggableProps}
             data-testid='checkbox-item-container'
             editing={isEditing}
+            hoverMenuItemOpen={isHoverMenuItemOpen}
             $disabled={props.disabled}
         >
             <CheckboxContainer>
@@ -225,6 +224,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
+                        onItemOpenChange={setIsHoverMenuItemOpen}
                     />
                 }
                 <DragButton
@@ -263,14 +263,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
-                        setShowMenu(false);
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
                         props.cancelAddingItem?.();
                     }}
                     onSave={() => {
-                        setShowMenu(false);
                         setIsEditing(false);
                         if (props.newItem) {
                             props.cancelAddingItem?.();
@@ -446,13 +444,15 @@ const Row = styled.div`
     margin-top: 8px;
 `;
 
-const ItemContainer = styled.div<{editing: boolean, $disabled: boolean}>`
+const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0px;
 
-    ${HoverMenu} {
-        opacity: 0;
-    }
+    ${({hoverMenuItemOpen}) => !hoverMenuItemOpen && css`
+        ${HoverMenu} {
+            opacity: 0;
+        }
+    `}
 
     .checklists:not(.isDragging) & {
         // not dragging and hover or focus-within

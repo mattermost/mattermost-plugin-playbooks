@@ -9,8 +9,6 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import Dropdown from 'src/components/dropdown';
 
-import {useClientRect} from 'src/hooks';
-
 import {PlaybookRunFilterButton} from '../backstage/styles';
 
 import TeamWithIcon from './team_with_icon';
@@ -126,30 +124,11 @@ export default function TeamSelector(props: Props) {
         }
     };
 
-    // Decide where to open the team selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numTeamsShown = Math.min(6, teamOptions.length);
-        const spacePerProfile = 48;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, teamOptions.length]);
     let target;
     if (props.selectedTeamId) {
         target = (
             <SelectedButton
                 data-testid={props.testId}
-                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -170,7 +149,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <button
                 data-testid={props.testId}
-                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -188,7 +166,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <PlaybookRunFilterButton
                 data-testid={props.testId}
-                ref={ref}
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -208,7 +185,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <div
                 data-testid={props.testId}
-                ref={ref}
                 onClick={toggleOpen}
             >
                 {props.placeholder}
@@ -225,10 +201,8 @@ export default function TeamSelector(props: Props) {
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={target}
-            showOnRight={props.showOnRight}
-            moveUp={moveUp}
         >
             <ReactSelect
                 autoFocus={true}

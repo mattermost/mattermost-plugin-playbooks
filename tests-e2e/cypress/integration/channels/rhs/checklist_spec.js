@@ -278,18 +278,6 @@ describe('channels > rhs > checklist', () => {
             cy.findByText(newTasktext).should('exist');
         });
 
-        it('assignee selector is shifted up if it falls below window', {
-            retries: {runMode: 3},
-        }, () => {
-            // Hover over a checklist item at the end
-            cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
-                // Click the profile icon
-                cy.get('.icon-account-plus-outline').click().wait(HALF_SEC);
-
-                cy.isInViewport('.playbook-run-user-select');
-            });
-        });
-
         it('creates a new checklist', () => {
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
