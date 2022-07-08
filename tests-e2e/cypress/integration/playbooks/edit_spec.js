@@ -809,6 +809,8 @@ describe('playbooks > edit', () => {
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
+                    });
+                    cy.get('#suggestionList').within(() => {
                         cy.findByText(/off-topic/i).click();
                     });
 
@@ -827,7 +829,11 @@ describe('playbooks > edit', () => {
                     // # status updates toggle
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
+                    });
+                    cy.get('#suggestionList').within(() => {
                         cy.findByText(/off-topic/i).click();
+                    });
+                    cy.get('#status-updates').within(() => {
                         cy.get('input[type=checkbox]').click({force: true});
                     });
 
