@@ -361,7 +361,7 @@ describe('runs > run details page', () => {
 
             it('publish retro', () => {
                 getRetro().within(() => {
-                    //# Enter metric invalid values
+                    // # Enter metric invalid values
                     cy.get('input[type=text]').eq(0).click();
                     cy.get('input[type=text]').eq(0).type('20:00:12d')
                         .tab().type('56')
