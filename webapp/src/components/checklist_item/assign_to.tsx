@@ -4,6 +4,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {Placement} from '@floating-ui/react-dom-interactions';
+
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -13,8 +15,11 @@ interface AssignedToProps {
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
+    placement?: Placement;
+    channelId?: string; // If not provided, the ID of the current channel will be used
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -54,7 +59,8 @@ const AssignTo = (props: AssignedToProps) => {
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                showOnRight={true}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         );
     }
@@ -97,6 +103,8 @@ const AssignTo = (props: AssignedToProps) => {
                 }}
                 selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         </AssignToContainer>
     );

@@ -63,12 +63,13 @@ describe('playbooks > edit', () => {
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
-                    cy.findByPlaceholderText('Slash Command').should('have.focus');
-                    cy.findByPlaceholderText('Slash Command').should('have.value', '/');
-
-                    // * Verify the autocomplete prompt is open
-                    cy.get('#suggestionList').should('exist');
+                    cy.focused()
+                        .should('have.attr', 'placeholder', 'Slash Command')
+                        .should('have.value', '/');
                 });
+
+                // * Verify the autocomplete prompt is open
+                cy.get('#suggestionList').should('exist');
             });
 
             // current regression in BPE
@@ -808,8 +809,8 @@ describe('playbooks > edit', () => {
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
                     });
+                    cy.findByText(/off-topic/i).click();
 
                     cy.reload();
 
@@ -826,7 +827,10 @@ describe('playbooks > edit', () => {
                     // # status updates toggle
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
+                    });
+                    cy.findByText(/off-topic/i).click();
+
+                    cy.get('#status-updates').within(() => {
                         cy.get('input[type=checkbox]').click({force: true});
                     });
 

@@ -2,12 +2,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled, {css} from 'styled-components';
 import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+
+import {Placement} from '@floating-ui/react-dom-interactions';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {labelFrom, Mode, ms, Option, useMakeOption} from '../datetime_input';
@@ -24,6 +26,8 @@ interface Props {
     editable?: boolean;
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
+    placement: Placement;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const controlComponentDueDate = (isDateTime: boolean) => (ownProps: ControlProps<DateTimeOption, boolean>) => (
@@ -123,7 +127,8 @@ export const DueDateHoverMenuButton = ({
                 onCustomReset: resetDueDate,
             }}
             controlledOpenToggle={dateTimeSelectorToggle}
-            showOnRight={true}
+            placement={props.placement}
+            onOpenChange={props.onOpenChange}
         />
     );
 };
@@ -136,13 +141,6 @@ export const DueDateButton = ({
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [showOnRight, setShowOnRight] = useState(false);
-    const ref = useRef<any>(null);
-
-    useEffect(() => {
-        // depending on component left offset decide where to show popup
-        setShowOnRight(ref.current.offsetLeft > 50);
-    }, [props.editable]);
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
@@ -188,7 +186,6 @@ export const DueDateButton = ({
 
     const dueDateButton = (
         <DueDateContainer
-            ref={ref}
             overdue={overdue}
             dueSoon={dueSoon}
         >
@@ -225,7 +222,7 @@ export const DueDateButton = ({
                     onCustomReset: resetDueDate,
                 }}
                 controlledOpenToggle={dateTimeSelectorToggle}
-                showOnRight={showOnRight}
+                placement={props.placement}
             />
             {upgradeModal}
         </DueDateContainer>
@@ -424,7 +421,7 @@ const SelectorRightIcon = styled.i<{overdueOrDueSoon: boolean}>`
 `;
 
 const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean}>`
-    display: flex;  
+    display: flex;
     flex-wrap: wrap;
 
     border-radius: 13px;
