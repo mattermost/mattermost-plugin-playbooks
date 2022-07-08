@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import {HashLink as Link} from 'react-router-hash-link';
+import styled, {css} from 'styled-components';
 
 export const Container = styled.div`
     display: flex;
@@ -64,20 +64,7 @@ const SectionTitle = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const StyledLink = styled(Link)`
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--button-bg);
-
-    opacity: 0;
-    ${Section}:hover & {
-        opacity: 100%;
-    }
-
-    transition: opacity .2s;
-`;
-
-const StyledSpan = styled.span`
+const LinkStyle = css`
     font-weight: 600;
     font-size: 12px;
     color: var(--button-bg);
@@ -93,4 +80,12 @@ const StyledSpan = styled.span`
     }
 
     transition: opacity .2s;
+`;
+
+const StyledLink = styled(Link)`
+    ${LinkStyle}
+`;
+
+const StyledSpan = styled.span`
+    ${LinkStyle}
 `;

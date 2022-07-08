@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {forwardRef, useImperativeHandle, useRef, useState} from 'react';
+import React, {forwardRef, useImperativeHandle, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useUpdateEffect} from 'react-use';
 
@@ -9,7 +9,6 @@ import {RunMetricData} from 'src/types/playbook_run';
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {isMetricValueValid, stringToMetric, metricToString} from 'src/components/backstage/playbook_edit/metrics/shared';
-import {useClickOutsideRef} from 'src/hooks';
 import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 
@@ -19,9 +18,11 @@ interface MetricsProps {
     notEditable: boolean;
     onEdit: (metricsData: RunMetricData[]) => void;
     flushChanges: () => void;
+    focusMetricId?: string;
+    idPrefix?: string;
 }
 
-const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdit, flushChanges}: MetricsProps, ref) => {
+const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdit, flushChanges, focusMetricId, idPrefix}: MetricsProps, ref) => {
     const {formatMessage} = useIntl();
 
     const produceValues = (config: Metric[], data: RunMetricData[]) => {
@@ -39,12 +40,6 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
     useUpdateEffect(() => {
         setInputsValues(produceValues(metricsConfigs, metricsData));
     }, [metricsData, metricsConfigs]);
-
-    // Handles click outside of metrics inputs to save changes
-    const inputRef = useRef(null);
-    useClickOutsideRef(inputRef, () => {
-        flushChanges();
-    });
 
     //  validateInputs function is called from retrospective component on publish button click, to validate metrics inputs
     useImperativeHandle(
@@ -124,6 +119,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
                         <div key={mc.id}>
                             <VerticalSpacer size={24}/>
                             <MetricInput
+                                id={(idPrefix ?? '') + mc.id}
                                 title={mc.title}
                                 value={inputsValues[idx]}
                                 placeholder={placeholder}
@@ -132,9 +128,10 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
                                 targetValue={metricToString(mc.target, mc.type, true)}
                                 mandatory={true}
                                 inputIcon={inputIcon}
-                                inputRef={inputRef}
                                 onChange={(e) => updateMetrics(idx, e)}
                                 disabled={notEditable}
+                                autofocus={focusMetricId === mc.id}
+                                onClickOutside={flushChanges}
                             />
                         </div>
                     );

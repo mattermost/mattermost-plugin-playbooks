@@ -1,14 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
+import {useClickOutsideRef} from 'src/hooks';
 import {StyledInput, HelpText, ErrorText} from '../../shared';
 
 interface Props {
+    id: string;
     title: string;
     value: string;
     placeholder: string;
@@ -17,12 +19,14 @@ interface Props {
     targetValue?: string;
     mandatory?: boolean;
     inputIcon: JSX.Element;
-    inputRef?: React.MutableRefObject<null>
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
     disabled?: boolean;
+    autofocus?: boolean;
+    onClickOutside?: () => void;
 }
 
 const MetricInput = ({
+    id,
     title,
     value,
     placeholder,
@@ -31,11 +35,21 @@ const MetricInput = ({
     targetValue,
     mandatory,
     inputIcon,
-    inputRef: textareaRef,
     onChange,
     disabled,
+    autofocus,
+    onClickOutside,
 }: Props) => {
     const {formatMessage} = useIntl();
+
+    const textareaRef = useRef<HTMLInputElement | null>(null);
+    useClickOutsideRef(textareaRef, onClickOutside ?? (() => {/*do nothing*/}));
+
+    useEffect(() => {
+        if (autofocus) {
+            textareaRef?.current?.focus();
+        }
+    }, [autofocus]);
 
     return (
         <InputContainer>
@@ -49,6 +63,7 @@ const MetricInput = ({
             <InputWithIcon>
                 {inputIcon}
                 <StyledInput
+                    id={id}
                     ref={textareaRef}
                     error={errorText !== ''}
                     placeholder={placeholder}
