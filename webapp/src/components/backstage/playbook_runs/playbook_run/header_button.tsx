@@ -6,11 +6,12 @@ import React from 'react';
 
 import Tooltip from 'src/components/widgets/tooltip';
 import {HeaderIcon} from '../playbook_run_backstage/playbook_run_backstage';
+import {CompassIcon} from 'src/types/compass';
 
 interface HeaderButtonProps {
     tooltipId: string;
     tooltipMessage: string
-    className: string;
+    Icon: CompassIcon;
     onClick: () => void;
     clicked?: boolean;
     size?: number;
@@ -18,7 +19,7 @@ interface HeaderButtonProps {
     'aria-label'?: string;
 }
 
-const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, size, iconSize, 'aria-label': ariaLabel}: HeaderButtonProps) => {
+const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, clicked, size, iconSize, 'aria-label': ariaLabel}: HeaderButtonProps) => {
     return (
         <Tooltip
             id={tooltipId}
@@ -34,17 +35,13 @@ const HeaderButton = ({tooltipId, tooltipMessage, className, onClick, clicked, s
             >
 
                 <Icon
-                    className={className}
-                    fontSize={iconSize}
+                    size={iconSize ?? 18}
+                    color={'rgb(var(--center-channel-color-rgb), 0.56)'}
                 />
             </StyledHeaderIcon>
         </Tooltip>
     );
 };
-
-const Icon = styled.i<{fontSize?: number}>`
-    font-size: ${(props) => (`${props.fontSize}px` ?? '18px')};
-`;
 
 const StyledHeaderIcon = styled(HeaderIcon)<{size?: number}>`
     margin-left: 4px;

@@ -7,6 +7,8 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
+import {UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
@@ -41,10 +43,8 @@ export const RunHeader = ({playbookRun, role, onViewInfo, onViewTimeline}: Props
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-
-                //TODO: replace icon to 'icon-lightning-bolt-outline'
-                className={'icon-hammer'}
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+                Icon={LightningBoltOutlineIcon}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
@@ -55,17 +55,16 @@ export const RunHeader = ({playbookRun, role, onViewInfo, onViewTimeline}: Props
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
-
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                className={'icon-update'}
+                Icon={UpdateIcon}
                 onClick={onViewTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
-                className={'icon-information-outline'}
+                Icon={InformationOutlineIcon}
                 onClick={onViewInfo}
             />
             <RunActionsModal

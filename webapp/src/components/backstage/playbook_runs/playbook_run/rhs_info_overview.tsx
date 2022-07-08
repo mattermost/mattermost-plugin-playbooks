@@ -8,7 +8,6 @@ import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
 import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
-import CompassIconProps from '@mattermost/compass-icons/components/props';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
@@ -25,6 +24,7 @@ import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {CompassIcon} from 'src/types/compass';
 
 interface Props {
     run: PlaybookRun;
@@ -239,8 +239,6 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
 
     return [FollowingButton, followers] as const;
 };
-
-type CompassIcon = React.FC<CompassIconProps>;
 
 interface ItemProps {
     id: string;
