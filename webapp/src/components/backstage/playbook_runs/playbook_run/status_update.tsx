@@ -138,11 +138,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                         {dueInfo.time}
                     </DueDateViewer>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <RequestUpdateButton
-                            onClick={() => setShowRequestUpdateConfirm(true)}
-                        >
-                            {formatMessage({defaultMessage: 'Request update...'})}
-                        </RequestUpdateButton>
+                        <RequestUpdateButton onClick={() => setShowRequestUpdateConfirm(true)}/>
                     ) : null}
                 </RightWrapper>
             </Header>
