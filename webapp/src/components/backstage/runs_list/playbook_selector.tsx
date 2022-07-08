@@ -5,7 +5,6 @@ import React, {useEffect, useState} from 'react';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../../backstage/styles';
 import {Playbook} from '../../../types/playbook';
 import {SelectedButton} from 'src/components/team/team_selector';
@@ -101,26 +100,6 @@ export default function PlaybookSelector(props: Props) {
         }
     };
 
-    // Decide where to open the profile selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numPlaybooksShown = Math.min(6, playbookOptions.length);
-        const spacePerPlaybook = 48;
-        const dropdownYShift = 27;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numPlaybooksShown * spacePerPlaybook) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, playbookOptions.length]);
-
     let target;
     if (props.selectedPlaybookId) {
         const playbookOption = playbookOptions.find((option) => option.playbookId === props.selectedPlaybookId);
@@ -151,7 +130,6 @@ export default function PlaybookSelector(props: Props) {
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            ref={ref}
             className={props.className}
         >
             {target}
@@ -167,9 +145,8 @@ export default function PlaybookSelector(props: Props) {
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={targetWrapped}
-            moveUp={moveUp}
         >
             <ReactSelect
                 autoFocus={true}

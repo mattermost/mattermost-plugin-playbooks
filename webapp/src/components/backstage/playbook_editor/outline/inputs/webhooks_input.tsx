@@ -1,15 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState, ReactNode} from 'react';
+import React, {useState, ReactNode} from 'react';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import {useClientRect} from 'src/hooks';
 import Dropdown from 'src/components/dropdown';
 import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
-
-import {moveRect} from './broadcast_channels_selector';
 
 type Props = {
     urls: string[];
@@ -38,17 +35,8 @@ export const WebhooksInput = (props: Props) => {
         setURLs(newURLs.split('\n'));
     };
 
-    // Decide where to open the datetime selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        moveRect(rect, props.urls.length, setMoveUp);
-    }, [rect, props.urls.length]);
-
     const target = (
         <div
-            ref={ref}
             onClick={toggleOpen}
         >
             {props.children}
@@ -80,9 +68,9 @@ export const WebhooksInput = (props: Props) => {
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={target}
-            moveUp={moveUp}
+            initialFocus={props.webhooksDisabled ? -1 : undefined}
         >
             <SelectorWrapper>
                 <TextArea
@@ -190,7 +178,7 @@ const TextArea = styled.textarea<TextAreaProps>`
             }
         }
     `}
-    ${(props) => props.webhooksDisabled && `
+    ${(props) => props.webhooksDisabled && css`
         :not(:focus):not(:placeholder-shown) {
             text-decoration: line-through;
             color: rgba(var(--center-channel-color-rgb), 0.48);
