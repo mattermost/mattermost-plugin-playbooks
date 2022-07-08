@@ -7,8 +7,7 @@ import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
-
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
@@ -80,13 +79,15 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
+                id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
-                {playbook && <PlaybookLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</PlaybookLink>}
+                {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
             <Item
+                id='runinfo-owner'
                 icon={AccountOutlineIcon}
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
@@ -99,6 +100,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 />
             </Item>
             <Item
+                id='runinfo-participants'
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
@@ -111,6 +113,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 </Participants>
             </Item>
             <Item
+                id='runinfo-following'
                 icon={BullhornOutlineIcon}
                 name={formatMessage({defaultMessage: 'Following'})}
             >
@@ -133,8 +136,25 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     setShowAddToChannel(false);
                     setSelectedUser(null);
                 }}
-            />
-            }
+            />}
+            {runMetadata && editable && (
+                <Item
+                    id='runinfo-channel'
+                    icon={ProductChannelsIcon}
+                    name={formatMessage({defaultMessage: 'Channel'})}
+                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`)}
+                >
+                    <ItemLink to={`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`}>
+                        <ItemContent >
+                            {runMetadata.channel_name}
+                            <OpenInNewIcon
+                                size={14}
+                                color={'var(--button-bg)'}
+                            />
+                        </ItemContent>
+                    </ItemLink>
+                </Item>
+            )}
         </Section>
     );
 };
@@ -221,6 +241,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
 };
 
 interface ItemProps {
+    id: string;
     icon: CompassIcon;
     name: string;
     children: React.ReactNode;
@@ -233,7 +254,10 @@ const Item = (props: ItemProps) => {
     `;
 
     return (
-        <OverviewRow onClick={props.onClick}>
+        <OverviewRow
+            onClick={props.onClick}
+            data-testid={props.id}
+        >
             <OverviewItemName>
                 <StyledIcon
                     size={18}
@@ -246,12 +270,22 @@ const Item = (props: ItemProps) => {
     );
 };
 
-const PlaybookLink = styled(Link)`
+const ItemLink = styled(Link)`
     max-width: 230px;
 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+`;
+
+const ItemContent = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    svg {
+        margin-left: 3px;
+    }
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
