@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef} from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
@@ -10,14 +10,19 @@ import {Link} from 'react-router-dom';
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
 
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {promptPlaybookRun} from 'src/actions';
+import {openPlaybookRunModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 const Item = styled.div`
@@ -170,8 +175,11 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
         num_stages,
         num_actions,
         last_run_at,
+        description,
+        team_id,
     } = playbook;
-
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, team_id || ''));
+    const {id: teamId, name: teamName} = team;
     return (
         <Item data-testid='rhs-home-item'>
             <div>
@@ -242,7 +250,9 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             {hasPermissionToRunPlaybook &&
             <RunButton
                 data-testid={'run-playbook'}
-                onClick={() => dispatch(promptPlaybookRun(id))}
+                onClick={() => {
+                    return dispatch(openPlaybookRunModal(id, description, teamId, teamName));
+                }}
             >
                 <Icon
                     path={mdiClipboardPlayOutline}
