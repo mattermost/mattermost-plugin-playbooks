@@ -71,8 +71,6 @@ import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter, PlaybookWithChecklist} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
-
-
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
@@ -93,35 +91,13 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        // Add unique id
-        const clientId = generateId();
-        dispatch(setClientId(clientId));
-
-        const command = `/playbook run-playbook ${playbookId} ${clientId}`;
-
-        // When dispatching from the playbooks product, the switch to channels resets the websocket
-        // connection, losing the event that opens this dialog. Allow the caller to specify a
-        // timeout as a gross workaround.
-        await new Promise((resolve) => setTimeout(() => {
-            clientExecuteCommand(dispatch, getState, command, teamId);
-            // eslint-disable-next-line no-undefined
-            resolve(undefined);
-        }, timeout));
-    };
-}
-
-export function promptPlaybookRun(playbookId: string) {
-    return async (dispatch: Dispatch) => {
-        dispatch(openPlaybookRunModal(playbookId));
-    };
-}
-
-export function openPlaybookRunModal(playbookId: string) {
-    return modals.openModal(makePlaybookRunModalDefinition({
+export function openPlaybookRunModal(playbookId: string, description: string, teamId: string, teamName: string) {
+    return modals.openModal(makePlaybookRunModalDefinition(
         playbookId,
-    }));
+        description,
+        teamId,
+        teamName
+    ));
 }
 
 export function promptUpdateStatus(
