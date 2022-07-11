@@ -473,7 +473,7 @@ describe('runs > run details page > header', () => {
                     // # confirm modal
                     cy.get('#confirmModal').get('#confirmModalButton').click();
 
-                    // * Assert that modal is not showed
+                    // * Assert that modal is not shown
                     cy.get('#confirmModal').should('not.exist');
 
                     // # Login as testUser
