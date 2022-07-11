@@ -10,9 +10,12 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 
+import {Placement} from '@floating-ui/react-dom-interactions';
+
+import {useUpdateEffect} from 'react-use';
+
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
 import Dropdown from 'src/components/dropdown';
 
@@ -45,10 +48,11 @@ interface Props {
     getUsersInTeam: () => Promise<UserProfile[]>;
     onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
-    dropdownMoveRightPx?: number;
+    placement?: Placement;
     className?: string;
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -63,10 +67,13 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
+    useUpdateEffect(() => {
+        props.onOpenChange?.(isOpen);
+    }, [isOpen]);
+
     // Allow the parent component to control the open state -- only after mounting.
     const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);
     useEffect(() => {
-        // eslint-disable-next-line no-undefined
         if (props.controlledOpenToggle !== undefined && props.controlledOpenToggle !== oldOpenToggle) {
             setOpen(!isOpen);
             setOldOpenToggle(props.controlledOpenToggle);
@@ -162,26 +169,6 @@ export default function ProfileSelector(props: Props) {
         }
     };
 
-    // Decide where to open the profile selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect || !isOpen) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, userOptions.length);
-        const spacePerProfile = 48;
-        const dropdownYShift = 27;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, userOptions.length]);
-
     const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
         <i className={'icon-chevron-down icon--small ml-2'}/>
     );
@@ -231,9 +218,7 @@ export default function ProfileSelector(props: Props) {
 
     if (props.onlyPlaceholder) {
         target = (
-            <div
-                onClick={toggleOpen}
-            >
+            <div>
                 {props.placeholder}
             </div>
         );
@@ -241,7 +226,7 @@ export default function ProfileSelector(props: Props) {
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            ref={ref}
+            onClick={toggleOpen}
             className={props.className}
         >
             {target}
@@ -259,11 +244,10 @@ export default function ProfileSelector(props: Props) {
 
     return (
         <Dropdown
-            isOpen={isOpen}
-            onClose={toggleOpen}
             target={targetWrapped}
-            moveRight={props.dropdownMoveRightPx}
-            moveUp={moveUp}
+            placement={props.placement}
+            isOpen={isOpen}
+            onOpenChange={setOpen}
         >
             <ReactSelect
                 autoFocus={true}
@@ -274,7 +258,7 @@ export default function ProfileSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={selectOptions}
-                placeholder={'Search'}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}

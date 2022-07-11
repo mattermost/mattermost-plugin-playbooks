@@ -7,6 +7,8 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import {Placement} from '@floating-ui/react-dom-interactions';
+
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInChannel, useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -16,10 +18,11 @@ interface AssignedToProps {
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
-    dropdownMoveRightPx?: number;
+    placement?: Placement;
     channelId?: string; // If not provided, the ID of the current channel will be used
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -61,7 +64,8 @@ const AssignTo = (props: AssignedToProps) => {
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                dropdownMoveRightPx={props.dropdownMoveRightPx}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         );
     }
@@ -104,7 +108,8 @@ const AssignTo = (props: AssignedToProps) => {
                 }}
                 selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
-                dropdownMoveRightPx={props.dropdownMoveRightPx}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         </AssignToContainer>
     );

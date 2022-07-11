@@ -23,7 +23,7 @@ import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
-import {useToasts} from '../toast_banner';
+import {useToaster} from '../toast_banner';
 
 import {
     duplicatePlaybook as clientDuplicatePlaybook,
@@ -305,7 +305,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
-    const {add: addToast} = useToasts();
+    const {add: addToast} = useToaster();
 
     const archived = playbook.delete_at !== 0;
 
@@ -316,7 +316,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             <DotMenu
                 dotMenuButton={TitleButton}
                 className={className}
-                placement='bottom-end'
+                placement='bottom-start'
                 icon={
                     <>
                         {children}

@@ -7,8 +7,6 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
-import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
-import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
@@ -20,7 +18,7 @@ import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {ToastType, useToasts} from '../../toast_banner';
+import {ToastType, useToaster} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -76,7 +74,7 @@ interface ViewerProps {
 
 export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
@@ -224,18 +222,11 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                             {formatMessage({defaultMessage: 'Post update'})}
                         </ActionButton>
                     ) : null}
-                    <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
-                            <ViewAllLink
-                                onClick={onClickViewAllUpdates}
-                                disabled={playbookRun.status_posts.length === 0}
-                            >
-                                {openRHSText}
-                            </ViewAllLink>
-                        </DotMenu>
-                    </Kebab>
                 </RightWrapper>
             </Content>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onClickViewAllUpdates}>
+                {formatMessage({defaultMessage: 'View all updates'})}
+            </ViewAllUpdates> : null}
         </Container>
     );
 };
@@ -307,10 +298,6 @@ const DueDateViewer = styled(DueDateParticipant)`
     margin-right: 10px;
 
 `;
-const Kebab = styled.div`
-    margin-left: 8px;
-    display: flex;
-`;
 
 const RightWrapper = styled.div`
     display: flex;
@@ -330,14 +317,6 @@ const ViewAllUpdates = styled.div`
     font-size: 11px;
     cursor: pointer;
     color: var(--button-bg);
+    font-weight: 600;
 `;
 
-const ThreeDotsIcon = styled(HamburgerButton)`
-    font-size: 18px;
-    margin-left: 4px;
-`;
-
-const ViewAllLink = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
-    opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
-    cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
-`;

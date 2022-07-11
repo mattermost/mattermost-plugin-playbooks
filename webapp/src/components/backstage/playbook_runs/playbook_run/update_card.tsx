@@ -51,7 +51,7 @@ const StatusUpdateCard = ({post}: Props) => {
     };
 
     return (
-        <Container>
+        <Container data-testid='status-update-card'>
             <Header>
                 <ProfilePic src={authorProfileUrl}/>
                 <Author>{authorUserName}</Author>

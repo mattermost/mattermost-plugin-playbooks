@@ -16,7 +16,7 @@ import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-import {usePlaybookRunNavigationTelemetry} from 'src/hooks/telemetry';
+import {usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks/telemetry';
 
 interface Props {
     id: string;
@@ -33,7 +33,7 @@ const Retrospective = ({
     playbook,
     role,
 }: Props) => {
-    usePlaybookRunNavigationTelemetry('retrospective', playbookRun.id);
+    usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, playbookRun.id);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
@@ -107,7 +107,7 @@ const Retrospective = ({
                 }
                 <PublishButton
                     onClick={onPublishClick}
-                    disabled={notEditable}
+                    disabled={isPublished}
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
@@ -133,9 +133,11 @@ const Retrospective = ({
                         title={formatMessage({defaultMessage: 'Retrospective'})}
                         id={id}
                     />
-                    <HeaderButtonsRight>
-                        {renderPublishComponent()}
-                    </HeaderButtonsRight>
+                    {role === Role.Participant ? (
+                        <HeaderButtonsRight>
+                            {renderPublishComponent()}
+                        </HeaderButtonsRight>
+                    ) : null}
                 </Header>
                 <StyledContent>
                     {playbook?.metrics && metricsAvailable &&
