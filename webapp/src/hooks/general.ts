@@ -740,7 +740,7 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
 export const useProxyState = <T>(
     prop: T,
     onChange: (val: T) => void,
-    ms = 500,
+    wait = 500,
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const check = useRef(prop);
     const [value, setValue] = useState(prop);
@@ -757,7 +757,7 @@ export const useProxyState = <T>(
     const onChangeDebounced = useCallback(debounce((v) => {
         check.current = v; // send check
         onChange(v);
-    }, ms), [ms, onChange]);
+    }, wait), [wait, onChange]);
 
     useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
 

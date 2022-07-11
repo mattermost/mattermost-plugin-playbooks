@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
 
@@ -86,10 +86,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-
-                //TODO: replace icon to 'icon-lightning-bolt-outline'
-                className={'icon-hammer'}
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+                Icon={LightningBoltOutlineIcon}
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
@@ -100,17 +98,16 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>
-
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                className={'icon-update'}
+                Icon={UpdateIcon}
                 onClick={onViewTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
-                className={'icon-information-outline'}
+                Icon={InformationOutlineIcon}
                 onClick={onViewInfo}
             />
             {role === Role.Viewer &&

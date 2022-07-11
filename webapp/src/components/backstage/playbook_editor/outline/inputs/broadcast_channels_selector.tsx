@@ -1,4 +1,4 @@
-import React, {useState, useEffect, ReactNode} from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import ReactSelect, {StylesConfig, ValueType} from 'react-select';
@@ -11,7 +11,6 @@ import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
 
-import {useClientRect} from 'src/hooks';
 import Dropdown from 'src/components/dropdown';
 
 export interface Props {
@@ -66,23 +65,8 @@ const BroadcastChannels = (props: Props) => {
     const {formatMessage} = useIntl();
     const selectableChannels = sortChannels(useSelector(getMyPublicAndPrivateChannels), props.channelIds);
 
-    const [isOpen, setOpen] = useState(false);
-    const toggleOpen = () => {
-        setOpen(!isOpen);
-    };
-
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        moveRect(rect, selectableChannels.length, setMoveUp);
-    }, [rect, selectableChannels.length]);
-
     const target = (
-        <div
-            ref={ref}
-            onClick={toggleOpen}
-        >
+        <div >
             {props.children}
         </div>
     );
@@ -115,12 +99,7 @@ const BroadcastChannels = (props: Props) => {
     };
 
     return (
-        <Dropdown
-            isOpen={isOpen}
-            onClose={toggleOpen}
-            target={target}
-            moveUp={moveUp}
-        >
+        <Dropdown target={target}>
             <StyledReactSelect
                 autoFocus={true}
                 closeMenuOnSelect={false}
@@ -150,22 +129,6 @@ const BroadcastChannels = (props: Props) => {
             />
         </Dropdown>
     );
-};
-
-export const moveRect = (rect: DOMRect, length: number, moveUp: React.Dispatch<React.SetStateAction<number>>) => {
-    if (!rect) {
-        moveUp(0);
-        return;
-    }
-
-    const innerHeight = window.innerHeight;
-    const numProfilesShown = Math.min(6, length);
-    const spacePerProfile = 48;
-    const dropdownYShift = 27;
-    const dropdownReqSpace = 80;
-    const extraSpace = 10;
-    const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
-    moveUp(Math.max(0, dropdownBottom - innerHeight));
 };
 
 // styles for the select component
