@@ -126,7 +126,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             <ConfirmModal
                 show={showGetInvolvedConfirm}
                 title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a particpant.'})}
+                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a participant.'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();
