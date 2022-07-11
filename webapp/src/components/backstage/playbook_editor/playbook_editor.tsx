@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useState} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
@@ -19,7 +19,7 @@ import {
     useStats,
 } from 'src/hooks';
 
-import {telemetryEventForPlaybook} from 'src/client';
+import {favoriteItem, isFavoriteItem, telemetryEventForPlaybook, unfavoriteItem} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
@@ -41,6 +41,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
+import {CategoryItemType} from 'src/types/category';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
@@ -61,16 +62,21 @@ const PlaybookEditor = () => {
     const headingIntersection = useIntersection(headingRef, {threshold: 1});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
 
+    const [isFavoritePlaybook, setIsFavoritePlaybook] = useState(false);
+
     useEffect(() => {
         const teamId = playbook?.team_id;
         if (!teamId) {
             return;
         }
 
+        isFavoriteItem(teamId, playbookId, CategoryItemType.PlaybookItemType)
+            .then(setIsFavoritePlaybook)
+            .catch(() => setIsFavoritePlaybook(false));
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
-    }, [dispatch, playbook?.team_id]);
+    }, [dispatch, playbook?.team_id, playbookId]);
 
     if (error) {
         // not found
@@ -104,13 +110,31 @@ const PlaybookEditor = () => {
         </Tooltip>
     );
 
+    // Favorite Button State
+    const favoriteIcon = isFavoritePlaybook ? 'icon-star' : 'icon-star-outline';
+
+    const toggleFavorite = () => {
+        if (isFavoritePlaybook) {
+            unfavoriteItem(playbook.team_id, playbookId, 'p');
+            return;
+        }
+        favoriteItem(playbook.team_id, playbookId, 'p');
+    };
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Controls.Back/>
+                    <Button
+                        onClick={toggleFavorite}
+                        className={isFavoritePlaybook ? 'active' : ''}
+                    >
+                        <div>
+                            <i className={'icon ' + favoriteIcon}/>
+                        </div>
+                    </Button>
                     <TextEdit
                         disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
@@ -563,6 +587,35 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
     @media screen and (min-width: 1680px) {
         --content-max-width: 1100px;
+    }
+`;
+
+const Button = styled.button`
+    border-radius: 4px;
+    border: 0;
+    padding: 12px 0 10px 0;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    flex: 1;
+    margin: 0 6px;
+
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+
+    &:active,
+    &.active {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    }
+
+    & i {
+        font-size: 24px;
+    }
+    & span {
+        line-height: 16px;
+        font-size: 10px;
+        font-weight: 600;
     }
 `;
 
