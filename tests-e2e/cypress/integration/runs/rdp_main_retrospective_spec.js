@@ -36,7 +36,7 @@ const editAndPublishRetro = () => {
 
 const getMetricInput = (index) => getRetro().getStyledComponent('InputContainer').eq(index);
 
-const verifyMetricInput = (index, title, target, description) => {
+const verifyMetricInput = (index, title, target, description, placeholder) => {
     getMetricInput(index).within(() => {
         cy.getStyledComponent('Title').contains(title);
 
@@ -48,6 +48,9 @@ const verifyMetricInput = (index, title, target, description) => {
 
         if (description) {
             cy.getStyledComponent('HelpText').contains(description);
+        }
+        if (placeholder) {
+            cy.get('input').should('have.attr', 'placeholder', placeholder);
         }
     });
 };
@@ -220,9 +223,9 @@ describe('runs > run details page', () => {
         const commonTests = () => {
             it('inputs info(title, target, description) and order', () => {
                 // * Verify the created metrics
-                verifyMetricInput(0, 'title1', '12 minutes', 'description1');
-                verifyMetricInput(1, 'title2', '40', 'description2');
-                verifyMetricInput(2, 'title3', '30', 'description3');
+                verifyMetricInput(0, 'title1', '12 minutes', 'description1', 'Add value (in dd:hh:mm)');
+                verifyMetricInput(1, 'title2', '40', 'description2', 'Add value');
+                verifyMetricInput(2, 'title3', '30', 'description3', 'Add value');
             });
         };
 
@@ -252,9 +255,9 @@ describe('runs > run details page', () => {
                     cy.visit(`/playbooks/run_details/${testRun.id}`);
 
                     // * Verify changes are reflected
-                    verifyMetricInput(0, 'title1', null, 'description1');
-                    verifyMetricInput(1, 'title2', '0', 'description2');
-                    verifyMetricInput(2, 'title3', '30', 'description3');
+                    verifyMetricInput(0, 'title1', null, 'description1', 'Add value (in dd:hh:mm)');
+                    verifyMetricInput(1, 'title2', '0', 'description2', 'Add value');
+                    verifyMetricInput(2, 'title3', '30', 'description3', 'Add value');
 
                     // # recover the original data for playbook
                     testPublicPlaybookWithMetrics.metrics[0].target = 720000;
