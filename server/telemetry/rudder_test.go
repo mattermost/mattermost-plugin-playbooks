@@ -95,6 +95,7 @@ var dummyPlaybookRun = &app.PlaybookRun{
 	DeleteAt:       9999,
 	PostID:         "post_id",
 	PlaybookID:     "playbookID1",
+	ParticipantIDs: []string{"owner_user_id", "dummy_user_id"},
 	Checklists: []app.Checklist{
 		{
 			Title: "Checklist",
@@ -174,6 +175,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 			StatusPosts:      dummyPlaybookRun.StatusPosts,
 			PreviousReminder: time.Duration((properties["PreviousReminder"]).(float64)),
 			TimelineEvents:   dummyPlaybookRun.TimelineEvents,
+			ParticipantIDs:   []string{"owner_user_id", "dummy_user_id"},
 		}
 	}
 
@@ -441,7 +443,7 @@ func TestPlaybookProperties(t *testing.T) {
 	require.Equal(t, expectedProperties, properties)
 }
 
-func TestPlaybookRunProperties(t *testing.T) {
+func TestPlaybookRunPropertiesParticipant(t *testing.T) {
 	properties := playbookRunProperties(dummyPlaybookRun, dummyUserID)
 
 	// ID field is reserved by Rudder to uniquely identify every event
@@ -449,6 +451,41 @@ func TestPlaybookRunProperties(t *testing.T) {
 
 	expectedProperties := map[string]interface{}{
 		"UserActualID":                         dummyUserID,
+		"UserActualRole":                       "participant",
+		telemetryKeyPlaybookRunID:              dummyPlaybookRun.ID,
+		"HasDescription":                       true,
+		"CommanderUserID":                      dummyPlaybookRun.OwnerUserID,
+		"ReporterUserID":                       dummyPlaybookRun.ReporterUserID,
+		"TeamID":                               dummyPlaybookRun.TeamID,
+		"ChannelID":                            dummyPlaybookRun.ChannelID,
+		"CreateAt":                             dummyPlaybookRun.CreateAt,
+		"EndAt":                                dummyPlaybookRun.EndAt,
+		"DeleteAt":                             dummyPlaybookRun.DeleteAt, //nolint
+		"PostID":                               dummyPlaybookRun.PostID,
+		"PlaybookID":                           dummyPlaybookRun.PlaybookID,
+		"NumChecklists":                        2,
+		"TotalChecklistItems":                  3,
+		"ChecklistItemsWithDueDate":            1,
+		"NumStatusPosts":                       2,
+		"CurrentStatus":                        dummyPlaybookRun.CurrentStatus,
+		"PreviousReminder":                     dummyPlaybookRun.PreviousReminder,
+		"NumTimelineEvents":                    len(dummyPlaybookRun.TimelineEvents),
+		"StatusUpdateBroadcastChannelsEnabled": dummyPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
+		"StatusUpdateBroadcastWebhooksEnabled": dummyPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+	}
+
+	require.Equal(t, expectedProperties, properties)
+}
+
+func TestPlaybookRunPropertiesViewer(t *testing.T) {
+	properties := playbookRunProperties(dummyPlaybookRun, "other_user_id")
+
+	// ID field is reserved by Rudder to uniquely identify every event
+	require.NotContains(t, properties, "ID")
+
+	expectedProperties := map[string]interface{}{
+		"UserActualID":                         "other_user_id",
+		"UserActualRole":                       "viewer",
 		telemetryKeyPlaybookRunID:              dummyPlaybookRun.ID,
 		"HasDescription":                       true,
 		"CommanderUserID":                      dummyPlaybookRun.OwnerUserID,

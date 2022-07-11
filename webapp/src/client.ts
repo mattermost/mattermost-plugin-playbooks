@@ -38,6 +38,7 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
+import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -502,7 +503,11 @@ export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookSt
     return data as PlaybookStats;
 }
 
-export async function telemetryEventForPlaybookRun(playbookRunID: string, action: string) {
+// telemetryRunAction are the event types that can be reported to telemetry server re: PlaybookRun
+// string is kept to do progressive migration to enum
+type telemetryRunAction = PlaybookRunViewTarget | PlaybookRunEventTarget | string;
+
+export async function telemetryEventForPlaybookRun(playbookRunID: string, action: telemetryRunAction) {
     await doFetchWithoutResponse(`${apiUrl}/telemetry/run/${playbookRunID}`, {
         method: 'POST',
         body: JSON.stringify({action}),

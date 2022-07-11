@@ -153,8 +153,17 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
+	role := "viewer"
+	for _, p := range playbookRun.ParticipantIDs {
+		if p == userID {
+			role = "participant"
+			break
+		}
+	}
+
 	return map[string]interface{}{
 		"UserActualID":                         userID,
+		"UserActualRole":                       role,
 		telemetryKeyPlaybookRunID:              playbookRun.ID,
 		"HasDescription":                       playbookRun.Summary != "",
 		"CommanderUserID":                      playbookRun.OwnerUserID,
