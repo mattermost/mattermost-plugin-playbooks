@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-// Note that this test check the basic behavior in Run details page as participant / viewer
+// Note that this test checks the basic behavior in Run details page as participant / viewer
 // It relies on the Channel RHS Checklist test to cover the full behavior of the checklists
 
 describe('runs > run details page > checklist', () => {
