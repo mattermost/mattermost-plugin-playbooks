@@ -26,7 +26,8 @@ const Checklists = ({id, playbookRun, role}: Props) => {
                 parentContainer={ChecklistParent.RunDetails}
                 viewerMode={role === Role.Viewer}
             />
-        </Container>);
+        </Container>
+    );
 };
 
 export default Checklists;

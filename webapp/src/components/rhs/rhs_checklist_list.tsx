@@ -40,6 +40,7 @@ import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
+import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -150,6 +151,18 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
         />
     ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
 
+    const itemButtonsFormat = () => {
+        if (parentContainer === ChecklistParent.RHS) {
+            return ItemButtonsFormat.Short;
+        }
+
+        if (viewerMode) {
+            return ItemButtonsFormat.Mixed;
+        }
+
+        return ItemButtonsFormat.Long;
+    };
+
     return (
         <InnerContainer
             id='pb-checklists-inner-container'
@@ -201,6 +214,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
                 onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                 onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 showItem={showItem}
+                itemButtonsFormat={itemButtonsFormat()}
             />
         </InnerContainer>
     );

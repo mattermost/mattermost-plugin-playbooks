@@ -27,6 +27,8 @@ interface CommandProps {
     isEditing: boolean;
 
     onChangeCommand: (newCommand: string) => void;
+
+    showAlways?: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -42,11 +44,6 @@ const Command = (props: CommandProps) => {
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
-
-    // nothing to show if we have not selected command and we are not editing
-    if (props.command === '' && !props.isEditing) {
-        return null;
-    }
 
     const placeholder = (
         <PlaceholderDiv
@@ -118,7 +115,7 @@ const Command = (props: CommandProps) => {
                     editing={props.isEditing}
                     isPlaceholder={props.command === ''}
                 >
-                    {props.isEditing ? editingCommand : notEditingCommand}
+                    {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
                 </CommandButton>
             )}
         >
