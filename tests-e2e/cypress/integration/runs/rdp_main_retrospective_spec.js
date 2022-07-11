@@ -139,7 +139,7 @@ describe('runs > run details page', () => {
             });
 
             it('has template text', () => {
-                // * Verify the retrospective section has a title
+                // * Verify the retrospective text is rendered
                 getRetro().findByTestId('retro-report-text').contains('This is a retrospective template.');
             });
 
