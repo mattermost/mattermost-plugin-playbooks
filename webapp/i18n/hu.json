@@ -531,7 +531,7 @@
     "lyXljU": "Feladat duplikálása",
     "371AC3": "Futás összefoglalójának frissítése",
     "TTIQ6E": "Jelöljön ki határidőket a feladatokhoz, hogy a kijelöltek priorizálni és elvégezni tudják a feladatokat.",
-    "aEhjYg": "Körvonal",
+    "aEhjYg": "Áttekintés",
     "oBeKB4": "Határidő {date}",
     "oAJsne": "Nyilvános forgatókönyv",
     "mm5vL8": "Csak meghívott tagok",
@@ -627,5 +627,6 @@
     "JvEwg/": "Nem volt lehetséges egy frissítést kérni",
     "Jli9m7": "A rendszer üzenetet küld a futó csatornának, amelyben kéri, hogy tegyen közzé egy frissítést.",
     "9xs0pp": "Érték hozzáadása...",
-    "KeO51o": "Csatorna"
+    "KeO51o": "Csatorna",
+    "lKeJ+i": "Nincsen összefoglaló"
 }
