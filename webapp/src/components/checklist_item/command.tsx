@@ -55,11 +55,11 @@ const Command = (props: CommandProps) => {
             }}
         >
             <CommandIcon
-                title={formatMessage({defaultMessage: 'Add slash command'})}
+                title={formatMessage({defaultMessage: 'Command...'})}
                 className={'icon-slash-forward icon-12'}
             />
             <CommandTextContainer>
-                {formatMessage({defaultMessage: 'Add slash command'})}
+                {formatMessage({defaultMessage: 'Command...'})}
             </CommandTextContainer>
             {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
@@ -116,6 +116,7 @@ const Command = (props: CommandProps) => {
             target={(
                 <CommandButton
                     editing={props.isEditing}
+                    isPlaceholder={props.command === ''}
                 >
                     {props.isEditing ? editingCommand : notEditingCommand}
                 </CommandButton>
@@ -151,16 +152,20 @@ const PlaceholderDiv = styled.div`
     }
 `;
 
-const CommandButton = styled.div<{editing: boolean}>`
+const CommandButton = styled.div<{editing: boolean; isPlaceholder: boolean}>`
     display: flex;
-    background: var(--center-channel-color-08);
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
-	max-width: 100%;
+    max-width: 100%;
+
+    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.16);
+        color: var(--center-channel-color);
     }
 `;
 
