@@ -19,7 +19,7 @@ import {
     useStats,
 } from 'src/hooks';
 
-import {favoriteItem, isFavoriteItem, telemetryEventForPlaybook, unfavoriteItem} from 'src/client';
+import {isFavoriteItem, telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
@@ -111,14 +111,10 @@ const PlaybookEditor = () => {
     );
 
     // Favorite Button State
-    const favoriteIcon = isFavoritePlaybook ? 'icon-star' : 'icon-star-outline';
+    const favoriteIcon = playbook.is_favorite ? 'icon-star' : 'icon-star-outline';
 
     const toggleFavorite = () => {
-        if (isFavoritePlaybook) {
-            unfavoriteItem(playbook.team_id, playbookId, 'p');
-            return;
-        }
-        favoriteItem(playbook.team_id, playbookId, 'p');
+        updatePlaybook({isFavorite: !playbook.is_favorite});
     };
 
     return (
@@ -129,7 +125,7 @@ const PlaybookEditor = () => {
                 <div>
                     <Button
                         onClick={toggleFavorite}
-                        className={isFavoritePlaybook ? 'active' : ''}
+                        className={playbook.is_favorite ? 'active' : ''}
                     >
                         <div>
                             <i className={'icon ' + favoriteIcon}/>
@@ -594,7 +590,7 @@ const Button = styled.button`
     border-radius: 4px;
     border: 0;
     padding: 12px 0 10px 0;
-    background: rgba(var(--center-channel-color-rgb), 0.04);
+    background: none;
     flex: 1;
     margin: 0 6px;
 
@@ -605,8 +601,11 @@ const Button = styled.button`
 
     &:active,
     &.active {
-        background: rgba(var(--button-bg-rgb), 0.08);
+        background: none;
         color: var(--button-bg);
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+         }
     }
 
     & i {
