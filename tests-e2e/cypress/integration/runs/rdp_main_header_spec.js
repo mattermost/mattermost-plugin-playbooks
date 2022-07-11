@@ -447,7 +447,7 @@ describe('runs > run details page > header', () => {
                     // # cancel modal
                     cy.get('#confirmModal').get('#cancelModalButton').click();
 
-                    // * Assert modal is not showed
+                    // * Assert modal is not shown
                     cy.get('#confirmModal').should('not.exist');
 
                     // # Login as testUser
