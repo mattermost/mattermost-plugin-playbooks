@@ -6,6 +6,7 @@ import (
 
 type PlaybookResolver struct {
 	app.Playbook
+	IsFavorite bool
 }
 
 func (r *PlaybookResolver) DeleteAt() float64 {
