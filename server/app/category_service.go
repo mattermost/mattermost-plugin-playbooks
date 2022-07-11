@@ -84,3 +84,57 @@ func (c *categoryService) Delete(categoryID string) error {
 
 	return nil
 }
+
+// AddFavorite favorites an item, which may be either run or playbook
+func (c *categoryService) AddFavorite(item CategoryItem, teamID, userID string) error {
+	favoriteCategory, err := c.store.GetFavoriteCategory(teamID, userID)
+	if err != nil {
+		return errors.Wrap(err, "can't get favorite category")
+	}
+
+	for _, favItem := range favoriteCategory.Items {
+		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
+			return errors.New("Item already is favorite")
+		}
+	}
+	if err := c.store.AddItemToCategory(item, favoriteCategory.ID); err != nil {
+		return errors.Wrap(err, "can't add item to favorite category")
+	}
+	return nil
+}
+
+func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID string) error {
+	favoriteCategory, err := c.store.GetFavoriteCategory(teamID, userID)
+	if err != nil {
+		return errors.Wrap(err, "can't get favorite category")
+	}
+
+	found := false
+	for _, favItem := range favoriteCategory.Items {
+		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
+			found = true
+		}
+	}
+	if !found {
+		return errors.New("Item is not favorited")
+	}
+	if err := c.store.DeleteItemFromCategory(item, favoriteCategory.ID); err != nil {
+		return errors.Wrap(err, "can't delete item from favorite category")
+	}
+	return nil
+}
+
+func (c *categoryService) IsItemFavorite(item CategoryItem, teamID, userID string) (bool, error) {
+	favoriteCategory, err := c.store.GetFavoriteCategory(teamID, userID)
+	if err != nil {
+		return false, errors.Wrap(err, "can't get favorite category")
+	}
+
+	found := false
+	for _, favItem := range favoriteCategory.Items {
+		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
+			found = true
+		}
+	}
+	return found, nil
+}
