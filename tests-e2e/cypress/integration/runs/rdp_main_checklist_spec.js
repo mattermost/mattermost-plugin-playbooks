@@ -105,7 +105,7 @@ describe('runs > run details page > checklist', () => {
             // # Click first task
             getChecklistTasks().eq(taskIndex).find('.checkbox').check();
 
-            // *  Assert checkbox is checked
+            // * Assert checkbox is checked
             getChecklistTasks().eq(taskIndex).find('.checkbox').should('be.checked');
         });
 
