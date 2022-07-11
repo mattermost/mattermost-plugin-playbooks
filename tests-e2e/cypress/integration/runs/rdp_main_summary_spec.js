@@ -141,6 +141,7 @@ describe('runs > run details page > summary', () => {
             // # Mouseover the summary
             cy.findByTestId('run-summary-section').trigger('mouseover');
 
+            // * Verify that the edit button is not rendered
             cy.findByTestId('run-summary-section').findByTestId('hover-menu-edit-button').should('not.exist');
         });
     });
