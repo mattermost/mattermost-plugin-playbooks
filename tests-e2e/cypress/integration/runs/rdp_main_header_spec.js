@@ -430,7 +430,7 @@ describe('runs > run details page > header', () => {
 
             describe('get involved', () => {
                 it('shows button', () => {
-                    // * Assert thst button is showed
+                    // * Assert that the button is shown
                     getHeader().findByText('Get involved').should('be.visible');
                 });
 
