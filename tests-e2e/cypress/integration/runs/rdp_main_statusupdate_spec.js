@@ -121,7 +121,7 @@ describe('runs > run details page > status update', () => {
                 // # Click on request update
                 cy.findByText('Request update...').click();
 
-                // * Click on modal confirmation
+                // # Click on modal confirmation
                 cy.get('#confirmModalButton').click();
 
                 // # Go to channel
@@ -138,7 +138,7 @@ describe('runs > run details page > status update', () => {
                 // # Click on request update
                 cy.findByText('Request update...').click();
 
-                // * Click on modal confirmation
+                // # Click on modal confirmation
                 cy.get('#cancelModalButton').click();
 
                 // # Go to channel
@@ -215,7 +215,7 @@ describe('runs > run details page > status update', () => {
             // # Click on request update
             cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
 
-            // * Click on modal confirmation
+            // # Click on modal confirmation
             cy.get('#confirmModalButton').click();
 
             cy.apiLogin(testUser).then(() => {
@@ -231,7 +231,7 @@ describe('runs > run details page > status update', () => {
             // # Click on request update
             cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
 
-            // * Click on modal confirmation
+            // # Click on modal confirmation
             cy.get('#cancelModalButton').click();
 
             cy.apiLogin(testUser).then(() => {
