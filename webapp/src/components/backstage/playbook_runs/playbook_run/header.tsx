@@ -146,10 +146,6 @@ const Container = styled.div`
     box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
-const Icon = styled.i`
-    font-size: 18px;
-`;
-
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
     font-size: 14px;

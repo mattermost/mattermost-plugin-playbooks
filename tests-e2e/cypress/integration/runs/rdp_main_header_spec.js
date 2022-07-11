@@ -456,7 +456,7 @@ describe('runs > run details page > header', () => {
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert message has not been sent
-                        cy.get('#postListContent').should('not.contain', 'wants to get involved in this run.');
+                        cy.getLastPost().should('not.contain', 'wants to get involved in this run.');
                     });
                 });
 
@@ -482,7 +482,7 @@ describe('runs > run details page > header', () => {
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert that message has been sent
-                        cy.get('#postListContent').contains('wants to get involved in this run.');
+                        cy.getLastPost().contains('wants to get involved in this run.');
                     });
                 });
 

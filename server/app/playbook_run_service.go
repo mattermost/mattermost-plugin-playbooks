@@ -2708,6 +2708,12 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	// Check if user is already a member of the channel
+	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if err == nil && member != nil {
+		return errors.New("user is already involved")
+	}
+
 	T := i18n.GetUserTranslations(requesterUser.Locale)
 	data := map[string]interface{}{
 		"Name": requesterUser.Username,
