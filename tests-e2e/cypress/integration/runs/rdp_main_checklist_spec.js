@@ -140,7 +140,7 @@ describe('runs > run details page > checklist', () => {
             // # Hover over the checklist item
             getChecklistTasks().eq(taskIndex).trigger('mouseover');
 
-            // # Click dot menu
+            // * Check that the hover menu is not rendered
             getChecklistTasks().eq(taskIndex).findByTitle('More').should('not.exist');
         });
     });
