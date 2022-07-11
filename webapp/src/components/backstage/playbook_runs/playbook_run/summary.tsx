@@ -38,6 +38,8 @@ const Summary = ({
         </TimestampContainer>
     );
 
+    const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
+
     return (
         <Container
             id={id}
@@ -52,7 +54,7 @@ const Summary = ({
             </Header>
             <MarkdownEdit
                 disabled={Role.Viewer === role}
-                placeholder={formatMessage({defaultMessage: 'Add a run summary'})}
+                placeholder={placeholder}
                 value={playbookRun.summary}
                 onSave={(value) => {
                     updatePlaybookRunDescription(playbookRun.id, value);
