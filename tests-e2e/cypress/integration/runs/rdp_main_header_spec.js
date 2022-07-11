@@ -441,7 +441,7 @@ describe('runs > run details page > header', () => {
                     // # Wait for useChannel
                     cy.wait(500);
 
-                    // * Assert button is not showed
+                    // * Click get involved button
                     getHeader().findByText('Get involved').click();
 
                     // # cancel modal
