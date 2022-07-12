@@ -18,7 +18,6 @@ import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_r
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
-import {navigateToUrl} from 'src/browser_routing';
 
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
@@ -48,33 +47,28 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
+        setShowGetInvolvedConfirm(true);
+    };
+
+    const onConfirmGetInvolved = async () => {
+        if (role === Role.Participant || !playbookRunMetadata) {
+            return;
+        }
 
         // Channel null value comes from error response (and we assume that is mostly 403)
         // If we don't have access to channel we'll send a request to be added,
         // otherwise we directly join it
         if (channel === null) {
-            setShowGetInvolvedConfirm(true);
+            const response = await requestGetInvolved(playbookRun.id);
+            if (response?.error) {
+                addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
+            } else {
+                addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
+            }
             return;
         }
-
         await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
-        navigateToChannel();
-    };
-
-    const onConfirmGetInvolved = async () => {
-        const response = await requestGetInvolved(playbookRun.id);
-        if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
-        } else {
-            addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
-        }
-    };
-
-    const navigateToChannel = () => {
-        if (!playbookRunMetadata) {
-            return;
-        }
-        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+        addToast(formatMessage({defaultMessage: 'You just joined this run.'}), ToastType.Success);
     };
 
     return (
@@ -127,7 +121,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             <ConfirmModal
                 show={showGetInvolvedConfirm}
                 title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a participant.'})}
+                message={channel === null ? formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a participant.'}) : formatMessage({defaultMessage: 'You are about to join this run.'})
+                }
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();

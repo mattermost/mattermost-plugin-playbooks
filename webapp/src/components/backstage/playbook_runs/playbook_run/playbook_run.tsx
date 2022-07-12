@@ -205,7 +205,6 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             role={role}
                         />
-                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
                             id={PlaybookRunIDs.SectionRetrospective}
                             playbookRun={playbookRun}
@@ -213,6 +212,7 @@ const PlaybookRunDetails = () => {
                             role={role}
                             focusMetricId={retrospectiveMetricId}
                         />
+                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                     </Body>
                 </Main>
             </MainWrapper>
