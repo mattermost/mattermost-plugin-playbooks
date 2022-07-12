@@ -135,12 +135,12 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                         {dueInfo.time}
                     </DueDateViewer>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <ActionButton
+                        <RequestUpdateButton
                             data-testid={'request-update-button'}
                             onClick={() => setShowRequestUpdateConfirm(true)}
                         >
                             {formatMessage({defaultMessage: 'Request update...'})}
-                        </ActionButton>
+                        </RequestUpdateButton>
                     ) : null}
                 </RightWrapper>
             </Header>
@@ -215,12 +215,12 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                 >{dueInfo.time}</DueDateParticipant>
                 <RightWrapper>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <ActionButton
+                        <PostUpdateButton
                             data-testid={'post-update-button'}
                             onClick={postUpdate}
                         >
                             {formatMessage({defaultMessage: 'Post update'})}
-                        </ActionButton>
+                        </PostUpdateButton>
                     ) : null}
                 </RightWrapper>
             </Content>
@@ -306,7 +306,13 @@ const RightWrapper = styled.div`
     flex: 1;
 `;
 
-const ActionButton = styled(TertiaryButton)`
+const PostUpdateButton = styled(TertiaryButton)`
+    font-size: 12px;
+    height: 32px;
+    padding: 0 48px;
+`;
+
+const RequestUpdateButton = styled(TertiaryButton)`
     font-size: 12px;
     height: 32px;
     padding: 0 16px;

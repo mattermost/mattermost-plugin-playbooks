@@ -118,6 +118,6 @@ const RightWrapper = styled.div`
 const FinishRunButton = styled(TertiaryButton)`
     font-size: 12px;
     height: 32px;
-    padding: 0 32px;
+    padding: 0 48px;
 `;
 
