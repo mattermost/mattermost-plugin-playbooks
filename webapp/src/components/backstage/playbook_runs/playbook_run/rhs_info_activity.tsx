@@ -24,9 +24,10 @@ const SHOWED_EVENTS = 5;
 interface Props {
     run: PlaybookRun;
     role: Role;
+    onViewTimeline: () => void;
 }
 
-const RHSInfoActivity = ({run, role}: Props) => {
+const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
@@ -34,7 +35,13 @@ const RHSInfoActivity = ({run, role}: Props) => {
 
     return (
         <Section>
-            <SectionHeader title={formatMessage({defaultMessage: 'Recent Activity'})}/>
+            <SectionHeader
+                title={formatMessage({defaultMessage: 'Recent Activity'})}
+                link={{
+                    onClick: onViewTimeline,
+                    name: formatMessage({defaultMessage: 'View all'}),
+                }}
+            />
             <ItemList>
                 {filteredEvents.slice(0, SHOWED_EVENTS).map((event, i, events) => {
                     let prevEventAt;
