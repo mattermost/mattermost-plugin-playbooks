@@ -171,6 +171,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		// assert some data has been injected
+		assert.Len(t, run.ParticipantIDs, 1)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {

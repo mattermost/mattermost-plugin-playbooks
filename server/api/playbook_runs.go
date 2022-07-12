@@ -517,7 +517,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	if err != nil {
+		return nil, err
+	}
+
+	// force database retrieval to ensure all data is processed correctly (i.e participantIds)
+	return h.playbookRunService.GetPlaybookRun(playbookRunReturned.ID)
+
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
