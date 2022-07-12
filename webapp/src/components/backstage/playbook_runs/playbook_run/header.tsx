@@ -17,6 +17,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {BadgeType} from '../../status_badge';
+import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -26,9 +27,10 @@ interface Props {
     role: Role;
     onViewInfo: () => void;
     onViewTimeline: () => void;
+    rhsSection: RHSContent | null;
 }
 
-export const RunHeader = ({playbookRun, role, onViewInfo, onViewTimeline}: Props) => {
+export const RunHeader = ({playbookRun, role, onViewInfo, onViewTimeline, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
@@ -60,12 +62,14 @@ export const RunHeader = ({playbookRun, role, onViewInfo, onViewTimeline}: Props
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 Icon={UpdateIcon}
                 onClick={onViewTimeline}
+                isActive={rhsSection === RHSContent.RunTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 Icon={InformationOutlineIcon}
                 onClick={onViewInfo}
+                isActive={rhsSection === RHSContent.RunInfo}
             />
             <RunActionsModal
                 playbookRun={playbookRun}
