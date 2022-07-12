@@ -250,7 +250,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
-	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.categoryService)
+	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.categoryService, p.playbookService, p.playbookRunService)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
