@@ -166,6 +166,9 @@ const PlaybookRunDetails = () => {
         rhsComponent = null;
     }
 
+    const onInfoClick = RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo;
+    const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
+
     return (
         <Container>
             <MainWrapper isRHSOpen={RHS.isOpen}>
@@ -173,8 +176,8 @@ const PlaybookRunDetails = () => {
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
-                        onViewInfo={RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo}
-                        onViewTimeline={RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline}
+                        onInfoClick={onInfoClick}
+                        onTimelineClick={onTimelineClick}
                         role={role}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                     />
