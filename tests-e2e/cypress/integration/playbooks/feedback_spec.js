@@ -9,7 +9,6 @@
 describe('playbooks > feedback', () => {
     let testTeam;
     let testUser;
-    let testPlaybook;
 
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
@@ -28,8 +27,6 @@ describe('playbooks > feedback', () => {
                 teamId: testTeam.id,
                 title: 'Test Playbook',
                 memberIDs: [],
-            }).then((playbook) => {
-                testPlaybook = playbook;
             });
 
             // # Login as the newly created testUser
