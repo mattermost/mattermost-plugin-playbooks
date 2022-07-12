@@ -53,6 +53,11 @@ const StyledHeaderIcon = styled(HeaderIcon)<{isActive: boolean; size?: number}>`
     ${({isActive: active}) => active && css`
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
+
+        :hover {
+            background: rgba(var(--button-bg-rgb), 0.16);
+            color: var(--button-bg);
+        }
     `}
 `;
 
