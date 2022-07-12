@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react';
+import React from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
@@ -56,9 +56,9 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const addViewAllsToGroups = (groups: SidebarGroup[]) => {
         for (let i = 0; i < groups.length; i++) {
             if (groups[i].id === 'runsCategory') {
-                groups[i].customLastItem = viewAllRuns();
+                groups[i].afterGroup = viewAllRuns();
             } else if (groups[i].id === 'playbooksCategory') {
-                groups[i].customLastItem = viewAllPlaybooks();
+                groups[i].afterGroup = viewAllPlaybooks();
             }
         }
     };
@@ -66,7 +66,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
 
-    const viewAllRuns = (): ReactNode => {
+    const viewAllRuns = () => {
         return (
             <ItemContainer>
                 <StyledLink
@@ -83,7 +83,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
         );
     };
 
-    const viewAllPlaybooks = (): ReactNode => {
+    const viewAllPlaybooks = () => {
         return (
             <ItemContainer key={'sidebarItem_view_all_playbooks'}>
                 <StyledLink
