@@ -38,7 +38,7 @@ const Group = (props: GroupProps) => {
                         />
                     );
                 })}
-                {props.group.customLastItem}
+                {props.group.afterGroup}
             </Body>
         </GroupContainer>
     );

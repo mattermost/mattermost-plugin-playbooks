@@ -28,7 +28,7 @@ export interface SidebarGroup {
     display_name: string;
     collapsed: boolean;
     items: Array<GroupItem>;
-    customLastItem?: ReactNode;
+    afterGroup?: ReactNode;
 }
 
 interface SidebarProps {
