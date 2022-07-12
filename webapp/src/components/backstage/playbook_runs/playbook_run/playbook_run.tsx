@@ -175,8 +175,8 @@ const PlaybookRunDetails = () => {
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
                         playbookRun={playbookRun}
-                        onViewInfo={onViewInfo}
-                        onViewTimeline={onViewTimeline}
+                        onViewInfo={RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo}
+                        onViewTimeline={RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline}
                         role={role}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                     />
