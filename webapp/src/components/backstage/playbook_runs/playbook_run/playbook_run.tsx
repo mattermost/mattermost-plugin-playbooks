@@ -3,16 +3,14 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {useUpdateEffect} from 'react-use';
-
 import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
-
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -121,7 +119,6 @@ const PlaybookRunDetails = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
@@ -174,6 +171,7 @@ const PlaybookRunDetails = () => {
             <MainWrapper isRHSOpen={RHS.isOpen}>
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
+                        playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
                         onViewInfo={RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo}
                         onViewTimeline={RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline}

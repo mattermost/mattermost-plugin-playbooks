@@ -171,6 +171,11 @@ export const getUpgradeModalCopy = (
         case AdminNotificationType.CHECKLIST_ITEM_DUE_DATE:
             titleText = <FormattedMessage defaultMessage='Work more effectively'/>;
             helpText = <FormattedMessage defaultMessage='Assign due dates to tasks so assignees can prioritize and get things done.'/>;
+            break;
+        case AdminNotificationType.REQUEST_UPDATE:
+            titleText = <FormattedMessage defaultMessage='Try request update with a free trial'/>;
+            helpText = <FormattedMessage defaultMessage='Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.'/>;
+            break;
         }
 
         if (!isAdmin) {

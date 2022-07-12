@@ -7,17 +7,20 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
+import {AdminNotificationType} from 'src/constants';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
-import {useNow} from 'src/hooks';
+import {useNow, useAllowRequestUpdate} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
-import {TertiaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import Tooltip from 'src/components/widgets/tooltip';
 import {ToastType, useToaster} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
@@ -135,12 +138,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                         {dueInfo.time}
                     </DueDateViewer>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <ActionButton
-                            data-testid={'request-update-button'}
-                            onClick={() => setShowRequestUpdateConfirm(true)}
-                        >
-                            {formatMessage({defaultMessage: 'Request update...'})}
-                        </ActionButton>
+                        <RequestUpdateButton onClick={() => setShowRequestUpdateConfirm(true)}/>
                     ) : null}
                 </RightWrapper>
             </Header>
@@ -311,6 +309,61 @@ const ActionButton = styled(TertiaryButton)`
     height: 32px;
     padding: 0 16px;
 `;
+
+const RequestUpdateButton = ({onClick}: {onClick: () => void}) => {
+    const {formatMessage} = useIntl();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const requestUpdateAllowed = useAllowRequestUpdate();
+
+    const commonCss = `
+        position: relative;
+        font-size: 12px;
+        height: 32px;
+        padding: 0 16px;
+    `;
+
+    const commonProps = {
+        'data-testid': 'request-update-button',
+        children: formatMessage({defaultMessage: 'Request update...'}),
+    };
+
+    if (requestUpdateAllowed) {
+        return (
+            <TertiaryButton
+                css={commonCss}
+                onClick={onClick}
+                {...commonProps}
+            />
+        );
+    }
+
+    return (
+        <>
+            <Tooltip
+                id={'request-update-button-tooltip'}
+                placement={'bottom'}
+                content={formatMessage(
+                    {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
+                    {
+                        title: (el) => <div>{el}</div>,
+                        body: (el) => <span style={{opacity: 0.56}}>{el}</span>,
+                    }
+                )}
+            >
+                <UpgradeTertiaryButton
+                    css={commonCss}
+                    onClick={() => setShowUpgradeModal(true)}
+                    {...commonProps}
+                />
+            </Tooltip>
+            <UpgradeModal
+                messageType={AdminNotificationType.REQUEST_UPDATE}
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
+            />
+        </>
+    );
+};
 
 const ViewAllUpdates = styled.div`
     margin-top: 9px;
