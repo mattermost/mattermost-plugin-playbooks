@@ -107,7 +107,6 @@ const Title = styled.h1`
     `;
 
 export const TitleButton = styled.div<{isActive: boolean}>`
-    /* padding-left: 16px; */
     padding: 2px 2px 2px 6px;
     display: inline-flex;
     border-radius: 4px;
