@@ -165,10 +165,11 @@ const StyledBadge = styled(Badge)`
 const GetInvolved = styled(PrimaryButton)`
     height: 28px;
     padding: 0 12px;
+    font-size: 12px;
 `;
 
 const GetInvolvedIcon = styled(AccountPlusOutlineIcon)`
     height: 14px;
     width: 14px;
-    margin-right: 3px;
+    margin-right: 8px;
 `;

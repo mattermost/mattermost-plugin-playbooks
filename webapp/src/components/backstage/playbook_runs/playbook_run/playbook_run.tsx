@@ -118,7 +118,6 @@ const PlaybookRunDetails = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
