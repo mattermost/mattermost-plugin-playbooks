@@ -43,7 +43,7 @@ const MetricInput = ({
     const {formatMessage} = useIntl();
 
     const textareaRef = useRef<HTMLInputElement | null>(null);
-    useClickOutsideRef(textareaRef, onClickOutside ?? (() => {/*do nothing*/}));
+    useClickOutsideRef(textareaRef, onClickOutside);
 
     useEffect(() => {
         if (autofocus) {

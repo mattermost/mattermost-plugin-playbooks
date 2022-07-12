@@ -92,7 +92,7 @@ export function useKeyPress(targetKey: string | ((e: KeyboardEvent) => boolean),
  */
 export function useClickOutsideRef(
     ref: MutableRefObject<HTMLElement | null>,
-    handler: () => void,
+    handler?: () => void,
 ) {
     useEffect(() => {
         function onMouseDown(event: MouseEvent) {
@@ -102,7 +102,7 @@ export function useClickOutsideRef(
                 target instanceof Node &&
                 !ref.current.contains(target)
             ) {
-                handler();
+                handler?.();
             }
         }
 
