@@ -18,7 +18,7 @@ import {BaseInput} from './assets/inputs';
 import PublicPrivateSelector from './backstage/public_private_selector';
 import {TemplateDropdown} from './templates/template_selector';
 import MarkdownTextbox from './markdown_textbox';
-import TeamSelector from './team/team_selector';
+import TeamSelector, {SelectedButton} from './team/team_selector';
 import GenericModal, {InlineLabel} from './widgets/generic_modal';
 
 const ID = 'playbooks_create';
@@ -54,6 +54,10 @@ const TeamSelectorBorder = styled(BaseInput).attrs({as: 'div'})`
 	display: flex;
 	flex-direction: horizontal;
 	padding: 0;
+
+    ${SelectedButton} {
+        width: 100%;
+    }
 `;
 
 const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, startingDescription, startingPublic, ...modalProps}: PlaybookCreateModalProps) => {

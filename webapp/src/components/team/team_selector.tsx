@@ -40,8 +40,6 @@ interface Props {
     containerStyles?: ReturnType<typeof css>;
 }
 
-const dropdownYShift = 27;
-
 const RightAlign = styled.div`
 	flex-grow: 1;
 	text-align: right;
