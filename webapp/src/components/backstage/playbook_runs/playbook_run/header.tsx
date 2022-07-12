@@ -166,10 +166,11 @@ const GetInvolved = styled(PrimaryButton)`
     height: 28px;
     padding: 0 12px;
     font-size: 12px;
+    margin-left: 8px;
 `;
 
 const GetInvolvedIcon = styled(AccountPlusOutlineIcon)`
     height: 14px;
     width: 14px;
-    margin-right: 8px;
+    margin-right: 3px;
 `;

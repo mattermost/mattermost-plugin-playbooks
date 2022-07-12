@@ -475,7 +475,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	// force owner as participant without triggering a store retrieval
-	playbookRun.ParticipantIDs = append(playbookRun.ParticipantIDs, playbookRun.OwnerUserID)
+	if len(playbookRun.ParticipantIDs) == 0 {
+		playbookRun.ParticipantIDs = append(playbookRun.ParticipantIDs, playbookRun.OwnerUserID)
+	}
 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
 		s.sendWebhooksOnCreation(*playbookRun)
