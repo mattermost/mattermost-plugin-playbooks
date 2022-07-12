@@ -202,7 +202,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                 <IconWrapper>
                     <IconClock
                         type={dueInfo.type}
-                        size={24}
+                        size={20}
                     />
                 </IconWrapper>
                 <TextDate
