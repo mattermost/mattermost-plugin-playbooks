@@ -15,11 +15,16 @@ export const Section = styled.section`
     padding: 24px 0;
 `;
 
-type LinkType = {to: string, name: string} | {onClick: () => void, name: string};
+type LinkURL = {to: string, name: string};
+type LinkHandler = {onClick: () => void, name: string};
+
+function isLinkURL(link: LinkURL | LinkHandler): link is LinkURL {
+    return 'to' in link;
+}
 
 interface SectionHeaderProps {
     title: string;
-    link?: LinkType;
+    link?: LinkURL | LinkHandler;
 }
 
 export const SectionHeader = ({title, link}: SectionHeaderProps) => (
@@ -29,8 +34,8 @@ export const SectionHeader = ({title, link}: SectionHeaderProps) => (
     </SectionHeaderContainer>
 );
 
-const SectionLink = ({link}: {link: LinkType}) => {
-    if ('to' in link) {
+const SectionLink = ({link}: {link: LinkURL | LinkHandler}) => {
+    if (isLinkURL(link)) {
         return (
             <StyledLink to={link.to}>
                 {link.name}
