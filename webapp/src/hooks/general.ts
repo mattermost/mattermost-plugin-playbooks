@@ -92,7 +92,7 @@ export function useKeyPress(targetKey: string | ((e: KeyboardEvent) => boolean),
  */
 export function useClickOutsideRef(
     ref: MutableRefObject<HTMLElement | null>,
-    handler: () => void,
+    handler?: () => void,
 ) {
     useEffect(() => {
         function onMouseDown(event: MouseEvent) {
@@ -102,7 +102,7 @@ export function useClickOutsideRef(
                 target instanceof Node &&
                 !ref.current.contains(target)
             ) {
-                handler();
+                handler?.();
             }
         }
 
@@ -373,7 +373,7 @@ export function useFetch<T>(
     fetchFunction: (id: string) => Promise<T>,
     deps: Array<any> = [],
 ) {
-    const [error, setError] = useState<ClientError|null>(null);
+    const [error, setError] = useState<ClientError | null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
     const [data, setData] = useState<T | null>(null);
 
@@ -396,7 +396,7 @@ export function useFetch<T>(
             });
     }, [id, ...deps]);
 
-    return [data, {state: fetchState, error}] as [T|null, FetchMetadata];
+    return [data, {state: fetchState, error}] as [T | null, FetchMetadata];
 }
 
 /**
@@ -568,7 +568,7 @@ export function useFormattedUsernameByID(userId: string) {
 
 // Return the list of names of the users given a list of UserProfiles or userIds
 // It will respect teamnameNameDisplaySetting.
-export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>) : string[] {
+export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>): string[] {
     const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
         getTeammateNameDisplaySetting,
     ) || '';
