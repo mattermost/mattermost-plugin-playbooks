@@ -61,6 +61,7 @@ type Plugin struct {
 	playbookService      app.PlaybookService
 	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
+	categoryService      app.CategoryService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -166,6 +167,7 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
+	categoryStore := sqlstore.NewCategoryStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
@@ -173,6 +175,7 @@ func (p *Plugin) OnActivate() error {
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
+	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -247,6 +250,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
+	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.categoryService, p.playbookService, p.playbookRunService)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

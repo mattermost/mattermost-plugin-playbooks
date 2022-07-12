@@ -187,6 +187,7 @@ func setupSQLStoreForUserInfo(t *testing.T, db *sqlx.DB) *SQLStore {
 	setupChannelsTable(t, db)
 	setupPostsTable(t, db)
 	setupKVStoreTable(t, db)
+	setupTeamMembersTable(t, db)
 
 	err := sqlStore.RunMigrations()
 	require.NoError(t, err)

@@ -141,7 +141,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                         <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
                     )}
                 </Header>
-                <form>
+                <>
                     <Modal.Body>{this.props.children}</Modal.Body>
                     <Modal.Footer>
                         <FooterContainer>
@@ -152,7 +152,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                             {this.props.footer}
                         </FooterContainer>
                     </Modal.Footer>
-                </form>
+                </>
             </StyledModal>
         );
     }

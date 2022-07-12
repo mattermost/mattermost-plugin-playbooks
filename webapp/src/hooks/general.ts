@@ -42,7 +42,6 @@ import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
-
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
@@ -741,7 +740,7 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
 export const useProxyState = <T>(
     prop: T,
     onChange: (val: T) => void,
-    ms = 500,
+    wait = 500,
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const check = useRef(prop);
     const [value, setValue] = useState(prop);
@@ -758,7 +757,7 @@ export const useProxyState = <T>(
     const onChangeDebounced = useCallback(debounce((v) => {
         check.current = v; // send check
         onChange(v);
-    }, ms), [ms, onChange]);
+    }, wait), [wait, onChange]);
 
     useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
 

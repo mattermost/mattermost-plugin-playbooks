@@ -10,13 +10,18 @@ import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklis
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 interface Props {
+    id: string;
     playbookRun: PlaybookRun;
     role: Role;
 }
-const Checklists = ({playbookRun, role}: Props) => {
+const Checklists = ({id, playbookRun, role}: Props) => {
     return (
-        <Container>
+        <Container
+            id={id}
+            data-testid={'run-checklist-section'}
+        >
             <RHSChecklistList
+                id={id}
                 playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
                 viewerMode={role === Role.Viewer}

@@ -42,6 +42,7 @@ import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/sta
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
+import {Category} from './types/category';
 
 let siteURL = '';
 let basePath = '';
@@ -717,6 +718,24 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
     } catch (error) {
         return {error};
     }
+};
+
+export const requestUpdate = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {
+    const queryParams = `?team_id=${teamID}`;
+    const data = await doGet(`${apiUrl}/my_categories${queryParams}`);
+    if (!data) {
+        return [];
+    }
+
+    return data;
 };
 
 export const doGet = async <TData = any>(url: string) => {

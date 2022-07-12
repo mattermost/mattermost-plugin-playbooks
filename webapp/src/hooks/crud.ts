@@ -9,9 +9,11 @@ import {
     clientFetchPlaybook,
     clientFetchPlaybooks,
     savePlaybook,
+    fetchMyCategories,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
-import {useToasts} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {Category} from 'src/types/category';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -90,7 +92,7 @@ export function usePlaybooksCrud(
         fetchPlaybooks();
     }, [params]);
 
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
 
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {
@@ -160,7 +162,7 @@ export function usePlaybooksCrud(
 
     const setSearchTerm = (term: string) => {
         setLoading(true);
-        setParams({search_term: term});
+        setParams({search_term: term, page: 0});
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
 
@@ -187,4 +189,25 @@ export function usePlaybooksCrud(
             isFiltering,
         },
     ] as const;
+}
+
+/**
+ * Read-only logic to fetch categories
+ * @param team_id identifier of the team of current user to fetch categories from
+ * @returns [] == loading or fetch error
+ */
+export function useCategories(team_id: string) {
+    const [categories, setCategories] = useState([] as Category[]);
+
+    useEffect(() => {
+        if (!team_id) {
+            setCategories([]);
+            return;
+        }
+        fetchMyCategories(team_id)
+            .then(setCategories)
+            .catch(() => setCategories([]));
+    }, [team_id]);
+
+    return categories;
 }

@@ -16,8 +16,10 @@ import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
+import {usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks/telemetry';
 
 interface Props {
+    id: string;
     playbookRun: PlaybookRun;
     playbook: PlaybookWithChecklist | null;
     role: Role;
@@ -26,10 +28,13 @@ interface Props {
 const DEBOUNCE_2_SECS = 2000;
 
 const Retrospective = ({
+    id,
     playbookRun,
     playbook,
     role,
 }: Props) => {
+    usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, playbookRun.id);
+
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -42,10 +47,13 @@ const Retrospective = ({
 
     if (!allowRetrospectiveAccess) {
         return (
-            <Container>
+            <Container
+                id={id}
+                data-testid={'run-retrospective-section'}
+            >
                 <AnchorLinkTitle
                     title={formatMessage({defaultMessage: 'Retrospective'})}
-                    id='retrospective'
+                    id={id}
                 />
                 <BannerWrapper>
                     <UpgradeBanner
@@ -99,7 +107,7 @@ const Retrospective = ({
                 }
                 <PublishButton
                     onClick={onPublishClick}
-                    disabled={notEditable}
+                    disabled={isPublished}
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
@@ -115,16 +123,21 @@ const Retrospective = ({
     }, DEBOUNCE_2_SECS);
 
     return (
-        <Container>
+        <Container
+            id={id}
+            data-testid={'run-retrospective-section'}
+        >
             <div>
                 <Header>
                     <AnchorLinkTitle
                         title={formatMessage({defaultMessage: 'Retrospective'})}
-                        id='retrospective'
+                        id={id}
                     />
-                    <HeaderButtonsRight>
-                        {renderPublishComponent()}
-                    </HeaderButtonsRight>
+                    {role === Role.Participant ? (
+                        <HeaderButtonsRight>
+                            {renderPublishComponent()}
+                        </HeaderButtonsRight>
+                    ) : null}
                 </Header>
                 <StyledContent>
                     {playbook?.metrics && metricsAvailable &&

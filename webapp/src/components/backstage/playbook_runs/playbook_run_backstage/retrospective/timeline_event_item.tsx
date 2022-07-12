@@ -148,7 +148,6 @@ interface Props {
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
-    disableLinks?: boolean;
     editable: boolean;
 }
 
@@ -307,9 +306,9 @@ const TimelineEventItem = (props: Props) => {
                     </Tooltip>
                 </TimeStamp>
                 <SummaryTitle
-                    onClick={(e) => props.disableLinks !== false && !statusPostDeleted && goToPost(e, props.event.post_id)}
+                    onClick={(e) => props.editable && !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
-                    postIdExists={props.event.post_id !== '' && props.disableLinks !== false}
+                    postIdExists={props.event.post_id !== '' && props.editable}
                 >
                     {summaryTitle}
                 </SummaryTitle>

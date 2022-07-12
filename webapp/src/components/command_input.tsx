@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
@@ -38,7 +38,6 @@ interface CommandInputProps {
     command: string;
     setCommand: (command: string) => void;
     autocompleteOnBottom: boolean;
-    grabFocus?: boolean;
 }
 
 const CommandInput = (props: CommandInputProps) => {
@@ -48,13 +47,6 @@ const CommandInput = (props: CommandInputProps) => {
     const [hover, setHover] = useState(false);
     const textboxRef = useRef(null);
     const id = useUniqueId('step-command-');
-
-    useEffect(() => {
-        if (props.grabFocus && textboxRef && textboxRef.current) {
-            // @ts-ignore
-            textboxRef.current.focus();
-        }
-    }, [props.grabFocus]);
 
     const save = () => {
         // Discard invalid slash commands.

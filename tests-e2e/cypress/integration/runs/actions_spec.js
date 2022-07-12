@@ -6,6 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+// This file could be removed after completing the migration to Run Detail Page
+// The equivalent test is rdp_main_header_spec.js
+
 describe('runs > actions', () => {
     let testTeam;
     let testSysadmin;

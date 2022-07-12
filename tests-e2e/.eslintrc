@@ -4,7 +4,7 @@
     "plugin:cypress/recommended",
     "plugin:react/recommended"
   ],
-  "plugins": ["mattermost", "import", "cypress", "@typescript-eslint"],
+  "plugins": ["mattermost", "import", "cypress", "@typescript-eslint", "no-only-tests"],
   "globals": {
     "Cypress": true,
     "cy": true
@@ -13,6 +13,7 @@
     "react": { "version": "16" }
   },
   "rules": {
+    "no-only-tests/no-only-tests": ["error", {"focus": ["only"]}],
     "import/no-unresolved": 2,
     "comma-dangle": 0,
     "dot-location": [
@@ -51,7 +52,7 @@
         "max-nested-callbacks": 0,
         "no-process-env": 0,
         "no-unused-expressions": 0,
-        "max-lines": 0,
+        "max-lines": 0
       }
     }
   ]

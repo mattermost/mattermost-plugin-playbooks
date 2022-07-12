@@ -63,12 +63,13 @@ describe('playbooks > edit', () => {
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
-                    cy.findByPlaceholderText('Slash Command').should('have.focus');
-                    cy.findByPlaceholderText('Slash Command').should('have.value', '/');
-
-                    // * Verify the autocomplete prompt is open
-                    cy.get('#suggestionList').should('exist');
+                    cy.focused()
+                        .should('have.attr', 'placeholder', 'Slash Command')
+                        .should('have.value', '/');
                 });
+
+                // * Verify the autocomplete prompt is open
+                cy.get('#suggestionList').should('exist');
             });
 
             // current regression in BPE
@@ -130,7 +131,6 @@ describe('playbooks > edit', () => {
     });
 
     describe('actions', () => {
-        let testPublicChannel;
         let testPrivateChannel;
         let testPlaybook;
 
@@ -144,9 +144,7 @@ describe('playbooks > edit', () => {
                 'public-channel',
                 'Public Channel',
                 'O'
-            ).then(({channel}) => {
-                testPublicChannel = channel;
-            });
+            );
 
             // # Create a private channel
             cy.apiCreateChannel(
@@ -727,7 +725,6 @@ describe('playbooks > edit', () => {
                 // MM-44678
                 it.skip('removes the owner and disables the setting if the user is no longer in the team', () => {
                     let userToRemove;
-                    let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
@@ -750,8 +747,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     defaultOwnerId: userToRemove.id,
                                     defaultOwnerEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Remove user from the team
@@ -808,8 +803,8 @@ describe('playbooks > edit', () => {
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
                     });
+                    cy.findByText(/off-topic/i).click();
 
                     cy.reload();
 
@@ -826,7 +821,10 @@ describe('playbooks > edit', () => {
                     // # status updates toggle
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
+                    });
+                    cy.findByText(/off-topic/i).click();
+
+                    cy.get('#status-updates').within(() => {
                         cy.get('input[type=checkbox]').click({force: true});
                     });
 
@@ -843,8 +841,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
-                    let playbookId;
-
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
                         .then(() => {
@@ -867,8 +863,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     announcementChannelId: channel.id,
                                     announcementChannelEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Delete channel
