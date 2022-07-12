@@ -64,7 +64,7 @@ const FinishRun = ({playbookRun}: Props) => {
                 <IconWrapper>
                     <Icon
                         path={mdiFlagOutline}
-                        size={'24px'}
+                        size={'20px'}
                     />
                 </IconWrapper>
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
