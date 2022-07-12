@@ -46,11 +46,7 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
 
-import {
-    isCloud,
-    isE10LicensedOrDevelopment,
-    isE20LicensedOrDevelopment,
-} from '../license';
+import {isCloud} from '../license';
 import {
     globalSettings,
     isCurrentUserAdmin,
@@ -443,53 +439,6 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
         setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
-}
-
-// useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
-// post to the timeline in the current team
-export function useAllowAddMessageToTimelineInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowChannelExport returns whether exporting the channel is allowed
-export function useAllowChannelExport() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookStatsView returns whether the server is licensed to show
-// the stats in the playbook backstage dashboard
-export function useAllowPlaybookStatsView() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookAndRunMetrics returns whether the server is licensed to
-// enter and show playbook and run metrics
-export function useAllowPlaybookAndRunMetrics() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowRetrospectiveAccess returns whether the server is licenced for
-// the retrospective feature.
-export function useAllowRetrospectiveAccess() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPrivatePlaybooks returns whether the server is licenced for
-// creating private playbooks
-export function useAllowPrivatePlaybooks() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowSetTaskDueDate returns whether the server is licensed for
-// setting / editing checklist item due date
-export function useAllowSetTaskDueDate() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowMakePlaybookPrivate returns whether the server is licenced for
-// converting public playbooks to private
-export function useAllowMakePlaybookPrivate() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 type StringToUserProfileFn = (id: string) => UserProfile;
