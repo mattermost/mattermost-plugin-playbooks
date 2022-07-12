@@ -38,7 +38,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, click
 
                 <Icon
                     size={iconSize ?? 18}
-                    color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                    color={isActive ? 'var(--button-bg)' : 'rgb(var(--center-channel-color-rgb), 0.56)'}
                 />
             </StyledHeaderIcon>
         </Tooltip>
