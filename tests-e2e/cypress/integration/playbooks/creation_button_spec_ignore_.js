@@ -65,9 +65,6 @@ describe('playbooks > creation button', () => {
     });
 
     it('auto creates a playbook with "Blank" template option', () => {
-        const url = 'playbooks/new';
-        const playbookName = 'Untitled playbook';
-
         // # Open the product
         cy.visit('/playbooks');
 
@@ -82,8 +79,6 @@ describe('playbooks > creation button', () => {
     });
 
     it('opens Service Outage Incident page from its template option', () => {
-        const playbookName = 'Incident Resolution';
-
         // # Open the product
         cy.visit('/playbooks');
 

@@ -137,6 +137,8 @@ export const StyledInput = styled(BaseInput)<{error?: boolean}>`
             }
         `
     )}
+
+    scroll-margin-top: 36px;
 `;
 
 interface AnchorLinkTitleProps {

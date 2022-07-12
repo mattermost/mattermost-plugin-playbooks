@@ -23,6 +23,7 @@ interface Props {
     playbookRun: PlaybookRun;
     playbook: PlaybookWithChecklist | null;
     role: Role;
+    focusMetricId?: string;
 }
 
 const DEBOUNCE_2_SECS = 2000;
@@ -32,6 +33,7 @@ const Retrospective = ({
     playbookRun,
     playbook,
     role,
+    focusMetricId,
 }: Props) => {
     usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, playbookRun.id);
 
@@ -142,12 +144,14 @@ const Retrospective = ({
                 <StyledContent>
                     {playbook?.metrics && metricsAvailable &&
                         <MetricsData
+                            idPrefix={id}
                             ref={childRef}
                             metricsData={playbookRun.metrics_data}
                             metricsConfigs={playbook.metrics}
                             notEditable={notEditable}
                             onEdit={onMetricsChange}
                             flushChanges={() => onMetricsChange.flush()}
+                            focusMetricId={focusMetricId}
                         />}
                     <Report
                         playbookRun={playbookRun}

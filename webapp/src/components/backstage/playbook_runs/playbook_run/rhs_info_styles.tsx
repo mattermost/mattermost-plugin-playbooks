@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import {HashLink as Link} from 'react-router-hash-link';
+import styled, {css} from 'styled-components';
 
 export const Container = styled.div`
     display: flex;
@@ -15,20 +15,40 @@ export const Section = styled.section`
     padding: 24px 0;
 `;
 
+type LinkURL = {to: string, name: string};
+type LinkHandler = {onClick: () => void, name: string};
+
+function isLinkURL(link: LinkURL | LinkHandler): link is LinkURL {
+    return 'to' in link;
+}
+
 interface SectionHeaderProps {
     title: string;
-    link?: {
-        to: string,
-        name: string,
-    };
+    link?: LinkURL | LinkHandler;
 }
 
 export const SectionHeader = ({title, link}: SectionHeaderProps) => (
     <SectionHeaderContainer>
         <SectionTitle>{title}</SectionTitle>
-        {link && <SectionLink to={link.to}>{link.name}</SectionLink>}
+        {link && <SectionLink link={link}/>}
     </SectionHeaderContainer>
 );
+
+const SectionLink = ({link}: {link: LinkURL | LinkHandler}) => {
+    if (isLinkURL(link)) {
+        return (
+            <StyledLink to={link.to}>
+                {link.name}
+            </StyledLink>
+        );
+    }
+
+    return (
+        <StyledSpan onClick={link.onClick}>
+            {link.name}
+        </StyledSpan>
+    );
+};
 
 const SectionHeaderContainer = styled.div`
     display: flex;
@@ -49,10 +69,15 @@ const SectionTitle = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const SectionLink = styled(Link)`
+const LinkStyle = css`
     font-weight: 600;
     font-size: 12px;
     color: var(--button-bg);
+    cursor: pointer;
+
+    :hover{
+        text-decoration: underline;
+    }
 
     opacity: 0;
     ${Section}:hover & {
@@ -60,4 +85,12 @@ const SectionLink = styled(Link)`
     }
 
     transition: opacity .2s;
+`;
+
+const StyledLink = styled(Link)`
+    ${LinkStyle}
+`;
+
+const StyledSpan = styled.span`
+    ${LinkStyle}
 `;

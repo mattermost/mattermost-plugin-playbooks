@@ -70,8 +70,9 @@ const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
-    const {hash: urlHash} = useLocation();
     const playbookRunId = match.params.playbookRunId;
+    const {hash: urlHash} = useLocation();
+    const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
     const [metadata, metadataResult] = useRunMetadata(playbookRunId);
@@ -141,6 +142,7 @@ const PlaybookRunDetails = () => {
                 runMetadata={metadata ?? undefined}
                 role={role}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
         break;
@@ -174,6 +176,7 @@ const PlaybookRunDetails = () => {
                         onViewInfo={onViewInfo}
                         onViewTimeline={onViewTimeline}
                         role={role}
+                        rhsSection={RHS.isOpen ? RHS.section : null}
                     />
                 </Header>
                 <Main isRHSOpen={RHS.isOpen}>
@@ -208,6 +211,7 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
                             role={role}
+                            focusMetricId={retrospectiveMetricId}
                         />
                     </Body>
                 </Main>
