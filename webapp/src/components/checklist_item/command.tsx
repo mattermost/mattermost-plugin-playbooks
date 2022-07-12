@@ -83,8 +83,11 @@ const Command = (props: CommandProps) => {
     const commandButton = (
         <CommandText
             onClick={() => {
-                setCommandOpen((open) => !open);
+                if (!props.disabled) {
+                    setCommandOpen((open) => !open);
+                }
             }}
+            isDisabled={props.disabled}
         >
             <TextWithTooltipWhenEllipsis
                 id={`checklist-command-button-tooltip-${props.checklistNum}`}
@@ -116,6 +119,7 @@ const Command = (props: CommandProps) => {
             target={(
                 <CommandButton
                     editing={props.isEditing}
+                    isDisabled={props.disabled}
                 >
                     {props.isEditing ? editingCommand : notEditingCommand}
                 </CommandButton>
@@ -151,7 +155,7 @@ const PlaceholderDiv = styled.div`
     }
 `;
 
-const CommandButton = styled.div<{editing: boolean}>`
+const CommandButton = styled.div<{editing: boolean, isDisabled: boolean}>`
     display: flex;
     background: var(--center-channel-color-08);
     border-radius: 54px;
@@ -159,9 +163,13 @@ const CommandButton = styled.div<{editing: boolean}>`
     height: 24px;
 	max-width: 100%;
 
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-    }
+    ${({isDisabled}) => (isDisabled ? css`
+        cursor: default;
+    ` : css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+        }
+    `)}
 `;
 
 interface RunProps {
@@ -190,7 +198,7 @@ const Run = styled.div<RunProps>`
     `}
 `;
 
-const CommandText = styled.div`
+const CommandText = styled.div<{isDisabled: boolean}>`
     word-break: break-word;
     display: inline;
     overflow: hidden;
@@ -200,9 +208,11 @@ const CommandText = styled.div`
     border-radius: 4px;
     font-size: 12px;
 
-    :hover {
-        cursor: pointer;
-    }
+    ${({isDisabled}) => !isDisabled && css`
+        :hover {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const StyledSpinner = styled(Spinner)`

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
@@ -145,9 +145,11 @@ const StyledProfileSelector = styled(ProfileSelector)`
         font-size: 12px;
         line-height: 10px;
 
-        :hover {
-            background: rgba(var(--center-channel-color-rgb), 0.16);
-        }
+        ${({enableEdit}) => enableEdit && css`
+            :hover {
+                background: rgba(var(--center-channel-color-rgb), 0.16);
+            }
+        `}
 
         .image {
             width: 20px;

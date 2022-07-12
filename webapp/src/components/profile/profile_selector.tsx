@@ -226,7 +226,7 @@ export default function ProfileSelector(props: Props) {
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            onClick={toggleOpen}
+            onClick={props.enableEdit ? toggleOpen : () => null}
             className={props.className}
         >
             {target}
