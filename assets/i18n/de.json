@@ -88,5 +88,9 @@
     {
         "id": "app.user.run.request_update",
         "translation": "@here — @{{.Name}} hat eine Statusaktualisierung angefordert.\n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here - @{{.Name}} möchte sich an diesem Lauf beteiligen. Um ihn an dem Lauf teilnehmen zu lassen, füge ihn bitte zu diesem Kanal hinzu.\n"
     }
 ]
