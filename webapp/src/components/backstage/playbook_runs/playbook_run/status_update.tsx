@@ -100,14 +100,17 @@ const useRequestUpdate = (playbookRunId: string) => {
             onCancel={() => setShowRequestUpdateConfirm(false)}
         />
     );
-    return {RequestUpdateConfirmModal, setShowRequestUpdateConfirm};
+    return {
+        RequestUpdateConfirmModal,
+        showRequestUpdateConfirm: () => setShowRequestUpdateConfirm(true),
+    };
 };
 
 export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
-    const {RequestUpdateConfirmModal, setShowRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
+    const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
 
     if (!playbookRun.status_update_enabled) {
         return null;
@@ -158,7 +161,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
                         <ActionButton
                             data-testid={'request-update-button'}
-                            onClick={() => setShowRequestUpdateConfirm(true)}
+                            onClick={showRequestUpdateConfirm}
                         >
                             {formatMessage({defaultMessage: 'Request update...'})}
                         </ActionButton>
@@ -185,7 +188,7 @@ interface ParticipantProps {
 export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const {RequestUpdateConfirmModal, setShowRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
+    const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -243,7 +246,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                                 {openRHSText}
                             </DropdownItem>
                             <DropdownItem
-                                onClick={() => setShowRequestUpdateConfirm(true)}
+                                onClick={showRequestUpdateConfirm}
                                 disabled={false}
                             >
                                 {formatMessage({defaultMessage: 'Request update...'})}
