@@ -192,7 +192,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 playbookRunId={props.playbookRunId}
                 isEditing={isEditing}
                 onChangeCommand={onCommandChange}
-                showAlways={true}
             />
         );
     };
