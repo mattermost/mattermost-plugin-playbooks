@@ -30,6 +30,23 @@ import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
 import {DueDateButton} from './duedate';
 
+export enum ButtonsFormat {
+
+    // All buttons are shown regardless of their state if they're editable;
+    // owner name is shown completely
+    Long = 'long',
+
+    // Only buttons with a value are shown;
+    // owner name is shown completely
+    Mixed = 'mixed',
+
+    // Only buttons with a value are shown;
+    // owner name is not shown when other buttons have a value
+    Short = 'short',
+}
+
+const defaultButtonsFormat = ButtonsFormat.Short;
+
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
@@ -46,6 +63,7 @@ interface ChecklistItemProps {
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    buttonsFormat?: ButtonsFormat;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -58,6 +76,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [command, setCommand] = useState(props.checklistItem.command);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
+    const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -121,7 +140,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderAssignTo = (): null | React.ReactNode => {
-        if (!assigneeID && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !isEditing)) {
             return null;
         }
 
@@ -131,6 +150,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
 
         const shouldHideName = () => {
+            if (buttonsFormat !== ButtonsFormat.Short) {
+                return false;
+            }
+
             if (isEditing) {
                 return false;
             }
@@ -156,7 +179,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderCommand = (): null | React.ReactNode => {
-        if (!command && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!command && !isEditing)) {
             return null;
         }
         return (
@@ -175,7 +198,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
-        if ((!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
             return null;
         }
 
@@ -191,7 +214,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderRow = (): null | React.ReactNode => {
-        if (!assigneeID && !command && !dueDate && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !isEditing)) {
             return null;
         }
         return (

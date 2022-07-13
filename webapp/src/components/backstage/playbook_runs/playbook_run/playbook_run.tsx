@@ -3,16 +3,14 @@
 
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {useUpdateEffect} from 'react-use';
-
 import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
-
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -72,8 +70,9 @@ const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
-    const {hash: urlHash} = useLocation();
     const playbookRunId = match.params.playbookRunId;
+    const {hash: urlHash} = useLocation();
+    const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
     const [metadata, metadataResult] = useRunMetadata(playbookRunId);
@@ -120,7 +119,6 @@ const PlaybookRunDetails = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    // TODO: triple-check this assumption, can we rely on participant_ids?
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
@@ -144,6 +142,7 @@ const PlaybookRunDetails = () => {
                 runMetadata={metadata ?? undefined}
                 role={role}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
         break;
@@ -172,6 +171,7 @@ const PlaybookRunDetails = () => {
             <MainWrapper isRHSOpen={RHS.isOpen}>
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
+                        playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
                         onViewInfo={onViewInfo}
                         onViewTimeline={onViewTimeline}
@@ -211,6 +211,7 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             playbook={playbook ?? null}
                             role={role}
+                            focusMetricId={retrospectiveMetricId}
                         />
                     </Body>
                 </Main>

@@ -3,7 +3,7 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {useAllowPrivatePlaybooks} from 'src/hooks/general';
+import {useAllowPrivatePlaybooks} from 'src/hooks';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import Tooltip from 'src/components/widgets/tooltip';
 

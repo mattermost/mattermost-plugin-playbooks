@@ -5,7 +5,7 @@ import React from 'react';
 import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
 import {setChecklistItemState} from 'src/client';
-import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
+import {ButtonsFormat as ItemButtonsFormat, ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -21,6 +21,7 @@ interface Props {
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    itemButtonsFormat?: ItemButtonsFormat;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -46,6 +47,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onAddChecklistItem={props.onAddChecklistItem}
                     onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                     onDeleteChecklistItem={props.onDeleteChecklistItem}
+                    buttonsFormat={props.itemButtonsFormat}
                 />
             )}
         </Draggable>

@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Link} from 'react-router-dom';
+import {HashLink as Link} from 'react-router-hash-link';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {Duration} from 'luxon';
 
+import {PlaybookRunIDs} from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {RunMetricData} from 'src/types/playbook_run';
 import {Metric, MetricType} from 'src/types/playbook';
@@ -15,12 +16,13 @@ import {formatDuration} from 'src/components/formatted_duration';
 import {useAllowPlaybookAndRunMetrics} from 'src/hooks';
 
 interface Props {
+    runID: string;
     metricsData: RunMetricData[];
     metricsConfig?: Metric[];
     editable: boolean;
 }
 
-const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
+const RHSInfoMetrics = ({runID, metricsData, metricsConfig, editable}: Props) => {
     const {formatMessage} = useIntl();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
 
@@ -33,12 +35,14 @@ const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
         return null;
     }
 
+    const retroURL = `/playbooks/run_details/${runID}#${PlaybookRunIDs.SectionRetrospective}`;
+
     return (
         <Section>
             <SectionHeader
                 title={formatMessage({defaultMessage: 'Key Metrics'})}
                 link={{
-                    to: '#',
+                    to: retroURL,
                     name: formatMessage({defaultMessage: 'View Retrospective'}),
                 }}
             />
@@ -46,7 +50,7 @@ const RHSInfoMetrics = ({metricsData, metricsConfig, editable}: Props) => {
                 {metricsConfig.map((metricInfo) => (
                     <Item
                         key={metricInfo.id}
-                        to={'#'}
+                        to={retroURL + metricInfo.id}
                         data={metricDataByID[metricInfo.id]}
                         info={metricInfo}
                         editable={editable}

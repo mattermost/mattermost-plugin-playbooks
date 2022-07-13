@@ -17,6 +17,7 @@ interface Props {
     runMetadata?: Metadata;
     role: Role;
     onViewParticipants: () => void;
+    onViewTimeline: () => void;
 }
 
 const RHSInfo = (props: Props) => {
@@ -33,6 +34,7 @@ const RHSInfo = (props: Props) => {
                 editable={editable}
             />
             <RHSInfoMetrics
+                runID={props.run.id}
                 metricsData={props.run.metrics_data}
                 metricsConfig={props.playbook?.metrics}
                 editable={editable}
@@ -40,6 +42,7 @@ const RHSInfo = (props: Props) => {
             <RHSInfoActivity
                 run={props.run}
                 role={props.role}
+                onViewTimeline={props.onViewTimeline}
             />
         </Container>
     );

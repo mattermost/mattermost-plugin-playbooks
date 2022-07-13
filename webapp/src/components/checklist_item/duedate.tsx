@@ -189,6 +189,7 @@ export const DueDateButton = ({
             overdue={overdue}
             dueSoon={dueSoon}
             editable={props.editable}
+            isPlaceholder={!date}
         >
             <DateTimeSelector
                 placeholder={
@@ -256,7 +257,7 @@ const buttonLabelForDuration = (date?: number) => {
 
 const buttonLabelForDateTime = (date?: number) => {
     if (!date) {
-        return <FormattedMessage defaultMessage='Add due date'/>;
+        return <FormattedMessage defaultMessage='Due date...'/>;
     }
 
     const timespec = (date < DateTime.now().toMillis()) ? PastTimeSpec : FutureTimeSpec;
@@ -420,26 +421,27 @@ const SelectorRightIcon = styled.i<{overdueOrDueSoon: boolean}>`
     `}
 `;
 
-const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean, editable: boolean}>`
+const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean, editable: boolean, isPlaceholder: boolean}>`
     display: flex;
     flex-wrap: wrap;
 
     border-radius: 13px;
     padding: 2px 8px;
-    background: rgba(var(--center-channel-color-rgb), 0.08);
     max-width: 100%;
 
-    ${({overdue, dueSoon}) => (overdue || dueSoon ? css`
+    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+
+    ${({overdue, dueSoon}) => ((overdue || dueSoon) && css`
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);
         color: var(--dnd-indicator);
-    ` : css`
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color);
     `)}
 
     ${({editable}) => editable && css`
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
         }
     `}
 `;

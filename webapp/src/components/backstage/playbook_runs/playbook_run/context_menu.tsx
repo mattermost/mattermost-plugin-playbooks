@@ -13,13 +13,12 @@ import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
-
 import {copyToClipboard} from 'src/utils';
-import {useToaster} from '../../toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
-import UpgradeModal from '../../upgrade_modal';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
-import {Role} from '../shared';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import {useOnFinishRun} from './finish_run';
 

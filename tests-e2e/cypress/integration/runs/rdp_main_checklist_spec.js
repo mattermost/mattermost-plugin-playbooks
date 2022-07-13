@@ -103,7 +103,7 @@ describe('runs > run details page > checklist', () => {
 
         it('click marks task as done', () => {
             // # Click first task
-            getChecklistTasks().eq(taskIndex).find('.checkbox').check();
+            getChecklistTasks().eq(taskIndex).find('.checkbox').check({force: true});
 
             // * Assert checkbox is checked
             getChecklistTasks().eq(taskIndex).find('.checkbox').should('be.checked');
@@ -114,7 +114,7 @@ describe('runs > run details page > checklist', () => {
             getChecklistTasks().eq(taskIndex).trigger('mouseover');
 
             // # Click dot menu
-            getChecklistTasks().eq(taskIndex).findByTitle('More').click();
+            getChecklistTasks().eq(taskIndex).findByTitle('More').click({force: true});
 
             // * Assert actions are available
             cy.findByRole('button', {name: 'Skip task'}).should('be.visible');
