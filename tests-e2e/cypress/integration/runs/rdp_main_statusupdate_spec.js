@@ -12,6 +12,7 @@ describe('runs > run details page > status update', () => {
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
+    let playbookRunChannelName;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -45,10 +46,14 @@ describe('runs > run details page > status update', () => {
         // # Login as testUser
         cy.apiLogin(testUser);
 
+        const now = Date.now();
+        const playbookRunName = 'Playbook Run (' + now + ')';
+        playbookRunChannelName = 'playbook-run-' + now;
+
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPublicPlaybook.id,
-            playbookRunName: 'the run name',
+            playbookRunName,
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             testRun = playbookRun;
@@ -105,6 +110,42 @@ describe('runs > run details page > status update', () => {
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');
                 cy.findByTestId('update-due-date-time').contains('in 15 minutes');
+            });
+        });
+
+        describe('request an update', () => {
+            it('requests and confirm', () => {
+                // # Click on kebab menu
+                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+
+                // # Click on request update
+                cy.findByText('Request update...').click();
+
+                // # Click on modal confirmation
+                cy.get('#confirmModalButton').click();
+
+                // # Go to channel
+                cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                // * Assert that message has been sent
+                cy.getLastPost().contains(testUser.username + ' requested a status update.');
+            });
+
+            it('requests and cancel', () => {
+                // # Click on kebab menu
+                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+
+                // # Click on request update
+                cy.findByText('Request update...').click();
+
+                // # Click on modal confirmation
+                cy.get('#cancelModalButton').click();
+
+                // # Go to channel
+                cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                // * Assert that message has been sent
+                cy.getLastPost().should('not.contain', testUser.username + ' requested a status update.');
             });
         });
     });
@@ -167,6 +208,38 @@ describe('runs > run details page > status update', () => {
 
                 // * Assert the recent updated text
                 cy.findByTestId('run-statusupdate-section').contains('my nice update');
+            });
+        });
+
+        it('requests an update and confirm', () => {
+            // # Click on request update
+            cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
+
+            // # Click on modal confirmation
+            cy.get('#confirmModalButton').click();
+
+            cy.apiLogin(testUser).then(() => {
+                // # Go to channel
+                cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                // * Assert that message has been sent
+                cy.getLastPost().contains(testViewerUser.username + ' requested a status update.');
+            });
+        });
+
+        it('requests an update and cancel', () => {
+            // # Click on request update
+            cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
+
+            // # Click on modal confirmation
+            cy.get('#cancelModalButton').click();
+
+            cy.apiLogin(testUser).then(() => {
+                // # Go to channel
+                cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                // * Assert that message has been sent
+                cy.getLastPost().should('not.contain', testViewerUser.username + ' requested a status update.');
             });
         });
     });
