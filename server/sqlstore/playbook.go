@@ -382,12 +382,14 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
-			p.Public = true
-			OR EXISTS(SELECT 1
-					FROM IR_PlaybookMember as pm
-					WHERE pm.PlaybookID = p.ID
-					AND pm.MemberID = ?)
+			EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
 		)`, requesterInfo.UserID)
+	if !opts.WithMembershipOnly { // return all public playbooks and private ones user is member of
+		permissionsAndFilter = sq.Or{sq.Expr(`p.Public = true`), permissionsAndFilter}
+	}
 	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
 
 	queryForResults := p.store.builder.
