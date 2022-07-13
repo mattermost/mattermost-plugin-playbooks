@@ -728,6 +728,14 @@ export const requestUpdate = async (playbookRunId: string) => {
     }
 };
 
+export const requestGetInvolved = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {
     const queryParams = `?team_id=${teamID}`;
     const data = await doGet(`${apiUrl}/my_categories${queryParams}`);

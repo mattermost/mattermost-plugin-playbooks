@@ -11,8 +11,6 @@ import debounce from 'debounce';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
-import {useUpdateEffect} from 'react-use';
-
 import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
@@ -64,14 +62,15 @@ export const DateTimeSelector = ({
 }: Props) => {
     const {locale, formatMessage} = useIntl();
 
-    const [isOpen, setOpen] = useState(false);
+    const [isOpen, realSetOpen] = useState(false);
+    const setOpen = (open: boolean) => {
+        props.onOpenChange?.(open);
+        realSetOpen(open);
+    };
+
     const toggleOpen = () => {
         setOpen(!isOpen);
     };
-
-    useUpdateEffect(() => {
-        props.onOpenChange?.(isOpen);
-    }, [isOpen]);
 
     // Allow the parent component to control the open state -- only after mounting.
     const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);
@@ -144,6 +143,9 @@ export const DateTimeSelector = ({
                 autoFocus={true}
                 components={components}
                 controlShouldRenderValue={false}
+                backspaceRemovesValue={false}
+                tabSelectsValue={false}
+                hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={options}
                 placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}

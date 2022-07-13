@@ -7,17 +7,22 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
+import {AdminNotificationType} from 'src/constants';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
 import {openUpdateRunStatusModal} from 'src/actions';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
-import {useNow} from 'src/hooks';
+import {useNow, useAllowRequestUpdate} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
-import {TertiaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC, FUTURE_TIME_SPEC} from 'src/components/time_spec';
 import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
+import Tooltip from 'src/components/widgets/tooltip';
 import {ToastType, useToaster} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
@@ -72,12 +77,42 @@ interface ViewerProps {
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
+const useRequestUpdate = (playbookRunId: string) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const [showRequestUpdateConfirm, setShowRequestUpdateConfirm] = useState(false);
+    const requestStatusUpdate = async () => {
+        const response = await requestUpdate(playbookRunId);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
+        } else {
+            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
+        }
+    };
+    const RequestUpdateConfirmModal = (
+        <ConfirmModal
+            show={showRequestUpdateConfirm}
+            title={formatMessage({defaultMessage: 'Confirm request update'})}
+            message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
+            onConfirm={() => {
+                requestStatusUpdate();
+                setShowRequestUpdateConfirm(false);
+            }}
+            onCancel={() => setShowRequestUpdateConfirm(false)}
+        />
+    );
+    return {
+        RequestUpdateConfirmModal,
+        showRequestUpdateConfirm: () => setShowRequestUpdateConfirm(true),
+    };
+};
+
+export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
+    const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
+    const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
 
     if (!playbookRun.status_update_enabled) {
         return null;
@@ -94,15 +129,6 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
             return null;
         }
         return <StatusUpdateCard post={lastStatusUpdate}/>;
-    };
-
-    const requestStatusUpdate = async () => {
-        const response = await requestUpdate(playbookRun.id);
-        if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
-        } else {
-            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
-        }
     };
 
     return (
@@ -135,12 +161,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                         {dueInfo.time}
                     </DueDateViewer>
                     {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <RequestUpdateButton
-                            data-testid={'request-update-button'}
-                            onClick={() => setShowRequestUpdateConfirm(true)}
-                        >
-                            {formatMessage({defaultMessage: 'Request update...'})}
-                        </RequestUpdateButton>
+                        <RequestUpdateButton onClick={showRequestUpdateConfirm}/>
                     ) : null}
                 </RightWrapper>
             </Header>
@@ -150,17 +171,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
             {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
                 {openRHSText}
             </ViewAllUpdates> : null}
-            <ConfirmModal
-                show={showRequestUpdateConfirm}
-                title={formatMessage({defaultMessage: 'Confirm request update'})}
-                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
-                onConfirm={() => {
-                    requestStatusUpdate();
-                    setShowRequestUpdateConfirm(false);
-                }}
-                onCancel={() => setShowRequestUpdateConfirm(false)}
-            />
+            {RequestUpdateConfirmModal}
         </Container>
     );
 };
@@ -174,6 +185,7 @@ interface ParticipantProps {
 export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
+    const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -222,11 +234,28 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                             {formatMessage({defaultMessage: 'Post update'})}
                         </PostUpdateButton>
                     ) : null}
+                    <Kebab>
+                        <DotMenu icon={<ThreeDotsIcon/>}>
+                            <DropdownItem
+                                onClick={onClickViewAllUpdates}
+                                disabled={playbookRun.status_posts.length === 0}
+                            >
+                                {openRHSText}
+                            </DropdownItem>
+                            <DropdownItem
+                                onClick={showRequestUpdateConfirm}
+                                disabled={false}
+                            >
+                                {formatMessage({defaultMessage: 'Request update...'})}
+                            </DropdownItem>
+                        </DotMenu>
+                    </Kebab>
                 </RightWrapper>
             </Content>
             {playbookRun.status_posts.length ? <ViewAllUpdates onClick={onClickViewAllUpdates}>
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
+            {RequestUpdateConfirmModal}
         </Container>
     );
 };
@@ -257,6 +286,21 @@ const Header = styled.div`
 
 const Placeholder = styled.i`
     color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+const Kebab = styled.div`
+    margin-left: 8px;
+    display: flex;
+`;
+
+const ThreeDotsIcon = styled(HamburgerButton)`
+    font-size: 18px;
+    margin-left: 4px;
+`;
+
+const DropdownItem = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
+    opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
+    cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
 `;
 
 const IconWrapper = styled.div`
@@ -312,11 +356,60 @@ const PostUpdateButton = styled(TertiaryButton)`
     padding: 0 48px;
 `;
 
-const RequestUpdateButton = styled(TertiaryButton)`
-    font-size: 12px;
-    height: 32px;
-    padding: 0 16px;
-`;
+const RequestUpdateButton = ({onClick}: {onClick: () => void}) => {
+    const {formatMessage} = useIntl();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const requestUpdateAllowed = useAllowRequestUpdate();
+
+    const commonCss = `
+        position: relative;
+        font-size: 12px;
+        height: 32px;
+        padding: 0 16px;
+    `;
+
+    const commonProps = {
+        'data-testid': 'request-update-button',
+        children: formatMessage({defaultMessage: 'Request update...'}),
+    };
+
+    if (requestUpdateAllowed) {
+        return (
+            <TertiaryButton
+                css={commonCss}
+                onClick={onClick}
+                {...commonProps}
+            />
+        );
+    }
+
+    return (
+        <>
+            <Tooltip
+                id={'request-update-button-tooltip'}
+                placement={'bottom'}
+                content={formatMessage(
+                    {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
+                    {
+                        title: (el) => <div>{el}</div>,
+                        body: (el) => <span style={{opacity: 0.56}}>{el}</span>,
+                    }
+                )}
+            >
+                <UpgradeTertiaryButton
+                    css={commonCss}
+                    onClick={() => setShowUpgradeModal(true)}
+                    {...commonProps}
+                />
+            </Tooltip>
+            <UpgradeModal
+                messageType={AdminNotificationType.REQUEST_UPDATE}
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
+            />
+        </>
+    );
+};
 
 const ViewAllUpdates = styled.div`
     margin-top: 9px;
