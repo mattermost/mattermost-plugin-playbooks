@@ -61,7 +61,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
         if (channel === null) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
+                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
             } else {
                 addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
             }
