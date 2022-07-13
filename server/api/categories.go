@@ -55,13 +55,14 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
+	filteredCustomCategories := filterEmptyCategories(customCategories)
 
 	runsCategory, err := h.getRunsCategory(teamID, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
-	filteredRuns := filterDuplicatesFromCategory(runsCategory, customCategories)
+	filteredRuns := filterDuplicatesFromCategory(runsCategory, filteredCustomCategories)
 	allCategories := append([]app.Category{}, customCategories...)
 	allCategories = append(allCategories, filteredRuns)
 
@@ -70,11 +71,10 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
-	filteredPlaybooks := filterDuplicatesFromCategory(playbooksCategory, customCategories)
+	filteredPlaybooks := filterDuplicatesFromCategory(playbooksCategory, filteredCustomCategories)
 	allCategories = append(allCategories, filteredPlaybooks)
 
-	filteredCategories := filterEmptyCategories(allCategories)
-	ReturnJSON(w, filteredCategories, http.StatusOK)
+	ReturnJSON(w, allCategories, http.StatusOK)
 }
 
 func (h *CategoryHandler) createMyCategory(w http.ResponseWriter, r *http.Request) {

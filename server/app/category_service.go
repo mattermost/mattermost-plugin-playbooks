@@ -1,6 +1,8 @@
 package app
 
 import (
+	"database/sql"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -87,8 +89,15 @@ func (c *categoryService) Delete(categoryID string) error {
 
 // AddFavorite favorites an item, which may be either run or playbook
 func (c *categoryService) AddFavorite(item CategoryItem, teamID, userID string) error {
-	favoriteCategory, err := c.store.GetFavoriteCategory(teamID, userID)
-	if err != nil {
+	var favoriteCategory Category
+	var err error
+	favoriteCategory, err = c.store.GetFavoriteCategory(teamID, userID)
+	if err == sql.ErrNoRows {
+		// No favorite category, we should create one
+		if favoriteCategory, err = c.store.CreateFavoriteCategory(teamID, userID); err != nil {
+			return err
+		}
+	} else if err != nil {
 		return errors.Wrap(err, "can't get favorite category")
 	}
 
@@ -126,7 +135,9 @@ func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID strin
 
 func (c *categoryService) IsItemFavorite(item CategoryItem, teamID, userID string) (bool, error) {
 	favoriteCategory, err := c.store.GetFavoriteCategory(teamID, userID)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
 		return false, errors.Wrap(err, "can't get favorite category")
 	}
 

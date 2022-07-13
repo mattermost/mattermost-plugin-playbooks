@@ -128,6 +128,9 @@ type CategoryStore interface {
 	// GetFavoriteCategory returns favorite category
 	GetFavoriteCategory(teamID, userID string) (Category, error)
 
+	// CreateFavoriteCategory creates and returns favorite category
+	CreateFavoriteCategory(teamID, userID string) (Category, error)
+
 	// AddItemToCategory adds an item to category
 	AddItemToCategory(item CategoryItem, categoryID string) error
 

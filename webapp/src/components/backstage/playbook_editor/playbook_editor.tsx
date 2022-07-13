@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect, useState} from 'react';
+import React, {useRef, useEffect} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
@@ -19,7 +19,7 @@ import {
     useStats,
 } from 'src/hooks';
 
-import {isFavoriteItem, telemetryEventForPlaybook} from 'src/client';
+import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
@@ -41,7 +41,6 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
-import {CategoryItemType} from 'src/types/category';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
@@ -62,17 +61,12 @@ const PlaybookEditor = () => {
     const headingIntersection = useIntersection(headingRef, {threshold: 1});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
 
-    const [isFavoritePlaybook, setIsFavoritePlaybook] = useState(false);
-
     useEffect(() => {
         const teamId = playbook?.team_id;
         if (!teamId) {
             return;
         }
 
-        isFavoriteItem(teamId, playbookId, CategoryItemType.PlaybookItemType)
-            .then(setIsFavoritePlaybook)
-            .catch(() => setIsFavoritePlaybook(false));
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));

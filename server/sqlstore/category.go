@@ -190,30 +190,32 @@ func (c *categoryStore) GetFavoriteCategory(teamID, userID string) (app.Category
 		"c.UserID": userID,
 	}))
 	if err == sql.ErrNoRows {
-		// No favorite category for this user in this team, let's create one and return it
-		now := model.GetMillis()
-		favCat := app.Category{
-			ID:        model.NewId(),
-			Name:      "Favorite",
-			TeamID:    teamID,
-			UserID:    userID,
-			Collapsed: false,
-			CreateAt:  now,
-			UpdateAt:  now,
-			Items:     []app.CategoryItem{},
-		}
-		if err := c.Create(category); err != nil {
-			return app.Category{}, errors.Wrap(err, "can't create favorite category")
-		}
-		return favCat, nil
-	} else if err != nil {
-		return app.Category{}, errors.Wrap(err, "failed to get favorite category")
+		return app.Category{}, err
 	}
 	category.Items, err = c.getItems(category.ID)
 	if err != nil {
 		return app.Category{}, errors.Wrap(err, "failed to get Items for category")
 	}
 	return category, nil
+}
+
+// CreateFavoriteCategory creates and returns favorite category
+func (c *categoryStore) CreateFavoriteCategory(teamID, userID string) (app.Category, error) {
+	now := model.GetMillis()
+	favCat := app.Category{
+		ID:        model.NewId(),
+		Name:      "Favorite",
+		TeamID:    teamID,
+		UserID:    userID,
+		Collapsed: false,
+		CreateAt:  now,
+		UpdateAt:  now,
+		Items:     []app.CategoryItem{},
+	}
+	if err := c.Create(favCat); err != nil {
+		return app.Category{}, errors.Wrap(err, "can't create favorite category")
+	}
+	return favCat, nil
 }
 
 // AddItemToCategory adds an item to category
