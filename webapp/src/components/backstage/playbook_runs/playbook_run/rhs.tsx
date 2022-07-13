@@ -41,7 +41,7 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack, s
         >
             <Header>
                 {onBack ? (
-                    <BackIcon>
+                    <BackIcon data-testid={'rhs-back-button'}>
                         <i
                             className='icon icon-arrow-back-ios'
                             onClick={onBack}

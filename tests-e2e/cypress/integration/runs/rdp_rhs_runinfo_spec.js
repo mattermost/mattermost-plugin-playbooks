@@ -169,7 +169,7 @@ describe('runs > run details page > run info', () => {
     });
 
 
-    describe.only('> key metrics', () => {
+    describe('> key metrics', () => {
         describe('playbook without metrics', () => {
             describe('it should not render', () => {
                 it('as participant', () => {
@@ -330,4 +330,39 @@ describe('runs > run details page > run info', () => {
             });
         });
     });
+
+    describe('> recent activity', () => {
+        const commonTests = () => {
+            it.only('recent activity is present and it contains a timeline', () => {
+                getRHSSection('Recent Activity').within(() => {
+                    cy.findByTestId('rhs-timeline').should('exist');
+                });
+            });
+
+            it.only('link switches the RHS to Timeline', () => {
+                getRHSSection('Recent Activity').within(() => {
+                    cy.findByText('View all').click({force: true});
+                });
+
+                cy.findByRole('complementary').within(() => {
+                    cy.findByTestId('rhs-title').contains('Timeline');
+                    cy.findByTestId('rhs-back-button').should('exist');
+                });
+            });
+        }
+
+        describe('as participant', () => {
+            commonTests();
+        });
+
+        describe('as viewer', () => {
+            beforeEach(() => {
+                cy.apiLogin(testViewerUser).then(() => {
+                    cy.visit(`/playbooks/run_details/${testRun.id}`);
+                });
+            });
+
+            commonTests();
+        });
+    })
 });

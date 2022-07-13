@@ -42,7 +42,7 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
                     name: formatMessage({defaultMessage: 'View all'}),
                 }}
             />
-            <ItemList>
+            <ItemList data-testid={'rhs-timeline'}>
                 {filteredEvents.slice(0, SHOWED_EVENTS).map((event, i, events) => {
                     let prevEventAt;
                     if (i !== events.length - 1) {
