@@ -66,7 +66,7 @@ describe('runs > run details page > RHS', () => {
         getRHS().within(() => {
             cy.findByTestId('rhs-title').contains(expectedTitle);
         });
-    }
+    };
 
     const commonTests = () => {
         it('timeline button toggles timeline in the RHS', () => {

@@ -85,7 +85,7 @@ describe('runs > run details page > run info', () => {
                 getOverviewEntry('participants').within(() => {
                     cy.getStyledComponent('Participants').within(() => {
                         cy.getStyledComponent('UserPic').should('exist');
-                    })
+                    });
                 });
             });
 
@@ -112,10 +112,8 @@ describe('runs > run details page > run info', () => {
                     // * Verify that the RHS is back to Run info
                     cy.findByTestId('rhs-title').contains('Run info');
                 });
-
-
             });
-        }
+        };
 
         describe('as participant', () => {
             commonTests();
@@ -141,8 +139,8 @@ describe('runs > run details page > run info', () => {
 
                     // * Verify that it now says Following
                     cy.findByRole('button', {name: /Following/}).should('exist');
-                })
-            })
+                });
+            });
 
             it('click channel link navigates to run\'s channel', () => {
                 // # Click on channel item
@@ -194,7 +192,6 @@ describe('runs > run details page > run info', () => {
             });
         });
     });
-
 
     describe('> key metrics', () => {
         describe('playbook without metrics', () => {
@@ -288,7 +285,7 @@ describe('runs > run details page > run info', () => {
                         });
                     });
                 });
-            }
+            };
 
             describe('as participant', () => {
                 commonTests();
@@ -303,19 +300,19 @@ describe('runs > run details page > run info', () => {
 
                 it('click on metric items, type and see the result in the RHS', () => {
                     const testData = {
-                        'metric_duration': {
+                        metric_duration: {
                             input: '12:06:03',
                             expected: '12d, 6h, 3m',
                         },
-                        'metric_currency': {
+                        metric_currency: {
                             input: '5000',
                             expected: '5000',
                         },
-                        'metric_integer': {
+                        metric_integer: {
                             input: '42',
                             expected: '42',
                         },
-                    }
+                    };
 
                     // # Type the values for the metrics
                     getRHSSection('Key Metrics').within(() => {
@@ -376,7 +373,7 @@ describe('runs > run details page > run info', () => {
                     cy.findByTestId('rhs-back-button').should('exist');
                 });
             });
-        }
+        };
 
         describe('as participant', () => {
             commonTests();
@@ -391,5 +388,5 @@ describe('runs > run details page > run info', () => {
 
             commonTests();
         });
-    })
+    });
 });
