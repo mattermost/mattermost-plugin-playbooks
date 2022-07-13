@@ -88,6 +88,33 @@ describe('runs > run details page > run info', () => {
                     })
                 });
             });
+
+            it('clicking on Participants show the full list of participants', () => {
+                // * Click on the Participants entry
+                getOverviewEntry('participants').click();
+
+                cy.findByRole('complementary').within(() => {
+                    // * Verify that the Participants RHS is shown
+                    cy.findByTestId('rhs-title').contains('Participants');
+
+                    // * Verify that the back button is shown
+                    cy.findByTestId('rhs-back-button').should('exist');
+
+                    // * Verify that the participants list shows the number of participants
+                    cy.findByText('1 Participant');
+
+                    // * Verify that the participants list contains the test user
+                    cy.findByText(`@${testUser.username}`);
+
+                    // # Click on the back button
+                    cy.findByTestId('rhs-back-button').click();
+
+                    // * Verify that the RHS is back to Run info
+                    cy.findByTestId('rhs-title').contains('Run info');
+                });
+
+
+            });
         }
 
         describe('as participant', () => {
