@@ -9,12 +9,20 @@
 describe('runs > run details page > summary', () => {
     let testTeam;
     let testUser;
+    let testRun;
+    let testViewerUser;
     let testPublicPlaybook;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // Create another user in the same team
+            cy.apiCreateUser().then(({user: viewer}) => {
+                testViewerUser = viewer;
+                cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
+            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -43,69 +51,98 @@ describe('runs > run details page > summary', () => {
             playbookRunName: 'the run name',
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
+            testRun = playbookRun;
+
             // # Visit the playbook run
             cy.visit(`/playbooks/run_details/${playbookRun.id}`);
         });
     });
 
-    it('is visible', () => {
-        // * Verify the summary section is present
-        cy.findByTestId('run-summary-section').should('be.visible');
-    });
-
-    it('has title', () => {
-        // * Verify the summary section is present
-        cy.findByTestId('run-summary-section').find('h3').contains('Summary');
-    });
-
-    it('has a placeholder', () => {
-        // * Assert the placeholder content
-        cy.findByTestId('run-summary-section').within(() => {
-            cy.findByTestId('rendered-text').contains('Add a run summary');
+    const commonTests = () => {
+        it('is visible', () => {
+            // * Verify the summary section is present
+            cy.findByTestId('run-summary-section').should('be.visible');
         });
-    });
 
-    it('can be edited', () => {
-        // # Mouseover the summary
-        cy.findByTestId('run-summary-section').trigger('mouseover');
+        it('has title', () => {
+            // * Verify the summary section is present
+            cy.findByTestId('run-summary-section').find('h3').contains('Summary');
+        });
+    };
 
-        cy.findByTestId('run-summary-section').within(() => {
+    describe('as participant', () => {
+        commonTests();
+
+        it('has a placeholder', () => {
+            // * Assert the placeholder content
+            cy.findByTestId('run-summary-section').findByTestId('rendered-text').contains('Add a run summary');
+        });
+
+        it('can be edited', () => {
+            // # Mouseover the summary
+            cy.findByTestId('run-summary-section').trigger('mouseover');
+
+            cy.findByTestId('run-summary-section').within(() => {
             // # Click the edit icon
-            cy.findByTestId('hover-menu-edit-button').click();
+                cy.findByTestId('hover-menu-edit-button').click();
 
-            // # Write a summary
-            cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
+                // # Write a summary
+                cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
 
-            // # Save changes
-            cy.findByTestId('checklist-item-save-button').click();
+                // # Save changes
+                cy.findByTestId('checklist-item-save-button').click();
 
-            // * Assert that data has changed
-            cy.findByTestId('rendered-text').contains('This is my new summary');
+                // * Assert that data has changed
+                cy.findByTestId('rendered-text').contains('This is my new summary');
+            });
+
+            // * Assert last edition date is visible
+            cy.findByTestId('run-summary-section').contains('Last edited');
         });
 
-        // * Assert last edition date is visible
-        cy.findByTestId('run-summary-section').contains('Last edited');
+        it('can be canceled', () => {
+            // # Mouseover the summary
+            cy.findByTestId('run-summary-section').trigger('mouseover');
+
+            cy.findByTestId('run-summary-section').within(() => {
+            // # Click the edit icon
+                cy.findByTestId('hover-menu-edit-button').click();
+
+                // # Write a summary
+                cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
+
+                // # Cancel changes
+                cy.findByText('Cancel').click();
+
+                // * Assert that data has not changed
+                cy.findByTestId('rendered-text').contains('Add a run summary');
+            });
+
+            // * Assert last edition date is not visible
+            cy.findByTestId('run-summary-section').should('not.contain', 'Last edited');
+        });
     });
 
-    it('can be canceled', () => {
-        // # Mouseover the summary
-        cy.findByTestId('run-summary-section').trigger('mouseover');
-
-        cy.findByTestId('run-summary-section').within(() => {
-            // # Click the edit icon
-            cy.findByTestId('hover-menu-edit-button').click();
-
-            // # Write a summary
-            cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
-
-            // # Cancel changes
-            cy.findByText('Cancel').click();
-
-            // * Assert that data has not changed
-            cy.findByTestId('rendered-text').contains('Add a run summary');
+    describe('as viewer', () => {
+        beforeEach(() => {
+            cy.apiLogin(testViewerUser).then(() => {
+                cy.visit(`/playbooks/run_details/${testRun.id}`);
+            });
         });
 
-        // * Assert last edition date is not visible
-        cy.findByTestId('run-summary-section').should('not.contain', 'Last edited');
+        commonTests();
+
+        it('has a placeholder', () => {
+            // * Assert the placeholder content
+            cy.findByTestId('run-summary-section').findByTestId('rendered-text').contains('There\'s no summary');
+        });
+
+        it('can not be edited', () => {
+            // # Mouseover the summary
+            cy.findByTestId('run-summary-section').trigger('mouseover');
+
+            // * Verify that the edit button is not rendered
+            cy.findByTestId('run-summary-section').findByTestId('hover-menu-edit-button').should('not.exist');
+        });
     });
 });

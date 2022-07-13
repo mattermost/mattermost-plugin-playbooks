@@ -2696,6 +2696,35 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	return nil
 }
 
+// RequestUpdate posts a status update request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	// Check if user is already a member of the channel
+	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if err == nil && member != nil {
+		return errors.New("user is already involved")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_get_involved", data)); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID string, post *model.Post) error {
 	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
 	if err != nil {
