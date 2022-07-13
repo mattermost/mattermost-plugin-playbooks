@@ -370,6 +370,7 @@ const (
 	PlaybookRunCreated     timelineEventType = "incident_created"
 	TaskStateModified      timelineEventType = "task_state_modified"
 	StatusUpdated          timelineEventType = "status_updated"
+	StatusUpdateRequested  timelineEventType = "status_update_requested"
 	OwnerChanged           timelineEventType = "owner_changed"
 	AssigneeChanged        timelineEventType = "assignee_changed"
 	RanSlashCommand        timelineEventType = "ran_slash_command"
