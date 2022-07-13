@@ -274,7 +274,7 @@ describe('runs > run details page > run info', () => {
 
                 it('link scrolls to retrospective', () => {
                     cy.findByRole('link', {name: /View Retrospective/}).click({force: true});
-                    cy.url().should('contain', '#playbookrun-retrospective');
+                    cy.url().should('contain', '#playbook-run-retrospective');
                 });
 
                 it('metric items scroll to corresponding metric', () => {
