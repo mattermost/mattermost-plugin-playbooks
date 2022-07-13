@@ -89,27 +89,7 @@ func (c *categoryService) Delete(categoryID string) error {
 
 // AddFavorite favorites an item, which may be either run or playbook
 func (c *categoryService) AddFavorite(item CategoryItem, teamID, userID string) error {
-	var favoriteCategory Category
-	var err error
-	favoriteCategory, err = c.store.GetFavoriteCategory(teamID, userID)
-	if err == sql.ErrNoRows {
-		// No favorite category, we should create one
-		if favoriteCategory, err = c.store.CreateFavoriteCategory(teamID, userID); err != nil {
-			return err
-		}
-	} else if err != nil {
-		return errors.Wrap(err, "can't get favorite category")
-	}
-
-	for _, favItem := range favoriteCategory.Items {
-		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
-			return errors.New("Item already is favorite")
-		}
-	}
-	if err := c.store.AddItemToCategory(item, favoriteCategory.ID); err != nil {
-		return errors.Wrap(err, "can't add item to favorite category")
-	}
-	return nil
+	return c.store.AddItemToFavoriteCategory(item, teamID, userID)
 }
 
 func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID string) error {

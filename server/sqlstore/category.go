@@ -199,8 +199,8 @@ func (c *categoryStore) GetFavoriteCategory(teamID, userID string) (app.Category
 	return category, nil
 }
 
-// CreateFavoriteCategory creates and returns favorite category
-func (c *categoryStore) CreateFavoriteCategory(teamID, userID string) (app.Category, error) {
+// createFavoriteCategory creates and returns favorite category
+func (c *categoryStore) createFavoriteCategory(teamID, userID string) (app.Category, error) {
 	now := model.GetMillis()
 	favCat := app.Category{
 		ID:        model.NewId(),
@@ -216,6 +216,29 @@ func (c *categoryStore) CreateFavoriteCategory(teamID, userID string) (app.Categ
 		return app.Category{}, errors.Wrap(err, "can't create favorite category")
 	}
 	return favCat, nil
+}
+
+// AddItemToFavoriteCategory adds an item to favorite category,
+// if favorite category does not exist it creates one
+func (c *categoryStore) AddItemToFavoriteCategory(item app.CategoryItem, teamID, userID string) error {
+	favoriteCategory, err := c.GetFavoriteCategory(teamID, userID)
+	if err == sql.ErrNoRows {
+		// No favorite category, we should create one
+		if favoriteCategory, err = c.createFavoriteCategory(teamID, userID); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return errors.Wrap(err, "can't get favorite category")
+	}
+	for _, favItem := range favoriteCategory.Items {
+		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
+			return errors.New("Item already is favorite")
+		}
+	}
+	if err := c.AddItemToCategory(item, favoriteCategory.ID); err != nil {
+		return errors.Wrap(err, "can't add item to favorite category")
+	}
+	return nil
 }
 
 // AddItemToCategory adds an item to category
