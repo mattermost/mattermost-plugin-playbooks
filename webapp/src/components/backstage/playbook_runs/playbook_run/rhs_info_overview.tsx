@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
@@ -206,6 +206,11 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const currentUser = useSelector(getCurrentUser);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useEffect(() => {
+        setFollowers(metadataFollowers);
+        setIsFollowing(metadataFollowers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
