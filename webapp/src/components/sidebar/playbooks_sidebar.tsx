@@ -31,7 +31,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
                 id: category.id,
                 items: category.items ? category.items.map((item: CategoryItem): GroupItem => {
                     let icon = <StyledPlaybookRunIcon/>;
-                    let link = pluginUrl(`/run_details/${item.item_id}`);
+                    let link = pluginUrl(`/runs/${item.item_id}`);
                     if (item.type === CategoryItemType.PlaybookItemType) {
                         icon = item.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
                         link = `/playbooks/playbooks/${item.item_id}`;

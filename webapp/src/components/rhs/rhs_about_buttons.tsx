@@ -14,7 +14,7 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {useExperimentalFeaturesEnabled, usePlaybookName} from 'src/hooks';
+import {usePlaybookName} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -27,8 +27,7 @@ const RHSAboutButtons = (props: Props) => {
     const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
-    const runHandler = useExperimentalFeaturesEnabled() ? 'run_details' : 'runs';
-    const overviewURL = `/${runHandler}/${props.playbookRun.id}`;
+    const overviewURL = `/runs/${props.playbookRun.id}`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
 
     return (

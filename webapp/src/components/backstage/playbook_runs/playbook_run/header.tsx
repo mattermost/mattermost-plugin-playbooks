@@ -95,7 +95,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id}
+                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
                 tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
             />
             <ExpandRight/>

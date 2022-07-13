@@ -11,7 +11,6 @@ import {useIntl} from 'react-intl';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
@@ -26,7 +25,6 @@ const RHSTitle = () => {
 
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
-    const runLink = useExperimentalFeaturesEnabled() ? `/run_details/${playbookRun?.id}` : `/runs/${playbookRun?.id}`;
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -52,7 +50,7 @@ const RHSTitle = () => {
                     <RHSTitleLink
                         data-testid='rhs-title'
                         role={'button'}
-                        to={pluginUrl(runLink)}
+                        to={pluginUrl(`/runs/${playbookRun?.id}`)}
                     >
                         {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>

@@ -61,7 +61,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
             >
                 <DropdownMenuItem
                     onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/run_details/' + playbookRun?.id);
+                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >

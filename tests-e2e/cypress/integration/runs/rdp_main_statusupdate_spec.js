@@ -59,7 +59,7 @@ describe('runs > run details page > status update', () => {
             testRun = playbookRun;
 
             // # Visit the playbook run
-            cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
     });
 
@@ -153,7 +153,7 @@ describe('runs > run details page > status update', () => {
     describe('as viewer', () => {
         beforeEach(() => {
             cy.apiLogin(testViewerUser).then(() => {
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
             });
         });
 
@@ -181,7 +181,7 @@ describe('runs > run details page > status update', () => {
         it('shows the most recent update', () => {
             // # Login as participant
             cy.apiLogin(testUser).then(() => {
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
             });
 
             // # Click post update
@@ -200,7 +200,7 @@ describe('runs > run details page > status update', () => {
             cy.getStatusUpdateDialog().findByTestId('modal-confirm-button').click();
 
             cy.apiLogin(testViewerUser).then(() => {
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
 
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');

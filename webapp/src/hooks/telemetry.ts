@@ -1,5 +1,4 @@
 import {useEffect} from 'react';
-import {useLocation} from 'react-use';
 
 import {telemetryEventForPlaybook, telemetryEventForPlaybookRun} from 'src/client';
 
@@ -29,12 +28,7 @@ export const usePlaybookViewTelemetry = (target: PlaybookTarget, playbookID?: st
 };
 
 export const usePlaybookRunViewTelemetry = (target: PlaybookRunTarget, playbookRunID?: string) => {
-    const {pathname} = useLocation();
     useEffect(() => {
-        // Needed until we remove the old run details
-        if (pathname?.includes('/playbooks/run_details/') && target === PlaybookRunTarget.Retrospective) {
-            return;
-        }
         if (playbookRunID) {
             telemetryEventForPlaybookRun(playbookRunID, target);
         }

@@ -5,7 +5,6 @@ import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/pla
 
 import Playbook from 'src/components/backstage/playbooks/playbook';
 
-import PlaybookRunBackstage from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import PlaybookEditor from 'src/components/backstage/playbook_editor/playbook_editor';
@@ -43,9 +42,6 @@ const MainBody = () => {
                 to={`${match.url}/runs/:playbookRunId`}
             />
             <Route path={`${match.url}/runs/:playbookRunId`}>
-                <PlaybookRunBackstage/>
-            </Route>
-            <Route path={`${match.url}/run_details/:playbookRunId`}>
                 <PlaybookRun/>
             </Route>
             <Redirect

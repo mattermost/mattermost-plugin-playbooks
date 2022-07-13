@@ -103,7 +103,7 @@ describe('runs > run details page > header', () => {
                 cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
 
                 // * Verify clipboard content
-                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
             });
         });
     };
@@ -122,7 +122,7 @@ describe('runs > run details page > header', () => {
 
             getDropdownItemByText('Copy link').click().then(() => {
                 // * Verify clipboard content
-                cy.get('@clipboard').its('contents').should('contain', `/playbooks/run_details/${playbookRun.id}`);
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
             });
         });
     };
@@ -144,7 +144,7 @@ describe('runs > run details page > header', () => {
                 playbookRun = run;
 
                 // # Visit the playbook run
-                cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+                cy.visit(`/playbooks/runs/${playbookRun.id}`);
             });
         });
 
@@ -420,7 +420,7 @@ describe('runs > run details page > header', () => {
 
                 cy.apiLogin(testViewerUser).then(() => {
                     // # Visit the playbook run
-                    cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
             });
         });
@@ -500,7 +500,7 @@ describe('runs > run details page > header', () => {
                         cy.apiLogin(testViewerUser);
 
                         // # Visit the playbook run
-                        cy.visit(`/playbooks/run_details/${run.id}`);
+                        cy.visit(`/playbooks/runs/${run.id}`);
 
                         // * Assert that component is rendered
                         getHeader().findByText('Get involved').should('be.visible');
