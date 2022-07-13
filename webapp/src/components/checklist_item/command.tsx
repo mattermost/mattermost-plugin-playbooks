@@ -27,8 +27,6 @@ interface CommandProps {
     isEditing: boolean;
 
     onChangeCommand: (newCommand: string) => void;
-
-    showAlways?: boolean;
 }
 
 const RunningTimeout = 1000;
