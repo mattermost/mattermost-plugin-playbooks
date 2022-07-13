@@ -225,7 +225,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
         if (isFollowing) {
             return (
                 <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
+                    {formatMessage({defaultMessage: 'Followers'})}
                 </UnfollowButton>
             );
         }
