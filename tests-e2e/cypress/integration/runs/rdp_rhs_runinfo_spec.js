@@ -320,7 +320,7 @@ describe('runs > run details page > run info', () => {
 
                 commonTests();
 
-                it.only('metric items show - if empty', () => {
+                it('metric items show - if empty', () => {
                     getRHSSection('Key Metrics').within(() => {
                         playbookWithMetrics.metrics.forEach((metric) => {
                             cy.findByText(metric.title).parent().contains('-');
@@ -333,13 +333,13 @@ describe('runs > run details page > run info', () => {
 
     describe('> recent activity', () => {
         const commonTests = () => {
-            it.only('recent activity is present and it contains a timeline', () => {
+            it('recent activity is present and it contains a timeline', () => {
                 getRHSSection('Recent Activity').within(() => {
                     cy.findByTestId('rhs-timeline').should('exist');
                 });
             });
 
-            it.only('link switches the RHS to Timeline', () => {
+            it('link switches the RHS to Timeline', () => {
                 getRHSSection('Recent Activity').within(() => {
                     cy.findByText('View all').click({force: true});
                 });
