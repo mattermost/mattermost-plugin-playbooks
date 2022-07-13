@@ -35,7 +35,7 @@ const Item = (props: ItemProps) => {
     );
 };
 
-const ItemContainer = styled.li`
+export const ItemContainer = styled.li`
     display: flex;
     overflow: hidden;
     height: 32px;
@@ -47,7 +47,7 @@ const ItemContainer = styled.li`
     visibility: visible;
 `;
 
-const StyledLink = styled(Link)`
+export const StyledLink = styled(Link)`
     position: relative;
     display: flex;
     width: 240px;

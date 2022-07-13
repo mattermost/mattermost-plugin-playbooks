@@ -1,13 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {GroupItem} from './sidebar';
+import {SidebarGroup} from './sidebar';
 import ItemComponent from './item';
 
 interface GroupProps {
-    display_name: string;
-    isCollapsed: boolean;
-    items: GroupItem[];
+    group: SidebarGroup;
     onClick: () => void;
 }
 
@@ -16,17 +14,17 @@ const Group = (props: GroupProps) => {
         <GroupContainer>
             <Header>
                 <HeaderButton
-                    aria-label={props.display_name}
+                    aria-label={props.group.display_name}
                     onClick={props.onClick}
                 >
                     <i className='icon icon-chevron-down'/>
                     <HeaderName>
-                        {props.display_name}
+                        {props.group.display_name}
                     </HeaderName>
                 </HeaderButton>
             </Header>
             <Body role='list'>
-                {props.items.map((item) => {
+                {props.group.items.map((item) => {
                     return (
                         <ItemComponent
                             key={item.display_name}
@@ -34,12 +32,13 @@ const Group = (props: GroupProps) => {
                             className={item.className}
                             display_name={item.display_name}
                             icon={item.icon}
-                            isCollapsed={props.isCollapsed}
+                            isCollapsed={props.group.collapsed}
                             itemMenu={item.itemMenu}
                             link={item.link}
                         />
                     );
                 })}
+                {props.group.afterGroup}
             </Body>
         </GroupContainer>
     );
