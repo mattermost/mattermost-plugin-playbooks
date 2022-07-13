@@ -147,7 +147,7 @@ const UserLine = (props: UserLineProps) => {
         </IconWrapper>
     );
 
-    if (props.hasPermissionsToEditRoles && props.member.user_id !== props.currentUserId) {
+    if (props.hasPermissionsToEditRoles) {
         let permissionsChangeOption = (
             <DropdownMenuItem
                 onClick={() => props.onMakeAdmin(props.member.user_id)}
