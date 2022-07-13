@@ -463,15 +463,15 @@ const assertRunIsVisible = (run, user) => {
     });
 
     // * Verify that the details loaded
-    cy.findByTestId('playbook-run-title').contains(run.name);
+    cy.findByTestId('run-header-section').get('h1').contains(run.name);
 };
 
 const assertRunOverviewIsVisible = (run) => {
     // # Opening the playbook run directly
-    cy.visit(`/playbooks/runs/${run.id}/overview`);
+    cy.visit(`/playbooks/runs/${run.id}`);
 
     // * Verify that the details loaded
-    cy.findByTestId('playbook-run-title').contains(run.name);
+    cy.findByTestId('run-header-section').get('h1').contains(run.name);
 };
 
 const assertRunIsNotVisible = (run, user) => {
