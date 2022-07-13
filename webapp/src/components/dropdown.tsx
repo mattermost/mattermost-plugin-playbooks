@@ -88,7 +88,7 @@ const Dropdown = (props: DropdownProps) => {
         useDismiss(context),
     ]);
 
-    const MaybePortal = props.portal ? FloatingPortal : React.Fragment;
+    const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment;
 
     return (
         <>

@@ -191,7 +191,7 @@ function sysadminSetup(user) {
     });
 
     // # Reset roles
-    cy.apiGetClientLicense().then(({isLicensed, isCloudLicensed}) => {
+    cy.apiGetClientLicense().then(({isCloudLicensed}) => {
         //if (isLicensed) {
         //cy.apiResetRoles();
         //}

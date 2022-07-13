@@ -113,6 +113,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 <VerticalSpacer size={16}/>
 
                 <MetricInput
+                    id={metric.id}
                     title={formatMessage({defaultMessage: 'Target per run'})}
                     value={curTargetString}
                     placeholder={formatMessage({defaultMessage: 'Target value for each run'})}

@@ -620,7 +620,7 @@ describe('channels > actions', () => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: playbook.id,
-                    playbookRunName: playbookRunName,
+                    playbookRunName,
                     ownerUserId: testUser.id,
                 });
             }).then((playbookRun) => {

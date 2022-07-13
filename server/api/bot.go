@@ -62,7 +62,7 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.poster.NotifyAdmins(payload.MessageType, userID, h.pluginAPI.System.IsEnterpriseReady()); err != nil {
+	if err := h.poster.NotifyAdmins(payload.MessageType, userID, !h.pluginAPI.System.IsEnterpriseReady()); err != nil {
 		h.HandleError(w, err)
 		return
 	}

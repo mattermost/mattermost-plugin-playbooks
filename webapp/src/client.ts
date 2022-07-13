@@ -739,6 +739,14 @@ export const favoriteItem = async (teamID: string, itemID: string, itemType: str
     }
 };
 
+export const requestGetInvolved = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     try {
         return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
