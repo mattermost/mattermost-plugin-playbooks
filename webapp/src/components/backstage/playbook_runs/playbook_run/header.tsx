@@ -68,7 +68,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             return;
         }
         await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
-        addToast(formatMessage({defaultMessage: 'You just joined this run.'}), ToastType.Success);
+        addToast(formatMessage({defaultMessage: 'You've joined this run.'}), ToastType.Success);
     };
 
     return (
