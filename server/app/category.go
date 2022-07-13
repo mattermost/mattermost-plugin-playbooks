@@ -15,6 +15,8 @@ const (
 type CategoryItem struct {
 	ItemID string           `json:"item_id"`
 	Type   CategoryItemType `json:"type"`
+	Name   string           `json:"name"`
+	Public bool             `json:"public"`
 }
 
 // Category represents sidebar category with items
@@ -57,6 +59,15 @@ func (c *Category) IsValid() error {
 	}
 
 	return nil
+}
+
+func (c *Category) ContainsItem(item CategoryItem) bool {
+	for _, catItem := range c.Items {
+		if catItem.ItemID == item.ItemID && catItem.Type == item.Type {
+			return true
+		}
+	}
+	return false
 }
 
 // CategoryService is the category service for managing categories

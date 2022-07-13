@@ -78,12 +78,43 @@ func (c *categoryStore) Get(id string) (app.Category, error) {
 
 func (c *categoryStore) getItems(id string) ([]app.CategoryItem, error) {
 	var items []app.CategoryItem
-	err := c.store.selectBuilder(c.store.db, &items, c.categoryItemSelect.Where(sq.Eq{"ci.categoryID": id}))
+	var playbookItems []app.CategoryItem
+	queryPlaybooks := c.queryBuilder.
+		Select(
+			"ci.ItemID",
+			"ci.Type",
+			"p.title AS name",
+			"p.public",
+		).
+		From("IR_Category_Item ci").
+		LeftJoin("IR_Playbook as p on ci.ItemID=p.id").
+		Where(sq.And{sq.Eq{"ci.categoryID": id}, sq.Eq{"ci.type": "p"}})
+	err := c.store.selectBuilder(c.store.db, &playbookItems, queryPlaybooks)
 	if err == sql.ErrNoRows {
-		return []app.CategoryItem{}, nil
+		items = []app.CategoryItem{}
+	} else if err != nil {
+		return []app.CategoryItem{}, err
+	} else {
+		items = playbookItems
+	}
+
+	var runItems []app.CategoryItem
+	queryRuns := c.queryBuilder.
+		Select(
+			"ci.ItemID",
+			"ci.Type",
+			"r.name",
+		).
+		From("IR_Category_Item ci").
+		LeftJoin("IR_Incident as r on ci.ItemID=r.id").
+		Where(sq.And{sq.Eq{"ci.categoryID": id}, sq.Eq{"ci.type": "r"}})
+	err = c.store.selectBuilder(c.store.db, &runItems, queryRuns)
+	if err == sql.ErrNoRows {
+		return items, nil
 	} else if err != nil {
 		return []app.CategoryItem{}, err
 	}
+	items = append(items, runItems...)
 	return items, nil
 }
 
@@ -117,12 +148,12 @@ func (c *categoryStore) GetCategories(teamID, userID string) ([]app.Category, er
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get categories for team id %q and user id %q", teamID, userID)
 	}
-	for _, category := range categories {
+	for i, category := range categories {
 		items, err := c.getItems(category.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get category items for category id %q", category.ID)
 		}
-		category.Items = items
+		categories[i].Items = items
 	}
 	return categories, nil
 }

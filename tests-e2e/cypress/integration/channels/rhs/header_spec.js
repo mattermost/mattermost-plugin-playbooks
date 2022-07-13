@@ -134,7 +134,6 @@ describe('channels > rhs > header', () => {
                 });
             });
 
-
             // # type text in textarea
             cy.get('#rhsContainer').findByTestId('textarea-description').should('be.visible').type('new summary{ctrl+enter}');
 
