@@ -37,6 +37,7 @@ import {
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -58,6 +59,7 @@ interface Props {
     onChecklistCollapsedStateChange: (checklistIndex: number, state: boolean) => void;
     onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
+    itemButtonsFormat?: ItemButtonsFormat;
 }
 
 const ChecklistList = ({
@@ -69,6 +71,7 @@ const ChecklistList = ({
     onChecklistCollapsedStateChange,
     onEveryChecklistCollapsedStateChange,
     showItem,
+    itemButtonsFormat,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -370,6 +373,7 @@ const ChecklistList = ({
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
                                                     showItem={showItem}
+                                                    itemButtonsFormat={itemButtonsFormat}
                                                 />
                                             </CollapsibleChecklist>
                                         );
