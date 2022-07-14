@@ -12,12 +12,13 @@ import {joinChannel} from 'mattermost-redux/actions/channels';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
-import {getSiteUrl, requestGetInvolved} from 'src/client';
+import {getSiteUrl, requestGetInvolved, telemetryEventForPlaybookRun} from 'src/client';
 import {useChannel} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
@@ -47,6 +48,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
+        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedClick);
         setShowGetInvolvedConfirm(true);
     };
 
@@ -67,7 +69,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             }
             return;
         }
+
+        // if channel is not null, join the channel
         await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
+        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
         addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 

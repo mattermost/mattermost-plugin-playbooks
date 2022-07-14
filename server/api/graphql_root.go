@@ -32,8 +32,19 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
+	isFavorite, err := c.categoryService.IsItemFavorite(
+		app.CategoryItem{
+			ItemID: playbookID,
+			Type:   app.PlaybookItemType,
+		},
+		playbook.TeamID,
+		userID,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't determine if item is favorite or not")
+	}
 
-	return &PlaybookResolver{playbook}, nil
+	return &PlaybookResolver{playbook, isFavorite}, nil
 }
 
 type UpdateChecklist struct {
@@ -88,6 +99,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RunSummaryTemplate                   *string
 		ChannelNameTemplate                  *string
 		Checklists                           *[]UpdateChecklist
+		IsFavorite                           *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -206,6 +218,32 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	if len(setmap) > 0 {
 		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
 			return "", err
+		}
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
 		}
 	}
 
