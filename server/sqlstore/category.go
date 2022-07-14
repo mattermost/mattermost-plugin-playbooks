@@ -83,12 +83,12 @@ func (c *categoryStore) getItems(id string) ([]app.CategoryItem, error) {
 		Select(
 			"ci.ItemID",
 			"ci.Type",
-			"p.title AS name",
-			"p.public",
+			"COALESCE(p.title, '') AS Name",
+			"COALESCE(p.public, false) AS Public",
 		).
 		From("IR_Category_Item ci").
 		LeftJoin("IR_Playbook as p on ci.ItemID=p.id").
-		Where(sq.And{sq.Eq{"ci.categoryID": id}, sq.Eq{"ci.type": "p"}})
+		Where(sq.And{sq.Eq{"ci.CategoryID": id}, sq.Eq{"ci.Type": "p"}})
 	err := c.store.selectBuilder(c.store.db, &playbookItems, queryPlaybooks)
 	if err == sql.ErrNoRows {
 		items = []app.CategoryItem{}
@@ -103,11 +103,11 @@ func (c *categoryStore) getItems(id string) ([]app.CategoryItem, error) {
 		Select(
 			"ci.ItemID",
 			"ci.Type",
-			"r.name",
+			"COALESCE(r.name, '') AS Name",
 		).
 		From("IR_Category_Item ci").
 		LeftJoin("IR_Incident as r on ci.ItemID=r.id").
-		Where(sq.And{sq.Eq{"ci.categoryID": id}, sq.Eq{"ci.type": "r"}})
+		Where(sq.And{sq.Eq{"ci.CategoryID": id}, sq.Eq{"ci.Type": "r"}})
 	err = c.store.selectBuilder(c.store.db, &runItems, queryRuns)
 	if err == sql.ErrNoRows {
 		return items, nil
@@ -162,9 +162,9 @@ func (c *categoryStore) GetCategories(teamID, userID string) ([]app.Category, er
 func (c *categoryStore) Update(category app.Category) error {
 	if _, err := c.store.execBuilder(c.store.db, sq.
 		Update("IR_Category").
-		Set("name", category.Name).
-		Set("update_at", category.UpdateAt).
-		Where(sq.Eq{"id": category.ID})); err != nil {
+		Set("Name", category.Name).
+		Set("UpdateAt", category.UpdateAt).
+		Where(sq.Eq{"ID": category.ID})); err != nil {
 		return errors.Wrapf(err, "failed to update category with id '%s'", category.ID)
 	}
 	return nil
@@ -174,8 +174,8 @@ func (c *categoryStore) Update(category app.Category) error {
 func (c *categoryStore) Delete(categoryID string) error {
 	if _, err := c.store.execBuilder(c.store.db, sq.
 		Update("IR_Category").
-		Set("delete_at", model.GetMillis()).
-		Where(sq.Eq{"id": categoryID})); err != nil {
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"ID": categoryID})); err != nil {
 		return errors.Wrapf(err, "failed to delete category with id '%s'", categoryID)
 	}
 	return nil
