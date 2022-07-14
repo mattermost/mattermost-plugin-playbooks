@@ -16,6 +16,7 @@ import {
     emptyChecklistItem,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
+import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -28,6 +29,7 @@ interface Props {
     checklistIndex: number;
     onUpdateChecklist: (newChecklist: Checklist) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
+    itemButtonsFormat?: ItemButtonsFormat;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -104,6 +106,7 @@ const GenericChecklist = (props: Props) => {
                                     onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
                                     onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                                    itemButtonsFormat={props.itemButtonsFormat}
                                 />
                             );
                         })}
@@ -120,6 +123,7 @@ const GenericChecklist = (props: Props) => {
                                     setAddingItem(false);
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
+                                itemButtonsFormat={props.itemButtonsFormat}
                             />
                         }
                         {droppableProvided.placeholder}

@@ -28,7 +28,7 @@ const Summary = ({
     const modifiedAt = (
         <Timestamp
             value={playbookRun.summary_modified_at}
-            {...PAST_TIME_SPEC}
+            units={PAST_TIME_SPEC}
         />
     );
 
@@ -81,6 +81,7 @@ const TimestampContainer = styled.div`
     justify-content: flex-end;
 
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
 `;
 
 const Container = styled.div`

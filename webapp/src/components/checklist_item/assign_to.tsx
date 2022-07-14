@@ -82,11 +82,11 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
-                            title={formatMessage({defaultMessage: 'Assign to...'})}
+                            title={formatMessage({defaultMessage: 'Assignee...'})}
                             className={'icon-account-plus-outline icon-12'}
                         />
-                        <AssignToTextContainer>
-                            {formatMessage({defaultMessage: 'Assign to...'})}
+                        <AssignToTextContainer isPlaceholder={!props.assignee_id}>
+                            {formatMessage({defaultMessage: 'Assignee...'})}
                         </AssignToTextContainer>
                     </PlaceholderDiv>
                 }
@@ -163,6 +163,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
             text-align: center;
         }
     }
+
     .NoName-Assigned-button {
         background: none;
         padding: 0px;
@@ -170,6 +171,16 @@ const StyledProfileSelector = styled(ProfileSelector)`
         .image {
             background: rgba(var(--center-channel-color-rgb),0.08);
             margin: 2px;
+        }
+    }
+
+    .NoAssignee-button {
+        background-color: transparent;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+
+        :hover {
+            color: var(--center-channel-color);
         }
     }
 `;
@@ -180,8 +191,11 @@ const PlaceholderDiv = styled.div`
     flex-direction: row;
 `;
 
-const AssignToTextContainer = styled.div`
-    color: var(--center-channel-color);
+const AssignToTextContainer = styled.div<{isPlaceholder: boolean}>`
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+    :hover {
+        color: var(--center-channel-color);
+    }
     font-weight: 400;
     font-size: 12px;
     line-height: 15px;

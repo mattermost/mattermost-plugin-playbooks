@@ -79,7 +79,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
 
     return (
         <Container data-testid={'run-header-section'}>
-            {/* <Icon className={'icon-star'}/> */}
             <ContextMenu
                 playbookRun={playbookRun}
                 role={role}
@@ -164,6 +163,9 @@ const StyledBadge = styled(Badge)`
     margin-left: 8px;
     margin-right: 6px;
     text-transform: uppercase;
+    font-size: 10px;
+    padding: 2px 6px;
+    line-height: 16px;
 `;
 
 const GetInvolved = styled(PrimaryButton)`

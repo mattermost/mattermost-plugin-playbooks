@@ -36,7 +36,7 @@ const Item = (props: ItemProps) => {
     );
 };
 
-const ItemDisplayLabel = styled.span`
+export const ItemDisplayLabel = styled.span`
     max-width: 100%;
     height: 18px;
     line-height: 18px;
@@ -46,7 +46,7 @@ const ItemDisplayLabel = styled.span`
     font-size: 14px;
 `;
 
-const Icon = styled.div`
+export const Icon = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,7 +55,7 @@ const Icon = styled.div`
     color: rgba(var(--sidebar-text-rgb), 0.72);
 `;
 
-const ItemContainer = styled.li`
+export const ItemContainer = styled.li`
     display: flex;
     overflow: hidden;
     height: 32px;
@@ -67,7 +67,7 @@ const ItemContainer = styled.li`
     visibility: visible;
 `;
 
-const StyledNavLink = styled(NavLink)`
+export const StyledNavLink = styled(NavLink)`
     position: relative;
     display: flex;
     width: 240px;

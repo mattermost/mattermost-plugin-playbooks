@@ -2,6 +2,7 @@ import React from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {useIntl} from 'react-intl';
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
@@ -12,6 +13,7 @@ import {useCategories} from 'src/hooks';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
+import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 interface PlaybookSidebarProps {
     team_id: string;
 }
@@ -47,7 +49,55 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
                 }) : [],
             };
         });
+        addViewAllsToGroups(calculatedGroups);
         return calculatedGroups;
+    };
+
+    const addViewAllsToGroups = (groups: SidebarGroup[]) => {
+        for (let i = 0; i < groups.length; i++) {
+            if (groups[i].id === 'runsCategory') {
+                groups[i].afterGroup = viewAllRuns();
+            } else if (groups[i].id === 'playbooksCategory') {
+                groups[i].afterGroup = viewAllPlaybooks();
+            }
+        }
+    };
+
+    const {formatMessage} = useIntl();
+    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+
+    const viewAllRuns = () => {
+        return (
+            <ItemContainer>
+                <StyledNavLink
+                    id={'sidebarItem_view_all_runs'}
+                    aria-label={'View all runs'}
+                    to={'/playbooks/runs'}
+                    exact={true}
+                >
+                    <StyledItemDisplayLabel>
+                        {viewAllMessage}
+                    </StyledItemDisplayLabel>
+                </StyledNavLink>
+            </ItemContainer>
+        );
+    };
+
+    const viewAllPlaybooks = () => {
+        return (
+            <ItemContainer key={'sidebarItem_view_all_playbooks'}>
+                <StyledNavLink
+                    id={'sidebarItem_view_all_playbooks'}
+                    aria-label={'View all playbooks'}
+                    to={'/playbooks/playbooks'}
+                    exact={true}
+                >
+                    <StyledItemDisplayLabel>
+                        {viewAllMessage}
+                    </StyledItemDisplayLabel>
+                </StyledNavLink>
+            </ItemContainer>
+        );
     };
 
     const groups = getGroupsFromCategories(categories);
@@ -78,4 +128,9 @@ const StyledPlaybookRunIcon = styled(PlaybookRunIcon)`
 
 const StyledPrivatePlaybookIcon = styled(PrivatePlaybookIcon)`
     ${sharedIconStyles}
+`;
+
+const StyledItemDisplayLabel = styled(ItemDisplayLabel)`
+    line-height: 20px;
+    color: rgba(var(--sidebar-text-rgb), 0.56);
 `;

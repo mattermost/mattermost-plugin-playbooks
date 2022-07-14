@@ -47,7 +47,7 @@ describe('playbooks > edit', () => {
 
     describe('checklists', () => {
         describe('slash command', () => {
-            it('autocompletes after clicking Add a slash command', () => {
+            it('autocompletes after clicking Command...', () => {
                 // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
 
@@ -59,7 +59,7 @@ describe('playbooks > edit', () => {
                     // # Open the slash command input on a step
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Add slash command').click();
+                    cy.findByText('Command...').click();
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
