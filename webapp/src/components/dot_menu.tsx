@@ -80,7 +80,7 @@ const DotMenu = (props: DotMenuProps) => {
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        setOpen(true);
+        setOpen(!isOpen);
     };
 
     useClickOutsideRef(refs.reference, () => {
