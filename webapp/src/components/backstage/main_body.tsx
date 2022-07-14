@@ -44,7 +44,7 @@ const useInitTeamRoutingLogic = () => {
      */
     const negateTeamRestore = matchPath<{playbookRunId?: string; playbookId?: string;}>(location.pathname, {
         path: [
-            `${url}/run_details/:playbookRunId`,
+            `${url}/runs/:playbookRunId`,
             `${url}/playbooks/:playbookId`,
         ],
     });
