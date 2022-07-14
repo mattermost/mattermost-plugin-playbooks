@@ -83,8 +83,8 @@ func (c *categoryStore) getItems(id string) ([]app.CategoryItem, error) {
 		Select(
 			"ci.ItemID",
 			"ci.Type",
-			"p.title AS name",
-			"p.public",
+			"COALESCE(p.title, '') AS Name",
+			"COALESCE(p.public, false) AS Public",
 		).
 		From("IR_Category_Item ci").
 		LeftJoin("IR_Playbook as p on ci.ItemID=p.id").
@@ -103,7 +103,7 @@ func (c *categoryStore) getItems(id string) ([]app.CategoryItem, error) {
 		Select(
 			"ci.ItemID",
 			"ci.Type",
-			"r.name",
+			"COALESCE(r.name, '') AS Name",
 		).
 		From("IR_Category_Item ci").
 		LeftJoin("IR_Incident as r on ci.ItemID=r.id").
@@ -162,8 +162,8 @@ func (c *categoryStore) GetCategories(teamID, userID string) ([]app.Category, er
 func (c *categoryStore) Update(category app.Category) error {
 	if _, err := c.store.execBuilder(c.store.db, sq.
 		Update("IR_Category").
-		Set("name", category.Name).
-		Set("update_at", category.UpdateAt).
+		Set("Name", category.Name).
+		Set("UpdateAt", category.UpdateAt).
 		Where(sq.Eq{"id": category.ID})); err != nil {
 		return errors.Wrapf(err, "failed to update category with id '%s'", category.ID)
 	}
@@ -174,7 +174,7 @@ func (c *categoryStore) Update(category app.Category) error {
 func (c *categoryStore) Delete(categoryID string) error {
 	if _, err := c.store.execBuilder(c.store.db, sq.
 		Update("IR_Category").
-		Set("delete_at", model.GetMillis()).
+		Set("DeleteAt", model.GetMillis()).
 		Where(sq.Eq{"id": categoryID})); err != nil {
 		return errors.Wrapf(err, "failed to delete category with id '%s'", categoryID)
 	}
