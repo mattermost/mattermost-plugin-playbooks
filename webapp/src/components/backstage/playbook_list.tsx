@@ -57,7 +57,6 @@ const ContainerMedium = styled.article<{$newLHSEnabled: boolean}>`
 `;
 
 const PlaybookListContainer = styled.div`
-    flex: 1 1 auto;
     color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 

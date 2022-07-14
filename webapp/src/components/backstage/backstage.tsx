@@ -123,9 +123,9 @@ const Backstage = () => {
 };
 
 const MainContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: max-content auto;
 `;
 
 const Navbar = () => {
