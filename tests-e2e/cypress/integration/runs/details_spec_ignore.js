@@ -5,6 +5,10 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
+
+// This file could be removed after completing the migration to Run Detail Page
+// The equivalent is spreaded on tests at rdp_xxx.js
+
 import {stubClipboard} from '../../utils';
 
 describe('runs > details', () => {

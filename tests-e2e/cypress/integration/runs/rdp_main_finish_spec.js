@@ -54,14 +54,14 @@ describe('runs > run details page > finish', () => {
             testPlaybookRun = playbookRun;
 
             // # Visit the playbook run
-            cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
     });
 
     it('is hidden as viewer', () => {
         cy.apiLogin(testViewerUser).then(() => {
             // # Visit the playbook run
-            cy.visit(`/playbooks/run_details/${testPlaybookRun.id}`);
+            cy.visit(`/playbooks/runs/${testPlaybookRun.id}`);
         });
 
         // * Assert that finish section does not exist

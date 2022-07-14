@@ -162,7 +162,7 @@ describe('runs > run details page', () => {
                     testRun = playbookRun;
 
                     // # Visit the playbook run
-                    cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
             });
 
@@ -197,12 +197,12 @@ describe('runs > run details page', () => {
                     testRun = playbookRun;
 
                     // # Visit the playbook run
-                    cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
             });
             beforeEach(() => {
                 cy.apiLogin(testViewerUser).then(() => {
-                    cy.visit(`/playbooks/run_details/${testRun.id}`);
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
                 });
             });
 
@@ -241,7 +241,7 @@ describe('runs > run details page', () => {
                 });
             });
             beforeEach(() => {
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
             });
 
             commonTests();
@@ -252,7 +252,7 @@ describe('runs > run details page', () => {
                 testPublicPlaybookWithMetrics.metrics[1].target = 0;
                 cy.apiUpdatePlaybook(testPublicPlaybookWithMetrics).then(() => {
                     // # Navigate directly to the retro tab
-                    cy.visit(`/playbooks/run_details/${testRun.id}`);
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
 
                     // * Verify changes are reflected
                     verifyMetricInput(0, 'title1', null, 'description1', 'Add value (in dd:hh:mm)');
@@ -293,7 +293,7 @@ describe('runs > run details page', () => {
                 cy.wait(2000);
 
                 // # Reload page
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
 
                 getRetro().within(() => {
                     // * Validate if values are saved
@@ -351,7 +351,7 @@ describe('runs > run details page', () => {
                 });
 
                 // # Reload page and navigate to the retro tab
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
 
                 getRetro().within(() => {
                     // * Validate that values are not saved
@@ -445,7 +445,7 @@ describe('runs > run details page', () => {
 
             beforeEach(() => {
                 cy.apiLogin(testViewerUser).then(() => {
-                    cy.visit(`/playbooks/run_details/${testRun.id}`);
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
                 });
             });
 

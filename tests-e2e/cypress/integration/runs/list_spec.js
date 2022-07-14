@@ -90,7 +90,7 @@ describe('runs > list', () => {
         });
 
         // * Verify that the header contains the playbook run name
-        cy.findByTestId('playbook-run-title').contains(playbookRunName);
+        cy.findByTestId('run-header-section').get('h1').contains(playbookRunName);
     });
 
     describe('filters my runs only', () => {

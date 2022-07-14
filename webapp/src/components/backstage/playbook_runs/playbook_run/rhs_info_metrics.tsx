@@ -35,7 +35,7 @@ const RHSInfoMetrics = ({runID, metricsData, metricsConfig, editable}: Props) =>
         return null;
     }
 
-    const retroURL = `/playbooks/run_details/${runID}#${PlaybookRunIDs.SectionRetrospective}`;
+    const retroURL = `/playbooks/runs/${runID}#${PlaybookRunIDs.SectionRetrospective}`;
 
     return (
         <Section>

@@ -54,7 +54,7 @@ describe('runs > run details page > summary', () => {
             testRun = playbookRun;
 
             // # Visit the playbook run
-            cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
     });
 
@@ -126,7 +126,7 @@ describe('runs > run details page > summary', () => {
     describe('as viewer', () => {
         beforeEach(() => {
             cy.apiLogin(testViewerUser).then(() => {
-                cy.visit(`/playbooks/run_details/${testRun.id}`);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
             });
         });
 

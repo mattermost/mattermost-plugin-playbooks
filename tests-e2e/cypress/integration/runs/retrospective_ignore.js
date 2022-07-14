@@ -6,6 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+// This file could be removed after completing the migration to Run Detail Page
+// The equivalent test is rdp_main_retrospective.js
+
 describe('runs > retrospective', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let testTeam;

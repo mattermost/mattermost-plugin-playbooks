@@ -44,13 +44,13 @@ describe('runs > run details page', () => {
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             // # Visit the playbook run
-            cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
     });
 
     it('redirects to not found error if the playbook run is unknown', () => {
         // # Visit the URL of a non-existing playbook run
-        cy.visit('/playbooks/run_details/an_unknown_id');
+        cy.visit('/playbooks/runs/an_unknown_id');
 
         // * Verify that the user has been redirected to the playbook runs not found error page
         cy.url().should('include', '/playbooks/error?type=playbook_runs');
