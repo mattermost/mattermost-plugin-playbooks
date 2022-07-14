@@ -14,8 +14,9 @@ import {renderThumbVertical, renderTrackHorizontal, renderView} from '../rhs/rhs
 import Group from './group';
 
 export interface GroupItem {
+    id?: string;
     icon: React.ReactNode;
-    itemMenu: React.ReactNode;
+    itemMenu?: React.ReactNode;
     display_name: string;
     className: string;
     areaLabel: string;

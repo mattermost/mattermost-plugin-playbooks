@@ -5,7 +5,8 @@ import styled from 'styled-components';
 
 interface ItemProps {
     icon: React.ReactNode;
-    itemMenu: React.ReactNode;
+    itemMenu?: React.ReactNode;
+    id: string;
     display_name: string;
     className: string;
     areaLabel: string;
@@ -18,7 +19,7 @@ const Item = (props: ItemProps) => {
         <ItemContainer>
             <StyledLink
                 className={props.className}
-                id={`sidebarItem_${props.display_name}`}
+                id={`sidebarItem_${props.id}`}
                 aria-label={props.areaLabel}
                 to={props.link}
                 tabIndex={props.isCollapsed ? -1 : 0}

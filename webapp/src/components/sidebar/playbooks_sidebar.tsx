@@ -39,6 +39,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
                         areaLabel: item.name,
                         className: '',
                         display_name: item.name,
+                        id: item.item_id,
                         icon,
                         isCollapsed: false,
                         itemMenu: null,
