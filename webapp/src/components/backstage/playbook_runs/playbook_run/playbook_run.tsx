@@ -170,6 +170,9 @@ const PlaybookRunDetails = () => {
         rhsComponent = null;
     }
 
+    const onInfoClick = RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo;
+    const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
+
     return (
         <Container>
             <MainWrapper isRHSOpen={RHS.isOpen}>
@@ -177,8 +180,8 @@ const PlaybookRunDetails = () => {
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
-                        onViewInfo={onViewInfo}
-                        onViewTimeline={onViewTimeline}
+                        onInfoClick={onInfoClick}
+                        onTimelineClick={onTimelineClick}
                         role={role}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                     />
@@ -209,7 +212,6 @@ const PlaybookRunDetails = () => {
                             playbookRun={playbookRun}
                             role={role}
                         />
-                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                         <Retrospective
                             id={PlaybookRunIDs.SectionRetrospective}
                             playbookRun={playbookRun}
@@ -217,6 +219,7 @@ const PlaybookRunDetails = () => {
                             role={role}
                             focusMetricId={retrospectiveMetricId}
                         />
+                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
                     </Body>
                 </Main>
             </MainWrapper>
