@@ -30,12 +30,12 @@ interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
     role: Role;
-    onViewInfo: () => void;
-    onViewTimeline: () => void;
+    onInfoClick: () => void;
+    onTimelineClick: () => void;
     rhsSection: RHSContent | null;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -97,14 +97,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 Icon={UpdateIcon}
-                onClick={onViewTimeline}
+                onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 Icon={InformationOutlineIcon}
-                onClick={onViewInfo}
+                onClick={onInfoClick}
                 isActive={rhsSection === RHSContent.RunInfo}
             />
             {role === Role.Viewer &&
