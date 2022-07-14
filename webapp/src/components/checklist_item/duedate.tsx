@@ -23,7 +23,7 @@ import {AdminNotificationType, OVERLAY_DELAY} from 'src/constants';
 interface Props {
     date?: number;
     mode: Mode.DateTimeValue | Mode.DurationValue;
-    editable?: boolean;
+    editable: boolean;
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
     placement: Placement;
@@ -188,6 +188,7 @@ export const DueDateButton = ({
         <DueDateContainer
             overdue={overdue}
             dueSoon={dueSoon}
+            editable={props.editable}
             isPlaceholder={!date}
         >
             <DateTimeSelector
@@ -195,6 +196,7 @@ export const DueDateButton = ({
                     <PlaceholderDiv
                         onClick={handleButtonClick}
                         data-testid='due-date-info-button'
+                        editable={props.editable}
                     >
                         <CalendarIcon
                             className={'icon-calendar-outline icon-12 btn-icon'}
@@ -376,22 +378,20 @@ const CheckIcon = styled.i`
 	font-size: 22px;
 `;
 
-const PlaceholderDiv = styled.div`
+const PlaceholderDiv = styled.div<{editable: boolean}>`
     display: flex;
     align-items: center;
     flex-direction: row;
     white-space: nowrap;
 
-    &:hover {
-        cursor: pointer;
-    }
+    cursor: ${({editable}) => (editable ? 'pointer' : 'default')};
 `;
 
 const DueDateTextContainer = styled.div<{overdue: boolean}>`
     font-size: 12px;
     line-height: 15px;
 
-    font-weight:  ${(props) => (props.overdue ? '600' : '400')};
+    font-weight: ${(props) => (props.overdue ? '600' : '400')};
 `;
 
 const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
@@ -421,7 +421,7 @@ const SelectorRightIcon = styled.i<{overdueOrDueSoon: boolean}>`
     `}
 `;
 
-const DueDateContainer = styled.div<{overdue: boolean; dueSoon: boolean; isPlaceholder: boolean}>`
+const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean, editable: boolean, isPlaceholder: boolean}>`
     display: flex;
     flex-wrap: wrap;
 
@@ -438,8 +438,10 @@ const DueDateContainer = styled.div<{overdue: boolean; dueSoon: boolean; isPlace
         color: var(--dnd-indicator);
     `)}
 
-    :hover {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-        color: var(--center-channel-color);
-    }
+    ${({editable}) => editable && css`
+        :hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
+        }
+    `}
 `;

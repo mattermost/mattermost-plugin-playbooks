@@ -12,13 +12,13 @@ import {joinChannel} from 'mattermost-redux/actions/channels';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
-import {getSiteUrl, requestGetInvolved} from 'src/client';
+import {getSiteUrl, requestGetInvolved, telemetryEventForPlaybookRun} from 'src/client';
 import {useChannel} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
-import {navigateToUrl} from 'src/browser_routing';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
@@ -31,12 +31,12 @@ interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
     role: Role;
-    onViewInfo: () => void;
-    onViewTimeline: () => void;
+    onInfoClick: () => void;
+    onTimelineClick: () => void;
     rhsSection: RHSContent | null;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, onViewTimeline, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -48,33 +48,32 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
+        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedClick);
+        setShowGetInvolvedConfirm(true);
+    };
+
+    const onConfirmGetInvolved = async () => {
+        if (role === Role.Participant || !playbookRunMetadata) {
+            return;
+        }
 
         // Channel null value comes from error response (and we assume that is mostly 403)
         // If we don't have access to channel we'll send a request to be added,
         // otherwise we directly join it
         if (channel === null) {
-            setShowGetInvolvedConfirm(true);
+            const response = await requestGetInvolved(playbookRun.id);
+            if (response?.error) {
+                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
+            } else {
+                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
+            }
             return;
         }
 
+        // if channel is not null, join the channel
         await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
-        navigateToChannel();
-    };
-
-    const onConfirmGetInvolved = async () => {
-        const response = await requestGetInvolved(playbookRun.id);
-        if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request to get involved'}), ToastType.Failure);
-        } else {
-            addToast(formatMessage({defaultMessage: 'Request has been sent to the run channel.'}), ToastType.Success);
-        }
-    };
-
-    const navigateToChannel = () => {
-        if (!playbookRunMetadata) {
-            return;
-        }
-        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
+        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
+        addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 
     return (
@@ -104,7 +103,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 Icon={UpdateIcon}
-                onClick={onViewTimeline}
+                onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
                 data-testid={'rhs-header-button-timeline'}
             />
@@ -112,7 +111,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 Icon={InformationOutlineIcon}
-                onClick={onViewInfo}
+                onClick={onInfoClick}
                 isActive={rhsSection === RHSContent.RunInfo}
                 data-testid={'rhs-header-button-info'}
             />
@@ -129,7 +128,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
             <ConfirmModal
                 show={showGetInvolvedConfirm}
                 title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to add you as a participant.'})}
+                message={channel === null ? formatMessage({defaultMessage: 'Your participation request will be sent to the run channel.'}) : formatMessage({defaultMessage: 'You\'re about to join this run.'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();

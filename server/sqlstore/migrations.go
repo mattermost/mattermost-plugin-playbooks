@@ -2101,4 +2101,34 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.55.0"),
+		toVersion:   semver.MustParse("0.56.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Find all users who are members of channels where runs have been created.
+			// Add them as members of the playbook but only if it's a public playbook.
+			if _, err := e.Exec(`
+				INSERT INTO IR_PlaybookMember
+					SELECT DISTINCT
+						pb.ID as PlaybookID,
+						cm.UserID as MemberID,
+						'playbook_member' as Roles
+					FROM IR_Playbook as pb
+					JOIN IR_Incident as run on run.PlaybookID = pb.ID
+					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
+					LEFT JOIN IR_PlaybookMember as pm on pm.PlaybookID = pb.ID AND pm.MemberID = cm.UserID
+					LEFT JOIN Bots as b ON b.UserID = cm.UserID
+					WHERE
+						pb.Public = true AND
+						pb.DeleteAt = 0 AND
+						pm.PlaybookID IS NULL AND
+						b.UserId IS NULL
+			`); err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+			}
+
+			return nil
+		},
+	},
 }

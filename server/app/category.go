@@ -12,6 +12,18 @@ const (
 	RunItemType      CategoryItemType = "r"
 )
 
+func StringToItemType(item string) (CategoryItemType, error) {
+	var convertedItem CategoryItemType
+	if item == string(PlaybookItemType) {
+		convertedItem = PlaybookItemType
+	} else if item == string(RunItemType) {
+		convertedItem = RunItemType
+	} else {
+		return PlaybookItemType, errors.New("unknown item type")
+	}
+	return convertedItem, nil
+}
+
 type CategoryItem struct {
 	ItemID string           `json:"item_id"`
 	Type   CategoryItemType `json:"type"`
@@ -86,6 +98,15 @@ type CategoryService interface {
 
 	// Delete deletes a category
 	Delete(categoryID string) error
+
+	// AddFavorite favorites an item, which may be either run or playbook
+	AddFavorite(item CategoryItem, teamID, userID string) error
+
+	// DeleteFavorite unfavorites an item, which may be either run or playbook
+	DeleteFavorite(item CategoryItem, teamID, userID string) error
+
+	// IsItemFavorite returns whether item was favorited or not
+	IsItemFavorite(item CategoryItem, teamID, userID string) (bool, error)
 }
 
 type CategoryStore interface {
@@ -103,4 +124,17 @@ type CategoryStore interface {
 
 	// Delete deletes a category
 	Delete(categoryID string) error
+
+	// GetFavoriteCategory returns favorite category
+	GetFavoriteCategory(teamID, userID string) (Category, error)
+
+	// AddItemToFavoriteCategory adds an item to favorite category,
+	// if favorite category does not exist it creates one
+	AddItemToFavoriteCategory(item CategoryItem, teamID, userID string) error
+
+	// AddItemToCategory adds an item to category
+	AddItemToCategory(item CategoryItem, categoryID string) error
+
+	// DeleteItemFromCategory adds an item to category
+	DeleteItemFromCategory(item CategoryItem, categoryID string) error
 }

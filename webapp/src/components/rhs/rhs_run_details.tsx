@@ -23,14 +23,15 @@ import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from '../tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
-import {usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks/telemetry';
+import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookRunViewTarget} from 'src/types/telemetry';
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
     const scrollbarsRef = useRef<Scrollbars>(null);
 
     const playbookRun = useSelector(currentPlaybookRun);
-    usePlaybookRunViewTelemetry(PlaybookRunTarget.ChannelsRHSDetails, playbookRun?.id);
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 

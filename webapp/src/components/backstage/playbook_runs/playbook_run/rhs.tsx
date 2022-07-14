@@ -111,6 +111,8 @@ const HeaderIcon = styled.div`
     width: 32px;
     height: 32px;
     margin-right: 20px;
+    border-radius: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     :hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
@@ -152,6 +154,5 @@ const Body = styled.div`
 `;
 
 const BackIcon = styled(HeaderIcon)`
-    margin-left: 10px;
-    margin-right: 0;
+    margin: 0 10px;
 `;
