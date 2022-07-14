@@ -19,7 +19,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 import {setPlaybookRunEventsFilter} from 'src/actions';
 
-export const useTimelineEvents = (playbookRun: PlaybookRun) => {
+export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilterOverride?: TimelineEventsFilter) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
@@ -30,8 +30,8 @@ export const useTimelineEvents = (playbookRun: PlaybookRun) => {
     const selectUser = useSelector((state: GlobalState) => (userId: string) => getUser(state, userId));
 
     useEffect(() => {
-        setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
-    }, [eventsFilter, allEvents]);
+        setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilterOverride || eventsFilter)));
+    }, [eventsFilter, eventsFilterOverride, allEvents]);
 
     useEffect(() => {
         const {
@@ -43,7 +43,6 @@ export const useTimelineEvents = (playbookRun: PlaybookRun) => {
             if (post.delete_at !== 0) {
                 map[post.id] = post.delete_at;
             }
-
             return map;
         }, {});
 
@@ -76,10 +75,13 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
         return true;
     }
     const filterRecord = filter as unknown as Record<string, boolean>;
-    return filterRecord[eventType] ||
-        (eventType === TimelineEventType.RunCreated && filterRecord[TimelineEventType.StatusUpdated]) ||
-        (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]) ||
-        (eventType === TimelineEventType.RunRestored && filterRecord[TimelineEventType.StatusUpdated]);
+    const statusUpdateTypes = [
+        TimelineEventType.StatusUpdateRequested,
+        TimelineEventType.RunCreated,
+        TimelineEventType.RunFinished,
+        TimelineEventType.RunRestored,
+    ];
+    return filterRecord[eventType] || (filterRecord[TimelineEventType.StatusUpdated] && statusUpdateTypes.includes(eventType as TimelineEventType));
 };
 
 export const useFilter = (playbookRun: PlaybookRun) => {

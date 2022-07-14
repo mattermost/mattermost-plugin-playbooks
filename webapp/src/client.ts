@@ -733,12 +733,39 @@ export const requestUpdate = async (playbookRunId: string) => {
     }
 };
 
+export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const requestGetInvolved = async (playbookRunId: string) => {
     try {
         return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
     } catch (error) {
         return {error};
     }
+};
+
+export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const isFavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    const data = await doGet<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}&item_id=${itemID}&type=${itemType}`);
+    return Boolean(data);
 };
 
 export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
@@ -115,7 +115,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
             <Item
                 id='runinfo-following'
                 icon={BullhornOutlineIcon}
-                name={formatMessage({defaultMessage: 'Following'})}
+                name={formatMessage({defaultMessage: 'Followers'})}
             >
                 <FollowersWrapper>
                     <FollowingButton/>
@@ -207,6 +207,11 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
 
+    useEffect(() => {
+        setFollowers(metadataFollowers);
+        setIsFollowing(metadataFollowers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
+
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
         action(runID)
@@ -225,7 +230,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
         if (isFollowing) {
             return (
                 <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Followers'})}
+                    {formatMessage({defaultMessage: 'Following'})}
                 </UnfollowButton>
             );
         }

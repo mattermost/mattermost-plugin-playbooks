@@ -88,12 +88,19 @@ type Metadata struct {
 type TimelineEventType string
 
 const (
-	PlaybookRunCreated TimelineEventType = "incident_created"
-	TaskStateModified  TimelineEventType = "task_state_modified"
-	StatusUpdated      TimelineEventType = "status_updated"
-	OwnerChanged       TimelineEventType = "owner_changed"
-	AssigneeChanged    TimelineEventType = "assignee_changed"
-	RanSlashCommand    TimelineEventType = "ran_slash_command"
+	PlaybookRunCreated     TimelineEventType = "incident_created"
+	TaskStateModified      TimelineEventType = "task_state_modified"
+	StatusUpdated          TimelineEventType = "status_updated"
+	StatusUpdateRequested  TimelineEventType = "status_update_requested"
+	OwnerChanged           TimelineEventType = "owner_changed"
+	AssigneeChanged        TimelineEventType = "assignee_changed"
+	RanSlashCommand        TimelineEventType = "ran_slash_command"
+	EventFromPost          TimelineEventType = "event_from_post"
+	UserJoinedLeft         TimelineEventType = "user_joined_left"
+	PublishedRetrospective TimelineEventType = "published_retrospective"
+	CanceledRetrospective  TimelineEventType = "canceled_retrospective"
+	RunFinished            TimelineEventType = "run_finished"
+	RunRestored            TimelineEventType = "run_restored"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.

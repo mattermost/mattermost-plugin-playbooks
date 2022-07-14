@@ -21,6 +21,17 @@ import {useTimelineEvents} from './timeline_utils';
 
 const SHOWED_EVENTS = 5;
 
+const fixedFilters = {
+    all: true,
+    owner_changed: false,
+    status_updated: false,
+    event_from_post: false,
+    task_state_modified: false,
+    assignee_changed: false,
+    ran_slash_command: false,
+    user_joined_left: false,
+};
+
 interface Props {
     run: PlaybookRun;
     role: Role;
@@ -29,7 +40,7 @@ interface Props {
 
 const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
-    const [filteredEvents] = useTimelineEvents(run);
+    const [filteredEvents] = useTimelineEvents(run, fixedFilters);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
     const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
 
@@ -42,7 +53,7 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
                     name: formatMessage({defaultMessage: 'View all'}),
                 }}
             />
-            <ItemList>
+            <ItemList data-testid={'rhs-timeline'}>
                 {filteredEvents.slice(0, SHOWED_EVENTS).map((event, i, events) => {
                     let prevEventAt;
                     if (i !== events.length - 1) {

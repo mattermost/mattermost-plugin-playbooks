@@ -91,6 +91,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
                 onClick={() => dispatch(showRunActionsModal())}
                 size={24}
                 iconSize={14}
+                data-testid={'rhs-header-button-run-actions'}
             />
             <StyledCopyLink
                 id='copy-run-link-tooltip'
@@ -104,6 +105,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
                 Icon={UpdateIcon}
                 onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
+                data-testid={'rhs-header-button-timeline'}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
@@ -111,6 +113,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
                 Icon={InformationOutlineIcon}
                 onClick={onInfoClick}
                 isActive={rhsSection === RHSContent.RunInfo}
+                data-testid={'rhs-header-button-info'}
             />
             {role === Role.Viewer &&
                 <GetInvolved onClick={onGetInvolved}>

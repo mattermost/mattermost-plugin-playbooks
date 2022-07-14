@@ -1191,10 +1191,19 @@ func TestRequestUpdate(t *testing.T) {
 		// Gained Viewer access
 		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
 		assert.NoError(t, err)
+
+		// Assert that timeline event is created
+		privateRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), privateRun.ID)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, privateRun.TimelineEvents)
+		lastEvent := privateRun.TimelineEvents[len(privateRun.TimelineEvents)-1]
+		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
 	})
 
 	t.Run("public - viewer access ", func(t *testing.T) {
-		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		publicRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Basic create",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
@@ -1202,10 +1211,19 @@ func TestRequestUpdate(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUser2.Id)
 		assert.NoError(t, err)
 
-		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUserNotInTeam.Id)
+		// Assert that timeline event is created
+		publicRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), publicRun.ID)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, publicRun.TimelineEvents)
+		lastEvent := publicRun.TimelineEvents[len(publicRun.TimelineEvents)-1]
+		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+
+		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
 	})
 

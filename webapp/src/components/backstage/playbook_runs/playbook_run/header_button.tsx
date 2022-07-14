@@ -18,9 +18,10 @@ interface HeaderButtonProps {
     size?: number;
     iconSize?: number;
     'aria-label'?: string;
+    'data-testid': string;
 }
 
-const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, clicked, size, iconSize, 'aria-label': ariaLabel}: HeaderButtonProps) => {
+const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, clicked, size, iconSize, 'aria-label': ariaLabel, 'data-testid': dataTestId}: HeaderButtonProps) => {
     return (
         <Tooltip
             id={tooltipId}
@@ -29,6 +30,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, click
             content={tooltipMessage}
         >
             <StyledHeaderIcon
+                data-testid={dataTestId}
                 onClick={() => onClick()}
                 clicked={clicked ?? false}
                 isActive={isActive ?? false}

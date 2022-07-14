@@ -70,7 +70,7 @@ const PlaybookEditor = () => {
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
-    }, [dispatch, playbook?.team_id]);
+    }, [dispatch, playbook?.team_id, playbookId]);
 
     if (error) {
         // not found
@@ -104,13 +104,27 @@ const PlaybookEditor = () => {
         </Tooltip>
     );
 
+    // Favorite Button State
+    const favoriteIcon = playbook.is_favorite ? 'icon-star' : 'icon-star-outline';
+
+    const toggleFavorite = () => {
+        updatePlaybook({isFavorite: !playbook.is_favorite});
+    };
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Controls.Back/>
+                    <Button
+                        onClick={toggleFavorite}
+                        className={playbook.is_favorite ? 'active' : ''}
+                    >
+                        <div>
+                            <i className={'icon ' + favoriteIcon}/>
+                        </div>
+                    </Button>
                     <TextEdit
                         disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
@@ -563,6 +577,38 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
     @media screen and (min-width: 1680px) {
         --content-max-width: 1100px;
+    }
+`;
+
+const Button = styled.button`
+    border-radius: 4px;
+    border: 0;
+    padding: 12px 0 10px 0;
+    background: none;
+    flex: 1;
+    margin: 0 6px;
+
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+
+    &:active,
+    &.active {
+        background: none;
+        color: var(--button-bg);
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+         }
+    }
+
+    & i {
+        font-size: 24px;
+    }
+    & span {
+        line-height: 16px;
+        font-size: 10px;
+        font-weight: 600;
     }
 `;
 

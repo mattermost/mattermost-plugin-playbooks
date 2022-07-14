@@ -180,3 +180,91 @@ func (c *categoryStore) Delete(categoryID string) error {
 	}
 	return nil
 }
+
+// GetFavoriteCategory returns favorite category
+func (c *categoryStore) GetFavoriteCategory(teamID, userID string) (app.Category, error) {
+	var category app.Category
+	err := c.store.getBuilder(c.store.db, &category, c.categorySelect.Where(sq.Eq{
+		"c.Name":   "Favorite",
+		"c.TeamID": teamID,
+		"c.UserID": userID,
+	}))
+	if err == sql.ErrNoRows {
+		return app.Category{}, err
+	}
+	category.Items, err = c.getItems(category.ID)
+	if err != nil {
+		return app.Category{}, errors.Wrap(err, "failed to get Items for category")
+	}
+	return category, nil
+}
+
+// createFavoriteCategory creates and returns favorite category
+func (c *categoryStore) createFavoriteCategory(teamID, userID string) (app.Category, error) {
+	now := model.GetMillis()
+	favCat := app.Category{
+		ID:        model.NewId(),
+		Name:      "Favorite",
+		TeamID:    teamID,
+		UserID:    userID,
+		Collapsed: false,
+		CreateAt:  now,
+		UpdateAt:  now,
+		Items:     []app.CategoryItem{},
+	}
+	if err := c.Create(favCat); err != nil {
+		return app.Category{}, errors.Wrap(err, "can't create favorite category")
+	}
+	return favCat, nil
+}
+
+// AddItemToFavoriteCategory adds an item to favorite category,
+// if favorite category does not exist it creates one
+func (c *categoryStore) AddItemToFavoriteCategory(item app.CategoryItem, teamID, userID string) error {
+	favoriteCategory, err := c.GetFavoriteCategory(teamID, userID)
+	if err == sql.ErrNoRows {
+		// No favorite category, we should create one
+		if favoriteCategory, err = c.createFavoriteCategory(teamID, userID); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return errors.Wrap(err, "can't get favorite category")
+	}
+	for _, favItem := range favoriteCategory.Items {
+		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
+			return errors.New("Item already is favorite")
+		}
+	}
+	if err := c.AddItemToCategory(item, favoriteCategory.ID); err != nil {
+		return errors.Wrap(err, "can't add item to favorite category")
+	}
+	return nil
+}
+
+// AddItemToCategory adds an item to category
+func (c *categoryStore) AddItemToCategory(item app.CategoryItem, categoryID string) error {
+	if _, err := c.store.execBuilder(c.store.db, sq.
+		Insert("IR_Category_Item").
+		SetMap(map[string]interface{}{
+			"CategoryID": categoryID,
+			"ItemID":     item.ItemID,
+			"Type":       item.Type,
+		})); err != nil {
+		return errors.Wrap(err, "failed to store item in category")
+	}
+	return nil
+}
+
+// DeleteItemFromCategory deletes an item from category
+func (c *categoryStore) DeleteItemFromCategory(item app.CategoryItem, categoryID string) error {
+	if _, err := c.store.execBuilder(c.store.db, sq.
+		Delete("IR_Category_Item").
+		Where(sq.Eq{
+			"CategoryID": categoryID,
+			"ItemID":     item.ItemID,
+			"Type":       item.Type,
+		})); err != nil {
+		return errors.Wrapf(err, "failed to delete category with item id '%s'", item.ItemID)
+	}
+	return nil
+}

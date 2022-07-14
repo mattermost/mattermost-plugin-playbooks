@@ -218,6 +218,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewGraphQLHandler(
 		p.handler.APIRouter,
 		p.playbookService,
+		p.categoryService,
 		pluginAPIClient,
 		p.bot,
 		p.config,

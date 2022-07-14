@@ -19,6 +19,7 @@ import (
 type GraphQLHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
+	categoryService app.CategoryService
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	config          config.Service
@@ -35,6 +36,7 @@ var SchemaFile string
 func NewGraphQLHandler(
 	router *mux.Router,
 	playbookService app.PlaybookService,
+	categoryService app.CategoryService,
 	api *pluginapi.Client,
 	log bot.Logger,
 	configService config.Service,
@@ -45,6 +47,7 @@ func NewGraphQLHandler(
 	handler := &GraphQLHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		playbookService: playbookService,
+		categoryService: categoryService,
 		pluginAPI:       api,
 		log:             log,
 		config:          configService,
@@ -85,6 +88,7 @@ type Context struct {
 	r               *http.Request
 	playbookService app.PlaybookService
 	playbookStore   app.PlaybookStore
+	categoryService app.CategoryService
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	config          config.Service
@@ -117,6 +121,7 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 	c := &Context{
 		r:               r,
 		playbookService: h.playbookService,
+		categoryService: h.categoryService,
 		pluginAPI:       h.pluginAPI,
 		log:             h.log,
 		config:          h.config,

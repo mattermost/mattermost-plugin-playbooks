@@ -35,6 +35,9 @@ func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, logger bot.Lo
 	categoriesRouter := router.PathPrefix("/my_categories").Subrouter()
 	categoriesRouter.HandleFunc("", handler.getMyCategories).Methods(http.MethodGet)
 	categoriesRouter.HandleFunc("", handler.createMyCategory).Methods(http.MethodPost)
+	categoriesRouter.HandleFunc("/favorites", handler.addFavorite).Methods(http.MethodPost)
+	categoriesRouter.HandleFunc("/favorites", handler.deleteFavorite).Methods(http.MethodDelete)
+	categoriesRouter.HandleFunc("/favorites", handler.isFavorite).Methods(http.MethodGet)
 
 	categoryRouter := categoriesRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	categoryRouter.HandleFunc("", handler.updateMyCategory).Methods(http.MethodPut)
@@ -52,13 +55,14 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
+	filteredCustomCategories := filterEmptyCategories(customCategories)
 
 	runsCategory, err := h.getRunsCategory(teamID, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
-	filteredRuns := filterDuplicatesFromCategory(runsCategory, customCategories)
+	filteredRuns := filterDuplicatesFromCategory(runsCategory, filteredCustomCategories)
 	allCategories := append([]app.Category{}, customCategories...)
 	allCategories = append(allCategories, filteredRuns)
 
@@ -67,11 +71,10 @@ func (h *CategoryHandler) getMyCategories(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
-	filteredPlaybooks := filterDuplicatesFromCategory(playbooksCategory, customCategories)
+	filteredPlaybooks := filterDuplicatesFromCategory(playbooksCategory, filteredCustomCategories)
 	allCategories = append(allCategories, filteredPlaybooks)
 
-	filteredCategories := filterEmptyCategories(allCategories)
-	ReturnJSON(w, filteredCategories, http.StatusOK)
+	ReturnJSON(w, allCategories, http.StatusOK)
 }
 
 func (h *CategoryHandler) createMyCategory(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +147,9 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 
 	if err := h.categoryService.Update(category); err != nil {
 		h.HandleError(w, err)
+		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *CategoryHandler) deleteMyCategory(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +178,65 @@ func (h *CategoryHandler) deleteMyCategory(w http.ResponseWriter, r *http.Reques
 
 	if err := h.categoryService.Delete(categoryID); err != nil {
 		h.HandleError(w, err)
+		return
 	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *CategoryHandler) addFavorite(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	teamID := params.Get("team_id")
+
+	var item app.CategoryItem
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode category item", err)
+		return
+	}
+
+	if err := h.categoryService.AddFavorite(item, teamID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *CategoryHandler) deleteFavorite(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	teamID := params.Get("team_id")
+
+	var item app.CategoryItem
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode category item", err)
+		return
+	}
+
+	if err := h.categoryService.DeleteFavorite(item, teamID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *CategoryHandler) isFavorite(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	teamID := params.Get("team_id")
+	itemID := params.Get("item_id")
+	itemType := params.Get("type")
+	convertedItemType, err := app.StringToItemType(itemType)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	isFavorite, err := h.categoryService.IsItemFavorite(app.CategoryItem{ItemID: itemID, Type: convertedItemType}, teamID, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	ReturnJSON(w, isFavorite, http.StatusOK)
 }
 
 func (h *CategoryHandler) getRunsCategory(teamID, userID string) (app.Category, error) {
@@ -221,8 +284,9 @@ func (h *CategoryHandler) getPlaybooksCategory(teamID, userID string) (app.Categ
 		},
 		teamID,
 		app.PlaybookFilterOptions{
-			Page:    0,
-			PerPage: maxItemsInRunsAndPlaybooksCategory,
+			Page:               0,
+			PerPage:            maxItemsInRunsAndPlaybooksCategory,
+			WithMembershipOnly: true,
 		},
 	)
 	if err != nil {
