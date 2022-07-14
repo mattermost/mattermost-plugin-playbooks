@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
 
@@ -16,17 +16,13 @@ import {
     getSiteUrl,
     requestGetInvolved,
     telemetryEventForPlaybookRun,
-    favoriteItem,
-    isFavoriteItem,
-    unfavoriteItem,
 } from 'src/client';
-import {useChannel} from 'src/hooks';
+import {useChannel, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {CategoryItemType} from 'src/types/category';
 
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
@@ -53,13 +49,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useChannel(playbookRun.channel_id);
     const addToast = useToaster().add;
-    const [isFavoriteRun, setIsFavoriteRun] = useState(false);
-
-    useEffect(() => {
-        isFavoriteItem(playbookRun.team_id, playbookRun.id, CategoryItemType.RunItemType)
-            .then(setIsFavoriteRun)
-            .catch(() => setIsFavoriteRun(false));
-    }, [playbookRun.id, playbookRun.team_id]);
+    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
@@ -94,27 +84,15 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
     };
 
     // Favorite Button State
-    const favoriteIcon = isFavoriteRun ? 'icon-star' : 'icon-star-outline';
-
-    const toggleFavorite = () => {
-        if (isFavoriteRun) {
-            unfavoriteItem(playbookRun.team_id, playbookRun.id, CategoryItemType.RunItemType);
-            setIsFavoriteRun(false);
-            return;
-        }
-        favoriteItem(playbookRun.team_id, playbookRun.id, CategoryItemType.RunItemType);
-        setIsFavoriteRun(true);
-    };
+    const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
 
     return (
         <Container data-testid={'run-header-section'}>
-            <StarButton
-                onClick={toggleFavorite}
-                className={isFavoriteRun ? 'active' : ''}
-            >
-                <div>
-                    <i className={'icon ' + favoriteIcon}/>
-                </div>
+            <StarButton onClick={toggleFavorite}>
+                <FavoriteIcon
+                    size={18}
+                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : ''}
+                />
             </StarButton>
             <ContextMenu
                 playbookRun={playbookRun}
