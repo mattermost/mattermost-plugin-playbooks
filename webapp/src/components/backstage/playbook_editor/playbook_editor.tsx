@@ -12,6 +12,7 @@ import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch} from 'react-redux';
+import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -105,7 +106,7 @@ const PlaybookEditor = () => {
     );
 
     // Favorite Button State
-    const favoriteIcon = playbook.is_favorite ? 'icon-star' : 'icon-star-outline';
+    const FavoriteIcon = playbook.is_favorite ? StarIcon : StarOutlineIcon;
 
     const toggleFavorite = () => {
         updatePlaybook({isFavorite: !playbook.is_favorite});
@@ -117,14 +118,12 @@ const PlaybookEditor = () => {
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Button
-                        onClick={toggleFavorite}
-                        className={playbook.is_favorite ? 'active' : ''}
-                    >
-                        <div>
-                            <i className={'icon ' + favoriteIcon}/>
-                        </div>
-                    </Button>
+                    <StarButton onClick={toggleFavorite}>
+                        <FavoriteIcon
+                            size={18}
+                            color={playbook.is_favorite ? 'var(--sidebar-text-active-border)' : ''}
+                        />
+                    </StarButton>
                     <TextEdit
                         disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
@@ -580,36 +579,16 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 `;
 
-const Button = styled.button`
+export const StarButton = styled.button`
     border-radius: 4px;
     border: 0;
     padding: 12px 0 10px 0;
     background: none;
-    flex: 1;
     margin: 0 6px;
 
     &:hover {
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
-
-    &:active,
-    &.active {
-        background: none;
-        color: var(--button-bg);
-        &:hover {
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-         }
-    }
-
-    & i {
-        font-size: 24px;
-    }
-    & span {
-        line-height: 16px;
-        font-size: 10px;
-        font-weight: 600;
-    }
 `;
-
 export default PlaybookEditor;

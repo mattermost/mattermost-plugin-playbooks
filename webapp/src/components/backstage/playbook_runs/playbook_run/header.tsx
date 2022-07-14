@@ -5,15 +5,19 @@ import styled from 'styled-components';
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
-import {getSiteUrl, requestGetInvolved, telemetryEventForPlaybookRun} from 'src/client';
-import {useChannel} from 'src/hooks';
+import {
+    getSiteUrl,
+    requestGetInvolved,
+    telemetryEventForPlaybookRun,
+} from 'src/client';
+import {useChannel, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -23,6 +27,8 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
+
+import {StarButton} from '../../playbook_editor/playbook_editor';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -43,6 +49,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useChannel(playbookRun.channel_id);
     const addToast = useToaster().add;
+    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
@@ -76,8 +83,17 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 
+    // Favorite Button State
+    const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
+
     return (
         <Container data-testid={'run-header-section'}>
+            <StarButton onClick={toggleFavorite}>
+                <FavoriteIcon
+                    size={18}
+                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : ''}
+                />
+            </StarButton>
             <ContextMenu
                 playbookRun={playbookRun}
                 role={role}

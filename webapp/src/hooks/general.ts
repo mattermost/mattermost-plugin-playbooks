@@ -44,7 +44,18 @@ import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
-import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
+import {
+    fetchPlaybookRuns,
+    clientFetchPlaybook,
+    fetchPlaybookRunStatusUpdates,
+    fetchPlaybookRun,
+    fetchPlaybookStats,
+    fetchPlaybookRunMetadata,
+    isFavoriteItem,
+    favoriteItem,
+    unfavoriteItem,
+} from 'src/client';
+import {CategoryItemType} from 'src/types/category';
 
 import {isCloud} from '../license';
 import {
@@ -722,4 +733,25 @@ export const useProxyState = <T>(
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
     return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+};
+
+export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
+    const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+
+    useEffect(() => {
+        isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
+            .then(setIsFavoriteRun)
+            .catch(() => setIsFavoriteRun(false));
+    }, [teamID, runID]);
+
+    const toggleFavorite = () => {
+        if (isFavoriteRun) {
+            unfavoriteItem(teamID, runID, CategoryItemType.RunItemType);
+            setIsFavoriteRun(false);
+            return;
+        }
+        favoriteItem(teamID, runID, CategoryItemType.RunItemType);
+        setIsFavoriteRun(true);
+    };
+    return [isFavoriteRun, toggleFavorite];
 };
