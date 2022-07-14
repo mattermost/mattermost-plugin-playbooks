@@ -115,7 +115,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
             <Item
                 id='runinfo-following'
                 icon={BullhornOutlineIcon}
-                name={formatMessage({defaultMessage: 'Following'})}
+                name={formatMessage({defaultMessage: 'Followers'})}
             >
                 <FollowersWrapper>
                     <FollowingButton/>
@@ -230,7 +230,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
         if (isFollowing) {
             return (
                 <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Followers'})}
+                    {formatMessage({defaultMessage: 'Following'})}
                 </UnfollowButton>
             );
         }
