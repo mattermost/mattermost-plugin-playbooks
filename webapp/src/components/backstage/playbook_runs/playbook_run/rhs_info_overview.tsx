@@ -225,7 +225,7 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
         if (isFollowing) {
             return (
                 <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
+                    {formatMessage({defaultMessage: 'Followers'})}
                 </UnfollowButton>
             );
         }
@@ -290,6 +290,7 @@ const ItemContent = styled.div`
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
     padding: 10px 24px;
+    height: 44px;
     display: flex;
     justify-content: space-between;
 

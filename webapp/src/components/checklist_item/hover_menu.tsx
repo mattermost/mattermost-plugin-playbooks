@@ -70,6 +70,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 onSelectedChange={props.onDueDateChange}
                 placement={'bottom-end'}
                 onOpenChange={props.onItemOpenChange}
+                editable={props.isEditing}
             />
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
