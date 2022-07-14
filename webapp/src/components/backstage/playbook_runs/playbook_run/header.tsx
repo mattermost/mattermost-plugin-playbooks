@@ -48,6 +48,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
+        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedClick);
         setShowGetInvolvedConfirm(true);
     };
 
@@ -55,8 +56,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onViewInfo, o
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-
-        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedClick);
 
         // Channel null value comes from error response (and we assume that is mostly 403)
         // If we don't have access to channel we'll send a request to be added,
