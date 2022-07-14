@@ -117,14 +117,14 @@ const PlaybookEditor = () => {
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Button
+                    <StarButton
                         onClick={toggleFavorite}
                         className={playbook.is_favorite ? 'active' : ''}
                     >
                         <div>
                             <i className={'icon ' + favoriteIcon}/>
                         </div>
-                    </Button>
+                    </StarButton>
                     <TextEdit
                         disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
@@ -580,12 +580,11 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 `;
 
-const Button = styled.button`
+export const StarButton = styled.button`
     border-radius: 4px;
     border: 0;
     padding: 12px 0 10px 0;
     background: none;
-    flex: 1;
     margin: 0 6px;
 
     &:hover {
