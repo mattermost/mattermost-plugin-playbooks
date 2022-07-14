@@ -42,6 +42,8 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
 
+import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
 import * as Controls from './controls';
@@ -71,6 +73,8 @@ const PlaybookEditor = () => {
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id]);
+
+    useDefaultRedirectOnTeamChange(playbook?.team_id);
 
     if (error) {
         // not found

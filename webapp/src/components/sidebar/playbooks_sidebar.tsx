@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
@@ -17,8 +17,7 @@ interface PlaybookSidebarProps {
 }
 
 const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
-    const teams = useSelector(getMyTeams);
-    const teamID = props.team_id || teams[0].id;
+    const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
 
     const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {

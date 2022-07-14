@@ -555,6 +555,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
     const [totalCount, setTotalCount] = useState(0);
     const history = useHistory();
     const location = useLocation();
+    const currentTeamId = useSelector(getCurrentTeamId);
     const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
     // Fetch the queried runs
@@ -562,7 +563,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
         let isCanceled = false;
 
         async function fetchPlaybookRunsAsync() {
-            const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
+            const playbookRunsReturn = await fetchPlaybookRuns({...fetchParams, team_id: currentTeamId});
 
             if (!isCanceled) {
                 setPlaybookRuns((existingRuns: PlaybookRun[]) => {
@@ -580,7 +581,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
         return () => {
             isCanceled = true;
         };
-    }, [fetchParams]);
+    }, [fetchParams, currentTeamId]);
 
     // Update the query string when the fetchParams change
     useEffect(() => {

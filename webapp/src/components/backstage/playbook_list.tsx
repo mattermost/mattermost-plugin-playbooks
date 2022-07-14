@@ -137,7 +137,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         playbooks,
         {isLoading, totalCount, params},
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
-    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+    ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();

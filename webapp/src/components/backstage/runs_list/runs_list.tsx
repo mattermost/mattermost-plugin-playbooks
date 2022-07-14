@@ -50,7 +50,15 @@ const StyledSpinner = styled(Spinner)`
     margin-top: 10px;
 `;
 
-const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
+const RunList = ({
+    playbookRuns,
+    totalCount,
+    fetchParams,
+    setFetchParams,
+    filterPill,
+    fixedTeam,
+    fixedPlaybook,
+}: Props) => {
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
         (fetchParams?.statuses?.length ?? 0) > 1 ||
@@ -71,7 +79,6 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
             <Filters
                 fetchParams={fetchParams}
                 setFetchParams={setFetchParams}
-                fixedTeam={fixedTeam}
                 fixedPlaybook={fixedPlaybook}
             />
             {filterPill}
