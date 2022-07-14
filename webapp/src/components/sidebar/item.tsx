@@ -1,5 +1,5 @@
 import React from 'react';
-import {Link} from 'react-router-dom';
+import {NavLink} from 'react-router-dom';
 
 import styled from 'styled-components';
 
@@ -17,7 +17,7 @@ interface ItemProps {
 const Item = (props: ItemProps) => {
     return (
         <ItemContainer>
-            <StyledLink
+            <StyledNavLink
                 className={props.className}
                 id={`sidebarItem_${props.id}`}
                 aria-label={props.areaLabel}
@@ -31,44 +31,10 @@ const Item = (props: ItemProps) => {
                     {props.display_name}
                 </ItemDisplayLabel>
                 {props.itemMenu}
-            </StyledLink>
+            </StyledNavLink>
         </ItemContainer>
     );
 };
-
-const ItemContainer = styled.li`
-    display: flex;
-    overflow: hidden;
-    height: 32px;
-    align-items: center;
-    color: rgba(var(--sidebar-text-rgb), 0.6);
-    list-style-type: none;
-    opacity: 1;
-    transition: height 0.18s ease;
-    visibility: visible;
-`;
-
-const StyledLink = styled(Link)`
-    position: relative;
-    display: flex;
-    width: 240px;
-    height: 32px;
-    align-items: center;
-    padding: 7px 16px 7px 19px;
-    border-top: 0;
-    border-bottom: 0;
-    margin-right: 0;
-    color: rgba(var(--sidebar-text-rgb), 0.72);
-    font-size: 14px;
-    text-decoration: none;
-
-    :hover,
-    :focus {
-        padding-right: 5px;
-        background-color: var(--sidebar-text-hover-bg);
-        text-decoration: none;
-    }
-`;
 
 const ItemDisplayLabel = styled.span`
     max-width: 100%;
@@ -87,6 +53,67 @@ const Icon = styled.div`
     margin: 0 6px 0 -2px;
     font-size: 18px;
     color: rgba(var(--sidebar-text-rgb), 0.72);
+`;
+
+const ItemContainer = styled.li`
+    display: flex;
+    overflow: hidden;
+    height: 32px;
+    align-items: center;
+    color: rgba(var(--sidebar-text-rgb), 0.6);
+    list-style-type: none;
+    opacity: 1;
+    transition: height 0.18s ease;
+    visibility: visible;
+`;
+
+const StyledNavLink = styled(NavLink)`
+    position: relative;
+    display: flex;
+    width: 240px;
+    height: 32px;
+    align-items: center;
+    padding: 7px 16px 7px 19px;
+    border-top: 0;
+    border-bottom: 0;
+    margin-right: 0;
+    color: rgba(var(--sidebar-text-rgb), 0.72);
+    font-size: 14px;
+    text-decoration: none;
+
+    :hover,
+    :focus {
+        text-decoration: none;
+    }
+
+    :hover,
+    :focus-visible {
+        padding-right: 5px;
+        background: rgba(var(--sidebar-text-rgb), 0.08);
+    }
+
+    &.active {
+        background: rgba(var(--sidebar-text-rgb), 0.16);
+        ${ItemDisplayLabel},
+        ${Icon} {
+            color: rgba(var(--sidebar-text-rgb), 1);
+        }
+
+        :hover,
+        :focus-visible {
+            background: rgba(var(--sidebar-text-rgb), 0.24);
+        }
+        ::before {
+            position: absolute;
+            top: 0;
+            left: -2px;
+            width: 4px;
+            height: 100%;
+            background: var(--sidebar-text-active-border);
+            border-radius: 4px;
+            content: "";
+        }
+    }
 `;
 
 export default Item;
