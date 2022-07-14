@@ -226,7 +226,7 @@ const TimelineEventItem = (props: Props) => {
         testid = TimelineEventType.StatusUpdated;
         break;
     case TimelineEventType.StatusUpdateRequested:
-        iconClass = 'icon icon-flag-outline';
+        iconClass = 'icon icon-update';
         summaryTitle = props.event.summary;
         testid = TimelineEventType.StatusUpdateRequested;
         break;

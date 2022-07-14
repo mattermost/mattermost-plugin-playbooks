@@ -2708,6 +2708,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
+	// send updated run through websocket
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
+
 	return nil
 }
 
