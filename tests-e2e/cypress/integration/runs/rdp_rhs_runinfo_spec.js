@@ -197,6 +197,7 @@ describe('runs > run details page > run info', () => {
         describe('playbook without metrics', () => {
             describe('it should not render', () => {
                 it('as participant', () => {
+                    // * assert metrics does not exist
                     getRHSSection('Key Metrics').should('not.exist');
                 });
 
@@ -204,6 +205,8 @@ describe('runs > run details page > run info', () => {
                     cy.apiLogin(testViewerUser).then(() => {
                         cy.visit(`/playbooks/run_details/${testRun.id}`);
                     });
+
+                    // * assert metrics does not exist
                     getRHSSection('Key Metrics').should('not.exist');
                 });
             });
@@ -273,14 +276,20 @@ describe('runs > run details page > run info', () => {
                 });
 
                 it('link scrolls to retrospective', () => {
+                    // # click in view retro link
                     cy.findByRole('link', {name: /View Retrospective/}).click({force: true});
+
+                    // * verify that URL has been changed
                     cy.url().should('contain', '#playbook-run-retrospective');
                 });
 
                 it('metric items scroll to corresponding metric', () => {
                     getRHSSection('Key Metrics').within(() => {
                         playbookWithMetrics.metrics.forEach((metric) => {
+                            // # Click on metric
                             cy.findByText(metric.title).click({force: true});
+
+                            // * Verify that url changed (and therefore we scrolled)
                             cy.url().should('contain', `#playbook-run-retrospective${metric.id}`);
                         });
                     });
@@ -293,6 +302,7 @@ describe('runs > run details page > run info', () => {
                 it('metric items show Add value if empty', () => {
                     getRHSSection('Key Metrics').within(() => {
                         playbookWithMetrics.metrics.forEach((metric) => {
+                            // * Verify that we show a placeholder when empty
                             cy.findByText(metric.title).parent().contains('Add value...');
                         });
                     });
@@ -347,6 +357,7 @@ describe('runs > run details page > run info', () => {
                 it('metric items show - if empty', () => {
                     getRHSSection('Key Metrics').within(() => {
                         playbookWithMetrics.metrics.forEach((metric) => {
+                            // * verify that values are shown as - when empty
                             cy.findByText(metric.title).parent().contains('-');
                         });
                     });
@@ -359,16 +370,19 @@ describe('runs > run details page > run info', () => {
         const commonTests = () => {
             it('recent activity is present and it contains a timeline', () => {
                 getRHSSection('Recent Activity').within(() => {
+                    // * assert that section is shown
                     cy.findByTestId('rhs-timeline').should('exist');
                 });
             });
 
             it('link switches the RHS to Timeline', () => {
                 getRHSSection('Recent Activity').within(() => {
+                    // * click link to see all timeline
                     cy.findByText('View all').click({force: true});
                 });
 
                 cy.findByRole('complementary').within(() => {
+                    // * verify we changed to RHS-timeline
                     cy.findByTestId('rhs-title').contains('Timeline');
                     cy.findByTestId('rhs-back-button').should('exist');
                 });
