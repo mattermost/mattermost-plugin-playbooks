@@ -486,15 +486,19 @@ describe('runs > run details page > header', () => {
                     });
                 });
 
-                it('click button to join channel', () => {
+                it('click button and confirm to join public channel', () => {
                     // # Login as testUser
                     cy.apiLogin(testUser);
+
+                    const now = Date.now();
+                    const playbookRunName = 'Playbook Run (' + now + ')';
+                    playbookRunChannelName = 'playbook-run-' + now;
 
                     // Create a run with public chanel
                     cy.apiRunPlaybook({
                         teamId: testTeam.id,
                         playbookId: testPublicPlaybookAndChannel.id,
-                        playbookRunName: 'the run name',
+                        playbookRunName,
                         ownerUserId: testUser.id,
                     }).then((run) => {
                         cy.apiLogin(testViewerUser);
@@ -511,8 +515,20 @@ describe('runs > run details page > header', () => {
                         // # Click get involved button
                         getHeader().findByText('Get involved').click();
 
-                        // * Assert that we joined channel and navigated correctly
-                        cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+                        // # confirm modal
+                        cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                        // * Assert that modal is not shown
+                        cy.get('#confirmModal').should('not.exist');
+
+                        // # Wait for useChannel
+                        cy.wait(500);
+
+                        // # Visit the channel run (now we joined)
+                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Assert that message has not been sent
+                        cy.getLastPost().should('not.contain', 'wants to get involved in this run.');
                     });
                 });
             });

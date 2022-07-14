@@ -9,7 +9,6 @@ import {useDispatch} from 'react-redux';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
-import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -102,7 +101,18 @@ const Title = styled.h1`
     letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
-    color: var(--center-channel-color);
     margin: 0;
     white-space: nowrap;
+    `;
+
+export const TitleButton = styled.div<{isActive: boolean}>`
+    padding: 2px 2px 2px 6px;
+    display: inline-flex;
+    border-radius: 4px;
+    color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
+    background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
+
+    &:hover {
+        background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    }
 `;

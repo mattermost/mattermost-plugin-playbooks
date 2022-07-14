@@ -10,7 +10,8 @@ import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {useRunsList} from 'src/hooks';
 import RunList from '../runs_list/runs_list';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
-import {usePlaybookViewTelemetry, PlaybookTarget} from 'src/hooks/telemetry';
+import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookViewTarget} from 'src/types/telemetry';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -32,7 +33,7 @@ const PlaybookUsage = ({
     stats,
     ...attrs
 }: Props & Attrs) => {
-    usePlaybookViewTelemetry(PlaybookTarget.Usage, playbookID);
+    usePlaybookViewTelemetry(PlaybookViewTarget.Usage, playbookID);
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 

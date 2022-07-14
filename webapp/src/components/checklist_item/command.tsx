@@ -78,8 +78,11 @@ const Command = (props: CommandProps) => {
     const commandButton = (
         <CommandText
             onClick={() => {
-                setCommandOpen((open) => !open);
+                if (!props.disabled) {
+                    setCommandOpen((open) => !open);
+                }
             }}
+            isDisabled={props.disabled}
         >
             <TextWithTooltipWhenEllipsis
                 id={`checklist-command-button-tooltip-${props.checklistNum}`}
@@ -111,6 +114,7 @@ const Command = (props: CommandProps) => {
             target={(
                 <CommandButton
                     editing={props.isEditing}
+                    isDisabled={props.disabled}
                     isPlaceholder={props.command === ''}
                 >
                     {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
@@ -147,7 +151,7 @@ const PlaceholderDiv = styled.div`
     }
 `;
 
-const CommandButton = styled.div<{editing: boolean; isPlaceholder: boolean}>`
+const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlaceholder: boolean}>`
     display: flex;
     border-radius: 54px;
     padding: 0px 4px;
@@ -158,10 +162,14 @@ const CommandButton = styled.div<{editing: boolean; isPlaceholder: boolean}>`
     border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
     color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
 
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-        color: var(--center-channel-color);
-    }
+    ${({isDisabled}) => (isDisabled ? css`
+        cursor: default;
+    ` : css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
+        }
+    `)}
 `;
 
 interface RunProps {
@@ -190,7 +198,7 @@ const Run = styled.div<RunProps>`
     `}
 `;
 
-const CommandText = styled.div`
+const CommandText = styled.div<{isDisabled: boolean}>`
     word-break: break-word;
     display: inline;
     overflow: hidden;
@@ -200,9 +208,11 @@ const CommandText = styled.div`
     border-radius: 4px;
     font-size: 12px;
 
-    :hover {
-        cursor: pointer;
-    }
+    ${({isDisabled}) => !isDisabled && css`
+        :hover {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const StyledSpinner = styled(Spinner)`

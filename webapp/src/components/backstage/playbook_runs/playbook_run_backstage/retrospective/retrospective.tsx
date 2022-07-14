@@ -15,7 +15,8 @@ import {Container, Content, Left, Right, Title} from 'src/components/backstage/p
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
-import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess, usePlaybookRunViewTelemetry, PlaybookRunTarget} from 'src/hooks';
+import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess, usePlaybookRunViewTelemetry} from 'src/hooks';
+import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {Metric} from 'src/types/playbook';
 
@@ -43,7 +44,7 @@ interface Props {
 }
 
 export const Retrospective = (props: Props) => {
-    usePlaybookRunViewTelemetry(PlaybookRunTarget.Retrospective, props.playbookRun.id);
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Retrospective, props.playbookRun.id);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
