@@ -221,8 +221,9 @@ func (h *CategoryHandler) getPlaybooksCategory(teamID, userID string) (app.Categ
 		},
 		teamID,
 		app.PlaybookFilterOptions{
-			Page:    0,
-			PerPage: maxItemsInRunsAndPlaybooksCategory,
+			Page:               0,
+			PerPage:            maxItemsInRunsAndPlaybooksCategory,
+			WithMembershipOnly: true,
 		},
 	)
 	if err != nil {
