@@ -279,13 +279,13 @@ const Body = styled(RowContainer)`
 const Header = styled.header<{isRHSOpen: boolean}>`
     height: 56px;
     min-height: 56px;
-    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 639px)' : 'calc(100% - 239px)')};
+    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 711px)' : 'calc(100% - 311px)')};
     z-index: 2;
     position: fixed;
     background-color: var(--center-channel-bg);
     display:flex;
 
     @media screen and (min-width: 1600px) {
-        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 739px)' : 'calc(100% - 239px)')};
+        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 811px)' : 'calc(100% - 311px)')};
     }
 `;
