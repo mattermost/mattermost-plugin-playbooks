@@ -420,10 +420,11 @@ func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int
 
 // PlaybookFilterOptions specifies the parameters when getting playbooks.
 type PlaybookFilterOptions struct {
-	Sort         SortField
-	Direction    SortDirection
-	SearchTerm   string
-	WithArchived bool
+	Sort               SortField
+	Direction          SortDirection
+	SearchTerm         string
+	WithArchived       bool
+	WithMembershipOnly bool //if true will return only playbooks you are a member of
 
 	// Pagination options.
 	Page    int
