@@ -4,10 +4,6 @@ export enum PlaybookViewTarget {
     Reports = 'view_playbook_reports'
 }
 
-export enum PlaybookEventTarget {
-
-}
-
 export enum PlaybookRunViewTarget {
 
     // @deprecated triggered at old run details
