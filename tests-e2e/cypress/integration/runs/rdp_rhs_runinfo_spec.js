@@ -75,7 +75,7 @@ describe('runs > run details page > run info', () => {
                 cy.findByTestId('playbook-editor-title').contains(testPublicPlaybook.title);
             });
 
-            it('Owner entry shows the owner', () => {
+            it.only('Owner entry shows the owner', () => {
                 // * Verify that the owner is shown
                 getOverviewEntry('owner').contains(testUser.username);
             });
@@ -203,7 +203,7 @@ describe('runs > run details page > run info', () => {
 
                 it('as viewer', () => {
                     cy.apiLogin(testViewerUser).then(() => {
-                        cy.visit(`/playbooks/run_details/${testRun.id}`);
+                        cy.visit(`/playbooks/runs/${testRun.id}`);
                     });
 
                     // * assert metrics does not exist
@@ -266,7 +266,7 @@ describe('runs > run details page > run info', () => {
                     runWithMetrics = playbookRun;
 
                     // # Visit the playbook run
-                    cy.visit(`/playbooks/run_details/${playbookRun.id}`);
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
             });
 
@@ -396,7 +396,7 @@ describe('runs > run details page > run info', () => {
         describe('as viewer', () => {
             beforeEach(() => {
                 cy.apiLogin(testViewerUser).then(() => {
-                    cy.visit(`/playbooks/run_details/${testRun.id}`);
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
                 });
             });
 
