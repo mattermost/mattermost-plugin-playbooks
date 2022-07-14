@@ -17,7 +17,7 @@ import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {promptForFeedback} from 'src/client';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {applyTheme} from 'src/components/backstage/css_utils';
@@ -106,28 +106,16 @@ const Backstage = () => {
 
     useForceDocumentTitle('Playbooks');
 
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
-
     return (
         <BackstageContainer
             id={BackstageID}
             isRunDetailsPage={isRunDetailsPage}
         >
             <ToastProvider>
-                {!newLHSEnabled &&
-                <>
-                    <Navbar/>
-                    <BackstageBody>
-                        <MainBody/>
-                    </BackstageBody>
-                </>
-                }
-                {newLHSEnabled &&
                 <MainContainer>
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
-                }
                 <CloudModal/>
             </ToastProvider>
         </BackstageContainer>
@@ -135,9 +123,9 @@ const Backstage = () => {
 };
 
 const MainContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: max-content auto;
 `;
 
 const Navbar = () => {

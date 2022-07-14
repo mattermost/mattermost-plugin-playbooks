@@ -42,7 +42,7 @@ describe('navigation', () => {
         cy.visit(`/${testTeam.name}/`);
     });
 
-    it('switches to playbooks list view via header button', () => {
+    it('switches to playbooks list view via sidebar view all button', () => {
         // # Open the product
         cy.visit('/playbooks');
 
@@ -53,7 +53,7 @@ describe('navigation', () => {
         cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
-    it('switches to playbook runs list view via header button', () => {
+    it('switches to playbook runs list view via sidebar view all button', () => {
         // # Open the product
         cy.visit('/playbooks');
 

@@ -25,9 +25,11 @@ const Group = (props: GroupProps) => {
             </Header>
             <Body role='list'>
                 {props.group.items.map((item) => {
+                    const id = item.id ?? item.display_name;
                     return (
                         <ItemComponent
-                            key={item.display_name}
+                            key={id}
+                            id={id}
                             areaLabel={item.areaLabel}
                             className={item.className}
                             display_name={item.display_name}

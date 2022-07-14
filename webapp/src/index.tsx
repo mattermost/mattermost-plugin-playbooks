@@ -162,7 +162,7 @@ export default class Plugin {
             />
         );
 
-        const enableTeamSidebar = false;
+        const enableTeamSidebar = true;
 
         registry.registerProduct(
             '/playbooks',

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
@@ -13,14 +13,13 @@ import {useCategories} from 'src/hooks';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
-import {ItemContainer, StyledLink} from './item';
+import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 interface PlaybookSidebarProps {
     team_id: string;
 }
 
 const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
-    const teams = useSelector(getMyTeams);
-    const teamID = props.team_id || teams[0].id;
+    const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
 
     const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
@@ -41,6 +40,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
                         areaLabel: item.name,
                         className: '',
                         display_name: item.name,
+                        id: item.item_id,
                         icon,
                         isCollapsed: false,
                         itemMenu: null,
@@ -69,16 +69,17 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const viewAllRuns = () => {
         return (
             <ItemContainer>
-                <StyledLink
+                <StyledNavLink
                     id={'sidebarItem_view_all_runs'}
                     aria-label={'View all runs'}
+                    data-testid={'playbookRunsLHSButton'}
                     to={'/playbooks/runs'}
-                    tabIndex={0}
+                    exact={true}
                 >
-                    <ItemDisplayLabel>
+                    <StyledItemDisplayLabel>
                         {viewAllMessage}
-                    </ItemDisplayLabel>
-                </StyledLink>
+                    </StyledItemDisplayLabel>
+                </StyledNavLink>
             </ItemContainer>
         );
     };
@@ -86,16 +87,17 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
     const viewAllPlaybooks = () => {
         return (
             <ItemContainer key={'sidebarItem_view_all_playbooks'}>
-                <StyledLink
+                <StyledNavLink
                     id={'sidebarItem_view_all_playbooks'}
                     aria-label={'View all playbooks'}
+                    data-testid={'playbooksLHSButton'}
                     to={'/playbooks/playbooks'}
-                    tabIndex={0}
+                    exact={true}
                 >
-                    <ItemDisplayLabel>
+                    <StyledItemDisplayLabel>
                         {viewAllMessage}
-                    </ItemDisplayLabel>
-                </StyledLink>
+                    </StyledItemDisplayLabel>
+                </StyledNavLink>
             </ItemContainer>
         );
     };
@@ -130,12 +132,7 @@ const StyledPrivatePlaybookIcon = styled(PrivatePlaybookIcon)`
     ${sharedIconStyles}
 `;
 
-const ItemDisplayLabel = styled.span`
-    max-width: 100%;
-    height: 18px;
+const StyledItemDisplayLabel = styled(ItemDisplayLabel)`
     line-height: 20px;
-    text-align: justify;
-    white-space: nowrap;
     color: rgba(var(--sidebar-text-rgb), 0.56);
-    font-size: 14px;
 `;

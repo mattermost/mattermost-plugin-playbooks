@@ -43,6 +43,8 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
 
+import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
 import * as Controls from './controls';
@@ -72,6 +74,8 @@ const PlaybookEditor = () => {
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id, playbookId]);
+
+    useDefaultRedirectOnTeamChange(playbook?.team_id);
 
     if (error) {
         // not found
@@ -431,7 +435,6 @@ const TitleHeaderBackdrop = styled.div`
 `;
 
 const Editor = styled.main<{$headingVisible: boolean}>`
-    flex: 1 1 auto;
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);

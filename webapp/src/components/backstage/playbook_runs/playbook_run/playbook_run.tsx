@@ -18,6 +18,8 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 
+import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
@@ -98,6 +100,8 @@ const PlaybookRunDetails = () => {
 
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
+
+    useDefaultRedirectOnTeamChange(playbookRun?.team_id);
 
     // When first loading the page, the element with the ID corresponding to the URL
     // hash is not mounted, so the browser fails to automatically scroll to such section.

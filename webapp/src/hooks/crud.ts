@@ -2,6 +2,10 @@ import {useEffect, useState} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';
 
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
 import {
     archivePlaybook as clientArchivePlaybook,
     restorePlaybook as clientRestorePlaybook,
@@ -15,7 +19,7 @@ import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/p
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
 
-type ParamsState = Required<FetchPlaybooksParams>;
+type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
 
 const searchDebounceDelayMilliseconds = 300;
 
@@ -68,13 +72,13 @@ export function usePlaybooksCrud(
     {infinitePaging} = {infinitePaging: false},
 ) {
     const {formatMessage} = useIntl();
+    const teamId = useSelector(getCurrentTeamId);
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybookState] = useState<Playbook | null>();
     const [params, setParamsState] = useState<ParamsState>({
-        team_id: '',
         sort: 'title',
         direction: 'asc',
         page: 0,
@@ -90,7 +94,7 @@ export function usePlaybooksCrud(
 
     useEffect(() => {
         fetchPlaybooks();
-    }, [params]);
+    }, [params, teamId]);
 
     const addToast = useToaster().add;
 
@@ -116,7 +120,7 @@ export function usePlaybooksCrud(
 
     const fetchPlaybooks = async () => {
         setLoading(true);
-        const result = await clientFetchPlaybooks(params.team_id, params);
+        const result = await clientFetchPlaybooks(teamId, params);
         if (result) {
             setPlaybooks(infinitePaging && playbooks ? [...playbooks, ...result.items] : result.items);
             setTotalCount(result.total_count);
@@ -129,7 +133,7 @@ export function usePlaybooksCrud(
         await clientArchivePlaybook(playbookId);
 
         // Fetch latest count
-        const result = await clientFetchPlaybooks(params.team_id, params);
+        const result = await clientFetchPlaybooks(teamId, params);
 
         if (result) {
             // Go back to previous page if the last item on this page was just deleted

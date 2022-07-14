@@ -34,7 +34,8 @@ describe('playbooks > feedback', () => {
         });
     });
 
-    it('runs prompts to give feedback', () => {
+    // https://mattermost.atlassian.net/browse/MM-45738
+    it.skip('runs prompts to give feedback', () => {
         // # Visit the runs list
         cy.visit('/playbooks/runs');
 
@@ -45,7 +46,8 @@ describe('playbooks > feedback', () => {
         cy.findByText('Have feedback about Playbooks?').should('exist');
     });
 
-    it('playbooks prompts to give feedback', () => {
+    // https://mattermost.atlassian.net/browse/MM-45738
+    it.skip('playbooks prompts to give feedback', () => {
         // # Visit the playbooks list
         cy.visit('/playbooks/playbooks');
 

@@ -3,18 +3,17 @@ import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {useHasTeamPermission, usePlaybooksRouting} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
-
-import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
 
 import {BaseInput} from './assets/inputs';
 import PublicPrivateSelector from './backstage/public_private_selector';
 import {TemplateDropdown} from './templates/template_selector';
 import MarkdownTextbox from './markdown_textbox';
-import TeamSelector, {SelectedButton} from './team/team_selector';
 import GenericModal, {InlineLabel} from './widgets/generic_modal';
 
 const ID = 'playbooks_create';
@@ -46,21 +45,10 @@ const Body = styled.div`
 	}
 `;
 
-const TeamSelectorBorder = styled(BaseInput).attrs({as: 'div'})`
-	display: flex;
-	flex-direction: horizontal;
-	padding: 0;
-
-    ${SelectedButton} {
-        width: 100%;
-    }
-`;
-
 const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, startingDescription, startingPublic, ...modalProps}: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
-    const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
     const [name, setName] = useState(startingName);
-    const [teamId, setTeamId] = useState<string>(teams.length === 1 ? teams[0].id : (startingTeamId || teams[0].id));
+    const teamId = useSelector(getCurrentTeamId);
     const [template, setTemplate] = useState(startingTemplate);
     const [description, setDescription] = useState(startingDescription);
     const [makePublic, setMakePublic] = useState(startingPublic ?? true);
@@ -99,22 +87,6 @@ const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, st
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                 />
-                <TeamSelectorBorder>
-                    <TeamSelector
-                        selectedTeamId={teamId}
-                        placeholder={'Select a team'}
-                        enableEdit={true}
-                        isClearable={false}
-                        teams={teams}
-                        onSelectedChange={setTeamId}
-                        containerStyles={css`
-                            width: 100%;
-                            .playbook-run-user-select {
-                                max-width: none;
-                            }
-                        `}
-                    />
-                </TeamSelectorBorder>
                 <TemplateDropdown
                     template={template}
                     onTemplateSet={setTemplate}
@@ -126,6 +98,5 @@ const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, st
                 />
             </Body>
         </SizedGenericModal>
-
     );
 };
