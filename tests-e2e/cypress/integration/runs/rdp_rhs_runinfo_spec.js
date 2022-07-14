@@ -75,7 +75,7 @@ describe('runs > run details page > run info', () => {
                 cy.findByTestId('playbook-editor-title').contains(testPublicPlaybook.title);
             });
 
-            it.only('Owner entry shows the owner', () => {
+            it('Owner entry shows the owner', () => {
                 // * Verify that the owner is shown
                 getOverviewEntry('owner').contains(testUser.username);
             });
