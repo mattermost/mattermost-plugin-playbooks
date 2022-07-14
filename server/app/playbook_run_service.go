@@ -2693,6 +2693,26 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
+	// create timeline event
+	eventTime := model.GetMillis()
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
+		EventType:     StatusUpdateRequested,
+		SubjectUserID: requesterID,
+		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	// send updated run through websocket
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
+
 	return nil
 }
 

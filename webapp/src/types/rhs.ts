@@ -9,6 +9,7 @@ export enum RHSState {
 export enum TimelineEventType {
     RunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
+    StatusUpdateRequested = 'status_update_requested',
     OwnerChanged = 'owner_changed',
     AssigneeChanged = 'assignee_changed',
     TaskStateModified = 'task_state_modified',

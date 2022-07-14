@@ -225,6 +225,11 @@ const TimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
+    case TimelineEventType.StatusUpdateRequested:
+        iconClass = 'icon icon-update';
+        summaryTitle = props.event.summary;
+        testid = TimelineEventType.StatusUpdateRequested;
+        break;
     case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: props.event.summary});
