@@ -377,7 +377,7 @@ function useThing<T extends NonNullable<any>>(
         state: fetchState,
         error,
         isErrorCode: (code: number) => {
-            return fetchState !== FetchState.error && error !== null && error.status_code === code;
+            return fetchState === FetchState.error && error !== null && error.status_code === code;
         },
     };
     return [thing, metadata] as const;

@@ -47,7 +47,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
-    const [channel, channelMetadata] = useChannel(playbookRun.channel_id);
+    const [channel, channelFetchMetadata] = useChannel(playbookRun.channel_id);
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
@@ -63,8 +63,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-
-        if (channelMetadata.isErrorCode(403)) {
+        if (channelFetchMetadata.isErrorCode(403)) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
                 addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
