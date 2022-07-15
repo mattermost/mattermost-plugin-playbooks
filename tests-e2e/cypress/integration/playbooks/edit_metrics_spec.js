@@ -95,28 +95,19 @@ describe('playbooks > edit_metrics', () => {
                 // # Edit all 4 metrics and repeat the test
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.get('input[type=text]').eq(2).clear().type('12:8:97');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.findAllByTestId('edit-metric').eq(1).click();
                 cy.get('textarea').eq(0).clear().type('a new description');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.findAllByTestId('edit-metric').eq(2).click();
                 cy.get('input[type=text]').eq(2).clear().type('7777777');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.findAllByTestId('edit-metric').eq(3).click();
                 cy.get('input[type=text]').eq(1).clear().type('test duration 2!!!');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
 
                 // # Save
                 cy.findByTestId('save_playbook').click();
-
-                // * Verify we're back in the main page
-                cy.get('#playbooks-playbookPreview-checklists').should('exist');
-
-                // # Go back to editing
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                // # Switch to Retrospective tab
-                cy.get('#root').findByText('Retrospective').click();
 
                 // * Verify we saved the metrics
                 verifyViewMetric(0, 'test duration', '12 days, 9 hours, 37 minutes per run', 'test description');
@@ -132,31 +123,31 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Metrics need a title
                 cy.get('input[type=text]').eq(1).clear();
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
 
                 // * Metrics need a unique title
                 cy.get('input[type=text]').eq(1).type('test dollars');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.getStyledComponent('ErrorText')
                     .contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // * A duration target needs to be in the correct format (no letters)
                 cy.get('input[type=text]').eq(1).clear().wait(100).type('test duration again');
                 cy.get('input[type=text]').eq(2).clear().type('a');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.getStyledComponent('ErrorText')
                     .contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // * A duration target needs to be in the correct format (mm:dd:ss)
                 cy.get('input[type=text]').eq(2).clear().type('0:123:0');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 cy.getStyledComponent('ErrorText')
                     .contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewMetric(0, 'test duration', '2 days, 12 hours, 1 minute per run', 'test description');
 
                 // * Verify we have four valid metrics and are editing none.
@@ -295,7 +286,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.getStyledComponent('ViewContainer').should('have.length', 2);
 
                 // # Stop editing
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
 
                 // * Verify metric was added without target or description.
                 verifyViewMetric(2, 'test integer #2!!', '', '');
@@ -380,7 +371,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.get('input[type=text]').eq(1).clear().type('test currency 2!');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewsAndEdits(1, 0);
                 verifyViewMetric(0, 'test currency 2!', '', '');
 
@@ -393,7 +384,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.get('input[type=text]').eq(1).clear().type('test currency 3!');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewsAndEdits(1, 0);
                 verifyViewMetric(0, 'test currency 3!', '', '');
 
@@ -457,13 +448,13 @@ describe('playbooks > edit_metrics', () => {
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '00:00:00')
                     .clear();
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewMetric(0, 'test duration', '', 'test description');
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
 
                 // # Add and verify currency
                 addMetric('Dollars', 'test money', '0', 'test description 2');
@@ -473,13 +464,13 @@ describe('playbooks > edit_metrics', () => {
                 cy.findAllByTestId('edit-metric').eq(1).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '0')
                     .clear();
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewMetric(1, 'test money', '', 'test description 2');
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(1).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
 
                 // # Add and verify Integer
                 addMetric('Integer', 'test number', '0', 'test description 3');
@@ -489,13 +480,13 @@ describe('playbooks > edit_metrics', () => {
                 cy.findAllByTestId('edit-metric').eq(2).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '0')
                     .clear();
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
                 verifyViewMetric(2, 'test number', '', 'test description 3');
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(2).click();
                 cy.get('input[type=text]').eq(2).should('have.value', '');
-                cy.findByRole('button', {name: 'Add'}).click();
+                saveMetric();
 
                 // * Verify we have three valid metrics and are editing none.
                 verifyViewsAndEdits(3, 0);
@@ -533,7 +524,7 @@ const addMetric = (type, title, target, description) => {
         .tab().type(description);
 
     // # Add the metric
-    cy.findByRole('button', {name: 'Add'}).click();
+    saveMetric();
 };
 
 const verifyViewMetric = (index, title, target, description) => {
@@ -553,5 +544,16 @@ const verifyViewMetric = (index, title, target, description) => {
 
 const verifyViewsAndEdits = (numViews, numEdits) => {
     cy.getStyledComponent('ViewContainer').should('have.length', numViews);
-    cy.getStyledComponent('EditContainer').should('have.length', numEdits);
+
+    if (numEdits == 0) {
+        cy.getStyledComponent('EditContainer').should('not.exist');
+    } else {
+        cy.getStyledComponent('EditContainer').should('have.length', numEdits);
+    }
 };
+
+function saveMetric() {
+    cy.get('#retrospective-metrics').within(() => {
+        cy.findByRole('button', {name: 'Save'}).click();
+    });
+}
