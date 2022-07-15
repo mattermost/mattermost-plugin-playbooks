@@ -27,7 +27,6 @@ describe('playbooks > overview', () => {
 
                 // # Create a dedicated run follower
                 cy.apiCreateUser().then(({user: createdUser}) => {
-                    testUserFollower = createdUser;
                     cy.apiAddUserToTeam(testTeam.id, createdUser.id);
                     cy.apiAddUserToTeam(testOtherTeam.id, createdUser.id);
                 });
@@ -53,8 +52,6 @@ describe('playbooks > overview', () => {
                         teamId: testTeam.id,
                         title: 'Private Only Mine Playbook',
                         memberIDs: [testUser.id],
-                    }).then((playbook) => {
-                        testPrivateOnlyMinePlaybook = playbook;
                     });
 
                     // # Create a private playbook with multiple users
@@ -62,8 +59,6 @@ describe('playbooks > overview', () => {
                         teamId: testTeam.id,
                         title: 'Private Shared Playbook',
                         memberIDs: [testUser.id, anotherUser.id],
-                    }).then((playbook) => {
-                        testPrivateSharedPlaybook = playbook;
                     });
 
                     // # Create a public playbook
