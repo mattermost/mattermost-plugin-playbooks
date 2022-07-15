@@ -180,7 +180,7 @@ jobs:
       - run:
           name: install golangci-lint 1.46.2
           command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | | sudo sh -s -- -b /usr/local/bin 1.46.2
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin 1.46.2
       - run:
           name: Checking code style
           command: |
