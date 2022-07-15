@@ -66,6 +66,7 @@ ifneq ($(HAS_SERVER),)
 	golangci-lint run ./...
 endif
 
+.PHONY: check-golangci
 check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
