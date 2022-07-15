@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
@@ -57,13 +57,12 @@ const ContainerMedium = styled.article<{$newLHSEnabled: boolean}>`
 `;
 
 const PlaybookListContainer = styled.div`
-    flex: 1 1 auto;
     color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 
 const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
-    overflow: hidden;
-    overflow: clip;
+    overflow-x: hidden;
+    overflow-x: clip;
     ${({$newLHSEnabled}) => !$newLHSEnabled && css`
         margin: 0 auto;
         max-width: 1160px;
@@ -137,7 +136,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         playbooks,
         {isLoading, totalCount, params},
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
-    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+    ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();

@@ -53,6 +53,7 @@ export interface PlaybookWithChecklist extends Playbook {
     run_summary_template: string;
     channel_name_template: string;
     metrics: Metric[];
+    is_favorite: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -180,6 +181,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         channel_name_template: '',
         default_playbook_member_role: '',
         metrics: [],
+        is_favorite: false,
     };
 }
 

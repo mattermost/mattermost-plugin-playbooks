@@ -5,7 +5,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {StyledComponent} from 'styled-components';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import General from 'mattermost-redux/constants/general';
 import Permissions from 'mattermost-redux/constants/permissions';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';

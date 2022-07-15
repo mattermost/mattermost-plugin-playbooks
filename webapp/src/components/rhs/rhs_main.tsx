@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {receivedTeamPlaybookRuns, setRHSOpen, setRHSViewingPlaybookRun, setRHSViewingList} from 'src/actions';

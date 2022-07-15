@@ -13,8 +13,8 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from '@mattermost/types/teams';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -23,7 +23,7 @@ import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_ro
 import {useForceDocumentTitle, useHasPlaybookPermission, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
-import {useToasts} from '../toast_banner';
+import {useToaster} from '../toast_banner';
 
 import {
     clientFetchPlaybookFollowers,
@@ -130,7 +130,7 @@ const Playbook = () => {
             navigateToPluginUrl('/playbooks');
         }
     });
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const punchoutTitleRow = useMeasurePunchouts(['title-row'], [], {y: -5, height: 10, x: -5, width: 10});
     const showRunButtonTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.RunButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
 

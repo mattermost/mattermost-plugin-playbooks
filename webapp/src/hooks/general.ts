@@ -12,8 +12,8 @@ import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
 import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import {
     getCurrentUserId,
     getUser,
@@ -27,7 +27,7 @@ import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -42,16 +42,22 @@ import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
-
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
-import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRunStatusUpdates, fetchPlaybookRun, fetchPlaybookStats, fetchPlaybookRunMetadata} from 'src/client';
-
 import {
-    isCloud,
-    isE10LicensedOrDevelopment,
-    isE20LicensedOrDevelopment,
-} from '../license';
+    fetchPlaybookRuns,
+    clientFetchPlaybook,
+    fetchPlaybookRunStatusUpdates,
+    fetchPlaybookRun,
+    fetchPlaybookStats,
+    fetchPlaybookRunMetadata,
+    isFavoriteItem,
+    favoriteItem,
+    unfavoriteItem,
+} from 'src/client';
+import {CategoryItemType} from 'src/types/category';
+
+import {isCloud} from '../license';
 import {
     globalSettings,
     isCurrentUserAdmin,
@@ -93,7 +99,7 @@ export function useKeyPress(targetKey: string | ((e: KeyboardEvent) => boolean),
  */
 export function useClickOutsideRef(
     ref: MutableRefObject<HTMLElement | null>,
-    handler: () => void,
+    handler?: () => void,
 ) {
     useEffect(() => {
         function onMouseDown(event: MouseEvent) {
@@ -103,7 +109,7 @@ export function useClickOutsideRef(
                 target instanceof Node &&
                 !ref.current.contains(target)
             ) {
-                handler();
+                handler?.();
             }
         }
 
@@ -374,7 +380,7 @@ export function useFetch<T>(
     fetchFunction: (id: string) => Promise<T>,
     deps: Array<any> = [],
 ) {
-    const [error, setError] = useState<ClientError|null>(null);
+    const [error, setError] = useState<ClientError | null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
     const [data, setData] = useState<T | null>(null);
 
@@ -397,7 +403,7 @@ export function useFetch<T>(
             });
     }, [id, ...deps]);
 
-    return [data, {state: fetchState, error}] as [T|null, FetchMetadata];
+    return [data, {state: fetchState, error}] as [T | null, FetchMetadata];
 }
 
 /**
@@ -444,53 +450,6 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
         setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
-}
-
-// useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
-// post to the timeline in the current team
-export function useAllowAddMessageToTimelineInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowChannelExport returns whether exporting the channel is allowed
-export function useAllowChannelExport() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookStatsView returns whether the server is licensed to show
-// the stats in the playbook backstage dashboard
-export function useAllowPlaybookStatsView() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookAndRunMetrics returns whether the server is licensed to
-// enter and show playbook and run metrics
-export function useAllowPlaybookAndRunMetrics() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowRetrospectiveAccess returns whether the server is licenced for
-// the retrospective feature.
-export function useAllowRetrospectiveAccess() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPrivatePlaybooks returns whether the server is licenced for
-// creating private playbooks
-export function useAllowPrivatePlaybooks() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowSetTaskDueDate returns whether the server is licensed for
-// setting / editing checklist item due date
-export function useAllowSetTaskDueDate() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowMakePlaybookPrivate returns whether the server is licenced for
-// converting public playbooks to private
-export function useAllowMakePlaybookPrivate() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 type StringToUserProfileFn = (id: string) => UserProfile;
@@ -569,7 +528,7 @@ export function useFormattedUsernameByID(userId: string) {
 
 // Return the list of names of the users given a list of UserProfiles or userIds
 // It will respect teamnameNameDisplaySetting.
-export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>) : string[] {
+export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>): string[] {
     const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
         getTeammateNameDisplaySetting,
     ) || '';
@@ -607,6 +566,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
     const [totalCount, setTotalCount] = useState(0);
     const history = useHistory();
     const location = useLocation();
+    const currentTeamId = useSelector(getCurrentTeamId);
     const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
     // Fetch the queried runs
@@ -614,7 +574,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
         let isCanceled = false;
 
         async function fetchPlaybookRunsAsync() {
-            const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
+            const playbookRunsReturn = await fetchPlaybookRuns({...fetchParams, team_id: currentTeamId});
 
             if (!isCanceled) {
                 setPlaybookRuns((existingRuns: PlaybookRun[]) => {
@@ -632,7 +592,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
         return () => {
             isCanceled = true;
         };
-    }, [fetchParams]);
+    }, [fetchParams, currentTeamId]);
 
     // Update the query string when the fetchParams change
     useEffect(() => {
@@ -741,7 +701,7 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
 export const useProxyState = <T>(
     prop: T,
     onChange: (val: T) => void,
-    ms = 500,
+    wait = 500,
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const check = useRef(prop);
     const [value, setValue] = useState(prop);
@@ -758,7 +718,7 @@ export const useProxyState = <T>(
     const onChangeDebounced = useCallback(debounce((v) => {
         check.current = v; // send check
         onChange(v);
-    }, ms), [ms, onChange]);
+    }, wait), [wait, onChange]);
 
     useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
 
@@ -774,4 +734,25 @@ export const useProxyState = <T>(
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
     return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+};
+
+export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
+    const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+
+    useEffect(() => {
+        isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
+            .then(setIsFavoriteRun)
+            .catch(() => setIsFavoriteRun(false));
+    }, [teamID, runID]);
+
+    const toggleFavorite = () => {
+        if (isFavoriteRun) {
+            unfavoriteItem(teamID, runID, CategoryItemType.RunItemType);
+            setIsFavoriteRun(false);
+            return;
+        }
+        favoriteItem(teamID, runID, CategoryItemType.RunItemType);
+        setIsFavoriteRun(true);
+    };
+    return [isFavoriteRun, toggleFavorite];
 };

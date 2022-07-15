@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon, StyledDropdownMenuItemRed, DropdownIconRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
@@ -36,6 +36,7 @@ export interface Props {
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    onItemOpenChange?: (isOpen: boolean) => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -59,12 +60,17 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
+                    placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
                 />
             }
             <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={props.onDueDateChange}
+                placement={'bottom-end'}
+                onOpenChange={props.onItemOpenChange}
+                editable={props.isEditing}
             />
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'

@@ -75,8 +75,9 @@ const (
 	eventSettings = "settings"
 	actionDigest  = "digest"
 
-	eventChannelAction     = "channel_action"
-	actionRunChannelAction = "run_channel_action"
+	eventChannelAction        = "channel_action"
+	actionRunChannelAction    = "run_channel_action"
+	actionChannelActionUpdate = "update_channel_action"
 
 	eventRunAction         = "playbookrun_action"
 	actionRunAction        = "run_playbookrun_action"
@@ -152,8 +153,17 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
+	role := "viewer"
+	for _, p := range playbookRun.ParticipantIDs {
+		if p == userID {
+			role = "participant"
+			break
+		}
+	}
+
 	return map[string]interface{}{
 		"UserActualID":                         userID,
+		"UserActualRole":                       role,
 		telemetryKeyPlaybookRunID:              playbookRun.ID,
 		"HasDescription":                       playbookRun.Summary != "",
 		"CommanderUserID":                      playbookRun.OwnerUserID,
@@ -594,6 +604,7 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
+		"ChannelID":    action.ChannelID,
 		"ActionType":   action.ActionType,
 		"TriggerType":  action.TriggerType,
 	}
@@ -602,6 +613,13 @@ func channelActionProperties(action app.GenericChannelAction, userID string) map
 func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionRunChannelAction
+	t.track(eventChannelAction, properties)
+}
+
+// UpdateRunActions tracks actions settings update
+func (t *RudderTelemetry) UpdateChannelAction(action app.GenericChannelAction, userID string) {
+	properties := channelActionProperties(action, userID)
+	properties["Action"] = actionChannelActionUpdate
 	t.track(eventChannelAction, properties)
 }
 

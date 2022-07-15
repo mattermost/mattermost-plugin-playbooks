@@ -33,7 +33,7 @@ import {
     usePlaybooksCrud,
     getPlaybookOrFetch,
     usePlaybooksRouting,
-    useCanCreatePlaybooksOnAnyTeam,
+    useHasTeamPermission,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
@@ -194,10 +194,12 @@ const RHSHome = () => {
     const hasCurrentRun = Boolean(currentRun);
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
+    const permissionForPublic = useHasTeamPermission(currentTeam.id || '', 'playbook_public_create');
+    const permissionForPrivate = useHasTeamPermission(currentTeam.id || '', 'playbook_private_create');
+    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
+
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
-
-    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {

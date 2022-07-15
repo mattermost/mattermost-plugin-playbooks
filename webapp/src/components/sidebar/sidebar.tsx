@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
@@ -14,8 +14,9 @@ import {renderThumbVertical, renderTrackHorizontal, renderView} from '../rhs/rhs
 import Group from './group';
 
 export interface GroupItem {
+    id?: string;
     icon: React.ReactNode;
-    itemMenu: React.ReactNode;
+    itemMenu?: React.ReactNode;
     display_name: string;
     className: string;
     areaLabel: string;
@@ -28,6 +29,7 @@ export interface SidebarGroup {
     display_name: string;
     collapsed: boolean;
     items: Array<GroupItem>;
+    afterGroup?: ReactNode;
 }
 
 interface SidebarProps {
@@ -70,15 +72,16 @@ const Sidebar = (props: SidebarProps) => {
                 renderThumbVertical={renderThumbVertical}
                 renderView={renderView}
                 renderTrackHorizontal={renderTrackHorizontal}
-                style={{position: 'relative'}}
+                style={{
+                    position: 'relative',
+                    marginBottom: '40px',
+                }}
             >
                 {props.groups.map((group) => {
                     return (
                         <Group
                             key={group.id}
-                            display_name={group.display_name}
-                            isCollapsed={group.collapsed}
-                            items={group.items}
+                            group={group}
                             onClick={() => {
                                 props.onGroupClick(group.id);
                             }}

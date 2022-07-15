@@ -6,8 +6,8 @@ import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
@@ -19,8 +19,8 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {Content, TabPageContainer, Title} from 'src/components/backstage/playbook_runs/shared';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
-import {setRHSEventsFilter} from 'src/actions';
-import {rhsEventsFilterForChannel} from 'src/selectors';
+import {setPlaybookRunEventsFilter} from 'src/actions';
+import {eventsFilterForPlaybookRun} from 'src/selectors';
 
 const Header = styled.div`
     display: flex;
@@ -75,7 +75,7 @@ const TimelineRetro = (props: Props) => {
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => rhsEventsFilterForChannel(state, props.playbookRun.channel_id));
+    const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>((state) => eventsFilterForPlaybookRun(state, props.playbookRun.id));
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
@@ -122,7 +122,7 @@ const TimelineRetro = (props: Props) => {
             return;
         }
 
-        dispatch(setRHSEventsFilter(props.playbookRun.channel_id, {
+        dispatch(setPlaybookRunEventsFilter(props.playbookRun.id, {
             ...eventsFilter,
             [value]: checked,
         }));

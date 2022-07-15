@@ -6,7 +6,7 @@ import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {
     clientEditChecklistItem,
@@ -30,6 +30,23 @@ import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
 import {DueDateButton} from './duedate';
 
+export enum ButtonsFormat {
+
+    // All buttons are shown regardless of their state if they're editable;
+    // owner name is shown completely
+    Long = 'long',
+
+    // Only buttons with a value are shown;
+    // owner name is shown completely
+    Mixed = 'mixed',
+
+    // Only buttons with a value are shown;
+    // owner name is not shown when other buttons have a value
+    Short = 'short',
+}
+
+const defaultButtonsFormat = ButtonsFormat.Short;
+
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
@@ -47,19 +64,20 @@ interface ChecklistItemProps {
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    buttonsFormat?: ButtonsFormat;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
+    const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
-
-    const [showMenu, setShowMenu] = useState(false);
+    const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -72,7 +90,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
-        setShowMenu(false);
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -91,7 +108,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
-        setShowMenu(false);
         let timestamp = 0;
         if (value?.value) {
             timestamp = value?.value.toMillis();
@@ -113,7 +129,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const onCommandChange = async (newCommand: string) => {
-        setShowMenu(false);
         setCommand(newCommand);
         if (props.newItem) {
             return;
@@ -128,7 +143,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderAssignTo = (): null | React.ReactNode => {
-        if (!assigneeID && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !isEditing)) {
             return null;
         }
 
@@ -138,6 +153,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
 
         const shouldHideName = () => {
+            if (buttonsFormat !== ButtonsFormat.Short) {
+                return false;
+            }
+
             if (isEditing) {
                 return false;
             }
@@ -157,12 +176,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
+                placement={'bottom-start'}
             />
         );
     };
 
     const renderCommand = (): null | React.ReactNode => {
-        if (!command && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!command && !isEditing)) {
             return null;
         }
         return (
@@ -181,7 +201,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
-        if ((!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
             return null;
         }
 
@@ -191,12 +211,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 date={dueDate}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
+                placement={'bottom-start'}
             />
         );
     };
 
     const renderRow = (): null | React.ReactNode => {
-        if (!assigneeID && !command && !dueDate && !isEditing) {
+        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !isEditing)) {
             return null;
         }
         return (
@@ -214,6 +235,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {...props.draggableProvided?.draggableProps}
             data-testid='checkbox-item-container'
             editing={isEditing}
+            hoverMenuItemOpen={isHoverMenuItemOpen}
             $disabled={props.disabled}
         >
             <CheckboxContainer>
@@ -235,6 +257,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
+                        onItemOpenChange={setIsHoverMenuItemOpen}
                     />
                 }
                 <DragButton
@@ -273,14 +296,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
-                        setShowMenu(false);
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
                         props.cancelAddingItem?.();
                     }}
                     onSave={() => {
-                        setShowMenu(false);
                         setIsEditing(false);
                         if (props.newItem) {
                             props.cancelAddingItem?.();
@@ -456,13 +477,15 @@ const Row = styled.div`
     margin-top: 8px;
 `;
 
-const ItemContainer = styled.div<{editing: boolean, $disabled: boolean}>`
+const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0px;
 
-    ${HoverMenu} {
-        opacity: 0;
-    }
+    ${({hoverMenuItemOpen}) => !hoverMenuItemOpen && css`
+        ${HoverMenu} {
+            opacity: 0;
+        }
+    `}
 
     .checklists:not(.isDragging) & {
         // not dragging and hover or focus-within

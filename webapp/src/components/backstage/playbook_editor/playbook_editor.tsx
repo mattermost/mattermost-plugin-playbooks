@@ -12,6 +12,7 @@ import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch} from 'react-redux';
+import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -42,6 +43,8 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
 
+import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
 import * as Controls from './controls';
@@ -70,7 +73,9 @@ const PlaybookEditor = () => {
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
-    }, [dispatch, playbook?.team_id]);
+    }, [dispatch, playbook?.team_id, playbookId]);
+
+    useDefaultRedirectOnTeamChange(playbook?.team_id);
 
     if (error) {
         // not found
@@ -104,13 +109,25 @@ const PlaybookEditor = () => {
         </Tooltip>
     );
 
+    // Favorite Button State
+    const FavoriteIcon = playbook.is_favorite ? StarIcon : StarOutlineIcon;
+
+    const toggleFavorite = () => {
+        updatePlaybook({isFavorite: !playbook.is_favorite});
+    };
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Controls.Back/>
+                    <StarButton onClick={toggleFavorite}>
+                        <FavoriteIcon
+                            size={18}
+                            color={playbook.is_favorite ? 'var(--sidebar-text-active-border)' : ''}
+                        />
+                    </StarButton>
                     <TextEdit
                         disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
@@ -418,7 +435,6 @@ const TitleHeaderBackdrop = styled.div`
 `;
 
 const Editor = styled.main<{$headingVisible: boolean}>`
-    flex: 1 1 auto;
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
@@ -566,4 +582,16 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 `;
 
+export const StarButton = styled.button`
+    border-radius: 4px;
+    border: 0;
+    padding: 12px 0 10px 0;
+    background: none;
+    margin: 0 6px;
+
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+`;
 export default PlaybookEditor;

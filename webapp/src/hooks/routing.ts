@@ -1,7 +1,7 @@
 import {useEffect, useMemo} from 'react';
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';

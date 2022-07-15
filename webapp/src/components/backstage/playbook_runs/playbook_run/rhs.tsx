@@ -16,16 +16,16 @@ export enum RHSContent {
 }
 
 interface Props {
-
-    // playbookRun: PlaybookRun;
     isOpen: boolean;
     onClose: () => void;
     title: ReactNode;
     children: ReactNode;
     subtitle?: ReactNode;
+    onBack?: () => void;
+    scrollable: boolean;
 }
 
-const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) => {
+const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack, scrollable}: Props) => {
     const sidebarRef = React.useRef(null);
 
     if (!isOpen) {
@@ -40,9 +40,18 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
             isOpen={isOpen}
         >
             <Header>
-                <HeaderTitle>{title}</HeaderTitle>
+                {onBack ? (
+                    <BackIcon>
+                        <i
+                            data-testid={'rhs-back-button'}
+                            className='icon icon-arrow-back-ios'
+                            onClick={onBack}
+                        />
+                    </BackIcon>
+                ) : null}
+                <HeaderTitle data-testid='rhs-title'>{title}</HeaderTitle>
                 <HeaderVerticalDivider/>
-                {subtitle && <HeaderSubtitle>{subtitle}</HeaderSubtitle>}
+                {subtitle && <HeaderSubtitle data-testid='rhs-subtitle'>{subtitle}</HeaderSubtitle>}
                 <ExpandRight/>
                 <HeaderIcon>
                     <i
@@ -52,17 +61,19 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle}: Props) =
                 </HeaderIcon>
             </Header>
             <Body>
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'relative'}}
-                >
-                    {children}
-                </Scrollbars>
+                {scrollable ? (
+                    <Scrollbars
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                        renderThumbVertical={renderThumbVertical}
+                        renderView={renderView}
+                        renderTrackHorizontal={renderTrackHorizontal}
+                        style={{position: 'relative'}}
+                    >
+                        {children}
+                    </Scrollbars>
+                ) : children}
             </Body>
         </Container>);
 };
@@ -101,18 +112,23 @@ const HeaderIcon = styled.div`
     width: 32px;
     height: 32px;
     margin-right: 20px;
+    border-radius: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     :hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 
 const HeaderTitle = styled.div`
-    margin: auto 0 auto 20px;
+    margin: auto 0;
     line-height: 32px;
     font-size: 16px;
     font-weight: 600;
     color: var(--center-channel-color);
     white-space: nowrap;
+    :first-child {
+        margin-left: 20px;
+    }
 `;
 
 const HeaderVerticalDivider = styled.div`
@@ -136,4 +152,8 @@ const Body = styled.div`
     display: flex;
     flex: 1;
     flex-direction: column;
+`;
+
+const BackIcon = styled(HeaderIcon)`
+    margin: 0 10px;
 `;

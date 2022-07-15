@@ -8,7 +8,7 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
@@ -163,7 +163,7 @@ export default class Plugin {
             />
         );
 
-        const enableTeamSidebar = false;
+        const enableTeamSidebar = true;
 
         registry.registerProduct(
             '/playbooks',

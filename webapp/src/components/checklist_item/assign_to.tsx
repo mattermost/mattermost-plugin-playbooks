@@ -1,11 +1,16 @@
 import React, {useState} from 'react';
-import styled from 'styled-components';
+import {useSelector} from 'react-redux';
+import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
+
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
+import {Placement} from '@floating-ui/react-dom-interactions';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
-import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
+import {useProfilesInChannel, useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
@@ -13,13 +18,18 @@ interface AssignedToProps {
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
+    placement?: Placement;
+    channelId?: string; // If not provided, the ID of the current channel will be used
 
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const profilesInChannel = useProfilesInCurrentChannel();
+    const currentChannelID = useSelector(getCurrentChannelId);
+    const channelID = props.channelId || currentChannelID;
+    const profilesInChannel = useProfilesInChannel(channelID);
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
@@ -54,7 +64,8 @@ const AssignTo = (props: AssignedToProps) => {
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                showOnRight={true}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         );
     }
@@ -71,11 +82,11 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
-                            title={formatMessage({defaultMessage: 'Assign to...'})}
+                            title={formatMessage({defaultMessage: 'Assignee...'})}
                             className={'icon-account-plus-outline icon-12'}
                         />
-                        <AssignToTextContainer>
-                            {formatMessage({defaultMessage: 'Assign to...'})}
+                        <AssignToTextContainer isPlaceholder={!props.assignee_id}>
+                            {formatMessage({defaultMessage: 'Assignee...'})}
                         </AssignToTextContainer>
                     </PlaceholderDiv>
                 }
@@ -97,6 +108,8 @@ const AssignTo = (props: AssignedToProps) => {
                 }}
                 selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
+                placement={props.placement}
+                onOpenChange={props.onOpenChange}
             />
         </AssignToContainer>
     );
@@ -132,9 +145,11 @@ const StyledProfileSelector = styled(ProfileSelector)`
         font-size: 12px;
         line-height: 10px;
 
-        :hover {
-            background: rgba(var(--center-channel-color-rgb), 0.16);
-        }
+        ${({enableEdit}) => enableEdit && css`
+            :hover {
+                background: rgba(var(--center-channel-color-rgb), 0.16);
+            }
+        `}
 
         .image {
             width: 20px;
@@ -150,6 +165,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
             text-align: center;
         }
     }
+
     .NoName-Assigned-button {
         background: none;
         padding: 0px;
@@ -157,6 +173,16 @@ const StyledProfileSelector = styled(ProfileSelector)`
         .image {
             background: rgba(var(--center-channel-color-rgb),0.08);
             margin: 2px;
+        }
+    }
+
+    .NoAssignee-button {
+        background-color: transparent;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+
+        :hover {
+            color: var(--center-channel-color);
         }
     }
 `;
@@ -167,8 +193,11 @@ const PlaceholderDiv = styled.div`
     flex-direction: row;
 `;
 
-const AssignToTextContainer = styled.div`
-    color: var(--center-channel-color);
+const AssignToTextContainer = styled.div<{isPlaceholder: boolean}>`
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+    :hover {
+        color: var(--center-channel-color);
+    }
     font-weight: 400;
     font-size: 12px;
     line-height: 15px;

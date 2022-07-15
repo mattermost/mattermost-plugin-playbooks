@@ -3,8 +3,8 @@
 
 import {combineReducers} from 'redux';
 
-import {Team} from 'mattermost-redux/types/teams';
-import {Channel} from 'mattermost-redux/types/channels';
+import {Team} from '@mattermost/types/teams';
+import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
@@ -28,8 +28,8 @@ import {
     PlaybookRunUpdated,
     PLAYBOOK_RUN_UPDATED,
     REMOVED_FROM_CHANNEL,
-    SetRHSEventsFilter,
-    SET_RHS_EVENTS_FILTER,
+    SetPlaybookRunEventsFilter,
+    SET_PLAYBOOK_RUN_EVENTS_FILTER,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
@@ -51,8 +51,8 @@ import {
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SetEachChecklistCollapsedState,
-    SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    SetEveryChecklistCollapsedState,
+    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
     OPEN_BACKSTAGE_RHS,
@@ -269,12 +269,12 @@ const myPlaybookRunsByTeam = (
     }
 };
 
-const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {}, action: SetRHSEventsFilter) => {
+const eventsFilterByPlaybookRun = (state: Record<string, TimelineEventsFilter> = {}, action: SetPlaybookRunEventsFilter) => {
     switch (action.type) {
-    case SET_RHS_EVENTS_FILTER:
+    case SET_PLAYBOOK_RUN_EVENTS_FILTER:
         return {
             ...state,
-            [action.channelId]: action.nextState,
+            [action.playbookRunId]: action.nextState,
         };
     default:
         return state;
@@ -353,15 +353,15 @@ const checklistCollapsedState = (
     action:
     | SetChecklistCollapsedState
     | SetAllChecklistsCollapsedState
-    | SetEachChecklistCollapsedState
+    | SetEveryChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
         const setAction = action as SetChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: {
-                ...state[setAction.channelId],
+            [setAction.key]: {
+                ...state[setAction.key],
                 [setAction.checklistIndex]: setAction.collapsed,
             },
         };
@@ -374,14 +374,14 @@ const checklistCollapsedState = (
         }
         return {
             ...state,
-            [setAction.channelId]: newState,
+            [setAction.key]: newState,
         };
     }
-    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
-        const setAction = action as SetEachChecklistCollapsedState;
+    case SET_EVERY_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEveryChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: setAction.state,
+            [setAction.key]: setAction.state,
         };
     }
     default:
@@ -394,7 +394,7 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     case SET_CHECKLIST_ITEMS_FILTER:
         return {
             ...state,
-            [action.channelId]: action.nextState,
+            [action.key]: action.nextState,
         };
     default:
         return state;
@@ -436,7 +436,7 @@ const reducer = combineReducers({
     myPlaybookRuns,
     myPlaybookRunsByTeam,
     rhsState,
-    eventsFilterByChannel,
+    eventsFilterByPlaybookRun,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,

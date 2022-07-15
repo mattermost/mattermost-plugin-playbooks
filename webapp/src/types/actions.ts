@@ -22,7 +22,7 @@ export const RECEIVED_PLAYBOOK_RUNS = pluginId + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
-export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
+export const SET_PLAYBOOK_RUN_EVENTS_FILTER = pluginId + '_set_playbook_run_events_filter';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
@@ -32,7 +32,7 @@ export const SHOW_RUN_ACTIONS_MODAL = pluginId + '_show_run_actions_modal';
 export const HIDE_RUN_ACTIONS_MODAL = pluginId + '_hide_run_actions_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
 export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
-export const SET_EACH_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
+export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
@@ -109,9 +109,9 @@ export interface SetRHSState {
     nextState: RHSState;
 }
 
-export interface SetRHSEventsFilter {
-    type: typeof SET_RHS_EVENTS_FILTER;
-    channelId: string;
+export interface SetPlaybookRunEventsFilter {
+    type: typeof SET_PLAYBOOK_RUN_EVENTS_FILTER;
+    playbookRunId: string;
     nextState: TimelineEventsFilter;
 }
 
@@ -158,27 +158,27 @@ export interface SetRHSAboutCollapsedState {
 
 export interface SetChecklistCollapsedState {
     type: typeof SET_CHECKLIST_COLLAPSED_STATE;
-    channelId: string;
+    key: string;
     checklistIndex: number;
     collapsed: boolean;
 }
 
-export interface SetEachChecklistCollapsedState {
-    type: typeof SET_EACH_CHECKLIST_COLLAPSED_STATE;
-    channelId: string;
+export interface SetEveryChecklistCollapsedState {
+    type: typeof SET_EVERY_CHECKLIST_COLLAPSED_STATE;
+    key: string;
     state: Record<number, boolean>;
 }
 
 export interface SetAllChecklistsCollapsedState {
     type: typeof SET_ALL_CHECKLISTS_COLLAPSED_STATE;
-    channelId: string;
+    key: string;
     numOfChecklists: number;
     collapsed: boolean;
 }
 
 export interface SetChecklistItemsFilter {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
-    channelId: string;
+    key: string;
     nextState: ChecklistItemsFilter;
 }
 

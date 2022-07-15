@@ -9,27 +9,27 @@ import {useDispatch} from 'react-redux';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
-import {TitleButton} from '../../playbook_editor/controls';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
-
 import {copyToClipboard} from 'src/utils';
-import {useToasts} from '../../toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
-import UpgradeModal from '../../upgrade_modal';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 import {useOnFinishRun} from './finish_run';
 
 interface Props {
     playbookRun: PlaybookRun;
+    role: Role;
 }
 
-export const ContextMenu = ({playbookRun}: Props) => {
+export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const {add: addToast} = useToasts();
+    const {add: addToast} = useToaster();
 
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
@@ -50,7 +50,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
         <>
             <DotMenu
                 dotMenuButton={TitleButton}
-                placement='bottom-end'
+                placement='bottom-start'
                 icon={
                     <>
                         <Title>{playbookRun.name}</Title>
@@ -79,7 +79,7 @@ export const ContextMenu = ({playbookRun}: Props) => {
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
                 {
-                    playbookRunIsActive(playbookRun) &&
+                    playbookRunIsActive(playbookRun) && role === Role.Participant &&
                     <DropdownMenuItem
                         onClick={onFinishRun}
                     >
@@ -96,12 +96,23 @@ export const ContextMenu = ({playbookRun}: Props) => {
     );
 };
 
-const Title = styled.div`
+const Title = styled.h1`
     ${SemiBoldHeading}
     letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
-    color: var(--center-channel-color);
     margin: 0;
     white-space: nowrap;
+    `;
+
+export const TitleButton = styled.div<{isActive: boolean}>`
+    padding: 2px 2px 2px 6px;
+    display: inline-flex;
+    border-radius: 4px;
+    color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
+    background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
+
+    &:hover {
+        background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    }
 `;

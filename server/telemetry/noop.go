@@ -177,6 +177,10 @@ func (t *NoopTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID strin
 func (t *NoopTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
 }
 
+// UpdateChannelAction does nothing
+func (t *NoopTelemetry) UpdateChannelAction(action app.GenericChannelAction, userID string) {
+}
+
 // RunAction does nothing
 func (t *NoopTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
 }

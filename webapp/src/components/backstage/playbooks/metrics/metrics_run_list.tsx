@@ -58,7 +58,6 @@ const MetricsRunList = ({
             <Filters
                 fetchParams={fetchParams}
                 setFetchParams={setFetchParams}
-                fixedTeam={true}
                 fixedPlaybook={true}
                 fixedFinished={true}
             />

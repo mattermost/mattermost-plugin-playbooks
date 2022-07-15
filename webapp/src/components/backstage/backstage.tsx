@@ -2,22 +2,22 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
+import {Switch, Route, NavLink, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {Theme} from 'mattermost-redux/types/themes';
+import {Team} from '@mattermost/types/teams';
+import {Theme} from '@mattermost/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {promptForFeedback} from 'src/client';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {applyTheme} from 'src/components/backstage/css_utils';
@@ -28,12 +28,20 @@ import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
 
-const BackstageContainer = styled.div`
+const BackstageContainer = styled.div<{isRunDetailsPage: boolean}>`
     background: var(--center-channel-bg);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     height: 100%;
+
+    ${({isRunDetailsPage}) => isRunDetailsPage && css`
+        // Accounts for the run header, so when scrolling with
+        // anchor links, the sections are not hidden under it.
+        scroll-padding-top: 64px;
+
+        scroll-behavior: smooth;
+    `}
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
@@ -77,6 +85,11 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    const {pathname} = useLocation();
+
+    // TODO: Change  to /playbooks/runs when we get the new run details page to production
+    const isRunDetailsPage = pathname.startsWith('/playbooks/run_details');
+
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
@@ -95,27 +108,16 @@ const Backstage = () => {
 
     useForceDocumentTitle('Playbooks');
 
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
-
     return (
         <BackstageContainer
             id={BackstageID}
+            isRunDetailsPage={isRunDetailsPage}
         >
             <ToastProvider>
-                {!newLHSEnabled &&
-                <>
-                    <Navbar/>
-                    <BackstageBody>
-                        <MainBody/>
-                    </BackstageBody>
-                </>
-                }
-                {newLHSEnabled &&
                 <MainContainer>
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
-                }
                 <CloudModal/>
             </ToastProvider>
             <BackstageRHS/>
@@ -124,9 +126,9 @@ const Backstage = () => {
 };
 
 const MainContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: max-content auto;
 `;
 
 const Navbar = () => {
@@ -142,7 +144,7 @@ const Navbar = () => {
             <Route path={`${match.url}/error`}/>
             <Route path={`${match.url}/start`}/>
             <Route path={`${match.url}/playbooks/:playbookId`}/>
-            <Route path={`${match.url}/run_details/:playbookRunId`}/>
+            <Route path={`${match.url}/runs/:playbookRunId`}/>
             <Route>
                 <BackstageNavbar className='flex justify-content-between'>
                     <div className='d-flex items-center'>

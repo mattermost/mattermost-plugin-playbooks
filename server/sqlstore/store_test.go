@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/golang/mock/gomock"
 	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,6 +50,12 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
 
 			// Apply each migration twice
 			for _, migration := range migrations {
@@ -82,6 +90,12 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
 
 			// Apply the whole set of migrations twice
 			for i := 0; i < 2; i++ {
@@ -116,6 +130,12 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
 
 			// Apply the migrations up to and including 0.36
 			migrateUpTo(t, sqlStore, semver.MustParse("0.36.0"))
@@ -220,6 +240,12 @@ func TestMigrations(t *testing.T) {
 			setupPostsTable(t, db)
 			// Migration to 0.31.0 needs the PluginKeyValueStore
 			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
 
 			// Apply the migrations up to and including 0.38
 			migrateUpTo(t, sqlStore, semver.MustParse("0.38.0"))
@@ -299,6 +325,174 @@ func TestMigrations(t *testing.T) {
 			// Check that the copy was successful in the playbook with the empty description
 			require.Equal(t, playbookWithEmptyDescription.Description, "")
 			require.Equal(t, playbookWithEmptyDescription.RunSummaryTemplate, "")
+		})
+
+		t.Run("playbook member migration", func(t *testing.T) {
+			db := setupTestDB(t, driver)
+			sqlStore := &SQLStore{
+				logger,
+				db,
+				builder,
+				scheduler,
+			}
+
+			// Make sure we start from scratch
+			currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+			require.NoError(t, err)
+			require.Equal(t, currentSchemaVersion, semver.Version{})
+
+			// Migration to 0.10.0 needs the Channels table to work
+			setupChannelsTable(t, db)
+			// Migration to 0.21.0 need the Posts table
+			setupPostsTable(t, db)
+			// Migration to 0.31.0 needs the PluginKeyValueStore
+			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
+
+			migrateUpTo(t, sqlStore, semver.MustParse("0.55.0"))
+
+			// Public playbook
+			publicPlaybookID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Playbook").
+				SetMap(map[string]interface{}{
+					"ID":          publicPlaybookID,
+					"Description": "",
+					"Public":      true,
+					// Have to be set:
+					"Title":                                "Playbook",
+					"Teamid":                               model.NewId(),
+					"CreatePublicIncident":                 true,
+					"CreateAt":                             0,
+					"DeleteAt":                             0,
+					"ChecklistsJSON":                       []byte("{}"),
+					"NumStages":                            0,
+					"NumSteps":                             0,
+					"ReminderTimerDefaultSeconds":          0,
+					"RetrospectiveReminderIntervalSeconds": 0,
+					"UpdateAt":                             0,
+					"ExportChannelOnFinishedEnabled":       false,
+				}))
+			require.NoError(t, err)
+
+			// Private playbook
+			privatePlaybookID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Playbook").
+				SetMap(map[string]interface{}{
+					"ID":          privatePlaybookID,
+					"Description": "",
+					"Public":      true,
+					// Have to be set:
+					"Title":                                "Playbook",
+					"Teamid":                               model.NewId(),
+					"CreatePublicIncident":                 true,
+					"CreateAt":                             0,
+					"DeleteAt":                             0,
+					"ChecklistsJSON":                       []byte("{}"),
+					"NumStages":                            0,
+					"NumSteps":                             0,
+					"ReminderTimerDefaultSeconds":          0,
+					"RetrospectiveReminderIntervalSeconds": 0,
+					"UpdateAt":                             0,
+					"ExportChannelOnFinishedEnabled":       false,
+				}))
+			require.NoError(t, err)
+
+			channel1ID := model.NewId()
+			user1ID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("ChannelMembers").
+				SetMap(map[string]interface{}{
+					"UserID":    user1ID,
+					"ChannelID": channel1ID,
+				}))
+			require.NoError(t, err)
+
+			channel2ID := model.NewId()
+			user2ID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("ChannelMembers").
+				SetMap(map[string]interface{}{
+					"UserID":    user2ID,
+					"ChannelID": channel2ID,
+				}))
+			require.NoError(t, err)
+
+			publicPlaybookRunID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Incident").
+				SetMap(map[string]interface{}{
+					"ID":            publicPlaybookRunID,
+					"CreateAt":      model.GetMillis(),
+					"CurrentStatus": app.StatusInProgress,
+					"PlaybookID":    publicPlaybookID,
+					// have to be set:
+					"Name":            "test",
+					"Description":     "test",
+					"IsActive":        true,
+					"CommanderUserID": "commander",
+					"TeamID":          "testTeam",
+					"ChannelID":       channel1ID,
+					"ActiveStage":     0,
+					"ChecklistsJSON":  "{}",
+				}))
+			require.NoError(t, err)
+
+			privatePlaybookRunID := model.NewId()
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Incident").
+				SetMap(map[string]interface{}{
+					"ID":            privatePlaybookRunID,
+					"CreateAt":      model.GetMillis(),
+					"CurrentStatus": app.StatusInProgress,
+					"PlaybookID":    privatePlaybookRunID,
+					// have to be set:
+					"Name":            "test",
+					"Description":     "test",
+					"IsActive":        true,
+					"CommanderUserID": "commander",
+					"TeamID":          "testTeam",
+					"ChannelID":       channel2ID,
+					"ActiveStage":     0,
+					"ChecklistsJSON":  "{}",
+				}))
+			require.NoError(t, err)
+
+			migrateFrom(t, sqlStore, semver.MustParse("0.55.0"))
+
+			// Check to see if we added the playbook member correctly
+			var member playbookMember
+			err = sqlStore.getBuilder(sqlStore.db, &member, sqlStore.builder.
+				Select("PlaybookID", "MemberID", "Roles").
+				From("IR_PlaybookMember").
+				Where(sq.Eq{"PlaybookID": publicPlaybookID}).
+				Where(sq.Eq{"MemberID": user1ID}))
+			require.NoError(t, err)
+			assert.Equal(t, publicPlaybookID, member.PlaybookID)
+			assert.Equal(t, user1ID, member.MemberID)
+			assert.Equal(t, "playbook_member", member.Roles)
+
+			// Make sure we don't add to private playbooks
+			err = sqlStore.getBuilder(sqlStore.db, &member, sqlStore.builder.
+				Select("PlaybookID", "MemberID", "Roles").
+				From("IR_PlaybookMember").
+				Where(sq.Eq{"PlaybookID": privatePlaybookID}).
+				Where(sq.Eq{"MemberID": user2ID}))
+			require.ErrorIs(t, err, sql.ErrNoRows)
+
+			// Must be a member of that playbooks run
+			err = sqlStore.getBuilder(sqlStore.db, &member, sqlStore.builder.
+				Select("PlaybookID", "MemberID", "Roles").
+				From("IR_PlaybookMember").
+				Where(sq.Eq{"PlaybookID": publicPlaybookID}).
+				Where(sq.Eq{"MemberID": user2ID}))
+			require.ErrorIs(t, err, sql.ErrNoRows)
 		})
 	}
 }
@@ -497,8 +691,21 @@ func TestHasPrimaryKeys(t *testing.T) {
 					  tab.table_name,
 					  tco.constraint_name
 		`)
+		tablesToBeFiltered := []string{"teammembers"}
+		for _, table := range tablesToBeFiltered {
+			tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
+		}
 		require.Len(t, tablesWithoutPrimaryKeys, 0)
 		require.NoError(t, err)
 	})
 
+}
+
+func removeFromSlice(slice []string, item string) []string {
+	for i, elem := range slice {
+		if elem == item {
+			return append(slice[:i], slice[i+1:]...)
+		}
+	}
+	return slice
 }
