@@ -76,7 +76,9 @@ ifneq ($(HAS_SERVER),)
 		exit 1; \
 	fi; \
 
-	@if [ $(GOLANGCI_CURRENT_MAJOR) -lt $(GOLANGCI_MINIMUM_MAJOR) ]; then \
+	@if [ $(GOLANGCI_CURRENT_MAJOR) -gt $(GOLANGCI_MINIMUM_MAJOR) ]; then \
+		exit 0; \
+	elif [ $(GOLANGCI_CURRENT_MAJOR) -lt $(GOLANGCI_MINIMUM_MAJOR) ]; then \
 		echo $(GOLANCI_VERSION_ERRORMESSAGE) \
 		exit 1; \
 	elif [ $(GOLANGCI_CURRENT_MINOR) -lt $(GOLANGCI_MINIMUM_MINOR) ]; then \
