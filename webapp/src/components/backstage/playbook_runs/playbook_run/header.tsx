@@ -17,7 +17,7 @@ import {
     requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {useChannel, useFavoriteRun} from 'src/hooks';
+import {FetchState, useChannel, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -70,6 +70,9 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             } else {
                 addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
             }
+            return;
+        } else if (channelFetchMetadata.state === FetchState.error) {
+            addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
             return;
         }
 
