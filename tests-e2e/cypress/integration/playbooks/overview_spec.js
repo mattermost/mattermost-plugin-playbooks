@@ -11,12 +11,7 @@ describe('playbooks > overview', () => {
     let testTeam;
     let testOtherTeam;
     let testUser;
-    let testUserFollower;
     let testPublicPlaybook;
-    // eslint-disable-next-line no-unused-vars
-    let testPrivateOnlyMinePlaybook;
-    // eslint-disable-next-line no-unused-vars
-    let testPrivateSharedPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
 

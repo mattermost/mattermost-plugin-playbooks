@@ -545,7 +545,7 @@ const verifyViewMetric = (index, title, target, description) => {
 const verifyViewsAndEdits = (numViews, numEdits) => {
     cy.getStyledComponent('ViewContainer').should('have.length', numViews);
 
-    if (numEdits == 0) {
+    if (numEdits === 0) {
         cy.getStyledComponent('EditContainer').should('not.exist');
     } else {
         cy.getStyledComponent('EditContainer').should('have.length', numEdits);

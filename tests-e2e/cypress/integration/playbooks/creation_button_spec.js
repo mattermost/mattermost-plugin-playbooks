@@ -47,7 +47,6 @@ describe('playbooks > creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open the product
