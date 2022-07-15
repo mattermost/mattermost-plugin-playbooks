@@ -17,7 +17,7 @@ import {
     requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {hasResponseErrorCode, useChannel, useFavoriteRun} from 'src/hooks';
+import {useChannel, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -64,10 +64,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             return;
         }
 
-        // Channel null value comes from error response (and we assume that is mostly 403)
-        // If we don't have access to channel we'll send a request to be added,
-        // otherwise we directly join it
-        if (hasResponseErrorCode(channelMetadata, 403)) {
+        if (channelMetadata.isErrorCode(403)) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
                 addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);

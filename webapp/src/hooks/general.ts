@@ -76,9 +76,6 @@ export type FetchMetadata = {
     state: FetchState;
     error: ClientError | null;
 }
-export const hasResponseErrorCode = (metadata: FetchMetadata, code: number) => {
-    return metadata.state !== FetchState.error && metadata.error !== null && metadata.error.status_code === code;
-};
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -376,7 +373,14 @@ function useThing<T extends NonNullable<any>>(
         setThing(null);
     }, [thingFromState, id]);
 
-    return [thing, {state: fetchState, error}] as const;
+    const metadata = {
+        state: fetchState,
+        error,
+        isErrorCode: (code: number) => {
+            return fetchState !== FetchState.error && error !== null && error.status_code === code;
+        },
+    };
+    return [thing, metadata] as const;
 }
 
 export function usePost(postId: string) {
@@ -425,7 +429,14 @@ export function useFetch<T>(
             });
     }, [id, ...deps]);
 
-    return [data, {state: fetchState, error}] as const;
+    const metadata = {
+        state: fetchState,
+        error,
+        isErrorCode: (code: number) => {
+            return fetchState !== FetchState.error && error !== null && error.status_code === code;
+        },
+    };
+    return [data, metadata] as const;
 }
 
 /**
