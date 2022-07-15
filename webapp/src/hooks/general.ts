@@ -6,6 +6,7 @@ import {
     useState,
     useMemo,
     useLayoutEffect,
+    DependencyList,
 } from 'react';
 
 import {useDispatch, useSelector} from 'react-redux';
@@ -63,6 +64,21 @@ import {
     isCurrentUserAdmin,
 } from '../selectors';
 import {resolve} from 'src/utils';
+
+export enum FetchState {
+    idle = 'idle',
+    loading = 'loading',
+    done = 'done',
+    error = 'error',
+}
+
+export type FetchMetadata = {
+    state: FetchState;
+    error: ClientError | null;
+}
+export const hasResponseErrorCode = (metadata: FetchMetadata, code: number) => {
+    return metadata.state !== FetchState.error && metadata.error !== null && metadata.error.status_code === code;
+};
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -326,26 +342,41 @@ export function useProfilesInChannel(channelId: string) {
  */
 function useThing<T extends NonNullable<any>>(
     id: string,
-    fetch: (id: string) => Promise<T>,
-    select?: (state: GlobalState, id: string) => T,
+    fetchFunc: (id: string) => Promise<T>,
+    select: (state: GlobalState, id: string) => T,
 ) {
     const [thing, setThing] = useState<T | null>();
     const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
+    const [error, setError] = useState<ClientError | null>(null);
+    const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
 
     useEffect(() => {
         if (thingFromState) {
             setThing(thingFromState);
+            setFetchState(FetchState.done);
             return;
         }
 
         if (id) {
-            fetch(id).then(setThing).catch(() => setThing(null));
+            setFetchState(FetchState.loading);
+            fetchFunc(id)
+                .then((res) => {
+                    setFetchState(FetchState.done);
+                    setThing(res);
+                })
+                .catch((err) => {
+                    if (err instanceof ClientError) {
+                        setError(err);
+                    }
+                    setFetchState(FetchState.error);
+                    setThing(null);
+                });
             return;
         }
         setThing(null);
     }, [thingFromState, id]);
 
-    return thing;
+    return [thing, {state: fetchState, error}] as const;
 }
 
 export function usePost(postId: string) {
@@ -356,18 +387,6 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
     return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
 }
 
-export enum FetchState {
-    idle = 'idle',
-    loading = 'loading',
-    done = 'done',
-    error = 'error',
-}
-
-export type FetchMetadata = {
-    state: FetchState;
-    error: ClientError | null;
-}
-
 /**
  *
  * @param id The id of the resource to be fetched
@@ -376,9 +395,9 @@ export type FetchMetadata = {
  * @returns array tuple with the data in the first position and the fetchState in the second
  */
 export function useFetch<T>(
-    id: string,
+    id: string | undefined,
     fetchFunction: (id: string) => Promise<T>,
-    deps: Array<any> = [],
+    deps: DependencyList = [],
 ) {
     const [error, setError] = useState<ClientError | null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
@@ -386,6 +405,9 @@ export function useFetch<T>(
 
     useEffect(() => {
         if (!id) {
+            setFetchState(FetchState.idle);
+            setData(null);
+            setError(null);
             return;
         }
         setFetchState(FetchState.loading);
@@ -403,7 +425,7 @@ export function useFetch<T>(
             });
     }, [id, ...deps]);
 
-    return [data, {state: fetchState, error}] as [T | null, FetchMetadata];
+    return [data, {state: fetchState, error}] as const;
 }
 
 /**

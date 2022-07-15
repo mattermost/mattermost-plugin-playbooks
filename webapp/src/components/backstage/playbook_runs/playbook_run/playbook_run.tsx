@@ -76,8 +76,8 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const playbookRun = useRun(playbookRunId);
-    const playbook = usePlaybook(playbookRun?.playbook_id);
+    const [playbookRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
     const [metadata, metadataResult] = useRunMetadata(playbookRunId);
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const myUser = useSelector(getCurrentUser);

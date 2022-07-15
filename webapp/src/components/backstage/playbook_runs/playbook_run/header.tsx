@@ -17,7 +17,7 @@ import {
     requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {useChannel, useFavoriteRun} from 'src/hooks';
+import {hasResponseErrorCode, useChannel, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -47,7 +47,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
-    const channel = useChannel(playbookRun.channel_id);
+    const [channel, channelMetadata] = useChannel(playbookRun.channel_id);
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
@@ -67,7 +67,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         // Channel null value comes from error response (and we assume that is mostly 403)
         // If we don't have access to channel we'll send a request to be added,
         // otherwise we directly join it
-        if (channel === null) {
+        if (hasResponseErrorCode(channelMetadata, 403)) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
                 addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);

@@ -69,7 +69,7 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const run = useRun(playbookRunId);
+    const [run] = useRun(playbookRunId);
 
     const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(run);
@@ -337,7 +337,7 @@ const UpdateRunStatusModal = ({
 
 const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
-    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
+    const [lastStatusPost] = usePost(lastStatusPostMeta?.id ?? '');
 
     if (lastStatusPostMeta) {
         // last status exist and should have a post-message

@@ -259,7 +259,7 @@ const PlaybookRunBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
-    const currentRun = useRun(match.params.playbookRunId);
+    const [currentRun] = useRun(match.params.playbookRunId);
 
     const [following, setFollowing] = useState<string[]>([]);
 
