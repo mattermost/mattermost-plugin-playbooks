@@ -7,6 +7,9 @@ executors:
   default:
     docker:
       - image: cimg/go:1.18.1-node
+        environment:
+          GOCI_LINT_V: 1.46.2
+
 
 aliases:
   - &restore_go_cache

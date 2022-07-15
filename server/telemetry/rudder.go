@@ -450,7 +450,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"DefaultCommanderID":          playbook.DefaultOwnerID,
 		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         playbook.BroadcastChannelIDs,
-		"BroadcastEnabled":            playbook.BroadcastEnabled,
+		"BroadcastEnabled":            playbook.BroadcastEnabled, //nolint
 		"NumWebhookOnCreationURLs":    len(playbook.WebhookOnCreationURLs),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,

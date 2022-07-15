@@ -236,7 +236,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
@@ -644,7 +644,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
