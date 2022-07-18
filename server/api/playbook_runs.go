@@ -817,6 +817,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Req
 		post, err := h.pluginAPI.Post.GetPost(p.ID)
 		if err != nil {
 			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
+			continue
 		}
 
 		// Given the fact that we are bypassing some permissions,
