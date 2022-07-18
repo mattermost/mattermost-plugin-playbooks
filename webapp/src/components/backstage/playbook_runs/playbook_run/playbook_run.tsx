@@ -175,8 +175,8 @@ const PlaybookRunDetails = () => {
     const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
 
     return (
-        <Container>
-            <MainWrapper isRHSOpen={RHS.isOpen}>
+        <Container isRHSOpen={RHS.isOpen}>
+            <MainWrapper>
                 <Header isRHSOpen={RHS.isOpen}>
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
@@ -187,7 +187,7 @@ const PlaybookRunDetails = () => {
                         rhsSection={RHS.isOpen ? RHS.section : null}
                     />
                 </Header>
-                <Main isRHSOpen={RHS.isOpen}>
+                <Main>
                     <Body>
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
@@ -249,22 +249,23 @@ const ColumnContainer = styled.div`
     flex-direction: row;
 `;
 
-const Container = styled(ColumnContainer)`
-    flex: 1;
-`;
+const Container = styled(ColumnContainer)<{isRHSOpen: boolean}>`
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: ${({isRHSOpen}) => (isRHSOpen ? 'auto 400px' : 'auto')};
 
-const MainWrapper = styled.div<{isRHSOpen: boolean}>`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
 
     @media screen and (min-width: 1600px) {
-        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+        grid-template-columns: ${({isRHSOpen}) => (isRHSOpen ? 'auto 500px' : 'auto')};
     }
 `;
 
-const Main = styled.main<{isRHSOpen: boolean}>`
+const MainWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const Main = styled.main`
     max-width: 780px;
     width: min(780px, 100%);
     padding: 20px;
@@ -279,13 +280,5 @@ const Body = styled(RowContainer)`
 const Header = styled.header<{isRHSOpen: boolean}>`
     height: 56px;
     min-height: 56px;
-    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 711px)' : 'calc(100% - 311px)')};
-    z-index: 2;
-    position: fixed;
     background-color: var(--center-channel-bg);
-    display:flex;
-
-    @media screen and (min-width: 1600px) {
-        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 811px)' : 'calc(100% - 311px)')};
-    }
 `;
