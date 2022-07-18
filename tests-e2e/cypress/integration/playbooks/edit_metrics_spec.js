@@ -532,11 +532,10 @@ const verifyViewMetric = (index, title, target, description) => {
 };
 
 const verifyViewsAndEdits = (numViews, numEdits) => {
-    if (numViews == 0) {
+    if (numViews === 0) {
         cy.getStyledComponent('ViewContainer').should('not.exist');
     } else {
         cy.getStyledComponent('ViewContainer').should('have.length', numViews);
-
     }
 
     if (numEdits === 0) {
