@@ -71,7 +71,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
             <ItemContainer>
                 <StyledNavLink
                     id={'sidebarItem_view_all_runs'}
-                    aria-label={'View all runs'}
+                    aria-label={formatMessage({defaultMessage: 'View all runs'})}
                     data-testid={'playbookRunsLHSButton'}
                     to={'/playbooks/runs'}
                     exact={true}
@@ -89,7 +89,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
             <ItemContainer key={'sidebarItem_view_all_playbooks'}>
                 <StyledNavLink
                     id={'sidebarItem_view_all_playbooks'}
-                    aria-label={'View all playbooks'}
+                    aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
                     data-testid={'playbooksLHSButton'}
                     to={'/playbooks/playbooks'}
                     exact={true}

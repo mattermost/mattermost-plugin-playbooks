@@ -104,6 +104,7 @@ const Retrospective = ({
                     isPublished &&
                     <TimestampContainer>
                         <i className={'icon icon-check-all'}/>
+                        {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                         <span>{''}</span>
                         {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
                     </TimestampContainer>

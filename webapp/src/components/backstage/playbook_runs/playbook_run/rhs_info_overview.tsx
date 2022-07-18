@@ -121,7 +121,6 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     <FollowingButton/>
                     <Following
                         userIds={followers}
-                        hideHelpText={true}
                         maxUsers={4}
                     />
                 </FollowersWrapper>
