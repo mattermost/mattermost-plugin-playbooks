@@ -7,6 +7,12 @@ import React from 'react';
 import Tooltip from 'src/components/widgets/tooltip';
 import {CompassIcon} from 'src/types/compass';
 
+declare module 'react-bootstrap/esm/OverlayTrigger' {
+    interface OverlayTriggerProps {
+        shouldUpdatePosition?: boolean;
+    }
+}
+
 interface HeaderButtonProps {
     tooltipId: string;
     tooltipMessage: string
