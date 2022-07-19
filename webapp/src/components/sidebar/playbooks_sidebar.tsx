@@ -14,11 +14,8 @@ import {useCategories} from 'src/hooks';
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
 import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
-interface PlaybookSidebarProps {
-    team_id: string;
-}
 
-const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
+const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
 
@@ -26,7 +23,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
         const calculatedGroups = cats.map((category): SidebarGroup => {
             return {
                 collapsed: category.collapsed,
-                display_name: category.name,
+                display_name: category.name === 'Favorite' ? 'Favorites' : category.name,
                 id: category.id,
                 items: category.items ? category.items.map((item: CategoryItem): GroupItem => {
                     let icon = <StyledPlaybookRunIcon/>;
