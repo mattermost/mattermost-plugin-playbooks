@@ -9,7 +9,7 @@ import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
 import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
 import {pluginUrl} from 'src/browser_routing';
 import {CategoryItem, CategoryItemType, Category} from 'src/types/category';
-import {useCategories} from 'src/hooks';
+import {useCategories, useReservedCategoryTitleMapper} from 'src/hooks';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -18,12 +18,13 @@ import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
+    const normalizeCategoryName = useReservedCategoryTitleMapper();
 
     const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
         const calculatedGroups = cats.map((category): SidebarGroup => {
             return {
                 collapsed: category.collapsed,
-                display_name: category.name === 'Favorite' ? 'Favorites' : category.name,
+                display_name: normalizeCategoryName(category.name),
                 id: category.id,
                 items: category.items ? category.items.map((item: CategoryItem): GroupItem => {
                     let icon = <StyledPlaybookRunIcon/>;
