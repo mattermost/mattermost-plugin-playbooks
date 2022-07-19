@@ -253,6 +253,7 @@ const Container = styled(ColumnContainer)`
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 2fr minmax(400px, 1fr);
+    overflow-y: hidden;
 
     @media screen and (min-width: 1600px) {
         grid-auto-columns: 2.5fr 500px;
@@ -263,17 +264,16 @@ const MainWrapper = styled.div`
     display: grid;
     grid-auto-flow: row;
     height: 100vh;
-    `;
+    overflow-y: hidden;
+`;
 
 const Main = styled.main`
+    min-height: 0;
     padding: 0 20px 60px;
     display: grid;
     overflow-y: auto;
     place-content: start center;
     grid-auto-columns: min(780px, 100%);
-    ::-webkit-scrollbar {
-        display: none;
-    }
 `;
 const Body = styled(RowContainer)`
 `;
