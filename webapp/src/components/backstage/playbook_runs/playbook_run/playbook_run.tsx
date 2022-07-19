@@ -175,9 +175,9 @@ const PlaybookRunDetails = () => {
     const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
 
     return (
-        <Container isRHSOpen={RHS.isOpen}>
+        <Container>
             <MainWrapper>
-                <Header isRHSOpen={RHS.isOpen}>
+                <Header>
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
@@ -249,35 +249,36 @@ const ColumnContainer = styled.div`
     flex-direction: row;
 `;
 
-const Container = styled(ColumnContainer)<{isRHSOpen: boolean}>`
+const Container = styled(ColumnContainer)`
     display: grid;
     grid-auto-flow: column;
-    grid-template-columns: ${({isRHSOpen}) => (isRHSOpen ? 'auto 400px' : 'auto')};
-
+    grid-auto-columns: 2fr minmax(400px, 1fr);
 
     @media screen and (min-width: 1600px) {
-        grid-template-columns: ${({isRHSOpen}) => (isRHSOpen ? 'auto 500px' : 'auto')};
+        grid-auto-columns: 2.5fr 500px;
     }
 `;
 
 const MainWrapper = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
+    display: grid;
+    grid-auto-flow: row;
+    height: 100vh;
+    `;
 
 const Main = styled.main`
-    max-width: 780px;
-    width: min(780px, 100%);
-    padding: 20px;
-    flex: 1;
-    margin: 40px auto;
-    display: flex;
-    flex-direction: column;
+    padding: 0 20px 60px;
+    display: grid;
+    overflow-y: auto;
+    place-content: start center;
+    grid-auto-columns: min(780px, 100%);
+    ::-webkit-scrollbar {
+        display: none;
+    }
 `;
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header<{isRHSOpen: boolean}>`
+const Header = styled.header`
     height: 56px;
     min-height: 56px;
     background-color: var(--center-channel-bg);
