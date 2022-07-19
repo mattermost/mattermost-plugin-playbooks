@@ -184,7 +184,7 @@ describe('playbooks > edit_metrics', () => {
         });
 
         describe('adding and editing metrics (new playbook)', () => {
-            it.only('verifies when clicking "Add Metric", for Currency type, and switches to new edit', () => {
+            it('verifies when clicking "Add Metric", for Currency type, and switches to new edit', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
