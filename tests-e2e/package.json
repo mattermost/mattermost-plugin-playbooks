@@ -1,11 +1,11 @@
 {
   "dependencies": {
     "@cypress/skip-test": "^2.6.1",
-    "@testing-library/cypress": "7.0.6",
+    "@testing-library/cypress": "^8.0.3",
     "authenticator": "^1.1.5",
     "axios": "^0.21.1",
     "axios-retry": "^3.1.9",
-    "cypress": "7.7.0",
+    "cypress": "^10.3.0",
     "cypress-file-upload": "5.0.8",
     "cypress-multi-reporters": "^1.5.0",
     "cypress-plugin-tab": "1.0.5",
