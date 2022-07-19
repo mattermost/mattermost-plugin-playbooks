@@ -91,7 +91,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             <StarButton onClick={toggleFavorite}>
                 <FavoriteIcon
                     size={18}
-                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : ''}
+                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                 />
             </StarButton>
             <ContextMenu
