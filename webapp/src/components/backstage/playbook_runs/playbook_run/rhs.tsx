@@ -87,7 +87,6 @@ const Container = styled.div<{isOpen: boolean}>`
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     right: 0;
-    z-index: 2;
     background-color: var(--center-channel-bg);
 `;
 
