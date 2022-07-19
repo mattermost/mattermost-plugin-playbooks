@@ -82,6 +82,12 @@ const (
 	eventRunAction         = "playbookrun_action"
 	actionRunAction        = "run_playbookrun_action"
 	actionRunActionsUpdate = "update_playbookrun_actions"
+
+	eventSidebarCategory     = "lhs_category"
+	actionFavoriteRun        = "favorite_run"
+	actionUnfavoriteRun      = "unfavorite_run"
+	actionFavoritePlaybook   = "favorite_playbook"
+	actionUnfavoritePlaybook = "unfavorite_playbook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -646,4 +652,40 @@ func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID 
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRunActionsUpdate
 	t.track(eventRunAction, properties)
+}
+
+// FavoriteRun tracks run favoriting
+func (t *RudderTelemetry) FavoriteRun(runID, userID string) {
+	properties := map[string]interface{}{}
+	properties["PlaybookRunID"] = runID
+	properties["UserActualID"] = userID
+	properties["Action"] = actionFavoriteRun
+	t.track(eventSidebarCategory, properties)
+}
+
+// FavoriteRun tracks run unfavoriting
+func (t *RudderTelemetry) UnFavoriteRun(runID, userID string) {
+	properties := map[string]interface{}{}
+	properties["PlaybookRunID"] = runID
+	properties["UserActualID"] = userID
+	properties["Action"] = actionUnfavoriteRun
+	t.track(eventSidebarCategory, properties)
+}
+
+// FavoriteRun tracks playbook favoriting
+func (t *RudderTelemetry) FavoritePlaybook(playbookID, userID string) {
+	properties := map[string]interface{}{}
+	properties["PlaybookID"] = playbookID
+	properties["UserActualID"] = userID
+	properties["Action"] = actionFavoritePlaybook
+	t.track(eventSidebarCategory, properties)
+}
+
+// FavoriteRun tracks playbook unfavoriting
+func (t *RudderTelemetry) UnFavoritePlaybook(playbookID, userID string) {
+	properties := map[string]interface{}{}
+	properties["PlaybookID"] = playbookID
+	properties["UserActualID"] = userID
+	properties["Action"] = actionUnfavoritePlaybook
+	t.track(eventSidebarCategory, properties)
 }

@@ -138,3 +138,17 @@ type CategoryStore interface {
 	// DeleteItemFromCategory adds an item to category
 	DeleteItemFromCategory(item CategoryItem, categoryID string) error
 }
+
+type CategoryTelemetry interface {
+	// FavoriteRun tracks run favoriting
+	FavoriteRun(runID, userID string)
+
+	// FavoriteRun tracks run unfavoriting
+	UnFavoriteRun(runID, userID string)
+
+	// FavoriteRun tracks playbook favoriting
+	FavoritePlaybook(playbookID, userID string)
+
+	// FavoriteRun tracks playbook unfavoriting
+	UnFavoritePlaybook(playbookID, userID string)
+}
