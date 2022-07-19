@@ -654,38 +654,32 @@ func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID 
 	t.track(eventRunAction, properties)
 }
 
-// FavoriteRun tracks run favoriting
-func (t *RudderTelemetry) FavoriteRun(runID, userID string) {
+// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
 	properties := map[string]interface{}{}
-	properties["PlaybookRunID"] = runID
 	properties["UserActualID"] = userID
-	properties["Action"] = actionFavoriteRun
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionFavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionFavoriteRun
+	}
 	t.track(eventSidebarCategory, properties)
 }
 
-// FavoriteRun tracks run unfavoriting
-func (t *RudderTelemetry) UnFavoriteRun(runID, userID string) {
+// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
 	properties := map[string]interface{}{}
-	properties["PlaybookRunID"] = runID
 	properties["UserActualID"] = userID
-	properties["Action"] = actionUnfavoriteRun
-	t.track(eventSidebarCategory, properties)
-}
-
-// FavoriteRun tracks playbook favoriting
-func (t *RudderTelemetry) FavoritePlaybook(playbookID, userID string) {
-	properties := map[string]interface{}{}
-	properties["PlaybookID"] = playbookID
-	properties["UserActualID"] = userID
-	properties["Action"] = actionFavoritePlaybook
-	t.track(eventSidebarCategory, properties)
-}
-
-// FavoriteRun tracks playbook unfavoriting
-func (t *RudderTelemetry) UnFavoritePlaybook(playbookID, userID string) {
-	properties := map[string]interface{}{}
-	properties["PlaybookID"] = playbookID
-	properties["UserActualID"] = userID
-	properties["Action"] = actionUnfavoritePlaybook
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionUnfavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionUnfavoriteRun
+	}
 	t.track(eventSidebarCategory, properties)
 }

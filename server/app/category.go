@@ -140,15 +140,9 @@ type CategoryStore interface {
 }
 
 type CategoryTelemetry interface {
-	// FavoriteRun tracks run favoriting
-	FavoriteRun(runID, userID string)
+	// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
+	FavoriteItem(item CategoryItem, userID string)
 
-	// FavoriteRun tracks run unfavoriting
-	UnFavoriteRun(runID, userID string)
-
-	// FavoriteRun tracks playbook favoriting
-	FavoritePlaybook(playbookID, userID string)
-
-	// FavoriteRun tracks playbook unfavoriting
-	UnFavoritePlaybook(playbookID, userID string)
+	// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
+	UnfavoriteItem(item CategoryItem, userID string)
 }

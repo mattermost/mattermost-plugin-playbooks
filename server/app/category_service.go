@@ -95,12 +95,7 @@ func (c *categoryService) AddFavorite(item CategoryItem, teamID, userID string) 
 		return errors.Wrap(err, "failed to add favorite")
 	}
 
-	switch item.Type {
-	case PlaybookItemType:
-		c.telemetry.FavoritePlaybook(item.ItemID, userID)
-	case RunItemType:
-		c.telemetry.FavoriteRun(item.ItemID, userID)
-	}
+	c.telemetry.FavoriteItem(item, userID)
 	return nil
 }
 
@@ -123,12 +118,7 @@ func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID strin
 		return errors.Wrap(err, "can't delete item from favorite category")
 	}
 
-	switch item.Type {
-	case PlaybookItemType:
-		c.telemetry.UnFavoritePlaybook(item.ItemID, userID)
-	case RunItemType:
-		c.telemetry.UnFavoriteRun(item.ItemID, userID)
-	}
+	c.telemetry.UnfavoriteItem(item, userID)
 	return nil
 }
 
