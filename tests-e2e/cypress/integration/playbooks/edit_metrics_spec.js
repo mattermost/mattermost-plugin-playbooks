@@ -184,7 +184,7 @@ describe('playbooks > edit_metrics', () => {
         });
 
         describe('adding and editing metrics (new playbook)', () => {
-            it('verifies when clicking "Add Metric", for Currency type, and switches to new edit', () => {
+            it.only('verifies when clicking "Add Metric", for Currency type, and switches to new edit', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
@@ -239,6 +239,10 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByTestId('dropdownmenu').within(() => {
                     cy.findByText('Integer').click();
                 });
+
+                // Delay for the save/re-render triggered by line 240
+                // to finish before attempting to verifyViewMetric
+                cy.wait(500);
 
                 // * Verify metric was added without target or description.
                 verifyViewMetric(1, 'test currency!', '', '');
