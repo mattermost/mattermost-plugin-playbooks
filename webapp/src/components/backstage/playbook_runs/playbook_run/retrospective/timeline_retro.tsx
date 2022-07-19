@@ -14,7 +14,7 @@ import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import Timeline from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline';
+import Timeline from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Content, TabPageContainer, Title} from 'src/components/backstage/playbook_runs/shared';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';

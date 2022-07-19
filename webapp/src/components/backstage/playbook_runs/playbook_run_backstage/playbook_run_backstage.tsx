@@ -26,7 +26,7 @@ import {
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
-import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
+import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run/retrospective/retrospective';
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
