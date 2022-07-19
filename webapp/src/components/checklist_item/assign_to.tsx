@@ -214,7 +214,7 @@ const AssignToIcon = styled.i`
     color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
-const AssignToContainer = styled.div`
+export const AssignToContainer = styled.div`
     :not(:first-child) {
         margin-left: 36px;
     }
