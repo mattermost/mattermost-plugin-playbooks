@@ -14,7 +14,7 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
-import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
+import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
