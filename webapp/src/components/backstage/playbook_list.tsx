@@ -7,7 +7,7 @@ import {Team} from '@mattermost/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
@@ -23,7 +23,6 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
-    useExperimentalFeaturesEnabled,
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
@@ -47,11 +46,7 @@ import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
-const ContainerMedium = styled.article<{$newLHSEnabled: boolean}>`
-    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
-        margin: 0 auto;
-        max-width: 1160px;
-    `}
+const ContainerMedium = styled.article`
     padding: 0 20px;
     scroll-margin-top: 20px;
 `;
@@ -60,13 +55,9 @@ const PlaybookListContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.9);
 `;
 
-const TableContainer = styled.div<{$newLHSEnabled: boolean;}>`
+const TableContainer = styled.div`
     overflow-x: hidden;
     overflow-x: clip;
-    ${({$newLHSEnabled}) => !$newLHSEnabled && css`
-        margin: 0 auto;
-        max-width: 1160px;
-    `}
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
@@ -143,8 +134,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
-
     const hasPlaybooks = Boolean(playbooks?.length);
 
     if (props.firstTimeUserExperience && hasPlaybooks) {
@@ -208,7 +197,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         };
 
         return (
-            <TableContainer $newLHSEnabled={newLHSEnabled}>
+            <TableContainer>
                 <Header
                     data-testid='titlePlaybook'
                     level={2}
@@ -336,7 +325,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 <>
                     <ContainerMedium
                         ref={selectorRef}
-                        $newLHSEnabled={newLHSEnabled}
                     >
                         {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
