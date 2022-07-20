@@ -10,6 +10,7 @@ export enum TimelineEventType {
     RunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
     StatusUpdateRequested = 'status_update_requested',
+    StatusUpdateSnoozed = 'status_update_snoozed',
     OwnerChanged = 'owner_changed',
     AssigneeChanged = 'assignee_changed',
     TaskStateModified = 'task_state_modified',

@@ -965,7 +965,6 @@ func TestChecklistManagement(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
 func TestRunActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1227,8 +1226,8 @@ func TestRequestUpdate(t *testing.T) {
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
 	})
+}
 
-=======
 func TestReminderReset(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1252,5 +1251,4 @@ func TestReminderReset(t *testing.T) {
 
 		require.Len(t, statusSnoozed, 1)
 	})
->>>>>>> ac28796b (Add test for reminder reset)
 }
