@@ -6,6 +6,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
+import {Channel} from '@mattermost/types/channels';
 
 import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
@@ -30,10 +31,11 @@ interface Props {
     run: PlaybookRun;
     runMetadata?: Metadata;
     editable: boolean;
+    channel: Channel | undefined | null;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
@@ -137,16 +139,16 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     setSelectedUser(null);
                 }}
             />}
-            {runMetadata && editable && (
+            {channel && runMetadata && editable && (
                 <Item
                     id='runinfo-channel'
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
-                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`)}
+                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${channel.name}`)}
                 >
-                    <ItemLink to={`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`}>
+                    <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
                         <ItemContent >
-                            {runMetadata.channel_name}
+                            {channel.display_name}
                             <OpenInNewIcon
                                 size={14}
                                 color={'var(--button-bg)'}
