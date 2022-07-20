@@ -308,7 +308,7 @@ describe('runs > run details page > run info', () => {
                     });
                 });
 
-                it.only('click on metric items, type and see the result in the RHS', () => {
+                it('click on metric items, type and see the result in the RHS', () => {
                     const testData = {
                         metric_duration: {
                             input: '12:06:03',
