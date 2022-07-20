@@ -778,6 +778,14 @@ export const fetchMyCategories = async (teamID: string): Promise<Category[]> => 
     return data;
 };
 
+export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
+    try {
+        return await doPost(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

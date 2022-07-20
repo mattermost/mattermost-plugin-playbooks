@@ -164,6 +164,7 @@ func (c *categoryStore) Update(category app.Category) error {
 		Update("IR_Category").
 		Set("Name", category.Name).
 		Set("UpdateAt", category.UpdateAt).
+		Set("Collapsed", category.Collapsed).
 		Where(sq.Eq{"ID": category.ID})); err != nil {
 		return errors.Wrapf(err, "failed to update category with id '%s'", category.ID)
 	}
