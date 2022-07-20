@@ -263,7 +263,6 @@ const Container = styled(ColumnContainer)`
 const MainWrapper = styled.div`
     display: grid;
     grid-auto-flow: row;
-    height: 100vh;
     overflow-y: hidden;
 `;
 
