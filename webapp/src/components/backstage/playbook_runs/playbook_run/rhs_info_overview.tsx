@@ -123,7 +123,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                     <FollowingButton/>
                     <Following
                         userIds={followers}
-                        hideHelpText={true}
                         maxUsers={4}
                     />
                 </FollowersWrapper>

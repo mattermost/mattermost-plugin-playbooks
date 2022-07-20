@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {Duration} from 'luxon';
-import {useIntl} from 'react-intl';
+import {FormattedNumber, useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {HorizontalSpacer} from 'src/components/backstage/styles';
@@ -67,6 +67,7 @@ const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
                         <Title>{formatMessage({defaultMessage: 'Value range'})}</Title>
                         <Value>
                             {stats.value_range[0] === null ? '-' : valueTransformFn(stats.value_range[0])}
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                             <ValueTo>{' ' + formatMessage({defaultMessage: 'to'}) + ' '}</ValueTo>
                             {stats.value_range[1] === null ? '-' : valueTransformFn(stats.value_range[1])}
                         </Value>
@@ -191,7 +192,10 @@ const percentageChange = (change: NullNumber) => {
     return (
         <PercentageChange>
             <i className={'icon ' + changeSymbol}/>
-            {change + '%'}
+            <FormattedNumber
+                value={change / 100}
+                style={'percent'}
+            />
         </PercentageChange>
     );
 };

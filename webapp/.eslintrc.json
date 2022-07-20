@@ -547,7 +547,17 @@
     "react/require-render-return": 2,
     "react/self-closing-comp": 2,
     "react/sort-comp": 0,
-    "react/style-prop-object": 2,
+    "react/style-prop-object": [
+        2,
+        {
+            "allow": [
+                "FormattedNumber",
+                "FormattedDuration",
+                "FormattedRelativeTime",
+                "Timestamp"
+            ]
+        }
+    ],
     "require-yield": 2,
     "rest-spread-spacing": [
       2,
@@ -620,6 +630,7 @@
     "formatjs/no-multiple-whitespaces": 1,
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
+    "formatjs/no-literal-string-in-jsx": 2,
     "unused-imports/no-unused-imports": 2
   },
   "overrides": [

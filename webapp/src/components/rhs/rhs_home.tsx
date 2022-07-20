@@ -290,6 +290,7 @@ const RHSHome = () => {
                         <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
                                 <FormattedMessage defaultMessage='View run details'/>
+                                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 {' '}
                             </span>
                             <Icon
