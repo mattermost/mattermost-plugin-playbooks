@@ -86,17 +86,17 @@ const useRequestUpdate = (playbookRunId: string) => {
     const requestStatusUpdate = async () => {
         const response = await requestUpdate(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
+            addToast(formatMessage({defaultMessage: 'It was not possible to request an update '}), ToastType.Failure);
         } else {
-            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
+            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel. '}), ToastType.Success);
         }
     };
     const RequestUpdateConfirmModal = (
         <ConfirmModal
             show={showRequestUpdateConfirm}
-            title={formatMessage({defaultMessage: 'Confirm request update'})}
-            message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
+            title={formatMessage({defaultMessage: 'Confirm request update '})}
+            message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update. '})}
+            confirmButtonText={formatMessage({defaultMessage: 'Request update '})}
             onConfirm={() => {
                 requestStatusUpdate();
                 setShowRequestUpdateConfirm(false);

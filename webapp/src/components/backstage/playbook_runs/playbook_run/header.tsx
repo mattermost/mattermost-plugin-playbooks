@@ -71,9 +71,9 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
         if (channel === null) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
+                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful. '}), ToastType.Failure);
             } else {
-                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
+                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel. '}), ToastType.Success);
             }
             return;
         }
@@ -144,8 +144,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
             />
             <ConfirmModal
                 show={showGetInvolvedConfirm}
-                title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={channel === null ? formatMessage({defaultMessage: 'Your participation request will be sent to the run channel.'}) : formatMessage({defaultMessage: 'You\'re about to join this run.'})}
+                title={formatMessage({defaultMessage: 'Participate in the run'})}
+                message={formatMessage({defaultMessage: 'Become a participant of the run. As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();
