@@ -308,7 +308,7 @@ describe('runs > run details page > run info', () => {
                     });
                 });
 
-                it('click on metric items, type and see the result in the RHS', () => {
+                it.only('click on metric items, type and see the result in the RHS', () => {
                     const testData = {
                         metric_duration: {
                             input: '12:06:03',
@@ -331,7 +331,7 @@ describe('runs > run details page > run info', () => {
                             cy.findByText(metric.title).click();
 
                             // # Type a value for the metric
-                            cy.focused().type(testData[metric.type].input);
+                            cy.focused().type(testData[metric.type].input, {delay: 100});
                         });
                     });
 
