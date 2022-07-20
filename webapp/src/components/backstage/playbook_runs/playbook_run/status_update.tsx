@@ -94,7 +94,7 @@ const useRequestUpdate = (playbookRunId: string) => {
     const RequestUpdateConfirmModal = (
         <ConfirmModal
             show={showRequestUpdateConfirm}
-            title={formatMessage({defaultMessage: 'Confirm request update '})}
+            title={formatMessage({defaultMessage: 'Request an update '})}
             message={formatMessage({defaultMessage: 'A status update request will be sent to the run channel. '})}
             confirmButtonText={formatMessage({defaultMessage: 'Request update '})}
             onConfirm={() => {
