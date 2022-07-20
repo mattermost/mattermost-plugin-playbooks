@@ -86,7 +86,7 @@ const useRequestUpdate = (playbookRunId: string) => {
     const requestStatusUpdate = async () => {
         const response = await requestUpdate(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request an update '}), ToastType.Failure);
+            addToast(formatMessage({defaultMessage: 'The update request was unsuccessful.'}), ToastType.Failure);
         } else {
             addToast(formatMessage({defaultMessage: 'A message was sent to the run channel. '}), ToastType.Success);
         }
