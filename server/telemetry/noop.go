@@ -188,3 +188,11 @@ func (t *NoopTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerT
 // UpdateRunActions does nothing
 func (t *NoopTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
 }
+
+// FavoriteItem does nothing
+func (t *NoopTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
+}
+
+// UnfavoriteItem does nothing
+func (t *NoopTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
+}
