@@ -2745,6 +2745,26 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	return nil
 }
 
+// Leave removes user from the run's participants list
+func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// Check if user is not a member of the channel
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if member == nil {
+		return errors.New("user is not a participant")
+	}
+
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
+		return errors.Wrap(err, "failed to remove channel member")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID string, post *model.Post) error {
 	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
 	if err != nil {

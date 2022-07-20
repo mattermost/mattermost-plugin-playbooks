@@ -735,6 +735,9 @@ type PlaybookRunService interface {
 
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
+
+	// Leave removes user from the run's participants list
+	Leave(playbookRunID, requesterID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
