@@ -88,7 +88,7 @@ const useRequestUpdate = (playbookRunId: string) => {
         if (response?.error) {
             addToast(formatMessage({defaultMessage: 'The update request was unsuccessful.'}), ToastType.Failure);
         } else {
-            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel. '}), ToastType.Success);
+            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel. '}), ToastType.Success);
         }
     };
     const RequestUpdateConfirmModal = (
