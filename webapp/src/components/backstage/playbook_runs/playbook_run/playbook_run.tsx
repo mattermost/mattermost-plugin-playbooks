@@ -82,9 +82,13 @@ const PlaybookRunDetails = () => {
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const channel = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
-    const {options, selectOption, eventsFilter} = useFilter();
+    const {options, selectOption, eventsFilter, resetFilters} = useFilter();
 
     const RHS = useRHS(playbookRun);
+
+    useUpdateEffect(() => {
+        resetFilters();
+    }, [playbookRunId]);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
@@ -99,7 +103,6 @@ const PlaybookRunDetails = () => {
         if (!teamId) {
             return;
         }
-
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 

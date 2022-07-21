@@ -85,6 +85,8 @@ export const useFilter = () => {
     const {formatMessage} = useIntl();
     const [eventsFilter, setEventsFilter] = useState<TimelineEventsFilter>(TimelineEventsFilterDefault);
 
+    const resetFilters = () => setEventsFilter(TimelineEventsFilterDefault);
+
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {
             return;
@@ -142,5 +144,5 @@ export const useFilter = () => {
             disabled: eventsFilter.all,
         },
     ];
-    return {options, selectOption, eventsFilter};
+    return {options, selectOption, eventsFilter, resetFilters};
 };
