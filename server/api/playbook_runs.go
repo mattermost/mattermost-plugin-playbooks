@@ -905,6 +905,7 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.PermissionsCheck(w, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not participant", nil)
 		return
 	}
 
