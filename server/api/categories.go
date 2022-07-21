@@ -43,7 +43,7 @@ func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, logger bot.Lo
 	categoryRouter := categoriesRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	categoryRouter.HandleFunc("", handler.updateMyCategory).Methods(http.MethodPut)
 	categoryRouter.HandleFunc("", handler.deleteMyCategory).Methods(http.MethodDelete)
-	categoryRouter.HandleFunc("/collapse", handler.collapseMyCategory).Methods(http.MethodPost)
+	categoryRouter.HandleFunc("/collapse", handler.collapseMyCategory).Methods(http.MethodPut)
 
 	return handler
 }
@@ -138,7 +138,7 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 	}
 
 	if existingCategory.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
 		return
 	}
 
@@ -165,7 +165,6 @@ func (h *CategoryHandler) collapseMyCategory(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// verify if category belongs to the user
 	existingCategory, err := h.categoryService.Get(categoryID)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Can't get category", err)
@@ -173,17 +172,18 @@ func (h *CategoryHandler) collapseMyCategory(w http.ResponseWriter, r *http.Requ
 	}
 
 	if existingCategory.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
 		return
 	}
 
+	// verify if category belongs to the user
 	if existingCategory.UserID != userID {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "UserID mismatch", nil)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "UserID mismatch", nil)
 		return
 	}
 
 	if existingCategory.Collapsed == collapsed {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Collapsed state is not changed", nil)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -212,7 +212,7 @@ func (h *CategoryHandler) deleteMyCategory(w http.ResponseWriter, r *http.Reques
 	// category is already deleted. This avoids
 	// overriding the original deleted at timestamp
 	if existingCategory.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
 		return
 	}
 

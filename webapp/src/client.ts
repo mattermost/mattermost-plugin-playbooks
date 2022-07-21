@@ -780,7 +780,7 @@ export const fetchMyCategories = async (teamID: string): Promise<Category[]> => 
 
 export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
     try {
-        return await doPost(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
+        return await doPut(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
     } catch (error) {
         return {error};
     }
