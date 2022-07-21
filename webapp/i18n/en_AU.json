@@ -641,5 +641,17 @@
     "5PpBsd": "Your request wasn't successful.",
     "4Iqlfe": "You've joined this run.",
     "1fXVVz": "Due date:",
-    "1GOpgL": "Assignee:"
+    "1GOpgL": "Assignee:",
+    "wGp7l3": "{icon} Dollars",
+    "s+rSpl": "{icon} Integer",
+    "qp5G0Z": "Upgrade required for access to retrospective features.",
+    "ojQue/": "{icon} Duration (in dd:hh:mm)",
+    "mNgqXf": "To unlock this feature:",
+    "j2VYGA": "View all playbooks",
+    "SMrXWc": "Favourites",
+    "PWmZrW": "View all runs",
+    "PW+sL4": "N/A",
+    "KzHQCQ": "There are no finished runs matching those filters.",
+    "5HXkY/": "Type: {typeTitle}",
+    "3zF589": "Reset to all {filterName}"
 }
