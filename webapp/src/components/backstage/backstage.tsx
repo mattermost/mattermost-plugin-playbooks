@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {Switch, Route, NavLink, useLocation, useRouteMatch} from 'react-router-dom';
+import {Switch, Route, NavLink, useLocation, useRouteMatch, matchPath} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
@@ -26,20 +26,10 @@ import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
 
-const BackstageContainer = styled.div<{isRunDetailsPage: boolean}>`
+const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
-    display: flex;
-    flex-direction: column;
     overflow-y: auto;
     height: 100%;
-
-    ${({isRunDetailsPage}) => isRunDetailsPage && css`
-        // Accounts for the run header, so when scrolling with
-        // anchor links, the sections are not hidden under it.
-        scroll-padding-top: 64px;
-
-        scroll-behavior: smooth;
-    `}
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
@@ -76,17 +66,12 @@ const BackstageTitlebarItem = styled(NavLink)`
     }
 `;
 
-const BackstageBody = styled.div`
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-`;
-
 const Backstage = () => {
     const {pathname} = useLocation();
-
-    // TODO: Change  to /playbooks/runs when we get the new run details page to production
-    const isRunDetailsPage = pathname.startsWith('/playbooks/run_details');
+    const {url} = useRouteMatch();
+    const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
+        path: [`${url}/runs/:playbookRunId`],
+    });
 
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
@@ -107,12 +92,9 @@ const Backstage = () => {
     useForceDocumentTitle('Playbooks');
 
     return (
-        <BackstageContainer
-            id={BackstageID}
-            isRunDetailsPage={isRunDetailsPage}
-        >
+        <BackstageContainer id={BackstageID}>
             <ToastProvider>
-                <MainContainer>
+                <MainContainer noContainerScroll={Boolean(noContainerScroll)}>
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
@@ -122,10 +104,15 @@ const Backstage = () => {
     );
 };
 
-const MainContainer = styled.div`
+const MainContainer = styled.div<{noContainerScroll: boolean}>`
     display: grid;
     grid-auto-flow: column;
     grid-template-columns: max-content auto;
+    ${({noContainerScroll}) => (noContainerScroll ? css`
+        height: 100%;
+    ` : css`
+        min-height: 100%;
+    `)}
 `;
 
 const Navbar = () => {

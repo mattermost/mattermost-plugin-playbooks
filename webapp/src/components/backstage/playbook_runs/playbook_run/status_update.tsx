@@ -240,7 +240,10 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                         </PostUpdateButton>
                     ) : null}
                     <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
+                        <DotMenu
+                            icon={<ThreeDotsIcon/>}
+                            placement='bottom-end'
+                        >
                             <DropdownItem
                                 onClick={onClickViewAllUpdates}
                                 disabled={playbookRun.status_posts.length === 0}
