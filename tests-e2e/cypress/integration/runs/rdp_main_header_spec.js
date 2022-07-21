@@ -153,7 +153,7 @@ describe('runs > run details page > header', () => {
 
             it('has not get-involved button', () => {
                 // * Assert button is not showed
-                getHeader().findByText('Start participating').should('not.exist');
+                getHeader().findByText('Participate').should('not.exist');
             });
 
             describe('run actions', () => {
@@ -428,21 +428,21 @@ describe('runs > run details page > header', () => {
         describe('title, icons and buttons', () => {
             commonHeaderTests();
 
-            describe('start participating', () => {
+            describe('Participate', () => {
                 it('shows button', () => {
                     // * Assert that the button is shown
-                    getHeader().findByText('Start participating').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
                 });
 
                 it('click button to show modal and cancel', () => {
                     // * Assert that component is rendered
-                    getHeader().findByText('Start participating').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // # Wait for useChannel
                     cy.wait(500);
 
-                    // * Click start participating button
-                    getHeader().findByText('Start participating').click();
+                    // * Click Participate button
+                    getHeader().findByText('Participate').click();
 
                     // # cancel modal
                     cy.get('#confirmModal').get('#cancelModalButton').click();
@@ -462,13 +462,13 @@ describe('runs > run details page > header', () => {
 
                 it('click button to show modal and confirm', () => {
                     // * Assert component is rendered
-                    getHeader().findByText('Start participating').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // # Wait for useChannel
                     cy.wait(500);
 
                     // * Click start-participating button
-                    getHeader().findByText('Start participating').click();
+                    getHeader().findByText('Participate').click();
 
                     // # confirm modal
                     cy.get('#confirmModal').get('#confirmModalButton').click();
@@ -507,13 +507,13 @@ describe('runs > run details page > header', () => {
                         cy.visit(`/playbooks/runs/${run.id}`);
 
                         // * Assert that component is rendered
-                        getHeader().findByText('Start participating').should('be.visible');
+                        getHeader().findByText('Participate').should('be.visible');
 
                         // # Wait for useChannel
                         cy.wait(500);
 
                         // # Click start-participating button
-                        getHeader().findByText('Start participating').click();
+                        getHeader().findByText('Participate').click();
 
                         // # confirm modal
                         cy.get('#confirmModal').get('#confirmModalButton').click();

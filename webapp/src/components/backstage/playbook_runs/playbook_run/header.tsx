@@ -141,7 +141,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
             {role === Role.Viewer &&
                 <GetInvolved onClick={onGetInvolved}>
                     <GetInvolvedIcon color={'var(--button-color)'}/>
-                    {formatMessage({defaultMessage: 'Start participating'})}
+                    {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
             }
             <RunActionsModal
