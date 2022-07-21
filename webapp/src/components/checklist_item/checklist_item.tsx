@@ -52,6 +52,7 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
+    channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -239,6 +240,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.disabled && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
+                        channelId={props.channelId}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
