@@ -187,7 +187,7 @@ export type PlaybookUpdates = {
 export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
-    playbooks: Array<Maybe<Playbook>>;
+    playbooks: Array<Playbook>;
 };
 
 export type QueryPlaybookArgs = {
@@ -214,6 +214,10 @@ export type UpdatePlaybookMutationVariables = Exact<{
 }>;
 
 export type UpdatePlaybookMutation = { __typename?: 'Mutation', updatePlaybook: string };
+
+export type PlaybookLhsQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type PlaybookLhsQuery = { __typename?: 'Query', playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -339,6 +343,43 @@ export function useUpdatePlaybookMutation(baseOptions?: Apollo.MutationHookOptio
 export type UpdatePlaybookMutationHookResult = ReturnType<typeof useUpdatePlaybookMutation>;
 export type UpdatePlaybookMutationResult = Apollo.MutationResult<UpdatePlaybookMutation>;
 export type UpdatePlaybookMutationOptions = Apollo.BaseMutationOptions<UpdatePlaybookMutation, UpdatePlaybookMutationVariables>;
+export const PlaybookLhsDocument = gql`
+    query PlaybookLHS {
+  playbooks {
+    id
+    title
+    isFavorite
+    public
+  }
+}
+    `;
+
+/**
+ * __usePlaybookLhsQuery__
+ *
+ * To run a query within a React component, call `usePlaybookLhsQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePlaybookLhsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePlaybookLhsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function usePlaybookLhsQuery(baseOptions?: Apollo.QueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<PlaybookLhsQuery, PlaybookLhsQueryVariables>(PlaybookLhsDocument, options);
+}
+export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<PlaybookLhsQuery, PlaybookLhsQueryVariables>(PlaybookLhsDocument, options);
+}
+export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
+export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
+export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

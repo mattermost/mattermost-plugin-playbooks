@@ -15,6 +15,7 @@ import {
 import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
@@ -50,6 +51,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
     const currentUserId = useSelector(getCurrentUserId);
+    const apolloClient = window.playbooksGraphqlClient;
 
     return useMemo(() => {
         function go(path: string, p?: TParam) {
@@ -92,6 +94,9 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     initialPlaybook.public = Boolean(params.public);
 
                     const data = await savePlaybook(initialPlaybook);
+                    apolloClient.refetchQueries({
+                        include: [PlaybookLhsDocument],
+                    });
                     return data?.id;
                 };
 

@@ -758,7 +758,7 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-enum ReservedCategory {
+export enum ReservedCategory {
     Favorite = 'Favorite',
     Runs = 'Runs',
     Playbooks = 'Playbooks'

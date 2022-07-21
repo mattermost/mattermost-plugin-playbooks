@@ -64,3 +64,12 @@ query Playbook($id: String!) {
 mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
 }
+
+query PlaybookLHS {
+	playbooks {
+		id
+		title
+		isFavorite
+		public
+	}
+}

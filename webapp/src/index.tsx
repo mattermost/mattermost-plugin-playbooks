@@ -287,6 +287,7 @@ export default class Plugin {
             link: new HttpLink({fetch: graphqlFetch}),
             cache: new InMemoryCache(),
         });
+        window.playbooksGraphqlClient = graphqlClient;
 
         this.doRegistrations(registry, store, graphqlClient);
 

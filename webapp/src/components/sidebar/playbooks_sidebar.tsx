@@ -7,11 +7,11 @@ import {useIntl} from 'react-intl';
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
 import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
-import {pluginUrl} from 'src/browser_routing';
-import {CategoryItem, CategoryItemType, Category} from 'src/types/category';
-import {useCategories, useReservedCategoryTitleMapper} from 'src/hooks';
+import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
-import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
+import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
+
+import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
 import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 
@@ -20,10 +20,11 @@ export const PlaybooksCategoryName = 'playbooksCategory';
 
 const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
-    const categories = useCategories(teamID);
+
+    //const categories = useCategories(teamID);
     const normalizeCategoryName = useReservedCategoryTitleMapper();
 
-    const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
+    /*const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
         const calculatedGroups = cats.map((category): SidebarGroup => {
             return {
                 collapsed: category.collapsed,
@@ -50,6 +51,58 @@ const PlaybooksSidebar = () => {
                 }) : [],
             };
         });
+        addViewAllsToGroups(calculatedGroups);
+        return calculatedGroups;
+    };*/
+    const {data, loading, error} = usePlaybookLhsQuery();
+
+    if (loading) {
+        return null;
+    }
+    if (error || !data) {
+        return null;
+    }
+
+    const playbookItems = data.playbooks.map((pb) => {
+        const icon = pb?.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
+        const link = `/playbooks/playbooks/${pb.id}`;
+
+        return {
+            areaLabel: pb?.title,
+            display_name: pb?.title,
+            id: pb?.id,
+            icon,
+            link,
+            isCollapsed: false,
+            itemMenu: null,
+            isFavorite: pb.isFavorite,
+            className: '',
+        };
+    });
+    const playbookFavorites = playbookItems.filter((group) => group.isFavorite);
+    const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
+
+    const getGroupsFromCategories = (): SidebarGroup[] => {
+        const calculatedGroups = [
+            {
+                collapsed: false,
+                display_name: normalizeCategoryName(ReservedCategory.Favorite),
+                id: ReservedCategory.Favorite,
+                items: playbookFavorites,
+            },
+            {
+                collapsed: false,
+                display_name: normalizeCategoryName(ReservedCategory.Runs),
+                id: ReservedCategory.Runs,
+                items: [],
+            },
+            {
+                collapsed: false,
+                display_name: normalizeCategoryName(ReservedCategory.Playbooks),
+                id: ReservedCategory.Playbooks,
+                items: playbooksWithoutFavorites,
+            },
+        ];
         addViewAllsToGroups(calculatedGroups);
         return calculatedGroups;
     };
@@ -103,7 +156,7 @@ const PlaybooksSidebar = () => {
         );
     };
 
-    const groups = getGroupsFromCategories(categories);
+    const groups = getGroupsFromCategories();
     return (
         <Sidebar
             groups={groups}

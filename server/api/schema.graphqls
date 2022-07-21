@@ -6,7 +6,7 @@ type Query {
 		direction: String = "ASC",
 		searchTerm: String = "",
 		withArchived: Boolean = false,
-	): [Playbook]!
+	): [Playbook!]!
 }
 
 type Mutation {
