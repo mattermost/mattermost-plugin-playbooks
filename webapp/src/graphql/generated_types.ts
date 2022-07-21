@@ -187,10 +187,19 @@ export type PlaybookUpdates = {
 export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
+    playbooks: Array<Maybe<Playbook>>;
 };
 
 export type QueryPlaybookArgs = {
     id: Scalars['String'];
+};
+
+export type QueryPlaybooksArgs = {
+    direction?: InputMaybe<Scalars['String']>;
+    searchTerm?: InputMaybe<Scalars['String']>;
+    sort?: InputMaybe<Scalars['String']>;
+    teamID?: InputMaybe<Scalars['String']>;
+    withArchived?: InputMaybe<Scalars['Boolean']>;
 };
 
 export type PlaybookQueryVariables = Exact<{

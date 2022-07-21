@@ -32,19 +32,56 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
-	isFavorite, err := c.categoryService.IsItemFavorite(
-		app.CategoryItem{
-			ItemID: playbookID,
-			Type:   app.PlaybookItemType,
-		},
-		playbook.TeamID,
-		userID,
-	)
+
+	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *RootResolver) Playbooks(ctx context.Context, args struct {
+	TeamID       string
+	Sort         string
+	Direction    string
+	SearchTerm   string
+	WithArchived bool
+}) ([]*PlaybookResolver, error) {
+	c, err := getContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't determine if item is favorite or not")
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if args.TeamID != "" {
+		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+			c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+			return nil, errors.New("Not authorized")
+		}
 	}
 
-	return &PlaybookResolver{playbook, isFavorite}, nil
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	opts := app.PlaybookFilterOptions{
+		Sort:         app.SortField(args.Sort),
+		Direction:    app.SortDirection(args.Direction),
+		SearchTerm:   args.SearchTerm,
+		WithArchived: args.WithArchived,
+		Page:         0,
+		PerPage:      10000,
+	}
+
+	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
+	for _, pb := range playbookResults.Items {
+		ret = append(ret, &PlaybookResolver{pb})
+	}
+
+	return ret, nil
 }
 
 type UpdateChecklist struct {

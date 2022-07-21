@@ -1,5 +1,12 @@
 type Query {
 	playbook(id: String!): Playbook
+	playbooks(
+		teamID: String = "",
+		sort: String = "title",
+		direction: String = "ASC",
+		searchTerm: String = "",
+		withArchived: Boolean = false,
+	): [Playbook]!
 }
 
 type Mutation {
