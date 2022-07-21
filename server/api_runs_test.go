@@ -1199,6 +1199,8 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := privateRun.TimelineEvents[len(privateRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
+		assert.NotZero(t, lastEvent.PostID)
 		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
 	})
 
