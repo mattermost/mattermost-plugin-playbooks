@@ -334,7 +334,7 @@ describe('runs > run details page > run info', () => {
                             cy.findByText(metric.title).click();
 
                             // # Type a value for the metric
-                            cy.focused().type(testData[metric.type].input);
+                            cy.focused().type(testData[metric.type].input, {delay: 100});
                         });
                     });
 
