@@ -29,11 +29,11 @@
     },
     {
         "id": "app.user.run.request_get_involved",
-        "translation": "@here — @{{.Name}} részt szeretne venni ebben a futásban. Ahhoz, hogy tagja lehessen a futásnak, kérjük, add hozzá őket ehhez a csatornához.\n"
+        "translation": "@here — @{{.Name}} részt szeretne venni ebben a futásban. Ahhoz, hogy résztvevők lehessenek, adja hozzá őket ehhez a csatornához.\n"
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} kért egy állapot frissítést.\n"
+        "translation": "@here — @{{.Name}} kért egy állapot frissítést. \n"
     },
     {
         "id": "app.user.digest.tasks.zero_assigned",
