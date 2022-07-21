@@ -15,6 +15,9 @@ import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
 import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 
+export const RunsCategoryName = 'runsCategory';
+export const PlaybooksCategoryName = 'playbooksCategory';
+
 const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
@@ -53,9 +56,9 @@ const PlaybooksSidebar = () => {
 
     const addViewAllsToGroups = (groups: SidebarGroup[]) => {
         for (let i = 0; i < groups.length; i++) {
-            if (groups[i].id === 'runsCategory') {
+            if (groups[i].id === RunsCategoryName) {
                 groups[i].afterGroup = viewAllRuns();
-            } else if (groups[i].id === 'playbooksCategory') {
+            } else if (groups[i].id === PlaybooksCategoryName) {
                 groups[i].afterGroup = viewAllPlaybooks();
             }
         }
@@ -105,7 +108,6 @@ const PlaybooksSidebar = () => {
         <Sidebar
             groups={groups}
             headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
-            onGroupClick={() => {/*empty*/}}
             team_id={teamID}
         />
     );
