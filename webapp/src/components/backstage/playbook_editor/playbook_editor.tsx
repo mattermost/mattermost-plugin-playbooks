@@ -2,12 +2,11 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
-import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
@@ -59,10 +58,6 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
-
-    const headingRef = useRef<HTMLDivElement>(null);
-    const headingIntersection = useIntersection(headingRef, {threshold: 1});
-    const headingVisible = headingIntersection?.isIntersecting ?? true;
 
     useEffect(() => {
         const teamId = playbook?.team_id;
@@ -117,7 +112,7 @@ const PlaybookEditor = () => {
     };
 
     return (
-        <Editor $headingVisible={headingVisible}>
+        <Editor>
             <TitleHeaderBackdrop/>
             <NavBackdrop/>
             <TitleBar>
@@ -154,9 +149,9 @@ const PlaybookEditor = () => {
                                     editTitle={edit}
                                     refetch={refetch}
                                 >
-                                    <Title>
+                                    <HeaderTitle data-testid={'playbook-editor-title'}>
                                         {playbook.title}
-                                    </Title>
+                                    </HeaderTitle>
                                 </Controls.TitleMenu>
                                 {privateTooltip}
                                 {archivedTooltip}
@@ -174,48 +169,15 @@ const PlaybookEditor = () => {
                     <Controls.RunPlaybook playbook={playbook}/>
                 </div>
             </TitleBar>
-            <Header ref={headingRef}>
-                <TextEdit
-                    placeholder={formatMessage({defaultMessage: 'Playbook name'})}
-                    value={playbook.title}
-                    onSave={(title) => updatePlaybook({title})}
-                    editStyles={css`
-                        input {
-                            ${titleCommon}
-                            font-size: 32px;
-                            line-height: 40px;
-                            height: 48px;
-                            margin: 6px 0;
-                            padding: 10px 16px;
-                            display: inline-flex;
-                            flex: 1 1 auto;
-                        }
-                        ${CancelSaveContainer} {
-                            padding: 0;
-                        }
-                        ${PrimaryButton}, ${TertiaryButton} {
-                            height: 48px;
-                            font-size: 16px;
-                        }
-                    `}
-                >
-                    {(edit) => (
-                        <Heading>
-                            <Controls.CopyPlaybook playbook={playbook}/>
-                            <Controls.TitleMenu
-                                playbook={playbook}
-                                editTitle={edit}
-                                refetch={refetch}
-                            >
-                                <span data-testid={'playbook-editor-title'}>
-                                    {playbook.title}
-                                </span>
-                            </Controls.TitleMenu>
-                            {privateTooltip}
-                            {archivedTooltip}
-                        </Heading>
-                    )}
-                </TextEdit>
+            <Header>
+                <Heading>
+                    <Controls.CopyPlaybook playbook={playbook}/>
+                    <Title>
+                        {playbook.title}
+                    </Title>
+                    {privateTooltip}
+                    {archivedTooltip}
+                </Heading>
                 <Description>
                     <MarkdownEdit
                         disabled={archived}
@@ -301,6 +263,7 @@ const TitleBar = styled.div`
         gap: 8px;
     }
     margin-bottom: 1px; // keeps box-shadow visible
+    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb),0.08);
 
     ${Controls.TitleButton} {
         padding-left: 8px;
@@ -366,7 +329,7 @@ const Heading = styled.h1`
     ${titleMenuOverrides}
 `;
 
-const Title = styled.h1`
+const HeaderTitle = styled.h1`
     ${SemiBoldHeading}
     letter-spacing: -0.01em;
     font-size: 16px;
@@ -377,6 +340,10 @@ const Title = styled.h1`
     margin: 0;
 
     ${titleMenuOverrides}
+`;
+
+const Title = styled.span`
+    padding-left: 16px;
 `;
 
 const Description = styled.div`
@@ -434,7 +401,7 @@ const TitleHeaderBackdrop = styled.div`
     grid-area: title/title/control/title;
 `;
 
-const Editor = styled.main<{$headingVisible: boolean}>`
+const Editor = styled.main`
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
@@ -499,21 +466,19 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     /* === scrolling, condense header/title === */
-    ${({$headingVisible}) => !$headingVisible && css`
-        @media screen and (min-width: 769px) {
-            // only on tablet-desktop
-            ${TitleBar} {
-                ${Controls.TitleMenu}, .indicator {
-                    display: inline-flex;
-                }
+    @media screen and (min-width: 769px) {
+        // only on tablet-desktop
+        ${TitleBar} {
+            ${Controls.TitleMenu}, .indicator {
+                display: inline-flex;
             }
         }
-        ${Controls.Back} {
-            span {
-                display: none;
-            }
+    }
+    ${Controls.Back} {
+        span {
+            display: none;
         }
-    `}
+    }
 
     /* === mobile === */
     @media screen and (max-width: 768px) {
