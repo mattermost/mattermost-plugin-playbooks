@@ -19,6 +19,7 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 
 import {useOnFinishRun} from './finish_run';
 
@@ -122,6 +123,9 @@ const useLeaveRun = (playbookRunId: string) => {
             addToast(formatMessage({defaultMessage: 'It was not possible to leave the run.'}), ToastType.Failure);
         } else {
             addToast(formatMessage({defaultMessage: 'You have successfully left the run.'}), ToastType.Success);
+            if (!response.has_view_permission) {
+                navigateToUrl(pluginUrl(''));
+            }
         }
     };
     const leaveRunConfirmModal = (

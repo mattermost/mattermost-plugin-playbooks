@@ -913,6 +913,14 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 		h.HandleError(w, err)
 		return
 	}
+
+	hasViewPermission := h.permissions.RunView(userID, playbookRunID) == nil
+
+	type RunPermission struct {
+		HasViewPermission bool `json:"has_view_permission"`
+	}
+
+	ReturnJSON(w, RunPermission{HasViewPermission: hasViewPermission}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
