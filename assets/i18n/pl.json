@@ -90,5 +90,9 @@
     {
         "id": "app.command.execute.error",
         "translation": "Nie można wykonać polecenia."
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here - @{.Name}} poprosił o aktualizację statusu.\n"
     }
 ]

@@ -73,7 +73,7 @@ const MetricsRunList = ({
             }
             {playbookRuns.length === 0 && isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no finished runs matching those filters.'}
+                    <FormattedMessage defaultMessage='There are no finished runs matching those filters.'/>
                 </div>
             }
             <InfiniteScroll

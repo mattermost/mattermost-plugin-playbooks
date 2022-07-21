@@ -125,7 +125,7 @@ const PlaybookEditor = () => {
                     <StarButton onClick={toggleFavorite}>
                         <FavoriteIcon
                             size={18}
-                            color={playbook.is_favorite ? 'var(--sidebar-text-active-border)' : ''}
+                            color={playbook.is_favorite ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                         />
                     </StarButton>
                     <TextEdit

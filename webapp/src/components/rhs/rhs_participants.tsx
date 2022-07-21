@@ -21,6 +21,7 @@ const RHSParticipants = (props: Props) => {
         return (
             <NoParticipants>
                 <FormattedMessage defaultMessage='Nobody yet.'/>
+                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                 {' '}
                 <AddParticipants/>
             </NoParticipants>
@@ -60,6 +61,7 @@ export const UserList = ({userIds, sizeInPx}: {userIds: string[], sizeInPx: numb
                 />
             ))}
             {userIds.length > 6 &&
+            // eslint-disable-next-line formatjs/no-literal-string-in-jsx
             <Rest sizeInPx={sizeInPx}>{'+' + (userIds.length - 6)}</Rest>
             }
         </>

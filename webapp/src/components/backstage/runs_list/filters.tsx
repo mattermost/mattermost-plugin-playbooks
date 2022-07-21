@@ -6,7 +6,7 @@ import debounce from 'debounce';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from '@mattermost/types/users';
@@ -51,7 +51,10 @@ const controlComponent = (ownProps: ControlComponentProps, filterName: string) =
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                {'Reset to all ' + filterName}
+                <FormattedMessage
+                    defaultMessage='Reset to all {filterName}'
+                    values={{filterName}}
+                />
             </ControlComponentAnchor>
         )}
     </div>
