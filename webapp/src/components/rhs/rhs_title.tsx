@@ -65,6 +65,7 @@ const RHSTitle = () => {
     return (
         <RHSTitleText>
             {/* product name; don't translate */}
+            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
             {'Playbooks'}
         </RHSTitleText>
     );

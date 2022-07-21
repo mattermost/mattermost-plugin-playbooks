@@ -261,7 +261,7 @@ describe('runs > run details page > header', () => {
                         cy.findByText('Broadcast update to selected channels').click();
 
                         // # Select a couple of channels
-                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Save the changes
                         saveRunActionsModal();
@@ -298,7 +298,7 @@ describe('runs > run details page > header', () => {
                         cy.findByText('Broadcast update to selected channels').click();
 
                         // # Select a couple of channels
-                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Disable broadcast to channels
                         cy.findByText('Broadcast update to selected channels').click();
