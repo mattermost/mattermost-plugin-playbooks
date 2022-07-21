@@ -84,6 +84,12 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
         addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 
+    const confirmGetInvolvedMessage = () => {
+        const commonMessage = formatMessage({defaultMessage: 'As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'});
+        const introMessage = channel === null ? formatMessage({defaultMessage: 'Request to participate in this run.'}) : formatMessage({defaultMessage: 'Become a participant of the run.'});
+        return introMessage + ' ' + commonMessage;
+    };
+
     // Favorite Button State
     const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
 
@@ -145,7 +151,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
             <ConfirmModal
                 show={showGetInvolvedConfirm}
                 title={formatMessage({defaultMessage: 'Participate in the run'})}
-                message={formatMessage({defaultMessage: 'Become a participant of the run. As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'})}
+                message={confirmGetInvolvedMessage()}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();
