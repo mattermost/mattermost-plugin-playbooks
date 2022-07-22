@@ -122,9 +122,9 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
     const onLeaveRun = async () => {
         const response = await leaveRun(playbookRun.id);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to leave the run.'}), ToastType.Failure);
+            addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
         } else {
-            addToast(formatMessage({defaultMessage: 'You have successfully left the run.'}), ToastType.Success);
+            addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
             if (!response.has_view_permission) {
                 navigateToUrl(pluginUrl(''));
             }
