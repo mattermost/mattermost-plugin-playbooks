@@ -78,7 +78,7 @@ export interface FetchPlaybooksParams {
     team_id?: string;
     page?: number;
     per_page?: number;
-    sort?: 'title' | 'stages' | 'steps' | 'runs';
+    sort?: 'title' | 'stages' | 'steps' | 'runs' | 'last_run_at';
     direction?: 'asc' | 'desc';
     search_term?: string;
     with_archived?: boolean;

@@ -60,6 +60,8 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "NumRuns"
 	case app.SortByCreateAt:
 		sort = "CreateAt"
+	case app.SortByLastRunAt:
+		sort = "LastRunAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
