@@ -170,6 +170,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
+                channelId={props.channelId}
                 assignee_id={assigneeID || ''}
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
