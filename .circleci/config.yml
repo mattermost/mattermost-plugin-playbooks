@@ -160,7 +160,7 @@ commands:
             cd tests-e2e
             SPECS=$(circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings | tr '\n' ',')
             SPECS=${SPECS::-1}
-            npm run test -- --spec "${SPECS}""
+            npm run test -- --spec "${SPECS}"
       - *save_cypress_cache
       - store_test_results:
           path: tests-e2e/cypress/results/junit
