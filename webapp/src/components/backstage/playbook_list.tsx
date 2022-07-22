@@ -126,7 +126,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [
         playbooks,
         {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
     ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
@@ -162,6 +162,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
+                onMembershipChanged={() => fetchPlaybooks()}
             />
         ));
     }

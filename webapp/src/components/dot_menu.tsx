@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useFloating, offset, flip, shift, Placement} from '@floating-ui/react-dom';
 
@@ -167,9 +167,15 @@ export const DisabledDropdownMenuItemStyled = styled.div`
     font-weight: normal;
     font-size: 14px;
     color: var(--center-channel-color-40);
-    padding: 10px 20px;
+    padding: 8px 20px;
     text-decoration: unset;
 }
+`;
+
+export const iconSplitStyling = css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
 `;
 
 export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {
