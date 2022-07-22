@@ -17,8 +17,8 @@ import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
-
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -82,8 +82,13 @@ const PlaybookRunDetails = () => {
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const channel = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
+    const {options, selectOption, eventsFilter, resetFilters} = useFilter();
 
     const RHS = useRHS(playbookRun);
+
+    useUpdateEffect(() => {
+        resetFilters();
+    }, [playbookRunId]);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
@@ -98,7 +103,6 @@ const PlaybookRunDetails = () => {
         if (!teamId) {
             return;
         }
-
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
@@ -149,7 +153,10 @@ const PlaybookRunDetails = () => {
                 role={role}
                 channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
-                onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
+                onViewTimeline={() => {
+                    selectOption('all', true);
+                    RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
+                }}
             />
         );
         break;
@@ -166,6 +173,9 @@ const PlaybookRunDetails = () => {
             <RHSTimeline
                 playbookRun={playbookRun}
                 role={role}
+                options={options}
+                selectOption={selectOption}
+                eventsFilter={eventsFilter}
             />
         );
         break;

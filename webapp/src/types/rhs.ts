@@ -56,7 +56,7 @@ export const TimelineEventsFilterDefault = {
     owner_changed: true,
     status_updated: true,
     event_from_post: true,
-    task_state_modified: false,
+    task_state_modified: true,
     assignee_changed: false,
     ran_slash_command: false,
     user_joined_left: false,
