@@ -475,6 +475,7 @@ const Row = styled.div`
 
     margin-left: 35px;
     margin-top: 8px;
+    margin-right: 10px;
 `;
 
 const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean}>`

@@ -172,12 +172,14 @@ function TextboxLinks({
             >
                 {!hideHelpText &&
                 <HelpText>
+                    {/* eslint-disable formatjs/no-literal-string-in-jsx */}
                     <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
                     <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
                     <span>{'~~'}<s>{formatMessage({defaultMessage: 'strike'})}</s>{'~~ '}</span>
                     <span>{'`'}{formatMessage({defaultMessage: 'inline code'})}{'`'}</span>
                     <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
                     <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
+                    {/* eslint-enable formatjs/no-literal-string-in-jsx */}
                 </HelpText>
                 }
             </div>

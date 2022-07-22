@@ -7,6 +7,7 @@ import {
     useMemo,
     useLayoutEffect,
 } from 'react';
+import {useIntl} from 'react-intl';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
@@ -755,4 +756,26 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
         setIsFavoriteRun(true);
     };
     return [isFavoriteRun, toggleFavorite];
+};
+
+enum ReservedCategory {
+    Favorite = 'Favorite',
+    Runs = 'Runs',
+    Playbooks = 'Playbooks'
+}
+
+export const useReservedCategoryTitleMapper = () => {
+    const {formatMessage} = useIntl();
+    return (categoryName: ReservedCategory | string) => {
+        switch (categoryName) {
+        case ReservedCategory.Favorite:
+            return formatMessage({defaultMessage: 'Favorites'});
+        case ReservedCategory.Runs:
+            return formatMessage({defaultMessage: 'Runs'});
+        case ReservedCategory.Playbooks:
+            return formatMessage({defaultMessage: 'Playbooks'});
+        default:
+            return categoryName;
+        }
+    };
 };
