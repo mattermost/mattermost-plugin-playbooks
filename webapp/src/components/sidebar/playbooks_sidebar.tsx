@@ -9,24 +9,25 @@ import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
 import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
 import {pluginUrl} from 'src/browser_routing';
 import {CategoryItem, CategoryItemType, Category} from 'src/types/category';
-import {useCategories} from 'src/hooks';
+import {useCategories, useReservedCategoryTitleMapper} from 'src/hooks';
 
 import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
 import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
-interface PlaybookSidebarProps {
-    team_id: string;
-}
 
-const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
+export const RunsCategoryName = 'runsCategory';
+export const PlaybooksCategoryName = 'playbooksCategory';
+
+const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const categories = useCategories(teamID);
+    const normalizeCategoryName = useReservedCategoryTitleMapper();
 
     const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
         const calculatedGroups = cats.map((category): SidebarGroup => {
             return {
                 collapsed: category.collapsed,
-                display_name: category.name,
+                display_name: normalizeCategoryName(category.name),
                 id: category.id,
                 items: category.items ? category.items.map((item: CategoryItem): GroupItem => {
                     let icon = <StyledPlaybookRunIcon/>;
@@ -55,9 +56,9 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
 
     const addViewAllsToGroups = (groups: SidebarGroup[]) => {
         for (let i = 0; i < groups.length; i++) {
-            if (groups[i].id === 'runsCategory') {
+            if (groups[i].id === RunsCategoryName) {
                 groups[i].afterGroup = viewAllRuns();
-            } else if (groups[i].id === 'playbooksCategory') {
+            } else if (groups[i].id === PlaybooksCategoryName) {
                 groups[i].afterGroup = viewAllPlaybooks();
             }
         }
@@ -71,7 +72,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
             <ItemContainer>
                 <StyledNavLink
                     id={'sidebarItem_view_all_runs'}
-                    aria-label={'View all runs'}
+                    aria-label={formatMessage({defaultMessage: 'View all runs'})}
                     data-testid={'playbookRunsLHSButton'}
                     to={'/playbooks/runs'}
                     exact={true}
@@ -89,7 +90,7 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
             <ItemContainer key={'sidebarItem_view_all_playbooks'}>
                 <StyledNavLink
                     id={'sidebarItem_view_all_playbooks'}
-                    aria-label={'View all playbooks'}
+                    aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
                     data-testid={'playbooksLHSButton'}
                     to={'/playbooks/playbooks'}
                     exact={true}
@@ -107,7 +108,6 @@ const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
         <Sidebar
             groups={groups}
             headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
-            onGroupClick={() => {/*empty*/}}
             team_id={teamID}
         />
     );

@@ -825,7 +825,11 @@ describe('playbooks > edit', () => {
                     cy.findByText(/off-topic/i).click();
 
                     cy.get('#status-updates').within(() => {
-                        cy.get('input[type=checkbox]').click({force: true});
+                        // # Click on the toggle to disable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle off
+                        cy.get('label input').should('not.be.checked');
                     });
 
                     // * Verify disabled status updates text

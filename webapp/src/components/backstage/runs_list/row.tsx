@@ -143,6 +143,7 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
+                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
                 <ProgressBar
                     completed={completedTasks}

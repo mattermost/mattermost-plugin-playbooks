@@ -240,6 +240,10 @@ describe('playbooks > edit_metrics', () => {
                     cy.findByText('Integer').click();
                 });
 
+                // Delay for the save/re-render triggered by line 240
+                // to finish before attempting to verifyViewMetric
+                cy.wait(500);
+
                 // * Verify metric was added without target or description.
                 verifyViewMetric(1, 'test currency!', '', '');
 

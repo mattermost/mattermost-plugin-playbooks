@@ -82,6 +82,12 @@ const (
 	eventRunAction         = "playbookrun_action"
 	actionRunAction        = "run_playbookrun_action"
 	actionRunActionsUpdate = "update_playbookrun_actions"
+
+	eventSidebarCategory     = "lhs_category"
+	actionFavoriteRun        = "favorite_run"
+	actionUnfavoriteRun      = "unfavorite_run"
+	actionFavoritePlaybook   = "favorite_playbook"
+	actionUnfavoritePlaybook = "unfavorite_playbook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -646,4 +652,34 @@ func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID 
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRunActionsUpdate
 	t.track(eventRunAction, properties)
+}
+
+// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionFavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionFavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
+}
+
+// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionUnfavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionUnfavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
 }

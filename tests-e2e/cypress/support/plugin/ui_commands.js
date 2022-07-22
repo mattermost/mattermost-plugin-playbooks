@@ -24,7 +24,8 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
-    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200}).type('{enter}');
+    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200});
+    cy.findByTestId('post_textbox').type('{enter}');
 });
 
 // Opens playbook run dialog using the `/playbook run` slash command

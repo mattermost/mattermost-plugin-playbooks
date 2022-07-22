@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {Channel} from '@mattermost/types/channels';
 
 import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_overview';
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
@@ -10,12 +11,12 @@ import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun, PlaybookRunStatus, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-
 interface Props {
     run: PlaybookRun;
     playbook?: PlaybookWithChecklist;
     runMetadata?: Metadata;
     role: Role;
+    channel: Channel | undefined | null;
     onViewParticipants: () => void;
     onViewTimeline: () => void;
 }
@@ -32,6 +33,7 @@ const RHSInfo = (props: Props) => {
                 runMetadata={props.runMetadata}
                 onViewParticipants={props.onViewParticipants}
                 editable={editable}
+                channel={props.channel}
             />
             <RHSInfoMetrics
                 runID={props.run.id}

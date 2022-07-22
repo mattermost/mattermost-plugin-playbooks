@@ -4,7 +4,7 @@
 import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
-import {useIntl} from 'react-intl';
+import {FormattedNumber, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
@@ -191,7 +191,10 @@ const percentageChange = (change: number) => {
     return (
         <PercentageChange>
             <i className={'icon ' + changeSymbol}/>
-            {change + '%'}
+            <FormattedNumber
+                value={change / 100}
+                style={'percent'}
+            />
         </PercentageChange>
     );
 };
