@@ -24,7 +24,6 @@ import {InfoLine} from './styles';
 
 interface Props {
     playbook: Playbook
-    displayTeam: boolean
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
@@ -101,10 +100,6 @@ const PlaybookListRow = (props: Props) => {
                 <ArchiveIcon className='icon icon-archive-outline'/>
             </Tooltip>
         ));
-    }
-
-    if (props.displayTeam) {
-        infos.push((<>{teamName}</>));
     }
 
     const [exportHref, exportFilename] = playbookExportProps(props.playbook);
