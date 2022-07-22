@@ -813,7 +813,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it('persists selected channels when status update toggle is off', () => {
+                it.only('persists selected channels when status update toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
@@ -824,9 +824,12 @@ describe('playbooks > edit', () => {
                     });
                     cy.findByText(/off-topic/i).click();
 
-                    cy.get('#status-updates').within(() => {
+                    // # Close the channel selector
+                    cy.findByText(/search for a channel/i).type('{esc}');
+
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
                         // # Click on the toggle to disable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').click();
 
                         // * Verify that the toggle off
                         cy.get('label input').should('not.be.checked');
@@ -838,8 +841,8 @@ describe('playbooks > edit', () => {
 
                     // # Turn the status update toggle back on
                     // * Verify there's still 1 channel selected
-                    cy.get('#status-updates').within(() => {
-                        cy.get('input[type=checkbox]').click({force: true});
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
+                        cy.get('label').click();
                         cy.findByText('1 channel').should('be.visible');
                     });
                 });
