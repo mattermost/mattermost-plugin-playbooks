@@ -153,7 +153,7 @@ describe('runs > run details page > header', () => {
 
             it('has not get-involved button', () => {
                 // * Assert button is not showed
-                getHeader().findByText('Get involved').should('not.exist');
+                getHeader().findByText('Participate').should('not.exist');
             });
 
             describe('run actions', () => {
@@ -261,7 +261,7 @@ describe('runs > run details page > header', () => {
                         cy.findByText('Broadcast update to selected channels').click();
 
                         // # Select a couple of channels
-                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Save the changes
                         saveRunActionsModal();
@@ -298,7 +298,7 @@ describe('runs > run details page > header', () => {
                         cy.findByText('Broadcast update to selected channels').click();
 
                         // # Select a couple of channels
-                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Disable broadcast to channels
                         cy.findByText('Broadcast update to selected channels').click();
@@ -428,21 +428,21 @@ describe('runs > run details page > header', () => {
         describe('title, icons and buttons', () => {
             commonHeaderTests();
 
-            describe('get involved', () => {
+            describe('Participate', () => {
                 it('shows button', () => {
                     // * Assert that the button is shown
-                    getHeader().findByText('Get involved').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
                 });
 
                 it('click button to show modal and cancel', () => {
                     // * Assert that component is rendered
-                    getHeader().findByText('Get involved').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // # Wait for useChannel
                     cy.wait(500);
 
-                    // * Click get involved button
-                    getHeader().findByText('Get involved').click();
+                    // * Click Participate button
+                    getHeader().findByText('Participate').click();
 
                     // # cancel modal
                     cy.get('#confirmModal').get('#cancelModalButton').click();
@@ -456,19 +456,19 @@ describe('runs > run details page > header', () => {
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert message has not been sent
-                        cy.getLastPost().should('not.contain', 'wants to get involved in this run.');
+                        cy.getLastPost().should('not.contain', 'wants to participate in this run.');
                     });
                 });
 
                 it('click button to show modal and confirm', () => {
                     // * Assert component is rendered
-                    getHeader().findByText('Get involved').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // # Wait for useChannel
                     cy.wait(500);
 
-                    // * Click get involved button
-                    getHeader().findByText('Get involved').click();
+                    // * Click start-participating button
+                    getHeader().findByText('Participate').click();
 
                     // # confirm modal
                     cy.get('#confirmModal').get('#confirmModalButton').click();
@@ -482,7 +482,7 @@ describe('runs > run details page > header', () => {
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert that message has been sent
-                        cy.getLastPost().contains('wants to get involved in this run.');
+                        cy.getLastPost().contains('wants to participate in this run.');
                     });
                 });
 
@@ -507,13 +507,13 @@ describe('runs > run details page > header', () => {
                         cy.visit(`/playbooks/runs/${run.id}`);
 
                         // * Assert that component is rendered
-                        getHeader().findByText('Get involved').should('be.visible');
+                        getHeader().findByText('Participate').should('be.visible');
 
                         // # Wait for useChannel
                         cy.wait(500);
 
-                        // # Click get involved button
-                        getHeader().findByText('Get involved').click();
+                        // # Click start-participating button
+                        getHeader().findByText('Participate').click();
 
                         // # confirm modal
                         cy.get('#confirmModal').get('#confirmModalButton').click();
@@ -528,7 +528,7 @@ describe('runs > run details page > header', () => {
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                         // * Assert that message has not been sent
-                        cy.getLastPost().should('not.contain', 'wants to get involved in this run.');
+                        cy.getLastPost().should('not.contain', 'wants to participate in this run');
                     });
                 });
             });

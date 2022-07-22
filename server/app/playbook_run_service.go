@@ -2689,18 +2689,21 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	data := map[string]interface{}{
 		"Name": requesterUser.Username,
 	}
-	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data)); err != nil {
+
+	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
+	if err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
 	// create timeline event
-	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
-		CreateAt:      eventTime,
-		EventAt:       eventTime,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
 		EventType:     StatusUpdateRequested,
+		PostID:        post.Id,
 		SubjectUserID: requesterID,
+		CreatorUserID: requesterID,
 		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
 	}
 

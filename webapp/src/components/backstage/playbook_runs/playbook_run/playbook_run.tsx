@@ -10,7 +10,7 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -80,6 +80,7 @@ const PlaybookRunDetails = () => {
     const playbook = usePlaybook(playbookRun?.playbook_id);
     const [metadata, metadataResult] = useRunMetadata(playbookRunId);
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
+    const channel = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
 
     const RHS = useRHS(playbookRun);
@@ -146,6 +147,7 @@ const PlaybookRunDetails = () => {
                 playbook={playbook ?? undefined}
                 runMetadata={metadata ?? undefined}
                 role={role}
+                channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
@@ -176,18 +178,19 @@ const PlaybookRunDetails = () => {
 
     return (
         <Container>
-            <MainWrapper isRHSOpen={RHS.isOpen}>
-                <Header isRHSOpen={RHS.isOpen}>
+            <MainWrapper>
+                <Header>
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
+                        channel={channel}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                     />
                 </Header>
-                <Main isRHSOpen={RHS.isOpen}>
+                <Main>
                     <Body>
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
@@ -250,42 +253,35 @@ const ColumnContainer = styled.div`
 `;
 
 const Container = styled(ColumnContainer)`
-    flex: 1;
-`;
-
-const MainWrapper = styled.div<{isRHSOpen: boolean}>`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 2fr minmax(400px, 1fr);
+    overflow-y: hidden;
 
     @media screen and (min-width: 1600px) {
-        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+        grid-auto-columns: 2.5fr 500px;
     }
 `;
 
-const Main = styled.main<{isRHSOpen: boolean}>`
-    max-width: 780px;
-    width: min(780px, 100%);
-    padding: 20px;
-    flex: 1;
-    margin: 40px auto;
-    display: flex;
-    flex-direction: column;
+const MainWrapper = styled.div`
+    display: grid;
+    grid-auto-flow: row;
+    overflow-y: hidden;
+`;
+
+const Main = styled.main`
+    min-height: 0;
+    padding: 0 20px 60px;
+    display: grid;
+    overflow-y: auto;
+    place-content: start center;
+    grid-auto-columns: min(780px, 100%);
 `;
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header<{isRHSOpen: boolean}>`
+const Header = styled.header`
     height: 56px;
     min-height: 56px;
-    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 711px)' : 'calc(100% - 311px)')};
-    z-index: 2;
-    position: fixed;
     background-color: var(--center-channel-bg);
-    display:flex;
-
-    @media screen and (min-width: 1600px) {
-        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 811px)' : 'calc(100% - 311px)')};
-    }
 `;

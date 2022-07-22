@@ -12,7 +12,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import Profile from 'src/components/profile/profile';
 import {useEnsureProfiles} from 'src/hooks';
@@ -139,7 +139,7 @@ interface UserLabelProps {
 const UserLabel = (props: UserLabelProps) => {
     let icon = <PlusIcon/>;
     if (props.invitedUsers.find((user: UserProfile) => user.id === props.id)) {
-        icon = <Remove onClick={props.onRemove}>{'Remove'}</Remove>;
+        icon = <Remove onClick={props.onRemove}><FormattedMessage defaultMessage='Remove'/></Remove>;
     }
 
     return (

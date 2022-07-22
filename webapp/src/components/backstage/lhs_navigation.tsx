@@ -14,7 +14,7 @@ const LHSContainer = styled.div`
 const LHSNavigation = () => {
     return (
         <LHSContainer>
-            <PlaybooksSidebar team_id=''/>
+            <PlaybooksSidebar/>
         </LHSContainer>
     );
 };

@@ -143,6 +143,9 @@ describe('runs > run details page > run info', () => {
             });
 
             it('click channel link navigates to run\'s channel', () => {
+                // * Assert channel name
+                getOverviewEntry('channel').contains('the run name');
+
                 // # Click on channel item
                 getOverviewEntry('channel').click();
 
@@ -331,7 +334,7 @@ describe('runs > run details page > run info', () => {
                             cy.findByText(metric.title).click();
 
                             // # Type a value for the metric
-                            cy.focused().type(testData[metric.type].input);
+                            cy.focused().type(testData[metric.type].input, {delay: 100});
                         });
                     });
 

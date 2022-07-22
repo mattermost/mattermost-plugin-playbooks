@@ -208,6 +208,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                                         ),
                                     }}
                                 />
+                                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 <span className='separator'>{'·'}</span>
                             </span>
                         </>
