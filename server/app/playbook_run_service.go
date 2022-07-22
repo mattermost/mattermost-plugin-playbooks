@@ -2752,6 +2752,11 @@ func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error 
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
+	// Check if user is an owner
+	if playbookRun.OwnerUserID == requesterID {
+		return errors.New("owner user can't leave the run")
+	}
+
 	// Check if user is not a member of the channel
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
 	if member == nil {

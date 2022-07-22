@@ -5,7 +5,8 @@ import styled from 'styled-components';
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
@@ -32,7 +33,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun.id);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun);
 
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
@@ -112,13 +113,14 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     );
 };
 
-const useLeaveRun = (playbookRunId: string) => {
+const useLeaveRun = (playbookRun: PlaybookRun) => {
     const {formatMessage} = useIntl();
+    const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
 
     const onLeaveRun = async () => {
-        const response = await leaveRun(playbookRunId);
+        const response = await leaveRun(playbookRun.id);
         if (response?.error) {
             addToast(formatMessage({defaultMessage: 'It was not possible to leave the run.'}), ToastType.Failure);
         } else {
@@ -145,6 +147,10 @@ const useLeaveRun = (playbookRunId: string) => {
     return {
         leaveRunConfirmModal,
         showLeaveRunConfirm: () => {
+            if (currentUserId === playbookRun.owner_user_id) {
+                addToast(formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}), ToastType.Failure);
+                return;
+            }
             setLeaveRunConfirm(true);
         },
     };
