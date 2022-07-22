@@ -7,6 +7,12 @@ type Query {
 		searchTerm: String = "",
 		withArchived: Boolean = false,
 	): [Playbook!]!
+
+	runs(
+		teamID: String = ""
+		statuses: [String!] = []
+		participantOrFollowerID: String = ""
+	): [Run!]!
 }
 
 type Mutation {
@@ -150,4 +156,10 @@ type PlaybookMetricConfig {
 	description: String!
 	type: MetricType!
 	target: Int
+}
+
+type Run {
+	id: String!
+	name: String!
+	isFavorite: Boolean!
 }

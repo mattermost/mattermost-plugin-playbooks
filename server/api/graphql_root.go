@@ -84,6 +84,44 @@ func (r *RootResolver) Playbooks(ctx context.Context, args struct {
 	return ret, nil
 }
 
+func (r *RootResolver) Runs(ctx context.Context, args struct {
+	TeamID                  string `url:"team_id,omitempty"`
+	Statuses                []string
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+}) ([]*RunResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	filterOptions := app.PlaybookRunFilterOptions{
+		TeamID:                  args.TeamID,
+		Statuses:                args.Statuses,
+		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		Page:                    0,
+		PerPage:                 10000,
+	}
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*RunResolver, 0, len(runResults.Items))
+	for _, run := range runResults.Items {
+		ret = append(ret, &RunResolver{run})
+	}
+
+	return ret, nil
+}
+
 type UpdateChecklist struct {
 	Title string                `json:"title"`
 	Items []UpdateChecklistItem `json:"items"`

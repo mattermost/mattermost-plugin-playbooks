@@ -11,6 +11,8 @@ import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 
+import {pluginUrl} from 'src/browser_routing';
+
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
 import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
@@ -64,13 +66,13 @@ const PlaybooksSidebar = () => {
     }
 
     const playbookItems = data.playbooks.map((pb) => {
-        const icon = pb?.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
+        const icon = pb.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
         const link = `/playbooks/playbooks/${pb.id}`;
 
         return {
-            areaLabel: pb?.title,
-            display_name: pb?.title,
-            id: pb?.id,
+            areaLabel: pb.title,
+            display_name: pb.title,
+            id: pb.id,
             icon,
             link,
             isCollapsed: false,
@@ -82,19 +84,37 @@ const PlaybooksSidebar = () => {
     const playbookFavorites = playbookItems.filter((group) => group.isFavorite);
     const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
 
+    const runItems = data.runs.map((run) => {
+        const icon = <StyledPlaybookRunIcon/>;
+        const link = pluginUrl(`/runs/${run.id}`);
+        return {
+            areaLabel: run.name,
+            display_name: run.name,
+            id: run.id,
+            icon,
+            link,
+            isCollapsed: false,
+            itemMenu: null,
+            isFavorite: run.isFavorite,
+            className: '',
+        };
+    });
+    const runFavorites = runItems.filter((group) => group.isFavorite);
+    const runsWithoutFavorites = runItems.filter((group) => !group.isFavorite);
+
     const getGroupsFromCategories = (): SidebarGroup[] => {
         const calculatedGroups = [
             {
                 collapsed: false,
                 display_name: normalizeCategoryName(ReservedCategory.Favorite),
                 id: ReservedCategory.Favorite,
-                items: playbookFavorites,
+                items: playbookFavorites.concat(runFavorites),
             },
             {
                 collapsed: false,
                 display_name: normalizeCategoryName(ReservedCategory.Runs),
                 id: ReservedCategory.Runs,
-                items: [],
+                items: runsWithoutFavorites,
             },
             {
                 collapsed: false,

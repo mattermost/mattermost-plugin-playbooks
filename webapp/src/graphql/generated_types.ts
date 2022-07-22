@@ -188,6 +188,7 @@ export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
     playbooks: Array<Playbook>;
+    runs: Array<Run>;
 };
 
 export type QueryPlaybookArgs = {
@@ -200,6 +201,19 @@ export type QueryPlaybooksArgs = {
     sort?: InputMaybe<Scalars['String']>;
     teamID?: InputMaybe<Scalars['String']>;
     withArchived?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type QueryRunsArgs = {
+    participantOrFollowerID?: InputMaybe<Scalars['String']>;
+    statuses?: InputMaybe<Array<Scalars['String']>>;
+    teamID?: InputMaybe<Scalars['String']>;
+};
+
+export type Run = {
+    __typename?: 'Run';
+    id: Scalars['String'];
+    isFavorite: Scalars['Boolean'];
+    name: Scalars['String'];
 };
 
 export type PlaybookQueryVariables = Exact<{
@@ -217,7 +231,7 @@ export type UpdatePlaybookMutation = { __typename?: 'Mutation', updatePlaybook: 
 
 export type PlaybookLhsQueryVariables = Exact<{ [key: string]: never; }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -345,6 +359,11 @@ export type UpdatePlaybookMutationResult = Apollo.MutationResult<UpdatePlaybookM
 export type UpdatePlaybookMutationOptions = Apollo.BaseMutationOptions<UpdatePlaybookMutation, UpdatePlaybookMutationVariables>;
 export const PlaybookLhsDocument = gql`
     query PlaybookLHS {
+  runs {
+    id
+    name
+    isFavorite
+  }
   playbooks {
     id
     title
