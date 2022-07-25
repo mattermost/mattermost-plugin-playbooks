@@ -322,6 +322,7 @@ describe('channels > general actions', () => {
 
             // # Save action
             cy.findByRole('button', {name: /save/i}).click();
+            cy.wait(5000);
 
             // # Switch to the additional channel
             cy.get('#sidebarItem_' + channel.name).click();

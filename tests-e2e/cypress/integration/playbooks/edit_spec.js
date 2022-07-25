@@ -813,7 +813,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it.only('persists selected channels when status update toggle is off', () => {
+                it('persists selected channels when status update toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
