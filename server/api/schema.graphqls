@@ -6,6 +6,7 @@ type Query {
 		direction: String = "ASC",
 		searchTerm: String = "",
 		withArchived: Boolean = false,
+		withMembershipOnly: Boolean = false,
 	): [Playbook!]!
 
 	runs(

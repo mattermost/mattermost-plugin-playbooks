@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -37,11 +38,12 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 }
 
 func (r *RootResolver) Playbooks(ctx context.Context, args struct {
-	TeamID       string
-	Sort         string
-	Direction    string
-	SearchTerm   string
-	WithArchived bool
+	TeamID             string
+	Sort               string
+	Direction          string
+	SearchTerm         string
+	WithMembershipOnly bool
+	WithArchived       bool
 }) ([]*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -63,12 +65,13 @@ func (r *RootResolver) Playbooks(ctx context.Context, args struct {
 	}
 
 	opts := app.PlaybookFilterOptions{
-		Sort:         app.SortField(args.Sort),
-		Direction:    app.SortDirection(args.Direction),
-		SearchTerm:   args.SearchTerm,
-		WithArchived: args.WithArchived,
-		Page:         0,
-		PerPage:      10000,
+		Sort:               app.SortField(args.Sort),
+		Direction:          app.SortDirection(args.Direction),
+		SearchTerm:         args.SearchTerm,
+		WithArchived:       args.WithArchived,
+		WithMembershipOnly: args.WithMembershipOnly,
+		Page:               0,
+		PerPage:            10000,
 	}
 
 	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
@@ -99,6 +102,10 @@ func (r *RootResolver) Runs(ctx context.Context, args struct {
 		UserID:  userID,
 		TeamID:  args.TeamID,
 		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	if args.ParticipantOrFollowerID == client.Me {
+		args.ParticipantOrFollowerID = userID
 	}
 
 	filterOptions := app.PlaybookRunFilterOptions{

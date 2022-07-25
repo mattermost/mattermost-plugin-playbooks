@@ -22,47 +22,24 @@ export const PlaybooksCategoryName = 'playbooksCategory';
 
 const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
-
-    //const categories = useCategories(teamID);
+    const {formatMessage} = useIntl();
     const normalizeCategoryName = useReservedCategoryTitleMapper();
+    const {data, loading, error} = usePlaybookLhsQuery({
+        variables: {
+            userID: 'me',
+            teamID,
+        },
+        fetchPolicy: 'cache-and-network',
+    });
 
-    /*const getGroupsFromCategories = (cats: Category[]): SidebarGroup[] => {
-        const calculatedGroups = cats.map((category): SidebarGroup => {
-            return {
-                collapsed: category.collapsed,
-                display_name: normalizeCategoryName(category.name),
-                id: category.id,
-                items: category.items ? category.items.map((item: CategoryItem): GroupItem => {
-                    let icon = <StyledPlaybookRunIcon/>;
-                    let link = pluginUrl(`/runs/${item.item_id}`);
-                    if (item.type === CategoryItemType.PlaybookItemType) {
-                        icon = item.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
-                        link = `/playbooks/playbooks/${item.item_id}`;
-                    }
-
-                    return {
-                        areaLabel: item.name,
-                        className: '',
-                        display_name: item.name,
-                        id: item.item_id,
-                        icon,
-                        isCollapsed: false,
-                        itemMenu: null,
-                        link,
-                    };
-                }) : [],
-            };
-        });
-        addViewAllsToGroups(calculatedGroups);
-        return calculatedGroups;
-    };*/
-    const {data, loading, error} = usePlaybookLhsQuery();
-
-    if (loading) {
-        return null;
-    }
-    if (error || !data) {
-        return null;
+    if (loading || error || !data) {
+        return (
+            <Sidebar
+                groups={[]}
+                headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
+                team_id={teamID}
+            />
+        );
     }
 
     const playbookItems = data.playbooks.map((pb) => {
@@ -103,13 +80,8 @@ const PlaybooksSidebar = () => {
     const runsWithoutFavorites = runItems.filter((group) => !group.isFavorite);
 
     const getGroupsFromCategories = (): SidebarGroup[] => {
-        const calculatedGroups = [
-            {
-                collapsed: false,
-                display_name: normalizeCategoryName(ReservedCategory.Favorite),
-                id: ReservedCategory.Favorite,
-                items: playbookFavorites.concat(runFavorites),
-            },
+        const allFavorites = playbookFavorites.concat(runFavorites);
+        let calculatedGroups = [
             {
                 collapsed: false,
                 display_name: normalizeCategoryName(ReservedCategory.Runs),
@@ -123,6 +95,16 @@ const PlaybooksSidebar = () => {
                 items: playbooksWithoutFavorites,
             },
         ];
+        if (allFavorites.length > 0) {
+            calculatedGroups = [
+                {
+                    collapsed: false,
+                    display_name: normalizeCategoryName(ReservedCategory.Favorite),
+                    id: ReservedCategory.Favorite,
+                    items: playbookFavorites.concat(runFavorites),
+                },
+            ].concat(calculatedGroups);
+        }
         addViewAllsToGroups(calculatedGroups);
         return calculatedGroups;
     };
@@ -137,7 +119,6 @@ const PlaybooksSidebar = () => {
         }
     };
 
-    const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
 
     const viewAllRuns = () => {

@@ -207,6 +207,7 @@ export type QueryPlaybooksArgs = {
     sort?: InputMaybe<Scalars['String']>;
     teamID?: InputMaybe<Scalars['String']>;
     withArchived?: InputMaybe<Scalars['Boolean']>;
+    withMembershipOnly?: InputMaybe<Scalars['Boolean']>;
 };
 
 export type QueryRunsArgs = {
@@ -239,7 +240,10 @@ export type UpdatePlaybookMutationVariables = Exact<{
 
 export type UpdatePlaybookMutation = { __typename?: 'Mutation', updatePlaybook: string };
 
-export type PlaybookLhsQueryVariables = Exact<{ [key: string]: never; }>;
+export type PlaybookLhsQueryVariables = Exact<{
+    userID: Scalars['String'];
+    teamID: Scalars['String'];
+}>;
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
@@ -375,13 +379,17 @@ export type UpdatePlaybookMutationHookResult = ReturnType<typeof useUpdatePlaybo
 export type UpdatePlaybookMutationResult = Apollo.MutationResult<UpdatePlaybookMutation>;
 export type UpdatePlaybookMutationOptions = Apollo.BaseMutationOptions<UpdatePlaybookMutation, UpdatePlaybookMutationVariables>;
 export const PlaybookLhsDocument = gql`
-    query PlaybookLHS {
-  runs {
+    query PlaybookLHS($userID: String!, $teamID: String!) {
+  runs(
+    participantOrFollowerID: $userID
+    teamID: $teamID
+    statuses: ["InProgress"]
+  ) {
     id
     name
     isFavorite
   }
-  playbooks {
+  playbooks(teamID: $teamID, withMembershipOnly: true) {
     id
     title
     isFavorite
@@ -402,10 +410,12 @@ export const PlaybookLhsDocument = gql`
  * @example
  * const { data, loading, error } = usePlaybookLhsQuery({
  *   variables: {
+ *      userID: // value for 'userID'
+ *      teamID: // value for 'teamID'
  *   },
  * });
  */
-export function usePlaybookLhsQuery(baseOptions?: Apollo.QueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
+export function usePlaybookLhsQuery(baseOptions: Apollo.QueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
     const options = {...defaultOptions, ...baseOptions};
     return Apollo.useQuery<PlaybookLhsQuery, PlaybookLhsQueryVariables>(PlaybookLhsDocument, options);
 }

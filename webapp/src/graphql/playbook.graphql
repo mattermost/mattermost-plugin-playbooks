@@ -65,13 +65,13 @@ mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
 }
 
-query PlaybookLHS {
-	runs {
+query PlaybookLHS($userID: String!, $teamID: String!) {
+	runs (participantOrFollowerID: $userID, teamID: $teamID, statuses: ["InProgress"]){
 		id
 		name
 		isFavorite
 	}
-	playbooks {
+	playbooks (teamID: $teamID, withMembershipOnly: true) {
 		id
 		title
 		isFavorite
