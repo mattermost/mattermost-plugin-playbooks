@@ -12,7 +12,7 @@ import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/s
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -25,11 +25,9 @@ import {
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
     SET_CLIENT_ID,
-    SET_PLAYBOOK_RUN_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
     SetClientId,
-    SetPlaybookRunEventsFilter,
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
@@ -276,12 +274,6 @@ export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedT
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({
     type: REMOVED_FROM_CHANNEL,
     channelId,
-});
-
-export const setPlaybookRunEventsFilter = (playbookRunId: string, nextState: TimelineEventsFilter): SetPlaybookRunEventsFilter => ({
-    type: SET_PLAYBOOK_RUN_EVENTS_FILTER,
-    playbookRunId,
-    nextState,
 });
 
 export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({

@@ -4,7 +4,7 @@
 import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {pluginId} from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -20,7 +20,6 @@ export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
-export const SET_PLAYBOOK_RUN_EVENTS_FILTER = pluginId + '_set_playbook_run_events_filter';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
@@ -93,12 +92,6 @@ export interface RemovedFromChannel {
 export interface SetRHSState {
     type: typeof SET_RHS_STATE;
     nextState: RHSState;
-}
-
-export interface SetPlaybookRunEventsFilter {
-    type: typeof SET_PLAYBOOK_RUN_EVENTS_FILTER;
-    playbookRunId: string;
-    nextState: TimelineEventsFilter;
 }
 
 export interface ReceivedGlobalSettings {
