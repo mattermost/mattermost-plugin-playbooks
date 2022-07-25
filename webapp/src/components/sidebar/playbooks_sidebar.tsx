@@ -24,7 +24,7 @@ const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const {formatMessage} = useIntl();
     const normalizeCategoryName = useReservedCategoryTitleMapper();
-    const {data, loading, error} = usePlaybookLhsQuery({
+    const {data, error} = usePlaybookLhsQuery({
         variables: {
             userID: 'me',
             teamID,
@@ -32,7 +32,7 @@ const PlaybooksSidebar = () => {
         fetchPolicy: 'cache-and-network',
     });
 
-    if (loading || error || !data) {
+    if (error || !data) {
         return (
             <Sidebar
                 groups={[]}
@@ -79,41 +79,11 @@ const PlaybooksSidebar = () => {
     const runFavorites = runItems.filter((group) => group.isFavorite);
     const runsWithoutFavorites = runItems.filter((group) => !group.isFavorite);
 
-    const getGroupsFromCategories = (): SidebarGroup[] => {
-        const allFavorites = playbookFavorites.concat(runFavorites);
-        let calculatedGroups = [
-            {
-                collapsed: false,
-                display_name: normalizeCategoryName(ReservedCategory.Runs),
-                id: ReservedCategory.Runs,
-                items: runsWithoutFavorites,
-            },
-            {
-                collapsed: false,
-                display_name: normalizeCategoryName(ReservedCategory.Playbooks),
-                id: ReservedCategory.Playbooks,
-                items: playbooksWithoutFavorites,
-            },
-        ];
-        if (allFavorites.length > 0) {
-            calculatedGroups = [
-                {
-                    collapsed: false,
-                    display_name: normalizeCategoryName(ReservedCategory.Favorite),
-                    id: ReservedCategory.Favorite,
-                    items: playbookFavorites.concat(runFavorites),
-                },
-            ].concat(calculatedGroups);
-        }
-        addViewAllsToGroups(calculatedGroups);
-        return calculatedGroups;
-    };
-
     const addViewAllsToGroups = (groups: SidebarGroup[]) => {
         for (let i = 0; i < groups.length; i++) {
-            if (groups[i].id === RunsCategoryName) {
+            if (groups[i].id === ReservedCategory.Runs) {
                 groups[i].afterGroup = viewAllRuns();
-            } else if (groups[i].id === PlaybooksCategoryName) {
+            } else if (groups[i].id === ReservedCategory.Playbooks) {
                 groups[i].afterGroup = viewAllPlaybooks();
             }
         }
@@ -157,7 +127,33 @@ const PlaybooksSidebar = () => {
         );
     };
 
-    const groups = getGroupsFromCategories();
+    const allFavorites = playbookFavorites.concat(runFavorites);
+    let groups = [
+        {
+            collapsed: false,
+            display_name: normalizeCategoryName(ReservedCategory.Runs),
+            id: ReservedCategory.Runs,
+            items: runsWithoutFavorites,
+        },
+        {
+            collapsed: false,
+            display_name: normalizeCategoryName(ReservedCategory.Playbooks),
+            id: ReservedCategory.Playbooks,
+            items: playbooksWithoutFavorites,
+        },
+    ];
+    if (allFavorites.length > 0) {
+        groups = [
+            {
+                collapsed: false,
+                display_name: normalizeCategoryName(ReservedCategory.Favorite),
+                id: ReservedCategory.Favorite,
+                items: playbookFavorites.concat(runFavorites),
+            },
+        ].concat(groups);
+    }
+    addViewAllsToGroups(groups);
+
     return (
         <Sidebar
             groups={groups}
