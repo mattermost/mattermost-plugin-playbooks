@@ -68,6 +68,10 @@ import {UpdateRequestPost} from 'src/components/update_request_post';
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
+// Global for use in gloablly mounted modals that won't work with react context.
+// Don't use this. If you need the client itself use `useApolloClient`.
+export let playbooksGraphqlClient: ApolloClient<NormalizedCacheObject>;
+
 const GlobalHeaderCenter = () => {
     return null;
 };
@@ -287,7 +291,9 @@ export default class Plugin {
             link: new HttpLink({fetch: graphqlFetch}),
             cache: new InMemoryCache(),
         });
-        window.playbooksGraphqlClient = graphqlClient;
+
+        // Store graphql client for bad modals.
+        playbooksGraphqlClient = graphqlClient;
 
         this.doRegistrations(registry, store, graphqlClient);
 
