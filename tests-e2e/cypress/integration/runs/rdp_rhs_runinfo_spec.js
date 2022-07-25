@@ -333,8 +333,13 @@ describe('runs > run details page > run info', () => {
                             // # Click on the metric row
                             cy.findByText(metric.title).click();
 
+                            // # Seems there's a re-render between clicking the title and
+                            // # typing that occasionally leads to dropped keystrokes in
+                            // # .type(). Wait for it to avoid.
+                            cy.wait(1000);
+
                             // # Type a value for the metric
-                            cy.focused().type(testData[metric.type].input, {delay: 100});
+                            cy.focused().type(testData[metric.type].input);
                         });
                     });
 
