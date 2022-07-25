@@ -69,6 +69,7 @@ export type Mutation = {
     deleteMetric: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
+    updateRun: Scalars['String'];
 };
 
 export type MutationAddMetricArgs = {
@@ -93,6 +94,11 @@ export type MutationUpdateMetricArgs = {
 export type MutationUpdatePlaybookArgs = {
     id: Scalars['String'];
     updates: PlaybookUpdates;
+};
+
+export type MutationUpdateRunArgs = {
+    id: Scalars['String'];
+    updates: RunUpdates;
 };
 
 export type Playbook = {
@@ -216,6 +222,10 @@ export type Run = {
     name: Scalars['String'];
 };
 
+export type RunUpdates = {
+    isFavorite?: InputMaybe<Scalars['Boolean']>;
+};
+
 export type PlaybookQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
@@ -232,6 +242,13 @@ export type UpdatePlaybookMutation = { __typename?: 'Mutation', updatePlaybook: 
 export type PlaybookLhsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+
+export type UpdateRunMutationVariables = Exact<{
+    id: Scalars['String'];
+    updates: RunUpdates;
+}>;
+
+export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -399,6 +416,38 @@ export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
 export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
 export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
+export const UpdateRunDocument = gql`
+    mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+  updateRun(id: $id, updates: $updates)
+}
+    `;
+export type UpdateRunMutationFn = Apollo.MutationFunction<UpdateRunMutation, UpdateRunMutationVariables>;
+
+/**
+ * __useUpdateRunMutation__
+ *
+ * To run a mutation, you first call `useUpdateRunMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateRunMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateRunMutation, { data, loading, error }] = useUpdateRunMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      updates: // value for 'updates'
+ *   },
+ * });
+ */
+export function useUpdateRunMutation(baseOptions?: Apollo.MutationHookOptions<UpdateRunMutation, UpdateRunMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<UpdateRunMutation, UpdateRunMutationVariables>(UpdateRunDocument, options);
+}
+export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation>;
+export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
+export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

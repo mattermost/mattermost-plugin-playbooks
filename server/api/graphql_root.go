@@ -325,6 +325,56 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	return args.ID, nil
 }
 
+func (r *RootResolver) UpdateRun(ctx context.Context, args struct {
+	ID      string
+	Updates struct {
+		IsFavorite *bool
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return playbookRun.ID, nil
+}
+
 func (r *RootResolver) AddMetric(ctx context.Context, args struct {
 	PlaybookID  string
 	Title       string
