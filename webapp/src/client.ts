@@ -754,7 +754,7 @@ export const requestGetInvolved = async (playbookRunId: string) => {
 
 export const leaveRun = async (playbookRunId: string) => {
     try {
-        return await doDelete(`${apiUrl}/runs/${playbookRunId}/leave`);
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/leave`);
     } catch (error) {
         return {error};
     }

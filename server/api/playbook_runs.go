@@ -76,7 +76,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-get-involved", handler.requestGetInvolved).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/leave", handler.leave).Methods(http.MethodDelete)
+	playbookRunRouter.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -899,7 +899,7 @@ func (h *PlaybookRunHandler) requestGetInvolved(w http.ResponseWriter, r *http.R
 	}
 }
 
-// leave handles the DELETE request /runs/{id}/leave endpoint, caller user will be removed from participants.
+// leave handles the POST request /runs/{id}/leave endpoint, caller user will be removed from participants.
 func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
