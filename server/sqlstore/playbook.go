@@ -1079,16 +1079,59 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 		From("IR_Playbook as p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
 		Where(sq.And{
-			sq.Eq{"p.ID": accessiblePlaybooks},
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+			sq.Or{
+				sq.Eq{"p.ID": accessiblePlaybooks},
+				sq.And{
+					sq.Eq{"p.Public": "true"},
+					sq.Eq{"p.TeamID": teamID},
+				},
+			},
 		}).
 		GroupBy("p.ID").
 		OrderBy("NumRuns desc").
 		Offset(uint64(offset)).
 		Limit(uint64(limit))
 
-	qs, args, _ := query.ToSql()
-	fmt.Println(qs, args)
+	topPlaybooksList := make([]*app.PlaybookInsight, 0)
+	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get top playbooks for for user: %s", userID)
+	}
+
+	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
+
+	return topPlaybooks, nil
+}
+
+func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*app.PlaybooksInsightsList, error) {
+	offset := opts.Page * opts.PerPage
+	limit := opts.PerPage
+	query := p.queryBuilder.
+		Select(
+			"p.ID as PlaybookID",
+			"p.Title",
+			"COUNT(i.ID) AS NumRuns",
+			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+		).
+		From("IR_Playbook as p").
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		LeftJoin("IR_PlaybookMember as pm on pm.PlaybookID = p.ID").
+		Where(sq.And{
+			sq.Eq{"pm.MemberID": userID},
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+			sq.Or{
+				sq.Eq{"p.ID": accessiblePlaybooks},
+				sq.And{
+					sq.Eq{"p.Public": "true"},
+					sq.Eq{"p.TeamID": teamID},
+				},
+			},
+		}).
+		GroupBy("p.ID").
+		OrderBy("NumRuns desc").
+		Offset(uint64(offset)).
+		Limit(uint64(limit))
 
 	topPlaybooksList := make([]*app.PlaybookInsight, 0)
 	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)

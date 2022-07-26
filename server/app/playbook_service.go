@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -188,6 +190,7 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 // get top playbooks for teams
 func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
 	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
+	fmt.Println(accessiblePlaybooks, "top team")
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
 	}
@@ -195,6 +198,11 @@ func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *mo
 }
 
 // get top playbooks for users
-// func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) {
-
-// }
+func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
+	fmt.Println(accessiblePlaybooks, "top user")
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
+	}
+	return s.store.GetTopPlaybooksForUser(teamID, userID, opts, accessiblePlaybooks)
+}

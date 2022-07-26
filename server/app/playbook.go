@@ -311,7 +311,7 @@ type PlaybookService interface {
 	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// Get top playbooks for users
-	// GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -379,7 +379,7 @@ type PlaybookStore interface {
 	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
 
 	// Get top playbooks for users
-	// GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
