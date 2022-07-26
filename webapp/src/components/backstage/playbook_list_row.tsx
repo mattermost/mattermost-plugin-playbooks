@@ -215,7 +215,7 @@ const PlaybookListRow = (props: Props) => {
                     '-'
                 )}
             </PlaybookItemRow>
-            <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.active_runs}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol
                 css={`

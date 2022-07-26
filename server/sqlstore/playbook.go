@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -62,7 +63,7 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "CreateAt"
 	case app.SortByLastRunAt:
 		sort = "LastRunAt"
-	case "":
+	case "", app.SortByActiveRuns:
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
 	default:
@@ -380,6 +381,44 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	return playbooks, nil
 }
 
+func (p *playbookStore) populateActiveRuns(playbooks []app.Playbook) error {
+	ids := make([]string, len(playbooks))
+	for _, pb := range playbooks {
+		ids = append(ids, pb.ID)
+	}
+
+	activeRunsSelect := p.store.builder.
+		Select(
+			"p.ID",
+			"COUNT(i.ID) AS ActiveRuns",
+		).
+		From("IR_Playbook AS p").
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		Where(sq.And{
+			sq.Eq{"i.CurrentStatus": app.StatusInProgress},
+			sq.Eq{"p.ID": ids},
+		}).
+		GroupBy("p.ID")
+
+	var pActiveRuns []struct {
+		ID         string
+		ActiveRuns int64
+	}
+	if err := p.store.selectBuilder(p.store.db, &pActiveRuns, activeRunsSelect); err != nil {
+		return errors.Wrap(err, "failed to get active runs for playbooks")
+	}
+
+	for i, playbook := range playbooks {
+		for _, pActiveRun := range pActiveRuns {
+			if playbook.ID == pActiveRun.ID {
+				playbooks[i].ActiveRuns = pActiveRun.ActiveRuns
+				continue
+			}
+		}
+	}
+	return nil
+}
+
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
@@ -495,6 +534,21 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 
 	addMembersToPlaybooks(members, playbooks)
 	addMetricsToPlaybooks(metrics, playbooks)
+
+	if err := p.populateActiveRuns(playbooks); err != nil {
+		return app.GetPlaybooksResults{}, err
+	}
+	if opts.Sort == app.SortByActiveRuns {
+		var mult int64
+		if opts.Direction == app.DirectionAsc {
+			mult = -1
+		} else if opts.Direction == app.DirectionDesc {
+			mult = 1
+		}
+		sort.Slice(playbooks, func(p, q int) bool {
+			return (playbooks[p].ActiveRuns-playbooks[q].ActiveRuns)*mult > 0
+		})
+	}
 
 	pageCount := 0
 	if opts.PerPage > 0 {

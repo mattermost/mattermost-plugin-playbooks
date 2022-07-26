@@ -284,10 +284,10 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={'Tasks'}
+                                name={formatMessage({defaultMessage: 'Active Runs'})}
                                 direction={params.direction}
-                                active={params.sort === 'steps'}
-                                onClick={() => sortBy('steps')}
+                                active={params.sort === 'active_runs'}
+                                onClick={() => sortBy('active_runs')}
                             />
                         </div>
                         <div className='col-sm-2'>
