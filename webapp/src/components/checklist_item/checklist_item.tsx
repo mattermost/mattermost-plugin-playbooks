@@ -200,7 +200,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
-        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+
+        // if task is done hide due date info
+        if (!isTaskOpenOrInProgress) {
+            return null;
+        }
+        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
             return null;
         }
 
