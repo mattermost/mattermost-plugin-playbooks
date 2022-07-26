@@ -7,7 +7,7 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-import {StarIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
@@ -51,7 +51,6 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
     };
 
     const onFinishRun = useOnFinishRun(playbookRun);
-    const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
 
     return (
         <>
@@ -65,65 +64,50 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
                     </>
                 }
             >
-                <DropdownMenuItem onClick={toggleFavorite}>
-                    <FavoriteIcon
-                        size={18}
-                        css={'margin-right: 11px'}
-                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
-                    />
-                    {isFavoriteRun ? formatMessage({defaultMessage: 'Unfavorite'}) : formatMessage({defaultMessage: 'Favorite'})}
-                </DropdownMenuItem>
+                <StyledDropdownMenuItem onClick={toggleFavorite}>
+                    {isFavoriteRun ? (
+                        <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
+                    ) : (
+                        <><StarIcon size={18}/>{formatMessage({defaultMessage: 'Favorite'})}</>
+                    )}
+                </StyledDropdownMenuItem>
                 <Separator/>
 
-                <DropdownMenuItem
+                <StyledDropdownMenuItem
                     onClick={() => {
                         copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >
-                    <LinkVariantIcon
-                        size={18}
-                        css={'margin-right: 11px'}
-                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
-                    />
+                    <LinkVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Copy link'/>
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                </StyledDropdownMenuItem>
+                <StyledDropdownMenuItem
                     onClick={() => dispatch(showRunActionsModal())}
                 >
-                    <LightningBoltOutlineIcon
-                        size={18}
-                        css={'margin-right: 11px'}
-                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
-                    />
+                    <LightningBoltOutlineIcon size={18}/>
                     <FormattedMessage defaultMessage='Run actions'/>
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                </StyledDropdownMenuItem>
+                <StyledDropdownMenuItem
                     disabled={!exportAvailable}
                     disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
                     onClick={onExportClick}
                 >
                     <ArrowDownIcon
                         size={18}
-                        css={'margin-right: 11px'}
-                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
                     />
                     <FormattedMessage defaultMessage='Export channel log'/>
-                </DropdownMenuItem>
+                </StyledDropdownMenuItem>
                 {
                     playbookRunIsActive(playbookRun) && role === Role.Participant &&
                         <>
                             <Separator/>
-                            <DropdownMenuItem
+                            <StyledDropdownMenuItem
                                 onClick={onFinishRun}
                             >
-                                <FlagOutlineIcon
-                                    size={18}
-                                    css={'margin-right: 11px'}
-                                    color={'rgb(var(--center-channel-color-rgb), 0.56)'}
-                                />
+                                <FlagOutlineIcon size={18}/>
                                 <FormattedMessage defaultMessage='Finish run'/>
-                            </DropdownMenuItem>
+                            </StyledDropdownMenuItem>
                         </>
                 }
                 {
@@ -131,11 +115,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
                     <>
                         <Separator/>
                         <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
-                            <CloseIcon
-                                size={18}
-                                css={'margin-right: 11px'}
-                                color={'var(--dnd-indicator)'}
-                            />
+                            <CloseIcon size={18}/>
                             <FormattedMessage defaultMessage='Leave run'/>
                         </StyledDropdownMenuItemRed>
                     </>
@@ -194,15 +174,28 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
     };
 };
 
-const StyledDropdownMenuItemRed = styled(DropdownMenuItem)`
+const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
     align-items: center;
+
+    svg {
+        margin-right: 11px;
+        fill: rgb(var(--center-channel-color-rgb), 0.56);
+    }
+`;
+const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
     && {
         color: var(--dnd-indicator);
 
         :hover {
             background: var(--dnd-indicator);
             color: var(--button-color);
+        }
+    }
+    svg{
+        fill: var(--dnd-indicator);
+        :hover {
+            fill: var(--button-color);
         }
     }
 `;
