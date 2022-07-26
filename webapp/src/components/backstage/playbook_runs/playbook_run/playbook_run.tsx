@@ -275,6 +275,7 @@ const Container = styled(ColumnContainer)`
 
 const MainWrapper = styled.div`
     display: grid;
+    grid-template-rows: 56px 1fr;
     grid-auto-flow: row;
     overflow-y: hidden;
 `;
