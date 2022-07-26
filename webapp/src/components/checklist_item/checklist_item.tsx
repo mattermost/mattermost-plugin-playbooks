@@ -52,6 +52,7 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
+    channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -169,6 +170,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
+                channelId={props.channelId}
                 assignee_id={assigneeID || ''}
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
@@ -198,7 +200,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
-        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+
+        // if task is done hide due date info
+        if (!isTaskOpenOrInProgress) {
+            return null;
+        }
+        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
             return null;
         }
 
@@ -239,6 +246,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.disabled && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
+                        channelId={props.channelId}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}

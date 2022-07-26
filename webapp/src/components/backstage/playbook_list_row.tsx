@@ -42,13 +42,12 @@ import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
 
 interface Props {
-    playbook: Playbook;
-    displayTeam: boolean;
-    onClick: () => void;
-    onEdit: () => void;
-    onArchive: () => void;
-    onRestore: () => void;
-    onDuplicate: () => void;
+    playbook: Playbook
+    onClick: () => void
+    onEdit: () => void
+    onArchive: () => void
+    onRestore: () => void
+    onDuplicate: () => void
     onMembershipChanged: (joined: boolean) => void;
 }
 

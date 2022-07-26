@@ -105,10 +105,10 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here – @{{.Name}} je zatražio/la aktualiziranje stanja.\n"
+        "translation": "@here – @{{.Name}} je zatražio/la aktualiziranje stanja. \n"
     },
     {
         "id": "app.user.run.request_get_involved",
-        "translation": "@here – @{{.Name}} želi sudjelovati u ovom izvođenju. Da bi postali članovi izvođenja, dodaj ih na ovaj kanal.\n"
+        "translation": "@here – @{{.Name}} želi sudjelovati u ovom izvođenju. Da bi postali članovi izvođenja, dodaj ih ovom kanalu.\n"
     }
 ]

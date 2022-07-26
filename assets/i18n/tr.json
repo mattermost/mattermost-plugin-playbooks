@@ -87,10 +87,10 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} bir durum güncellemesi istedi.\n"
+        "translation": "@here — @{{.Name}} bir durum güncellemesi istedi. \n"
     },
     {
         "id": "app.user.run.request_get_involved",
-        "translation": "@here — @{{.Name}} bu oyuna katılmak istiyor. Oyunun bir üyesi olabilmesi için lütfen onu bu kanala ekleyin.\n"
+        "translation": "@here — @{{.Name}} bu oyuna katılmak istiyor. Oyuna katılabilmesi için lütfen onu bu kanala ekleyin.\n"
     }
 ]
