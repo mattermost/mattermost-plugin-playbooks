@@ -16,7 +16,7 @@ import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookLhsDocument} from 'src/graphql/generated_types';
-import {playbooksGraphqlClient} from 'src/index';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
@@ -94,7 +94,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     initialPlaybook.public = Boolean(params.public);
 
                     const data = await savePlaybook(initialPlaybook);
-                    playbooksGraphqlClient.refetchQueries({
+                    getPlaybooksGraphQLClient().refetchQueries({
                         include: [PlaybookLhsDocument],
                     });
                     return data?.id;
