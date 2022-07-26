@@ -93,9 +93,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
                     disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
                     onClick={onExportClick}
                 >
-                    <ArrowDownIcon
-                        size={18}
-                    />
+                    <ArrowDownIcon size={18}/>
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </StyledDropdownMenuItem>
                 {
