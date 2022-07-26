@@ -5,19 +5,22 @@ import styled from 'styled-components';
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl} from 'src/client';
+import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
-import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
-import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 
 import {useOnFinishRun} from './finish_run';
 
@@ -30,6 +33,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun);
 
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
@@ -80,11 +84,23 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                 </DropdownMenuItem>
                 {
                     playbookRunIsActive(playbookRun) && role === Role.Participant &&
-                    <DropdownMenuItem
-                        onClick={onFinishRun}
-                    >
-                        <FormattedMessage defaultMessage='Finish run'/>
-                    </DropdownMenuItem>
+                        <>
+                            <Separator/>
+                            <DropdownMenuItem
+                                onClick={onFinishRun}
+                            >
+                                <FormattedMessage defaultMessage='Finish run'/>
+                            </DropdownMenuItem>
+                        </>
+                }
+                {
+                    role === Role.Participant &&
+                    <>
+                        <Separator/>
+                        <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
+                            <FormattedMessage defaultMessage='Leave run'/>
+                        </StyledDropdownMenuItemRed>
+                    </>
                 }
             </DotMenu>
             <UpgradeModal
@@ -92,9 +108,64 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                 show={showModal}
                 onHide={() => setShowModal(false)}
             />
+            {leaveRunConfirmModal}
         </>
     );
 };
+
+const useLeaveRun = (playbookRun: PlaybookRun) => {
+    const {formatMessage} = useIntl();
+    const currentUserId = useSelector(getCurrentUserId);
+    const addToast = useToaster().add;
+    const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
+
+    const onLeaveRun = async () => {
+        const response = await leaveRun(playbookRun.id);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
+        } else {
+            addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
+            if (!response.has_view_permission) {
+                navigateToUrl(pluginUrl(''));
+            }
+        }
+    };
+    const leaveRunConfirmModal = (
+        <ConfirmModal
+            show={showLeaveRunConfirm}
+            title={formatMessage({defaultMessage: 'Confirm leave'})}
+            message={formatMessage({defaultMessage: 'Are you sure you want to leave the run?'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Leave'})}
+            onConfirm={() => {
+                onLeaveRun();
+                setLeaveRunConfirm(false);
+            }}
+            onCancel={() => setLeaveRunConfirm(false)}
+        />
+    );
+
+    return {
+        leaveRunConfirmModal,
+        showLeaveRunConfirm: () => {
+            if (currentUserId === playbookRun.owner_user_id) {
+                addToast(formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}), ToastType.Failure);
+                return;
+            }
+            setLeaveRunConfirm(true);
+        },
+    };
+};
+
+const StyledDropdownMenuItemRed = styled(DropdownMenuItem)`
+ && {
+    color: var(--dnd-indicator);
+
+    :hover {
+        background: var(--dnd-indicator);
+        color: var(--button-color);
+    }    
+}    
+`;
 
 const Title = styled.h1`
     ${SemiBoldHeading}
