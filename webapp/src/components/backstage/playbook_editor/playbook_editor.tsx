@@ -585,7 +585,9 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 export const StarButton = styled.button`
     border-radius: 4px;
     border: 0;
-    padding: 12px 0 10px 0;
+    display: flex;
+    height: 24px;
+    align-items: center;
     background: none;
     margin: 0 6px;
 
