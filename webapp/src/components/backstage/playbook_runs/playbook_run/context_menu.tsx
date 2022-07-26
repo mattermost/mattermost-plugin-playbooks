@@ -7,6 +7,7 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
+import {StarIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
@@ -27,14 +28,15 @@ import {useOnFinishRun} from './finish_run';
 interface Props {
     playbookRun: PlaybookRun;
     role: Role;
+    isFavoriteRun: boolean;
+    toggleFavorite: () => void;
 }
 
-export const ContextMenu = ({playbookRun, role}: Props) => {
+export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun);
-
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
@@ -49,6 +51,7 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
     };
 
     const onFinishRun = useOnFinishRun(playbookRun);
+    const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
 
     return (
         <>
@@ -62,17 +65,37 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                     </>
                 }
             >
+                <DropdownMenuItem onClick={toggleFavorite}>
+                    <FavoriteIcon
+                        size={18}
+                        css={'margin-right: 11px'}
+                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                    />
+                    {isFavoriteRun ? formatMessage({defaultMessage: 'Unfavorite'}) : formatMessage({defaultMessage: 'Favorite'})}
+                </DropdownMenuItem>
+                <Separator/>
+
                 <DropdownMenuItem
                     onClick={() => {
                         copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >
+                    <LinkVariantIcon
+                        size={18}
+                        css={'margin-right: 11px'}
+                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                    />
                     <FormattedMessage defaultMessage='Copy link'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => dispatch(showRunActionsModal())}
                 >
+                    <LightningBoltOutlineIcon
+                        size={18}
+                        css={'margin-right: 11px'}
+                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                    />
                     <FormattedMessage defaultMessage='Run actions'/>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -80,6 +103,11 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                     disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
                     onClick={onExportClick}
                 >
+                    <ArrowDownIcon
+                        size={18}
+                        css={'margin-right: 11px'}
+                        color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                    />
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </DropdownMenuItem>
                 {
@@ -89,6 +117,11 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                             <DropdownMenuItem
                                 onClick={onFinishRun}
                             >
+                                <FlagOutlineIcon
+                                    size={18}
+                                    css={'margin-right: 11px'}
+                                    color={'rgb(var(--center-channel-color-rgb), 0.56)'}
+                                />
                                 <FormattedMessage defaultMessage='Finish run'/>
                             </DropdownMenuItem>
                         </>
@@ -98,6 +131,11 @@ export const ContextMenu = ({playbookRun, role}: Props) => {
                     <>
                         <Separator/>
                         <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
+                            <CloseIcon
+                                size={18}
+                                css={'margin-right: 11px'}
+                                color={'var(--dnd-indicator)'}
+                            />
                             <FormattedMessage defaultMessage='Leave run'/>
                         </StyledDropdownMenuItemRed>
                     </>
@@ -157,14 +195,16 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
 };
 
 const StyledDropdownMenuItemRed = styled(DropdownMenuItem)`
- && {
-    color: var(--dnd-indicator);
+    display: flex;
+    align-items: center;
+    && {
+        color: var(--dnd-indicator);
 
-    :hover {
-        background: var(--dnd-indicator);
-        color: var(--button-color);
-    }    
-}    
+        :hover {
+            background: var(--dnd-indicator);
+            color: var(--button-color);
+        }
+    }
 `;
 
 const Title = styled.h1`

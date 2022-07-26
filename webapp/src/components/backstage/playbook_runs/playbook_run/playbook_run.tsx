@@ -277,6 +277,7 @@ const MainWrapper = styled.div`
     display: grid;
     grid-auto-flow: row;
     overflow-y: hidden;
+    place-content: start;
 `;
 
 const Main = styled.main`

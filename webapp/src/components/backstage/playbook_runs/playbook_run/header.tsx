@@ -104,6 +104,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
             <ContextMenu
                 playbookRun={playbookRun}
                 role={role}
+                isFavoriteRun={isFavoriteRun}
+                toggleFavorite={toggleFavorite}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
