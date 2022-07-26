@@ -265,7 +265,6 @@ func (p *Plugin) OnActivate() error {
 
 	enableMetrics := p.API.GetConfig().MetricsSettings.Enable
 	if enableMetrics != nil && *enableMetrics {
-
 		// run metrics server to expose data
 		p.runMetricsServer()
 		// run metrics updater recurring task
