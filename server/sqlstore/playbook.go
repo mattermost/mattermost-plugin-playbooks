@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"strings"
 
@@ -1061,4 +1062,61 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	}
 
 	return p, nil
+}
+
+// insights - store manager functions
+
+func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*app.PlaybooksInsightsList, error) {
+	offset := opts.Page * opts.PerPage
+	limit := opts.PerPage
+	query := p.queryBuilder.
+		Select(
+			"p.ID as PlaybookID",
+			"p.Title",
+			"COUNT(i.ID) AS NumRuns",
+			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+		).
+		From("IR_Playbook as p").
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		Where(sq.And{
+			sq.Eq{"p.ID": accessiblePlaybooks},
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+		}).
+		GroupBy("p.ID").
+		OrderBy("NumRuns desc").
+		Offset(uint64(offset)).
+		Limit(uint64(limit))
+
+	qs, args, _ := query.ToSql()
+	fmt.Println(qs, args)
+
+	topPlaybooksList := make([]*app.PlaybookInsight, 0)
+	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get top playbooks for for user: %s", userID)
+	}
+
+	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
+
+	return topPlaybooks, nil
+}
+
+func BoardInsightsFromJSON(data io.Reader) []app.PlaybookInsight {
+	var playbookInsights []app.PlaybookInsight
+	_ = json.NewDecoder(data).Decode(&playbookInsights)
+	return playbookInsights
+}
+
+// GetTopBoardInsightsListWithPagination adds a rank to each item in the given list of PlaybooksInsight and checks if there is
+// another page that can be fetched based on the given limit and offset. The given list of PlaybooksInsight is assumed to be
+// sorted by Runs(score). Returns a PlaybooksInsightsList.
+func GetTopPlaybooksInsightsListWithPagination(boards []*app.PlaybookInsight, limit int) *app.PlaybooksInsightsList {
+	// Add pagination support
+	var hasNext bool
+	if (limit != 0) && (len(boards) == limit+1) {
+		hasNext = true
+		boards = boards[:len(boards)-1]
+	}
+
+	return &app.PlaybooksInsightsList{InsightsListData: model.InsightsListData{HasNext: hasNext}, Items: boards}
 }

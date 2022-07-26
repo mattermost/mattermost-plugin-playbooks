@@ -184,3 +184,17 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 
 	return s.Create(newPlaybook, userID)
 }
+
+// get top playbooks for teams
+func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
+	}
+	return s.store.GetTopPlaybooksForTeam(teamID, userID, opts, accessiblePlaybooks)
+}
+
+// get top playbooks for users
+// func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) {
+
+// }
