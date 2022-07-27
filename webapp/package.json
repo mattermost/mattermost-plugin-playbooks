@@ -154,7 +154,7 @@
       "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//types/src/$1"
     },
     "moduleDirectories": [
-      "",
+      "<rootDir>",
       "node_modules",
       "non_npm_dependencies"
     ],
