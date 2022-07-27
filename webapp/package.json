@@ -155,7 +155,7 @@
       "^@mattermost/client": "<rootDir>/node_modules/mattermost-webapp/packages/client/src"
     },
     "moduleDirectories": [
-      "",
+      "<rootDir>",
       "node_modules",
       "non_npm_dependencies"
     ],
