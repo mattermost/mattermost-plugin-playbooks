@@ -1884,3 +1884,172 @@ func setupPlaybookStore(t *testing.T, db *sqlx.DB) app.PlaybookStore {
 
 	return NewPlaybookStore(pluginAPIClient, logger, sqlStore)
 }
+
+func TestGetTopPlaybooks(t *testing.T) {
+	for _, driverName := range driverNames {
+		team1id := model.NewId()
+		team2id := model.NewId()
+
+		jon := userInfo{
+			ID:   model.NewId(),
+			Name: "jon",
+		}
+
+		matt := userInfo{
+			ID:   model.NewId(),
+			Name: "Matt",
+		}
+
+		desmond := userInfo{
+			ID:   model.NewId(),
+			Name: "Desmond",
+		}
+		fmt.Println(jon.ID, matt.ID, desmond.ID)
+
+		pb01 := NewPBBuilder().
+			WithTitle("playbook 1").
+			WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
+			WithTeamID(team1id).
+			WithCreateAt(500).
+			WithChecklists([]int{1, 2}).
+			WithMembers([]userInfo{jon, matt, desmond}).
+			ToPlaybook()
+
+		pb02 := NewPBBuilder().
+			WithTitle("playbook 2").
+			WithTeamID(team1id).
+			WithCreateAt(600).
+			WithChecklists([]int{1, 4, 6, 7, 1}). // 19
+			WithMembers([]userInfo{matt}).
+			WithMetrics([]string{"name11", "name12"}).
+			ToPlaybook()
+
+		pb03 := NewPBBuilder().
+			WithTitle("playbook 3").
+			WithTeamID(team2id).
+			WithChecklists([]int{1, 2, 3}).
+			WithCreateAt(700).
+			WithMembers([]userInfo{jon, matt}).
+			WithMetrics([]string{"name14", "name12", "name13", "name11"}).
+			ToPlaybook()
+
+		pb04 := NewPBBuilder().
+			WithTitle("playbook 4").
+			WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
+			WithTeamID(team1id).
+			WithCreateAt(800).
+			WithChecklists([]int{20}).
+			WithMembers([]userInfo{matt}).
+			WithCreatePublicPlaybook(true).
+			WithMetrics([]string{"name17"}).
+			ToPlaybook()
+
+		playbooks := []app.Playbook{pb01, pb02, pb03, pb04}
+
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+
+		// create playbooks
+		createPlaybooks := func(store app.PlaybookStore) {
+			t.Helper()
+
+			for index, p := range playbooks {
+				p.ID = ""
+				playbookCreatedId, err := store.Create(p)
+				playbooks[index].ID = playbookCreatedId
+				require.NoError(t, err)
+			}
+		}
+		createPlaybooks(playbookStore)
+		playbookRuns := []*app.PlaybookRun{
+			NewBuilder(t).WithName("pb01-0").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-1").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-2").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-3").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-0").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-1").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-2").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-3").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-4").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-5").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-0").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-1").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-2").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb04-0").WithPlaybookID(playbooks[3].ID).WithCreateAt(400).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb04-1").WithPlaybookID(playbooks[3].ID).WithCreateAt(400).ToPlaybookRun(),
+		}
+		// create playbook runs
+		for _, playbookRun := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(playbookRun)
+			require.NoError(t, err)
+		}
+
+		t.Run(driverName+" - get top team playbooks", func(t *testing.T) {
+			// for jon
+			accessiblePlaybooks := []string{playbooks[0].ID}
+			topPlaybooks, err := playbookStore.GetTopPlaybooksForTeam(team1id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100}, accessiblePlaybooks)
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 2)
+			// fmt.Println(topPlaybooks.Items)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[3].ID)
+
+			// for matt
+			accessiblePlaybooks = []string{playbooks[0].ID, playbooks[1].ID, playbooks[3].ID}
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForTeam(team1id, matt.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100}, accessiblePlaybooks)
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 3)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 6)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[1].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[2].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
+		})
+
+		t.Run(driverName+" - get top user playbooks", func(t *testing.T) {
+			// for jon
+			accessiblePlaybooks := []string{playbooks[0].ID}
+			topPlaybooks, err := playbookStore.GetTopPlaybooksForUser(team1id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100}, accessiblePlaybooks)
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 1)
+			// fmt.Println(topPlaybooks.Items)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[0].ID)
+
+			// for team 2
+			accessiblePlaybooks = []string{playbooks[2].ID}
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForUser(team1id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100}, accessiblePlaybooks)
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 1)
+			// fmt.Println(topPlaybooks.Items)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 3)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[2].ID)
+
+			// for matt
+			accessiblePlaybooks = []string{playbooks[0].ID, playbooks[1].ID, playbooks[3].ID}
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForUser(team1id, matt.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100}, accessiblePlaybooks)
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 3)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 6)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[1].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[2].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
+		})
+	}
+}

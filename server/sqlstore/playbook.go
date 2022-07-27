@@ -1083,7 +1083,7 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 			sq.Or{
 				sq.Eq{"p.ID": accessiblePlaybooks},
 				sq.And{
-					sq.Eq{"p.Public": "true"},
+					sq.Eq{"p.Public": true},
 					sq.Eq{"p.TeamID": teamID},
 				},
 			},
@@ -1116,17 +1116,9 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 		).
 		From("IR_Playbook as p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
-		LeftJoin("IR_PlaybookMember as pm on pm.PlaybookID = p.ID").
 		Where(sq.And{
-			sq.Eq{"pm.MemberID": userID},
+			sq.Eq{"p.ID": accessiblePlaybooks},
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
-			sq.Or{
-				sq.Eq{"p.ID": accessiblePlaybooks},
-				sq.And{
-					sq.Eq{"p.Public": "true"},
-					sq.Eq{"p.TeamID": teamID},
-				},
-			},
 		}).
 		GroupBy("p.ID").
 		OrderBy("NumRuns desc").
