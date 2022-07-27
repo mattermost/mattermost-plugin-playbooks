@@ -263,12 +263,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	// run metrics server to expose data
-	p.runMetricsServer()
-	// run metrics updater recurring task
-	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
-	// set error counter middleware handler
-	p.handler.APIRouter.Use(p.getErrorCounterHandler())
+	enableMetrics := p.API.GetConfig().MetricsSettings.Enable
+	if enableMetrics != nil && *enableMetrics {
+		// run metrics server to expose data
+		p.runMetricsServer()
+		// run metrics updater recurring task
+		p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+		// set error counter middleware handler
+		p.handler.APIRouter.Use(p.getErrorCounterHandler())
+	}
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -332,6 +335,8 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 }
 
 func (p *Plugin) runMetricsServer() {
+	p.pluginAPI.Log.Info("Starting Playbooks metrics server", "port", metricsExposePort)
+
 	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
 	// Run server to expose metrics
 	go func() {

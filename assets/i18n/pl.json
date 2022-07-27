@@ -93,6 +93,10 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here - @{.Name}} poprosił o aktualizację statusu.\n"
+        "translation": "@here - @{.Name}} poprosił o aktualizację statusu. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here - @{.Name}} chce wziąć udział w tym uruchomieniu. Aby uwzględnić ich jako uczestników, dodaj ich do tego kanału.\n"
     }
 ]
