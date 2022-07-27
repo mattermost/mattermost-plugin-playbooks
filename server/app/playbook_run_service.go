@@ -2568,6 +2568,19 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
+	if playbookRunToPublish.StatusUpdateBroadcastChannelsEnabled {
+		T := i18n.GetUserTranslations(publisherUser.Locale)
+		data := map[string]interface{}{
+			"Name": publisherUser.Username,
+			"URL":  retrospectiveURL + "#playbook-run-retrospective",
+		}
+
+		clonePost := post.Clone()
+		clonePost.Message = T("app.user.run.retro_publish", data)
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToPublish.BroadcastChannelIDs, clonePost, retroMessage, playbookRunToPublish)
+		s.telemetry.RunAction(playbookRunToPublish, publisherID, TriggerTypeRetroPublished, ActionTypeBroadcastChannels, len(playbookRunToPublish.BroadcastChannelIDs))
+	}
+
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
 	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
 	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
