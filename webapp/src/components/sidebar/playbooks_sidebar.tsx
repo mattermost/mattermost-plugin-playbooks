@@ -20,9 +20,7 @@ import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
 
-const PlaybooksSidebar = () => {
-    const teamID = useSelector(getCurrentTeamId);
-    const {formatMessage} = useIntl();
+const useLHSData = (teamID: string) => {
     const normalizeCategoryName = useReservedCategoryTitleMapper();
     const {data, error} = usePlaybookLhsQuery({
         variables: {
@@ -33,13 +31,7 @@ const PlaybooksSidebar = () => {
     });
 
     if (error || !data) {
-        return (
-            <Sidebar
-                groups={[]}
-                headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
-                team_id={teamID}
-            />
-        );
+        return {groups: [], ready: false};
     }
 
     const playbookItems = data.playbooks.map((pb) => {
@@ -79,54 +71,6 @@ const PlaybooksSidebar = () => {
     const runFavorites = runItems.filter((group) => group.isFavorite);
     const runsWithoutFavorites = runItems.filter((group) => !group.isFavorite);
 
-    const addViewAllsToGroups = (groups: SidebarGroup[]) => {
-        for (let i = 0; i < groups.length; i++) {
-            if (groups[i].id === ReservedCategory.Runs) {
-                groups[i].afterGroup = viewAllRuns();
-            } else if (groups[i].id === ReservedCategory.Playbooks) {
-                groups[i].afterGroup = viewAllPlaybooks();
-            }
-        }
-    };
-
-    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
-
-    const viewAllRuns = () => {
-        return (
-            <ItemContainer>
-                <StyledNavLink
-                    id={'sidebarItem_view_all_runs'}
-                    aria-label={formatMessage({defaultMessage: 'View all runs'})}
-                    data-testid={'playbookRunsLHSButton'}
-                    to={'/playbooks/runs'}
-                    exact={true}
-                >
-                    <StyledItemDisplayLabel>
-                        {viewAllMessage}
-                    </StyledItemDisplayLabel>
-                </StyledNavLink>
-            </ItemContainer>
-        );
-    };
-
-    const viewAllPlaybooks = () => {
-        return (
-            <ItemContainer key={'sidebarItem_view_all_playbooks'}>
-                <StyledNavLink
-                    id={'sidebarItem_view_all_playbooks'}
-                    aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
-                    data-testid={'playbooksLHSButton'}
-                    to={'/playbooks/playbooks'}
-                    exact={true}
-                >
-                    <StyledItemDisplayLabel>
-                        {viewAllMessage}
-                    </StyledItemDisplayLabel>
-                </StyledNavLink>
-            </ItemContainer>
-        );
-    };
-
     const allFavorites = playbookFavorites.concat(runFavorites);
     let groups = [
         {
@@ -152,6 +96,74 @@ const PlaybooksSidebar = () => {
             },
         ].concat(groups);
     }
+
+    return {groups, ready: true};
+};
+
+const ViewAllRuns = () => {
+    const {formatMessage} = useIntl();
+    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+    return (
+        <ItemContainer>
+            <StyledNavLink
+                id={'sidebarItem_view_all_runs'}
+                aria-label={formatMessage({defaultMessage: 'View all runs'})}
+                data-testid={'playbookRunsLHSButton'}
+                to={'/playbooks/runs'}
+                exact={true}
+            >
+                <StyledItemDisplayLabel>
+                    {viewAllMessage}
+                </StyledItemDisplayLabel>
+            </StyledNavLink>
+        </ItemContainer>
+    );
+};
+
+const ViewAllPlaybooks = () => {
+    const {formatMessage} = useIntl();
+    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+    return (
+        <ItemContainer key={'sidebarItem_view_all_playbooks'}>
+            <StyledNavLink
+                id={'sidebarItem_view_all_playbooks'}
+                aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
+                data-testid={'playbooksLHSButton'}
+                to={'/playbooks/playbooks'}
+                exact={true}
+            >
+                <StyledItemDisplayLabel>
+                    {viewAllMessage}
+                </StyledItemDisplayLabel>
+            </StyledNavLink>
+        </ItemContainer>
+    );
+};
+
+const addViewAllsToGroups = (groups: SidebarGroup[]) => {
+    for (let i = 0; i < groups.length; i++) {
+        if (groups[i].id === ReservedCategory.Runs) {
+            groups[i].afterGroup = ViewAllRuns;
+        } else if (groups[i].id === ReservedCategory.Playbooks) {
+            groups[i].afterGroup = ViewAllPlaybooks;
+        }
+    }
+};
+
+const PlaybooksSidebar = () => {
+    const teamID = useSelector(getCurrentTeamId);
+    const {groups, ready} = useLHSData(teamID);
+
+    if (!ready) {
+        return (
+            <Sidebar
+                groups={[]}
+                headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
+                team_id={teamID}
+            />
+        );
+    }
+
     addViewAllsToGroups(groups);
 
     return (
