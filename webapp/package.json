@@ -114,7 +114,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "2.3.1",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#6dcac2993000139f19c1b018f7fa6b9266973918",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#d8bddcdb1334a9c778d90a87e7f2dad22584c494",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
@@ -151,7 +151,8 @@
       "^bundle-loader\\?lazy\\!(.*)$": "$1",
       "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src",
       "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1",
-      "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//types/src/$1"
+      "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/types/src/$1",
+      "^@mattermost/client": "<rootDir>/node_modules/mattermost-webapp/packages/client/src"
     },
     "moduleDirectories": [
       "",

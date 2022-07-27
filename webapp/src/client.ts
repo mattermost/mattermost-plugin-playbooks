@@ -9,7 +9,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
@@ -591,9 +591,9 @@ export const requestTrialLicense = async (users: number, action: string) => {
     trackRequestTrialLicense(action);
 
     try {
-        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
-            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
-        });
+        const response = await doPost(`${Client4.getBaseRoute()}/trial-license`, JSON.stringify(
+            {users, terms_accepted: true, receive_emails_accepted: true}
+        ));
         return {data: response};
     } catch (e) {
         return {error: e.message};
