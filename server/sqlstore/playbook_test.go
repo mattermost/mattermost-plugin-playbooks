@@ -1956,8 +1956,8 @@ func TestGetTopPlaybooks(t *testing.T) {
 
 			for index, p := range playbooks {
 				p.ID = ""
-				playbookCreatedId, err := store.Create(p)
-				playbooks[index].ID = playbookCreatedId
+				playbookCreatedID, err := store.Create(p)
+				playbooks[index].ID = playbookCreatedID
 				require.NoError(t, err)
 			}
 		}
