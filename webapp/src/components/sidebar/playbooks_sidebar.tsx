@@ -143,9 +143,9 @@ const ViewAllPlaybooks = () => {
 const addViewAllsToGroups = (groups: SidebarGroup[]) => {
     for (let i = 0; i < groups.length; i++) {
         if (groups[i].id === ReservedCategory.Runs) {
-            groups[i].afterGroup = ViewAllRuns;
+            groups[i].afterGroup = <ViewAllRuns/>;
         } else if (groups[i].id === ReservedCategory.Playbooks) {
-            groups[i].afterGroup = ViewAllPlaybooks;
+            groups[i].afterGroup = <ViewAllPlaybooks/>;
         }
     }
 };
