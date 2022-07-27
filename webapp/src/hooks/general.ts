@@ -53,8 +53,6 @@ import {
     fetchPlaybookStats,
     fetchPlaybookRunMetadata,
     isFavoriteItem,
-    favoriteItem,
-    unfavoriteItem,
 } from 'src/client';
 import {CategoryItemType} from 'src/types/category';
 
@@ -64,6 +62,7 @@ import {
     isCurrentUserAdmin,
 } from '../selectors';
 import {resolve} from 'src/utils';
+import {useUpdateRun} from 'src/graphql/hooks';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -739,6 +738,7 @@ export const useExportLogAvailable = () => {
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+    const updateRun = useUpdateRun(runID);
 
     useEffect(() => {
         isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
@@ -748,17 +748,17 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
 
     const toggleFavorite = () => {
         if (isFavoriteRun) {
-            unfavoriteItem(teamID, runID, CategoryItemType.RunItemType);
+            updateRun({isFavorite: false});
             setIsFavoriteRun(false);
             return;
         }
-        favoriteItem(teamID, runID, CategoryItemType.RunItemType);
+        updateRun({isFavorite: true});
         setIsFavoriteRun(true);
     };
     return [isFavoriteRun, toggleFavorite];
 };
 
-enum ReservedCategory {
+export enum ReservedCategory {
     Favorite = 'Favorite',
     Runs = 'Runs',
     Playbooks = 'Playbooks'
