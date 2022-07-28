@@ -312,16 +312,3 @@ func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	}
 	return map[string]interface{}{"payload": string(payloadJSON)}
 }
-
-// DM posts a simple Direct Message to the specified user
-func (b *Bot) dmAdmins(format string, args ...interface{}) error {
-	for _, id := range b.configService.GetConfiguration().AllowedUserIDs {
-		err := b.DM(id, &model.Post{
-			Message: fmt.Sprintf(format, args...),
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}

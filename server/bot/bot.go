@@ -81,13 +81,3 @@ func New(api *pluginapi.Client, botUserID string, configService config.Service, 
 		telemetry:     telemetry,
 	}
 }
-
-// Clone shallow copies
-func (b *Bot) clone() *Bot {
-	return &Bot{
-		configService: b.configService,
-		pluginAPI:     b.pluginAPI,
-		botUserID:     b.botUserID,
-		telemetry:     b.telemetry,
-	}
-}
