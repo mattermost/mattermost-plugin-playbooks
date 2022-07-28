@@ -114,7 +114,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "2.3.1",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#9ec5599ba9206bc73237de63e6c38ac8c96fdfc2",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#874e86e221ef080dc7bd6480b15952443243eea2",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
