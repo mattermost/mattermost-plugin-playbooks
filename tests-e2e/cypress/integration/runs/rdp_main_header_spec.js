@@ -7,7 +7,7 @@
 // ***************************************************************
 import {stubClipboard} from '../../utils';
 
-export const CHANNEL_BROADCAST_TEXT = 'Broadcast to selected channels';
+const getBroadcastSection = () => cy.findByText('Broadcast to selected channels');
 
 describe('runs > run details page > header', () => {
     let testTeam;
@@ -212,7 +212,7 @@ describe('runs > run details page > header', () => {
                             openRunActionsModal();
 
                             // * Verify that the broadcast-to-channels toggle is checked
-                            cy.findByText(CHANNEL_BROADCAST_TEXT).parent().within(() => {
+                            getBroadcastSection().parent().within(() => {
                                 cy.get('input').should('be.checked');
                             });
 
@@ -235,7 +235,7 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
@@ -260,7 +260,7 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
@@ -297,13 +297,13 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Disable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Save the changes
                         saveRunActionsModal();
@@ -341,7 +341,7 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
@@ -378,13 +378,13 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Disable broadcast to channels
-                        cy.findByText(CHANNEL_BROADCAST_TEXT).click();
+                        getBroadcastSection().click();
 
                         // # Save the changes
                         saveRunActionsModal();

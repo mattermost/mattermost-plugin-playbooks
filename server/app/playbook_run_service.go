@@ -2572,7 +2572,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		T := i18n.GetUserTranslations(publisherUser.Locale)
 		data := map[string]interface{}{
 			"Name": publisherUser.Username,
-			"URL":  retrospectiveURL + "#playbook-run-retrospective",
+			"URL":  retrospectiveURL,
 		}
 
 		clonePost := post.Clone()
