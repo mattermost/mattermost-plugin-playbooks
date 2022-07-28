@@ -10,8 +10,6 @@ replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
 replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220512052723-ea98f9f4a9dc
 
-replace github.com/mattermost/mattermost-plugin-api => github.com/mattermost/mattermost-plugin-api v0.0.28-0.20220622150143-980bc9a8097d
-
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/blang/semver v3.5.1+incompatible
@@ -21,8 +19,8 @@ require (
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/isacikgoz/morph v0.0.0-20220406131225-b96d2fb806f1
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/lib/pq v1.10.5
-	github.com/mattermost/mattermost-plugin-api v0.0.28-0.20220622150143-980bc9a8097d
+	github.com/lib/pq v1.10.6
+	github.com/mattermost/mattermost-plugin-api v0.0.28
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.3.0
 	github.com/mitchellh/mapstructure v1.4.3
@@ -30,7 +28,7 @@ require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 	gopkg.in/guregu/null.v4 v4.0.0
 )
@@ -193,5 +191,5 @@ require (
 	gopkg.in/mail.v2 v2.3.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
