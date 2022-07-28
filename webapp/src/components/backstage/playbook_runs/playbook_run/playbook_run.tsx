@@ -78,7 +78,9 @@ const PlaybookRunDetails = () => {
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [metadata, metadataResult] = useRunMetadata(playbookRunId);
+
+    // we must force metadata refetch when participants change (leave&unfollow)
+    const [metadata, metadataResult] = useRunMetadata(playbookRunId, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const channel = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);

@@ -10,7 +10,7 @@ import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/
 import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
+import {exportChannelUrl, getSiteUrl, leaveRun, unfollowPlaybookRun} from 'src/client';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -114,7 +114,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
                         <Separator/>
                         <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
                             <CloseIcon size={18}/>
-                            <FormattedMessage defaultMessage='Leave run'/>
+                            <FormattedMessage defaultMessage='Leave and unfollow run'/>
                         </StyledDropdownMenuItemRed>
                     </>
                 }
@@ -140,18 +140,20 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
         if (response?.error) {
             addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
         } else {
-            addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
-            if (!response.has_view_permission) {
-                navigateToUrl(pluginUrl(''));
-            }
+            unfollowPlaybookRun(playbookRun.id).then(() => {
+                addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
+                if (!response.has_view_permission) {
+                    navigateToUrl(pluginUrl(''));
+                }
+            }).catch(() => addToast(formatMessage({defaultMessage: "It wasn't possible to unfollow the run."}), ToastType.Failure));
         }
     };
     const leaveRunConfirmModal = (
         <ConfirmModal
             show={showLeaveRunConfirm}
-            title={formatMessage({defaultMessage: 'Confirm leave'})}
-            message={formatMessage({defaultMessage: 'Are you sure you want to leave the run?'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Leave'})}
+            title={formatMessage({defaultMessage: 'Confirm leave and unfollow'})}
+            message={formatMessage({defaultMessage: 'When you leave and unfollow a run, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Leave and unfollow'})}
             onConfirm={() => {
                 onLeaveRun();
                 setLeaveRunConfirm(false);
