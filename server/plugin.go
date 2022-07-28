@@ -334,7 +334,7 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 }
 
 func (p *Plugin) runMetricsServer() {
-	p.pluginAPI.Log.Info("Starting Playbooks metrics server", "port", metricsExposePort)
+	logrus.WithField("port", metricsExposePort).Info("Starting Playbooks metrics server")
 
 	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService)
 	// Run server to expose metrics
