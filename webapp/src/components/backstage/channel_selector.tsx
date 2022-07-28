@@ -4,11 +4,11 @@ import {useSelector, useDispatch} from 'react-redux';
 import {createSelector} from 'reselect';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
-import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from 'mattermost-redux/types/utilities';
+import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from '@mattermost/types/utilities';
 import General from 'mattermost-redux/constants/general';
 
-import {Channel, ChannelMembership} from 'mattermost-redux/types/channels';
-import {Team} from 'mattermost-redux/types/teams';
+import {Channel, ChannelMembership} from '@mattermost/types/channels';
+import {Team} from '@mattermost/types/teams';
 import {fetchMyChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';

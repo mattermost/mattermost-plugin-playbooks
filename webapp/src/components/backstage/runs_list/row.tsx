@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {useSelector} from 'react-redux';
 
@@ -21,7 +21,7 @@ import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
-import {useExperimentalFeaturesEnabled, usePlaybookName} from 'src/hooks';
+import {usePlaybookName} from 'src/hooks';
 
 import {InfoLine} from '../styles';
 
@@ -92,7 +92,6 @@ const Row = (props: Props) => {
     const playbookName = usePlaybookName(props.fixedTeam ? '' : props.playbookRun.playbook_id);
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
 
     let infoLine: React.ReactNode = null;
     if (!props.fixedTeam) {
@@ -100,7 +99,7 @@ const Row = (props: Props) => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToPluginUrl(newLHSEnabled ? `/run_details/${playbookRun.id}` : `/runs/${playbookRun.id}`);
+        navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
 
     return (
@@ -144,6 +143,7 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
+                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
                 <ProgressBar
                     completed={completedTasks}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -34,6 +35,98 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	}
 
 	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *RootResolver) Playbooks(ctx context.Context, args struct {
+	TeamID             string
+	Sort               string
+	Direction          string
+	SearchTerm         string
+	WithMembershipOnly bool
+	WithArchived       bool
+}) ([]*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if args.TeamID != "" {
+		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+			c.logger.WithError(err).Warn("Not authorized")
+			return nil, errors.New("Not authorized")
+		}
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	opts := app.PlaybookFilterOptions{
+		Sort:               app.SortField(args.Sort),
+		Direction:          app.SortDirection(args.Direction),
+		SearchTerm:         args.SearchTerm,
+		WithArchived:       args.WithArchived,
+		WithMembershipOnly: args.WithMembershipOnly,
+		Page:               0,
+		PerPage:            10000,
+	}
+
+	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
+	for _, pb := range playbookResults.Items {
+		ret = append(ret, &PlaybookResolver{pb})
+	}
+
+	return ret, nil
+}
+
+func (r *RootResolver) Runs(ctx context.Context, args struct {
+	TeamID                  string `url:"team_id,omitempty"`
+	Statuses                []string
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+}) ([]*RunResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	if args.ParticipantOrFollowerID == client.Me {
+		args.ParticipantOrFollowerID = userID
+	}
+
+	filterOptions := app.PlaybookRunFilterOptions{
+		TeamID:                  args.TeamID,
+		Statuses:                args.Statuses,
+		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		Page:                    0,
+		PerPage:                 10000,
+	}
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*RunResolver, 0, len(runResults.Items))
+	for _, run := range runResults.Items {
+		ret = append(ret, &RunResolver{run})
+	}
+
+	return ret, nil
 }
 
 type UpdateChecklist struct {
@@ -88,6 +181,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RunSummaryTemplate                   *string
 		ChannelNameTemplate                  *string
 		Checklists                           *[]UpdateChecklist
+		IsFavorite                           *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -209,7 +303,83 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 	}
 
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
 	return args.ID, nil
+}
+
+func (r *RootResolver) UpdateRun(ctx context.Context, args struct {
+	ID      string
+	Updates struct {
+		IsFavorite *bool
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return playbookRun.ID, nil
 }
 
 func (r *RootResolver) AddMetric(ctx context.Context, args struct {

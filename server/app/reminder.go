@@ -170,6 +170,29 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 	return nil
 }
 
+// ResetReminder creates a timeline event for a reminder being reset and then creates a new reminder
+func (s *PlaybookRunServiceImpl) ResetReminder(playbookRunID string, newReminder time.Duration) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	eventTime := model.GetMillis()
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunToModify.ID,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
+		EventType:     StatusUpdateSnoozed,
+		SubjectUserID: playbookRunToModify.ReporterUserID,
+	}
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrapf(err, "failed to create timeline event after resetting reminder timer")
+	}
+
+	return s.SetNewReminder(playbookRunID, newReminder)
+}
+
 // SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
 // reminder post in the playbookRun's channel, and resets the PreviousReminder and
 // LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)

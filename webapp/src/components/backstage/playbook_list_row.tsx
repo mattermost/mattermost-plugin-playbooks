@@ -4,7 +4,7 @@
 import React, {Fragment} from 'react';
 import styled from 'styled-components';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -24,7 +24,6 @@ import {InfoLine} from './styles';
 
 interface Props {
     playbook: Playbook
-    displayTeam: boolean
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
@@ -101,10 +100,6 @@ const PlaybookListRow = (props: Props) => {
                 <ArchiveIcon className='icon icon-archive-outline'/>
             </Tooltip>
         ));
-    }
-
-    if (props.displayTeam) {
-        infos.push((<>{teamName}</>));
     }
 
     const [exportHref, exportFilename] = playbookExportProps(props.playbook);

@@ -47,7 +47,7 @@ describe('playbooks > edit', () => {
 
     describe('checklists', () => {
         describe('slash command', () => {
-            it('autocompletes after clicking Add a slash command', () => {
+            it('autocompletes after clicking Command...', () => {
                 // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
 
@@ -59,16 +59,17 @@ describe('playbooks > edit', () => {
                     // # Open the slash command input on a step
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Add slash command').click();
+                    cy.findByText('Command...').click();
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
-                    cy.findByPlaceholderText('Slash Command').should('have.focus');
-                    cy.findByPlaceholderText('Slash Command').should('have.value', '/');
-
-                    // * Verify the autocomplete prompt is open
-                    cy.get('#suggestionList').should('exist');
+                    cy.focused()
+                        .should('have.attr', 'placeholder', 'Slash Command')
+                        .should('have.value', '/');
                 });
+
+                // * Verify the autocomplete prompt is open
+                cy.get('#suggestionList').should('exist');
             });
 
             // current regression in BPE
@@ -130,7 +131,6 @@ describe('playbooks > edit', () => {
     });
 
     describe('actions', () => {
-        let testPublicChannel;
         let testPrivateChannel;
         let testPlaybook;
 
@@ -144,9 +144,7 @@ describe('playbooks > edit', () => {
                 'public-channel',
                 'Public Channel',
                 'O'
-            ).then(({channel}) => {
-                testPublicChannel = channel;
-            });
+            );
 
             // # Create a private channel
             cy.apiCreateChannel(
@@ -727,7 +725,6 @@ describe('playbooks > edit', () => {
                 // MM-44678
                 it.skip('removes the owner and disables the setting if the user is no longer in the team', () => {
                     let userToRemove;
-                    let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
@@ -750,8 +747,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     defaultOwnerId: userToRemove.id,
                                     defaultOwnerEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Remove user from the team
@@ -808,8 +803,8 @@ describe('playbooks > edit', () => {
 
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
                     });
+                    cy.findByText(/off-topic/i).click();
 
                     cy.reload();
 
@@ -826,8 +821,18 @@ describe('playbooks > edit', () => {
                     // # status updates toggle
                     cy.get('#status-updates').within(() => {
                         cy.findByText('no channels').click();
-                        cy.findByText(/off-topic/i).click();
-                        cy.get('input[type=checkbox]').click({force: true});
+                    });
+                    cy.findByText(/off-topic/i).click();
+
+                    // # Close the channel selector
+                    cy.findByText(/search for a channel/i).type('{esc}');
+
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
+                        // # Click on the toggle to disable the setting
+                        cy.get('label').click();
+
+                        // * Verify that the toggle off
+                        cy.get('label input').should('not.be.checked');
                     });
 
                     // * Verify disabled status updates text
@@ -836,15 +841,13 @@ describe('playbooks > edit', () => {
 
                     // # Turn the status update toggle back on
                     // * Verify there's still 1 channel selected
-                    cy.get('#status-updates').within(() => {
-                        cy.get('input[type=checkbox]').click({force: true});
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
+                        cy.get('label').click();
                         cy.findByText('1 channel').should('be.visible');
                     });
                 });
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
-                    let playbookId;
-
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin(testSysadmin)
                         .then(() => {
@@ -867,8 +870,6 @@ describe('playbooks > edit', () => {
                                     memberIDs: [testUser.id, testSysadmin.id],
                                     announcementChannelId: channel.id,
                                     announcementChannelEnabled: true,
-                                }).then((playbook) => {
-                                    playbookId = playbook.id;
                                 });
 
                                 // # Delete channel

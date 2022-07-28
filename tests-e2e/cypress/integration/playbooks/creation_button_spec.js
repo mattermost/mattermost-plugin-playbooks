@@ -47,8 +47,7 @@ describe('playbooks > creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'playbooks/new';
-        const playbookName = 'Untitled playbook';
+        const playbookName = 'Untitled Playbook';
 
         // # Open the product
         cy.visit('/playbooks');
@@ -60,14 +59,11 @@ describe('playbooks > creation button', () => {
         cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
         cy.get('#playbooks_create').findByText('Create playbook').click();
 
-        // * Verify a new playbook creation page opened
-        verifyPlaybookCreationPageOpened(url, playbookName);
+        // * Verify playbook outline page opened
+        verifyPlaybookOutlineOpened(playbookName);
     });
 
     it('auto creates a playbook with "Blank" template option', () => {
-        const url = 'playbooks/new';
-        const playbookName = 'Untitled playbook';
-
         // # Open the product
         cy.visit('/playbooks');
 
@@ -77,13 +73,11 @@ describe('playbooks > creation button', () => {
         // # Click 'Blank'
         cy.findByText('Blank').click();
 
-        // * Verify playbook preview opened
-        verifyPreviewOpened();
+        // * Verify playbook outline opened
+        verifyPlaybookOutlineOpened(`@${testUser.username}'s Blank`);
     });
 
     it('opens Service Outage Incident page from its template option', () => {
-        const playbookName = 'Incident Resolution';
-
         // # Open the product
         cy.visit('/playbooks');
 
@@ -93,25 +87,17 @@ describe('playbooks > creation button', () => {
         // # Click 'Incident Resolution'
         cy.findByText('Incident Resolution').click();
 
-        // * Verify playbook preview opened
-        verifyPreviewOpened();
+        // * Verify playbook outline opened
+        verifyPlaybookOutlineOpened(`@${testUser.username}'s Incident Resolution`);
     });
 });
 
-function verifyPlaybookCreationPageOpened(url, playbookName) {
+function verifyPlaybookOutlineOpened(playbookName) {
     // * Verify the page url contains 'playbooks/playbooks/new'
-    cy.url().should('include', url);
+    cy.url().should('contain', '/outline');
 
     // * Verify the playbook name matches the one provided
-    cy.findByTestId('backstage-nav-bar').within(() => {
+    cy.findByTestId('playbook-editor-title').within(() => {
         cy.findByText(playbookName).should('be.visible');
     });
-
-    // * Verify there is 'Save' button
-    cy.findByTestId('save_playbook').should('be.visible');
-}
-
-function verifyPreviewOpened() {
-    // * Verify the page url contains 'preview'
-    cy.url().should('include', 'preview');
 }

@@ -2,12 +2,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled, {css} from 'styled-components';
 import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+
+import {Placement} from '@floating-ui/react-dom-interactions';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {labelFrom, Mode, ms, Option, useMakeOption} from '../datetime_input';
@@ -21,9 +23,11 @@ import {AdminNotificationType, OVERLAY_DELAY} from 'src/constants';
 interface Props {
     date?: number;
     mode: Mode.DateTimeValue | Mode.DurationValue;
-    editable?: boolean;
+    editable: boolean;
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
+    placement: Placement;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 const controlComponentDueDate = (isDateTime: boolean) => (ownProps: ControlProps<DateTimeOption, boolean>) => (
@@ -123,7 +127,8 @@ export const DueDateHoverMenuButton = ({
                 onCustomReset: resetDueDate,
             }}
             controlledOpenToggle={dateTimeSelectorToggle}
-            dropdownMoveRightPx={-55}
+            placement={props.placement}
+            onOpenChange={props.onOpenChange}
         />
     );
 };
@@ -136,13 +141,6 @@ export const DueDateButton = ({
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [showOnRight, setShowOnRight] = useState(false);
-    const ref = useRef<any>(null);
-
-    useEffect(() => {
-        // depending on component left offset decide where to show popup
-        setShowOnRight(ref.current.offsetLeft > 50);
-    }, [props.editable]);
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
@@ -188,15 +186,17 @@ export const DueDateButton = ({
 
     const dueDateButton = (
         <DueDateContainer
-            ref={ref}
             overdue={overdue}
             dueSoon={dueSoon}
+            editable={props.editable}
+            isPlaceholder={!date}
         >
             <DateTimeSelector
                 placeholder={
                     <PlaceholderDiv
                         onClick={handleButtonClick}
                         data-testid='due-date-info-button'
+                        editable={props.editable}
                     >
                         <CalendarIcon
                             className={'icon-calendar-outline icon-12 btn-icon'}
@@ -225,7 +225,7 @@ export const DueDateButton = ({
                     onCustomReset: resetDueDate,
                 }}
                 controlledOpenToggle={dateTimeSelectorToggle}
-                dropdownMoveRightPx={showOnRight ? -55 : undefined}
+                placement={props.placement}
             />
             {upgradeModal}
         </DueDateContainer>
@@ -257,7 +257,7 @@ const buttonLabelForDuration = (date?: number) => {
 
 const buttonLabelForDateTime = (date?: number) => {
     if (!date) {
-        return <FormattedMessage defaultMessage='Add due date'/>;
+        return <FormattedMessage defaultMessage='Due date...'/>;
     }
 
     const timespec = (date < DateTime.now().toMillis()) ? PastTimeSpec : FutureTimeSpec;
@@ -378,22 +378,20 @@ const CheckIcon = styled.i`
 	font-size: 22px;
 `;
 
-const PlaceholderDiv = styled.div`
+const PlaceholderDiv = styled.div<{editable: boolean}>`
     display: flex;
     align-items: center;
     flex-direction: row;
     white-space: nowrap;
 
-    &:hover {
-        cursor: pointer;
-    }
+    cursor: ${({editable}) => (editable ? 'pointer' : 'default')};
 `;
 
 const DueDateTextContainer = styled.div<{overdue: boolean}>`
     font-size: 12px;
     line-height: 15px;
 
-    font-weight:  ${(props) => (props.overdue ? '600' : '400')};
+    font-weight: ${(props) => (props.overdue ? '600' : '400')};
 `;
 
 const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
@@ -423,24 +421,27 @@ const SelectorRightIcon = styled.i<{overdueOrDueSoon: boolean}>`
     `}
 `;
 
-const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean}>`
-    display: flex;  
+const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean, editable: boolean, isPlaceholder: boolean}>`
+    display: flex;
     flex-wrap: wrap;
 
     border-radius: 13px;
     padding: 2px 8px;
-    background: rgba(var(--center-channel-color-rgb), 0.08);
     max-width: 100%;
 
-    ${({overdue, dueSoon}) => (overdue || dueSoon ? css`
+    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+
+    ${({overdue, dueSoon}) => ((overdue || dueSoon) && css`
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);
         color: var(--dnd-indicator);
-    ` : css`
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color);
     `)}
 
-    :hover {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-    }
+    ${({editable}) => editable && css`
+        :hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
+        }
+    `}
 `;

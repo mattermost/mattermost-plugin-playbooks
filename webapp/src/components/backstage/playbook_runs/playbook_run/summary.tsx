@@ -14,12 +14,13 @@ import {AnchorLinkTitle, Role} from 'src/components/backstage/playbook_runs/shar
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
+    id: string;
     playbookRun: PlaybookRun;
     role: Role,
 }
 
 const Summary = ({
-    playbookRun, role,
+    id, playbookRun, role,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -27,7 +28,7 @@ const Summary = ({
     const modifiedAt = (
         <Timestamp
             value={playbookRun.summary_modified_at}
-            {...PAST_TIME_SPEC}
+            units={PAST_TIME_SPEC}
         />
     );
 
@@ -37,18 +38,23 @@ const Summary = ({
         </TimestampContainer>
     );
 
+    const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
+
     return (
-        <Container>
+        <Container
+            id={id}
+            data-testid={'run-summary-section'}
+        >
             <Header>
                 <AnchorLinkTitle
                     title={title}
-                    id='summary'
+                    id={id}
                 />
                 {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
             </Header>
             <MarkdownEdit
                 disabled={Role.Viewer === role}
-                placeholder={formatMessage({defaultMessage: 'Add a run summary'})}
+                placeholder={placeholder}
                 value={playbookRun.summary}
                 onSave={(value) => {
                     updatePlaybookRunDescription(playbookRun.id, value);
@@ -75,6 +81,7 @@ const TimestampContainer = styled.div`
     justify-content: flex-end;
 
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
 `;
 
 const Container = styled.div`

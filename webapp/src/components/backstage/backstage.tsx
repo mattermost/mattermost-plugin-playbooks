@@ -2,22 +2,22 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
+import {Switch, Route, NavLink, useLocation, useRouteMatch, matchPath} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {Theme} from 'mattermost-redux/types/themes';
+import {Team} from '@mattermost/types/teams';
+import {Theme} from '@mattermost/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {promptForFeedback} from 'src/client';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {applyTheme} from 'src/components/backstage/css_utils';
@@ -28,8 +28,6 @@ import MainBody from './main_body';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
-    display: flex;
-    flex-direction: column;
     overflow-y: auto;
     height: 100%;
 `;
@@ -68,13 +66,13 @@ const BackstageTitlebarItem = styled(NavLink)`
     }
 `;
 
-const BackstageBody = styled.div`
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-`;
-
 const Backstage = () => {
+    const {pathname} = useLocation();
+    const {url} = useRouteMatch();
+    const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
+        path: [`${url}/runs/:playbookRunId`],
+    });
+
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
@@ -93,37 +91,28 @@ const Backstage = () => {
 
     useForceDocumentTitle('Playbooks');
 
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
-
     return (
-        <BackstageContainer
-            id={BackstageID}
-        >
+        <BackstageContainer id={BackstageID}>
             <ToastProvider>
-                {!newLHSEnabled &&
-                <>
-                    <Navbar/>
-                    <BackstageBody>
-                        <MainBody/>
-                    </BackstageBody>
-                </>
-                }
-                {newLHSEnabled &&
-                <MainContainer>
+                <MainContainer noContainerScroll={Boolean(noContainerScroll)}>
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
-                }
                 <CloudModal/>
             </ToastProvider>
         </BackstageContainer>
     );
 };
 
-const MainContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+const MainContainer = styled.div<{noContainerScroll: boolean}>`
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: max-content auto;
+    ${({noContainerScroll}) => (noContainerScroll ? css`
+        height: 100%;
+    ` : css`
+        min-height: 100%;
+    `)}
 `;
 
 const Navbar = () => {
@@ -139,7 +128,7 @@ const Navbar = () => {
             <Route path={`${match.url}/error`}/>
             <Route path={`${match.url}/start`}/>
             <Route path={`${match.url}/playbooks/:playbookId`}/>
-            <Route path={`${match.url}/run_details/:playbookRunId`}/>
+            <Route path={`${match.url}/runs/:playbookRunId`}/>
             <Route>
                 <BackstageNavbar className='flex justify-content-between'>
                     <div className='d-flex items-center'>

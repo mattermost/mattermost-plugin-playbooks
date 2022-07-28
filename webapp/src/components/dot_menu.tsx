@@ -34,15 +34,7 @@ const DropdownMenuWrapper = styled.div`
     position: relative;
 `;
 
-interface DropdownMenuProps {
-    top?: boolean;
-    left?: boolean;
-    wide?: boolean;
-    topPx?: number;
-    leftPx?: number;
-}
-
-export const DropdownMenu = styled.div<DropdownMenuProps>`
+export const DropdownMenu = styled.div`
     display: flex;
     flex-direction: column;
 
@@ -88,7 +80,7 @@ const DotMenu = (props: DotMenuProps) => {
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        setOpen(true);
+        setOpen(!isOpen);
     };
 
     useClickOutsideRef(refs.reference, () => {

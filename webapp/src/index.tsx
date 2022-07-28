@@ -8,7 +8,7 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
@@ -67,6 +67,8 @@ import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
+
+import {setPlaybooksGraphQLClient} from './graphql_client';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -162,7 +164,7 @@ export default class Plugin {
             />
         );
 
-        const enableTeamSidebar = false;
+        const enableTeamSidebar = true;
 
         registry.registerProduct(
             '/playbooks',
@@ -287,6 +289,9 @@ export default class Plugin {
             link: new HttpLink({fetch: graphqlFetch}),
             cache: new InMemoryCache(),
         });
+
+        // Store graphql client for bad modals.
+        setPlaybooksGraphQLClient(graphqlClient);
 
         this.doRegistrations(registry, store, graphqlClient);
 

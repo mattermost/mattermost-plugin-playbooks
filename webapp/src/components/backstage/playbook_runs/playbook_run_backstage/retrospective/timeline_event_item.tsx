@@ -4,7 +4,7 @@
 import React, {ReactNode, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
@@ -44,12 +44,13 @@ const TimelineItem = styled.li`
     margin: 27px 0 0 0;
 `;
 
-const TimeContainer = styled.div`
+const TimeContainer = styled.div<{parent: 'rhs'|'retro'}>`
     position: absolute;
     width: 75px;
     line-height: 16px;
     text-align: left;
     left: 4px;
+    bottom: ${({parent}) => (parent === 'rhs' ? '-28px' : 'auto')};
 `;
 
 const TimeStamp = styled.time`
@@ -127,7 +128,11 @@ const SummaryDeleted = styled.span`
 const SummaryDetail = styled.div`
     font-size: 11px;
     margin: 4px 0 0 0;
-    color: rgba(var(--center-channel-color-rgb), 0.64)
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+const StyledHoverMenu = styled(HoverMenu)<{parent: 'rhs'|'retro'}>`
+    right: ${({parent}) => (parent === 'rhs' ? '20px' : '0')};
 `;
 
 const DATETIME_FORMAT = {
@@ -138,10 +143,12 @@ const DATETIME_FORMAT = {
 interface Props {
     event: TimelineEvent;
     prevEventAt?: DateTime;
+    parent: 'rhs' | 'retro';
     runCreateAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
+    editable: boolean;
 }
 
 const TimelineEventItem = (props: Props) => {
@@ -218,6 +225,16 @@ const TimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
+    case TimelineEventType.StatusUpdateSnoozed:
+        iconClass = 'icon icon-flag-outline';
+        summaryTitle = formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdateSnoozed;
+        break;
+    case TimelineEventType.StatusUpdateRequested:
+        iconClass = 'icon icon-update';
+        summaryTitle = props.event.summary;
+        testid = TimelineEventType.StatusUpdateRequested;
+        break;
     case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: props.event.summary});
@@ -270,9 +287,11 @@ const TimelineEventItem = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <TimeContainer>
-                {timeSincePrevEvent}
-            </TimeContainer>
+            {props.parent === 'retro' ? (
+                <TimeContainer parent={props.parent}>
+                    {timeSincePrevEvent}
+                </TimeContainer>
+            ) : null}
             <Circle>
                 <i className={iconClass}/>
             </Circle>
@@ -297,9 +316,9 @@ const TimelineEventItem = (props: Props) => {
                     </Tooltip>
                 </TimeStamp>
                 <SummaryTitle
-                    onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
+                    onClick={(e) => props.editable && !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
-                    postIdExists={props.event.post_id !== ''}
+                    postIdExists={props.event.post_id !== '' && props.editable}
                 >
                     {summaryTitle}
                 </SummaryTitle>
@@ -314,15 +333,15 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
-            {showMenu &&
-                <HoverMenu>
+            {showMenu && props.editable &&
+                <StyledHoverMenu parent={props.parent}>
                     <HoverMenuButton
                         className={'icon-trash-can-outline icon-16 btn-icon'}
                         onClick={() => {
                             setShowDeleteConfirm(true);
                         }}
                     />
-                </HoverMenu>
+                </StyledHoverMenu>
             }
             <ConfirmModal
                 show={showDeleteConfirm}
@@ -335,6 +354,11 @@ const TimelineEventItem = (props: Props) => {
                 }}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+            {props.parent === 'rhs' ? (
+                <TimeContainer parent={props.parent}>
+                    {timeSincePrevEvent}
+                </TimeContainer>
+            ) : null}
         </TimelineItem>
     );
 };

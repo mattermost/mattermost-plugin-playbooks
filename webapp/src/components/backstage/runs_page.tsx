@@ -3,17 +3,21 @@
 
 import React, {useEffect, useState} from 'react';
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
 import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
-import {useExperimentalFeaturesEnabled, useRunsList} from 'src/hooks';
+import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
 
@@ -34,34 +38,30 @@ const defaultPlaybookFetchParams = {
         .map((opt) => opt.value),
 };
 
-const RunListContainer = styled.div<{$newLHSEnabled: boolean;}>`
+const RunListContainer = styled.div`
     flex: 1 1 auto;
-	${({$newLHSEnabled}) => !$newLHSEnabled && css`
-        margin: 0 auto;
-        max-width: 1160px;
-    `}
 `;
 
 const RunsPage = () => {
     const {formatMessage} = useIntl();
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
+    const currentTeamId = useSelector(getCurrentTeamId);
 
     // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
     // landing page.
     useEffect(() => {
         async function checkForPlaybookRuns() {
-            const playbookRunsReturn = await fetchPlaybookRuns({page: 0, per_page: 1});
-            const hasPlaybooks = await clientHasPlaybooks('');
+            const playbookRunsReturn = await fetchPlaybookRuns({page: 0, per_page: 1, team_id: currentTeamId});
+            const hasPlaybooks = await clientHasPlaybooks(currentTeamId);
             setShowNoPlaybookRuns(playbookRunsReturn.items.length === 0);
             setNoPlaybooks(!hasPlaybooks);
         }
 
         checkForPlaybookRuns();
-    }, []);
+    }, [currentTeamId]);
 
     if (showNoPlaybookRuns == null || noPlaybooks == null) {
         return null;
@@ -75,7 +75,7 @@ const RunsPage = () => {
     }
 
     return (
-        <RunListContainer $newLHSEnabled={newLHSEnabled}>
+        <RunListContainer>
             <Header
                 data-testid='titlePlaybookRun'
                 level={2}

@@ -1,50 +1,51 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
+import React, {useState, useEffect} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
+import {Channel} from '@mattermost/types/channels';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
-import CompassIconProps from '@mattermost/compass-icons/components/props';
-
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {useToasts, ToastType} from 'src/components/backstage/toast_banner';
+import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
-import AssignTo from 'src/components/checklist_item/assign_to';
+import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
-import {Section, SectionTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
-import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {usePlaybook} from 'src/hooks';
+import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {CompassIcon} from 'src/types/compass';
 
 interface Props {
     run: PlaybookRun;
-    runMetadata: Metadata | null;
-    role: Role;
+    runMetadata?: Metadata;
+    editable: boolean;
+    channel: Channel | undefined | null;
+    onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const playbook = usePlaybook(run.playbook_id);
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
+    const [showAddToChannel, setShowAddToChannel] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
 
-    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
-        if (!user) {
-            return;
-        }
-
+    const setOwner = async (userID: string) => {
         try {
-            const response = await clientSetOwner(run.id, user.id);
+            const response = await clientSetOwner(run.id, userID);
 
             if (response.error) {
                 let message;
@@ -63,31 +64,48 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
         }
     };
 
+    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
+        if (!user || !userType) {
+            return;
+        }
+
+        if (userType === 'Member') {
+            setOwner(user.id);
+        } else {
+            setSelectedUser(user);
+            setShowAddToChannel(true);
+        }
+    };
+
     return (
         <Section>
-            <SectionTitle>{formatMessage({defaultMessage: 'Overview'})}</SectionTitle>
+            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
             <Item
+                id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
                 onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
-                {playbook && <Link to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</Link>}
+                {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
             <Item
+                id='runinfo-owner'
                 icon={AccountOutlineIcon}
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
                 <AssignTo
                     assignee_id={run.owner_user_id}
-                    editable={role === Role.Participant}
+                    editable={editable}
                     onSelectedChange={onOwnerChange}
-                    dropdownMoveRightPx={0}
+                    channelId={run.channel_id}
+                    placement={'bottom-end'}
                 />
             </Item>
             <Item
+                id='runinfo-participants'
                 icon={AccountMultipleOutlineIcon}
                 name={formatMessage({defaultMessage: 'Participants'})}
-                onClick={() => {/* implement the participants list view */}}
+                onClick={onViewParticipants}
             >
                 <Participants>
                     <UserList
@@ -97,30 +115,103 @@ const RHSInfoOverview = ({run, runMetadata, role}: Props) => {
                 </Participants>
             </Item>
             <Item
+                id='runinfo-following'
                 icon={BullhornOutlineIcon}
-                name={formatMessage({defaultMessage: 'Following'})}
+                name={formatMessage({defaultMessage: 'Followers'})}
             >
                 <FollowersWrapper>
                     <FollowingButton/>
                     <Following
                         userIds={followers}
-                        hideHelpText={true}
                         maxUsers={4}
                     />
                 </FollowersWrapper>
             </Item>
+            {selectedUser &&
+            <AddToChannelModal
+                user={selectedUser}
+                channelId={run.channel_id}
+                setOwner={setOwner}
+                show={showAddToChannel}
+                onHide={() => {
+                    setShowAddToChannel(false);
+                    setSelectedUser(null);
+                }}
+            />}
+            {channel && runMetadata && editable && (
+                <Item
+                    id='runinfo-channel'
+                    icon={ProductChannelsIcon}
+                    name={formatMessage({defaultMessage: 'Channel'})}
+                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${channel.name}`)}
+                >
+                    <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
+                        <ItemContent >
+                            {channel.display_name}
+                            <OpenInNewIcon
+                                size={14}
+                                color={'var(--button-bg)'}
+                            />
+                        </ItemContent>
+                    </ItemLink>
+                </Item>
+            )}
         </Section>
     );
 };
 
 export default RHSInfoOverview;
 
+interface AddToChannelModalProps {
+    user: UserProfile;
+    channelId: string;
+    setOwner: (id: string) => void;
+    show: boolean;
+    onHide: () => void;
+}
+
+const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+    const displayName = useFormattedUsername(user);
+
+    if (!user) {
+        return null;
+    }
+
+    return (
+        <ConfirmModal
+            show={show}
+            title={formatMessage(
+                {defaultMessage: 'Add {displayName} to Channel'},
+                {displayName},
+            )}
+            message={formatMessage(
+                {defaultMessage: '{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.'},
+                {displayName},
+            )}
+            confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+            onConfirm={() => {
+                dispatch(addChannelMember(channelId, user.id));
+                setOwner(user.id);
+                onHide();
+            }}
+            onCancel={onHide}
+        />
+    );
+};
+
 const useFollowing = (runID: string, metadataFollowers: string[]) => {
     const {formatMessage} = useIntl();
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
     const currentUser = useSelector(getCurrentUser);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useEffect(() => {
+        setFollowers(metadataFollowers);
+        setIsFollowing(metadataFollowers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
@@ -155,9 +246,8 @@ const useFollowing = (runID: string, metadataFollowers: string[]) => {
     return [FollowingButton, followers] as const;
 };
 
-type CompassIcon = React.FC<CompassIconProps>;
-
 interface ItemProps {
+    id: string;
     icon: CompassIcon;
     name: string;
     children: React.ReactNode;
@@ -170,7 +260,10 @@ const Item = (props: ItemProps) => {
     `;
 
     return (
-        <OverviewRow onClick={props.onClick}>
+        <OverviewRow
+            onClick={props.onClick}
+            data-testid={props.id}
+        >
             <OverviewItemName>
                 <StyledIcon
                     size={18}
@@ -183,8 +276,27 @@ const Item = (props: ItemProps) => {
     );
 };
 
+const ItemLink = styled(Link)`
+    max-width: 230px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const ItemContent = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    svg {
+        margin-left: 3px;
+    }
+`;
+
 const OverviewRow = styled.div<{onClick?: () => void}>`
     padding: 10px 24px;
+    height: 44px;
     display: flex;
     justify-content: space-between;
 
@@ -195,6 +307,11 @@ const OverviewRow = styled.div<{onClick?: () => void}>`
     ${({onClick}) => onClick && css`
         cursor: pointer;
     `}
+
+    ${AssignToContainer} {
+        margin-left: 0;
+        max-width: none;
+    }
 `;
 
 const OverviewItemName = styled.div`

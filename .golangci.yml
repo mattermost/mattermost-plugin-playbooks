@@ -23,10 +23,11 @@ linters:
     - ineffassign
     - exportloopref
     - staticcheck
-    - structcheck
     - unconvert
     - unused
     - varcheck
+    # disabled until is compatible with go1.18 https://github.com/golangci/golangci-lint/issues/2649
+    # - structcheck
 
 linters-settings:
   gofmt:

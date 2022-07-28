@@ -1,114 +1,176 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
+import {useSelector} from 'react-redux';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {useIntl} from 'react-intl';
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
 import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
-import {
-    usePlaybooksCrud,
-} from 'src/hooks';
+import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
+
+import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
+
 import {pluginUrl} from 'src/browser_routing';
-import {useRunsList} from 'src/hooks/general';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import Sidebar, {GroupItem, SidebarGroup} from './sidebar';
+import Sidebar, {SidebarGroup} from './sidebar';
+import CreatePlaybookDropdown from './create_playbook_dropdown';
+import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
 
-const defaultRunsFetchParams = {
-    page: 0,
-    per_page: 20,
-    sort: 'last_status_update_at',
-    direction: 'desc',
-    statuses: [PlaybookRunStatus.InProgress, PlaybookRunStatus.Finished],
-};
+export const RunsCategoryName = 'runsCategory';
+export const PlaybooksCategoryName = 'playbooksCategory';
 
-interface PlaybookSidebarProps{
-    team_id: string;
-}
+const useLHSData = (teamID: string) => {
+    const normalizeCategoryName = useReservedCategoryTitleMapper();
+    const {data, error} = usePlaybookLhsQuery({
+        variables: {
+            userID: 'me',
+            teamID,
+        },
+        fetchPolicy: 'cache-and-network',
+    });
 
-const PlaybooksSidebar = (props: PlaybookSidebarProps) => {
-    const groups: Array<SidebarGroup> = [];
+    if (error || !data) {
+        return {groups: [], ready: false};
+    }
 
-    const [playbooks] = usePlaybooksCrud({team_id: props.team_id, per_page: 20});
-    const [playbookRuns] = useRunsList(defaultRunsFetchParams, false);
+    const playbookItems = data.playbooks.map((pb) => {
+        const icon = pb.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
+        const link = `/playbooks/playbooks/${pb.id}`;
 
-    // Not a correct list of playbooks, should be changed
-    const playbooksItems = playbooks ? playbooks.map((playbook) => {
         return {
-            areaLabel: playbook.title,
-            className: '',
-            display_name: playbook.title,
-            icon: playbook.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>,
+            areaLabel: pb.title,
+            display_name: pb.title,
+            id: pb.id,
+            icon,
+            link,
             isCollapsed: false,
             itemMenu: null,
-            link: `/playbooks/playbooks/${playbook.id}`,
+            isFavorite: pb.isFavorite,
+            className: '',
         };
-    }) : [];
+    });
+    const playbookFavorites = playbookItems.filter((group) => group.isFavorite);
+    const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
 
-    const playbooksGroup: SidebarGroup = {
-        collapsed: false,
-        display_name: 'Playbooks',
-        id: 'playbooks',
-        items: playbooksItems,
-    };
-
-    // Not a correct list of runs, should be changed
-    const runsItems = playbookRuns ? playbookRuns.map((run): GroupItem => {
+    const runItems = data.runs.map((run) => {
+        const icon = <StyledPlaybookRunIcon/>;
+        const link = pluginUrl(`/runs/${run.id}`);
         return {
             areaLabel: run.name,
-            className: '',
             display_name: run.name,
-            icon: <StyledPlaybookRunIcon/>,
+            id: run.id,
+            icon,
+            link,
             isCollapsed: false,
             itemMenu: null,
-            link: pluginUrl(`/run_details/${run.id}`),
-        };
-    }) : [];
-
-    const runsGroup: SidebarGroup = {
-        collapsed: false,
-        display_name: 'Runs',
-        id: 'runs',
-        items: runsItems,
-    };
-
-    // favorite category rendered statically for the UI, should be changed
-    const favItems: Array<GroupItem> = [
-        {
-            areaLabel: 'Cool playbook',
+            isFavorite: run.isFavorite,
             className: '',
-            display_name: 'Cool playbook',
-            icon: <StyledPlaybookIcon/>,
-            isCollapsed: false,
-            itemMenu: null,
-            link: 'some',
+        };
+    });
+    const runFavorites = runItems.filter((group) => group.isFavorite);
+    const runsWithoutFavorites = runItems.filter((group) => !group.isFavorite);
+
+    const allFavorites = playbookFavorites.concat(runFavorites);
+    let groups = [
+        {
+            collapsed: false,
+            display_name: normalizeCategoryName(ReservedCategory.Runs),
+            id: ReservedCategory.Runs,
+            items: runsWithoutFavorites,
         },
         {
-            areaLabel: 'Cool run',
-            className: '',
-            display_name: 'Cool run',
-            icon: <StyledPlaybookRunIcon/>,
-            isCollapsed: false,
-            itemMenu: null,
-            link: 'some',
+            collapsed: false,
+            display_name: normalizeCategoryName(ReservedCategory.Playbooks),
+            id: ReservedCategory.Playbooks,
+            items: playbooksWithoutFavorites,
         },
     ];
+    if (allFavorites.length > 0) {
+        groups = [
+            {
+                collapsed: false,
+                display_name: normalizeCategoryName(ReservedCategory.Favorite),
+                id: ReservedCategory.Favorite,
+                items: playbookFavorites.concat(runFavorites),
+            },
+        ].concat(groups);
+    }
 
-    const fav: SidebarGroup = {
-        collapsed: false,
-        display_name: 'Favorites',
-        id: 'favorites',
-        items: favItems,
-    };
-    groups.push(fav);
-    groups.push(runsGroup);
-    groups.push(playbooksGroup);
+    return {groups, ready: true};
+};
+
+const ViewAllRuns = () => {
+    const {formatMessage} = useIntl();
+    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+    return (
+        <ItemContainer>
+            <StyledNavLink
+                id={'sidebarItem_view_all_runs'}
+                aria-label={formatMessage({defaultMessage: 'View all runs'})}
+                data-testid={'playbookRunsLHSButton'}
+                to={'/playbooks/runs'}
+                exact={true}
+            >
+                <StyledItemDisplayLabel>
+                    {viewAllMessage}
+                </StyledItemDisplayLabel>
+            </StyledNavLink>
+        </ItemContainer>
+    );
+};
+
+const ViewAllPlaybooks = () => {
+    const {formatMessage} = useIntl();
+    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+    return (
+        <ItemContainer key={'sidebarItem_view_all_playbooks'}>
+            <StyledNavLink
+                id={'sidebarItem_view_all_playbooks'}
+                aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
+                data-testid={'playbooksLHSButton'}
+                to={'/playbooks/playbooks'}
+                exact={true}
+            >
+                <StyledItemDisplayLabel>
+                    {viewAllMessage}
+                </StyledItemDisplayLabel>
+            </StyledNavLink>
+        </ItemContainer>
+    );
+};
+
+const addViewAllsToGroups = (groups: SidebarGroup[]) => {
+    for (let i = 0; i < groups.length; i++) {
+        if (groups[i].id === ReservedCategory.Runs) {
+            groups[i].afterGroup = <ViewAllRuns/>;
+        } else if (groups[i].id === ReservedCategory.Playbooks) {
+            groups[i].afterGroup = <ViewAllPlaybooks/>;
+        }
+    }
+};
+
+const PlaybooksSidebar = () => {
+    const teamID = useSelector(getCurrentTeamId);
+    const {groups, ready} = useLHSData(teamID);
+
+    if (!ready) {
+        return (
+            <Sidebar
+                groups={[]}
+                headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
+                team_id={teamID}
+            />
+        );
+    }
+
+    addViewAllsToGroups(groups);
 
     return (
         <Sidebar
             groups={groups}
-            headerDropdown={null}
-            onGroupClick={() => {/*empty*/}}
-            team_id={props.team_id}
+            headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
+            team_id={teamID}
         />
     );
 };
@@ -130,4 +192,9 @@ const StyledPlaybookRunIcon = styled(PlaybookRunIcon)`
 
 const StyledPrivatePlaybookIcon = styled(PrivatePlaybookIcon)`
     ${sharedIconStyles}
+`;
+
+const StyledItemDisplayLabel = styled(ItemDisplayLabel)`
+    line-height: 20px;
+    color: rgba(var(--sidebar-text-rgb), 0.56);
 `;

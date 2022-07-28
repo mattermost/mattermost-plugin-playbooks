@@ -1,7 +1,7 @@
 import {useEffect, useMemo} from 'react';
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -15,6 +15,8 @@ import {
 import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+import {PlaybookLhsDocument} from 'src/graphql/generated_types';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
@@ -92,6 +94,9 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     initialPlaybook.public = Boolean(params.public);
 
                     const data = await savePlaybook(initialPlaybook);
+                    getPlaybooksGraphQLClient().refetchQueries({
+                        include: [PlaybookLhsDocument],
+                    });
                     return data?.id;
                 };
 

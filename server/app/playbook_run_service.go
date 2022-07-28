@@ -2706,6 +2706,108 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	return nil
 }
 
+// RequestUpdate posts a status update request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+
+	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
+	if err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	// create timeline event
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
+		EventType:     StatusUpdateRequested,
+		PostID:        post.Id,
+		SubjectUserID: requesterID,
+		CreatorUserID: requesterID,
+		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	// send updated run through websocket
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		logger.WithError(err).Warn("failed send websocket event")
+	}
+
+	return nil
+}
+
+// RequestUpdate posts a status update request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	// Check if user is already a member of the channel
+	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if err == nil && member != nil {
+		return errors.New("user is already involved")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_get_involved", data)); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	return nil
+}
+
+// Leave removes user from the run's participants list
+func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// Check if user is an owner
+	if playbookRun.OwnerUserID == requesterID {
+		return errors.New("owner user can't leave the run")
+	}
+
+	// Check if user is not a member of the channel
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if member == nil {
+		return errors.New("user is not a participant")
+	}
+
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
+		return errors.Wrap(err, "failed to remove channel member")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID string, post *model.Post) error {
 	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
 	if err != nil {

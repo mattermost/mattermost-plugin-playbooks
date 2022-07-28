@@ -218,6 +218,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to playbook key metrics feature", author.Username)
 		title = "Track key metrics and measure value"
 		text = "Use metrics to understand patterns and progress across runs, and track performance."
+	case "start_trial_to_request_update":
+		message = fmt.Sprintf("@%s requested access to ask for status updates in playbook runs", author.Username)
+		title = "Try request update with a free trial"
+		text = "Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.\n" + footer
 	}
 
 	actions := []*model.PostAction{

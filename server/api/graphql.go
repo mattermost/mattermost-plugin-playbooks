@@ -17,12 +17,14 @@ import (
 
 type GraphQLHandler struct {
 	*ErrorHandler
-	playbookService app.PlaybookService
-	pluginAPI       *pluginapi.Client
-	config          config.Service
-	permissions     *app.PermissionsService
-	playbookStore   app.PlaybookStore
-	licenceChecker  app.LicenseChecker
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	categoryService    app.CategoryService
+	pluginAPI          *pluginapi.Client
+	config             config.Service
+	permissions        *app.PermissionsService
+	playbookStore      app.PlaybookStore
+	licenceChecker     app.LicenseChecker
 
 	schema *graphql.Schema
 }
@@ -33,6 +35,8 @@ var SchemaFile string
 func NewGraphQLHandler(
 	router *mux.Router,
 	playbookService app.PlaybookService,
+	playbookRunService app.PlaybookRunService,
+	categoryService app.CategoryService,
 	api *pluginapi.Client,
 	configService config.Service,
 	permissions *app.PermissionsService,
@@ -40,13 +44,15 @@ func NewGraphQLHandler(
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
 	handler := &GraphQLHandler{
-		ErrorHandler:    &ErrorHandler{},
-		playbookService: playbookService,
-		pluginAPI:       api,
-		config:          configService,
-		permissions:     permissions,
-		playbookStore:   playbookStore,
-		licenceChecker:  licenceChecker,
+		ErrorHandler:       &ErrorHandler{},
+		playbookService:    playbookService,
+		playbookRunService: playbookRunService,
+		categoryService:    categoryService,
+		pluginAPI:          api,
+		config:             configService,
+		permissions:        permissions,
+		playbookStore:      playbookStore,
+		licenceChecker:     licenceChecker,
 	}
 
 	opts := []graphql.SchemaOpt{
@@ -78,14 +84,16 @@ func NewGraphQLHandler(
 type ctxKey struct{}
 
 type Context struct {
-	r               *http.Request
-	playbookService app.PlaybookService
-	playbookStore   app.PlaybookStore
-	pluginAPI       *pluginapi.Client
-	logger          logrus.FieldLogger
-	config          config.Service
-	permissions     *app.PermissionsService
-	licenceChecker  app.LicenseChecker
+	r                  *http.Request
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	playbookStore      app.PlaybookStore
+	categoryService    app.CategoryService
+	pluginAPI          *pluginapi.Client
+	logger             logrus.FieldLogger
+	config             config.Service
+	permissions        *app.PermissionsService
+	licenceChecker     app.LicenseChecker
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
@@ -111,14 +119,16 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger 
 	}
 
 	c := &Context{
-		r:               r,
-		playbookService: h.playbookService,
-		pluginAPI:       h.pluginAPI,
-		logger:          logger,
-		config:          h.config,
-		permissions:     h.permissions,
-		playbookStore:   h.playbookStore,
-		licenceChecker:  h.licenceChecker,
+		r:                  r,
+		playbookService:    h.playbookService,
+		playbookRunService: h.playbookRunService,
+		categoryService:    h.categoryService,
+		pluginAPI:          h.pluginAPI,
+		logger:             logger,
+		config:             h.config,
+		permissions:        h.permissions,
+		playbookStore:      h.playbookStore,
+		licenceChecker:     h.licenceChecker,
 	}
 
 	// Populate the context with required info.
