@@ -99,10 +99,10 @@ const Backstage = () => {
                 <MainContainer noContainerScroll={Boolean(noContainerScroll)}>
                     <LHSNavigation/>
                     <MainBody/>
+                    <BackstageRHS/>
                 </MainContainer>
                 <CloudModal/>
             </ToastProvider>
-            <BackstageRHS/>
         </BackstageContainer>
     );
 };
