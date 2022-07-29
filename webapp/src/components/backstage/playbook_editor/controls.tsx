@@ -2,12 +2,22 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {PropsWithChildren, useEffect} from 'react';
+import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline} from '@mdi/js';
+import {mdiClipboardPlayOutline, mdiRestore} from '@mdi/js';
+
+import {
+    PlusIcon,
+    CloseIcon,
+    ArchiveOutlineIcon,
+    ExportVariantIcon,
+    ContentCopyIcon,
+    PencilOutlineIcon,
+    AccountMultipleOutlineIcon,
+} from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Client4} from 'mattermost-redux/client';
@@ -22,7 +32,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission, useLegacyUpdatePlaybook} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -42,22 +52,25 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {displayEditPlaybookAccessModal} from 'src/actions';
-import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
 
-type ControlProps = {playbook: {
-    id: string,
-    public: boolean,
-    default_playbook_member_role: string,
-    title: string,
-    delete_at: number,
-    team_id: string,
-    description: string,
-    members: PlaybookPermissionsMember[],
-}};
+type ControlProps = {
+    playbook: {
+        id: string,
+        public: boolean,
+        default_playbook_member_role: string,
+        title: string,
+        delete_at: number,
+        team_id: string,
+        description: string,
+        members: PlaybookPermissionsMember[],
+    }
+    refetch?: () => void;
+};
 
 type StyledProps = {className?: string;};
 
@@ -241,7 +254,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
 };
 
 const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
-const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
+export const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
 
 export const RunPlaybook = ({playbook}: ControlProps) => {
     const {formatMessage} = useIntl();
@@ -288,6 +301,39 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     );
 };
 
+export const JoinPlaybook = ({playbook: {members, id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
+    const {formatMessage} = useIntl();
+    const currentUser = useSelector(getCurrentUser);
+    const updatePlaybook = useLegacyUpdatePlaybook(playbookId);
+    const {setFollowing} = useEditorFollowersMeta(playbookId);
+
+    const join = async () => {
+        if (members.find(({user_id}) => user_id === currentUser.id)) {
+            return;
+        }
+        await updatePlaybook((playbook) => {
+            return {
+                members: [...playbook.members, {user_id: currentUser.id, roles: [PlaybookRole.Member]}],
+            };
+        });
+        await setFollowing(true);
+        refetch();
+    };
+
+    return (
+        <PrimaryButtonLarger
+            onClick={join}
+            data-testid='join-playbook'
+        >
+            <PlusIcon
+                size={16}
+                color='currentColor'
+            />
+            {formatMessage({defaultMessage: 'Join playbook'})}
+        </PrimaryButtonLarger>
+    );
+};
+
 type TitleMenuProps = {
     className?: string;
     editTitle: () => void;
@@ -307,9 +353,23 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
 
     const {add: addToast} = useToaster();
 
+    const currentUserId = useSelector(getCurrentUserId);
+
     const archived = playbook.delete_at !== 0;
+    const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
 
     const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
+
+    const updatePlaybook = useLegacyUpdatePlaybook(playbook.id);
+
+    const leavePlaybook = async () => {
+        await updatePlaybook(({members}) => {
+            return {
+                members: [...members.filter(({user_id}) => user_id !== currentUserId)],
+            };
+        });
+        refetch();
+    };
 
     return (
         <>
@@ -324,18 +384,31 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     </>
                 }
             >
-                <DropdownMenuItem
-                    onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
-                >
-                    <FormattedMessage defaultMessage='Manage access'/>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={editTitle}
-                    disabled={archived}
-                    disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
-                >
-                    <FormattedMessage defaultMessage='Rename'/>
-                </DropdownMenuItem>
+                {currentUserMember && (
+                    <>
+                        <DropdownMenuItem
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                        >
+                            <AccountMultipleOutlineIcon
+                                size={18}
+                                color='currentColor'
+                            />
+                            <FormattedMessage defaultMessage='Manage access'/>
+                        </DropdownMenuItem>
+                        <div className='MenuGroup menu-divider'/>
+                        <DropdownMenuItem
+                            onClick={editTitle}
+                            disabled={archived}
+                            disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
+                        >
+                            <PencilOutlineIcon
+                                size={18}
+                                color='currentColor'
+                            />
+                            <FormattedMessage defaultMessage='Rename'/>
+                        </DropdownMenuItem>
+                    </>
+                )}
                 <DropdownMenuItem
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
@@ -346,30 +419,62 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     disabled={!permissionForDuplicate}
                     disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                 >
+                    <ContentCopyIcon
+                        size={18}
+                        color='currentColor'
+                    />
                     <FormattedMessage defaultMessage='Duplicate'/>
                 </DropdownMenuItem>
                 <DropdownMenuItemStyled
                     href={exportHref}
                     download={exportFilename}
                     role={'button'}
+                    css={`${iconSplitStyling}`}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                 >
+                    <ExportVariantIcon
+                        size={18}
+                        color='currentColor'
+                    />
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
-                {archived ? (
-                    <DropdownMenuItem
-                        onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
-                    >
-                        <FormattedMessage defaultMessage='Restore playbook'/>
-                    </DropdownMenuItem>
-                ) : (
-                    <DropdownMenuItem
-                        onClick={() => openDeletePlaybookModal(playbook)}
-                    >
-                        <RedText>
-                            <FormattedMessage defaultMessage='Archive playbook'/>
-                        </RedText>
-                    </DropdownMenuItem>
+                {currentUserMember && (
+                    <>
+                        <div className='MenuGroup menu-divider'/>
+                        <DropdownMenuItem
+                            onClick={() => leavePlaybook()}
+                        >
+                            <CloseIcon
+                                size={18}
+                                color='currentColor'
+                            />
+                            <FormattedMessage defaultMessage='Leave'/>
+                        </DropdownMenuItem>
+                        <div className='MenuGroup menu-divider'/>
+                        {archived ? (
+                            <DropdownMenuItem
+                                onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
+                            >
+                                <Icon
+                                    path={mdiRestore}
+                                    size={'18px'}
+                                />
+                                <FormattedMessage defaultMessage='Restore'/>
+                            </DropdownMenuItem>
+                        ) : (
+                            <DropdownMenuItem
+                                onClick={() => openDeletePlaybookModal(playbook)}
+                            >
+                                <RedText css={`${iconSplitStyling}`}>
+                                    <ArchiveOutlineIcon
+                                        size={18}
+                                        color='currentColor'
+                                    />
+                                    <FormattedMessage defaultMessage='Archive'/>
+                                </RedText>
+                            </DropdownMenuItem>
+                        )}
+                    </>
                 )}
             </DotMenu>
             {confirmArchiveModal}
@@ -377,6 +482,10 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         </>
     );
 };
+
+const DropdownMenuItem = styled(DropdownMenuItemBase)`
+    ${iconSplitStyling};
+`;
 
 export const TitleMenu = styled(TitleMenuImpl)`
 
