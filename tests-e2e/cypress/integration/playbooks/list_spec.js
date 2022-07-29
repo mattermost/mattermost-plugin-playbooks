@@ -58,7 +58,7 @@ describe('playbooks > list', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click on the dot menu
-        cy.get('.icon-dots-horizontal').click();
+        cy.findByTestId('menu-button').click();
 
         // # Click on duplicate
         cy.findByText('Duplicate').click();
