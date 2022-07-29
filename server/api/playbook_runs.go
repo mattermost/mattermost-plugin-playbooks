@@ -905,16 +905,14 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
-		// h.HandleError(w, err)
-		h.HandleErrorWithCode(w, http.StatusForbidden, err.Error(), nil)
+		h.HandleError(w, err)
 		return
 	}
 
 	// Don't worry if the user could not be previously a follower
 	// Unfollow implementation is defensive about this.
 	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
-		// h.HandleError(w, err)
-		h.HandleErrorWithCode(w, http.StatusForbidden, err.Error(), nil)
+		h.HandleError(w, err)
 		return
 	}
 
