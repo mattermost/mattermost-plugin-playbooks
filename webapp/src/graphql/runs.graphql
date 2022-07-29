@@ -1,3 +1,20 @@
+query Runs($userID: String!, $teamID: String!, $statuses: [String!]) {
+	runs (participantOrFollowerID: $userID, teamID: $teamID, statuses: $statuses){
+		id
+		name
+		delete_at: createAt
+    participant_ids: participantIDs
+    owner_id: ownerUserID
+    playbook_id: playbookID
+    team_id: teamID
+    checklists {
+			items {
+				state
+			}
+    }
+	}
+}
+
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }

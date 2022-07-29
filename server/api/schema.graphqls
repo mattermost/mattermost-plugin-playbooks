@@ -166,6 +166,21 @@ type Run {
 	id: String!
 	name: String!
 	isFavorite: Boolean!
+
+	ownerUserID: String!
+	channelID: String!
+	teamID: String!
+	summary: String!
+	currentStatus: String!
+	summaryModifiedAt: Float!
+	createAt: Float!
+	endAt: Float!
+	lastStatusUpdateAt: Float!
+	playbookID: String!
+	checklists: [Checklist!]!
+	statusUpdateEnabled: Boolean!
+	participantIDs: [String!]!
+
 }
 
 input RunUpdates {

@@ -32,3 +32,27 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 
 	return isFavorite, nil
 }
+
+func (r *RunResolver) CreateAt() float64 {
+	return float64(r.PlaybookRun.CreateAt)
+}
+
+func (r *RunResolver) EndAt() float64 {
+	return float64(r.PlaybookRun.EndAt)
+}
+
+func (r *RunResolver) SummaryModifiedAt() float64 {
+	return float64(r.PlaybookRun.SummaryModifiedAt)
+}
+func (r *RunResolver) LastStatusUpdateAt() float64 {
+	return float64(r.PlaybookRun.LastStatusUpdateAt)
+}
+
+func (r *RunResolver) Checklists() []*ChecklistResolver {
+	checklistResolvers := make([]*ChecklistResolver, 0, len(r.PlaybookRun.Checklists))
+	for _, checklist := range r.PlaybookRun.Checklists {
+		checklistResolvers = append(checklistResolvers, &ChecklistResolver{checklist})
+	}
+
+	return checklistResolvers
+}

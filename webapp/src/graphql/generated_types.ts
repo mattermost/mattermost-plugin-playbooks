@@ -218,9 +218,22 @@ export type QueryRunsArgs = {
 
 export type Run = {
     __typename?: 'Run';
+    channelID: Scalars['String'];
+    checklists: Array<Checklist>;
+    createAt: Scalars['Float'];
+    currentStatus: Scalars['String'];
+    endAt: Scalars['Float'];
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
+    lastStatusUpdateAt: Scalars['Float'];
     name: Scalars['String'];
+    ownerUserID: Scalars['String'];
+    participantIDs: Array<Scalars['String']>;
+    playbookID: Scalars['String'];
+    statusUpdateEnabled: Scalars['Boolean'];
+    summary: Scalars['String'];
+    summaryModifiedAt: Scalars['Float'];
+    teamID: Scalars['String'];
 };
 
 export type RunUpdates = {
@@ -246,6 +259,14 @@ export type PlaybookLhsQueryVariables = Exact<{
 }>;
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+
+export type RunsQueryVariables = Exact<{
+    userID: Scalars['String'];
+    teamID: Scalars['String'];
+    statuses?: InputMaybe<Array<Scalars['String']> | Scalars['String']>;
+}>;
+
+export type RunsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, delete_at: number, participant_ids: Array<string>, owner_id: string, playbook_id: string, team_id: string, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', state: string }> }> }> };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -426,6 +447,54 @@ export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
 export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
 export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
+export const RunsDocument = gql`
+    query Runs($userID: String!, $teamID: String!, $statuses: [String!]) {
+  runs(participantOrFollowerID: $userID, teamID: $teamID, statuses: $statuses) {
+    id
+    name
+    delete_at: createAt
+    participant_ids: participantIDs
+    owner_id: ownerUserID
+    playbook_id: playbookID
+    team_id: teamID
+    checklists {
+      items {
+        state
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useRunsQuery__
+ *
+ * To run a query within a React component, call `useRunsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRunsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRunsQuery({
+ *   variables: {
+ *      userID: // value for 'userID'
+ *      teamID: // value for 'teamID'
+ *      statuses: // value for 'statuses'
+ *   },
+ * });
+ */
+export function useRunsQuery(baseOptions: Apollo.QueryHookOptions<RunsQuery, RunsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<RunsQuery, RunsQueryVariables>(RunsDocument, options);
+}
+export function useRunsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunsQuery, RunsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<RunsQuery, RunsQueryVariables>(RunsDocument, options);
+}
+export type RunsQueryHookResult = ReturnType<typeof useRunsQuery>;
+export type RunsLazyQueryHookResult = ReturnType<typeof useRunsLazyQuery>;
+export type RunsQueryResult = Apollo.QueryResult<RunsQuery, RunsQueryVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)

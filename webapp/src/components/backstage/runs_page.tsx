@@ -14,11 +14,8 @@ import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
-
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-
 import {useRunsList} from 'src/hooks';
-
 import {pluginUrl} from 'src/browser_routing';
 
 import Header from '../widgets/header';
@@ -48,6 +45,16 @@ const RunsPage = () => {
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
     const currentTeamId = useSelector(getCurrentTeamId);
+
+    // const {data, error} = useRunsQuery({
+    //     variables: {
+    //         userID: 'me',
+    //         teamID: currentTeamId,
+    //         statuses: ['InProgress'],
+    //     },
+    //     fetchPolicy: 'cache-and-network',
+    // });
+    // console.log(data, error);
 
     // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
