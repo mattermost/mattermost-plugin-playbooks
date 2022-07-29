@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"sort"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -63,7 +62,9 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "CreateAt"
 	case app.SortByLastRunAt:
 		sort = "LastRunAt"
-	case "", app.SortByActiveRuns:
+	case app.SortByActiveRuns:
+		sort = "ActiveRuns"
+	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
 	default:
@@ -446,6 +447,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"p.NumStages",
 			"p.NumSteps",
 			"COUNT(i.ID) AS NumRuns",
+			"COUNT(CASE WHEN i.CurrentStatus='InProgress' THEN 1 END) AS ActiveRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
 				1 + -- Channel creation is hard-coded
@@ -535,20 +537,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	addMembersToPlaybooks(members, playbooks)
 	addMetricsToPlaybooks(metrics, playbooks)
 
-	if err := p.populateActiveRuns(playbooks); err != nil {
-		return app.GetPlaybooksResults{}, err
-	}
-	if opts.Sort == app.SortByActiveRuns {
-		var mult int64
-		if opts.Direction == app.DirectionAsc {
-			mult = -1
-		} else if opts.Direction == app.DirectionDesc {
-			mult = 1
-		}
-		sort.Slice(playbooks, func(p, q int) bool {
-			return (playbooks[p].ActiveRuns-playbooks[q].ActiveRuns)*mult > 0
-		})
-	}
 
 	pageCount := 0
 	if opts.PerPage > 0 {
