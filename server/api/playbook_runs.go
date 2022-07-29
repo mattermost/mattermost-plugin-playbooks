@@ -76,7 +76,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-get-involved", handler.requestGetInvolved).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -93,6 +92,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -904,13 +904,17 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, h.permissions.RunManageProperties(userID, playbookRunID)) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "not participant", nil)
+	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+		// h.HandleError(w, err)
+		h.HandleErrorWithCode(w, http.StatusForbidden, err.Error(), nil)
 		return
 	}
 
-	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
-		h.HandleError(w, err)
+	// Don't worry if the user could not be previously a follower
+	// Unfollow implementation is defensive about this.
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
+		// h.HandleError(w, err)
+		h.HandleErrorWithCode(w, http.StatusForbidden, err.Error(), nil)
 		return
 	}
 
