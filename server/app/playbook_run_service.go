@@ -1490,7 +1490,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
+	if err = s.sendPlaybookRunToClient(playbookRunToModify.ID); err != nil {
 		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
@@ -1539,11 +1539,11 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.Wrapf(err, "failed to update playbook run recording run of slash command")
 	}
 
-	s.telemetry.RunTaskSlashCommand(playbookRunID, userID, itemToRun)
+	s.telemetry.RunTaskSlashCommand(playbookRun.ID, userID, itemToRun)
 
 	eventTime := model.GetMillis()
 	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
+		PlaybookRunID: playbookRun.ID,
 		CreateAt:      eventTime,
 		EventAt:       eventTime,
 		EventType:     RanSlashCommand,
@@ -1555,7 +1555,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
+	if err = s.sendPlaybookRunToClient(playbookRun.ID); err != nil {
 		return "", errors.Wrap(err, "failed to send playbook run to client")
 	}
 
