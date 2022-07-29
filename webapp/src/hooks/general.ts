@@ -6,7 +6,9 @@ import {
     useState,
     useMemo,
     useLayoutEffect,
+    DependencyList,
 } from 'react';
+import {useIntl} from 'react-intl';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
@@ -52,8 +54,6 @@ import {
     fetchPlaybookStats,
     fetchPlaybookRunMetadata,
     isFavoriteItem,
-    favoriteItem,
-    unfavoriteItem,
 } from 'src/client';
 import {CategoryItemType} from 'src/types/category';
 
@@ -63,6 +63,7 @@ import {
     isCurrentUserAdmin,
 } from '../selectors';
 import {resolve} from 'src/utils';
+import {useUpdateRun} from 'src/graphql/hooks';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -378,7 +379,7 @@ export type FetchMetadata = {
 export function useFetch<T>(
     id: string,
     fetchFunction: (id: string) => Promise<T>,
-    deps: Array<any> = [],
+    deps: DependencyList = [],
 ) {
     const [error, setError] = useState<ClientError | null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
@@ -411,8 +412,8 @@ export function useFetch<T>(
  * @param id identifier of the run to fetch metadata
  * @returns data and fetchState in a array tuple
  */
-export function useRunMetadata(id: PlaybookRun['id']) {
-    return useFetch(id, fetchPlaybookRunMetadata);
+export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = []) {
+    return useFetch(id, fetchPlaybookRunMetadata, deps);
 }
 
 /**
@@ -738,6 +739,7 @@ export const useExportLogAvailable = () => {
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+    const updateRun = useUpdateRun(runID);
 
     useEffect(() => {
         isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
@@ -747,12 +749,34 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
 
     const toggleFavorite = () => {
         if (isFavoriteRun) {
-            unfavoriteItem(teamID, runID, CategoryItemType.RunItemType);
+            updateRun({isFavorite: false});
             setIsFavoriteRun(false);
             return;
         }
-        favoriteItem(teamID, runID, CategoryItemType.RunItemType);
+        updateRun({isFavorite: true});
         setIsFavoriteRun(true);
     };
     return [isFavoriteRun, toggleFavorite];
+};
+
+export enum ReservedCategory {
+    Favorite = 'Favorite',
+    Runs = 'Runs',
+    Playbooks = 'Playbooks'
+}
+
+export const useReservedCategoryTitleMapper = () => {
+    const {formatMessage} = useIntl();
+    return (categoryName: ReservedCategory | string) => {
+        switch (categoryName) {
+        case ReservedCategory.Favorite:
+            return formatMessage({defaultMessage: 'Favorites'});
+        case ReservedCategory.Runs:
+            return formatMessage({defaultMessage: 'Runs'});
+        case ReservedCategory.Playbooks:
+            return formatMessage({defaultMessage: 'Playbooks'});
+        default:
+            return categoryName;
+        }
+    };
 };

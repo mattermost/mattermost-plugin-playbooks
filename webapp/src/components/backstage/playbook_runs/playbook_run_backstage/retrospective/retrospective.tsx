@@ -110,7 +110,6 @@ export const Retrospective = (props: Props) => {
             <>
                 <TimestampContainer>
                     <i className={'icon icon-check-all'}/>
-                    <span>{''}</span>
                     {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
                 </TimestampContainer>
                 <DisabledPrimaryButtonSmaller>

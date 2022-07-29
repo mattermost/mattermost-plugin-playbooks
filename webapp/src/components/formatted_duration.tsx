@@ -53,6 +53,7 @@ const FormattedDuration = ({from, to = 0, style, truncate}: DurationProps) => {
     const now = useNow();
 
     if (!from) {
+        // eslint-disable-next-line formatjs/no-literal-string-in-jsx
         return <div className='time'>{'-'}</div>;
     }
 

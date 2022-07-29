@@ -93,7 +93,7 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Pla
 		playbook.SignalAnyKeywords = app.ProcessSignalAnyKeywords(playbook.SignalAnyKeywords)
 	}
 
-	if playbook.BroadcastEnabled {
+	if playbook.BroadcastEnabled { //nolint
 		for _, channelID := range playbook.BroadcastChannelIDs {
 			channel, err := h.pluginAPI.Channel.Get(channelID)
 			if err != nil {

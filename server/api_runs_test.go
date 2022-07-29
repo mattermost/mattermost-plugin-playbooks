@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -1199,6 +1200,8 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := privateRun.TimelineEvents[len(privateRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
+		assert.NotZero(t, lastEvent.PostID)
 		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
 	})
 
@@ -1226,5 +1229,69 @@ func TestRequestUpdate(t *testing.T) {
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
 	})
+}
 
+func TestReminderReset(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("reminder reset - event created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 100,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		statusSnoozed := make([]client.TimelineEvent, 0)
+		for _, te := range pb.TimelineEvents {
+			if te.EventType == "status_update_snoozed" {
+				statusSnoozed = append(statusSnoozed, te)
+			}
+		}
+
+		require.Len(t, statusSnoozed, 1)
+	})
+}
+
+func TestLeave(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("owner can not leave run", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+	})
+
+	t.Run("join and leave run", func(t *testing.T) {
+		fmt.Println(e.BasicRun.ParticipantIDs)
+
+		// Join
+		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// Assert is participant and follower
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Contains(t, meta.Followers, e.RegularUser2.Id)
+
+		// Leave
+		err = e.PlaybooksClient2.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		// Assert is not participant and follower anymore
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		meta, err = e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, meta.Followers, e.RegularUser2.Id)
+	})
 }

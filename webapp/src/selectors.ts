@@ -27,7 +27,7 @@ import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams'
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
@@ -175,10 +175,6 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
 };
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
-
-export const eventsFilterForPlaybookRun = (state: GlobalState, playbookRunId: string): TimelineEventsFilter => {
-    return pluginState(state).eventsFilterByPlaybookRun[playbookRunId] || TimelineEventsFilterDefault;
-};
 
 export const lastUpdatedByPlaybookRunId = createSelector(
     'lastUpdatedByPlaybookRunId',

@@ -99,6 +99,7 @@ const ListSection = styled.div`
     display: flex;
     flex-direction: column;
     margin: 8px 4px;
+    padding-bottom: 50px;
 `;
 
 // const StyledSearchInput = styled(SearchInput)`
@@ -120,7 +121,7 @@ const ProfileWrapper = styled.div`
 
     ${HoverButtonContainer} {
         opacity: 0;
-    }    
+    }
     :hover,
     :focus-within {
         background: rgba(var(--center-channel-color-rgb), 0.04);

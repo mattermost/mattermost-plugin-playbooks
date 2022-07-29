@@ -431,7 +431,7 @@ func TestPlaybookProperties(t *testing.T) {
 		"DefaultCommanderID":          dummyPlaybook.DefaultOwnerID,
 		"DefaultCommanderEnabled":     dummyPlaybook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         dummyPlaybook.BroadcastChannelIDs,
-		"BroadcastEnabled":            dummyPlaybook.BroadcastEnabled,
+		"BroadcastEnabled":            dummyPlaybook.BroadcastEnabled, //nolint
 		"NumWebhookOnCreationURLs":    2,
 		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,

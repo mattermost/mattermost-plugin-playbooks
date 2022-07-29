@@ -11,12 +11,7 @@ describe('playbooks > overview', () => {
     let testTeam;
     let testOtherTeam;
     let testUser;
-    let testUserFollower;
     let testPublicPlaybook;
-    // eslint-disable-next-line no-unused-vars
-    let testPrivateOnlyMinePlaybook;
-    // eslint-disable-next-line no-unused-vars
-    let testPrivateSharedPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
 
@@ -32,7 +27,6 @@ describe('playbooks > overview', () => {
 
                 // # Create a dedicated run follower
                 cy.apiCreateUser().then(({user: createdUser}) => {
-                    testUserFollower = createdUser;
                     cy.apiAddUserToTeam(testTeam.id, createdUser.id);
                     cy.apiAddUserToTeam(testOtherTeam.id, createdUser.id);
                 });
@@ -58,8 +52,6 @@ describe('playbooks > overview', () => {
                         teamId: testTeam.id,
                         title: 'Private Only Mine Playbook',
                         memberIDs: [testUser.id],
-                    }).then((playbook) => {
-                        testPrivateOnlyMinePlaybook = playbook;
                     });
 
                     // # Create a private playbook with multiple users
@@ -67,8 +59,6 @@ describe('playbooks > overview', () => {
                         teamId: testTeam.id,
                         title: 'Private Shared Playbook',
                         memberIDs: [testUser.id, anotherUser.id],
-                    }).then((playbook) => {
-                        testPrivateSharedPlaybook = playbook;
                     });
 
                     // # Create a public playbook
@@ -172,7 +162,7 @@ describe('playbooks > overview', () => {
         cy.get('.icon-link-variant').trigger('mouseover', {force: true});
 
         // * Verify tooltip text
-        cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to playbook');
+        cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to');
 
         stubClipboard().as('clipboard');
 
@@ -191,13 +181,13 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # Click on playbook title
-        cy.get('.icon-chevron-down').click();
+        cy.findByTestId('playbook-editor-title').click();
 
         // # Click on duplicate
         cy.findByText('Duplicate').click();
 
         // * Verify that playbook got duplicated
-        cy.findByText(`Copy of ${testPublicPlaybook.title}`).should('exist');
+        cy.findByTestId('playbook-editor-title').should('contain', `Copy of ${testPublicPlaybook.title}`);
     });
 
     it('shows checklists', () => {
@@ -220,85 +210,24 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${playbook.id}`);
         });
 
-        cy.findByTestId('preview-content').within(() => {
-            // * Verify checklist and associated steps
-            cy.findByText('Checklists').next().within(() => {
-                cy.findByText('Stage 1').should('exist');
-                cy.findByText('Step 1').should('exist');
-                cy.findByText('Step 2').should('exist');
-            });
-        });
-    });
+        // # Switch to Outline section
+        cy.findByText('Outline').click();
 
-    it('shows followers in actions preview', () => {
-        // eslint-disable-next-line no-unused-vars
-        let playbookId;
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Playbook',
-            description: 'Cypress Playbook',
-            memberIDs: [testUser.id],
-            checklists: [
-                {
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1'},
-                        {title: 'Step 2'},
-                    ],
-                },
-            ],
-            retrospectiveTemplate: 'Cypress test template'
-        }).then((playbook) => {
-            playbookId = playbook.id;
-            cy.visit(`/playbooks/playbooks/${playbook.id}`);
-
-            // * Verify we don't have any follower
-            cy.findByTestId('preview-content').within(() => {
-                cy.findByText('Begin following for').should('not.exist');
-            });
-
-            // * set myself as follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({force: true});
-            cy.findByTestId('preview-content').within(() => {
-                cy.findByText('Begin following for one user').should('exist');
-            });
-
-            // # login as other follower and follow playbook
-            cy.apiLogin(testUserFollower);
-            cy.visit(`/playbooks/playbooks/${playbook.id}`);
-
-            // * set testUserFollower as follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({force: true});
-            cy.findByTestId('preview-content').within(() => {
-                cy.findByText('Begin following for 2 users').should('exist');
-            });
-
-            // * set testUserFollower as no follower and check message in preview
-            cy.findByTestId('auto-follow-runs').click({force: true});
-            cy.findByTestId('preview-content').within(() => {
-                cy.findByText('Begin following for one user').should('exist');
-            });
-        });
-    });
-
-    it('shows status update timer', () => {
-        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
-        cy.findByTestId('preview-content').within(() => {
-            cy.findByText('Status updates').next().within(() => {
-                cy.findByText('1 day').should('exist');
-            });
+        // * Verify checklist and associated steps
+        cy.get('#checklists').within(() => {
+            cy.findByText('Stage 1').should('exist');
+            cy.findByText('Step 1').should('exist');
+            cy.findByText('Step 2').should('exist');
         });
     });
 
     it('shows correct retrospective timer and template text', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+        cy.findByText('Outline').click();
 
-        cy.findByTestId('preview-content').within(() => {
-            cy.findByText('Retrospective').next().within(() => {
-                cy.findByText('7 days').should('exist');
-                cy.findByText('Retrospective report template').click();
-                cy.findByText('Retro template text').should('exist');
-            });
+        cy.get('#retrospective').within(() => {
+            cy.findByText('7days').should('exist');
+            cy.findByText('Retro template text').should('exist');
         });
     });
 
@@ -313,7 +242,7 @@ describe('playbooks > overview', () => {
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             // # Go to usage view
-            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/usage`);
+            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
             // * Verify basic information.
             cy.findByText('Runs currently in progress').next().should('contain', '1');
@@ -357,13 +286,10 @@ describe('playbooks > overview', () => {
             cy.get('[class^="Title-"]').contains(playbookTitle);
 
             // * Verify we can see the archived badge
-            cy.findByTestId('archived-badge').should('be.visible');
+            cy.get('.icon-archive-outline').should('be.visible');
 
             // * Verify the run button is disabled
             cy.findByTestId('run-playbook').should('be.disabled');
-
-            // * Verify the edit button is disabled
-            cy.findByTestId('edit-playbook').should('be.disabled');
 
             // # Attempt to edit the playbook
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {

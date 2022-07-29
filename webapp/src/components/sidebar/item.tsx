@@ -1,7 +1,7 @@
 import React from 'react';
 import {NavLink} from 'react-router-dom';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 interface ItemProps {
     icon: React.ReactNode;
@@ -16,7 +16,7 @@ interface ItemProps {
 
 const Item = (props: ItemProps) => {
     return (
-        <ItemContainer>
+        <ItemContainer isCollapsed={props.isCollapsed}>
             <StyledNavLink
                 className={props.className}
                 id={`sidebarItem_${props.id}`}
@@ -55,7 +55,7 @@ export const Icon = styled.div`
     color: rgba(var(--sidebar-text-rgb), 0.72);
 `;
 
-export const ItemContainer = styled.li`
+export const ItemContainer = styled.li<{isCollapsed?: boolean}>`
     display: flex;
     overflow: hidden;
     height: 32px;
@@ -65,6 +65,10 @@ export const ItemContainer = styled.li`
     opacity: 1;
     transition: height 0.18s ease;
     visibility: visible;
+
+    ${(props) => props.isCollapsed && css`
+        height: 0px;
+    `};
 `;
 
 export const StyledNavLink = styled(NavLink)`

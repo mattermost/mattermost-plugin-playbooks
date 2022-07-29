@@ -64,3 +64,17 @@ query Playbook($id: String!) {
 mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
 }
+
+query PlaybookLHS($userID: String!, $teamID: String!) {
+	runs (participantOrFollowerID: $userID, teamID: $teamID, statuses: ["InProgress"]){
+		id
+		name
+		isFavorite
+	}
+	playbooks (teamID: $teamID, withMembershipOnly: true) {
+		id
+		title
+		isFavorite
+		public
+	}
+}

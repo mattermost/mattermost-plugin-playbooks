@@ -35,7 +35,6 @@ export interface SidebarGroup {
 interface SidebarProps {
     team_id: string;
     groups: Array<SidebarGroup>;
-    onGroupClick: (groupId: string) => void;
     headerDropdown: React.ReactNode;
 }
 
@@ -82,9 +81,6 @@ const Sidebar = (props: SidebarProps) => {
                         <Group
                             key={group.id}
                             group={group}
-                            onClick={() => {
-                                props.onGroupClick(group.id);
-                            }}
                         />
                     );
                 })}

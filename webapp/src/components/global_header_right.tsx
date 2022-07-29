@@ -75,7 +75,7 @@ const GlobalHeaderRight = () => {
                     onClick={onClick}
                     inverted={true}
                     compact={true}
-                    aria-label='Select to toggle a list of tasks.' // proper wording and translation needed
+                    aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
                 />
             </IconButtonWrapper>
         </OverlayTrigger>

@@ -8,7 +8,6 @@ import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
-    hideHelpText?: boolean;
     maxUsers?: number;
 }
 
@@ -21,11 +20,6 @@ const Following = (props: Props) => {
 
     return (
         <>
-            {!props.hideHelpText &&
-            <FollowingWrapper>
-                {props.userIds.length + ' following'}
-            </FollowingWrapper>
-            }
             <UserRow
                 tabIndex={0}
                 role={'button'}
@@ -38,18 +32,13 @@ const Following = (props: Props) => {
                     />
                 ))}
                 {props.userIds.length > maxUsers &&
+                    // eslint-disable-next-line formatjs/no-literal-string-in-jsx
                     <Rest sizeInPx={20}>{'+' + (props.userIds.length - maxUsers)}</Rest>
                 }
             </UserRow>
         </>
     );
 };
-
-const FollowingWrapper = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 11px;
-    line-height: 16px;
-`;
 
 const UserRow = styled.div`
     width: max-content;

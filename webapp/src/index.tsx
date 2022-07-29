@@ -69,6 +69,8 @@ import {UpdateRequestPost} from 'src/components/update_request_post';
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
+import {setPlaybooksGraphQLClient} from './graphql_client';
+
 const GlobalHeaderCenter = () => {
     return null;
 };
@@ -288,6 +290,9 @@ export default class Plugin {
             link: new HttpLink({fetch: graphqlFetch}),
             cache: new InMemoryCache(),
         });
+
+        // Store graphql client for bad modals.
+        setPlaybooksGraphQLClient(graphqlClient);
 
         this.doRegistrations(registry, store, graphqlClient);
 
