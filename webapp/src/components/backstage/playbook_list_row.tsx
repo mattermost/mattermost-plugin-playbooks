@@ -20,7 +20,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {GlobalState} from '@mattermost/types/store';
 
-import {useHasPlaybookPermission, useHasTeamPermission, useLegacyUpdatePlaybook} from 'src/hooks';
+import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 
@@ -28,15 +28,17 @@ import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyle
 
 import Tooltip from 'src/components/widgets/tooltip';
 
-import {autoFollowPlaybook, createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
+import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 
-import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
 
 import {navigateToUrl} from 'src/browser_routing';
 
 import {DotMenuButton} from '../dot_menu';
+
+import {usePlaybookMembership} from 'src/graphql/hooks';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -110,29 +112,7 @@ const PlaybookListRow = (props: Props) => {
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
 
-    const updatePlaybook = useLegacyUpdatePlaybook(props.playbook.id);
-
-    const join = async () => {
-        if (props.playbook.members.find(({user_id}) => user_id === currentUser.id)) {
-            return;
-        }
-        await updatePlaybook((playbook) => {
-            return {
-                members: [...playbook.members, {user_id: currentUser.id, roles: [PlaybookRole.Member]}],
-            };
-        });
-        await autoFollowPlaybook(props.playbook.id, currentUser.id);
-        props.onMembershipChanged(true);
-    };
-
-    const leave = async () => {
-        await updatePlaybook(({members}) => {
-            return {
-                members: [...members.filter(({user_id}) => user_id !== currentUser.id)],
-            };
-        });
-        props.onMembershipChanged(false);
-    };
+    const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
@@ -224,6 +204,7 @@ const PlaybookListRow = (props: Props) => {
                         onClick={(e) => {
                             e.stopPropagation();
                             join();
+                            props.onMembershipChanged(true);
                         }}
                         data-testid='join-playbook'
                         css={`
@@ -302,7 +283,10 @@ const PlaybookListRow = (props: Props) => {
                         <>
                             <div className='MenuGroup menu-divider'/>
                             <DropdownMenuItem
-                                onClick={() => leave()}
+                                onClick={() => {
+                                    leave();
+                                    props.onMembershipChanged(false);
+                                }}
                             >
                                 <CloseIcon
                                     size={18}
