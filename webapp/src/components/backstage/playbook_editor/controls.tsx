@@ -32,7 +32,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission, useLegacyUpdatePlaybook} from 'src/hooks';
+import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -52,11 +52,12 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {displayEditPlaybookAccessModal} from 'src/actions';
-import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
+import {usePlaybookMembership} from 'src/graphql/hooks';
 
 type ControlProps = {
     playbook: {
@@ -301,28 +302,19 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     );
 };
 
-export const JoinPlaybook = ({playbook: {members, id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
+export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
     const {formatMessage} = useIntl();
     const currentUser = useSelector(getCurrentUser);
-    const updatePlaybook = useLegacyUpdatePlaybook(playbookId);
+    const {join} = usePlaybookMembership(playbookId, currentUser.id);
     const {setFollowing} = useEditorFollowersMeta(playbookId);
-
-    const join = async () => {
-        if (members.find(({user_id}) => user_id === currentUser.id)) {
-            return;
-        }
-        await updatePlaybook((playbook) => {
-            return {
-                members: [...playbook.members, {user_id: currentUser.id, roles: [PlaybookRole.Member]}],
-            };
-        });
-        await setFollowing(true);
-        refetch();
-    };
 
     return (
         <PrimaryButtonLarger
-            onClick={join}
+            onClick={async () => {
+                join();
+                await setFollowing(true);
+                refetch();
+            }}
             data-testid='join-playbook'
         >
             <PlusIcon
@@ -360,16 +352,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
 
     const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
 
-    const updatePlaybook = useLegacyUpdatePlaybook(playbook.id);
-
-    const leavePlaybook = async () => {
-        await updatePlaybook(({members}) => {
-            return {
-                members: [...members.filter(({user_id}) => user_id !== currentUserId)],
-            };
-        });
-        refetch();
-    };
+    const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 
     return (
         <>
@@ -442,7 +425,10 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     <>
                         <div className='MenuGroup menu-divider'/>
                         <DropdownMenuItem
-                            onClick={() => leavePlaybook()}
+                            onClick={() => {
+                                leave();
+                                refetch();
+                            }}
                         >
                             <CloseIcon
                                 size={18}

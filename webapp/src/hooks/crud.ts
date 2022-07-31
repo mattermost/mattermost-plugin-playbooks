@@ -18,7 +18,6 @@ import {
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
-import {resolve} from 'src/utils';
 
 type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
 
@@ -66,24 +65,6 @@ export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
     };
 
     return [playbook, updatePlaybook];
-}
-
-export function useLegacyUpdatePlaybook(id: Playbook['id']) {
-    const updatePlaybook = async (patch: Partial<PlaybookWithChecklist> | ((playbook: PlaybookWithChecklist) => Partial<PlaybookWithChecklist>)) => {
-        let playbook;
-        try {
-            playbook = await clientFetchPlaybook(id);
-            if (!playbook) {
-                return null;
-            }
-        } catch {
-            return null;
-        }
-
-        return savePlaybook({...playbook, ...resolve(patch, playbook)});
-    };
-
-    return updatePlaybook;
 }
 
 export function usePlaybooksCrud(
