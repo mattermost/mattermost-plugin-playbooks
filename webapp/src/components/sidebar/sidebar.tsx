@@ -59,7 +59,6 @@ const Sidebar = (props: SidebarProps) => {
                 >
                     <SidebarHeading>
                         <span className='title'>{team.display_name}</span>
-                        <i className='icon icon-chevron-down'/>
                     </SidebarHeading>
                 </OverlayTrigger>
                 {props.headerDropdown}
