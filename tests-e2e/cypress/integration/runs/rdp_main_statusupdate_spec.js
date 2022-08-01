@@ -125,7 +125,7 @@ describe('runs > run details page > status update', () => {
                     // # Click on request update
                     cy.findByText('Request update...').click();
 
-                    // # Click on modal confirmation
+                    // * Assert modal is not opened
                     cy.get('#confirmModalButton').should('not.exist');
                 });
             });
