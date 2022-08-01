@@ -32,7 +32,7 @@ import {FollowState} from './rhs_info';
 export const useFollow = (runID: string, followState: FollowState) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
-    const {isFollowing, followers, setIsFollowing, setFollowers} = followState;
+    const {isFollowing, followers, setFollowers} = followState;
     const currentUser = useSelector(getCurrentUser);
 
     const toggleFollow = () => {
@@ -40,11 +40,9 @@ export const useFollow = (runID: string, followState: FollowState) => {
         action(runID)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
-                setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
             })
             .catch(() => {
-                setIsFollowing(isFollowing);
                 addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
             });
     };

@@ -25,7 +25,6 @@ interface Props {
 export interface FollowState {
     isFollowing: boolean;
     followers: string[];
-    setIsFollowing: (isFollowing: boolean) => void;
     setFollowers: (followers: string[]) => void;
 }
 

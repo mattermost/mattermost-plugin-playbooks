@@ -66,12 +66,15 @@ const useFollowers = (metadataFollowers: string[]) => {
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
 
-    useEffect(() => {
+    useUpdateEffect(() => {
         setFollowers(metadataFollowers);
-        setIsFollowing(metadataFollowers.includes(currentUser.id));
     }, [currentUser.id, JSON.stringify(metadataFollowers)]);
 
-    return {isFollowing, followers, setIsFollowing, setFollowers};
+    useUpdateEffect(() => {
+        setIsFollowing(followers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(followers)]);
+
+    return {isFollowing, followers, setFollowers};
 };
 
 export enum PlaybookRunIDs {
