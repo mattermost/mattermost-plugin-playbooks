@@ -17,8 +17,16 @@ interface Props {
     runMetadata?: Metadata;
     role: Role;
     channel: Channel | undefined | null;
+    followState: FollowState;
     onViewParticipants: () => void;
     onViewTimeline: () => void;
+}
+
+export interface FollowState {
+    isFollowing: boolean;
+    followers: string[];
+    setIsFollowing: (isFollowing: boolean) => void;
+    setFollowers: (followers: string[]) => void;
 }
 
 const RHSInfo = (props: Props) => {
@@ -34,6 +42,7 @@ const RHSInfo = (props: Props) => {
                 onViewParticipants={props.onViewParticipants}
                 editable={editable}
                 channel={props.channel}
+                followState={props.followState}
             />
             <RHSInfoMetrics
                 runID={props.run.id}

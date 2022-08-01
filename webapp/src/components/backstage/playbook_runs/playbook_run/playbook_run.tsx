@@ -35,7 +35,6 @@ import RHSTimeline from './rhs_timeline';
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
@@ -62,6 +61,19 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+const useFollowers = (metadataFollowers: string[]) => {
+    const currentUser = useSelector(getCurrentUser);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useEffect(() => {
+        setFollowers(metadataFollowers);
+        setIsFollowing(metadataFollowers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
+
+    return {isFollowing, followers, setIsFollowing, setFollowers};
+};
+
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -79,12 +91,15 @@ const PlaybookRunDetails = () => {
     const playbookRun = useRun(playbookRunId);
     const playbook = usePlaybook(playbookRun?.playbook_id);
 
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
+
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRunId, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
     const channel = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
+    const followState = useFollowers(metadata?.followers || []);
 
     const RHS = useRHS(playbookRun);
 
@@ -153,6 +168,7 @@ const PlaybookRunDetails = () => {
                 playbook={playbook ?? undefined}
                 runMetadata={metadata ?? undefined}
                 role={role}
+                followState={followState}
                 channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => {
@@ -200,6 +216,7 @@ const PlaybookRunDetails = () => {
                         role={role}
                         channel={channel}
                         rhsSection={RHS.isOpen ? RHS.section : null}
+                        isFollowing={followState.isFollowing}
                     />
                 </Header>
                 <Main>
