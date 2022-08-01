@@ -36,7 +36,7 @@ import {PlaybooksPluginState} from 'src/reducer';
 // Assert known typing
 const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
 
-// Fake selector to user as a selctor that always fails to get info from store
+// Fake selector to use it as a selector that always fails to get info from store
 // It's useful to be compliant with some sort of selector-based parameters
 export const noopSelector = () => undefined;
 
