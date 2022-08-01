@@ -35,12 +35,14 @@ const RHSInfo = (props: Props) => {
                 editable={editable}
                 channel={props.channel}
             />
-            <RHSInfoMetrics
-                runID={props.run.id}
-                metricsData={props.run.metrics_data}
-                metricsConfig={props.playbook?.metrics}
-                editable={editable}
-            />
+            {props.run.retrospective_enabled ? (
+                <RHSInfoMetrics
+                    runID={props.run.id}
+                    metricsData={props.run.metrics_data}
+                    metricsConfig={props.playbook?.metrics}
+                    editable={editable}
+                />
+            ) : null}
             <RHSInfoActivity
                 run={props.run}
                 role={props.role}
