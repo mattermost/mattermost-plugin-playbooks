@@ -143,6 +143,9 @@ describe('runs > run details page > run info', () => {
             });
 
             it('click channel link navigates to run\'s channel', () => {
+                // * Assert channel name
+                getOverviewEntry('channel').contains('the run name');
+
                 // # Click on channel item
                 getOverviewEntry('channel').click();
 
@@ -329,6 +332,11 @@ describe('runs > run details page > run info', () => {
                         playbookWithMetrics.metrics.forEach((metric) => {
                             // # Click on the metric row
                             cy.findByText(metric.title).click();
+
+                            // # Seems there's a re-render between clicking the title and
+                            // # typing that occasionally leads to dropped keystrokes in
+                            // # .type(). Wait for it to avoid.
+                            cy.wait(1000);
 
                             // # Type a value for the metric
                             cy.focused().type(testData[metric.type].input);

@@ -46,6 +46,7 @@ type TelemetryClient interface {
 	bot.Telemetry
 	app.UserInfoTelemetry
 	app.ChannelActionTelemetry
+	app.CategoryTelemetry
 	Enable() error
 	Disable() error
 }
@@ -175,7 +176,7 @@ func (p *Plugin) OnActivate() error {
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
-	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
+	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -218,6 +219,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewGraphQLHandler(
 		p.handler.APIRouter,
 		p.playbookService,
+		p.playbookRunService,
 		p.categoryService,
 		pluginAPIClient,
 		p.bot,
@@ -262,12 +264,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	// run metrics server to expose data
-	p.runMetricsServer()
-	// run metrics updater recurring task
-	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
-	// set error counter middleware handler
-	p.handler.APIRouter.Use(p.getErrorCounterHandler())
+	enableMetrics := p.API.GetConfig().MetricsSettings.Enable
+	if enableMetrics != nil && *enableMetrics {
+		// run metrics server to expose data
+		p.runMetricsServer()
+		// run metrics updater recurring task
+		p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+		// set error counter middleware handler
+		p.handler.APIRouter.Use(p.getErrorCounterHandler())
+	}
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -331,6 +336,8 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 }
 
 func (p *Plugin) runMetricsServer() {
+	p.pluginAPI.Log.Info("Starting Playbooks metrics server", "port", metricsExposePort)
+
 	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
 	// Run server to expose metrics
 	go func() {

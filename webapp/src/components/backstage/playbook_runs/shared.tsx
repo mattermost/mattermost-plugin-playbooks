@@ -187,3 +187,11 @@ export enum Role {
     Viewer = 'viewer',
     Participant = 'participant',
 }
+
+export const Separator = styled.hr`
+    display: flex;
+    align-content: center;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb),0.08);
+    margin: 5px auto;
+    width: 100%;
+`;

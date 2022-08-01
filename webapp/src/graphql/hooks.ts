@@ -1,6 +1,16 @@
 import {useCallback} from 'react';
 
-import {PlaybookDocument, PlaybookQuery, PlaybookQueryHookResult, PlaybookUpdates, usePlaybookQuery, useUpdatePlaybookMutation} from 'src/graphql/generated_types';
+import {
+    PlaybookDocument,
+    PlaybookLhsDocument,
+    PlaybookQuery,
+    PlaybookQueryHookResult,
+    PlaybookUpdates,
+    RunUpdates,
+    usePlaybookQuery,
+    useUpdatePlaybookMutation,
+    useUpdateRunMutation,
+} from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -30,4 +40,16 @@ export const useUpdatePlaybook = (id?: string) => {
     return useCallback((updates: PlaybookUpdates) => {
         return innerUpdatePlaybook({variables: {id: id || '', updates}});
     }, [id, innerUpdatePlaybook]);
+};
+
+export const useUpdateRun = (id?: string) => {
+    const [innerUpdateRun] = useUpdateRunMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((updates: RunUpdates) => {
+        return innerUpdateRun({variables: {id: id || '', updates}});
+    }, [id, innerUpdateRun]);
 };

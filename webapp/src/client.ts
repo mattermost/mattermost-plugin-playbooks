@@ -752,6 +752,14 @@ export const requestGetInvolved = async (playbookRunId: string) => {
     }
 };
 
+export const leaveRun = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/leave`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     try {
         return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
@@ -776,6 +784,14 @@ export const fetchMyCategories = async (teamID: string): Promise<Category[]> => 
     }
 
     return data;
+};
+
+export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
+    try {
+        return await doPut(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
+    } catch (error) {
+        return {error};
+    }
 };
 
 export const doGet = async <TData = any>(url: string) => {

@@ -2689,18 +2689,21 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	data := map[string]interface{}{
 		"Name": requesterUser.Username,
 	}
-	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data)); err != nil {
+
+	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
+	if err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
 	// create timeline event
-	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
-		CreateAt:      eventTime,
-		EventAt:       eventTime,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
 		EventType:     StatusUpdateRequested,
+		PostID:        post.Id,
 		SubjectUserID: requesterID,
+		CreatorUserID: requesterID,
 		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
 	}
 
@@ -2740,6 +2743,31 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	}
 	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_get_involved", data)); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	return nil
+}
+
+// Leave removes user from the run's participants&followers lists
+func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// Check if user is an owner
+	if playbookRun.OwnerUserID == requesterID {
+		return errors.New("owner user can't leave the run")
+	}
+
+	// Check if user is not a member of the channel
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if member == nil {
+		return errors.New("user is not a participant")
+	}
+
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
+		return errors.Wrap(err, "failed to remove channel member")
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -42,6 +43,7 @@ func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, logger bot.Lo
 	categoryRouter := categoriesRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	categoryRouter.HandleFunc("", handler.updateMyCategory).Methods(http.MethodPut)
 	categoryRouter.HandleFunc("", handler.deleteMyCategory).Methods(http.MethodDelete)
+	categoryRouter.HandleFunc("/collapse", handler.collapseMyCategory).Methods(http.MethodPut)
 
 	return handler
 }
@@ -136,7 +138,7 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 	}
 
 	if existingCategory.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
 		return
 	}
 
@@ -146,6 +148,50 @@ func (h *CategoryHandler) updateMyCategory(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := h.categoryService.Update(category); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *CategoryHandler) collapseMyCategory(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	categoryID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var collapsed bool
+	if err := json.NewDecoder(r.Body).Decode(&collapsed); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode collapsed", err)
+		return
+	}
+
+	existingCategory, err := h.categoryService.Get(categoryID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Can't get category", err)
+		return
+	}
+
+	if existingCategory.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
+		return
+	}
+
+	// verify if category belongs to the user
+	if existingCategory.UserID != userID {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "UserID mismatch", nil)
+		return
+	}
+
+	if existingCategory.Collapsed == collapsed {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	patchedCategory := existingCategory
+	patchedCategory.Collapsed = collapsed
+	patchedCategory.UpdateAt = model.GetMillis()
+
+	if err := h.categoryService.Update(patchedCategory); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -166,7 +212,7 @@ func (h *CategoryHandler) deleteMyCategory(w http.ResponseWriter, r *http.Reques
 	// category is already deleted. This avoids
 	// overriding the original deleted at timestamp
 	if existingCategory.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Category deleted", nil)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Category deleted", nil)
 		return
 	}
 

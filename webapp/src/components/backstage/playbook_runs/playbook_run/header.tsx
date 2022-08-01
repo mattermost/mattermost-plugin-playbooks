@@ -8,6 +8,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
+import {Channel} from '@mattermost/types/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
@@ -17,7 +18,7 @@ import {
     requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {FetchState, useChannel, useFavoriteRun} from 'src/hooks';
+import {useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -37,17 +38,19 @@ interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
     role: Role;
+    channel: Channel | undefined | null;
+    hasAccessToChannel: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, channel, hasAccessToChannel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
-    const [channel, channelFetchMetadata] = useChannel(playbookRun.channel_id);
+
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
@@ -63,15 +66,15 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-        if (channelFetchMetadata.isErrorCode(403)) {
+        if (!hasAccessToChannel) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
+                addToast(formatMessage({defaultMessage: 'Your request to join the run was unsuccessful. '}), ToastType.Failure);
             } else {
-                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
+                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel. '}), ToastType.Success);
             }
             return;
-        } else if (channelFetchMetadata.state === FetchState.error) {
+        } else if (!channel) {
             addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
             return;
         }
@@ -82,6 +85,12 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 
+    const confirmGetInvolvedMessage = () => {
+        const commonMessage = formatMessage({defaultMessage: 'As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'});
+        const introMessage = channel === null ? formatMessage({defaultMessage: 'Request to participate in this run.'}) : formatMessage({defaultMessage: 'Become a participant of the run.'});
+        return introMessage + ' ' + commonMessage;
+    };
+
     // Favorite Button State
     const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
 
@@ -90,12 +99,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             <StarButton onClick={toggleFavorite}>
                 <FavoriteIcon
                     size={18}
-                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : ''}
+                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                 />
             </StarButton>
             <ContextMenu
                 playbookRun={playbookRun}
                 role={role}
+                isFavoriteRun={isFavoriteRun}
+                toggleFavorite={toggleFavorite}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
@@ -133,7 +144,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             {role === Role.Viewer &&
                 <GetInvolved onClick={onGetInvolved}>
                     <GetInvolvedIcon color={'var(--button-color)'}/>
-                    {formatMessage({defaultMessage: 'Get involved'})}
+                    {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
             }
             <RunActionsModal
@@ -142,8 +153,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             />
             <ConfirmModal
                 show={showGetInvolvedConfirm}
-                title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={channel === null ? formatMessage({defaultMessage: 'Your participation request will be sent to the run channel.'}) : formatMessage({defaultMessage: 'You\'re about to join this run.'})}
+                title={formatMessage({defaultMessage: 'Participate in the run'})}
+                message={confirmGetInvolvedMessage()}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
                     onConfirmGetInvolved();
