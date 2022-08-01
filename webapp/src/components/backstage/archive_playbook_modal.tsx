@@ -5,6 +5,8 @@ import {Banner} from 'src/components/backstage/styles';
 import {Playbook} from 'src/types/playbook';
 import ConfirmModal from '../widgets/confirmation_modal';
 
+import {refreshLHS} from './lhs_navigation';
+
 const ArchiveBannerTimeout = 5000;
 
 interface ArchiveModalParams {
@@ -25,7 +27,8 @@ const useConfirmPlaybookArchiveModal = (archivePlaybook: (id: Playbook['id']) =>
 
     const onArchive = async () => {
         if (playbook) {
-            archivePlaybook(playbook.id);
+            await archivePlaybook(playbook.id);
+            refreshLHS();
 
             setOpen(false);
             setShowBanner(true);

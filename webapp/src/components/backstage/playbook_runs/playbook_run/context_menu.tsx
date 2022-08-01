@@ -22,6 +22,7 @@ import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {refreshLHS} from '../../lhs_navigation';
 
 import {useOnFinishRun} from './finish_run';
 
@@ -140,6 +141,7 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
         if (response?.error) {
             addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
         } else {
+            refreshLHS();
             addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
             if (!response.has_view_permission) {
                 navigateToUrl(pluginUrl(''));

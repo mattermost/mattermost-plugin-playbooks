@@ -30,6 +30,7 @@ import {ToastType, useToaster} from '../../toast_banner';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {StarButton} from '../../playbook_editor/playbook_editor';
+import {refreshLHS} from '../../lhs_navigation';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -81,6 +82,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
         // if channel is not null, join the channel
         await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
         telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
+        refreshLHS();
         addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 

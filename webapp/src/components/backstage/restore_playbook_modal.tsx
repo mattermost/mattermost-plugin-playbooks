@@ -5,6 +5,8 @@ import {restorePlaybook} from 'src/client';
 import {Banner} from 'src/components/backstage/styles';
 import ConfirmModal from '../widgets/confirmation_modal';
 
+import {refreshLHS} from './lhs_navigation';
+
 const RestoreBannerTimeout = 5000;
 
 type Props = {id: string; title: string};
@@ -25,6 +27,7 @@ const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (context: Props, ca
     async function onRestore() {
         if (context) {
             await restorePlaybook(context.id);
+            refreshLHS();
 
             setOpen(false);
             setShowBanner(true);
