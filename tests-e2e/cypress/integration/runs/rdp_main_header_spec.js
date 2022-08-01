@@ -412,7 +412,7 @@ describe('runs > run details page > header', () => {
                     cy.get('#confirmModal').get('#confirmModalButton').click();
 
                     // * Assert that the Participate button is shown
-                    getHeader().findByText('Participate').should('be.visible');
+                    getHeader().findByText('Participate').should('exist');
 
                     // * Verify run has been removed from LHS
                     cy.findByTestId('lhs-navigation').within(() => {
