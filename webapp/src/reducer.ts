@@ -55,6 +55,8 @@ import {
     SET_CHECKLIST_ITEMS_FILTER,
     OPEN_BACKSTAGE_RHS,
     OpenBackstageRHS,
+    TOGGLE_BACKSTAGE_RHS,
+    ToggleBackstageRHS,
     CLOSE_BACKSTAGE_RHS,
     CloseBackstageRHS,
 } from 'src/types/actions';
@@ -407,6 +409,14 @@ const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, actio
     case OPEN_BACKSTAGE_RHS: {
         const openAction = action as OpenBackstageRHS;
         return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+    }
+    case TOGGLE_BACKSTAGE_RHS: {
+        const toggleAction = action as ToggleBackstageRHS;
+        if (state.section === toggleAction.section) {
+            return {...state, isOpen: false};
+        } else {
+            return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+        }
     }
     case CLOSE_BACKSTAGE_RHS:
         return {...state, isOpen: false};

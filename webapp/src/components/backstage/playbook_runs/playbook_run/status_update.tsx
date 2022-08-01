@@ -12,7 +12,8 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
-import {openUpdateRunStatusModal} from 'src/actions';
+import {openUpdateRunStatusModal, openBackstageRHS, closeBackstageRHS} from 'src/actions';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
 import {useNow, useAllowRequestUpdate} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
@@ -207,7 +208,9 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
         if (playbookRun.status_posts.length === 0) {
             return;
         }
-        openRHS(RHSContent.RunStatusUpdates, RHSTitle, playbookRun.name);
+
+        dispatch(openBackstageRHS(BackstageRHSSection.RunStatusUpdates, BackstageRHSViewMode.Overlap))
+        // openRHS(RHSContent.RunStatusUpdates, RHSTitle, playbookRun.name);
     };
 
     return (

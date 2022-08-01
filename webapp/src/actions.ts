@@ -65,9 +65,11 @@ import {
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
     OPEN_BACKSTAGE_RHS,
+    OpenBackstageRHS,
+    TOGGLE_BACKSTAGE_RHS,
+    ToggleBackstageRHS,
     CLOSE_BACKSTAGE_RHS,
     CloseBackstageRHS,
-    OpenBackstageRHS,
     SetEveryChecklistCollapsedState,
     SET_EVERY_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
@@ -361,6 +363,12 @@ export const closeBackstageRHS = (): CloseBackstageRHS => ({
 
 export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
     type: OPEN_BACKSTAGE_RHS,
+    section,
+    viewMode,
+});
+
+export const toggleBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): ToggleBackstageRHS => ({
+    type: TOGGLE_BACKSTAGE_RHS,
     section,
     viewMode,
 });

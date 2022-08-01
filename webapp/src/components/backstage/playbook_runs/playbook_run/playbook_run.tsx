@@ -19,6 +19,8 @@ import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+import {openBackstageRHS, toggleBackstageRHS, closeBackstageRHS} from 'src/actions';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -134,7 +136,8 @@ const PlaybookRunDetails = () => {
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
-    const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
+    // const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
+    const onViewTimeline = () => dispatch(openBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap))
 
     let rhsComponent = null;
     switch (RHS.section) {
@@ -154,11 +157,15 @@ const PlaybookRunDetails = () => {
                 runMetadata={metadata ?? undefined}
                 role={role}
                 channel={channel}
-                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
-                onViewTimeline={() => {
-                    selectOption('all', true);
-                    RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
-                }}
+                onViewParticipants={() =>
+                    dispatch(openBackstageRHS(BackstageRHSSection.RunParticipants, BackstageRHSViewMode.Overlap))
+                    // () => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                }
+                onViewTimeline={() =>
+                    dispatch(toggleBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap))
+                    // selectOption('all', true);
+                    // RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
+                }
             />
         );
         break;
@@ -186,7 +193,6 @@ const PlaybookRunDetails = () => {
     }
 
     const onInfoClick = RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo;
-    const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
 
     return (
         <Container>
@@ -196,7 +202,7 @@ const PlaybookRunDetails = () => {
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
                         onInfoClick={onInfoClick}
-                        onTimelineClick={onTimelineClick}
+                        onTimelineClick={onViewTimeline}
                         role={role}
                         channel={channel}
                         rhsSection={RHS.isOpen ? RHS.section : null}

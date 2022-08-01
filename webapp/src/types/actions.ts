@@ -41,6 +41,7 @@ export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filte
 // TODO: make a refactor with some naming change now we have multiple RHS
 //       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
 export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
+export const TOGGLE_BACKSTAGE_RHS = pluginId + '_toggle_backstage_rhs';
 export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
 
 export interface ReceivedToggleRHSAction {
@@ -181,6 +182,12 @@ export interface SetChecklistItemsFilter {
 //       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
 export interface OpenBackstageRHS {
     type: typeof OPEN_BACKSTAGE_RHS;
+    section: BackstageRHSSection;
+    viewMode: BackstageRHSViewMode;
+}
+
+export interface ToggleBackstageRHS {
+    type: typeof TOGGLE_BACKSTAGE_RHS;
     section: BackstageRHSSection;
     viewMode: BackstageRHSViewMode;
 }

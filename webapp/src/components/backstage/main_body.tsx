@@ -85,58 +85,60 @@ const MainBody = () => {
     useInitTeamRoutingLogic();
 
     return (
-        <Switch>
-            <Route path={`${match.url}/playbooks/new`}>
-                <NewPlaybook/>
-            </Route>
-            <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
-                <PlaybookEdit
-                    isNew={false}
+        <div className='inner-wrap channel__wrap move--left'>
+            <Switch>
+                <Route path={`${match.url}/playbooks/new`}>
+                    <NewPlaybook/>
+                </Route>
+                <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
+                    <PlaybookEdit
+                        isNew={false}
+                    />
+                </Route>
+                <Route path={`${match.url}/playbooks/:playbookId/preview`}>
+                    <Playbook/>
+                </Route>
+                <Route
+                    path={`${match.url}/playbooks/:playbookId`}
+                >
+                    <PlaybookEditor/>
+                </Route>
+                <Route path={`${match.url}/playbooks`}>
+                    <PlaybookList/>
+                </Route>
+                <Redirect
+                    from={`${match.url}/incidents/:playbookRunId`}
+                    to={`${match.url}/runs/:playbookRunId`}
                 />
-            </Route>
-            <Route path={`${match.url}/playbooks/:playbookId/preview`}>
-                <Playbook/>
-            </Route>
-            <Route
-                path={`${match.url}/playbooks/:playbookId`}
-            >
-                <PlaybookEditor/>
-            </Route>
-            <Route path={`${match.url}/playbooks`}>
-                <PlaybookList/>
-            </Route>
-            <Redirect
-                from={`${match.url}/incidents/:playbookRunId`}
-                to={`${match.url}/runs/:playbookRunId`}
-            />
-            <Route path={`${match.url}/runs/:playbookRunId`}>
-                <PlaybookRun/>
-            </Route>
-            <Redirect
-                from={`${match.url}/incidents`}
-                to={`${match.url}/runs`}
-            />
-            <Route path={`${match.url}/runs`}>
-                <RunsPage/>
-            </Route>
-            <Route path={`${match.url}/error`}>
-                <ErrorPage/>
-            </Route>
-            <Route
-                path={`${match.url}/start`}
-            >
-                <PlaybookList firstTimeUserExperience={true}/>
-            </Route>
-            <Route
-                exact={true}
-                path={`${match.url}/`}
-            >
-                <Redirect to={`${match.url}/runs`}/>
-            </Route>
-            <Route>
-                <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
-            </Route>
-        </Switch>
+                <Route path={`${match.url}/runs/:playbookRunId`}>
+                    <PlaybookRun/>
+                </Route>
+                <Redirect
+                    from={`${match.url}/incidents`}
+                    to={`${match.url}/runs`}
+                />
+                <Route path={`${match.url}/runs`}>
+                    <RunsPage/>
+                </Route>
+                <Route path={`${match.url}/error`}>
+                    <ErrorPage/>
+                </Route>
+                <Route
+                    path={`${match.url}/start`}
+                >
+                    <PlaybookList firstTimeUserExperience={true}/>
+                </Route>
+                <Route
+                    exact={true}
+                    path={`${match.url}/`}
+                >
+                    <Redirect to={`${match.url}/runs`}/>
+                </Route>
+                <Route>
+                    <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
+                </Route>
+            </Switch>
+        </div>
     );
 };
 

@@ -10,6 +10,10 @@ import {backstageRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 
 import TaskInbox, {TaskInboxTitle} from './task_inbox/task_inbox';
+import RHSStatusUpdates from 'components/backstage/playbook_runs/playbook_run/rhs_status_updates';
+import {Participants} from 'components/backstage/playbook_runs/playbook_run/rhs_participants';
+import RHSTimeline from 'components/backstage/playbook_runs/playbook_run/rhs_timeline';
+import RHSInfo from 'components/backstage/playbook_runs/playbook_run/rhs_info';
 
 const BackstageRHS = () => {
     const sidebarRef = React.useRef(null);
@@ -26,10 +30,81 @@ const BackstageRHS = () => {
         switch (section) {
         case BackstageRHSSection.TaskInbox:
             return TaskInboxTitle;
+
+        case BackstageRHSSection.RunInfo:
+            return <span>Run Info</span>;
+
+        case BackstageRHSSection.RunTimeline:
+            return <span>Run Timeline</span>;
+
+        case BackstageRHSSection.RunStatusUpdates:
+            return <span>Run Status Updates</span>;
+
+        case BackstageRHSSection.RunParticipants:
+            return <span>Run Participants</span>;
+
         default:
             throw new Error('Unknown backstage section while rendering title');
         }
     };
+
+    let rhsComponent = null;
+    switch(section) {
+        case BackstageRHSSection.TaskInbox:
+            rhsComponent = <TaskInbox/>;
+            break;
+
+        case BackstageRHSSection.RunInfo:
+            rhsComponent = <span>Run Info</span>;
+            // rhsComponent = (
+            //     <RHSInfo
+            //         run={playbookRun}
+            //         playbook={playbook ?? undefined}
+            //         runMetadata={metadata ?? undefined}
+            //         role={role}
+            //         channel={channel}
+            //         onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+            //         onViewTimeline={() => {
+            //             selectOption('all', true);
+            //             RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
+            //         }}
+            //     />
+            // );
+            break;
+
+        case BackstageRHSSection.RunTimeline:
+            rhsComponent = <span>Run Timeline</span>;
+            // rhsComponent = (
+            //     <RHSTimeline
+            //         playbookRun={playbookRun}
+            //         role={role}
+            //         options={options}
+            //         selectOption={selectOption}
+            //         eventsFilter={eventsFilter}
+            //     />
+            // );
+            break;
+
+        case BackstageRHSSection.RunStatusUpdates:
+            rhsComponent = <span>Run Status Updates</span>;
+            // rhsComponent = (
+            //     <RHSStatusUpdates
+            //         playbookRun={playbookRun}
+            //         statusUpdates={statusUpdates ?? null}
+            //     />
+            // );
+            break;
+
+        case BackstageRHSSection.RunParticipants:
+            rhsComponent = <span>Run Participants</span>;
+            // rhsComponent = (
+            //     <Participants
+            //         participantsIds={playbookRun.participant_ids}
+            //         playbookRunMetadata={metadata ?? null}
+            //     />
+            // );
+            break;
+    }
 
     return (
         <Container
@@ -37,7 +112,7 @@ const BackstageRHS = () => {
             role='complementary'
             ref={sidebarRef}
             isOpen={isOpen}
-            viewMode={viewMode}
+            className='sidebar--right move--left'
         >
             <Header>
                 <HeaderTitle>{renderTitle()}</HeaderTitle>
@@ -50,14 +125,15 @@ const BackstageRHS = () => {
                 </HeaderIcon>
             </Header>
             <Body>
-                {section === BackstageRHSSection.TaskInbox ? <TaskInbox/> : null}
+                {rhsComponent}
             </Body>
-        </Container>);
+        </Container>
+    );
 };
 
 export default BackstageRHS;
 
-const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
+const Container = styled.div<{isOpen: boolean}>`
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
     position: fixed;
     width: 400px;
