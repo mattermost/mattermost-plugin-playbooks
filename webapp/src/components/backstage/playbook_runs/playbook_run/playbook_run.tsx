@@ -10,7 +10,7 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -128,7 +128,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataResult.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 

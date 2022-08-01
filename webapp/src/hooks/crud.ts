@@ -18,8 +18,9 @@ import {
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
+import {noopSelector} from 'src/selectors';
 
-import {useFetch} from './general';
+import {useThing} from './general';
 
 type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
 
@@ -36,7 +37,7 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @returns undefined == loading; null == not found
  */
 export function usePlaybook(id: Playbook['id'] | undefined) {
-    return useFetch(id, clientFetchPlaybook);
+    return useThing(id, clientFetchPlaybook, noopSelector);
 }
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
