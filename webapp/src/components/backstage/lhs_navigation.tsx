@@ -16,7 +16,7 @@ const LHSContainer = styled.div`
 
 const LHSNavigation = () => {
     return (
-        <LHSContainer>
+        <LHSContainer data-testid='lhs-navigation'>
             <PlaybooksSidebar/>
         </LHSContainer>
     );
