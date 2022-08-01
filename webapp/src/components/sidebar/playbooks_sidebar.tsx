@@ -1,12 +1,9 @@
 import React from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
-import PlaybookIcon from '../assets/icons/playbook_icon';
-import PrivatePlaybookIcon from '../assets/icons/private_playbook_icon';
-import PlaybookRunIcon from '../assets/icons/playbook_run_icon';
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
@@ -15,7 +12,7 @@ import {pluginUrl} from 'src/browser_routing';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
-import {ItemContainer, StyledNavLink, ItemDisplayLabel} from './item';
+import {ItemContainer, StyledNavLink} from './item';
 
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
@@ -35,7 +32,7 @@ const useLHSData = (teamID: string) => {
     }
 
     const playbookItems = data.playbooks.map((pb) => {
-        const icon = pb.public ? <StyledPlaybookIcon/> : <StyledPrivatePlaybookIcon/>;
+        const icon = pb.public ? 'icon-book-outline' : 'icon-book-lock-outline';
         const link = `/playbooks/playbooks/${pb.id}`;
 
         return {
@@ -54,7 +51,7 @@ const useLHSData = (teamID: string) => {
     const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
 
     const runItems = data.runs.map((run) => {
-        const icon = <StyledPlaybookRunIcon/>;
+        const icon = 'icon-play-outline';
         const link = pluginUrl(`/runs/${run.id}`);
         return {
             areaLabel: run.name,
@@ -105,17 +102,15 @@ const ViewAllRuns = () => {
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
     return (
         <ItemContainer>
-            <StyledNavLink
+            <ViewAllNavLink
                 id={'sidebarItem_view_all_runs'}
                 aria-label={formatMessage({defaultMessage: 'View all runs'})}
                 data-testid={'playbookRunsLHSButton'}
                 to={'/playbooks/runs'}
                 exact={true}
             >
-                <StyledItemDisplayLabel>
-                    {viewAllMessage}
-                </StyledItemDisplayLabel>
-            </StyledNavLink>
+                {viewAllMessage}
+            </ViewAllNavLink>
         </ItemContainer>
     );
 };
@@ -125,17 +120,15 @@ const ViewAllPlaybooks = () => {
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
     return (
         <ItemContainer key={'sidebarItem_view_all_playbooks'}>
-            <StyledNavLink
+            <ViewAllNavLink
                 id={'sidebarItem_view_all_playbooks'}
                 aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
                 data-testid={'playbooksLHSButton'}
                 to={'/playbooks/playbooks'}
                 exact={true}
             >
-                <StyledItemDisplayLabel>
-                    {viewAllMessage}
-                </StyledItemDisplayLabel>
-            </StyledNavLink>
+                {viewAllMessage}
+            </ViewAllNavLink>
         </ItemContainer>
     );
 };
@@ -177,24 +170,12 @@ const PlaybooksSidebar = () => {
 
 export default PlaybooksSidebar;
 
-const sharedIconStyles = css`
-    width: 18px;
-    height: 18px;
-`;
+const ViewAllNavLink = styled(StyledNavLink)`
+    &&& {
+        &:not(.active) {
+            color: rgba(var(--sidebar-text-rgb), 0.56);
+        }
 
-const StyledPlaybookIcon = styled(PlaybookIcon)`
-    ${sharedIconStyles}
-`;
-
-const StyledPlaybookRunIcon = styled(PlaybookRunIcon)`
-    ${sharedIconStyles}
-`;
-
-const StyledPrivatePlaybookIcon = styled(PrivatePlaybookIcon)`
-    ${sharedIconStyles}
-`;
-
-const StyledItemDisplayLabel = styled(ItemDisplayLabel)`
-    line-height: 20px;
-    color: rgba(var(--sidebar-text-rgb), 0.56);
+        padding-left: 23px;
+    }
 `;

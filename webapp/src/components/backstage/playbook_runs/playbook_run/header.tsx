@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
 import {Channel} from '@mattermost/types/channels';
@@ -127,7 +127,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                Icon={UpdateIcon}
+                Icon={TimelineTextOutlineIcon}
                 onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
                 data-testid={'rhs-header-button-timeline'}
