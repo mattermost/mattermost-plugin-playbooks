@@ -797,6 +797,8 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	})
 
+	oldMembers := e.BasicPlaybook.Members
+
 	t.Run("update playbook members", func(t *testing.T) {
 		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members, client.PlaybookMember{UserID: "testuser", Roles: []string{model.PlaybookMemberRoleId}})
 
@@ -837,6 +839,10 @@ func TestPlaybooksPermissions(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
+
+	e.BasicPlaybook.Members = oldMembers
+	err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+	require.NoError(t, err)
 
 	t.Run("update playbook roles", func(t *testing.T) {
 		e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles = append(e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles, model.PlaybookAdminRoleId)
