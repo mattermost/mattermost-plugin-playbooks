@@ -212,6 +212,7 @@ export type QueryPlaybooksArgs = {
 
 export type QueryRunsArgs = {
     participantOrFollowerID?: InputMaybe<Scalars['String']>;
+    sort?: InputMaybe<Scalars['String']>;
     statuses?: InputMaybe<Array<Scalars['String']>>;
     teamID?: InputMaybe<Scalars['String']>;
 };

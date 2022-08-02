@@ -10,9 +10,10 @@ type Query {
 	): [Playbook!]!
 
 	runs(
-		teamID: String = ""
-		statuses: [String!] = []
-		participantOrFollowerID: String = ""
+		teamID: String = "",
+		sort: String = "name",
+		statuses: [String!] = [],
+		participantOrFollowerID: String = "",
 	): [Run!]!
 }
 

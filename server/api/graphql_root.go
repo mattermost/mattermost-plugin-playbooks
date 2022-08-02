@@ -89,6 +89,7 @@ func (r *RootResolver) Playbooks(ctx context.Context, args struct {
 
 func (r *RootResolver) Runs(ctx context.Context, args struct {
 	TeamID                  string `url:"team_id,omitempty"`
+	Sort                    string
 	Statuses                []string
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
 }) ([]*RunResolver, error) {
@@ -109,6 +110,7 @@ func (r *RootResolver) Runs(ctx context.Context, args struct {
 	}
 
 	filterOptions := app.PlaybookRunFilterOptions{
+		Sort:                    app.SortField(args.Sort),
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
