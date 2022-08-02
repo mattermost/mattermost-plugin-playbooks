@@ -442,58 +442,6 @@ func (r *RootResolver) RemovePlaybookMember(ctx context.Context, args struct {
 	return "", nil
 }
 
-/*func (r *RootResolver) PromotePlaybookMember(ctx context.Context, args struct {
-	PlaybookID string
-	UserID     string
-}) (string, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
-	if err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
-	}
-
-	if err := c.permissions.PlaybookManageRoles(userID, currentPlaybook); err != nil {
-		return "", errors.Wrap(err, "attempted to modify members without permissions")
-	}
-
-	return "", nil
-}
-
-func (r *RootResolver) DemotePlaybookMember(ctx context.Context, args struct {
-	PlaybookID string
-	UserID     string
-}) (string, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
-	if err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
-	}
-
-	if err := c.permissions.PlaybookManageRoles(userID, currentPlaybook); err != nil {
-		return "", errors.Wrap(err, "attempted to modify members without permissions")
-	}
-
-	return "", nil
-}*/
-
 func (r *RootResolver) AddMetric(ctx context.Context, args struct {
 	PlaybookID  string
 	Title       string

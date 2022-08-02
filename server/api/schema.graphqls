@@ -27,8 +27,6 @@ type Mutation {
 
 	addPlaybookMember(playbookID: String!, userID: String!): String!
 	removePlaybookMember(playbookID: String!, userID: String!): String!
-	#promotePlaybookMember(playbookID: String!, userID: String!): String!
-	#demotePlaybookMember(playbookID: String!, userID: String!): String!
 }
 
 input PlaybookUpdates {
