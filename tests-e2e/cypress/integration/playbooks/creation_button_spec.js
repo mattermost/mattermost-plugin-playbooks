@@ -77,18 +77,25 @@ describe('playbooks > creation button', () => {
         verifyPlaybookOutlineOpened(`@${testUser.username}'s Blank`);
     });
 
-    it('opens Service Outage Incident page from its template option', () => {
-        // # Open the product
-        cy.visit('/playbooks');
+    it('opens Service Outage Incident page from its template option (multiple teams)', () => {
+        cy.apiCreateTeam('second-team', 'Second Team').then(() => {
+            // # Open the product
+            cy.visit('/playbooks');
 
-        // # Switch to playbooks
-        cy.findByTestId('playbooksLHSButton').click();
+            // # Switch to playbooks
+            cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Incident Resolution'
-        cy.findByText('Incident Resolution').click();
+            // # Click 'Incident Resolution'
+            cy.findByText('Incident Resolution').click();
 
-        // * Verify playbook outline opened
-        verifyPlaybookOutlineOpened(`@${testUser.username}'s Incident Resolution`);
+            const playbookName = `@${testUser.username}'s Incident Resolution`;
+
+            // * Verify playbook outline opened
+            verifyPlaybookOutlineOpened(playbookName);
+
+            // * Verify the playbook was added to the lhs of current team
+            cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
+        });
     });
 });
 
