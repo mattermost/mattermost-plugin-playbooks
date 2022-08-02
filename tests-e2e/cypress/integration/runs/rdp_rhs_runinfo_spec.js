@@ -152,6 +152,22 @@ describe('runs > run details page > run info', () => {
                 // * Assert we navigated correctly
                 cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
             });
+
+            it('channel is still there when the run is finished', () => {
+                cy.apiFinishRun(testRun.id).then(() => {
+                    // # Reload page
+                    cy.reload();
+
+                    // * Assert channel name
+                    getOverviewEntry('channel').contains('the run name');
+
+                    // # Click on channel item
+                    getOverviewEntry('channel').click();
+
+                    // * Assert we navigated correctly
+                    cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+                });
+            });
         });
 
         describe('as viewer', () => {
