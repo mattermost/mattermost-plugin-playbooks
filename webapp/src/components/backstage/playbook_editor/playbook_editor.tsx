@@ -587,6 +587,7 @@ export const StarButton = styled.button`
     border: 0;
     display: flex;
     height: 28px;
+    width: 28px;
     align-items: center;
     background: none;
     margin: 0 6px;
