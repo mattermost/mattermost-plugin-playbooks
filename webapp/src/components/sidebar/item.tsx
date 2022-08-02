@@ -4,6 +4,8 @@ import classNames from 'classnames';
 
 import styled, {css} from 'styled-components';
 
+import Tooltip from 'src/components/widgets/tooltip';
+
 interface ItemProps {
     icon: string;
     itemMenu?: React.ReactNode;
@@ -18,19 +20,24 @@ interface ItemProps {
 const Item = (props: ItemProps) => {
     return (
         <ItemContainer isCollapsed={props.isCollapsed}>
-            <StyledNavLink
-                className={props.className}
-                id={`sidebarItem_${props.id}`}
-                aria-label={props.areaLabel}
-                to={props.link}
-                tabIndex={props.isCollapsed ? -1 : 0}
+            <Tooltip
+                id={`sidebarTooltip_${props.id}`}
+                content={props.display_name}
             >
-                <Icon className={classNames('CompassIcon', props.icon)}/>
-                <ItemDisplayLabel>
-                    {props.display_name}
-                </ItemDisplayLabel>
-                {props.itemMenu}
-            </StyledNavLink>
+                <StyledNavLink
+                    className={props.className}
+                    id={`sidebarItem_${props.id}`}
+                    aria-label={props.areaLabel}
+                    to={props.link}
+                    tabIndex={props.isCollapsed ? -1 : 0}
+                >
+                    <Icon className={classNames('CompassIcon', props.icon)}/>
+                    <ItemDisplayLabel>
+                        {props.display_name}
+                    </ItemDisplayLabel>
+                    {props.itemMenu}
+                </StyledNavLink>
+            </Tooltip>
         </ItemContainer>
     );
 };
