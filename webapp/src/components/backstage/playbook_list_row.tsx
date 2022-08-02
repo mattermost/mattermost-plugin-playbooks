@@ -222,6 +222,7 @@ const PlaybookListRow = (props: Props) => {
                     </TertiaryButton>
                 )}
                 <DotMenu
+                    title={'Actions'}
                     placement='bottom-end'
                     icon={(
                         <DotsVerticalIcon

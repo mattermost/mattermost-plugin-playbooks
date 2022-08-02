@@ -116,6 +116,7 @@ const DotMenu = (props: DotMenuProps) => {
             className={props.className}
             role={'button'}
             disabled={props.disabled || false}
+            data-testid={'menuButton' + props.title}
         >
             {props.icon}
             <DropdownMenuWrapper>
