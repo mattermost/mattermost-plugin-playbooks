@@ -412,12 +412,10 @@ describe('runs > run details page > header', () => {
                     cy.get('#confirmModal').get('#confirmModalButton').click();
 
                     // * Assert that the Participate button is shown
-                    getHeader().findByText('Participate').should('exist');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // * Verify run has been removed from LHS
-                    cy.findByTestId('lhs-navigation').within(() => {
-                        cy.findByText(playbookRun.name).should('not.exist');
-                    });
+                    cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
                 });
             });
         });
@@ -550,9 +548,7 @@ describe('runs > run details page > header', () => {
                         cy.wait(500);
 
                         // * Verify run has been added to LHS
-                        cy.findByTestId('lhs-navigation').within(() => {
-                            cy.findByText(playbookRunName).should('exist');
-                        });
+                        cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                         // # Visit the channel run (now we joined)
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
