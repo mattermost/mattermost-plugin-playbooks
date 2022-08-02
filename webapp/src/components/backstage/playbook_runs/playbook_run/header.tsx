@@ -114,8 +114,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 Icon={LightningBoltOutlineIcon}
                 onClick={() => dispatch(showRunActionsModal())}
-                size={24}
-                iconSize={14}
                 data-testid={'rhs-header-button-run-actions'}
             />
             <StyledCopyLink
@@ -178,9 +176,9 @@ const Container = styled.div`
 
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 14px;
-    width: 24px;
-    height: 24px;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
     margin-left: 4px;
     display: grid;
     place-items: center;

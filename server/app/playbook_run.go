@@ -533,6 +533,7 @@ const (
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
 
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
+	TriggerTypeRetroPublished     = "retrospective_published"
 )
 
 // PlaybookRunService is the playbook run service interface.
@@ -741,7 +742,7 @@ type PlaybookRunService interface {
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
-	// Leave removes user from the run's participants list
+	// Leave removes user from the run's participants&followers list
 	Leave(playbookRunID, requesterID string) error
 }
 

@@ -330,3 +330,19 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 
 	return err
 }
+
+// Leave removes the user from the participant & followers
+func (s *PlaybookRunService) Leave(ctx context.Context, playbookRunID string) error {
+	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/leave", playbookRunID), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}

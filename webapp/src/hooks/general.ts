@@ -6,6 +6,7 @@ import {
     useState,
     useMemo,
     useLayoutEffect,
+    DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
 
@@ -378,7 +379,7 @@ export type FetchMetadata = {
 export function useFetch<T>(
     id: string,
     fetchFunction: (id: string) => Promise<T>,
-    deps: Array<any> = [],
+    deps: DependencyList = [],
 ) {
     const [error, setError] = useState<ClientError | null>(null);
     const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
@@ -411,8 +412,8 @@ export function useFetch<T>(
  * @param id identifier of the run to fetch metadata
  * @returns data and fetchState in a array tuple
  */
-export function useRunMetadata(id: PlaybookRun['id']) {
-    return useFetch(id, fetchPlaybookRunMetadata);
+export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = []) {
+    return useFetch(id, fetchPlaybookRunMetadata, deps);
 }
 
 /**
