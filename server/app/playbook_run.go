@@ -533,6 +533,7 @@ const (
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
 
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
+	TriggerTypeRetroPublished     = "retrospective_published"
 )
 
 // PlaybookRunService is the playbook run service interface.
