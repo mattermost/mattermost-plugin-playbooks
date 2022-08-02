@@ -155,10 +155,7 @@ const PlaybookRunDetails = () => {
                 role={role}
                 channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
-                onViewTimeline={() => {
-                    selectOption('all', true);
-                    RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
-                }}
+                onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
         break;

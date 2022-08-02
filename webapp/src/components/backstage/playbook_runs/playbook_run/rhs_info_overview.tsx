@@ -138,7 +138,7 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                     setSelectedUser(null);
                 }}
             />}
-            {channel && runMetadata && editable && (
+            {channel && runMetadata && (
                 <Item
                     id='runinfo-channel'
                     icon={ProductChannelsIcon}
