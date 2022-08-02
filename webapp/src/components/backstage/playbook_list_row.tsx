@@ -201,9 +201,9 @@ const PlaybookListRow = (props: Props) => {
                     </SecondaryButton>
                 ) : (
                     <TertiaryButton
-                        onClick={(e) => {
+                        onClick={async (e) => {
                             e.stopPropagation();
-                            join();
+                            await join();
                             props.onMembershipChanged(true);
                         }}
                         data-testid='join-playbook'
@@ -284,8 +284,8 @@ const PlaybookListRow = (props: Props) => {
                         <>
                             <div className='MenuGroup menu-divider'/>
                             <DropdownMenuItem
-                                onClick={() => {
-                                    leave();
+                                onClick={async () => {
+                                    await leave();
                                     props.onMembershipChanged(false);
                                 }}
                             >
