@@ -25,19 +25,15 @@ import {
     usePlaybooksRouting,
 } from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
-
+import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import PresetTemplates from 'src/components/templates/template_data';
-
 import {RegularHeading} from 'src/styles/headings';
-
 import {importFile} from 'src/client';
-
 import {pluginUrl} from 'src/browser_routing';
 
 import Header from '../widgets/header';
 
 import CheckboxInput from './runs_list/checkbox_input';
-
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
@@ -117,6 +113,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const content = useRef<JSX.Element | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
+    const addToast = useToaster().add;
 
     const [
         playbooks,
@@ -177,8 +174,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 const file = e.target.files[0];
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
-                    const {id} = await importFile(ev?.target?.result, teamId);
-                    edit(id);
+                    importFile(ev?.target?.result, teamId)
+                        .then((id) => edit(id))
+                        .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that is JSON valid and try again.'}), ToastType.Failure));
                 };
                 reader.readAsArrayBuffer(file);
             }

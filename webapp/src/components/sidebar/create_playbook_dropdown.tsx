@@ -9,6 +9,7 @@ import Icon from '@mdi/react';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {importFile} from 'src/client';
+import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 
 import Menu from '../widgets/menu/menu';
 import MenuItem from '../widgets/menu/menu_item';
@@ -29,6 +30,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const teams = useSelector(getMyTeams);
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
+    const addToast = useToaster().add;
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
@@ -43,8 +45,9 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             const teamId = props.team_id || teams[0].id;
             const reader = new FileReader();
             reader.onload = async (ev) => {
-                const {id} = await importFile(ev?.target?.result, teamId);
-                navigateToPluginUrl(`/playbooks/${id}/outline`);
+                importFile(ev?.target?.result, teamId)
+                    .then((id) => navigateToPluginUrl(`/playbooks/${id}/outline`))
+                    .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that is JSON valid and try again.'}), ToastType.Failure));
             };
             reader.readAsArrayBuffer(file);
         }
