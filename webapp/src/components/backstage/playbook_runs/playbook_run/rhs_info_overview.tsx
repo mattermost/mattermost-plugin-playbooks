@@ -22,7 +22,7 @@ import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/pla
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {pluginUrl} from 'src/browser_routing';
 import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {CompassIcon} from 'src/types/compass';
@@ -124,7 +124,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
                 id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
-                onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
                 {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
@@ -183,7 +182,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
                     id='runinfo-channel'
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
-                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${channel.name}`)}
                 >
                     <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
                         <ItemContent >
