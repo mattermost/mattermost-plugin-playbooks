@@ -456,7 +456,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     --markdown-textbox-padding: 12px 16px;
 
     --bar-height: 60px;
-    --content-max-width: 780px;
+    --content-max-width: 1100px;
 
     /* === standard-full === */
     grid-template:
@@ -486,6 +486,9 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
         position: sticky;
         top: var(--bar-height);
+
+        min-width: 140px;
+        margin-left: 10px;
     }
 
 
@@ -585,13 +588,6 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         ${ScrollNav} {
             display: none;
         }
-    }
-    @media screen and (min-width: 1267px) {
-        --content-max-width: 900px;
-    }
-
-    @media screen and (min-width: 1680px) {
-        --content-max-width: 1100px;
     }
 `;
 
