@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -8,14 +8,13 @@ import {mdiClipboardPlayMultipleOutline, mdiImport} from '@mdi/js';
 import Icon from '@mdi/react';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {importFile} from 'src/client';
-import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
+import {useImportPlaybook} from 'src/components/backstage/import_playbook';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import Menu from '../widgets/menu/menu';
 import MenuItem from '../widgets/menu/menu_item';
 import MenuGroup from '../widgets/menu/menu_group';
 import MenuWrapper from '../widgets/menu/menu_wrapper';
-import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {OVERLAY_DELAY} from 'src/constants';
 import {useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
@@ -27,31 +26,15 @@ interface CreatePlaybookDropdownProps {
 const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const teams = useSelector(getMyTeams);
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
-    const addToast = useToaster().add;
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(props.team_id || teams[0].id, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
             {formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
         </Tooltip>
     );
-
-    const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0]) {
-            const file = e.target.files[0];
-
-            const teamId = props.team_id || teams[0].id;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                importFile(ev?.target?.result, teamId)
-                    .then((id) => navigateToPluginUrl(`/playbooks/${id}/outline`))
-                    .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that is JSON valid and try again.'}), ToastType.Failure));
-            };
-            reader.readAsArrayBuffer(file);
-        }
-    };
 
     const renderDropdownItems = () => {
         const browsePlaybooks = (
@@ -137,13 +120,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                     <Button aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}>
                         <i className='icon-plus'/>
                     </Button>
-                    <input
-                        type='file'
-                        accept='*.json,application/JSON'
-                        onChange={importUpload}
-                        ref={fileInputRef}
-                        style={{display: 'none'}}
-                    />
+                    {inputImportPlaybook}
                 </>
             </OverlayTrigger>
             <Menu
