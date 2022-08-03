@@ -17,7 +17,7 @@ interface Props {
     icon: React.ReactNode;
     color?: string;
     labelColor?: string;
-    author: React.ReactNode;
+    author?: React.ReactNode;
     onSelect: () => void;
 }
 
@@ -82,7 +82,7 @@ const Label = styled.label<LabelProps>`
     background: ${({$color}) => $color?.split('-')[0]};
     padding: 0 4px;
     border-radius: 4px;
-    color: ${({$color}) => $color?.split('-')[1]}
+    color: ${({$color}) => $color?.split('-')[1]};
 `;
 
 const Author = styled.div`
