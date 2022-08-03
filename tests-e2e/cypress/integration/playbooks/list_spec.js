@@ -61,7 +61,7 @@ describe('playbooks > list', () => {
         // # Click on the dot menu
         cy.findByTestId('menuButtonActions').click();
 
-        // # Click on duplicate
+        // # Click on leave
         cy.findByText('Leave').click();
 
         // * Verify it has disappeared from the LHS

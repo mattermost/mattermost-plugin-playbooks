@@ -311,7 +311,7 @@ export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps
     return (
         <PrimaryButtonLarger
             onClick={async () => {
-                join();
+                await join();
                 await setFollowing(true);
                 refetch();
             }}
@@ -425,8 +425,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     <>
                         <div className='MenuGroup menu-divider'/>
                         <DropdownMenuItem
-                            onClick={() => {
-                                leave();
+                            onClick={async () => {
+                                await leave();
                                 refetch();
                             }}
                         >
