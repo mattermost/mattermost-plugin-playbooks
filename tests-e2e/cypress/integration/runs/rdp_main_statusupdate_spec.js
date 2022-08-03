@@ -223,7 +223,7 @@ describe('runs > run details page > status update', () => {
                 cy.findByTestId('update-due-date-time').contains('in 15 minutes');
 
                 // * Assert the recent updated text
-                cy.findByTestId('run-statusupdate-section').contains('my nice update');
+                cy.findByTestId('status-update-card').contains('my nice update');
             });
         });
 
