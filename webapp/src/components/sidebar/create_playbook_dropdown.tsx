@@ -28,6 +28,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const dispatch = useDispatch();
     const teams = useSelector(getMyTeams);
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
+
     const [fileInputRef, inputImportPlaybook] = useImportPlaybook(props.team_id || teams[0].id, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
 
     const tooltip = (

@@ -19,12 +19,13 @@ export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 importFile(ev?.target?.result, teamId)
-                    .then((id) => cb(id))
+                    .then(({id}) => cb(id))
                     .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that JSON is valid and try again.'}), ToastType.Failure));
             };
             reader.readAsArrayBuffer(file);
         }
     };
+
     const input = (
         <input
             type='file'
