@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -189,8 +187,14 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 
 // get top playbooks for teams
 func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+	permissionFlag, err := licenseAndGuestCheck(s, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !permissionFlag {
+		return nil, errors.New("User cannot access playbooks insights")
+	}
 	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
-	fmt.Println(accessiblePlaybooks, "top team")
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
 	}
@@ -199,10 +203,36 @@ func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *mo
 
 // get top playbooks for users
 func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+	permissionFlag, err := licenseAndGuestCheck(s, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !permissionFlag {
+		return nil, errors.New("User cannot access playbooks insights")
+	}
 	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
-	fmt.Println(accessiblePlaybooks, "top user")
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
 	}
 	return s.store.GetTopPlaybooksForUser(teamID, userID, opts, accessiblePlaybooks)
+}
+
+func licenseAndGuestCheck(s *playbookService, userID string) (bool, error) {
+	licenseError := errors.New("invalid license/authorization to use insights API")
+	guestError := errors.New("Guests aren't authorized to use insights API")
+	lic := s.api.System.GetLicense()
+	if lic == nil {
+		return false, licenseError
+	}
+	user, err := s.api.User.Get(userID)
+	if err != nil {
+		return false, err
+	}
+	if lic.SkuShortName != model.LicenseShortSkuProfessional && lic.SkuShortName != model.LicenseShortSkuEnterprise {
+		return false, licenseError
+	}
+	if user.IsGuest() {
+		return false, guestError
+	}
+	return true, nil
 }
