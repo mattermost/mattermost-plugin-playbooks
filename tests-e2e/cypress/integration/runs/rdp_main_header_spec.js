@@ -5,6 +5,8 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
+import {stubClipboard} from '../../utils';
+
 const getBroadcastSection = () => cy.findByText('Broadcast to selected channels');
 
 describe('runs > run details page > header', () => {
@@ -97,15 +99,13 @@ describe('runs > run details page > header', () => {
             // * Assert tooltip is shown
             cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
 
-            cy.window().then((win) => {
-                const spy = cy.spy(win.navigator.clipboard, 'writeText');
-                getHeaderIcon('.icon-link-variant').click().then(() => {
-                    // * Verify that tooltip text changed
-                    cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+            stubClipboard().as('clipboard');
+            getHeaderIcon('.icon-link-variant').click().then(() => {
+                // * Verify that tooltip text changed
+                cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
 
-                    cy.wrap(spy.getCall(0).args[0])
-                        .should('contain', `/playbooks/runs/${playbookRun.id}`);
-                });
+                // * Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
             });
         });
     };
@@ -120,12 +120,11 @@ describe('runs > run details page > header', () => {
         });
 
         it('can copy link', () => {
-            cy.window().then((win) => {
-                const spy = cy.spy(win.navigator.clipboard, 'writeText');
-                getDropdownItemByText('Copy link').click().then(() => {
-                    cy.wrap(spy.getCall(0).args[0])
-                        .should('contain', `/playbooks/runs/${playbookRun.id}`);
-                });
+            stubClipboard().as('clipboard');
+
+            getDropdownItemByText('Copy link').click().then(() => {
+                // * Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
             });
         });
     };
