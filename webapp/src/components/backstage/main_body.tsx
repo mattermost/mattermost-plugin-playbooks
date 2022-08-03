@@ -131,7 +131,7 @@ const MainBody = () => {
                 exact={true}
                 path={`${match.url}/`}
             >
-                <Redirect to={`${match.url}/runs`}/>
+                <Redirect to={`${match.url}/playbooks`}/>
             </Route>
             <Route>
                 <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>

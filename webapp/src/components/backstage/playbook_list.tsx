@@ -157,7 +157,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     }
 
     const makePlaybookList = () => {
-        if (props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering)) {
+        if (props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering && !isLoading)) {
             return (
                 <>
                     <NoContentPage
