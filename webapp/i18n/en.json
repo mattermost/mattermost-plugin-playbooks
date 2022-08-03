@@ -139,7 +139,7 @@
   "DSVJjB": "Currently running the <strong>{playbookTitle}</strong> playbook",
   "DXACD6": "Publish retrospective report and access the timeline",
   "DaHpK1": "Search for a channel",
-  "Dbex52": "The playbook import has failed. Please check that is JSON valid and try again.",
+  "Dbex52": "The playbook import has failed. Please check that JSON is valid and try again.",
   "DnBhRg": "Add People",
   "DtCplA": "{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}",
   "E0LnBo": "You can select an option or specify a custom duration (\"2 weeks\", \"3 days 12 hours\", \"45 minutes\", ...)",
