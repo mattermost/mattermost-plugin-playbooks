@@ -74,11 +74,6 @@ const Button = styled.button`
     }
 
     .PlaybookRunProfile {
-        &:active {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
-        }
-
         &.active {
             cursor: pointer;
             color: var(--center-channel-color);
@@ -105,11 +100,6 @@ const Button = styled.button`
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
             color: rgba(var(--center-channel-color-rgb), 0.72);
-        }
-
-        &:active {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
         }
 
         &.active {
