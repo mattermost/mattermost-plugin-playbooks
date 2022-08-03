@@ -607,5 +607,8 @@
     "iEtImk": "Bir oyundan ayrılıp{isFollowing, select, true { izlemeyi bıraktığınızda} other { }}, oyun sağ yan çubuktan kaldırılır. Oyuna tüm oyunları görüntüleyerek yeniden erişebilirsiniz.",
     "cnfVhV": "Oyundan ayrıl{isFollowing, select, true { ve izlemeyi bırak } other {}}",
     "Suyx6A": "Senaryo içe aktarılamadı. Lütfen JSOn dosyasının geçerli olduğunu denetleyip yeniden deneyin.",
-    "Q4sutg": "Ayrılmayı onayla{isFollowing, select, true { ve izlemeyi bırak} other {}}"
+    "Q4sutg": "Ayrılmayı onayla{isFollowing, select, true { ve izlemeyi bırak} other {}}",
+    "QegBKq": "Senaryoya katıl",
+    "FgydNe": "Görüntüle",
+    "P6PLpi": "Katıl"
 }
