@@ -99,13 +99,15 @@ describe('runs > run details page > header', () => {
             // * Assert tooltip is shown
             cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
 
-            stubClipboard().as('clipboard');
-            getHeaderIcon('.icon-link-variant').click().then(() => {
-                // * Verify that tooltip text changed
-                cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+            cy.window().then((win) => {
+                const spy = cy.spy(win.navigator.clipboard, 'writeText');
+                getHeaderIcon('.icon-link-variant').click().then(() => {
+                    // * Verify that tooltip text changed
+                    cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
 
-                // * Verify clipboard content
-                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
+                    cy.wrap(spy.getCall(0).args[0])
+                        .should('contain', `/playbooks/runs/${playbookRun.id}`);
+                });
             });
         });
     };
@@ -120,11 +122,17 @@ describe('runs > run details page > header', () => {
         });
 
         it('can copy link', () => {
-            stubClipboard().as('clipboard');
+            // # Throwaway selector, without this the subsequent
+            // # cy.window().then() doesn't execute...
+            // # ¯\_(ツ)_/¯
+            cy.findByTestId('run-header-section');
 
-            getDropdownItemByText('Copy link').click().then(() => {
-                // * Verify clipboard content
-                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
+            cy.window().then((win) => {
+                const spy = cy.spy(win.navigator.clipboard, 'writeText');
+                getDropdownItemByText('Copy link').click().then(() => {
+                    cy.wrap(spy.getCall(0).args[0])
+                        .should('contain', `/playbooks/runs/${playbookRun.id}`);
+                });
             });
         });
     };
@@ -175,31 +183,6 @@ describe('runs > run details page > header', () => {
 
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
-                    });
-
-                    it('can not save an invalid form', () => {
-                        // * Verify that the run actions modal is shown when clicking on the button
-                        openRunActionsModal();
-
-                        cy.findByRole('dialog', {name: /Run Actions/i}).within(() => {
-                            // # click on webhooks toggle
-                            cy.findByText('Send outgoing webhook').click();
-
-                            // # Type an invalid webhook URL
-                            cy.getStyledComponent('TextArea').clear().type('invalidurl');
-
-                            // # Click outside textarea
-                            cy.findByText('Run Actions').click();
-
-                            // * Assert the error message is displayed
-                            cy.findByText('Invalid webhook URLs').should('be.visible');
-
-                            // # Click save
-                            cy.findByTestId('modal-confirm-button').click();
-
-                            // * Assert that modal is still open
-                            cy.findByText('Run Actions').should('be.visible');
-                        });
                     });
 
                     it('honours the settings from the playbook', () => {

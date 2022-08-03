@@ -294,6 +294,7 @@ describe('channels > broadcast', () => {
         // # Make two more updates
         // # Navigate directly to the application and the playbook run channel
         cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+        cy.wait(3000);
 
         // # Update the playbook run's status twice
         const updateMessage2 = updateMessage + ' - 2';
@@ -312,6 +313,7 @@ const verifyInitialAndStatusPostInBroadcast = (testTeam, channelName, runName, i
 
     // # Navigate to the broadcast channel
     cy.visit(`/${testTeam.name}/channels/${channelName}`);
+    cy.wait(3000);
 
     // * Verify that the last post contains the expected header and the update message verbatim
     cy.getLastPostId().then((lastPostId) => {
