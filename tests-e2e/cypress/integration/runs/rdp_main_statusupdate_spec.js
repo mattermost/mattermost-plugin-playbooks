@@ -114,6 +114,22 @@ describe('runs > run details page > status update', () => {
         });
 
         describe('request an update', () => {
+            it('is disabled if the run is finished', () => {
+                cy.apiFinishRun(testRun.id).then(() => {
+                    // # reload url
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
+
+                    // # Click on kebab menu
+                    cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+
+                    // # Click on request update
+                    cy.findByText('Request update...').click();
+
+                    // * Assert modal is not opened
+                    cy.get('#confirmModalButton').should('not.exist');
+                });
+            });
+
             it('requests and confirm', () => {
                 // # Click on kebab menu
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();

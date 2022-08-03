@@ -33,6 +33,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
 
     const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
+    const [isValid, setIsValid] = useState<boolean>(true);
 
     const onHide = () => {
         dispatch(hideRunActionsModal());
@@ -65,15 +66,16 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             editable={!readOnly}
             onSave={onSave}
             adjustTop={260}
+            isValid={isValid}
         >
             <TriggersContainer>
                 <Trigger
-                    title={formatMessage({defaultMessage: 'When a status update is posted'})}
+                    title={formatMessage({defaultMessage: 'When a status update is posted, or a retrospective is published'})}
                 >
                     <ActionsContainer>
                         <Action
                             enabled={broadcastToChannelsEnabled}
-                            title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
+                            title={formatMessage({defaultMessage: 'Broadcast to selected channels'})}
                             editable={!readOnly}
                             onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
                         >
@@ -103,6 +105,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                                 maxRows={64}
                                 maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                                 resize={'vertical'}
+                                onValidationChange={(valid) => setIsValid(valid)}
                             />
                             <HelpText>
                                 {formatMessage({defaultMessage: 'Please enter one webhook per line'})}
