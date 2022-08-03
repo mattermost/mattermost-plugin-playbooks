@@ -21,6 +21,7 @@ export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
                 importFile(ev?.target?.result, teamId)
                     .then(({id}) => cb(id))
                     .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that JSON is valid and try again.'}), ToastType.Failure));
+                e.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
