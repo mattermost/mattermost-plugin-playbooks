@@ -29,7 +29,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const teamId = playbookRun.team_id || '';
 
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled && playbookRun.broadcast_channel_ids.length > 0);
-    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled && playbookRun.webhook_on_status_update_urls.length > 0);
+    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled && playbookRun.webhook_on_status_update_urls.filter((s) => s !== '').length > 0);
 
     const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
@@ -55,7 +55,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             webhook_on_status_update_urls: webhooks,
         });
         setBroadcastToChannelsEnabled(broadcastToChannelsEnabled && channelIds.length > 0);
-        setSendOutgoingWebhookEnabled(sendOutgoingWebhookEnabled && webhooks.length > 0);
+        setSendOutgoingWebhookEnabled(sendOutgoingWebhookEnabled && webhooks.filter((s) => s !== '').length > 0);
     };
 
     return (
