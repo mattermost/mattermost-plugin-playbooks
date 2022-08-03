@@ -5,8 +5,6 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
-import {stubClipboard} from '../../utils';
-
 const getBroadcastSection = () => cy.findByText('Broadcast to selected channels');
 
 describe('runs > run details page > header', () => {
@@ -122,11 +120,6 @@ describe('runs > run details page > header', () => {
         });
 
         it('can copy link', () => {
-            // # Throwaway selector, without this the subsequent
-            // # cy.window().then() doesn't execute...
-            // # ¯\_(ツ)_/¯
-            cy.findByTestId('run-header-section');
-
             cy.window().then((win) => {
                 const spy = cy.spy(win.navigator.clipboard, 'writeText');
                 getDropdownItemByText('Copy link').click().then(() => {
@@ -183,6 +176,31 @@ describe('runs > run details page > header', () => {
 
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
+                    });
+
+                    it('can not save an invalid form', () => {
+                        // * Verify that the run actions modal is shown when clicking on the button
+                        openRunActionsModal();
+
+                        cy.findByRole('dialog', {name: /Run Actions/i}).within(() => {
+                            // # click on webhooks toggle
+                            cy.findByText('Send outgoing webhook').click();
+
+                            // # Type an invalid webhook URL
+                            cy.getStyledComponent('TextArea').clear().type('invalidurl');
+
+                            // # Click outside textarea
+                            cy.findByText('Run Actions').click();
+
+                            // * Assert the error message is displayed
+                            cy.findByText('Invalid webhook URLs').should('be.visible');
+
+                            // # Click save
+                            cy.findByTestId('modal-confirm-button').click();
+
+                            // * Assert that modal is still open
+                            cy.findByText('Run Actions').should('be.visible');
+                        });
                     });
 
                     it('honours the settings from the playbook', () => {
