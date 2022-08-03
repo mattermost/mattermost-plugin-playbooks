@@ -97,7 +97,7 @@ describe('channels > rhs > home', () => {
 
             cy.get('#playbooks_run_playbook_dialog').within(() => {
                 // * Verify run name prompt
-                cy.get('input').eq(1).should('be.empty');
+                cy.get('input').eq(0).should('be.empty');
             });
         });
 
@@ -106,7 +106,7 @@ describe('channels > rhs > home', () => {
 
             cy.get('#playbooks_run_playbook_dialog').within(() => {
                 // * Verify run name prompt
-                cy.get('input').eq(1).should('have.value', 'templated name');
+                cy.get('input').eq(0).should('have.value', 'templated name');
             });
         });
     });
