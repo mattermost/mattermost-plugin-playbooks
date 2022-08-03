@@ -14,13 +14,13 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 
 import {createGlobalState} from 'react-use';
 
-import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
+import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
 import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
