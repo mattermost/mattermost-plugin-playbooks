@@ -689,5 +689,8 @@
     "hnYSP3": "Wenn du einen Durchlauf verläßt und nicht mehr folgst, wird er aus der linken Randleiste entfernt. Du kannst ihn über die Anzeige aller Durchläufe wiederfinden.",
     "AhY0vJ": "Verlassen und nicht mehr folgen",
     "egUE/K": "Senden an ausgewählte Kanäle",
-    "Xm0L7N": "Wenn eine Statusaktualisierung gesendet oder eine Retrospektive veröffentlicht wird"
+    "Xm0L7N": "Wenn eine Statusaktualisierung gesendet oder eine Retrospektive veröffentlicht wird",
+    "iEtImk": "Wenn du einen Durchlauf verlässt{isFollowing, select, true { und nicht mehr folgst} other { }}, wird er aus der linken Seitenleiste entfernt. Du findest ihn weiterhin, wenn du alle Durchläufe ansiehst.",
+    "cnfVhV": "Verlassen {isFollowing, select, true { und nicht folgen } other {}}run",
+    "Q4sutg": "Bestätige verlassen{isFollowing, select, true { und nicht mehr folgen} other {}}"
 }
