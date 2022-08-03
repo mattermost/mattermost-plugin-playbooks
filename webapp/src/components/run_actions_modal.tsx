@@ -74,7 +74,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={broadcastToChannelsEnabled}
+                            enabled={broadcastToChannelsEnabled && channelIds.length > 0}
                             title={formatMessage({defaultMessage: 'Broadcast to selected channels'})}
                             editable={!readOnly}
                             onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
@@ -88,7 +88,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                             />
                         </Action>
                         <Action
-                            enabled={sendOutgoingWebhookEnabled}
+                            enabled={sendOutgoingWebhookEnabled && webhooks.length > 0}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
                             editable={!readOnly}
                             onToggle={() => setSendOutgoingWebhookEnabled((prev) => !prev)}
