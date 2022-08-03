@@ -24,20 +24,15 @@ import {
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
+import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {Playbook} from 'src/types/playbook';
-
 import PresetTemplates from 'src/components/templates/template_data';
-
 import {RegularHeading} from 'src/styles/headings';
-
-import {importFile} from 'src/client';
-
 import {pluginUrl} from 'src/browser_routing';
 
 import Header from '../widgets/header';
 
 import CheckboxInput from './runs_list/checkbox_input';
-
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
@@ -115,7 +110,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teamId = useSelector(getCurrentTeamId);
     const content = useRef<JSX.Element | null>(null);
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
 
     const [
@@ -127,7 +121,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
-    const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+    const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => edit(id));
 
     const hasPlaybooks = Boolean(playbooks?.length);
 
@@ -151,8 +146,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             <PlaybookListRow
                 key={p.id}
                 playbook={p}
-                onClick={() => view(p)}
-                onEdit={() => edit(p)}
+                onClick={() => view(p.id)}
+                onEdit={() => edit(p.id)}
                 onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
@@ -172,18 +167,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 </>
             );
         }
-
-        const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    const {id} = await importFile(ev?.target?.result, teamId);
-                    edit(id);
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        };
 
         return (
             <TableContainer>
@@ -228,13 +211,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         onChange={setWithArchived}
                     />
                     <HorizontalSpacer size={12}/>
-                    <input
-                        type='file'
-                        accept='*.json,application/JSON'
-                        onChange={importUpload}
-                        ref={fileInputRef}
-                        style={{display: 'none'}}
-                    />
+                    {inputImportPlaybook}
                 </PlaybooksListFilters>
                 <BackstageListHeader $edgeless={true}>
                     <div className='row'>
