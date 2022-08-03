@@ -42,9 +42,10 @@ interface Props {
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
+    isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -105,6 +106,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, role, onIn
                 playbookRun={playbookRun}
                 role={role}
                 isFavoriteRun={isFavoriteRun}
+                isFollowing={isFollowing}
                 toggleFavorite={toggleFavorite}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
