@@ -28,8 +28,8 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const show = useSelector(isRunActionsModalVisible);
     const teamId = playbookRun.team_id || '';
 
-    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
-    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
+    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled && playbookRun.broadcast_channel_ids.length > 0);
+    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled && playbookRun.webhook_on_status_update_urls.length > 0);
 
     const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
@@ -54,6 +54,8 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             status_update_broadcast_webhooks_enabled: sendOutgoingWebhookEnabled,
             webhook_on_status_update_urls: webhooks,
         });
+        setBroadcastToChannelsEnabled(broadcastToChannelsEnabled && channelIds.length > 0);
+        setSendOutgoingWebhookEnabled(sendOutgoingWebhookEnabled && webhooks.length > 0);
     };
 
     return (
@@ -74,7 +76,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={broadcastToChannelsEnabled && channelIds.length > 0}
+                            enabled={broadcastToChannelsEnabled}
                             title={formatMessage({defaultMessage: 'Broadcast to selected channels'})}
                             editable={!readOnly}
                             onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
@@ -88,7 +90,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                             />
                         </Action>
                         <Action
-                            enabled={sendOutgoingWebhookEnabled && webhooks.length > 0}
+                            enabled={sendOutgoingWebhookEnabled}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
                             editable={!readOnly}
                             onToggle={() => setSendOutgoingWebhookEnabled((prev) => !prev)}
