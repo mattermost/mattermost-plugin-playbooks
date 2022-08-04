@@ -384,6 +384,7 @@ export const PlaybookLhsDocument = gql`
   runs(
     participantOrFollowerID: $userID
     teamID: $teamID
+    sort: "name"
     statuses: ["InProgress"]
   ) {
     id

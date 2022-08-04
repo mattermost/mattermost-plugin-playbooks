@@ -11,7 +11,7 @@ type Query {
 
 	runs(
 		teamID: String = "",
-		sort: String = "name",
+		sort: String = "",
 		statuses: [String!] = [],
 		participantOrFollowerID: String = "",
 	): [Run!]!
