@@ -216,4 +216,51 @@ describe('runs > list', () => {
             });
         });
     });
+
+    describe('LHS run list', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'run-sort-check 1',
+                ownerUserId: testUser.id,
+            }).then(() => {
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 0',
+                    ownerUserId: testUser.id,
+                }).then(() => {
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: testPlaybook.id,
+                        playbookRunName: 'run-sort-check 3',
+                        ownerUserId: testUser.id,
+                    }).then(() => {
+                        cy.apiRunPlaybook({
+                            teamId: testTeam.id,
+                            playbookId: testPlaybook.id,
+                            playbookRunName: 'run-sort-check 2',
+                            ownerUserId: testUser.id,
+                        }).then((playbookRun) => {
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                        });
+                    });
+                });
+            });
+        });
+
+        it('lhs run list sorted by name', () => {
+            cy.findByTestId('lhs-navigation').within(() => {
+                cy.get('li:contains(run-sort-check)').each((item, index) => {
+                    // * Verify run list order
+                    cy.wrap(item).should('have.text', 'run-sort-check ' + index);
+                });
+            });
+        });
+    });
 });
