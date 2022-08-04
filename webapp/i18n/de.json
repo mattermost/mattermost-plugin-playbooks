@@ -693,5 +693,8 @@
     "iEtImk": "Wenn du einen Durchlauf verlässt{isFollowing, select, true { und nicht mehr folgst} other { }}, wird er aus der linken Seitenleiste entfernt. Du findest ihn weiterhin, wenn du alle Durchläufe ansiehst.",
     "cnfVhV": "Verlassen {isFollowing, select, true { und nicht folgen } other {}}run",
     "Q4sutg": "Bestätige verlassen{isFollowing, select, true { und nicht mehr folgen} other {}}",
-    "Suyx6A": "Der Playbook Import ist fehlgeschlagen. Bitte prüfe, dass das JSON valide ist und nochmal versuchen."
+    "Suyx6A": "Der Playbook Import ist fehlgeschlagen. Bitte prüfe, dass das JSON valide ist und nochmal versuchen.",
+    "QegBKq": "Playbook beitreten",
+    "P6PLpi": "Teilnehmen",
+    "FgydNe": "Ansehen"
 }
