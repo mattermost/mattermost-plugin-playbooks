@@ -1,9 +1,8 @@
+import {useApolloClient} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components';
 
 import {PlaybookLhsDocument} from 'src/graphql/generated_types';
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-
 import PlaybooksSidebar from '../sidebar/playbooks_sidebar';
 
 const LHSContainer = styled.div`
@@ -22,10 +21,16 @@ const LHSNavigation = () => {
     );
 };
 
-export const refreshLHS = () => {
-    getPlaybooksGraphQLClient().refetchQueries({
-        include: [PlaybookLhsDocument],
-    });
+export const useLHS = () => {
+    const apolloClient = useApolloClient();
+
+    const refreshLists = () => {
+        apolloClient.refetchQueries({
+            include: [PlaybookLhsDocument],
+        });
+    };
+
+    return refreshLists;
 };
 
 export default LHSNavigation;

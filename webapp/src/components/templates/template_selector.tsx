@@ -13,7 +13,7 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
 import {setPlaybookDefaults} from 'src/types/playbook';
 import {usePlaybooksRouting} from 'src/hooks';
-import {refreshLHS} from '../backstage/lhs_navigation';
+import {useLHS} from '../backstage/lhs_navigation';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';
@@ -75,6 +75,8 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
     const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
     const currentUser = useSelector(getCurrentUser);
     const {edit} = usePlaybooksRouting();
+    const refreshLHS = useLHS();
+
     return (
         <SelectorGrid>
             {templates.map((template: PresetTemplate) => (

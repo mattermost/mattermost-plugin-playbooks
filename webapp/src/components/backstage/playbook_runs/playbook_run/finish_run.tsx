@@ -14,11 +14,12 @@ import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {refreshLHS} from '../../lhs_navigation';
+import {useLHS} from '../../lhs_navigation';
 
 export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const refreshLHS = useLHS();
 
     return () => {
         const outstanding = outstandingTasks(playbookRun.checklists);

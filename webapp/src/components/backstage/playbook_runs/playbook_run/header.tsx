@@ -30,7 +30,7 @@ import {ToastType, useToaster} from '../../toast_banner';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {StarButton} from '../../playbook_editor/playbook_editor';
-import {refreshLHS} from '../../lhs_navigation';
+import {useLHS} from '../../lhs_navigation';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -53,6 +53,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, channe
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
+    const refreshLHS = useLHS();
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
