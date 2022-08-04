@@ -336,7 +336,7 @@ export function useProfilesInChannel(channelId: string) {
 export function useThing<T extends NonNullable<any>>(
     id: string| undefined,
     fetchFunc: (id: string) => Promise<T>,
-    select: (state: GlobalState, id: string) => T,
+    select: (state: GlobalState, id: string) => T|undefined = noopSelector,
     deps: DependencyList = [],
 ) {
     const [thing, setThing] = useState<T | null>();

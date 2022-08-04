@@ -18,7 +18,6 @@ import {
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
-import {noopSelector} from 'src/selectors';
 
 import {useThing} from './general';
 
@@ -37,7 +36,7 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @returns undefined == loading; null == not found
  */
 export function usePlaybook(id: Playbook['id'] | undefined) {
-    return useThing(id, clientFetchPlaybook, noopSelector);
+    return useThing(id, clientFetchPlaybook);
 }
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
