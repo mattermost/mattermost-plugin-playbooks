@@ -28,8 +28,8 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const show = useSelector(isRunActionsModalVisible);
     const teamId = playbookRun.team_id || '';
 
-    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled && playbookRun.broadcast_channel_ids.length > 0);
-    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled && playbookRun.webhook_on_status_update_urls.filter((s) => s !== '').length > 0);
+    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
+    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
 
     const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
@@ -54,8 +54,6 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             status_update_broadcast_webhooks_enabled: sendOutgoingWebhookEnabled,
             webhook_on_status_update_urls: webhooks,
         });
-        setBroadcastToChannelsEnabled(broadcastToChannelsEnabled && channelIds.length > 0);
-        setSendOutgoingWebhookEnabled(sendOutgoingWebhookEnabled && webhooks.filter((s) => s !== '').length > 0);
     };
 
     return (
