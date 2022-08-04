@@ -21,7 +21,7 @@ const LHSNavigation = () => {
     );
 };
 
-export const useLHS = () => {
+export const useLHSRefresh = () => {
     const apolloClient = useApolloClient();
 
     const refreshLists = () => {
