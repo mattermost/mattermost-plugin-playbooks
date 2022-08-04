@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {joinChannel} from 'mattermost-redux/actions/channels';
 import {Channel} from '@mattermost/types/channels';
@@ -39,17 +39,19 @@ interface Props {
     playbookRun: PlaybookRun;
     role: Role;
     channel: Channel | undefined | null;
+    hasAccessToChannel: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
@@ -65,17 +67,16 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, channe
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-
-        // Channel null value comes from error response (and we assume that is mostly 403)
-        // If we don't have access to channel we'll send a request to be added,
-        // otherwise we directly join it
-        if (channel === null) {
+        if (!hasAccessToChannel) {
             const response = await requestGetInvolved(playbookRun.id);
             if (response?.error) {
                 addToast(formatMessage({defaultMessage: 'Your request to join the run was unsuccessful. '}), ToastType.Failure);
             } else {
                 addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel. '}), ToastType.Success);
             }
+            return;
+        } else if (!channel) {
+            addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
             return;
         }
 
@@ -127,7 +128,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, channe
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                Icon={UpdateIcon}
+                Icon={TimelineTextOutlineIcon}
                 onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
                 data-testid={'rhs-header-button-timeline'}

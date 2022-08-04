@@ -14,12 +14,12 @@ import {isMac} from '../utils';
 // See https://github.com/mattermost/mattermost-webapp/pull/10653
 Cypress.Commands.overwrite('reload', (originalFn, forceReload, options) => {
     localStorage.setItem('__landingPageSeen__', 'true');
-    originalFn(forceReload, options);
+    return originalFn(forceReload, options);
 });
 
 Cypress.Commands.overwrite('visit', (originalFn, url, options) => {
     localStorage.setItem('__landingPageSeen__', 'true');
-    originalFn(url, options);
+    return originalFn(url, options);
 });
 
 Cypress.Commands.add('logout', () => {
