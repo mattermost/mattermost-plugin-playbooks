@@ -152,6 +152,22 @@ describe('runs > run details page > run info', () => {
                 // * Assert we navigated correctly
                 cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
             });
+
+            it('channel is still there when the run is finished', () => {
+                cy.apiFinishRun(testRun.id).then(() => {
+                    // # Reload page
+                    cy.reload();
+
+                    // * Assert channel name
+                    getOverviewEntry('channel').contains('the run name');
+
+                    // # Click on channel item
+                    getOverviewEntry('channel').click();
+
+                    // * Assert we navigated correctly
+                    cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+                });
+            });
         });
 
         describe('as viewer', () => {
@@ -215,7 +231,7 @@ describe('runs > run details page > run info', () => {
             });
         });
 
-        describe('playbook with metrics', () => {
+        describe('playbook with metrics (enabled retro)', () => {
             let playbookWithMetrics;
             let runWithMetrics;
 
@@ -370,6 +386,74 @@ describe('runs > run details page > run info', () => {
                         });
                     });
                 });
+            });
+        });
+
+        describe('playbook with metrics (disabled retro)', () => {
+            let playbookWithMetrics;
+            let runWithMetrics;
+
+            before(() => {
+                // # Login as testUser
+                cy.apiLogin(testUser);
+
+                // # Create a public playbook with metrics
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Public Playbook with metrics',
+                    memberIDs: [],
+                    metrics: [
+                        {
+                            title: 'Integer',
+                            description: 'integer',
+                            type: 'metric_integer',
+                            target: 1,
+                        },
+                    ],
+                    retrospectiveEnabled: false,
+                }).then((playbook) => {
+                    playbookWithMetrics = playbook;
+                });
+            });
+
+            beforeEach(() => {
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
+                // # Login as testUser
+                cy.apiLogin(testUser);
+
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbookWithMetrics.id,
+                    playbookRunName: 'the run name',
+                    ownerUserId: testUser.id,
+                }).then((playbookRun) => {
+                    runWithMetrics = playbookRun;
+
+                    // # Visit the playbook run
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                });
+            });
+
+            const commonTests = () => {
+                it('key metrics is hidden', () => {
+                    getRHSSection('Key Metrics').should('not.exist');
+                });
+            };
+
+            describe('as participant', () => {
+                commonTests();
+            });
+
+            describe('as viewer', () => {
+                beforeEach(() => {
+                    cy.apiLogin(testViewerUser).then(() => {
+                        cy.visit(`/playbooks/runs/${runWithMetrics.id}`);
+                    });
+                });
+
+                commonTests();
             });
         });
     });

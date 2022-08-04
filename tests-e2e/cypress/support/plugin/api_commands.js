@@ -133,6 +133,25 @@ Cypress.Commands.add('apiUpdateStatus', (
     });
 });
 
+// Publish retro programmatically.
+Cypress.Commands.add('apiPublishRetro', (
+    {
+        playbookRunId,
+        retrospective,
+    }) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/retrospective/publish`,
+        method: 'POST',
+        body: {
+            retrospective,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
 /**
  * Change the owner of a playbook run directly via API
  * @param {String} playbookRunId

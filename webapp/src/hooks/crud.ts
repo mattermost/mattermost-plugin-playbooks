@@ -191,6 +191,7 @@ export function usePlaybooksCrud(
             setSearchTerm: setSearchTermDebounced,
             setWithArchived,
             isFiltering,
+            fetchPlaybooks,
         },
     ] as const;
 }

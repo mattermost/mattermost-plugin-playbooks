@@ -23,6 +23,7 @@ interface Props {
     onSave: () => void;
     children: React.ReactNode;
     adjustTop?: number;
+    isValid: boolean;
 }
 
 const ActionsModal = (props: Props) => {
@@ -43,6 +44,17 @@ const ActionsModal = (props: Props) => {
         </Header>
     );
 
+    // We want to show the confirm button but disabled when is invalid
+    const onHandleConfirm = () => {
+        if (!props.editable) {
+            return null;
+        }
+        if (!props.isValid) {
+            return () => null;
+        }
+        return props.onSave;
+    };
+
     return (
         <StyledModal
             id={props.id}
@@ -51,10 +63,11 @@ const ActionsModal = (props: Props) => {
             onHide={props.onHide}
             onExited={() => {/* do nothing else after the modal has exited */}}
             handleCancel={props.editable ? props.onHide : null}
-            handleConfirm={props.editable ? props.onSave : null}
+            handleConfirm={onHandleConfirm()}
             confirmButtonText={formatMessage({defaultMessage: 'Save'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             isConfirmDisabled={!props.editable}
+            confirmButtonClassName={props.isValid ? '' : 'disabled'}
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={false}
@@ -107,6 +120,11 @@ const ModalFooter = styled(DefaultFooterContainer)`
         margin-top: -24px;
 
         background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
 `;
 
