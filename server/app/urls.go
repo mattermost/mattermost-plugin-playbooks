@@ -26,7 +26,7 @@ func getRunDetailsURL(siteURL string, playbookRunID string) string {
 }
 
 func getRunRetrospectiveURL(siteURL string, playbookRunID string) string {
-	return fmt.Sprintf("%s/retrospective", getRunDetailsURL(siteURL, playbookRunID))
+	return fmt.Sprintf("%s/retrospective#playbook-run-retrospective", getRunDetailsURL(siteURL, playbookRunID))
 }
 
 func getPlaybooksURL(siteURL string) string {

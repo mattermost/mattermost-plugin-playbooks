@@ -43,9 +43,10 @@ interface Props {
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
+    isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, channel, hasAccessToChannel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -106,6 +107,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, hasAccessT
                 playbookRun={playbookRun}
                 role={role}
                 isFavoriteRun={isFavoriteRun}
+                isFollowing={isFollowing}
                 toggleFavorite={toggleFavorite}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
@@ -115,8 +117,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, channel, hasAccessT
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 Icon={LightningBoltOutlineIcon}
                 onClick={() => dispatch(showRunActionsModal())}
-                size={24}
-                iconSize={14}
                 data-testid={'rhs-header-button-run-actions'}
             />
             <StyledCopyLink
@@ -179,9 +179,9 @@ const Container = styled.div`
 
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 14px;
-    width: 24px;
-    height: 24px;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
     margin-left: 4px;
     display: grid;
     place-items: center;
