@@ -68,7 +68,7 @@ describe('runs > run details page > run info', () => {
         const commonTests = () => {
             it('Playbook entry links to the playbook', () => {
                 // # Click on the Playbook entry
-                getOverviewEntry('playbook').click();
+                getOverviewEntry('playbook').within(() => cy.getStyledComponent('ItemLink').click());
 
                 // * Verify the we're in the right playbook page
                 cy.url().should('include', '/playbooks/playbooks');
@@ -147,7 +147,7 @@ describe('runs > run details page > run info', () => {
                 getOverviewEntry('channel').contains('the run name');
 
                 // # Click on channel item
-                getOverviewEntry('channel').click();
+                getOverviewEntry('channel').within(() => cy.getStyledComponent('ItemLink').click());
 
                 // * Assert we navigated correctly
                 cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
@@ -162,7 +162,7 @@ describe('runs > run details page > run info', () => {
                     getOverviewEntry('channel').contains('the run name');
 
                     // # Click on channel item
-                    getOverviewEntry('channel').click();
+                    getOverviewEntry('channel').within(() => cy.getStyledComponent('ItemLink').click());
 
                     // * Assert we navigated correctly
                     cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
