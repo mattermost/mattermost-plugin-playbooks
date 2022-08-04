@@ -22,7 +22,6 @@ const Following = (props: Props) => {
         <>
             <UserRow
                 tabIndex={0}
-                role={'button'}
             >
                 {props.userIds.slice(0, maxUsers).map((userId: string) => (
                     <RHSParticipant
