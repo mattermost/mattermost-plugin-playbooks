@@ -77,7 +77,7 @@ interface Props {
 
 const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(run.playbook_id);
+    const [playbook] = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);

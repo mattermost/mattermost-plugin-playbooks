@@ -10,7 +10,7 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -91,15 +91,16 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const playbookRun = useRun(playbookRunId);
-    const playbook = usePlaybook(playbookRun?.playbook_id);
+    const [playbookRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
     usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRunId, [JSON.stringify(playbookRun?.participant_ids)]);
+
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
-    const channel = useChannel(playbookRun?.channel_id ?? '');
+    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
     const followState = useFollowers(metadata?.followers || []);
@@ -145,7 +146,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataResult.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
@@ -215,6 +216,7 @@ const PlaybookRunDetails = () => {
                         onTimelineClick={onTimelineClick}
                         role={role}
                         channel={channel}
+                        hasAccessToChannel={!channelFetchMetadata.isErrorCode(403)}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
                     />
