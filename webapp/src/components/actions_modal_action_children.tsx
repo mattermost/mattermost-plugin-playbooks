@@ -47,7 +47,7 @@ interface OptionType {
 
 export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlaybookProps) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(playbookId);
+    const [playbook] = usePlaybook(playbookId);
     const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
 
     // Format the playbooks for use with StyledSelect.

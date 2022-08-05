@@ -277,7 +277,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.DefaultOwnerID = playbook.DefaultOwnerID
 	}
 
-	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
 	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
 
 	r.WebhookOnCreationURLs = []string{}
@@ -285,7 +286,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
 	}
 
-	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
 	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
 
 	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
@@ -533,6 +535,7 @@ const (
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
 
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
+	TriggerTypeRetroPublished     = "retrospective_published"
 )
 
 // PlaybookRunService is the playbook run service interface.
@@ -741,7 +744,7 @@ type PlaybookRunService interface {
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
-	// Leave removes user from the run's participants list
+	// Leave removes user from the run's participants&followers list
 	Leave(playbookRunID, requesterID string) error
 }
 
