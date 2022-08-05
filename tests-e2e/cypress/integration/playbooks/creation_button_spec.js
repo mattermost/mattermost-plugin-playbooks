@@ -61,6 +61,9 @@ describe('playbooks > creation button', () => {
 
         // * Verify playbook outline page opened
         verifyPlaybookOutlineOpened(playbookName);
+
+        // * Verify playbook was added to the LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
     });
 
     it('auto creates a playbook with "Blank" template option', () => {
@@ -73,8 +76,13 @@ describe('playbooks > creation button', () => {
         // # Click 'Blank'
         cy.findByText('Blank').click();
 
+        const playbookName = `@${testUser.username}'s Blank`;
+
         // * Verify playbook outline opened
-        verifyPlaybookOutlineOpened(`@${testUser.username}'s Blank`);
+        verifyPlaybookOutlineOpened(playbookName);
+
+        // * Verify playbook was added to the LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
     });
 
     it('opens Service Outage Incident page from its template option (multiple teams)', () => {

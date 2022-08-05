@@ -78,3 +78,11 @@ query PlaybookLHS($userID: String!, $teamID: String!) {
 		public
 	}
 }
+
+mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
+	addPlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+
+mutation RemovePlaybookMember($playbookID: String!, $userID: String!) {
+	removePlaybookMember(playbookID: $playbookID, userID: $userID)
+}

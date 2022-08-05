@@ -12,6 +12,7 @@ import {telemetryEventForTemplate, savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {setPlaybookDefaults} from 'src/types/playbook';
 import {usePlaybooksRouting} from 'src/hooks';
+import {useLHSRefresh} from '../backstage/lhs_navigation';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';
@@ -72,6 +73,8 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
     const teamId = useSelector(getCurrentTeamId);
     const currentUser = useSelector(getCurrentUser);
     const {edit} = usePlaybooksRouting();
+    const refreshLHS = useLHSRefresh();
+
     return (
         <SelectorGrid>
             {templates.map((template: PresetTemplate) => (
@@ -92,6 +95,7 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                             username = '';
                         }
                         const playbookID = await instantCreatePlaybook(template, teamId, username);
+                        refreshLHS();
                         edit(playbookID);
                     }}
                 />

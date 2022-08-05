@@ -1,5 +1,7 @@
 import {useCallback} from 'react';
 
+import {autoFollowPlaybook} from 'src/client';
+
 import {
     PlaybookDocument,
     PlaybookLhsDocument,
@@ -7,7 +9,9 @@ import {
     PlaybookQueryHookResult,
     PlaybookUpdates,
     RunUpdates,
+    useAddPlaybookMemberMutation,
     usePlaybookQuery,
+    useRemovePlaybookMemberMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
 } from 'src/graphql/generated_types';
@@ -52,4 +56,43 @@ export const useUpdateRun = (id?: string) => {
     return useCallback((updates: RunUpdates) => {
         return innerUpdateRun({variables: {id: id || '', updates}});
     }, [id, innerUpdateRun]);
+};
+
+export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
+    const [joinPlaybook] = useAddPlaybookMemberMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            playbookID: playbookID || '',
+            userID: userID || '',
+        },
+    });
+
+    const [leavePlaybook] = useRemovePlaybookMemberMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            playbookID: playbookID || '',
+            userID: userID || '',
+        },
+    });
+
+    const join = useCallback(async () => {
+        if (!playbookID || !userID) {
+            return;
+        }
+        await joinPlaybook();
+        await autoFollowPlaybook(playbookID, userID);
+    }, [playbookID, userID, joinPlaybook]);
+
+    const leave = useCallback(async () => {
+        if (!playbookID || !userID) {
+            return;
+        }
+        await leavePlaybook();
+    }, [playbookID, userID, leavePlaybook]);
+
+    return {join, leave};
 };

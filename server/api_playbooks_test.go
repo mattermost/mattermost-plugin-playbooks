@@ -797,6 +797,8 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	})
 
+	oldMembers := e.BasicPlaybook.Members
+
 	t.Run("update playbook members", func(t *testing.T) {
 		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members, client.PlaybookMember{UserID: "testuser", Roles: []string{model.PlaybookMemberRoleId}})
 
@@ -823,7 +825,24 @@ func TestPlaybooksPermissions(t *testing.T) {
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
 		})
+
+		e.BasicPlaybook.Members = []client.PlaybookMember{}
+		t.Run("with permissions removal", func(t *testing.T) {
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defer func() {
+				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			}()
+			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			assert.NoError(t, err)
+		})
 	})
+
+	e.BasicPlaybook.Members = oldMembers
+	err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+	require.NoError(t, err)
 
 	t.Run("update playbook roles", func(t *testing.T) {
 		e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles = append(e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles, model.PlaybookAdminRoleId)

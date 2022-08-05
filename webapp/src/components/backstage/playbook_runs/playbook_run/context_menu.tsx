@@ -22,6 +22,7 @@ import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {useLHSRefresh} from '../../lhs_navigation';
 
 import {useOnFinishRun} from './finish_run';
 
@@ -29,14 +30,15 @@ interface Props {
     playbookRun: PlaybookRun;
     role: Role;
     isFavoriteRun: boolean;
+    isFollowing: boolean;
     toggleFavorite: () => void;
 }
 
-export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: Props) => {
+export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun, isFollowing);
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
@@ -114,7 +116,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
                         <Separator/>
                         <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
                             <CloseIcon size={18}/>
-                            <FormattedMessage defaultMessage='Leave and unfollow run'/>
+                            <FormattedMessage
+                                defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
+                                values={{isFollowing}}
+                            />
                         </StyledDropdownMenuItemRed>
                     </>
                 }
@@ -129,17 +134,19 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, toggleFavorite}: 
     );
 };
 
-const useLeaveRun = (playbookRun: PlaybookRun) => {
+const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
+    const refreshLHS = useLHSRefresh();
 
     const onLeaveRun = async () => {
         const response = await leaveRun(playbookRun.id);
         if (response?.error) {
             addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
         } else {
+            refreshLHS();
             addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
             if (!response.has_view_permission) {
                 navigateToUrl(pluginUrl(''));
@@ -149,8 +156,8 @@ const useLeaveRun = (playbookRun: PlaybookRun) => {
     const leaveRunConfirmModal = (
         <ConfirmModal
             show={showLeaveRunConfirm}
-            title={formatMessage({defaultMessage: 'Confirm leave and unfollow'})}
-            message={formatMessage({defaultMessage: 'When you leave and unfollow a run, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'})}
+            title={formatMessage({defaultMessage: 'Confirm leave{isFollowing, select, true { and unfollow} other {}}'}, {isFollowing})}
+            message={formatMessage({defaultMessage: 'When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'}, {isFollowing})}
             confirmButtonText={formatMessage({defaultMessage: 'Leave and unfollow'})}
             onConfirm={() => {
                 onLeaveRun();
