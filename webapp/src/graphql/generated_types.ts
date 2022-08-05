@@ -66,7 +66,9 @@ export {MetricType};
 export type Mutation = {
     __typename?: 'Mutation';
     addMetric: Scalars['String'];
+    addPlaybookMember: Scalars['String'];
     deleteMetric: Scalars['String'];
+    removePlaybookMember: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
@@ -80,8 +82,18 @@ export type MutationAddMetricArgs = {
     type: Scalars['String'];
 };
 
+export type MutationAddPlaybookMemberArgs = {
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+};
+
 export type MutationDeleteMetricArgs = {
     id: Scalars['String'];
+};
+
+export type MutationRemovePlaybookMemberArgs = {
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
 };
 
 export type MutationUpdateMetricArgs = {
@@ -247,6 +259,20 @@ export type PlaybookLhsQueryVariables = Exact<{
 }>;
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+
+export type AddPlaybookMemberMutationVariables = Exact<{
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+}>;
+
+export type AddPlaybookMemberMutation = { __typename?: 'Mutation', addPlaybookMember: string };
+
+export type RemovePlaybookMemberMutationVariables = Exact<{
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+}>;
+
+export type RemovePlaybookMemberMutation = { __typename?: 'Mutation', removePlaybookMember: string };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -428,6 +454,70 @@ export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
 export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
 export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
+export const AddPlaybookMemberDocument = gql`
+    mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
+  addPlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+    `;
+export type AddPlaybookMemberMutationFn = Apollo.MutationFunction<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>;
+
+/**
+ * __useAddPlaybookMemberMutation__
+ *
+ * To run a mutation, you first call `useAddPlaybookMemberMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddPlaybookMemberMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addPlaybookMemberMutation, { data, loading, error }] = useAddPlaybookMemberMutation({
+ *   variables: {
+ *      playbookID: // value for 'playbookID'
+ *      userID: // value for 'userID'
+ *   },
+ * });
+ */
+export function useAddPlaybookMemberMutation(baseOptions?: Apollo.MutationHookOptions<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>(AddPlaybookMemberDocument, options);
+}
+export type AddPlaybookMemberMutationHookResult = ReturnType<typeof useAddPlaybookMemberMutation>;
+export type AddPlaybookMemberMutationResult = Apollo.MutationResult<AddPlaybookMemberMutation>;
+export type AddPlaybookMemberMutationOptions = Apollo.BaseMutationOptions<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>;
+export const RemovePlaybookMemberDocument = gql`
+    mutation RemovePlaybookMember($playbookID: String!, $userID: String!) {
+  removePlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+    `;
+export type RemovePlaybookMemberMutationFn = Apollo.MutationFunction<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
+
+/**
+ * __useRemovePlaybookMemberMutation__
+ *
+ * To run a mutation, you first call `useRemovePlaybookMemberMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemovePlaybookMemberMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removePlaybookMemberMutation, { data, loading, error }] = useRemovePlaybookMemberMutation({
+ *   variables: {
+ *      playbookID: // value for 'playbookID'
+ *      userID: // value for 'userID'
+ *   },
+ * });
+ */
+export function useRemovePlaybookMemberMutation(baseOptions?: Apollo.MutationHookOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>(RemovePlaybookMemberDocument, options);
+}
+export type RemovePlaybookMemberMutationHookResult = ReturnType<typeof useRemovePlaybookMemberMutation>;
+export type RemovePlaybookMemberMutationResult = Apollo.MutationResult<RemovePlaybookMemberMutation>;
+export type RemovePlaybookMemberMutationOptions = Apollo.BaseMutationOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
