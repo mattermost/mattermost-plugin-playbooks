@@ -140,7 +140,7 @@ describe('runs > run details page > header', () => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPublicPlaybook.id,
-                playbookRunName: 'the run name',
+                playbookRunName: 'the run name(' + Date.now() + ')',
                 ownerUserId: testUser.id,
             }).then((run) => {
                 playbookRun = run;
@@ -503,6 +503,30 @@ describe('runs > run details page > header', () => {
                     cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
                 });
             });
+
+            describe('leave run', () => {
+                it('can leave run', () => {
+                    // # Add viewer user to the channel
+                    cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+
+                    // # Change the owner to testViewerUser
+                    cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
+                    cy.wait(500);
+
+                    // # Click on leave run
+                    getDropdownItemByText('Leave and unfollow run').click();
+
+                    // # confirm modal
+                    cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                    // NOTE: this check fails because the front doesn't receive updated run object. Will deal in separate PR.
+                    // * Assert that the Participate button is shown
+                    // getHeader().findByText('Participate').should('be.visible');
+
+                    // * Verify run has been removed from LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
+                });
+            });
         });
     });
 
@@ -631,6 +655,9 @@ describe('runs > run details page > header', () => {
 
                         // # Wait for useChannel
                         cy.wait(500);
+
+                        // * Verify run has been added to LHS
+                        cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                         // # Visit the channel run (now we joined)
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
