@@ -674,5 +674,15 @@
     "AhY0vJ": "Leave and unfollow",
     "AH+V3r": "Become a participant of the run.",
     "5Hzwqs": "Favourite",
-    "+6DCr9": "As a participant, you can post status updates, assign and complete tasks as well as perform retrospectives."
+    "+6DCr9": "As a participant, you can post status updates, assign and complete tasks as well as perform retrospectives.",
+    "iEtImk": "When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it's removed from the left-hand sidebar. You can find it again by viewing all runs.",
+    "fnihsY": "Leave",
+    "egUE/K": "Broadcast to selected channels",
+    "cnfVhV": "Leave {isFollowing, select, true { and unfollow } other {}}run",
+    "Xm0L7N": "When a status update is posted, or a retrospective is published",
+    "Suyx6A": "The playbook import has failed. Please check that JSON is valid and try again.",
+    "QegBKq": "Join playbook",
+    "Q4sutg": "Confirm leave{isFollowing, select, true { and unfollow} other {}}",
+    "P6PLpi": "Join",
+    "FgydNe": "View"
 }
