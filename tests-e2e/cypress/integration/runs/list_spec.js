@@ -222,35 +222,37 @@ describe('runs > list', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
 
-            cy.apiRunPlaybook({
-                teamId: testTeam.id,
-                playbookId: testPlaybook.id,
-                playbookRunName: 'run-sort-check 1',
-                ownerUserId: testUser.id,
-            }).then(() => {
-                cy.apiRunPlaybook({
+            const runs = [
+                {
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
                     playbookRunName: 'run-sort-check 0',
                     ownerUserId: testUser.id,
-                }).then(() => {
-                    cy.apiRunPlaybook({
-                        teamId: testTeam.id,
-                        playbookId: testPlaybook.id,
-                        playbookRunName: 'run-sort-check 3',
-                        ownerUserId: testUser.id,
-                    }).then(() => {
-                        cy.apiRunPlaybook({
-                            teamId: testTeam.id,
-                            playbookId: testPlaybook.id,
-                            playbookRunName: 'run-sort-check 2',
-                            ownerUserId: testUser.id,
-                        }).then((playbookRun) => {
-                            // # Visit the playbook run
-                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
-                        });
-                    });
-                });
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 1',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 2',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 3',
+                    ownerUserId: testUser.id,
+                }
+            ];
+
+            Promise.all(runs.map((run) => {
+                return new Promise((resolve) => cy.apiRunPlaybook(run).then(resolve));
+            })).then(() => {
+                cy.visit('/playbooks');
             });
         });
 
