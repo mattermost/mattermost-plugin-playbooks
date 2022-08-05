@@ -53,7 +53,7 @@ export interface TimelineEventsFilter {
 }
 
 export const TimelineEventsFilterDefault = {
-    all: false,
+    all: true,
     owner_changed: true,
     status_updated: true,
     event_from_post: true,

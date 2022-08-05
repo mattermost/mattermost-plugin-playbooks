@@ -15,8 +15,9 @@ import {Team} from '@mattermost/types/teams';
 import {Theme} from '@mattermost/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
+import {BookOutlineIcon} from '@mattermost/compass-icons/components';
+
 import {promptForFeedback} from 'src/client';
-import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
@@ -152,7 +153,7 @@ const Navbar = () => {
                             activeClassName={'active'}
                             data-testid='playbooksLHSButton'
                         >
-                            <PlaybookIcon/>
+                            <BookOutlineIcon/>
                             {formatMessage({defaultMessage: 'Playbooks'})}
                         </BackstageTitlebarItem>
                     </div>

@@ -10,7 +10,7 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -19,7 +19,7 @@ import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
-import {openBackstageRHS, toggleBackstageRHS, closeBackstageRHS} from 'src/actions';
+import {openBackstageRHS, toggleBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 
 import Summary from './summary';
@@ -37,7 +37,6 @@ import RHSTimeline from './rhs_timeline';
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
@@ -64,6 +63,22 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+const useFollowers = (metadataFollowers: string[]) => {
+    const currentUser = useSelector(getCurrentUser);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useUpdateEffect(() => {
+        setFollowers(metadataFollowers);
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
+
+    useUpdateEffect(() => {
+        setIsFollowing(followers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(followers)]);
+
+    return {isFollowing, followers, setFollowers};
+};
+
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -78,15 +93,19 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const playbookRun = useRun(playbookRunId);
-    const playbook = usePlaybook(playbookRun?.playbook_id);
+    const [playbookRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
+
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRunId, [JSON.stringify(playbookRun?.participant_ids)]);
+
     const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
-    const channel = useChannel(playbookRun?.channel_id ?? '');
+    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
+    const followState = useFollowers(metadata?.followers || []);
 
     const RHS = useRHS(playbookRun);
 
@@ -129,15 +148,16 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataResult.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
+
     // const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
-    const onViewTimeline = () => dispatch(openBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap))
+    const onViewTimeline = () => dispatch(openBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap));
 
     let rhsComponent = null;
     switch (RHS.section) {
@@ -156,13 +176,16 @@ const PlaybookRunDetails = () => {
                 playbook={playbook ?? undefined}
                 runMetadata={metadata ?? undefined}
                 role={role}
+                followState={followState}
                 channel={channel}
                 onViewParticipants={() =>
                     dispatch(openBackstageRHS(BackstageRHSSection.RunParticipants, BackstageRHSViewMode.Overlap))
+
                     // () => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
                 }
                 onViewTimeline={() =>
                     dispatch(toggleBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap))
+
                     // selectOption('all', true);
                     // RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
                 }
@@ -205,7 +228,9 @@ const PlaybookRunDetails = () => {
                         onTimelineClick={onViewTimeline}
                         role={role}
                         channel={channel}
+                        hasAccessToChannel={!channelFetchMetadata.isErrorCode(403)}
                         rhsSection={RHS.isOpen ? RHS.section : null}
+                        isFollowing={followState.isFollowing}
                     />
                 </Header>
                 <Main>

@@ -7,6 +7,8 @@
 // ***************************************************************
 import {stubClipboard} from '../../utils';
 
+const getBroadcastSection = () => cy.findByText('Broadcast to selected channels');
+
 describe('runs > run details page > header', () => {
     let testTeam;
     let testUser;
@@ -138,7 +140,7 @@ describe('runs > run details page > header', () => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPublicPlaybook.id,
-                playbookRunName: 'the run name',
+                playbookRunName: 'the run name(' + Date.now() + ')',
                 ownerUserId: testUser.id,
             }).then((run) => {
                 playbookRun = run;
@@ -173,6 +175,31 @@ describe('runs > run details page > header', () => {
 
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
+                    });
+
+                    it('can not save an invalid form', () => {
+                        // * Verify that the run actions modal is shown when clicking on the button
+                        openRunActionsModal();
+
+                        cy.findByRole('dialog', {name: /Run Actions/i}).within(() => {
+                            // # click on webhooks toggle
+                            cy.findByText('Send outgoing webhook').click();
+
+                            // # Type an invalid webhook URL
+                            cy.getStyledComponent('TextArea').clear().type('invalidurl');
+
+                            // # Click outside textarea
+                            cy.findByText('Run Actions').click();
+
+                            // * Assert the error message is displayed
+                            cy.findByText('Invalid webhook URLs').should('be.visible');
+
+                            // # Click save
+                            cy.findByTestId('modal-confirm-button').click();
+
+                            // * Assert that modal is still open
+                            cy.findByText('Run Actions').should('be.visible');
+                        });
                     });
 
                     it('honours the settings from the playbook', () => {
@@ -210,7 +237,7 @@ describe('runs > run details page > header', () => {
                             openRunActionsModal();
 
                             // * Verify that the broadcast-to-channels toggle is checked
-                            cy.findByText('Broadcast update to selected channels').parent().within(() => {
+                            getBroadcastSection().parent().within(() => {
                                 cy.get('input').should('be.checked');
                             });
 
@@ -233,7 +260,7 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText('Broadcast update to selected channels').click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}');
@@ -258,7 +285,7 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText('Broadcast update to selected channels').click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
@@ -295,13 +322,13 @@ describe('runs > run details page > header', () => {
                         openRunActionsModal();
 
                         // # Enable broadcast to channels
-                        cy.findByText('Broadcast update to selected channels').click();
+                        getBroadcastSection().click();
 
                         // # Select a couple of channels
                         cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
 
                         // # Disable broadcast to channels
-                        cy.findByText('Broadcast update to selected channels').click();
+                        getBroadcastSection().click();
 
                         // # Save the changes
                         saveRunActionsModal();
@@ -327,6 +354,87 @@ describe('runs > run details page > header', () => {
                         // * Verify that the last post does not contain the status update
                         cy.getLastPost().then((post) => {
                             cy.get(post).contains(message).should('not.exist');
+                        });
+                    });
+                });
+            });
+
+            describe('trigger: when a retro is published', () => {
+                describe('action: Broadcast retro to selected channels', () => {
+                    it('broadcasts to two channels configured when it is enabled', () => {
+                        // # Open the run actions modal
+                        openRunActionsModal();
+
+                        // # Enable broadcast to channels
+                        getBroadcastSection().click();
+
+                        // # Select a couple of channels
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
+
+                        // # Save the changes
+                        saveRunActionsModal();
+
+                        // # Publish a retrospective.
+                        const retrospective = 'Retrospective - ' + Date.now();
+                        cy.apiPublishRetro({
+                            playbookRunId: playbookRun.id,
+                            retrospective,
+                        });
+
+                        // # Navigate to the town square channel
+                        cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                        // * Verify that the last post contains the retrospective post
+                        cy.getLastPost().then((post) => {
+                            cy.get(post).contains(retrospective);
+                        });
+
+                        // # Navigate to the off-topic channel
+                        cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+                        // * Verify that the last post contains the retrospective post
+                        cy.getLastPost().then((post) => {
+                            cy.get(post).contains(retrospective);
+                        });
+                    });
+
+                    it('does not broadcast if it is disabled, even if there are channels configured', () => {
+                        // # Open the run actions modal
+                        openRunActionsModal();
+
+                        // # Enable broadcast to channels
+                        getBroadcastSection().click();
+
+                        // # Select a couple of channels
+                        cy.findByText('Select channels').click().type('town square{enter}off-topic{enter}', {delay: 100});
+
+                        // # Disable broadcast to channels
+                        getBroadcastSection().click();
+
+                        // # Save the changes
+                        saveRunActionsModal();
+
+                        // # Publish a retrospective.
+                        const retrospective = 'Retrospective - ' + Date.now();
+                        cy.apiPublishRetro({
+                            playbookRunId: playbookRun.id,
+                            retrospective,
+                        });
+
+                        // # Navigate to the town square channel
+                        cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                        // * Verify that the last post does not contain the retro post
+                        cy.getLastPost().then((post) => {
+                            cy.get(post).contains(retrospective).should('not.exist');
+                        });
+
+                        // # Navigate to the off-topic channel
+                        cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+                        // * Verify that the last post does not contain the retro post
+                        cy.getLastPost().then((post) => {
+                            cy.get(post).contains(retrospective).should('not.exist');
                         });
                     });
                 });
@@ -393,6 +501,30 @@ describe('runs > run details page > header', () => {
 
                     // * Assert modal disappeared
                     cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+                });
+            });
+
+            describe('leave run', () => {
+                it('can leave run', () => {
+                    // # Add viewer user to the channel
+                    cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+
+                    // # Change the owner to testViewerUser
+                    cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
+                    cy.wait(500);
+
+                    // # Click on leave run
+                    getDropdownItemByText('Leave and unfollow run').click();
+
+                    // # confirm modal
+                    cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                    // NOTE: this check fails because the front doesn't receive updated run object. Will deal in separate PR.
+                    // * Assert that the Participate button is shown
+                    // getHeader().findByText('Participate').should('be.visible');
+
+                    // * Verify run has been removed from LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
                 });
             });
         });
@@ -523,6 +655,9 @@ describe('runs > run details page > header', () => {
 
                         // # Wait for useChannel
                         cy.wait(500);
+
+                        // * Verify run has been added to LHS
+                        cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                         // # Visit the channel run (now we joined)
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
