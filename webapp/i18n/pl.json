@@ -678,5 +678,13 @@
     "hnYSP3": "Kiedy opuścisz i przestaniesz obserwować uruchomienie, zostanie on usunięty z lewego paska bocznego. Możesz go ponownie znaleźć przeglądając wszystkie uruchomienia.",
     "AhY0vJ": "Opuść i przestań obserwować",
     "egUE/K": "Nadawanie na wybranych kanałach",
-    "Xm0L7N": "Kiedy aktualizuje się status, lub publikuje retrospekcję"
+    "Xm0L7N": "Kiedy aktualizuje się status, lub publikuje retrospekcję",
+    "iEtImk": "Kiedy opuścisz {isFollowing, select, true {i przestaniesz śledzić uruchomienie} other { uruchomienie}}, zostanie on usunięty z lewego paska bocznego. Możesz go ponownie znaleźć, przeglądając wszystkie uruchomienia.",
+    "cnfVhV": "Opuść{isFollowing, select, true { i wyłącz obserwowanie} other {}}",
+    "Suyx6A": "Import playbooka nie powiódł się. Proszę sprawdzić czy JSON jest poprawny i spróbować ponownie.",
+    "QegBKq": "Dołącz do playbooka",
+    "Q4sutg": "Potwierdź opuszczenie{isFollowing, select, true { i wyłączenie obserwowania} other {}}",
+    "P6PLpi": "Dołącz do",
+    "FgydNe": "Zobacz",
+    "5PpBsd": "Twoja prośba nie powiodła się."
 }
