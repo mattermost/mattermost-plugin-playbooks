@@ -3,18 +3,22 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {FormattedMessage} from 'react-intl';
+import {useSelector} from 'react-redux';
 
-import {PlaybookRun, StatusPostComplete} from 'src/types/playbook_run';
+import {useRunStatusUpdates} from 'src/hooks';
+import {currentBackstageRHS} from 'src/selectors';
 
 import StatusUpdateCard from './update_card';
 
-interface Props {
-    playbookRun: PlaybookRun;
-    statusUpdates: StatusPostComplete[] | null;
-}
+export const RunStatusUpdatesTitle = <FormattedMessage defaultMessage={'Status updates'}/>;
 
-const RHSStatusUpdates = ({playbookRun, statusUpdates}: Props) => {
-    if (playbookRun.status_posts.length === 0 || statusUpdates === null) {
+const RHSStatusUpdates = () => {
+    const RHS = useSelector(currentBackstageRHS);
+    const playbookRunId = RHS.resourceId;
+    const [statusUpdates] = useRunStatusUpdates(playbookRunId);
+
+    if (!statusUpdates) {
         return null;
     }
 

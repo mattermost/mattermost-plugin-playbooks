@@ -2,23 +2,32 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
+import {useRun, useRunMetadata} from 'src/hooks';
+import {currentBackstageRHS} from 'src/selectors';
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
-import {Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
 import {SendMessageButton} from './send_message_button';
 
-interface Props {
-    participantsIds: string[];
-    playbookRunMetadata: PlaybookRunMetadata | null;
-}
+export const RunParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
 
-export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
+const Participants = () => {
     const {formatMessage} = useIntl();
+    const RHS = useSelector(currentBackstageRHS);
+    const playbookRunId = RHS.resourceId;
+    const [run] = useRun(playbookRunId);
+
+    // we must force metadata refetch when participants change (leave&unfollow)
+    const [metadata] = useRunMetadata(playbookRunId, [JSON.stringify(run?.participant_ids)]);
+
+    if (!run) {
+        return null;
+    }
 
     // const setSearchTerm = (term: string) => {};
 
@@ -34,13 +43,13 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
                 <ParticipantsNumber>
                     {formatMessage(
                         {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
-                        {num: participantsIds.length}
+                        {num: run.participant_ids.length}
                     )}
                 </ParticipantsNumber>
             </SearchSection>
             <ListSection>
                 {
-                    participantsIds.map((id) => (
+                    run.participant_ids.map((id) => (
                         <ProfileWrapper key={id}>
                             <Profile
                                 userId={id}
@@ -57,7 +66,7 @@ export const Participants = ({participantsIds, playbookRunMetadata}: Props) => {
                                 >
                                     <SendMessageButton
                                         userId={id}
-                                        teamName={playbookRunMetadata?.team_name ?? null}
+                                        teamName={metadata?.team_name ?? null}
                                     />
                                 </Tooltip>
                             </HoverButtonContainer>
@@ -130,3 +139,5 @@ const ProfileWrapper = styled.div`
         }
     }
 `;
+
+export default Participants;

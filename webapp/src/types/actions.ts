@@ -183,12 +183,14 @@ export interface SetChecklistItemsFilter {
 export interface OpenBackstageRHS {
     type: typeof OPEN_BACKSTAGE_RHS;
     section: BackstageRHSSection;
+    resourceId: string;
     viewMode: BackstageRHSViewMode;
 }
 
 export interface ToggleBackstageRHS {
     type: typeof TOGGLE_BACKSTAGE_RHS;
     section: BackstageRHSSection;
+    resourceId: string;
     viewMode: BackstageRHSViewMode;
 }
 

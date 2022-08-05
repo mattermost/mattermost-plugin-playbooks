@@ -8,32 +8,43 @@ import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {DateTime} from 'luxon';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
+import {useUpdateEffect} from 'react-use';
 import Scrollbars from 'react-custom-scrollbars';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {clientRemoveTimelineEvent} from 'src/client';
-import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
+import {useRun} from 'src/hooks';
+import {currentBackstageRHS} from 'src/selectors';
+import MultiCheckbox from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
-import {TimelineEventsFilter} from 'src/types/rhs';
+import {useTimelineEvents, useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
-interface Props {
-    playbookRun: PlaybookRun;
-    role: Role;
-    options: CheckboxOption[];
-    selectOption: (value: string, checked: boolean) => void;
-    eventsFilter: TimelineEventsFilter;
-}
+export const RunTimelineTitle = <FormattedMessage defaultMessage={'Timeline'}/>;
 
-const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: Props) => {
+const RHSTimeline = () => {
     const {formatMessage} = useIntl();
+    const RHS = useSelector(currentBackstageRHS);
+    const playbookRunId = RHS.resourceId;
+    const [run] = useRun(playbookRunId);
+    const myUserId = useSelector(getCurrentUserId);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
+    const team = useSelector((state: GlobalState) => getTeam(state, run?.team_id || ''));
 
-    const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
+    const {options, selectOption, eventsFilter, resetFilters} = useFilter();
+    const [filteredEvents] = useTimelineEvents(run || undefined, eventsFilter);
+
+    useUpdateEffect(() => {
+        resetFilters();
+    }, [playbookRunId]);
+
+    if (!run) {
+        return null;
+    }
+
+    const role = run.participant_ids.includes(myUserId) ? Role.Participant : Role.Viewer;
 
     return (
         <Container data-testid='timeline-view'>
@@ -41,7 +52,7 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                 <FilterText>
                     {formatMessage(
                         {defaultMessage: 'Showing {filteredNum} of {totalNum} events'},
-                        {filteredNum: filteredEvents.length, totalNum: playbookRun.timeline_events.length}
+                        {filteredNum: filteredEvents.length, totalNum: run.timeline_events.length}
                     )}
                 </FilterText>
                 <FilterButton>
@@ -81,10 +92,10 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                                     event={event}
                                     prevEventAt={prevEventAt}
                                     parent={'rhs'}
-                                    runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
+                                    runCreateAt={DateTime.fromMillis(run.create_at)}
                                     channelNames={channelNamesMap}
                                     team={team}
-                                    deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}
+                                    deleteEvent={() => clientRemoveTimelineEvent(run.id, event.id)}
                                     editable={role === Role.Participant}
                                 />
                             );

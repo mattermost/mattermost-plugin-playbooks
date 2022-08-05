@@ -397,26 +397,27 @@ export type backstageRHSState = {
     isOpen: boolean;
     viewMode: BackstageRHSViewMode;
     section: BackstageRHSSection;
+    resourceId: string;
 }
 const initialBackstageRHSState = {
     isOpen: false,
     viewMode: BackstageRHSViewMode.Overlap,
     section: BackstageRHSSection.TaskInbox,
+    resourceId: '',
 };
 
-const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, action: OpenBackstageRHS | CloseBackstageRHS) => {
+const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, action: OpenBackstageRHS | CloseBackstageRHS | ToggleBackstageRHS) => {
     switch (action.type) {
     case OPEN_BACKSTAGE_RHS: {
         const openAction = action as OpenBackstageRHS;
-        return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+        return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section, resourceId: openAction.resourceId};
     }
     case TOGGLE_BACKSTAGE_RHS: {
         const toggleAction = action as ToggleBackstageRHS;
-        if (state.section === toggleAction.section) {
-            return {...state, isOpen: false};
-        } else {
-            return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+        if (state.section === toggleAction.section && state.resourceId === toggleAction.resourceId) {
+            return {...state, isOpen: !state.isOpen};
         }
+        return {isOpen: true, viewMode: toggleAction.viewMode, section: toggleAction.section, resourceId: toggleAction.resourceId};
     }
     case CLOSE_BACKSTAGE_RHS:
         return {...state, isOpen: false};

@@ -12,7 +12,7 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
-import {openUpdateRunStatusModal, openBackstageRHS, closeBackstageRHS} from 'src/actions';
+import {openUpdateRunStatusModal, openBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
 import {useNow, useAllowRequestUpdate} from 'src/hooks';
@@ -29,7 +29,6 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {ToastType, useToaster} from '../../toast_banner';
 
 import StatusUpdateCard from './update_card';
-import {RHSContent} from './rhs';
 
 enum dueType {
     Scheduled = 'scheduled',
@@ -71,13 +70,11 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     return {time, text, type};
 };
 
-const RHSTitle = <FormattedMessage defaultMessage={'Status updates'}/>;
 const openRHSText = <FormattedMessage defaultMessage={'View all updates'}/>;
 interface ViewerProps {
     id: string;
     playbookRun: PlaybookRun;
     lastStatusUpdate?: StatusPostComplete;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
 const useRequestUpdate = (playbookRunId: string) => {
@@ -114,10 +111,11 @@ const useRequestUpdate = (playbookRunId: string) => {
     };
 };
 
-export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
+export const ViewerStatusUpdate = ({id, playbookRun, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
+    const dispatch = useDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
 
     if (!playbookRun.status_update_enabled) {
@@ -174,7 +172,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
             <Content isShort={false}>
                 {renderStatusUpdate() || <Placeholder>{formatMessage({defaultMessage: 'No updates have been posted yet'})}</Placeholder>}
             </Content>
-            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => openRHS(RHSContent.RunStatusUpdates, formatMessage({defaultMessage: 'Status updates'}), playbookRun.name)}>
+            {playbookRun.status_posts.length ? <ViewAllUpdates onClick={() => dispatch(openBackstageRHS(BackstageRHSSection.RunStatusUpdates, BackstageRHSViewMode.Overlap, playbookRun.id))}>
                 {openRHSText}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
@@ -185,10 +183,9 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
 interface ParticipantProps {
     id: string;
     playbookRun: PlaybookRun;
-    openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
-export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
+export const ParticipantStatusUpdate = ({id, playbookRun}: ParticipantProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
@@ -209,8 +206,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
             return;
         }
 
-        dispatch(openBackstageRHS(BackstageRHSSection.RunStatusUpdates, BackstageRHSViewMode.Overlap))
-        // openRHS(RHSContent.RunStatusUpdates, RHSTitle, playbookRun.name);
+        dispatch(openBackstageRHS(BackstageRHSSection.RunStatusUpdates, BackstageRHSViewMode.Overlap, playbookRun.id));
     };
 
     return (

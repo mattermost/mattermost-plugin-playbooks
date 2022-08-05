@@ -17,7 +17,7 @@ import {TimelineEvent, TimelineEventsFilter, TimelineEventType, TimelineEventsFi
 import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 
-export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
+export const useTimelineEvents = (playbookRun: PlaybookRun | undefined, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
@@ -31,6 +31,10 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
     }, [eventsFilter, allEvents]);
 
     useEffect(() => {
+        if (!playbookRun) {
+            return;
+        }
+
         const {
             status_posts: statuses,
             timeline_events: events,
@@ -62,7 +66,7 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
             eventArray.reverse();
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [playbookRun.timeline_events, displayPreference, playbookRun.status_posts]);
+    }, [playbookRun?.timeline_events, displayPreference, playbookRun?.status_posts]);
 
     return [filteredEvents];
 };

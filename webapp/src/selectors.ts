@@ -27,7 +27,6 @@ import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams'
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {RHSState} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
@@ -178,7 +177,9 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
     return myPlaybookRunsByTeam(state)[getCurrentTeamId(state)] || {};
 };
 
-export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
+export const currentRHSState = (state: GlobalState) => pluginState(state).rhsState;
+
+export const currentBackstageRHS = (state: GlobalState) => pluginState(state).backstageRHS;
 
 export const lastUpdatedByPlaybookRunId = createSelector(
     'lastUpdatedByPlaybookRunId',

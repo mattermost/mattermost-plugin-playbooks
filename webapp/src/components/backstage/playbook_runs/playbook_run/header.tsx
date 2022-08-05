@@ -12,7 +12,7 @@ import {Channel} from '@mattermost/types/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
-import {showRunActionsModal} from 'src/actions';
+import {showRunActionsModal, toggleBackstageRHS} from 'src/actions';
 import {
     getSiteUrl,
     requestGetInvolved,
@@ -24,10 +24,11 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
+import {currentBackstageRHS} from 'src/selectors';
 
 import {BadgeType} from '../../status_badge';
 import {ToastType, useToaster} from '../../toast_banner';
-import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {StarButton} from '../../playbook_editor/playbook_editor';
 import {useLHSRefresh} from '../../lhs_navigation';
@@ -41,13 +42,10 @@ interface Props {
     role: Role;
     channel: Channel | undefined | null;
     hasAccessToChannel: boolean;
-    onInfoClick: () => void;
-    onTimelineClick: () => void;
-    rhsSection: RHSContent | null;
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, hasAccessToChannel, isFollowing, channel, role}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -56,6 +54,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
     const refreshLHS = useLHSRefresh();
+
+    const RHS = useSelector(currentBackstageRHS);
 
     const onGetInvolved = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
@@ -132,16 +132,16 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
                 Icon={TimelineTextOutlineIcon}
-                onClick={onTimelineClick}
-                isActive={rhsSection === RHSContent.RunTimeline}
+                onClick={() => dispatch(toggleBackstageRHS(BackstageRHSSection.RunTimeline, BackstageRHSViewMode.Overlap, playbookRun.id))}
+                isActive={RHS.section === BackstageRHSSection.RunTimeline}
                 data-testid={'rhs-header-button-timeline'}
             />
             <HeaderButton
                 tooltipId={'info-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Info'})}
                 Icon={InformationOutlineIcon}
-                onClick={onInfoClick}
-                isActive={rhsSection === RHSContent.RunInfo}
+                onClick={() => dispatch(toggleBackstageRHS(BackstageRHSSection.RunInfo, BackstageRHSViewMode.Overlap, playbookRun.id))}
+                isActive={RHS.section === BackstageRHSSection.RunInfo}
                 data-testid={'rhs-header-button-info'}
             />
             {role === Role.Viewer &&

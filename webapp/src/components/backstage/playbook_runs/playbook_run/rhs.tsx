@@ -9,12 +9,12 @@ import styled from 'styled-components';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 
-export enum RHSContent {
-    RunInfo = 'run-info',
-    RunTimeline = 'run-timeline',
-    RunStatusUpdates = 'run-status-updates',
-    RunParticipants = 'run-participants',
-}
+// export enum RHSContent {
+//     RunInfo = 'run-info',
+//     RunTimeline = 'run-timeline',
+//     RunStatusUpdates = 'run-status-updates',
+//     RunParticipants = 'run-participants',
+// }
 
 interface Props {
     isOpen: boolean;

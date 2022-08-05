@@ -7,13 +7,14 @@ import styled from 'styled-components';
 
 import {closeBackstageRHS} from 'src/actions';
 import {backstageRHS} from 'src/selectors';
-import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
+import {BackstageRHSSection} from 'src/types/backstage_rhs';
+
+import RunInfo, {RunInfoTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info';
+import RunTimeline, {RunTimelineTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
+import RunParticipants, {RunParticipantsTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_participants';
+import RunStatusUpdates, {RunStatusUpdatesTitle} from 'src/components/backstage/playbook_runs/playbook_run/rhs_status_updates';
 
 import TaskInbox, {TaskInboxTitle} from './task_inbox/task_inbox';
-import RHSStatusUpdates from 'components/backstage/playbook_runs/playbook_run/rhs_status_updates';
-import {Participants} from 'components/backstage/playbook_runs/playbook_run/rhs_participants';
-import RHSTimeline from 'components/backstage/playbook_runs/playbook_run/rhs_timeline';
-import RHSInfo from 'components/backstage/playbook_runs/playbook_run/rhs_info';
 
 const BackstageRHS = () => {
     const sidebarRef = React.useRef(null);
@@ -32,16 +33,16 @@ const BackstageRHS = () => {
             return TaskInboxTitle;
 
         case BackstageRHSSection.RunInfo:
-            return <span>Run Info</span>;
+            return RunInfoTitle;
 
         case BackstageRHSSection.RunTimeline:
-            return <span>Run Timeline</span>;
+            return RunTimelineTitle;
 
         case BackstageRHSSection.RunStatusUpdates:
-            return <span>Run Status Updates</span>;
+            return RunStatusUpdatesTitle;
 
         case BackstageRHSSection.RunParticipants:
-            return <span>Run Participants</span>;
+            return RunParticipantsTitle;
 
         default:
             throw new Error('Unknown backstage section while rendering title');
@@ -49,61 +50,33 @@ const BackstageRHS = () => {
     };
 
     let rhsComponent = null;
-    switch(section) {
-        case BackstageRHSSection.TaskInbox:
-            rhsComponent = <TaskInbox/>;
-            break;
+    switch (section) {
+    case BackstageRHSSection.TaskInbox:
+        rhsComponent = <TaskInbox/>;
+        break;
 
-        case BackstageRHSSection.RunInfo:
-            rhsComponent = <span>Run Info</span>;
-            // rhsComponent = (
-            //     <RHSInfo
-            //         run={playbookRun}
-            //         playbook={playbook ?? undefined}
-            //         runMetadata={metadata ?? undefined}
-            //         role={role}
-            //         channel={channel}
-            //         onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
-            //         onViewTimeline={() => {
-            //             selectOption('all', true);
-            //             RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false);
-            //         }}
-            //     />
-            // );
-            break;
+    case BackstageRHSSection.RunInfo:
+        rhsComponent = <RunInfo/>;
+        break;
 
-        case BackstageRHSSection.RunTimeline:
-            rhsComponent = <span>Run Timeline</span>;
-            // rhsComponent = (
-            //     <RHSTimeline
-            //         playbookRun={playbookRun}
-            //         role={role}
-            //         options={options}
-            //         selectOption={selectOption}
-            //         eventsFilter={eventsFilter}
-            //     />
-            // );
-            break;
+    case BackstageRHSSection.RunTimeline:
+        rhsComponent = <RunTimeline/>;
+        break;
 
-        case BackstageRHSSection.RunStatusUpdates:
-            rhsComponent = <span>Run Status Updates</span>;
-            // rhsComponent = (
-            //     <RHSStatusUpdates
-            //         playbookRun={playbookRun}
-            //         statusUpdates={statusUpdates ?? null}
-            //     />
-            // );
-            break;
+    case BackstageRHSSection.RunStatusUpdates:
+        rhsComponent = <RunStatusUpdates/>;
+        break;
 
-        case BackstageRHSSection.RunParticipants:
-            rhsComponent = <span>Run Participants</span>;
-            // rhsComponent = (
-            //     <Participants
-            //         participantsIds={playbookRun.participant_ids}
-            //         playbookRunMetadata={metadata ?? null}
-            //     />
-            // );
-            break;
+    case BackstageRHSSection.RunParticipants:
+        rhsComponent = <RunParticipants/>;
+
+        // rhsComponent = (
+        //     <Participants
+        //         participantsIds={playbookRun.participant_ids}
+        //         playbookRunMetadata={metadata ?? null}
+        //     />
+        // );
+        break;
     }
 
     return (

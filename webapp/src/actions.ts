@@ -361,14 +361,16 @@ export const closeBackstageRHS = (): CloseBackstageRHS => ({
     type: CLOSE_BACKSTAGE_RHS,
 });
 
-export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
+export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode, resourceId = ''): OpenBackstageRHS => ({
     type: OPEN_BACKSTAGE_RHS,
     section,
     viewMode,
+    resourceId,
 });
 
-export const toggleBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): ToggleBackstageRHS => ({
+export const toggleBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode, resourceId = ''): ToggleBackstageRHS => ({
     type: TOGGLE_BACKSTAGE_RHS,
     section,
     viewMode,
+    resourceId,
 });
