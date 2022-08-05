@@ -66,7 +66,7 @@ mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 }
 
 query PlaybookLHS($userID: String!, $teamID: String!) {
-	runs (participantOrFollowerID: $userID, teamID: $teamID, statuses: ["InProgress"]){
+	runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
 		id
 		name
 		isFavorite
