@@ -682,5 +682,11 @@
     "XS4umx": "{name} snoozed een status-update",
     "5Hzwqs": "Markeren als favoriet",
     "Mjq//Y": "Markeren als favoriet ongedaan maken",
-    "AhY0vJ": "Verlaten en niet langer volgen"
+    "AhY0vJ": "Verlaten en niet langer volgen",
+    "Xm0L7N": "Wanneer een status update gepost wordt, of een terugblik gepubliceerd wordt",
+    "Suyx6A": "De playbook-import is mislukt. Controleer of JSON geldig is en probeer het opnieuw.",
+    "QegBKq": "Deelnemen aan Playbook",
+    "Q4sutg": "Bevestig verlaten{isFollowing, select, true { en niet langer volgen} other{}}",
+    "P6PLpi": "Deelnemen",
+    "FgydNe": "Bekijken"
 }
