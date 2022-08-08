@@ -678,5 +678,14 @@
     "F/HKIy": "Biztosan ki szeretne lépni a futásból?",
     "Mjq//Y": "Kedvenc visszavonása",
     "5Hzwqs": "Kedvenc",
-    "XS4umx": "{name} elaltatott egy állapot frissítést"
+    "XS4umx": "{name} elaltatott egy állapot frissítést",
+    "QegBKq": "Csatlakozás a forgatókönyvhöz",
+    "Xm0L7N": "Amikor egy állapotfrissítés, vagy egy visszatekintő közzé lesz téve",
+    "Suyx6A": "A forgatókönyv importálása nem sikerült. Kérjük, ellenőrizze, hogy a JSON helyes-e, és próbálja meg újra.",
+    "cnfVhV": "Kilépés a futásból{isFollowing, select, true { és követés kikapcsolása} other {}}",
+    "egUE/K": "Közzététel a kiválasztott csatornákban",
+    "AhY0vJ": "Kilépés és követés kikapcsolása",
+    "Q4sutg": "Kilépés jóváhagyása{isFollowing, select, true { és követés kikapcsolása} other {}}",
+    "P6PLpi": "Csatlakozás",
+    "FgydNe": "Megtekintés"
 }
