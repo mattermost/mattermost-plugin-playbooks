@@ -183,7 +183,10 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
                 >
-                    <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
+                    <ItemLink
+                        to={`/${runMetadata.team_name}/channels/${channel.name}`}
+                        data-testid='runinfo-channel-link'
+                    >
                         <ItemContent >
                             {channel.display_name}
                             <OpenInNewIcon
