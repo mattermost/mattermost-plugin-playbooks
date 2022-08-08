@@ -12,3 +12,10 @@ SET @preparedStatement = (SELECT IF(
 PREPARE addColumnIfNotExists FROM @preparedStatement;
 EXECUTE addColumnIfNotExists;
 DEALLOCATE PREPARE addColumnIfNotExists;
+
+
+UPDATE IR_Incident 
+SET ActiveStageTitle = JSON_EXTRACT(`ChecklistsJSON` -> '$[activestage]', '$.title') 
+WHERE JSON_LENGTH(ChecklistsJSON) IS NOT NULL
+AND JSON_LENGTH(ChecklistsJSON) > ActiveStage
+AND ActiveStage >= 0;
