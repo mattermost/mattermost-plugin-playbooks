@@ -15,7 +15,7 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
-import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
+import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
@@ -23,12 +23,15 @@ import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from '../tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
+import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookRunViewTarget} from 'src/types/telemetry';
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
     const scrollbarsRef = useRef<Scrollbars>(null);
 
     const playbookRun = useSelector(currentPlaybookRun);
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 
@@ -82,7 +85,11 @@ const RHSRunDetails = () => {
                     style={{position: 'absolute'}}
                 >
                     <RHSAbout playbookRun={playbookRun}/>
-                    <RHSChecklistList playbookRun={playbookRun}/>
+                    <RHSChecklistList
+                        playbookRun={playbookRun}
+                        parentContainer={ChecklistParent.RHS}
+                        viewerMode={false}
+                    />
                 </Scrollbars>
             </RHSContent>
 

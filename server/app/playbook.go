@@ -42,7 +42,6 @@ type Playbook struct {
 	DefaultOwnerID                       string                 `json:"default_owner_id" export:"-"`
 	DefaultOwnerEnabled                  bool                   `json:"default_owner_enabled" export:"-"`
 	BroadcastChannelIDs                  []string               `json:"broadcast_channel_ids" export:"-"`
-	BroadcastEnabled                     bool                   `json:"broadcast_enabled" export:"-"`
 	WebhookOnCreationURLs                []string               `json:"webhook_on_creation_urls" export:"-"`
 	WebhookOnCreationEnabled             bool                   `json:"webhook_on_creation_enabled" export:"-"`
 	MessageOnJoin                        string                 `json:"message_on_join" export:"message_on_join"`
@@ -51,7 +50,6 @@ type Playbook struct {
 	RetrospectiveTemplate                string                 `json:"retrospective_template" export:"retrospective_template"`
 	RetrospectiveEnabled                 bool                   `json:"retrospective_enabled" export:"retrospective_enabled"`
 	WebhookOnStatusUpdateURLs            []string               `json:"webhook_on_status_update_urls" export:"-"`
-	WebhookOnStatusUpdateEnabled         bool                   `json:"webhook_on_status_update_enabled" export:"-"`
 	SignalAnyKeywords                    []string               `json:"signal_any_keywords" export:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool                   `json:"signal_any_keywords_enabled" export:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool                   `json:"categorize_channel_enabled" export:"categorize_channel_enabled"`
@@ -64,6 +62,9 @@ type Playbook struct {
 	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
 	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	// Deprecated: preserved for backwards compatibility with v1.27
+	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
+	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
 }
 
 const (
@@ -354,6 +355,24 @@ type PlaybookStore interface {
 
 	// GetPlaybooksActiveTotal returns number of active playbooks
 	GetPlaybooksActiveTotal() (int64, error)
+
+	// GetMetric retrieves a metric by ID
+	GetMetric(id string) (*PlaybookMetricConfig, error)
+
+	// AddMetric adds a metric
+	AddMetric(playbookID string, config PlaybookMetricConfig) error
+
+	// UpdateMetric updates a metric
+	UpdateMetric(id string, setmap map[string]interface{}) error
+
+	// DeleteMetric deletes a metric
+	DeleteMetric(id string) error
+
+	// AddPlaybookMember adds a user as a member to a playbook
+	AddPlaybookMember(id string, memberID string) error
+
+	// RemovePlaybookMember removes a user from a playbook
+	RemovePlaybookMember(id string, memberID string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -407,10 +426,11 @@ func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int
 
 // PlaybookFilterOptions specifies the parameters when getting playbooks.
 type PlaybookFilterOptions struct {
-	Sort         SortField
-	Direction    SortDirection
-	SearchTerm   string
-	WithArchived bool
+	Sort               SortField
+	Direction          SortDirection
+	SearchTerm         string
+	WithArchived       bool
+	WithMembershipOnly bool //if true will return only playbooks you are a member of
 
 	// Pagination options.
 	Page    int

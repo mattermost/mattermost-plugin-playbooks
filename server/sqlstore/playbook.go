@@ -236,7 +236,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
@@ -382,12 +382,14 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
-			p.Public = true
-			OR EXISTS(SELECT 1
-					FROM IR_PlaybookMember as pm
-					WHERE pm.PlaybookID = p.ID
-					AND pm.MemberID = ?)
+			EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
 		)`, requesterInfo.UserID)
+	if !opts.WithMembershipOnly { // return all public playbooks and private ones user is member of
+		permissionsAndFilter = sq.Or{sq.Expr(`p.Public = true`), permissionsAndFilter}
+	}
 	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
 
 	queryForResults := p.store.builder.
@@ -642,7 +644,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
@@ -731,6 +733,56 @@ func (p *playbookStore) GetPlaybooksActiveTotal() (int64, error) {
 	}
 
 	return count, nil
+}
+
+// Get number of active playbooks.
+func (p *playbookStore) GetNumMetrics(playbookID string) (int64, error) {
+	var count int64
+
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookID})
+
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count metrics")
+	}
+
+	return count, nil
+}
+
+func (p *playbookStore) AddPlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_PlaybookMember").
+		Columns("PlaybookID", "MemberID", "Roles").
+		Values(id, memberID, app.PlaybookRoleMember))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) RemovePlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Delete("IR_PlaybookMember").
+		Where(sq.Eq{"PlaybookID": id}).
+		Where(sq.Eq{"MemberID": memberID}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
 }
 
 // replacePlaybookMembers replaces the members of a playbook
@@ -844,6 +896,84 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	}
 
 	return autoFollows, nil
+}
+
+func (p *playbookStore) GetMetric(id string) (*app.PlaybookMetricConfig, error) {
+	metricSelect := p.queryBuilder.
+		Select(
+			"c.ID",
+			"c.PlaybookID",
+			"c.Title",
+			"c.Description",
+			"c.Type",
+			"c.Target",
+		).
+		From("IR_MetricConfig c").
+		Where(sq.Eq{"c.ID": id})
+
+	var metric app.PlaybookMetricConfig
+	err := p.store.getBuilder(p.store.db, &metric, metricSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metric, nil
+}
+
+func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricConfig) error {
+	numExistingMetrics, err := p.GetNumMetrics(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if numExistingMetrics >= app.MaxMetricsPerPlaybook {
+		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
+	}
+
+	_, err = p.store.execBuilder(p.store.db, sq.
+		Insert("IR_MetricConfig").
+		Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
+		Values(model.NewId(), playbookID, config.Title, config.Description, config.Type, config.Target, numExistingMetrics))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to add metric")
+	}
+
+	return nil
+}
+
+func (p *playbookStore) DeleteMetric(id string) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete metric with id %q", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update metric with id %q", id)
+	}
+
+	return nil
 }
 
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {

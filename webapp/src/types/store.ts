@@ -3,7 +3,7 @@
 
 import {Store as BaseStore} from 'redux';
 import {ThunkDispatch} from 'redux-thunk';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 /**
  * Emulated Store type used in mattermost-webapp/mattermost-redux

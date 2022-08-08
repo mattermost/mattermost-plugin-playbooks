@@ -1,16 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef} from 'react';
+import React, {ComponentProps, useRef} from 'react';
 import ReactDOM from 'react-dom';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import Tippy from '@tippyjs/react';
-import {Placement} from 'tippy.js';
 
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light-border.css';
-import 'tippy.js/animations/scale-subtle.css';
-import 'tippy.js/animations/perspective-subtle.css';
 import useTutorialTourTipManager from './manager';
 
 import PulsatingDot from './dot';
@@ -39,6 +34,8 @@ const TourTipOverlay = ({children, show, onClick}: OverlayProps) => {
     ), rootPortal!);
 };
 
+type Placement = ComponentProps<typeof Tippy>['placement'];
+
 type Props = {
     screen: React.ReactNode;
     title: React.ReactNode;
@@ -47,7 +44,7 @@ type Props = {
     step: number;
     singleTip?: boolean;
     showOptOut?: boolean;
-    placement?: Placement;
+    placement?: Placement
     telemetryTag?: string;
     stopPropagation?: boolean;
     preventDefault?: boolean;
@@ -82,6 +79,7 @@ const TutorialTourTip = ({
     preventDefault = true,
     width = 320,
 }: Props) => {
+    const {formatMessage} = useIntl();
     const triggerRef = useRef(null);
     const {
         show,
@@ -179,7 +177,7 @@ const TutorialTourTip = ({
                 <div className='pb-tutorial-tour-tip__image'>
                     <img
                         src={imageURL}
-                        alt={'tutorial tour tip product image'}
+                        alt={formatMessage({defaultMessage: 'tutorial tour tip product image'})}
                     />
                 </div>
             )}

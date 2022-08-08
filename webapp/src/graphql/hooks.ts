@@ -1,4 +1,20 @@
-import {PlaybookDocument, PlaybookQuery, PlaybookQueryHookResult, PlaybookUpdates, usePlaybookQuery, useUpdatePlaybookMutation} from 'src/graphql/generated_types';
+import {useCallback} from 'react';
+
+import {autoFollowPlaybook} from 'src/client';
+
+import {
+    PlaybookDocument,
+    PlaybookLhsDocument,
+    PlaybookQuery,
+    PlaybookQueryHookResult,
+    PlaybookUpdates,
+    RunUpdates,
+    useAddPlaybookMemberMutation,
+    usePlaybookQuery,
+    useRemovePlaybookMemberMutation,
+    useUpdatePlaybookMutation,
+    useUpdateRunMutation,
+} from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -14,20 +30,69 @@ export const usePlaybook = (id: string): [FullPlaybook, PlaybookQueryHookResult]
     });
 
     let playbook = result.data?.playbook;
-    playbook = playbook === null ? undefined : playbook; //eslint-disable-line no-undefined
+    playbook = playbook === null ? undefined : playbook;
 
     return [playbook, result];
 };
 
 export const useUpdatePlaybook = (id?: string) => {
-    const result = useUpdatePlaybookMutation({
+    const [innerUpdatePlaybook] = useUpdatePlaybookMutation({
         refetchQueries: [
             PlaybookDocument,
         ],
     });
-    const updatePlaybook = (updates: PlaybookUpdates) => {
-        const [innerUpdatePlaybook] = result;
+    return useCallback((updates: PlaybookUpdates) => {
         return innerUpdatePlaybook({variables: {id: id || '', updates}});
-    };
-    return updatePlaybook;
+    }, [id, innerUpdatePlaybook]);
+};
+
+export const useUpdateRun = (id?: string) => {
+    const [innerUpdateRun] = useUpdateRunMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((updates: RunUpdates) => {
+        return innerUpdateRun({variables: {id: id || '', updates}});
+    }, [id, innerUpdateRun]);
+};
+
+export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
+    const [joinPlaybook] = useAddPlaybookMemberMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            playbookID: playbookID || '',
+            userID: userID || '',
+        },
+    });
+
+    const [leavePlaybook] = useRemovePlaybookMemberMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            playbookID: playbookID || '',
+            userID: userID || '',
+        },
+    });
+
+    const join = useCallback(async () => {
+        if (!playbookID || !userID) {
+            return;
+        }
+        await joinPlaybook();
+        await autoFollowPlaybook(playbookID, userID);
+    }, [playbookID, userID, joinPlaybook]);
+
+    const leave = useCallback(async () => {
+        if (!playbookID || !userID) {
+            return;
+        }
+        await leavePlaybook();
+    }, [playbookID, userID, leavePlaybook]);
+
+    return {join, leave};
 };

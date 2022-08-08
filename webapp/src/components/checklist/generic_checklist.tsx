@@ -8,18 +8,15 @@ import styled from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {DateTime} from 'luxon';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 import {
     Checklist,
     ChecklistItem,
-    ChecklistItemsFilter,
-    ChecklistItemState,
     emptyChecklistItem,
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
-import {currentChecklistItemsFilter} from 'src/selectors';
+import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -27,59 +24,18 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun?: PlaybookRun;
-    menuEnabled: boolean;
+    disabled: boolean;
     checklist: Checklist;
     checklistIndex: number;
     onUpdateChecklist: (newChecklist: Checklist) => void;
+    showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
+    itemButtonsFormat?: ItemButtonsFormat;
 }
 
 const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
-    const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
     const [addingItem, setAddingItem] = useState(false);
-
-    const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, myId: string) => {
-        if (filter.all) {
-            return true;
-        }
-
-        // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
-        if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
-            return false;
-        }
-
-        // "Me" is not checked, so if assignee_id is me, don't show it.
-        if (!filter.me && checklistItem.assignee_id === myId) {
-            return false;
-        }
-
-        // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
-        if (!filter.unassigned && checklistItem.assignee_id === '') {
-            return false;
-        }
-
-        // "Others" is not checked, so if item has someone else as the assignee, don't show it.
-        if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
-            return false;
-        }
-
-        // "Overdue" is checked
-        if (filter.overdueOnly) {
-            // if an item doesn't have a due date or is due in the future, don't show it.
-            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
-                return false;
-            }
-
-            // if an item is skipped or closed, don't show it.
-            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
-                return false;
-            }
-        }
-
-        // We should show it!
-        return true;
-    };
 
     const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
         const newChecklistItems = [...props.checklist.items];
@@ -131,7 +87,7 @@ const GenericChecklist = (props: Props) => {
                         {props.checklist.items.map((checklistItem: ChecklistItem, index: number) => {
                             // filtering here because we need to maintain the index values
                             // because we refer to checklist items by their index
-                            if (!showItem(checklistItem, checklistItemsFilter, myUser.id)) {
+                            if (props.showItem ? !props.showItem(checklistItem, myUser.id) : false) {
                                 return null;
                             }
 
@@ -139,7 +95,7 @@ const GenericChecklist = (props: Props) => {
                                 <DraggableChecklistItem
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
-                                    menuEnabled={props.menuEnabled}
+                                    disabled={props.disabled}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
@@ -150,6 +106,7 @@ const GenericChecklist = (props: Props) => {
                                     onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
                                     onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                                    itemButtonsFormat={props.itemButtonsFormat}
                                 />
                             );
                         })}
@@ -157,7 +114,7 @@ const GenericChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
-                                menuEnabled={props.menuEnabled}
+                                disabled={props.disabled}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
@@ -166,12 +123,14 @@ const GenericChecklist = (props: Props) => {
                                     setAddingItem(false);
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
+                                itemButtonsFormat={props.itemButtonsFormat}
                             />
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {props.playbookRun?.current_status !== PlaybookRunStatus.Finished &&
+                    {props.disabled ? null : (
                         <AddTaskLink
+                            disabled={props.disabled}
                             onClick={() => {
                                 setAddingItem(true);
                             }}
@@ -182,7 +141,7 @@ const GenericChecklist = (props: Props) => {
                             </IconWrapper>
                             {formatMessage({defaultMessage: 'Add a task'})}
                         </AddTaskLink>
-                    }
+                    )}
                 </ChecklistContainer>
             )}
         </Droppable>
@@ -220,7 +179,7 @@ const AddTaskLink = styled.button`
 
     color: var(--center-channel-color-64);
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: var(--button-bg-08);
         color: var(--button-bg);
     }

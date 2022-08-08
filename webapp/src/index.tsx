@@ -8,7 +8,7 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
@@ -17,7 +17,7 @@ import {General} from 'mattermost-redux/constants';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
-import {ApolloClient, InMemoryCache, gql, ApolloProvider, NormalizedCacheObject} from '@apollo/client';
+import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -64,13 +64,15 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getApiUrl, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
+
+import {setPlaybooksGraphQLClient} from './graphql_client';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -95,6 +97,44 @@ const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<
         </ApolloProvider>
     );
 };
+
+type WindowObject = {
+    location: {
+        origin: string;
+        protocol: string;
+        hostname: string;
+        port: string;
+    };
+    basename?: string;
+}
+
+// From mattermost-webapp/utils
+function getSiteURLFromWindowObject(obj: WindowObject): string {
+    let siteURL = '';
+    if (obj.location.origin) {
+        siteURL = obj.location.origin;
+    } else {
+        siteURL = obj.location.protocol + '//' + obj.location.hostname + (obj.location.port ? ':' + obj.location.port : '');
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    if (obj.basename) {
+        siteURL += obj.basename;
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    return siteURL;
+}
+
+function getSiteURL(): string {
+    return getSiteURLFromWindowObject(window);
+}
 
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
@@ -128,6 +168,8 @@ export default class Plugin {
             />
         );
 
+        const enableTeamSidebar = true;
+
         registry.registerProduct(
             '/playbooks',
             'product-playbooks',
@@ -135,6 +177,8 @@ export default class Plugin {
             '/playbooks',
             BackstageWrapped,
             GlobalHeaderCenter,
+            () => null,
+            enableTeamSidebar
         );
 
         // RHS Registration
@@ -238,38 +282,21 @@ export default class Plugin {
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
-        const siteUrl = getConfig(store.getState())?.SiteURL || '';
+        const siteUrl = getSiteURL();
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
 
         // Setup our graphql client
+        const graphqlFetch = (_: RequestInfo, options: any) => {
+            return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
+        };
         const graphqlClient = new ApolloClient({
-            uri: `${siteUrl}/plugins/${pluginId}/api/v0/query`,
+            link: new HttpLink({fetch: graphqlFetch}),
             cache: new InMemoryCache(),
-            defaultOptions: {
-                watchQuery: {
-                    context: {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    },
-                },
-                query: {
-                    context: {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    },
-                },
-                mutate: {
-                    context: {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    },
-                },
-            },
         });
+
+        // Store graphql client for bad modals.
+        setPlaybooksGraphQLClient(graphqlClient);
 
         this.doRegistrations(registry, store, graphqlClient);
 

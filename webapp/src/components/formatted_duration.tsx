@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DateTime, Duration, Interval, DurationUnit, DurationLike} from 'luxon';
+import {DateTime, Duration, Interval, DurationUnit} from 'luxon';
 import React from 'react';
 
 import {useNow} from 'src/hooks';
@@ -53,6 +53,7 @@ const FormattedDuration = ({from, to = 0, style, truncate}: DurationProps) => {
     const now = useNow();
 
     if (!from) {
+        // eslint-disable-next-line formatjs/no-literal-string-in-jsx
         return <div className='time'>{'-'}</div>;
     }
 

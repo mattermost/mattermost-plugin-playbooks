@@ -5,57 +5,71 @@ import {
     useRef,
     useState,
     useMemo,
-    UIEventHandler,
+    useLayoutEffect,
+    DependencyList,
 } from 'react';
+import {useIntl} from 'react-intl';
+
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import {
-    getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
     getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
 import {
     getCurrentChannelId,
-    getChannelsNameMapInTeam,
     getChannel as getChannelFromState,
 } from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {ClientError} from 'mattermost-redux/client/client4';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
-import {Argument} from 'classnames';
+import {useUpdateEffect} from 'react-use';
+
+import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
-
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
-
+import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {
-    isCloud,
-    isE10LicensedOrDevelopment,
-    isE20LicensedOrDevelopment,
-} from '../license';
+    fetchPlaybookRuns,
+    clientFetchPlaybook,
+    fetchPlaybookRunStatusUpdates,
+    fetchPlaybookRun,
+    fetchPlaybookStats,
+    fetchPlaybookRunMetadata,
+    isFavoriteItem,
+} from 'src/client';
+import {CategoryItemType} from 'src/types/category';
+
+import {isCloud} from '../license';
 import {
     globalSettings,
     isCurrentUserAdmin,
-    myPlaybookRunsByTeam,
+    noopSelector,
 } from '../selectors';
-import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
+import {resolve} from 'src/utils';
+import {useUpdateRun} from 'src/graphql/hooks';
+
+export type FetchMetadata = {
+    isFetching: boolean;
+    error: ClientError | null;
+}
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -92,7 +106,7 @@ export function useKeyPress(targetKey: string | ((e: KeyboardEvent) => boolean),
  */
 export function useClickOutsideRef(
     ref: MutableRefObject<HTMLElement | null>,
-    handler: () => void,
+    handler?: () => void,
 ) {
     useEffect(() => {
         function onMouseDown(event: MouseEvent) {
@@ -102,7 +116,7 @@ export function useClickOutsideRef(
                 target instanceof Node &&
                 !ref.current.contains(target)
             ) {
-                handler();
+                handler?.();
             }
         }
 
@@ -312,31 +326,59 @@ export function useProfilesInChannel(channelId: string) {
 /**
  * Use thing from API and/or Store
  *
- * @param fetch required thing fetcher
- * @param select thing from store if available
+ * @param id The ID of the thing to fetch
+ * @param fetchFunc required thing fetcher function
+ * @param select thing from store if available (noopSelector if no store)
+ * @param deps Additional deps that might be needed to trigger again the fetch func
+ *
+ * @returns Array with data in first parameter and metadata in the second.
  */
-function useThing<T extends NonNullable<any>>(
-    id: string,
-    fetch: (id: string) => Promise<T>,
-    select?: (state: GlobalState, id: string) => T,
+export function useThing<T extends NonNullable<any>>(
+    id: string| undefined,
+    fetchFunc: (id: string) => Promise<T>,
+    select: (state: GlobalState, id: string) => T|undefined = noopSelector,
+    deps: DependencyList = [],
 ) {
-    const [thing, setThing] = useState<T | null>(null);
+    const [thing, setThing] = useState<T | null>();
     const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
+    const [error, setError] = useState<ClientError | null>(null);
+    const [isFetching, setIsFetching] = useState<boolean>(true);
 
     useEffect(() => {
+        if (!id) {
+            setIsFetching(false);
+            setThing(null);
+            setError(null);
+            return;
+        }
+
         if (thingFromState) {
             setThing(thingFromState);
+            setIsFetching(false);
             return;
         }
 
-        if (id) {
-            fetch(id).then(setThing);
-            return;
-        }
-        setThing(null);
-    }, [thingFromState, id]);
+        fetchFunc(id)
+            .then((res) => {
+                setThing(res);
+            })
+            .catch((err) => {
+                if (err instanceof ClientError) {
+                    setError(err);
+                }
+                setThing(null);
+            });
+        setIsFetching(false);
+    }, [thingFromState, id, ...deps]);
 
-    return thing;
+    const metadata = {
+        isFetching,
+        error,
+        isErrorCode: (code: number) => {
+            return error !== null && error.status_code === code;
+        },
+    };
+    return [thing, metadata] as const;
 }
 
 export function usePost(postId: string) {
@@ -344,14 +386,26 @@ export function usePost(postId: string) {
 }
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
-    return useThing(runId, fetchPlaybookRun, (state) => {
-        const runsByTeam = myPlaybookRunsByTeam(state);
-        if (teamId && channelId) {
-            // use efficient path
-            return runsByTeam[teamId]?.[channelId];
-        }
-        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
-    });
+    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
+}
+
+/**
+ * Read-only logic to fetch playbook run metadata
+ * @param id identifier of the run to fetch metadata
+ * @returns data and fetchState in a array tuple
+ */
+export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = []) {
+    return useThing(id, fetchPlaybookRunMetadata, noopSelector, deps);
+}
+
+/**
+ * Read-only logic to fetch playbook run status udpates
+ * @param id identifier of the playbook run to fetch updates
+ * @param deps Array of additional deps whose change will invoke again fetch
+ * @returns data and fetchState in a array tuple
+ */
+export function useRunStatusUpdates(id: PlaybookRun['id'], deps: DependencyList = []) {
+    return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
 }
 
 export function useChannel(channelId: string) {
@@ -379,53 +433,6 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
         setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
-}
-
-// useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
-// post to the timeline in the current team
-export function useAllowAddMessageToTimelineInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowChannelExport returns whether exporting the channel is allowed
-export function useAllowChannelExport() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookStatsView returns whether the server is licensed to show
-// the stats in the playbook backstage dashboard
-export function useAllowPlaybookStatsView() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookAndRunMetrics returns whether the server is licensed to
-// enter and show playbook and run metrics
-export function useAllowPlaybookAndRunMetrics() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowRetrospectiveAccess returns whether the server is licenced for
-// the retrospective feature.
-export function useAllowRetrospectiveAccess() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPrivatePlaybooks returns whether the server is licenced for
-// creating private playbooks
-export function useAllowPrivatePlaybooks() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowSetTaskDueDate returns whether the server is licensed for
-// setting / editing checklist item due date
-export function useAllowSetTaskDueDate() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowMakePlaybookPrivate returns whether the server is licenced for
-// converting public playbooks to private
-export function useAllowMakePlaybookPrivate() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 type StringToUserProfileFn = (id: string) => UserProfile;
@@ -504,7 +511,7 @@ export function useFormattedUsernameByID(userId: string) {
 
 // Return the list of names of the users given a list of UserProfiles or userIds
 // It will respect teamnameNameDisplaySetting.
-export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>) : string[] {
+export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>): string[] {
     const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
         getTeammateNameDisplaySetting,
     ) || '';
@@ -536,12 +543,13 @@ const combineQueryParameters = (oldParams: FetchPlaybookRunsParams, searchString
     return {...oldParams, ...queryParams};
 };
 
-export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
+export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed = true):
 [PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const history = useHistory();
     const location = useLocation();
+    const currentTeamId = useSelector(getCurrentTeamId);
     const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
     // Fetch the queried runs
@@ -549,7 +557,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
         let isCanceled = false;
 
         async function fetchPlaybookRunsAsync() {
-            const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
+            const playbookRunsReturn = await fetchPlaybookRuns({...fetchParams, team_id: currentTeamId});
 
             if (!isCanceled) {
                 setPlaybookRuns((existingRuns: PlaybookRun[]) => {
@@ -567,14 +575,16 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
         return () => {
             isCanceled = true;
         };
-    }, [fetchParams]);
+    }, [fetchParams, currentTeamId]);
 
     // Update the query string when the fetchParams change
     useEffect(() => {
-        const newFetchParams: Record<string, unknown> = {...fetchParams};
-        delete newFetchParams.page;
-        delete newFetchParams.per_page;
-        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
+        if (routed) {
+            const newFetchParams: Record<string, unknown> = {...fetchParams};
+            delete newFetchParams.page;
+            delete newFetchParams.per_page;
+            history.replace({...location, search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
+        }
     }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
@@ -633,15 +643,20 @@ export const usePrevious = (value: any) => {
     return ref.current;
 };
 
-// Create a portal to render while dragging
-export const usePortal = (parent: HTMLElement) => {
-    const [portal] = useState(document.createElement('div'));
-
-    useEffect(() => {
-        parent.appendChild(portal);
-    }, [parent, portal]);
-
-    return portal;
+export const usePortal = () => {
+    const [el] = useState(document.createElement('div'));
+    useLayoutEffect(() => {
+        const rootPortal = document.getElementById('root-portal');
+        if (rootPortal) {
+            rootPortal.appendChild(el);
+        }
+        return () => {
+            if (rootPortal) {
+                rootPortal.removeChild(el);
+            }
+        };
+    }, [el]);
+    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
@@ -653,4 +668,97 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
         el.addEventListener('scroll', listener);
         return () => el.removeEventListener('scroll', listener);
     }, [el, listener]);
+};
+
+/**
+ * For controlled props or other pieces of state that need immediate updates with a debounced side effect.
+ * @remarks
+ * This is a problem solving hook; it is not intended for general use unless it is specifically needed.
+ * Also consider {@link https://github.com/streamich/react-use/blob/master/docs/useDebounce.md react-use#useDebounce}.
+ *
+ * @example
+ * const [debouncedValue, setDebouncedValue] = useState('…');
+ * const [val, setVal] = useProxyState(debouncedValue, setDebouncedValue, 500);
+ * const input = <input type='text' value={val} onChange={({currentTarget}) => setVal(currentTarget.value)}/>;
+ */
+export const useProxyState = <T>(
+    prop: T,
+    onChange: (val: T) => void,
+    wait = 500,
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const check = useRef(prop);
+    const [value, setValue] = useState(prop);
+
+    useUpdateEffect(() => {
+        if (!isEqual(value, check.current)) {
+            // check failed; don't destroy pending changes (values set mid-cycle between send/sync)
+            return;
+        }
+        check.current = prop; // sync check
+        setValue(prop);
+    }, [prop]);
+
+    const onChangeDebounced = useCallback(debounce((v) => {
+        check.current = v; // send check
+        onChange(v);
+    }, wait), [wait, onChange]);
+
+    useEffect(() => onChangeDebounced.cancel, [onChangeDebounced]);
+
+    return [value, useCallback((update) => {
+        setValue((v) => {
+            const newValue = resolve(update, v);
+            onChangeDebounced(newValue);
+            return newValue;
+        });
+    }, [setValue, onChangeDebounced])];
+};
+
+export const useExportLogAvailable = () => {
+    //@ts-ignore plugins state is a thing
+    return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+};
+
+export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
+    const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+    const updateRun = useUpdateRun(runID);
+
+    useEffect(() => {
+        isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
+            .then(setIsFavoriteRun)
+            .catch(() => setIsFavoriteRun(false));
+    }, [teamID, runID]);
+
+    const toggleFavorite = () => {
+        if (isFavoriteRun) {
+            updateRun({isFavorite: false});
+            setIsFavoriteRun(false);
+            return;
+        }
+        updateRun({isFavorite: true});
+        setIsFavoriteRun(true);
+    };
+    return [isFavoriteRun, toggleFavorite];
+};
+
+export enum ReservedCategory {
+    Favorite = 'Favorite',
+    Runs = 'Runs',
+    Playbooks = 'Playbooks'
+}
+
+export const useReservedCategoryTitleMapper = () => {
+    const {formatMessage} = useIntl();
+    return (categoryName: ReservedCategory | string) => {
+        switch (categoryName) {
+        case ReservedCategory.Favorite:
+            return formatMessage({defaultMessage: 'Favorites'});
+        case ReservedCategory.Runs:
+            return formatMessage({defaultMessage: 'Runs'});
+        case ReservedCategory.Playbooks:
+            return formatMessage({defaultMessage: 'Playbooks'});
+        default:
+            return categoryName;
+        }
+    };
 };

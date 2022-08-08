@@ -37,6 +37,9 @@ type PlaybookRun struct {
 	// Summary is a short string, in Markdown, describing what the run is.
 	Summary string `json:"summary"`
 
+	// SummaryModifiedAt is date when the summary was modified
+	SummaryModifiedAt int64 `json:"summary_modified_at"`
+
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`
 
@@ -172,30 +175,30 @@ type PlaybookRun struct {
 	MetricsData []RunMetricData `json:"metrics_data"`
 }
 
-func (i *PlaybookRun) Clone() *PlaybookRun {
-	newPlaybookRun := *i
+func (r *PlaybookRun) Clone() *PlaybookRun {
+	newPlaybookRun := *r
 	var newChecklists []Checklist
-	for _, c := range i.Checklists {
+	for _, c := range r.Checklists {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybookRun.Checklists = newChecklists
 
-	newPlaybookRun.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
-	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
-	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
-	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
-	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
-	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
-	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
-	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
+	newPlaybookRun.StatusPosts = append([]StatusPost(nil), r.StatusPosts...)
+	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), r.TimelineEvents...)
+	newPlaybookRun.InvitedUserIDs = append([]string(nil), r.InvitedUserIDs...)
+	newPlaybookRun.InvitedGroupIDs = append([]string(nil), r.InvitedGroupIDs...)
+	newPlaybookRun.ParticipantIDs = append([]string(nil), r.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
+	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 
 	return &newPlaybookRun
 }
 
-func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
+func (r *PlaybookRun) MarshalJSON() ([]byte, error) {
 	type Alias PlaybookRun
 
-	old := (*Alias)(i.Clone())
+	old := (*Alias)(r.Clone())
 	// replace nils with empty slices for the frontend
 	if old.Checklists == nil {
 		old.Checklists = []Checklist{}
@@ -236,6 +239,64 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+// SetChecklistFromPlaybook overwrites this run's checklists with the ones in the provided playbook.
+func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
+	r.Checklists = playbook.Checklists
+
+	// Playbooks can only have due dates relative to when a run starts,
+	// so we should convert them to absolute timestamp.
+	now := model.GetMillis()
+	for i := range r.Checklists {
+		for j := range r.Checklists[i].Items {
+			if r.Checklists[i].Items[j].DueDate > 0 {
+				r.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
+}
+
+// SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
+// effectively snapshoting the playbook's configuration in this moment of time.
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
+	if playbook.RunSummaryTemplateEnabled {
+		r.Summary = playbook.RunSummaryTemplate
+	}
+	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
+	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
+	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
+	r.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
+
+	r.InvitedUserIDs = []string{}
+	r.InvitedGroupIDs = []string{}
+	if playbook.InviteUsersEnabled {
+		r.InvitedUserIDs = playbook.InvitedUserIDs
+		r.InvitedGroupIDs = playbook.InvitedGroupIDs
+	}
+
+	if playbook.DefaultOwnerEnabled {
+		r.DefaultOwnerID = playbook.DefaultOwnerID
+	}
+
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
+	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
+
+	r.WebhookOnCreationURLs = []string{}
+	if playbook.WebhookOnCreationEnabled {
+		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
+	}
+
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
+	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
+
+	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
+	if playbook.RetrospectiveEnabled {
+		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
+		r.Retrospective = playbook.RetrospectiveTemplate
+	}
+}
+
 type StatusPost struct {
 	// ID is the identifier of the post containing the status update.
 	ID string `json:"id"`
@@ -247,6 +308,41 @@ type StatusPost struct {
 	// DeleteAt is the timestamp, in milliseconds since epoch, of the time the post containing this
 	// status update was deleted. 0 if it was never deleted.
 	DeleteAt int64 `json:"delete_at"`
+}
+
+// StatusPostComplete is the "complete" representation of a status update
+//
+// This type is part of an effort to decopuple channels and playbooks, where
+// status updates will stop being -only- Posts in a channel.
+type StatusPostComplete struct {
+	// ID is the identifier of the post containing the status update.
+	ID string `json:"id"`
+
+	// CreateAt is the timestamp, in milliseconds since epoch, of the time this status update was
+	// posted.
+	CreateAt int64 `json:"create_at"`
+
+	// DeleteAt is the timestamp, in milliseconds since epoch, of the time the post containing this
+	// status update was deleted. 0 if it was never deleted.
+	DeleteAt int64 `json:"delete_at"`
+
+	// Message is the content of the status update. It supports markdown.
+	Message string `json:"message"`
+
+	// AuthorUserName is the username of the user who sent the status update.
+	AuthorUserName string `json:"author_user_name"`
+}
+
+// NewStatusPostComplete creates a StatusUpdate from a channel Post
+func NewStatusPostComplete(post *model.Post) *StatusPostComplete {
+	author, _ := post.GetProp("authorUsername").(string)
+	return &StatusPostComplete{
+		ID:             post.Id,
+		CreateAt:       post.CreateAt,
+		DeleteAt:       post.DeleteAt,
+		Message:        post.Message,
+		AuthorUserName: author,
+	}
 }
 
 type UpdateOptions struct {
@@ -276,6 +372,7 @@ const (
 	PlaybookRunCreated     timelineEventType = "incident_created"
 	TaskStateModified      timelineEventType = "task_state_modified"
 	StatusUpdated          timelineEventType = "status_updated"
+	StatusUpdateRequested  timelineEventType = "status_update_requested"
 	OwnerChanged           timelineEventType = "owner_changed"
 	AssigneeChanged        timelineEventType = "assignee_changed"
 	RanSlashCommand        timelineEventType = "ran_slash_command"
@@ -285,6 +382,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 )
 
 type TimelineEvent struct {
@@ -307,7 +405,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", "canceled_retrospective" or "status_update_snoozed".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -437,6 +535,7 @@ const (
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
 
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
+	TriggerTypeRetroPublished     = "retrospective_published"
 )
 
 // PlaybookRunService is the playbook run service interface.
@@ -580,6 +679,10 @@ type PlaybookRunService interface {
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
 	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
+	// ResetReminder records an event for snoozing a reminder, then calls SetNewReminder to create
+	// the next reminder
+	ResetReminder(playbookRunID string, newReminder time.Duration) error
+
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
@@ -634,6 +737,15 @@ type PlaybookRunService interface {
 
 	// UpdateRunActions updates status update broadcast settings
 	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
+
+	// RequestUpdate posts a status update request message in the run's channel
+	RequestUpdate(playbookRunID, requesterID string) error
+
+	// RequestGetInvolved posts a join request message in the run's channel
+	RequestGetInvolved(playbookRunID, requesterID string) error
+
+	// Leave removes user from the run's participants&followers list
+	Leave(playbookRunID, requesterID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

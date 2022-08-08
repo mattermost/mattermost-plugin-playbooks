@@ -4,7 +4,7 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {Client4} from 'mattermost-redux/client';
 import styled from 'styled-components';
 interface Props {

@@ -141,7 +141,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+            cy.findByTestId('post_textbox').should('exist');
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
@@ -158,7 +158,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+            cy.findByTestId('post_textbox').should('exist');
 
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -224,7 +224,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+            cy.findByTestId('post_textbox').should('exist');
 
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -265,7 +265,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+            cy.findByTestId('post_textbox').should('exist');
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
@@ -390,9 +390,7 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify RHS Home shows the run details
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -410,19 +408,15 @@ describe('channels > rhs', () => {
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByText('Playbooks').should('exist');
             });
 
-            // # Click the icon again
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click({force: true});
-            });
+            // # Click the icon
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // * Verify the playbook run RHS is no longer open.
             cy.get('#rhsContainer').should('not.exist');

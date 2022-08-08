@@ -24,7 +24,8 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
-    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200}).type('{enter}');
+    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200});
+    cy.findByTestId('post_textbox').type('{enter}');
 });
 
 // Opens playbook run dialog using the `/playbook run` slash command
@@ -40,6 +41,13 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
+// Selects Playbooks icon in the App Bar
+Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
+    cy.apiGetConfig(true).then(({config}) => {
+        return cy.get(`.app-bar .app-bar__icon-inner img[src="${config.SiteURL}/plugins/playbooks/public/app-bar-icon.png"]`);
+    });
+});
+
 // Starts playbook run from the playbook run RHS
 // function startPlaybookRunFromRHS(playbookName, playbookRunName) {
 Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) => {
@@ -48,7 +56,7 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
         cy.get('#channelHeaderFlagButton').click();
 
         // open the playbook run RHS
-        cy.get('#incidentIcon').click();
+        cy.getPlaybooksAppBarIcon().should('exist').click();
     });
 
     cy.get('#rhsContainer').should('exist').within(() => {

@@ -31,6 +31,7 @@ query Playbook($id: String!) {
 		categorize_channel_enabled: categorizeChannelEnabled
 		create_public_playbook_run: createPublicPlaybookRun
 		channel_name_template: channelNameTemplate
+		is_favorite: isFavorite
 		checklists {
 			title
 			items {
@@ -48,6 +49,7 @@ query Playbook($id: String!) {
 		members {
 			user_id: userID
 			roles
+			scheme_roles: schemeRoles
 		}
 		metrics {
 			id
@@ -61,4 +63,26 @@ query Playbook($id: String!) {
 
 mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
+}
+
+query PlaybookLHS($userID: String!, $teamID: String!) {
+	runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
+		id
+		name
+		isFavorite
+	}
+	playbooks (teamID: $teamID, withMembershipOnly: true) {
+		id
+		title
+		isFavorite
+		public
+	}
+}
+
+mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
+	addPlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+
+mutation RemovePlaybookMember($playbookID: String!, $userID: String!) {
+	removePlaybookMember(playbookID: $playbookID, userID: $userID)
 }

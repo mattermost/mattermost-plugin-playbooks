@@ -3,20 +3,25 @@
 
 import React, {useEffect, useState} from 'react';
 
-import {FormattedMessage} from 'react-intl';
-
 import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
+
+import {useIntl} from 'react-intl';
+
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
-import {BackstageHeader} from 'src/components/backstage/styles';
 
 import {pluginUrl} from 'src/browser_routing';
+
+import Header from '../widgets/header';
 
 import RunList from './runs_list/runs_list';
 import {statusOptions} from './runs_list/status_filter';
@@ -34,29 +39,29 @@ const defaultPlaybookFetchParams = {
 };
 
 const RunListContainer = styled.div`
-	margin: 0 auto;
-	max-width: 1160px;
-	padding: 0 20px;
+    flex: 1 1 auto;
 `;
 
 const RunsPage = () => {
+    const {formatMessage} = useIntl();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
+    const currentTeamId = useSelector(getCurrentTeamId);
 
     // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
     // landing page.
     useEffect(() => {
         async function checkForPlaybookRuns() {
-            const playbookRunsReturn = await fetchPlaybookRuns({page: 0, per_page: 1});
-            const hasPlaybooks = await clientHasPlaybooks('');
+            const playbookRunsReturn = await fetchPlaybookRuns({page: 0, per_page: 1, team_id: currentTeamId});
+            const hasPlaybooks = await clientHasPlaybooks(currentTeamId);
             setShowNoPlaybookRuns(playbookRunsReturn.items.length === 0);
             setNoPlaybooks(!hasPlaybooks);
         }
 
         checkForPlaybookRuns();
-    }, []);
+    }, [currentTeamId]);
 
     if (showNoPlaybookRuns == null || noPlaybooks == null) {
         return null;
@@ -71,9 +76,15 @@ const RunsPage = () => {
 
     return (
         <RunListContainer>
-            <BackstageHeader data-testid='titlePlaybookRun'>
-                <FormattedMessage defaultMessage='Runs'/>
-            </BackstageHeader>
+            <Header
+                data-testid='titlePlaybookRun'
+                level={2}
+                heading={formatMessage({defaultMessage: 'Runs'})}
+                subtitle={formatMessage({defaultMessage: 'All the runs that you can access will show here'})}
+                css={`
+                    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+                `}
+            />
             <RunList
                 playbookRuns={playbookRuns}
                 totalCount={totalCount}

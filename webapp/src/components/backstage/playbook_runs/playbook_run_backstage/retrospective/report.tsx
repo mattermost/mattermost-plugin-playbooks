@@ -12,7 +12,7 @@ import ReportTextArea
 
 interface ReportProps {
     playbookRun: PlaybookRun;
-    isPublished: boolean;
+    notEditable: boolean;
     onEdit: (report: string) => void;
     flushChanges: () => void;
 }
@@ -27,7 +27,7 @@ const Report = (props: ReportProps) => {
             <ReportTextArea
                 teamId={props.playbookRun.team_id}
                 text={props.playbookRun.retrospective}
-                isEditable={!props.isPublished}
+                isEditable={!props.notEditable}
                 onEdit={props.onEdit}
                 flushChanges={props.flushChanges}
             />

@@ -158,6 +158,23 @@ type PlaybookRunWebhookPayload struct {
 
 	// DetailsURL is the absolute URL of the playbook run overview page.
 	DetailsURL string `json:"details_url"`
+
+	// Event is metadata concerning the event that triggered this webhook.
+	Event PlaybookRunWebhookEvent `json:"event"`
+}
+
+type PlaybookRunWebhookEvent struct {
+	// Type is the type of event emitted.
+	Type timelineEventType `json:"type"`
+
+	// At is the time when the event occurred.
+	At int64 `json:"at"`
+
+	// UserId is the user who triggered the event.
+	UserID string `json:"user_id"`
+
+	// Payload is optional, event-specific metadata.
+	Payload interface{} `json:"payload"`
 }
 
 // sendWebhooksOnCreation sends a POST request to the creation webhook URL.
@@ -185,10 +202,17 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
+	event := PlaybookRunWebhookEvent{
+		Type:   PlaybookRunCreated,
+		At:     playbookRun.CreateAt,
+		UserID: playbookRun.ReporterUserID,
+	}
+
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
+		Event:       event,
 	}
 
 	body, err := json.Marshal(payload)
@@ -715,7 +739,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 
 // sendWebhooksOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string) {
+func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string, event *PlaybookRunWebhookEvent) {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun")
@@ -748,6 +772,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 		PlaybookRun: *playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
+		Event:       *event,
 	}
 
 	body, err := json.Marshal(payload)
@@ -824,7 +849,15 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:    StatusUpdated,
+			At:      channelPost.CreateAt,
+			UserID:  userID,
+			Payload: options,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
@@ -963,7 +996,14 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   RunFinished,
+			At:     endAt,
+			UserID: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
@@ -1025,7 +1065,14 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	}
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
-		s.sendWebhooksOnUpdateStatus(playbookRunID)
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   RunRestored,
+			At:     restoreAt,
+			UserID: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 		s.telemetry.RunAction(playbookRunToRestore, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToRestore.WebhookOnStatusUpdateURLs))
 	}
 
@@ -2102,6 +2149,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 	}
 
 	playbookRun.Summary = description
+	playbookRun.SummaryModifiedAt = model.GetMillis()
 	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
@@ -2520,6 +2568,19 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
+	if playbookRunToPublish.StatusUpdateBroadcastChannelsEnabled {
+		T := i18n.GetUserTranslations(publisherUser.Locale)
+		data := map[string]interface{}{
+			"Name": publisherUser.Username,
+			"URL":  retrospectiveURL,
+		}
+
+		clonePost := post.Clone()
+		clonePost.Message = T("app.user.run.retro_publish", data)
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToPublish.BroadcastChannelIDs, clonePost, retroMessage, playbookRunToPublish)
+		s.telemetry.RunAction(playbookRunToPublish, publisherID, TriggerTypeRetroPublished, ActionTypeBroadcastChannels, len(playbookRunToPublish.BroadcastChannelIDs))
+	}
+
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
 	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
 	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
@@ -2620,6 +2681,106 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 
 	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
 		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
+
+	return nil
+}
+
+// RequestUpdate posts a status update request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+
+	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
+	if err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	// create timeline event
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
+		EventType:     StatusUpdateRequested,
+		PostID:        post.Id,
+		SubjectUserID: requesterID,
+		CreatorUserID: requesterID,
+		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	// send updated run through websocket
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
+
+	return nil
+}
+
+// RequestUpdate posts a status update request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	// Check if user is already a member of the channel
+	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if err == nil && member != nil {
+		return errors.New("user is already involved")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_get_involved", data)); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	return nil
+}
+
+// Leave removes user from the run's participants&followers lists
+func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// Check if user is an owner
+	if playbookRun.OwnerUserID == requesterID {
+		return errors.New("owner user can't leave the run")
+	}
+
+	// Check if user is not a member of the channel
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	if member == nil {
+		return errors.New("user is not a participant")
+	}
+
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
+		return errors.Wrap(err, "failed to remove channel member")
 	}
 
 	return nil

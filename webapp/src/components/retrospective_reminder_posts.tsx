@@ -4,11 +4,11 @@ import {useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
-import {Post} from 'mattermost-redux/types/posts';
+import {Post} from '@mattermost/types/posts';
 
-import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
+import {getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {currentPlaybookRun} from 'src/selectors';
 

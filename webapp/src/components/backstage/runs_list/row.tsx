@@ -7,13 +7,12 @@ import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
 
-import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -73,7 +72,7 @@ const PlaybookRunItem = styled.div`
     align-items: center;
     margin: 0;
     background-color: var(--center-channel-bg);
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     cursor: pointer;
 
     &:hover {
@@ -144,6 +143,7 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
+                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
                 <ProgressBar
                     completed={completedTasks}

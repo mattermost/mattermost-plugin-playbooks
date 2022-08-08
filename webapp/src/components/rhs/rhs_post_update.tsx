@@ -7,8 +7,9 @@ import styled, {css} from 'styled-components';
 import {DateTime} from 'luxon';
 import Icon from '@mdi/react';
 import {mdiFlagCheckered} from '@mdi/js';
-
 import {FormattedMessage} from 'react-intl';
+
+import {Timestamp} from 'src/webapp_globals';
 
 import {promptUpdateStatus} from 'src/actions';
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
@@ -39,12 +40,6 @@ const RHSPostUpdate = (props: Props) => {
         RunDetailsTutorialSteps.PostUpdate,
         TutorialTourCategories.RUN_DETAILS
     );
-
-    //@ts-ignore
-    const Timestamp = window.Components?.Timestamp;
-    if (!Timestamp) {
-        return null;
-    }
 
     const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);
@@ -138,7 +133,7 @@ const RHSPostUpdate = (props: Props) => {
     );
 };
 
-const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
+export const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
     let timestampValue = playbookRun.last_status_update_at;
 
     if (playbookRun.current_status === PlaybookRunStatus.Finished) {
@@ -176,7 +171,7 @@ const PostUpdate = styled.div<CollapsedProps>`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-
+    align-items: center;
     justify-content: space-between;
     padding: ${(props) => (props.collapsed ? '8px 8px 8px 12px' : '12px')};
 

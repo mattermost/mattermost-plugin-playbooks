@@ -178,7 +178,7 @@ func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFro
 	return nil
 }
 
-func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
+func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID string) error {
 	oldAction, err := a.Get(action.ID)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve existing action with ID %q", action.ID)
@@ -190,7 +190,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 		}
 	}
 
-	return a.store.Update(action)
+	if err := a.store.Update(action); err != nil {
+		return err
+	}
+
+	a.telemetry.UpdateChannelAction(action, userID)
+
+	return nil
 }
 
 // UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
@@ -421,7 +427,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		triggers := payload.Keywords
 		actionExecuted := false
 		for _, trigger := range triggers {
-			if strings.Contains(post.Message, trigger) {
+			if strings.Contains(post.Message, trigger) || containsAttachments(post.Attachments(), trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
 				actionExecuted = true
@@ -542,4 +548,23 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
 	}
 	return attachment
+}
+
+func containsAttachments(attachments []*model.SlackAttachment, trigger string) bool {
+	// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
+	for _, attachment := range attachments {
+		switch {
+		case strings.Contains(attachment.Pretext, trigger):
+			return true
+		case strings.Contains(attachment.Title, trigger):
+			return true
+		case strings.Contains(attachment.Text, trigger):
+			return true
+		case strings.Contains(attachment.Footer, trigger):
+			return true
+		default:
+			continue
+		}
+	}
+	return false
 }

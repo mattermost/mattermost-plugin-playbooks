@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useMemo} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
@@ -11,7 +11,10 @@ import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -42,6 +45,8 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 
 import Tooltip from 'src/components/widgets/tooltip';
 
+import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+
 import Outline, {Sections, ScrollNav} from './outline/outline';
 
 import * as Controls from './controls';
@@ -54,6 +59,7 @@ const PlaybookEditor = () => {
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const stats = useStats(playbookId);
+    const currentUserId = useSelector(getCurrentUserId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -70,7 +76,10 @@ const PlaybookEditor = () => {
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
-    }, [dispatch, playbook?.team_id]);
+    }, [dispatch, playbook?.team_id, playbookId]);
+
+    useDefaultRedirectOnTeamChange(playbook?.team_id);
+    const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
 
     if (error) {
         // not found
@@ -104,14 +113,27 @@ const PlaybookEditor = () => {
         </Tooltip>
     );
 
+    // Favorite Button State
+    const FavoriteIcon = playbook.is_favorite ? StarIcon : StarOutlineIcon;
+
+    const toggleFavorite = () => {
+        updatePlaybook({isFavorite: !playbook.is_favorite});
+    };
+
     return (
         <Editor $headingVisible={headingVisible}>
             <TitleHeaderBackdrop/>
             <NavBackdrop/>
             <TitleBar>
                 <div>
-                    <Controls.Back/>
+                    <StarButton onClick={toggleFavorite}>
+                        <FavoriteIcon
+                            size={18}
+                            color={playbook.is_favorite ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
+                        />
+                    </StarButton>
                     <TextEdit
+                        disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -133,7 +155,6 @@ const PlaybookEditor = () => {
 
                                 <Controls.TitleMenu
                                     playbook={playbook}
-                                    archived={archived}
                                     editTitle={edit}
                                     refetch={refetch}
                                 >
@@ -149,12 +170,21 @@ const PlaybookEditor = () => {
                     </TextEdit>
                 </div>
                 <div>
-                    <Controls.Members
-                        playbookId={playbook.id}
-                        numMembers={playbook.members.length}
-                    />
-                    <Controls.AutoFollowToggle playbook={playbook}/>
-                    <Controls.RunPlaybook playbook={playbook}/>
+                    {currentUserMember ? (
+                        <>
+                            <Controls.Members
+                                playbookId={playbook.id}
+                                numMembers={playbook.members.length}
+                            />
+                            <Controls.AutoFollowToggle playbook={playbook}/>
+                            <Controls.RunPlaybook playbook={playbook}/>
+                        </>
+                    ) : (
+                        <Controls.JoinPlaybook
+                            playbook={playbook}
+                            refetch={refetch}
+                        />
+                    )}
                 </div>
             </TitleBar>
             <Header ref={headingRef}>
@@ -187,11 +217,12 @@ const PlaybookEditor = () => {
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}
-                                archived={archived}
                                 editTitle={edit}
                                 refetch={refetch}
                             >
-                                {playbook.title}
+                                <span data-testid={'playbook-editor-title'}>
+                                    {playbook.title}
+                                </span>
                             </Controls.TitleMenu>
                             {privateTooltip}
                             {archivedTooltip}
@@ -200,6 +231,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
+                        disabled={archived}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -563,4 +595,19 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 `;
 
+export const StarButton = styled.button`
+    border-radius: 4px;
+    border: 0;
+    display: flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
+    background: none;
+    margin: 0 6px;
+
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+`;
 export default PlaybookEditor;

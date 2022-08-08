@@ -2,17 +2,21 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode} from 'react';
+import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
+import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookViewTarget} from 'src/types/telemetry';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+
+import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -30,8 +34,23 @@ interface Props {
 type StyledAttrs = {className?: string};
 
 const Outline = ({playbook, refetch}: Props) => {
+    usePlaybookViewTelemetry(PlaybookViewTarget.Outline, playbook.id);
+
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const archived = playbook.delete_at !== 0;
+    const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+
+    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
+        setChecklistCollapseState({
+            ...checklistCollapseState,
+            [checklistIndex]: state,
+        });
+    };
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+        setChecklistCollapseState(state);
+    };
 
     return (
         <Sections
@@ -43,6 +62,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
+                    disabled={archived}
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
@@ -58,14 +78,15 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Status Updates'})}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
+                            disabled={archived}
                             isChecked={playbook.status_update_enabled}
                             onChange={() => {
                                 updatePlaybook({
                                     statusUpdateEnabled: !playbook.status_update_enabled,
-                                    webhookOnStatusUpdateEnabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                                    broadcastEnabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                    webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
+                                    broadcastEnabled: !playbook.status_update_enabled,
                                 });
                             }}
                         />
@@ -80,7 +101,14 @@ const Outline = ({playbook, refetch}: Props) => {
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Checklists'})}
             >
-                <ChecklistList playbook={playbook}/>
+                <ChecklistList
+                    playbook={playbook}
+                    enableFinishRun={false}
+                    isReadOnly={false}
+                    checklistsCollapseState={checklistCollapseState}
+                    onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
+                    onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
+                />
             </Section>
             <Section
                 id={'retrospective'}
@@ -89,6 +117,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer>
                         <Toggle
+                            disabled={archived || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
                             onChange={() => {
                                 updatePlaybook({

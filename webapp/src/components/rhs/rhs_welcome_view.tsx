@@ -7,8 +7,8 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 
 import {startPlaybookRun} from 'src/actions';
 import {navigateToPluginUrl} from 'src/browser_routing';

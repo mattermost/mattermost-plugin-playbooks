@@ -1,25 +1,23 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState, ReactNode} from 'react';
+import React, {useState, ReactNode} from 'react';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import {useClientRect} from 'src/hooks';
 import Dropdown from 'src/components/dropdown';
 import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
 
-import {moveRect} from './broadcast_channels_selector';
-
 type Props = {
     urls: string[];
-    onChange: (urls: string[]) => void;
+    onChange: (urls: string[]) => Promise<any>;
     errorText?: string;
     rows?: number;
     maxRows?: number;
     maxErrorText?: string;
     maxLength?: number;
     children?: ReactNode;
+    webhooksDisabled: boolean;
 }
 
 export const WebhooksInput = (props: Props) => {
@@ -37,35 +35,27 @@ export const WebhooksInput = (props: Props) => {
         setURLs(newURLs.split('\n'));
     };
 
-    // Decide where to open the datetime selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        moveRect(rect, props.urls.length, setMoveUp);
-    }, [rect, props.urls.length]);
-
     const target = (
         <div
-            ref={ref}
             onClick={toggleOpen}
         >
             {props.children}
         </div>
     );
 
-    const isValid = (newURLs: string): boolean => {
+    const errorTextTemp = props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'});
+
+    const isValid = (newURLs: string | undefined): boolean => {
         const maxRows = props.maxRows || 64;
         const maxErrorText = props.maxErrorText || formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'});
-        const errorTextTemp = props.errorText || formatMessage({defaultMessage: 'Invalid webhook URLs'});
 
-        if (newURLs.split('\n').filter((v) => v.trim().length > 0).length > maxRows) {
+        if (newURLs && newURLs.split('\n').filter((v) => v.trim().length > 0).length > maxRows) {
             setInvalid(true);
             setErrorText(maxErrorText);
             return false;
         }
 
-        if (!isPatternValid(newURLs, 'https?://.*', '\n')) {
+        if (newURLs && !isPatternValid(newURLs, 'https?://.*', '\n')) {
             setInvalid(true);
             setErrorText(errorTextTemp);
             return false;
@@ -78,13 +68,13 @@ export const WebhooksInput = (props: Props) => {
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={target}
-            showOnRight={false}
-            moveUp={moveUp}
+            initialFocus={props.webhooksDisabled ? -1 : undefined}
         >
             <SelectorWrapper>
                 <TextArea
+                    data-testid={'webhooks-input'}
                     disabled={false}
                     required={true}
                     rows={props.rows || 3}
@@ -94,6 +84,7 @@ export const WebhooksInput = (props: Props) => {
                     placeholder={formatMessage({defaultMessage: 'Enter one webhook per line'})}
                     maxLength={props.maxLength || 1000}
                     invalid={invalid}
+                    webhooksDisabled={props.webhooksDisabled}
                 />
                 <ErrorMessage>
                     {errorText}
@@ -103,10 +94,17 @@ export const WebhooksInput = (props: Props) => {
                         setOpen(false);
                     }}
                     onSave={() => {
-                        const filteredURLs = urls.filter((v) => v.trim().length > 0);
+                        const filteredURLs = urls.map((v) => v.trim()).filter((v) => v.length > 0);
                         if (isValid(filteredURLs.join('\n'))) {
-                            props.onChange(filteredURLs);
-                            setOpen(false);
+                            props.onChange(filteredURLs)
+                                .then(() => {
+                                    setURLs(filteredURLs);
+                                    setOpen(false);
+                                })
+                                .catch(() => {
+                                    setInvalid(true);
+                                    setErrorText(errorTextTemp);
+                                });
                         }
                     }}
                 />
@@ -145,6 +143,7 @@ const SelectorWrapper = styled.div`
 
 interface TextAreaProps {
     invalid: boolean;
+    webhooksDisabled: boolean;
 }
 
 const TextArea = styled.textarea<TextAreaProps>`
@@ -177,6 +176,12 @@ const TextArea = styled.textarea<TextAreaProps>`
             & + ${ErrorMessage} {
                 visibility: visible;
             }
+        }
+    `}
+    ${(props) => props.webhooksDisabled && css`
+        :not(:focus):not(:placeholder-shown) {
+            text-decoration: line-through;
+            color: rgba(var(--center-channel-color-rgb), 0.48);
         }
     `}
 `;

@@ -5,8 +5,8 @@ import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {Channel} from 'mattermost-redux/types/channels';
+import {UserProfile} from '@mattermost/types/users';
+import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -20,6 +20,7 @@ import {
     isMetadata,
     Metadata,
     RunMetricData,
+    StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -37,10 +38,12 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
+import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
+import {Category} from './types/category';
 
 let siteURL = '';
 let basePath = '';
@@ -60,6 +63,10 @@ export const setSiteUrl = (url?: string): void => {
 
 export const getSiteUrl = (): string => {
     return siteURL;
+};
+
+export const getApiUrl = (): string => {
+    return apiUrl;
 };
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
@@ -84,6 +91,10 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function fetchPlaybookRunStatusUpdates(id: string) {
+    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
 export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
@@ -281,6 +292,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
         data = [];
     }
     return data as OwnerInfo[];
+}
+
+export async function finishRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
 }
 
 export async function setOwner(playbookRunId: string, ownerId: string) {
@@ -485,7 +504,11 @@ export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookSt
     return data as PlaybookStats;
 }
 
-export async function telemetryEventForPlaybookRun(playbookRunID: string, action: string) {
+// telemetryRunAction are the event types that can be reported to telemetry server re: PlaybookRun
+// string is kept to do progressive migration to enum
+type telemetryRunAction = PlaybookRunViewTarget | PlaybookRunEventTarget | string;
+
+export async function telemetryEventForPlaybookRun(playbookRunID: string, action: telemetryRunAction) {
     await doFetchWithoutResponse(`${apiUrl}/telemetry/run/${playbookRunID}`, {
         method: 'POST',
         body: JSON.stringify({action}),
@@ -697,6 +720,75 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
 export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestUpdate = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestGetInvolved = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const leaveRun = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/leave`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const isFavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    const data = await doGet<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}&item_id=${itemID}&type=${itemType}`);
+    return Boolean(data);
+};
+
+export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {
+    const queryParams = `?team_id=${teamID}`;
+    const data = await doGet(`${apiUrl}/my_categories${queryParams}`);
+    if (!data) {
+        return [];
+    }
+
+    return data;
+};
+
+export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
+    try {
+        return await doPut(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
     } catch (error) {
         return {error};
     }

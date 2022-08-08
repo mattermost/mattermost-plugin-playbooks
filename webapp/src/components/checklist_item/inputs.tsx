@@ -1,12 +1,12 @@
 
 import React, {useRef, useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import MarkdownEdit from '../markdown_edit';
 
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
@@ -16,6 +16,10 @@ interface CheckBoxButtonProps {
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
+
+    useUpdateEffect(() => {
+        setIsChecked(props.item.state === ChecklistItemState.Closed);
+    }, [props.item.state]);
 
     // handleOnChange optimistic update approach: first do UI change, then
     // call to server and finally revert UI state if there's error

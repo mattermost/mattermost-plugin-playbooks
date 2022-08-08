@@ -6,21 +6,17 @@ import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-
 import {useIntl} from 'react-intl';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {GlobalState} from '@mattermost/types/store';
 
+import {PlaybookRun} from 'src/types/playbook_run';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
-
 import {pluginUrl} from 'src/browser_routing';
-
 import {OVERLAY_DELAY} from 'src/constants';
 
 const RHSTitle = () => {
@@ -69,6 +65,7 @@ const RHSTitle = () => {
     return (
         <RHSTitleText>
             {/* product name; don't translate */}
+            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
             {'Playbooks'}
         </RHSTitleText>
     );

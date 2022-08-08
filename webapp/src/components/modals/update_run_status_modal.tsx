@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -69,7 +69,7 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const run = useRun(playbookRunId);
+    const [run] = useRun(playbookRunId);
 
     const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(run);
@@ -337,7 +337,7 @@ const UpdateRunStatusModal = ({
 
 const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
-    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
+    const [lastStatusPost] = usePost(lastStatusPostMeta?.id ?? '');
 
     if (lastStatusPostMeta) {
         // last status exist and should have a post-message
@@ -416,7 +416,7 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
     return {input, reminder};
 };
 
-const outstandingTasks = (checklists: Checklist[]) => {
+export const outstandingTasks = (checklists: Checklist[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {

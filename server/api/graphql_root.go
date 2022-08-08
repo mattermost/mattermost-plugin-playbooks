@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 )
 
 type RootResolver struct{}
@@ -33,6 +35,100 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	}
 
 	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *RootResolver) Playbooks(ctx context.Context, args struct {
+	TeamID             string
+	Sort               string
+	Direction          string
+	SearchTerm         string
+	WithMembershipOnly bool
+	WithArchived       bool
+}) ([]*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if args.TeamID != "" {
+		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+			c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+			return nil, errors.New("Not authorized")
+		}
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	opts := app.PlaybookFilterOptions{
+		Sort:               app.SortField(args.Sort),
+		Direction:          app.SortDirection(args.Direction),
+		SearchTerm:         args.SearchTerm,
+		WithArchived:       args.WithArchived,
+		WithMembershipOnly: args.WithMembershipOnly,
+		Page:               0,
+		PerPage:            10000,
+	}
+
+	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
+	for _, pb := range playbookResults.Items {
+		ret = append(ret, &PlaybookResolver{pb})
+	}
+
+	return ret, nil
+}
+
+func (r *RootResolver) Runs(ctx context.Context, args struct {
+	TeamID                  string `url:"team_id,omitempty"`
+	Sort                    string
+	Statuses                []string
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+}) ([]*RunResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	if args.ParticipantOrFollowerID == client.Me {
+		args.ParticipantOrFollowerID = userID
+	}
+
+	filterOptions := app.PlaybookRunFilterOptions{
+		Sort:                    app.SortField(args.Sort),
+		TeamID:                  args.TeamID,
+		Statuses:                args.Statuses,
+		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		Page:                    0,
+		PerPage:                 10000,
+	}
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*RunResolver, 0, len(runResults.Items))
+	for _, run := range runResults.Items {
+		ret = append(ret, &RunResolver{run})
+	}
+
+	return ret, nil
 }
 
 type UpdateChecklist struct {
@@ -87,6 +183,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RunSummaryTemplate                   *string
 		ChannelNameTemplate                  *string
 		Checklists                           *[]UpdateChecklist
+		IsFavorite                           *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -143,7 +240,7 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
-		if c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
+		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
 			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
 		}
 		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)
@@ -206,6 +303,262 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
 			return "", err
 		}
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: currentPlaybook.ID,
+					Type:   app.PlaybookItemType,
+				},
+				currentPlaybook.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return args.ID, nil
+}
+
+func (r *RootResolver) UpdateRun(ctx context.Context, args struct {
+	ID      string
+	Updates struct {
+		IsFavorite *bool
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return playbookRun.ID, nil
+}
+
+func (r *RootResolver) AddPlaybookMember(ctx context.Context, args struct {
+	PlaybookID string
+	UserID     string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+		return "", errors.Wrap(err, "attempted to modify members without permissions")
+	}
+
+	if err := c.playbookStore.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "unable to add playbook member")
+	}
+
+	return "", nil
+}
+
+func (r *RootResolver) RemovePlaybookMember(ctx context.Context, args struct {
+	PlaybookID string
+	UserID     string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+		return "", errors.Wrap(err, "attempted to modify members without permissions")
+	}
+
+	if err := c.playbookStore.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "unable to remove playbook member")
+	}
+
+	return "", nil
+}
+
+func (r *RootResolver) AddMetric(ctx context.Context, args struct {
+	PlaybookID  string
+	Title       string
+	Description string
+	Type        string
+	Target      *float64
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	var target null.Int
+	if args.Target == nil {
+		target = null.NewInt(0, false)
+	} else {
+		target = null.IntFrom(int64(*args.Target))
+	}
+
+	if err := c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
+		Title:       args.Title,
+		Description: args.Description,
+		Type:        args.Type,
+		Target:      target,
+	}); err != nil {
+		return "", err
+	}
+
+	return args.PlaybookID, nil
+}
+
+func (r *RootResolver) UpdateMetric(ctx context.Context, args struct {
+	ID          string
+	Title       *string
+	Description *string
+	Target      *float64
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "Title", args.Title)
+	addToSetmap(setmap, "Description", args.Description)
+	if args.Target != nil {
+		setmap["Target"] = null.IntFrom(int64(*args.Target))
+	}
+	if len(setmap) > 0 {
+		if err := c.playbookStore.UpdateMetric(args.ID, setmap); err != nil {
+			return "", err
+		}
+	}
+
+	return args.ID, nil
+}
+
+func (r *RootResolver) DeleteMetric(ctx context.Context, args struct {
+	ID string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	if err := c.playbookStore.DeleteMetric(args.ID); err != nil {
+		return "", err
 	}
 
 	return args.ID, nil

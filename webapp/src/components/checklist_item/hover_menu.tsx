@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {UserProfile} from '@mattermost/types/users';
 
 import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon, StyledDropdownMenuItemRed, DropdownIconRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
@@ -21,6 +21,7 @@ import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId?: string;
+    channelId?: string;
     checklistNum: number;
     itemNum: number;
     isSkipped: boolean;
@@ -36,6 +37,7 @@ export interface Props {
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
+    onItemOpenChange?: (isOpen: boolean) => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -53,16 +55,24 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            <AssignTo
-                assignee_id={props.assignee_id}
-                editable={props.isEditing}
-                inHoverMenu={true}
-                onSelectedChange={props.onAssigneeChange}
-            />
+            {props.playbookRunId !== undefined &&
+                <AssignTo
+                    channelId={props.channelId}
+                    assignee_id={props.assignee_id}
+                    editable={props.isEditing}
+                    inHoverMenu={true}
+                    onSelectedChange={props.onAssigneeChange}
+                    placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
+                />
+            }
             <DueDateHoverMenuButton
                 date={props.due_date}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={props.onDueDateChange}
+                placement={'bottom-end'}
+                onOpenChange={props.onItemOpenChange}
+                editable={props.isEditing}
             />
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
@@ -76,8 +86,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={DotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                topPx={15}
-                leftPx={-161}
+                placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
@@ -125,14 +134,14 @@ const ChecklistItemHoverMenu = (props: Props) => {
     );
 };
 
-const HoverMenu = styled.div`
+export const HoverMenu = styled.div`
     display: flex;
     align-items: center;
-    padding: 0px 8px;
+    padding: 0px 3px;
     position: absolute;
     height: 32px;
     right: 1px;
-    top: 2px;
+    top: -6px;
     border: 1px solid var(--center-channel-color-08);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
@@ -140,8 +149,12 @@ const HoverMenu = styled.div`
 `;
 
 const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
-    transition: all 0.2s linear;
-    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    padding: 0;
+    border-radius: 4px;
+    &:before {
+        transition: all 0.2s linear;
+        transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+    }
 `;
 
 const DotMenuButton = styled(StyledDotMenuButton)`

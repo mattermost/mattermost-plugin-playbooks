@@ -4,12 +4,10 @@
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
 
 import Dropdown from 'src/components/dropdown';
-
-import {useClientRect} from 'src/hooks';
 
 import {PlaybookRunFilterButton} from '../backstage/styles';
 
@@ -39,9 +37,8 @@ interface Props {
     onSelectedChange?: (teamId: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
+    containerStyles?: ReturnType<typeof css>;
 }
-
-const dropdownYShift = 27;
 
 const RightAlign = styled.div`
 	flex-grow: 1;
@@ -126,30 +123,11 @@ export default function TeamSelector(props: Props) {
         }
     };
 
-    // Decide where to open the team selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numTeamsShown = Math.min(6, teamOptions.length);
-        const spacePerProfile = 48;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, teamOptions.length]);
     let target;
     if (props.selectedTeamId) {
         target = (
             <SelectedButton
                 data-testid={props.testId}
-                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -170,7 +148,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <button
                 data-testid={props.testId}
-                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -188,7 +165,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <PlaybookRunFilterButton
                 data-testid={props.testId}
-                ref={ref}
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -208,7 +184,6 @@ export default function TeamSelector(props: Props) {
         target = (
             <div
                 data-testid={props.testId}
-                ref={ref}
                 onClick={toggleOpen}
             >
                 {props.placeholder}
@@ -225,10 +200,10 @@ export default function TeamSelector(props: Props) {
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={target}
-            showOnRight={props.showOnRight}
-            moveUp={moveUp}
+            portal={false}
+            containerStyles={props.containerStyles}
         >
             <ReactSelect
                 autoFocus={true}
@@ -268,17 +243,11 @@ const selectStyles: StylesConfig<Option, boolean> = {
 };
 
 export const SelectedButton = styled.button`
-	flex-grow: 1;
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
     border-radius: 4px;
     color: var(--center-channel-color);
-
-    -webkit-transition: all 0.15s ease;
-    -webkit-transition-delay: 0s;
-    -moz-transition: all 0.15s ease;
-    -o-transition: all 0.15s ease;
     transition: all 0.15s ease;
 
     border: none;

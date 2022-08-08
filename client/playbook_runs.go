@@ -70,6 +70,24 @@ func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID stri
 	return playbookRun, nil
 }
 
+// Get all playbook status updates.
+func (s *PlaybookRunService) GetStatusUpdates(ctx context.Context, playbookRunID string) ([]StatusPostComplete, error) {
+	playbookRunURL := fmt.Sprintf("runs/%s/status-updates", playbookRunID)
+	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var statusUpdates []StatusPostComplete
+	resp, err := s.client.do(ctx, req, &statusUpdates)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return statusUpdates, nil
+}
+
 // List the playbook runs.
 func (s *PlaybookRunService) List(ctx context.Context, page, perPage int, opts PlaybookRunListOptions) (*GetPlaybookRunsResults, error) {
 	playbookRunURL := "runs"
@@ -140,6 +158,36 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, userID string) error {
+	requestURL := fmt.Sprintf("runs/%s/request-update", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, requestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}
+
+func (s *PlaybookRunService) RequestGetInvolved(ctx context.Context, playbookRunID, userID string) error {
+	requestURL := fmt.Sprintf("runs/%s/request-get-involved", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, requestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
 }
 
 func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
@@ -245,6 +293,54 @@ func (s *PlaybookRunService) UpdateRunActions(ctx context.Context, playbookRunID
 
 	resp, err := s.client.do(ctx, req, nil)
 	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}
+
+// UpdateRetrospective updates the run's retrospective info
+func (s *PlaybookRunService) UpdateRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
+	createURL := fmt.Sprintf("runs/%s/retrospective", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}
+
+// PublishRetrospective publishes the run's retrospective
+func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
+	createURL := fmt.Sprintf("runs/%s/retrospective/publish", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}
+
+// Leave removes the user from the participant & followers
+func (s *PlaybookRunService) Leave(ctx context.Context, playbookRunID string) error {
+	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/leave", playbookRunID), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+
 		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
 

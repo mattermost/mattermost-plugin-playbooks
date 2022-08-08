@@ -75,12 +75,19 @@ const (
 	eventSettings = "settings"
 	actionDigest  = "digest"
 
-	eventChannelAction     = "channel_action"
-	actionRunChannelAction = "run_channel_action"
+	eventChannelAction        = "channel_action"
+	actionRunChannelAction    = "run_channel_action"
+	actionChannelActionUpdate = "update_channel_action"
 
 	eventRunAction         = "playbookrun_action"
 	actionRunAction        = "run_playbookrun_action"
 	actionRunActionsUpdate = "update_playbookrun_actions"
+
+	eventSidebarCategory     = "lhs_category"
+	actionFavoriteRun        = "favorite_run"
+	actionUnfavoriteRun      = "unfavorite_run"
+	actionFavoritePlaybook   = "favorite_playbook"
+	actionUnfavoritePlaybook = "unfavorite_playbook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -152,8 +159,17 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
+	role := "viewer"
+	for _, p := range playbookRun.ParticipantIDs {
+		if p == userID {
+			role = "participant"
+			break
+		}
+	}
+
 	return map[string]interface{}{
 		"UserActualID":                         userID,
+		"UserActualRole":                       role,
 		telemetryKeyPlaybookRunID:              playbookRun.ID,
 		"HasDescription":                       playbookRun.Summary != "",
 		"CommanderUserID":                      playbookRun.OwnerUserID,
@@ -440,7 +456,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"DefaultCommanderID":          playbook.DefaultOwnerID,
 		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         playbook.BroadcastChannelIDs,
-		"BroadcastEnabled":            playbook.BroadcastEnabled,
+		"BroadcastEnabled":            playbook.BroadcastEnabled, //nolint
 		"NumWebhookOnCreationURLs":    len(playbook.WebhookOnCreationURLs),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
@@ -594,6 +610,7 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
+		"ChannelID":    action.ChannelID,
 		"ActionType":   action.ActionType,
 		"TriggerType":  action.TriggerType,
 	}
@@ -602,6 +619,13 @@ func channelActionProperties(action app.GenericChannelAction, userID string) map
 func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionRunChannelAction
+	t.track(eventChannelAction, properties)
+}
+
+// UpdateRunActions tracks actions settings update
+func (t *RudderTelemetry) UpdateChannelAction(action app.GenericChannelAction, userID string) {
+	properties := channelActionProperties(action, userID)
+	properties["Action"] = actionChannelActionUpdate
 	t.track(eventChannelAction, properties)
 }
 
@@ -628,4 +652,34 @@ func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID 
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRunActionsUpdate
 	t.track(eventRunAction, properties)
+}
+
+// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionFavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionFavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
+}
+
+// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionUnfavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionUnfavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
 }

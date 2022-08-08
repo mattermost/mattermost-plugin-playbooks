@@ -4,14 +4,14 @@
 import React, {CSSProperties, useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {components, ContainerProps} from 'react-select';
 
-import {Post} from 'mattermost-redux/types/posts';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel} from 'mattermost-redux/types/channels';
+import {Post} from '@mattermost/types/posts';
+import {GlobalState} from '@mattermost/types/store';
+import {Channel} from '@mattermost/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {getPlaybookRunByTeamAndChannelId} from 'src/selectors';

@@ -84,5 +84,17 @@
   {
     "id": "app.user.digest.tasks.zero_assigned",
     "translation": "You have 0 assigned tasks."
+  },
+  {
+    "id": "app.user.run.request_get_involved",
+    "translation": "@here — @{{.Name}} wants to participate in this run. To include them as a participant, add them to this channel.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} requested a status update. \n"
+  },
+  {
+    "id": "app.user.run.retro_publish",
+    "translation": "@{{.Name}} published a retrospective\n[See the full retrospective]({{.URL}})\n"
   }
 ]

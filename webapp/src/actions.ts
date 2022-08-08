@@ -12,7 +12,7 @@ import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/s
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -25,11 +25,9 @@ import {
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
     SET_CLIENT_ID,
-    SET_RHS_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
     SetClientId,
-    SetRHSEventsFilter,
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
@@ -63,8 +61,8 @@ import {
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
-    SetEachChecklistCollapsedState,
-    SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    SetEveryChecklistCollapsedState,
+    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -278,12 +276,6 @@ export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromCha
     channelId,
 });
 
-export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
-    type: SET_RHS_EVENTS_FILTER,
-    channelId,
-    nextState,
-});
-
 export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({
     type: RECEIVED_GLOBAL_SETTINGS,
     settings,
@@ -325,28 +317,28 @@ export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean)
     collapsed,
 });
 
-export const setChecklistCollapsedState = (channelId: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
+export const setChecklistCollapsedState = (key: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
     type: SET_CHECKLIST_COLLAPSED_STATE,
-    channelId,
+    key,
     checklistIndex,
     collapsed,
 });
 
-export const setEachChecklistCollapsedState = (channelId: string, state: Record<number, boolean>): SetEachChecklistCollapsedState => ({
-    type: SET_EACH_CHECKLIST_COLLAPSED_STATE,
-    channelId,
+export const setEveryChecklistCollapsedStateChange = (key: string, state: Record<number, boolean>): SetEveryChecklistCollapsedState => ({
+    type: SET_EVERY_CHECKLIST_COLLAPSED_STATE,
+    key,
     state,
 });
 
-export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
+export const setAllChecklistsCollapsedState = (key: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
     type: SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    channelId,
+    key,
     numOfChecklists,
     collapsed,
 });
 
-export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistItemsFilter): SetChecklistItemsFilter => ({
+export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFilter): SetChecklistItemsFilter => ({
     type: SET_CHECKLIST_ITEMS_FILTER,
-    channelId,
+    key,
     nextState,
 });

@@ -1,8 +1,9 @@
 package client
 
 import (
-	"gopkg.in/guregu/null.v4"
 	"time"
+
+	"gopkg.in/guregu/null.v4"
 )
 
 // Me is a constant that refers to the current user, and can be used in various APIs in place of
@@ -62,6 +63,17 @@ type StatusPost struct {
 	DeleteAt int64  `json:"delete_at"`
 }
 
+// StatusPostComplete is the complete status update (post)
+// it's similar to StatusPost but with extended info.
+type StatusPostComplete struct {
+	Id             string `json:"id"`
+	CreateAt       int64  `json:"create_at"`
+	UpdateAt       int64  `json:"update_at"`
+	DeleteAt       int64  `json:"delete_at"`
+	Message        string `json:"message"`
+	AuthorUserName string `json:"author_user_name"`
+}
+
 // Metadata tracks ancillary metadata about a playbook run.
 type Metadata struct {
 	ChannelName        string   `json:"channel_name"`
@@ -76,12 +88,19 @@ type Metadata struct {
 type TimelineEventType string
 
 const (
-	PlaybookRunCreated TimelineEventType = "incident_created"
-	TaskStateModified  TimelineEventType = "task_state_modified"
-	StatusUpdated      TimelineEventType = "status_updated"
-	OwnerChanged       TimelineEventType = "owner_changed"
-	AssigneeChanged    TimelineEventType = "assignee_changed"
-	RanSlashCommand    TimelineEventType = "ran_slash_command"
+	PlaybookRunCreated     TimelineEventType = "incident_created"
+	TaskStateModified      TimelineEventType = "task_state_modified"
+	StatusUpdated          TimelineEventType = "status_updated"
+	StatusUpdateRequested  TimelineEventType = "status_update_requested"
+	OwnerChanged           TimelineEventType = "owner_changed"
+	AssigneeChanged        TimelineEventType = "assignee_changed"
+	RanSlashCommand        TimelineEventType = "ran_slash_command"
+	EventFromPost          TimelineEventType = "event_from_post"
+	UserJoinedLeft         TimelineEventType = "user_joined_left"
+	PublishedRetrospective TimelineEventType = "published_retrospective"
+	CanceledRetrospective  TimelineEventType = "canceled_retrospective"
+	RunFinished            TimelineEventType = "run_finished"
+	RunRestored            TimelineEventType = "run_restored"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.
@@ -117,6 +136,12 @@ type RunAction struct {
 
 	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
+// RetrospectiveUpdate represents the run retrospective info
+type RetrospectiveUpdate struct {
+	Text    string          `json:"retrospective"`
+	Metrics []RunMetricData `json:"metrics"`
 }
 
 // Sort enumerates the available fields we can sort on.

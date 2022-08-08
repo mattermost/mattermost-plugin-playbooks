@@ -1,4 +1,3 @@
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import {checkE10Licensed, checkE20Licensed} from 'src/license';
 

@@ -57,23 +57,76 @@ describe('channels > rhs > checklist', () => {
             cy.apiCreatePlaybook({
                 teamId: team.id,
                 title: 'Playbook',
-                checklists: [{
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1', command: '/invalid'},
-                        {title: 'Step 2', command: '/echo VALID'},
-                        {title: 'Step 3'},
-                        {title: 'Step 4'},
-                        {title: 'Step 5'},
-                        {title: 'Step 6'},
-                        {title: 'Step 7'},
-                        {title: 'Step 8'},
-                        {title: 'Step 9'},
-                        {title: 'Step 10'},
-                        {title: 'Step 11'},
-                        {title: 'Step 12'},
-                    ],
-                }],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    }
+                ],
                 memberIDs: [
                     user.id,
                 ],
@@ -225,18 +278,6 @@ describe('channels > rhs > checklist', () => {
             cy.findByText(newTasktext).should('exist');
         });
 
-        it('assignee selector is shifted up if it falls below window', {
-            retries: {runMode: 3},
-        }, () => {
-            // Hover over a checklist item at the end
-            cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
-                // Click the profile icon
-                cy.get('.icon-account-plus-outline').click().wait(HALF_SEC);
-
-                cy.isInViewport('.playbook-run-user-select');
-            });
-        });
-
         it('creates a new checklist', () => {
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
@@ -261,7 +302,7 @@ describe('channels > rhs > checklist', () => {
             // # Open the dot menu and click on the rename button
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).trigger('mouseover');
-                cy.findByTestId('checklistHeader').within(() => {
+                cy.findAllByTestId('checklistHeader').eq(0).within(() => {
                     cy.findByTitle('More').click();
                 });
                 cy.findByRole('button', {name: 'Rename checklist'}).click();
@@ -306,7 +347,7 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it('filter overdue tasks', () => {
+        it('filter overdue tasks', {retries: {runMode: 3}}, () => {
             // # Set overdue date for several items
             setTaskDueDate(2, '1 hour ago');
 
@@ -338,7 +379,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
 
             // * Verify if filter was canceled
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
         });
 
         it('filter overdue automatically disappear if we check all overdue items', () => {
@@ -366,10 +407,10 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
 
             // * Verify if filter was canceled
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
         });
 
-        it.only('switching between runs with the same checklist', () => {
+        it('switching between runs with the same checklist', () => {
             // # Create another run using the same playbook
             const playbookRunName2 = 'RunWithSameChecklist';
             cy.apiRunPlaybook({
@@ -389,6 +430,17 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').eq(2).within(() => {
                 cy.findAllByTestId('due-date-info-button').should('not.exist');
             });
+        });
+
+        it('scroll 2-3 pages and open due date selector- unexpected scroll issue', () => {
+            // # Hover over the checklist item that is ~3 pages down
+            cy.findAllByTestId('checkbox-item-container').eq(26).trigger('mouseover').within(() => {
+                // # Click the set due date button
+                cy.get('.icon-calendar-outline').click();
+            });
+
+            // * Verify if date selector is visible
+            cy.get('.playbook-run-user-select').should('be.visible');
         });
     });
 });

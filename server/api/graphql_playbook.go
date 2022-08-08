@@ -1,11 +1,36 @@
 package api
 
 import (
+	"context"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/pkg/errors"
 )
 
 type PlaybookResolver struct {
 	app.Playbook
+}
+
+func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	isFavorite, err := c.categoryService.IsItemFavorite(
+		app.CategoryItem{
+			ItemID: r.ID,
+			Type:   app.PlaybookItemType,
+		},
+		r.TeamID,
+		userID,
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "can't determine if item is favorite or not")
+	}
+
+	return isFavorite, nil
 }
 
 func (r *PlaybookResolver) DeleteAt() float64 {

@@ -33,10 +33,20 @@ const TextEdit = (props: TextEditProps) => {
         setValue(props.value);
     }, [props.value]);
 
+    const save = () => {
+        setIsEditing(false);
+        props.onSave(value);
+    };
+
+    const cancel = () => {
+        setIsEditing(false);
+        setValue(props.value);
+    };
+
     if (isEditing) {
         return (
             <Container className={props.className}>
-                <input
+                <EditableTextInput
                     data-testid={'rendered-editable-text'}
                     value={value}
                     placeholder={props.placeholder}
@@ -45,16 +55,17 @@ const TextEdit = (props: TextEditProps) => {
                     }}
                     autoFocus={true}
                     disabled={props.disabled}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            cancel();
+                        }
+                    }}
                 />
                 <CancelSaveButtons
-                    onCancel={() => {
-                        setIsEditing(false);
-                        setValue(props.value);
-                    }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        props.onSave(value);
-                    }}
+                    onCancel={cancel}
+                    onSave={save}
                 />
             </Container>
         );
@@ -127,11 +138,6 @@ const Container = styled.div`
         padding: 8px 0;
     }
 
-    && .custom-textarea.custom-textarea {
-        ${commonTextStyle}
-    }
-
-
     ${HoverMenuContainer} {
         opacity: 0
     }
@@ -141,6 +147,10 @@ const Container = styled.div`
             opacity: 1;
         }
     }
+`;
+
+const EditableTextInput = styled.input`
+    background-color: var(--center-channel-bg);
 `;
 
 export const RenderedText = styled.span`
