@@ -171,7 +171,7 @@ const PostUpdate = styled.div<CollapsedProps>`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
     padding: ${(props) => (props.collapsed ? '8px 8px 8px 12px' : '12px')};
 
