@@ -15,7 +15,8 @@ DEALLOCATE PREPARE addColumnIfNotExists;
 
 
 UPDATE IR_Incident 
-SET ActiveStageTitle = JSON_EXTRACT(`ChecklistsJSON` -> '$[activestage]', '$.title') 
-WHERE JSON_LENGTH(ChecklistsJSON) IS NOT NULL
+SET ActiveStageTitle =  JSON_UNQUOTE(JSON_EXTRACT(JSON_EXTRACT(`ChecklistsJSON`, CONCAT('$[', activestage, ']')), '$.title'))
+WHERE JSON_VALID(ChecklistsJSON) = 1
+AND JSON_TYPE(ChecklistsJSON) = 'ARRAY'
 AND JSON_LENGTH(ChecklistsJSON) > ActiveStage
 AND ActiveStage >= 0;
