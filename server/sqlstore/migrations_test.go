@@ -10,73 +10,177 @@ import (
 )
 
 func TestMigration_000005(t *testing.T) {
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		_, store := setupTables(t, db)
-		engine, err := store.createMorphEngine()
+	testData := []struct {
+		Name          string
+		ActiveStage   int
+		ChecklistJSON string
+	}{
+		{
+			Name:          "0",
+			ActiveStage:   0,
+			ChecklistJSON: "{][",
+		},
+		{
+			Name:          "1",
+			ActiveStage:   0,
+			ChecklistJSON: "{}",
+		},
+		{
+			Name:          "2",
+			ActiveStage:   0,
+			ChecklistJSON: "\"key\"",
+		},
+		{
+			Name:          "3",
+			ActiveStage:   -1,
+			ChecklistJSON: "[]",
+		},
+		{
+			Name:          "4",
+			ActiveStage:   0,
+			ChecklistJSON: "",
+		},
+		{
+			Name:          "5",
+			ActiveStage:   1,
+			ChecklistJSON: `[{"title":"title50"}, {"title":"title51"}, {"title":"title52"}]`,
+		},
+		{
+			Name:          "6",
+			ActiveStage:   3,
+			ChecklistJSON: `[{"title":"title60"}, {"title":"title61"}, {"title":"title62"}]`,
+		},
+		{
+			Name:          "7",
+			ActiveStage:   2,
+			ChecklistJSON: `[{"title":"title70"}, {"title":"title71"}, {"title":"title72"}]`,
+		},
+	}
+
+	insertData := func(store *SQLStore) int {
+		numRuns := 0
+		for _, d := range testData {
+			_, err := insertRun(store, NewRunMapBuilder().
+				WithName(d.Name).
+				WithActiveStage(d.ActiveStage).
+				WithChecklists(d.ChecklistJSON).ToRunAsMap())
+			if err == nil {
+				numRuns++
+			}
+		}
+
+		return numRuns
+	}
+
+	type Run struct {
+		ID               string
+		Name             string
+		ChecklistsJSON   string
+		ActiveStage      int
+		ActiveStageTitle string
+	}
+
+	validateAfter := func(t *testing.T, store *SQLStore, numRuns int) {
+		var runs []Run
+		err := store.selectBuilder(store.db, &runs, store.builder.
+			Select("ID", "Name", "ChecklistsJSON", "ActiveStage", "ActiveStageTitle").
+			From("IR_Incident"))
+
 		require.NoError(t, err)
-		defer engine.Close()
+		require.Len(t, runs, int(numRuns))
+		expectedStageTitles := map[string]string{
+			"5": "title51",
+			"7": "title72",
+		}
+		for _, r := range runs {
+			require.Equal(t, expectedStageTitles[r.Name], r.ActiveStageTitle)
+		}
+	}
 
-		t.Run(fmt.Sprintf("test migration up %s", driverName), func(t *testing.T) {
-			engine.Apply(4)
-			_, err = insertRun(store, "0", "{][", 0) // invalid json
-			_, err = insertRun(store, "1", "{}", 0)
-			_, err = insertRun(store, "2", "\"key\"", 0)
-			_, err = insertRun(store, "3", "[]", 0)
-			_, err = insertRun(store, "5", `[{"title":"title50"}, {"title":"title51"}, {"title":"title52"}]`, 1)
-			_, err = insertRun(store, "6", `[{"title":"title60"}, {"title":"title61"}, {"title":"title62"}]`, 3)
-			_, err = insertRun(store, "7", `[{"title":"title70"}, {"title":"title71"}, {"title":"title72"}]`, 2)
+	validateBefore := func(t *testing.T, store *SQLStore, numRuns int) {
+		activeStageTitleExist, err := columnExists(store, "IR_Incident", "ActiveStageTitle")
+		require.NoError(t, err)
+		require.False(t, activeStageTitleExist)
+	}
 
-			var numRuns int64
-			err = db.Get(&numRuns, "SELECT COUNT(*) FROM IR_Incident")
-
-			engine.Apply(1)
-
-			type Run struct {
-				ID               string
-				Name             string
-				ChecklistsJSON   string
-				ActiveStage      int
-				ActiveStageTitle string
-			}
-
-			var runs []Run
-			err = store.selectBuilder(store.db, &runs, store.builder.
-				Select("ID", "Name", "ChecklistsJSON", "ActiveStage", "ActiveStageTitle").
-				From("IR_Incident"))
-
+	for _, driverName := range driverNames {
+		t.Run("run migration up", func(t *testing.T) {
+			db := setupTestDB(t, driverName)
+			_, store := setupTables(t, db)
+			engine, err := store.createMorphEngine()
 			require.NoError(t, err)
-			require.Len(t, runs, int(numRuns))
-			runNameToActiveStageTitle := map[string]string{
-				"5": "title51",
-				"7": "title72",
-			}
-			for _, r := range runs {
-				require.Equal(t, runNameToActiveStageTitle[r.Name], r.ActiveStageTitle)
-			}
-			engine.ApplyDown(1)
+			defer engine.Close()
+
+			engine.Apply(4)
+			numRuns := insertData(store)
+
 			engine.Apply(1)
+
+			validateAfter(t, store, numRuns)
+		})
+
+		t.Run("run migration down", func(t *testing.T) {
+			db := setupTestDB(t, driverName)
+			_, store := setupTables(t, db)
+			engine, err := store.createMorphEngine()
+			require.NoError(t, err)
+			defer engine.Close()
+
+			engine.Apply(4)
+			numRuns := insertData(store)
+
+			engine.Apply(1)
+
+			validateAfter(t, store, numRuns)
+			engine.ApplyDown(1)
+			validateBefore(t, store, numRuns)
 		})
 	}
 }
 
-func insertRun(sqlStore *SQLStore, name, checklistJSON string, activeStage int) (string, error) {
+func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 	id := model.NewId()
 	_, err := sqlStore.execBuilder(sqlStore.db, sq.
 		Insert("IR_Incident").
-		SetMap(map[string]interface{}{
-			"ID":       id,
-			"CreateAt": model.GetMillis(),
-			// have to be set:
-			"Name":            name,
-			"Description":     "test",
+		SetMap(run))
+
+	return id, err
+}
+
+type RunMapBuilder struct {
+	runAsMap map[string]interface{}
+}
+
+func NewRunMapBuilder() *RunMapBuilder {
+	return &RunMapBuilder{
+		runAsMap: map[string]interface{}{
+			"ID":              model.NewId(),
+			"CreateAt":        model.GetMillis(),
+			"Description":     "test description",
+			"Name":            fmt.Sprintf("run- %v", model.GetMillis()),
 			"IsActive":        true,
 			"CommanderUserID": "commander",
 			"TeamID":          "testTeam",
 			"ChannelID":       model.NewId(),
-			"ActiveStage":     activeStage,
-			"ChecklistsJSON":  checklistJSON,
-		}))
+		},
+	}
+}
 
-	return id, err
+func (b *RunMapBuilder) WithName(name string) *RunMapBuilder {
+	b.runAsMap["Name"] = name
+	return b
+}
+
+func (b *RunMapBuilder) WithActiveStage(activeStage int) *RunMapBuilder {
+	b.runAsMap["ActiveStage"] = activeStage
+	return b
+}
+
+func (b *RunMapBuilder) WithChecklists(checklistJSON string) *RunMapBuilder {
+	b.runAsMap["ChecklistsJSON"] = checklistJSON
+	return b
+}
+
+func (b *RunMapBuilder) ToRunAsMap() map[string]interface{} {
+	return b.runAsMap
 }

@@ -206,8 +206,6 @@ func getTableColumnNames(sqlStore *SQLStore, tableName string) ([]string, error)
 			WHERE TABLE_SCHEMA = DATABASE() 
 			AND TABLE_NAME = ?
 		`, tableName)
-
-		return results, err
 	} else if sqlStore.db.DriverName() == model.DatabaseDriverPostgres {
 		err = sqlStore.db.Select(&results, `
 			SELECT COLUMN_NAME 
@@ -217,4 +215,27 @@ func getTableColumnNames(sqlStore *SQLStore, tableName string) ([]string, error)
 	}
 
 	return results, err
+}
+
+func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error) {
+	results := []string{}
+	var err error
+	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+		err = sqlStore.db.Select(&results, `
+			SELECT COLUMN_NAME 
+			FROM INFORMATION_SCHEMA.COLUMNS 
+			WHERE TABLE_SCHEMA = DATABASE() 
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?
+		`, tableName, columnName)
+	} else if sqlStore.db.DriverName() == model.DatabaseDriverPostgres {
+		err = sqlStore.db.Select(&results, `
+			SELECT COLUMN_NAME 
+			FROM INFORMATION_SCHEMA.COLUMNS 
+			WHERE TABLE_NAME = $1
+			AND COLUMN_NAME = $2
+		`, strings.ToLower(tableName), strings.ToLower(columnName))
+	}
+
+	return len(results) > 0, err
 }
