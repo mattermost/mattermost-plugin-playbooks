@@ -48,7 +48,7 @@ describe('runs > run details page > finish', () => {
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPublicPlaybook.id,
-            playbookRunName: 'the run name',
+            playbookRunName: 'the run name(' + Date.now() + ')',
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             testPlaybookRun = playbookRun;
@@ -98,6 +98,9 @@ describe('runs > run details page > finish', () => {
 
             // * Assert status badge is finished
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
+
+            // * Verify run has been removed from LHS
+            cy.findByTestId('lhs-navigation').findByText(testPlaybookRun.name).should('not.exist');
         });
 
         it('can be canceled', () => {

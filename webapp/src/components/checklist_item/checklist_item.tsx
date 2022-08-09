@@ -199,12 +199,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderDueDate = (): null | React.ReactNode => {
-        const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
+        const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || props.checklistItem.state === ChecklistItemState.Skip;
 
-        // if task is done hide due date info
-        if (!isTaskOpenOrInProgress) {
-            return null;
-        }
         if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
             return null;
         }
@@ -213,6 +209,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <DueDateButton
                 editable={!props.disabled}
                 date={dueDate}
+                ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
                 placement={'bottom-start'}
