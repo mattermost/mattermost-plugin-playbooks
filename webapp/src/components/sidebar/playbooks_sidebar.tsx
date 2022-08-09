@@ -25,6 +25,7 @@ const useLHSData = (teamID: string) => {
             teamID,
         },
         fetchPolicy: 'cache-and-network',
+        pollInterval: 60000, // Poll every minute for updates
     });
 
     if (error || !data) {
