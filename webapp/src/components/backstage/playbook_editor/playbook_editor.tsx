@@ -487,8 +487,9 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         position: sticky;
         top: var(--bar-height);
 
-        min-width: 140px;
-        margin-left: 10px;
+        min-width: 145px;
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
     }
 
 
