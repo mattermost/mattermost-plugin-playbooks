@@ -70,12 +70,12 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
         >
             <TriggersContainer>
                 <Trigger
-                    title={formatMessage({defaultMessage: 'When a status update is posted, or a retrospective is published'})}
+                    title={formatMessage({defaultMessage: 'When a status update is posted'})}
                 >
                     <ActionsContainer>
                         <Action
                             enabled={broadcastToChannelsEnabled}
-                            title={formatMessage({defaultMessage: 'Broadcast to selected channels'})}
+                            title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
                             editable={!readOnly}
                             onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
                         >

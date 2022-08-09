@@ -92,9 +92,5 @@
   {
     "id": "app.user.run.request_update",
     "translation": "@here — @{{.Name}} requested a status update. \n"
-  },
-  {
-    "id": "app.user.run.retro_publish",
-    "translation": "@{{.Name}} published a retrospective\n[See the full retrospective]({{.URL}})\n"
   }
 ]

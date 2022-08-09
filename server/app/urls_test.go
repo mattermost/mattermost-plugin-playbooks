@@ -50,7 +50,7 @@ func TestGetRunDetailsURL(t *testing.T) {
 
 func TestGetRunRetrospectiveURL(t *testing.T) {
 	require.Equal(t,
-		"http://mattermost.com/playbooks/runs/testPlaybookRunId/retrospective#playbook-run-retrospective",
+		"http://mattermost.com/playbooks/runs/testPlaybookRunId/retrospective",
 		getRunRetrospectiveURL("http://mattermost.com", "testPlaybookRunId"),
 	)
 }
