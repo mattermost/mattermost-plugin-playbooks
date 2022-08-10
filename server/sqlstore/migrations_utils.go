@@ -196,27 +196,6 @@ func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName stri
 	return nil
 }
 
-func getTableColumnNames(sqlStore *SQLStore, tableName string) ([]string, error) {
-	results := []string{}
-	var err error
-	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
-		err = sqlStore.db.Select(&results, `
-			SELECT COLUMN_NAME 
-			FROM INFORMATION_SCHEMA.COLUMNS 
-			WHERE TABLE_SCHEMA = DATABASE() 
-			AND TABLE_NAME = ?
-		`, tableName)
-	} else if sqlStore.db.DriverName() == model.DatabaseDriverPostgres {
-		err = sqlStore.db.Select(&results, `
-			SELECT COLUMN_NAME 
-			FROM INFORMATION_SCHEMA.COLUMNS 
-			WHERE TABLE_NAME = $1
-		`, strings.ToLower(tableName))
-	}
-
-	return results, err
-}
-
 func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error) {
 	results := []string{}
 	var err error

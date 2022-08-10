@@ -6,6 +6,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/morph"
 	"github.com/stretchr/testify/require"
 )
 
@@ -87,7 +88,7 @@ func TestMigration_000005(t *testing.T) {
 			From("IR_Incident"))
 
 		require.NoError(t, err)
-		require.Len(t, runs, int(numRuns))
+		require.Len(t, runs, numRuns)
 		expectedStageTitles := map[string]string{
 			"5": "title51",
 			"7": "title72",
@@ -111,11 +112,9 @@ func TestMigration_000005(t *testing.T) {
 			require.NoError(t, err)
 			defer engine.Close()
 
-			engine.Apply(4)
+			upgrade(t, store, engine, 4)
 			numRuns := insertData(store)
-
-			engine.Apply(1)
-
+			upgrade(t, store, engine, 1)
 			validateAfter(t, store, numRuns)
 		})
 
@@ -126,16 +125,26 @@ func TestMigration_000005(t *testing.T) {
 			require.NoError(t, err)
 			defer engine.Close()
 
-			engine.Apply(4)
+			upgrade(t, store, engine, 4)
 			numRuns := insertData(store)
-
-			engine.Apply(1)
-
+			upgrade(t, store, engine, 1)
 			validateAfter(t, store, numRuns)
-			engine.ApplyDown(1)
+			downgrade(t, store, engine, 1)
 			validateBefore(t, store, numRuns)
 		})
 	}
+}
+
+func upgrade(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
+	applied, err := engine.Apply(limit)
+	require.NoError(t, err)
+	require.Equal(t, applied, limit)
+}
+
+func downgrade(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
+	applied, err := engine.ApplyDown(limit)
+	require.NoError(t, err)
+	require.Equal(t, applied, limit)
 }
 
 func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {

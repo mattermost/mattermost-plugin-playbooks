@@ -149,16 +149,17 @@ func (sqlStore *SQLStore) createMorphEngine() (*morph.Morph, error) {
 	return engine, err
 }
 
-func (sqlStore *SQLStore) runMigrationsWithMorph() error {
-	engine, err := sqlStore.createMorphEngine()
-	if err != nil {
-		return err
-	}
-	defer engine.Close()
+// WARNING: We don't use morph migration until proper testing
+// func (sqlStore *SQLStore) runMigrationsWithMorph() error {
+// 	engine, err := sqlStore.createMorphEngine()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer engine.Close()
 
-	if err := engine.ApplyAll(); err != nil {
-		return fmt.Errorf("could not apply migrations: %w", err)
-	}
+// 	if err := engine.ApplyAll(); err != nil {
+// 		return fmt.Errorf("could not apply migrations: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
