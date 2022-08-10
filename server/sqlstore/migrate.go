@@ -31,9 +31,10 @@ func (sqlStore *SQLStore) RunMigrations() error {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}
 
-	if err := sqlStore.runMigrationsWithMorph(); err != nil {
-		return fmt.Errorf("failed to complete migrations (with morph): %w", err)
-	}
+	// WARNING: Disable morph migrations until proper testing
+	// if err := sqlStore.runMigrationsWithMorph(); err != nil {
+	// 	return fmt.Errorf("failed to complete migrations (with morph): %w", err)
+	// }
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		if err := sqlStore.runMigrationsLegacy(currentSchemaVersion); err != nil {
