@@ -9,7 +9,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
@@ -44,6 +44,7 @@ import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/sta
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
+import {InsightsResponse} from './types/insights';
 
 let siteURL = '';
 let basePath = '';
@@ -893,3 +894,33 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];
 };
+
+
+export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+        team_id: teamId,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/user/me${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}
+
+export async function getTeamTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/teams/${teamId}${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}

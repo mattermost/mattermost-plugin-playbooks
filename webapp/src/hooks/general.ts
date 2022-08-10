@@ -31,7 +31,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
