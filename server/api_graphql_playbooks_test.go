@@ -45,6 +45,32 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Title, pbResultTest.Data.Playbook.Title)
 	})
 
+	t.Run("list", func(t *testing.T) {
+		var pbResultTest struct {
+			Data struct {
+				Playbooks []struct {
+					ID    string
+					Title string
+				}
+			}
+		}
+		testPlaybookQuery := `
+		query Playbooks {
+			playbooks {
+				id
+				title
+			}
+		}
+		`
+		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testPlaybookQuery,
+			OperationName: "Playbooks",
+		}, &pbResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, pbResultTest.Data.Playbooks, 3)
+	})
+
 	t.Run("playbook mutate", func(t *testing.T) {
 		newUpdatedTitle := "graphqlmutatetitle"
 

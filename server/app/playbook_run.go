@@ -277,7 +277,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.DefaultOwnerID = playbook.DefaultOwnerID
 	}
 
-	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
 	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
 
 	r.WebhookOnCreationURLs = []string{}
@@ -285,7 +286,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
 	}
 
-	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
 	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
 
 	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
@@ -380,6 +382,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 )
 
 type TimelineEvent struct {
@@ -402,7 +405,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", "canceled_retrospective" or "status_update_snoozed".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -675,6 +678,10 @@ type PlaybookRunService interface {
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
 	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
+	// ResetReminder records an event for snoozing a reminder, then calls SetNewReminder to create
+	// the next reminder
+	ResetReminder(playbookRunID string, newReminder time.Duration) error
+
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
@@ -736,7 +743,7 @@ type PlaybookRunService interface {
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
-	// Leave removes user from the run's participants list
+	// Leave removes user from the run's participants&followers list
 	Leave(playbookRunID, requesterID string) error
 }
 
