@@ -112,9 +112,9 @@ func TestMigration_000005(t *testing.T) {
 			require.NoError(t, err)
 			defer engine.Close()
 
-			upgrade(t, store, engine, 4)
+			runMigrationUp(t, store, engine, 4)
 			numRuns := insertData(store)
-			upgrade(t, store, engine, 1)
+			runMigrationUp(t, store, engine, 1)
 			validateAfter(t, store, numRuns)
 		})
 
@@ -125,23 +125,23 @@ func TestMigration_000005(t *testing.T) {
 			require.NoError(t, err)
 			defer engine.Close()
 
-			upgrade(t, store, engine, 4)
+			runMigrationUp(t, store, engine, 4)
 			numRuns := insertData(store)
-			upgrade(t, store, engine, 1)
+			runMigrationUp(t, store, engine, 1)
 			validateAfter(t, store, numRuns)
-			downgrade(t, store, engine, 1)
+			runMigrationDown(t, store, engine, 1)
 			validateBefore(t, store, numRuns)
 		})
 	}
 }
 
-func upgrade(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
+func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
 	require.Equal(t, applied, limit)
 }
 
-func downgrade(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
+func runMigrationDown(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.ApplyDown(limit)
 	require.NoError(t, err)
 	require.Equal(t, applied, limit)
