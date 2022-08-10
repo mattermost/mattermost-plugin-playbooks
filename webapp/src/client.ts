@@ -895,7 +895,6 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
-
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({
         time_range: timeRange,

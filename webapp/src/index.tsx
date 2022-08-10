@@ -251,14 +251,14 @@ export default class Plugin {
         if (registry.registerInsightsHandler) {
             registry.registerInsightsHandler(async (timeRange: string, page: number, perPage: number, teamId: string, insightType: string) => {
                 if (insightType === 'MY') {
-                    const data = await getMyTopPlaybooks(timeRange, page, perPage, teamId)
+                    const data = await getMyTopPlaybooks(timeRange, page, perPage, teamId);
 
-                    return data
-                } 
+                    return data;
+                }
 
-                const data = await getTeamTopPlaybooks(timeRange, page, perPage, teamId)
+                const data = await getTeamTopPlaybooks(timeRange, page, perPage, teamId);
 
-                return data
+                return data;
             });
         }
     }
