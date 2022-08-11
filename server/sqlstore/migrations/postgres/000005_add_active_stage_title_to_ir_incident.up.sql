@@ -18,3 +18,5 @@ UPDATE ir_incident
 SET activestagetitle = checklistsjson::json->(activestage::INTEGER)->>'title'
 WHERE json_array_length_safe(checklistsjson::text) > activestage
 AND activestage >= 0;
+
+DROP FUNCTION IF EXISTS json_array_length_safe;
