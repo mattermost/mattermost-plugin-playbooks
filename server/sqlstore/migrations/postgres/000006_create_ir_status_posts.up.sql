@@ -4,18 +4,5 @@ CREATE TABLE IF NOT EXISTS IR_StatusPosts (
     UNIQUE (IncidentID, PostID)
 );
 
-DO $$
-BEGIN
-	IF to_regclass ('IR_StatusPosts_IncidentID') IS NULL THEN
-		CREATE INDEX IR_StatusPosts_IncidentID ON IR_StatusPosts (IncidentID);
-	END IF;
-END
-$$;
-
-DO $$
-BEGIN
-	IF to_regclass ('IR_StatusPosts_PostID') IS NULL THEN
-		CREATE INDEX IR_StatusPosts_PostID ON IR_StatusPosts (PostID);
-	END IF;
-END
-$$;
+CREATE INDEX IF NOT EXISTS IR_StatusPosts_IncidentID ON IR_StatusPosts (IncidentID);
+CREATE INDEX IF NOT EXISTS IR_StatusPosts_PostID ON IR_StatusPosts (PostID);
