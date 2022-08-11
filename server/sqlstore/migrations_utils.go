@@ -220,15 +220,14 @@ func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error
 }
 
 type TableDescription struct {
-	TABLE_NAME               string
-	COLUMN_NAME              string
-	DATA_TYPE                string
-	IS_NULLABLE              string
-	COLUMN_KEY               string
-	COLUMN_DEFAULT           *string
-	EXTRA                    string
-	ORDINAL_POSITION         string
-	CHARACTER_MAXIMUM_LENGTH *string
+	TableName              string
+	ColumnName             string
+	DataType               string
+	IsNullable             string
+	ColumnKey              string
+	ColumnDefault          *string
+	Extra                  string
+	CharacterMaximumLength *string
 }
 
 func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
@@ -237,7 +236,11 @@ func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
 
 	if store.db.DriverName() == model.DatabaseDriverMysql {
 		err = store.db.Select(&results, `
-			SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA, ORDINAL_POSITION, CHARACTER_MAXIMUM_LENGTH	
+			SELECT 
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType, 
+				IS_NULLABLE as IsNullable, COLUMN_KEY as ColumnKey, COLUMN_DEFAULT as ColumnDefault, 
+				EXTRA as Extra, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
+
 			FROM INFORMATION_SCHEMA.COLUMNS
 			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME LIKE 'IR_%'
@@ -246,7 +249,10 @@ func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
 		`)
 	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
 		err = store.db.Select(&results, `
-			SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ORDINAL_POSITION
+			SELECT 
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType, 
+				IS_NULLABLE as IsNullable, COLUMN_DEFAULT as ColumnDefault, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
+
 			FROM INFORMATION_SCHEMA.COLUMNS
 			WHERE table_schema = 'public'
 			AND TABLE_NAME LIKE 'ir_%'
@@ -259,15 +265,14 @@ func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
 }
 
 type IndexInfo struct {
-	// Postgres fields
-	TABLENAME string
-	INDEXNAME string
-	INDEXDEF  string
+	TableName string
+	IndexName string
 
-	// MySQL fields
-	TABLE_NAME  string
-	INDEX_NAME  string
-	COLUMN_NAME string
+	// Postgres specific field
+	IndexDef string
+
+	// MySQL specific fields
+	ColumnName string
 }
 
 func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
@@ -276,7 +281,7 @@ func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
 
 	if store.db.DriverName() == model.DatabaseDriverMysql {
 		err = store.db.Select(&results, `
-			SELECT TABLE_NAME, INDEX_NAME, COLUMN_NAME
+			SELECT TABLE_NAME as TableName, INDEX_NAME as IndexName, COLUMN_NAME as ColumnName
 			FROM INFORMATION_SCHEMA.STATISTICS 
 			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME LIKE 'ir_%'
@@ -285,7 +290,7 @@ func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
 		`)
 	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
 		err = store.db.Select(&results, `
-			SELECT TABLENAME, INDEXNAME, INDEXDEF
+			SELECT TABLENAME as TableName, INDEXNAME as IndexName, INDEXDEF as IndexDef
 			FROM pg_indexes
 			WHERE SCHEMANAME = 'public'
 			AND TABLENAME LIKE 'ir_%'
