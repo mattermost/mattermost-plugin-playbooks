@@ -3,7 +3,7 @@ import React, {ComponentProps, useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUser, getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Client4} from 'mattermost-redux/client';
 
@@ -15,47 +15,48 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {displayUsername, getFullName} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 
+import {UserProfile} from '@mattermost/types/users';
+
 import {usePlaybook} from 'src/hooks';
 import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
-import {navigateToUrl} from 'src/browser_routing';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 const ID = 'playbooks_run_playbook_dialog';
 
-export const makeModalDefinition = (playbookId: string, description: string, teamId: string, teamName: string) => ({
+export const makeModalDefinition = (playbookId: string, defaultOwnerId: string, description: string, teamId: string, teamName: string) => ({
     modalId: ID,
     dialogType: RunPlaybookModal,
-    dialogProps: {playbookId, description, teamId, teamName},
+    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName},
 });
 
 type Props = {
     playbookId: string,
+    defaultUserId: string,
     description: string,
     teamId: string,
     teamName: string
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const owner = 'Owner';
-const playbookRunDescription = 'A channel will be created with this name';
-
 const RunPlaybookModal = ({
     playbookId,
+    defaultUserId,
     description,
     teamId,
-    teamName,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
 
-    const [showModal, setShowModal] = useState(true);
     const [runName, setRunName] = useState('');
     const currentUser = useSelector(getCurrentUser);
+    const defaultUser = useSelector<GlobalState, UserProfile>((state) => getUser(state, defaultUserId));
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+    const currentUserName = getFullName(currentUser) || displayUsername(currentUser, teamnameNameDisplaySetting);
+    const playbookOwner = defaultUser ? displayUsername(defaultUser, teamnameNameDisplaySetting) : currentUserName;
 
-    const playbookOwner = getFullName(currentUser) || displayUsername(currentUser, teamnameNameDisplaySetting);
     const profileUri = Client4.getProfilePictureUrl(currentUser.id, currentUser.last_picture_update);
-    const playbook = usePlaybook(playbookId);
+    const playbook = usePlaybook(playbookId)[0];
 
     useEffect(() => {
         if (playbook) {
@@ -64,20 +65,17 @@ const RunPlaybookModal = ({
     }, [playbook, playbook?.id]);
 
     const onSubmit = () => {
-        const playbookRun = createPlaybookRun(playbookId, currentUser.id, teamId, runName, description);
-        playbookRun.then(async (newPlaybookRun) => {
-            modalProps.onHide?.();
-            const pathname = `/playbooks/runs/${newPlaybookRun.id}`;
-            const search = '';
-            navigateToUrl({pathname, search});
-        }).catch(() => {
+        createPlaybookRun(playbookId, currentUser.id, teamId, runName, description)
+            .then((newPlaybookRun) => {
+                modalProps.onHide?.();
+                navigateToPluginUrl(`/runs/${newPlaybookRun.id}`);
+            }).catch(() => {
             // show error
-        });
+            });
     };
 
     return (
         <StyledGenericModal
-            show={showModal}
             modalHeaderText={formatMessage({defaultMessage: 'Run Playbook'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
@@ -97,7 +95,7 @@ const RunPlaybookModal = ({
                             <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
                         </PlaybookNameTitle>
                         <PlaybookName>
-                            {runName}
+                            {playbook?.title}
                         </PlaybookName>
                     </PlaybookNameAndTitle>
                     <PlaybookOwnerAndTitle>
@@ -106,7 +104,9 @@ const RunPlaybookModal = ({
                                 path={mdiAccountOutline}
                                 size={0.95}
                             />
-                            <div>{formatMessage({defaultMessage: 'Owner'})}</div>
+                            <div>
+                                {formatMessage({defaultMessage: 'Owner'})}
+                            </div>
                         </PlaybookOwnerTitle>
                         <PlaybookOwnerDetail>
                             <OwnerImage
@@ -126,7 +126,7 @@ const RunPlaybookModal = ({
                     value={runName}
                     onChange={(e) => setRunName(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
+                        if (e.key === 'Enter') {
                             onSubmit();
                         }
                     }}

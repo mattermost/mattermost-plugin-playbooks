@@ -62,6 +62,7 @@ type ControlProps = {
         id: string,
         public: boolean,
         default_playbook_member_role: string,
+        default_owner_id: string,
         title: string,
         delete_at: number,
         team_id: string,
@@ -268,6 +269,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             onClick={() => {
                 dispatch(openPlaybookRunModal(
                     playbook.id,
+                    playbook.default_owner_id,
                     playbook.description,
                     team.id,
                     team.name
@@ -292,8 +294,8 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 
 export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
     const {formatMessage} = useIntl();
-    const currentUser = useSelector(getCurrentUser);
-    const {join} = usePlaybookMembership(playbookId, currentUser.id);
+    const currentUserId = useSelector(getCurrentUserId);
+    const {join} = usePlaybookMembership(playbookId, currentUserId);
     const {setFollowing} = useEditorFollowersMeta(playbookId);
 
     return (

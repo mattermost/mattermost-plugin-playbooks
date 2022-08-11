@@ -91,9 +91,10 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openPlaybookRunModal(playbookId: string, description: string, teamId: string, teamName: string) {
+export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string, description: string, teamId: string, teamName: string) {
     return modals.openModal(makePlaybookRunModalDefinition(
         playbookId,
+        defaultOwnerId,
         description,
         teamId,
         teamName
