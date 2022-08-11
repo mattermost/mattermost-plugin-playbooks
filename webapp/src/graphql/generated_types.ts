@@ -66,9 +66,12 @@ export {MetricType};
 export type Mutation = {
     __typename?: 'Mutation';
     addMetric: Scalars['String'];
+    addPlaybookMember: Scalars['String'];
     deleteMetric: Scalars['String'];
+    removePlaybookMember: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
+    updateRun: Scalars['String'];
 };
 
 export type MutationAddMetricArgs = {
@@ -79,8 +82,18 @@ export type MutationAddMetricArgs = {
     type: Scalars['String'];
 };
 
+export type MutationAddPlaybookMemberArgs = {
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+};
+
 export type MutationDeleteMetricArgs = {
     id: Scalars['String'];
+};
+
+export type MutationRemovePlaybookMemberArgs = {
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
 };
 
 export type MutationUpdateMetricArgs = {
@@ -93,6 +106,11 @@ export type MutationUpdateMetricArgs = {
 export type MutationUpdatePlaybookArgs = {
     id: Scalars['String'];
     updates: PlaybookUpdates;
+};
+
+export type MutationUpdateRunArgs = {
+    id: Scalars['String'];
+    updates: RunUpdates;
 };
 
 export type Playbook = {
@@ -187,10 +205,39 @@ export type PlaybookUpdates = {
 export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
+    playbooks: Array<Playbook>;
+    runs: Array<Run>;
 };
 
 export type QueryPlaybookArgs = {
     id: Scalars['String'];
+};
+
+export type QueryPlaybooksArgs = {
+    direction?: InputMaybe<Scalars['String']>;
+    searchTerm?: InputMaybe<Scalars['String']>;
+    sort?: InputMaybe<Scalars['String']>;
+    teamID?: InputMaybe<Scalars['String']>;
+    withArchived?: InputMaybe<Scalars['Boolean']>;
+    withMembershipOnly?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type QueryRunsArgs = {
+    participantOrFollowerID?: InputMaybe<Scalars['String']>;
+    sort?: InputMaybe<Scalars['String']>;
+    statuses?: InputMaybe<Array<Scalars['String']>>;
+    teamID?: InputMaybe<Scalars['String']>;
+};
+
+export type Run = {
+    __typename?: 'Run';
+    id: Scalars['String'];
+    isFavorite: Scalars['Boolean'];
+    name: Scalars['String'];
+};
+
+export type RunUpdates = {
+    isFavorite?: InputMaybe<Scalars['Boolean']>;
 };
 
 export type PlaybookQueryVariables = Exact<{
@@ -205,6 +252,34 @@ export type UpdatePlaybookMutationVariables = Exact<{
 }>;
 
 export type UpdatePlaybookMutation = { __typename?: 'Mutation', updatePlaybook: string };
+
+export type PlaybookLhsQueryVariables = Exact<{
+    userID: Scalars['String'];
+    teamID: Scalars['String'];
+}>;
+
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+
+export type AddPlaybookMemberMutationVariables = Exact<{
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+}>;
+
+export type AddPlaybookMemberMutation = { __typename?: 'Mutation', addPlaybookMember: string };
+
+export type RemovePlaybookMemberMutationVariables = Exact<{
+    playbookID: Scalars['String'];
+    userID: Scalars['String'];
+}>;
+
+export type RemovePlaybookMemberMutation = { __typename?: 'Mutation', removePlaybookMember: string };
+
+export type UpdateRunMutationVariables = Exact<{
+    id: Scalars['String'];
+    updates: RunUpdates;
+}>;
+
+export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -330,6 +405,151 @@ export function useUpdatePlaybookMutation(baseOptions?: Apollo.MutationHookOptio
 export type UpdatePlaybookMutationHookResult = ReturnType<typeof useUpdatePlaybookMutation>;
 export type UpdatePlaybookMutationResult = Apollo.MutationResult<UpdatePlaybookMutation>;
 export type UpdatePlaybookMutationOptions = Apollo.BaseMutationOptions<UpdatePlaybookMutation, UpdatePlaybookMutationVariables>;
+export const PlaybookLhsDocument = gql`
+    query PlaybookLHS($userID: String!, $teamID: String!) {
+  runs(
+    participantOrFollowerID: $userID
+    teamID: $teamID
+    sort: "name"
+    statuses: ["InProgress"]
+  ) {
+    id
+    name
+    isFavorite
+  }
+  playbooks(teamID: $teamID, withMembershipOnly: true) {
+    id
+    title
+    isFavorite
+    public
+  }
+}
+    `;
+
+/**
+ * __usePlaybookLhsQuery__
+ *
+ * To run a query within a React component, call `usePlaybookLhsQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePlaybookLhsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePlaybookLhsQuery({
+ *   variables: {
+ *      userID: // value for 'userID'
+ *      teamID: // value for 'teamID'
+ *   },
+ * });
+ */
+export function usePlaybookLhsQuery(baseOptions: Apollo.QueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<PlaybookLhsQuery, PlaybookLhsQueryVariables>(PlaybookLhsDocument, options);
+}
+export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PlaybookLhsQuery, PlaybookLhsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<PlaybookLhsQuery, PlaybookLhsQueryVariables>(PlaybookLhsDocument, options);
+}
+export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
+export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
+export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
+export const AddPlaybookMemberDocument = gql`
+    mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
+  addPlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+    `;
+export type AddPlaybookMemberMutationFn = Apollo.MutationFunction<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>;
+
+/**
+ * __useAddPlaybookMemberMutation__
+ *
+ * To run a mutation, you first call `useAddPlaybookMemberMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddPlaybookMemberMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addPlaybookMemberMutation, { data, loading, error }] = useAddPlaybookMemberMutation({
+ *   variables: {
+ *      playbookID: // value for 'playbookID'
+ *      userID: // value for 'userID'
+ *   },
+ * });
+ */
+export function useAddPlaybookMemberMutation(baseOptions?: Apollo.MutationHookOptions<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>(AddPlaybookMemberDocument, options);
+}
+export type AddPlaybookMemberMutationHookResult = ReturnType<typeof useAddPlaybookMemberMutation>;
+export type AddPlaybookMemberMutationResult = Apollo.MutationResult<AddPlaybookMemberMutation>;
+export type AddPlaybookMemberMutationOptions = Apollo.BaseMutationOptions<AddPlaybookMemberMutation, AddPlaybookMemberMutationVariables>;
+export const RemovePlaybookMemberDocument = gql`
+    mutation RemovePlaybookMember($playbookID: String!, $userID: String!) {
+  removePlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+    `;
+export type RemovePlaybookMemberMutationFn = Apollo.MutationFunction<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
+
+/**
+ * __useRemovePlaybookMemberMutation__
+ *
+ * To run a mutation, you first call `useRemovePlaybookMemberMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemovePlaybookMemberMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removePlaybookMemberMutation, { data, loading, error }] = useRemovePlaybookMemberMutation({
+ *   variables: {
+ *      playbookID: // value for 'playbookID'
+ *      userID: // value for 'userID'
+ *   },
+ * });
+ */
+export function useRemovePlaybookMemberMutation(baseOptions?: Apollo.MutationHookOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>(RemovePlaybookMemberDocument, options);
+}
+export type RemovePlaybookMemberMutationHookResult = ReturnType<typeof useRemovePlaybookMemberMutation>;
+export type RemovePlaybookMemberMutationResult = Apollo.MutationResult<RemovePlaybookMemberMutation>;
+export type RemovePlaybookMemberMutationOptions = Apollo.BaseMutationOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
+export const UpdateRunDocument = gql`
+    mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+  updateRun(id: $id, updates: $updates)
+}
+    `;
+export type UpdateRunMutationFn = Apollo.MutationFunction<UpdateRunMutation, UpdateRunMutationVariables>;
+
+/**
+ * __useUpdateRunMutation__
+ *
+ * To run a mutation, you first call `useUpdateRunMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateRunMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateRunMutation, { data, loading, error }] = useUpdateRunMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      updates: // value for 'updates'
+ *   },
+ * });
+ */
+export function useUpdateRunMutation(baseOptions?: Apollo.MutationHookOptions<UpdateRunMutation, UpdateRunMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<UpdateRunMutation, UpdateRunMutationVariables>(UpdateRunDocument, options);
+}
+export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation>;
+export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
+export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

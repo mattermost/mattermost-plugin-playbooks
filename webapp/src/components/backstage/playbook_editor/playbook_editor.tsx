@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useMemo} from 'react';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
@@ -11,8 +11,10 @@ import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {
@@ -57,6 +59,7 @@ const PlaybookEditor = () => {
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const stats = useStats(playbookId);
+    const currentUserId = useSelector(getCurrentUserId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -76,6 +79,7 @@ const PlaybookEditor = () => {
     }, [dispatch, playbook?.team_id, playbookId]);
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
+    const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
 
     if (error) {
         // not found
@@ -166,12 +170,21 @@ const PlaybookEditor = () => {
                     </TextEdit>
                 </div>
                 <div>
-                    <Controls.Members
-                        playbookId={playbook.id}
-                        numMembers={playbook.members.length}
-                    />
-                    <Controls.AutoFollowToggle playbook={playbook}/>
-                    <Controls.RunPlaybook playbook={playbook}/>
+                    {currentUserMember ? (
+                        <>
+                            <Controls.Members
+                                playbookId={playbook.id}
+                                numMembers={playbook.members.length}
+                            />
+                            <Controls.AutoFollowToggle playbook={playbook}/>
+                            <Controls.RunPlaybook playbook={playbook}/>
+                        </>
+                    ) : (
+                        <Controls.JoinPlaybook
+                            playbook={playbook}
+                            refetch={refetch}
+                        />
+                    )}
                 </div>
             </TitleBar>
             <Header ref={headingRef}>
@@ -443,7 +456,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     --markdown-textbox-padding: 12px 16px;
 
     --bar-height: 60px;
-    --content-max-width: 780px;
+    --content-max-width: 1100px;
 
     /* === standard-full === */
     grid-template:
@@ -473,6 +486,10 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
         position: sticky;
         top: var(--bar-height);
+
+        min-width: 145px;
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
     }
 
 
@@ -573,19 +590,15 @@ const Editor = styled.main<{$headingVisible: boolean}>`
             display: none;
         }
     }
-    @media screen and (min-width: 1267px) {
-        --content-max-width: 900px;
-    }
-
-    @media screen and (min-width: 1680px) {
-        --content-max-width: 1100px;
-    }
 `;
 
 export const StarButton = styled.button`
     border-radius: 4px;
     border: 0;
-    padding: 12px 0 10px 0;
+    display: flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
     background: none;
     margin: 0 6px;
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
@@ -22,26 +22,66 @@ import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/pla
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {pluginUrl} from 'src/browser_routing';
 import {usePlaybook, useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {CompassIcon} from 'src/types/compass';
+
+import {FollowState} from './rhs_info';
+
+export const useFollow = (runID: string, followState: FollowState) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const {isFollowing, followers, setFollowers} = followState;
+    const currentUser = useSelector(getCurrentUser);
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(runID)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
+
+    const FollowingButton = () => {
+        if (isFollowing) {
+            return (
+                <UnfollowButton onClick={toggleFollow}>
+                    {formatMessage({defaultMessage: 'Following'})}
+                </UnfollowButton>
+            );
+        }
+
+        return (
+            <FollowButton onClick={toggleFollow}>
+                {formatMessage({defaultMessage: 'Follow'})}
+            </FollowButton>
+        );
+    };
+
+    return FollowingButton;
+};
 
 interface Props {
     run: PlaybookRun;
     runMetadata?: Metadata;
     editable: boolean;
     channel: Channel | undefined | null;
+    followState: FollowState;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(run.playbook_id);
+    const [playbook] = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
+    const FollowingButton = useFollow(run.id, followState);
 
     const setOwner = async (userID: string) => {
         try {
@@ -84,7 +124,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                 id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
-                onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
                 {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
@@ -122,7 +161,7 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                 <FollowersWrapper>
                     <FollowingButton/>
                     <Following
-                        userIds={followers}
+                        userIds={followState.followers}
                         maxUsers={4}
                     />
                 </FollowersWrapper>
@@ -138,14 +177,16 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                     setSelectedUser(null);
                 }}
             />}
-            {channel && runMetadata && editable && (
+            {channel && runMetadata && (
                 <Item
                     id='runinfo-channel'
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
-                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${channel.name}`)}
                 >
-                    <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
+                    <ItemLink
+                        to={`/${runMetadata.team_name}/channels/${channel.name}`}
+                        data-testid='runinfo-channel-link'
+                    >
                         <ItemContent >
                             {channel.display_name}
                             <OpenInNewIcon
@@ -199,51 +240,6 @@ const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChann
             onCancel={onHide}
         />
     );
-};
-
-const useFollowing = (runID: string, metadataFollowers: string[]) => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useEffect(() => {
-        setFollowers(metadataFollowers);
-        setIsFollowing(metadataFollowers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    const toggleFollow = () => {
-        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        action(runID)
-            .then(() => {
-                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
-                setIsFollowing(!isFollowing);
-                setFollowers(newFollowers);
-            })
-            .catch(() => {
-                setIsFollowing(isFollowing);
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
-            });
-    };
-
-    const FollowingButton = () => {
-        if (isFollowing) {
-            return (
-                <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
-                </UnfollowButton>
-            );
-        }
-
-        return (
-            <FollowButton onClick={toggleFollow}>
-                {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
-        );
-    };
-
-    return [FollowingButton, followers] as const;
 };
 
 interface ItemProps {

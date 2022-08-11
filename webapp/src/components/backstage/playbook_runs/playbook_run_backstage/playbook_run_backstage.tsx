@@ -12,6 +12,8 @@ import {mdiLightningBoltOutline} from '@mdi/js';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {BookOutlineIcon} from '@mattermost/compass-icons/components';
+
 import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 
 import CopyLink from 'src/components/widgets/copy_link';
@@ -41,7 +43,6 @@ import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
-import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 import {BadgeType} from 'src/components/backstage/status_badge';
@@ -180,7 +181,7 @@ const PlaybookLink = styled(Link)`
     }
 `;
 
-const SmallPlaybookIcon = styled(PlaybookIcon)`
+const SmallPlaybookIcon = styled(BookOutlineIcon)`
     height: 13px;
     width: auto;
     margin-top: 1px;
@@ -259,7 +260,7 @@ const PlaybookRunBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
-    const currentRun = useRun(match.params.playbookRunId);
+    const [currentRun] = useRun(match.params.playbookRunId);
 
     const [following, setFollowing] = useState<string[]>([]);
 

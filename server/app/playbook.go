@@ -380,6 +380,12 @@ type PlaybookStore interface {
 
 	// Get top playbooks for users
 	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
+
+	// AddPlaybookMember adds a user as a member to a playbook
+	AddPlaybookMember(id string, memberID string) error
+
+	// RemovePlaybookMember removes a user from a playbook
+	RemovePlaybookMember(id string, memberID string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.

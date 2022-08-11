@@ -172,7 +172,7 @@ describe('runs > run details page', () => {
                 editAndPublishRetro();
 
                 // # Switch to the run channel
-                cy.findByTestId('runinfo-channel').click();
+                cy.findByTestId('runinfo-channel-link').click();
 
                 // * Verify the modified retro text is posted
                 cy.getStyledComponent('CustomPostContent').should('exist').contains('Edited retrospective.');
