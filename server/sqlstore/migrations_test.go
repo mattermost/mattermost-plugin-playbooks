@@ -10,6 +10,65 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCompareMorphToLegacy(t *testing.T) {
+	migrationsMapping := []struct {
+		Name                 string
+		LegacyMigrationIndex int
+		MorphMigrationLimit  int
+	}{
+		{
+			Name:                 "0.1.0",
+			LegacyMigrationIndex: 0,
+			MorphMigrationLimit:  4,
+		},
+		{
+			Name:                 "0.3.0",
+			LegacyMigrationIndex: 2,
+			MorphMigrationLimit:  1,
+		},
+		{
+			Name:                 "0.4.0",
+			LegacyMigrationIndex: 3,
+			MorphMigrationLimit:  4,
+		},
+	}
+
+	for _, driverName := range driverNames {
+		// create database for morph migration
+		dbMorph := setupTestDB(t, driverName)
+		_, storeMorph := setupTables(t, dbMorph)
+
+		// create database for legacy migration
+		dbLegacy := setupTestDB(t, driverName)
+		_, storeLegacy := setupTables(t, dbLegacy)
+
+		engine, err := storeMorph.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		for _, migration := range migrationsMapping {
+			t.Run(fmt.Sprintf("check database schema: %s", migration.Name), func(t *testing.T) {
+				runMigrationUp(t, storeMorph, engine, migration.MorphMigrationLimit)
+				runLegacyMigration(t, storeLegacy, migration.LegacyMigrationIndex)
+
+				// compare table schemas
+				dbSchemaMorph, err := getDBSchemaInfo(storeMorph)
+				require.NoError(t, err)
+				dbSchemaLegacy, err := getDBSchemaInfo(storeLegacy)
+				require.NoError(t, err)
+				require.Equal(t, dbSchemaMorph, dbSchemaLegacy)
+
+				// compare indexes
+				dbIndexesMorph, err := getDBIndexesInfo(storeMorph)
+				require.NoError(t, err)
+				dbIndexesLegacy, err := getDBIndexesInfo(storeLegacy)
+				require.NoError(t, err)
+				require.Equal(t, dbIndexesMorph, dbIndexesLegacy)
+			})
+		}
+	}
+}
+
 func TestMigration_000005(t *testing.T) {
 	testData := []struct {
 		Name          string
@@ -145,6 +204,11 @@ func runMigrationDown(t *testing.T, store *SQLStore, engine *morph.Morph, limit 
 	applied, err := engine.ApplyDown(limit)
 	require.NoError(t, err)
 	require.Equal(t, applied, limit)
+}
+
+func runLegacyMigration(t *testing.T, store *SQLStore, index int) {
+	err := store.migrate(migrations[index])
+	require.NoError(t, err)
 }
 
 func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {

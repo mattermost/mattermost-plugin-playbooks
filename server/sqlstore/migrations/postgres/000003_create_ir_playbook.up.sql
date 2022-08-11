@@ -18,11 +18,3 @@ BEGIN
 	END IF;
 END
 $$;
-
-DO $$
-BEGIN
-	IF to_regclass ('IR_PlaybookMember_PlaybookID') IS NULL THEN
-		CREATE INDEX IR_PlaybookMember_PlaybookID ON IR_Playbook (ID);
-	END IF;
-END
-$$;

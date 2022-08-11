@@ -218,3 +218,81 @@ func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error
 
 	return len(results) > 0, err
 }
+
+type TableDescription struct {
+	TABLE_NAME               string
+	COLUMN_NAME              string
+	DATA_TYPE                string
+	IS_NULLABLE              string
+	COLUMN_KEY               string
+	COLUMN_DEFAULT           *string
+	EXTRA                    string
+	ORDINAL_POSITION         string
+	CHARACTER_MAXIMUM_LENGTH *string
+}
+
+func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
+	var results []TableDescription
+	var err error
+
+	if store.db.DriverName() == model.DatabaseDriverMysql {
+		err = store.db.Select(&results, `
+			SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA, ORDINAL_POSITION, CHARACTER_MAXIMUM_LENGTH	
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME LIKE 'IR_%'
+			AND TABLE_NAME != 'IR_db_migrations'
+			ORDER BY TABLE_NAME ASC, ORDINAL_POSITION ASC
+		`)
+	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
+		err = store.db.Select(&results, `
+			SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ORDINAL_POSITION
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE table_schema = 'public'
+			AND TABLE_NAME LIKE 'ir_%'
+			AND TABLE_NAME != 'ir_db_migrations'
+			ORDER BY TABLE_NAME ASC, ORDINAL_POSITION ASC
+		`)
+	}
+
+	return results, err
+}
+
+type IndexInfo struct {
+	// Postgres fields
+	TABLENAME string
+	INDEXNAME string
+	INDEXDEF  string
+
+	// MySQL fields
+	TABLE_NAME  string
+	INDEX_NAME  string
+	COLUMN_NAME string
+}
+
+func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
+	var results []IndexInfo
+	var err error
+
+	if store.db.DriverName() == model.DatabaseDriverMysql {
+		err = store.db.Select(&results, `
+			SELECT TABLE_NAME, INDEX_NAME, COLUMN_NAME
+			FROM INFORMATION_SCHEMA.STATISTICS 
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME LIKE 'ir_%'
+			AND TABLE_NAME != 'ir_db_migrations'
+			ORDER BY TABLE_NAME ASC, COLUMN_NAME ASC, INDEX_NAME ASC;
+		`)
+	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
+		err = store.db.Select(&results, `
+			SELECT TABLENAME, INDEXNAME, INDEXDEF
+			FROM pg_indexes
+			WHERE SCHEMANAME = 'public'
+			AND TABLENAME LIKE 'ir_%'
+			AND TABLENAME != 'ir_db_migrations'
+			ORDER BY TABLENAME ASC, INDEXNAME ASC;
+		`)
+	}
+
+	return results, err
+}
