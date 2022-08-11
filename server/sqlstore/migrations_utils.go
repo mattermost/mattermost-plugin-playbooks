@@ -219,7 +219,7 @@ func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error
 	return len(results) > 0, err
 }
 
-type TableDescription struct {
+type TableInfo struct {
 	TableName              string
 	ColumnName             string
 	DataType               string
@@ -230,8 +230,8 @@ type TableDescription struct {
 	CharacterMaximumLength *string
 }
 
-func getDBSchemaInfo(store *SQLStore) ([]TableDescription, error) {
-	var results []TableDescription
+func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
+	var results []TableInfo
 	var err error
 
 	if store.db.DriverName() == model.DatabaseDriverMysql {

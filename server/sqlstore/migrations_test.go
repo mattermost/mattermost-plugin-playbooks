@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCompareMorphToLegacy(t *testing.T) {
+func TestDBSchema(t *testing.T) {
 	migrationsMapping := []struct {
 		Name                 string
 		LegacyMigrationIndex int
@@ -47,7 +47,7 @@ func TestCompareMorphToLegacy(t *testing.T) {
 		defer engine.Close()
 
 		for _, migration := range migrationsMapping {
-			t.Run(fmt.Sprintf("check database schema: %s", migration.Name), func(t *testing.T) {
+			t.Run(fmt.Sprintf("migrations up: %s", migration.Name), func(t *testing.T) {
 				runMigrationUp(t, storeMorph, engine, migration.MorphMigrationLimit)
 				runLegacyMigration(t, storeLegacy, migration.LegacyMigrationIndex)
 
