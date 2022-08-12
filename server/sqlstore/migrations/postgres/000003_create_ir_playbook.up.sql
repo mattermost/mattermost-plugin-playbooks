@@ -11,10 +11,4 @@ CREATE TABLE IF NOT EXISTS IR_Playbook (
     NumSteps BIGINT NOT NULL DEFAULT 0
 );
 
-DO $$
-BEGIN
-	IF to_regclass ('IR_Playbook_TeamID') IS NULL THEN
-		CREATE INDEX IR_Playbook_TeamID ON IR_Playbook (TeamID);
-	END IF;
-END
-$$;
+CREATE INDEX IF NOT EXISTS IR_Playbook_TeamID ON IR_Playbook (TeamID);
