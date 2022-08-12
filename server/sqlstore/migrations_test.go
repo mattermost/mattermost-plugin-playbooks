@@ -36,8 +36,8 @@ func TestDBSchema(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		tableInfoList := getLegacyMigrationsTableInfoList(t, driverName, migrationsMapping)
-		indexInfoList := getLegacyMigrationsIndexInfoList(t, driverName, migrationsMapping)
+		tableInfoList := tableInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
+		indexInfoList := indexInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 
 		// create database for morph migration
 		db := setupTestDB(t, driverName)
@@ -232,9 +232,9 @@ func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 	return id, err
 }
 
-// getLegacyMigrationsTableInfoList runs legacy migrations, extracts database schema after each migration
+// tableInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema after each migration
 // and returns the list. The first and last elements in the list describe DB before and after running all migrations.
-func getLegacyMigrationsTableInfoList(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
+func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
 	// create database for legacy migration
 	db := setupTestDB(t, driverName)
 	_, store := setupTables(t, db)
@@ -255,9 +255,9 @@ func getLegacyMigrationsTableInfoList(t *testing.T, driverName string, migration
 	return list
 }
 
-// getLegacyMigrationsIndexInfoList runs legacy migrations, extracts database indexes info after each migration
+// indexInfoAfterEachLegacyMigration runs legacy migrations, extracts database indexes info after each migration
 // and returns the list. The first and last elements in the list describe DB before and after running all migrations.
-func getLegacyMigrationsIndexInfoList(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]IndexInfo {
+func indexInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]IndexInfo {
 	// create database for legacy migration
 	db := setupTestDB(t, driverName)
 	_, store := setupTables(t, db)
