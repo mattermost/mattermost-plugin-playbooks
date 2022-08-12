@@ -489,7 +489,7 @@ export function useOpenCloudModal() {
                 dialogType: PurchaseModal,
                 dialogProps: {
                     callerCTA: 'playbooks > ',
-                }
+                },
             }),
         );
     };
