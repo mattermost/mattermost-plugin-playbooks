@@ -12,4 +12,3 @@ CREATE TABLE IF NOT EXISTS IR_Playbook (
 );
 
 CREATE INDEX IF NOT EXISTS IR_Playbook_TeamID ON IR_Playbook (TeamID);
-CREATE INDEX IF NOT EXISTS IR_PlaybookMember_PlaybookID ON IR_Playbook (ID);

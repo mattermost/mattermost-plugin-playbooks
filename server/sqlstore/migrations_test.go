@@ -10,6 +10,77 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type MigrationMapping struct {
+	Name                 string
+	LegacyMigrationIndex int
+	MorphMigrationLimit  int
+}
+
+func TestDBSchema(t *testing.T) {
+	migrationsMapping := []MigrationMapping{
+		{
+			Name:                 "0.1.0",
+			LegacyMigrationIndex: 0,
+			MorphMigrationLimit:  4,
+		},
+		{
+			Name:                 "0.3.0",
+			LegacyMigrationIndex: 2,
+			MorphMigrationLimit:  1,
+		},
+		{
+			Name:                 "0.4.0",
+			LegacyMigrationIndex: 3,
+			MorphMigrationLimit:  4,
+		},
+	}
+
+	for _, driverName := range driverNames {
+		tableInfoList := tableInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
+		indexInfoList := indexInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
+
+		// create database for morph migration
+		db := setupTestDB(t, driverName)
+		_, store := setupTables(t, db)
+
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		for i, migration := range migrationsMapping {
+			t.Run(fmt.Sprintf("validate migration up: %s", migration.Name), func(t *testing.T) {
+				runMigrationUp(t, store, engine, migration.MorphMigrationLimit)
+				// compare table schemas
+				dbSchemaMorph, err := getDBSchemaInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, dbSchemaMorph, tableInfoList[i+1])
+
+				// compare indexes
+				dbIndexesMorph, err := getDBIndexesInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, dbIndexesMorph, indexInfoList[i+1])
+			})
+		}
+
+		for i := range migrationsMapping {
+			migrationIndex := len(migrationsMapping) - i - 1
+			migration := migrationsMapping[migrationIndex]
+			t.Run(fmt.Sprintf("validate migration down: %s", migration.Name), func(t *testing.T) {
+				runMigrationDown(t, store, engine, migration.MorphMigrationLimit)
+				// compare table schemas
+				dbSchemaMorph, err := getDBSchemaInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, dbSchemaMorph, tableInfoList[migrationIndex])
+
+				// compare indexes
+				dbIndexesMorph, err := getDBIndexesInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, dbIndexesMorph, indexInfoList[migrationIndex])
+			})
+		}
+	}
+}
+
 func TestMigration_000005(t *testing.T) {
 	testData := []struct {
 		Name          string
@@ -147,6 +218,11 @@ func runMigrationDown(t *testing.T, store *SQLStore, engine *morph.Morph, limit 
 	require.Equal(t, applied, limit)
 }
 
+func runLegacyMigration(t *testing.T, store *SQLStore, index int) {
+	err := store.migrate(migrations[index])
+	require.NoError(t, err)
+}
+
 func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 	id := model.NewId()
 	_, err := sqlStore.execBuilder(sqlStore.db, sq.
@@ -154,6 +230,52 @@ func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 		SetMap(run))
 
 	return id, err
+}
+
+// tableInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema after each migration
+// and returns the list. The first and last elements in the list describe DB before and after running all migrations.
+func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
+	// create database for legacy migration
+	db := setupTestDB(t, driverName)
+	_, store := setupTables(t, db)
+
+	list := make([][]TableInfo, len(migrationsToRun)+1)
+	schema, err := getDBSchemaInfo(store)
+	require.NoError(t, err)
+	list[0] = schema
+
+	for i, mm := range migrationsToRun {
+		runLegacyMigration(t, store, mm.LegacyMigrationIndex)
+
+		schema, err = getDBSchemaInfo(store)
+		require.NoError(t, err)
+		list[i+1] = schema
+	}
+
+	return list
+}
+
+// indexInfoAfterEachLegacyMigration runs legacy migrations, extracts database indexes info after each migration
+// and returns the list. The first and last elements in the list describe DB before and after running all migrations.
+func indexInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]IndexInfo {
+	// create database for legacy migration
+	db := setupTestDB(t, driverName)
+	_, store := setupTables(t, db)
+
+	list := make([][]IndexInfo, len(migrationsToRun)+1)
+	indexes, err := getDBIndexesInfo(store)
+	require.NoError(t, err)
+	list[0] = indexes
+
+	for i, mm := range migrationsToRun {
+		runLegacyMigration(t, store, mm.LegacyMigrationIndex)
+
+		indexes, err = getDBIndexesInfo(store)
+		require.NoError(t, err)
+		list[i+1] = indexes
+	}
+
+	return list
 }
 
 type RunMapBuilder struct {
