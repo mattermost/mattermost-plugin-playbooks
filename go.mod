@@ -19,12 +19,12 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/graph-gophers/graphql-go v1.4.0
-	github.com/isacikgoz/morph v0.0.0-20220406131225-b96d2fb806f1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.5
 	github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20220512052723-ea98f9f4a9dc
+	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
@@ -116,7 +116,6 @@ require (
 	github.com/mattermost/gziphandler v0.0.1 // indirect
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d // indirect
 	github.com/mattermost/logr/v2 v2.0.15 // indirect
-	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8 // indirect
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0 // indirect
 	github.com/mattermost/squirrel v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
