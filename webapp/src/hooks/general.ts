@@ -488,7 +488,7 @@ export function useOpenCloudModal() {
                 modalId: ModalIdentifiers.CLOUD_PURCHASE,
                 dialogType: PurchaseModal,
                 dialogProps: {
-                    callerCTA: 'playbooks > ',
+                    callerCTA: 'playbooks',
                 },
             }),
         );
