@@ -21,27 +21,32 @@ func TestDBSchema(t *testing.T) {
 		{
 			Name:                 "0.0.0",
 			LegacyMigrationIndex: 0,
-			MorphMigrationLimit:  4,
+			MorphMigrationLimit:  4, // 000001 <> 000004
 		},
 		{
 			Name:                 "0.2.0",
 			LegacyMigrationIndex: 2,
-			MorphMigrationLimit:  1,
+			MorphMigrationLimit:  1, // 000005
 		},
 		{
 			Name:                 "0.3.0",
 			LegacyMigrationIndex: 3,
-			MorphMigrationLimit:  4,
+			MorphMigrationLimit:  4, // 000006 <> 000009
 		},
 		{
 			Name:                 "0.4.0",
 			LegacyMigrationIndex: 4,
-			MorphMigrationLimit:  4,
+			MorphMigrationLimit:  4, // 000010 <> 000013
 		},
 		{
 			Name:                 "0.5.0",
 			LegacyMigrationIndex: 5,
-			MorphMigrationLimit:  2,
+			MorphMigrationLimit:  2, // 000014 <> 000015
+		},
+		{
+			Name:                 "0.6.0",
+			LegacyMigrationIndex: 6,
+			MorphMigrationLimit:  1, // 000016
 		},
 	}
 
