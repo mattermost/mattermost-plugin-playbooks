@@ -158,8 +158,9 @@ commands:
           no_output_timeout: 30m
           command: |
             cd tests-e2e
-            circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
-            npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
+            SPECS=$(circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings | tr '\n' ',')
+            SPECS=${SPECS::-1}
+            npm run test -- --spec "${SPECS}"
       - *save_cypress_cache
       - store_test_results:
           path: tests-e2e/cypress/results/junit

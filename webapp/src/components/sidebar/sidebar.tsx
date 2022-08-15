@@ -15,7 +15,7 @@ import Group from './group';
 
 export interface GroupItem {
     id?: string;
-    icon: React.ReactNode;
+    icon: string;
     itemMenu?: React.ReactNode;
     display_name: string;
     className: string;
@@ -57,10 +57,9 @@ const Sidebar = (props: SidebarProps) => {
                         <Tooltip id='team-name__tooltip'>{team.description}</Tooltip>
                     ) : <></>}
                 >
-                    <SidebarHeading>
-                        <span className='title'>{team.display_name}</span>
-                        <i className='icon icon-chevron-down'/>
-                    </SidebarHeading>
+                    <TeamName>
+                        {team.display_name}
+                    </TeamName>
                 </OverlayTrigger>
                 {props.headerDropdown}
             </Header>
@@ -113,7 +112,7 @@ const Header = styled.div`
     margin: 0px;
 `;
 
-const SidebarHeading = styled.h1`
+const TeamName = styled.h1`
     color: var(--sidebar-header-text-color);
     cursor: pointer;
     display: flex;
