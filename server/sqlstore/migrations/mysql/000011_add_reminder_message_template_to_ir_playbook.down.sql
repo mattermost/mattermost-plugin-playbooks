@@ -4,7 +4,7 @@ SET @preparedStatement = (SELECT IF(
         WHERE table_name = 'IR_Playbook'
         AND table_schema = DATABASE()
         AND column_name = 'ReminderMessageTemplate'
-    ) > 0,
+    ),
     'ALTER TABLE IR_Playbook DROP COLUMN ReminderMessageTemplate;',
     'SELECT 1;'
 ));

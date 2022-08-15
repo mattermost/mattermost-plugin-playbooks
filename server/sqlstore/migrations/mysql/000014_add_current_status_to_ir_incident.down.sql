@@ -1,11 +1,11 @@
 SET @preparedStatement = (SELECT IF(
     EXISTS(
         SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE table_name = 'IR_Playbook'
+        WHERE table_name = 'IR_Incident'
         AND table_schema = DATABASE()
-        AND column_name = 'ReminderTimerDefaultSeconds'
+        AND column_name = 'CurrentStatus'
     ),
-    'ALTER TABLE IR_Playbook DROP COLUMN ReminderTimerDefaultSeconds;',
+    'ALTER TABLE IR_Incident DROP COLUMN CurrentStatus;',
     'SELECT 1;'
 ));
 
