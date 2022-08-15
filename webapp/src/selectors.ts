@@ -23,7 +23,7 @@ import {
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
+import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';

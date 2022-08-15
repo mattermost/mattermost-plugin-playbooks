@@ -592,9 +592,7 @@ export const requestTrialLicense = async (users: number, action: string) => {
     trackRequestTrialLicense(action);
 
     try {
-        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
-            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
-        });
+        const response = await Client4.requestTrialLicense({users, terms_accepted: true, receive_emails_accepted: true});
         return {data: response};
     } catch (e) {
         return {error: e.message};

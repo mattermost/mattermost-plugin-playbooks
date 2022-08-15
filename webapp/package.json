@@ -101,7 +101,9 @@
   "dependencies": {
     "@apollo/client": "3.5.10",
     "@floating-ui/react-dom-interactions": "0.6.3",
+    "@mattermost/client": "7.1.0",
     "@mattermost/compass-icons": "0.1.24",
+    "@mattermost/types": "7.1.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",
     "@tippyjs/react": "4.2.6",
@@ -114,7 +116,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "2.3.1",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#c7ef961f32c39db8a41fa6860a2fcc9af2cc5316",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#c00fde021889aaddfcd3afa5ce18254756fc4185",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
@@ -150,9 +152,7 @@
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
       "^bundle-loader\\?lazy\\!(.*)$": "$1",
       "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src",
-      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1",
-      "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//types/src/$1",
-      "^@mattermost/client(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//client/src/$1"
+      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1"
     },
     "moduleDirectories": [
       "<rootDir>",
