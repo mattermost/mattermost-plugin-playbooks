@@ -81,7 +81,6 @@ const ParticipantsNumber = styled.div`
     line-height: 16px;
     text-transform: uppercase;
     margin-top: 16px;
-    margin-left: 22px;
 `;
 
 const SearchSection = styled.div`
