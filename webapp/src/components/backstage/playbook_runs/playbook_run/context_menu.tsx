@@ -211,8 +211,10 @@ const Title = styled.h1`
     font-size: 16px;
     line-height: 24px;
     margin: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
     white-space: nowrap;
-    `;
+`;
 
 export const TitleButton = styled.div<{isActive: boolean}>`
     padding: 2px 2px 2px 6px;
