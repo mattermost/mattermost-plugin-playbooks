@@ -3,9 +3,9 @@ SET @preparedStatement = (SELECT IF(
         SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
         WHERE table_name = 'IR_Incident'
         AND table_schema = DATABASE()
-        AND column_name = 'BroadcastChannelID'
+        AND column_name = 'PreviousReminder'
     ),
-    'ALTER TABLE IR_Incident DROP COLUMN BroadcastChannelID;',
+    'ALTER TABLE IR_Incident DROP COLUMN PreviousReminder;',
     'SELECT 1;'
 ));
 
