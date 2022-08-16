@@ -42,6 +42,7 @@ const RHSInfo = (props: Props) => {
                 editable={editable}
                 channel={props.channel}
                 followState={props.followState}
+                playbook={props.playbook}
             />
             {props.run.retrospective_enabled ? (
                 <RHSInfoMetrics
