@@ -394,7 +394,7 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
  * @param id identifier of the run to fetch metadata
  * @returns data and fetchState in a array tuple
  */
-export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = []) {
+export function useRunMetadata(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunMetadata, noopSelector, deps);
 }
 
@@ -404,7 +404,7 @@ export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = [])
  * @param deps Array of additional deps whose change will invoke again fetch
  * @returns data and fetchState in a array tuple
  */
-export function useRunStatusUpdates(id: PlaybookRun['id'], deps: DependencyList = []) {
+export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
 }
 
