@@ -1156,7 +1156,7 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 		GroupBy("p.ID").
 		OrderBy("NumRuns desc").
 		Offset(uint64(offset)).
-		Limit(uint64(limit))
+		Limit(uint64(limit + 1))
 
 	topPlaybooksList := make([]*app.PlaybookInsight, 0)
 	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
