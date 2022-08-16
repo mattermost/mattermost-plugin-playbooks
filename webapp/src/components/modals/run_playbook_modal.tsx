@@ -126,7 +126,7 @@ const RunPlaybookModal = ({
                     value={runName}
                     onChange={(e) => setRunName(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
+                        if (e.key === 'Enter') {
                             onSubmit();
                         }
                     }}
