@@ -688,5 +688,7 @@
     "QegBKq": "Deelnemen aan Playbook",
     "Q4sutg": "Bevestig verlaten{isFollowing, select, true { en niet langer volgen} other{}}",
     "P6PLpi": "Deelnemen",
-    "FgydNe": "Bekijken"
+    "FgydNe": "Bekijken",
+    "iEtImk": "Wanneer je {isFollowing, select, true { en een uitvoering niet langer volgt} other { een uitvoering}} verlaat, wordt deze verwijderd uit de linkerzijbalk. Je kan deze terugvinden door alle uitvoeringen te bekijken.",
+    "cnfVhV": "De uitvoering verlaten {isFollowing, select, true { en niet langer volgen } other {}}"
 }
