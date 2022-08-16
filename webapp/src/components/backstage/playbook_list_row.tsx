@@ -185,6 +185,7 @@ const PlaybookListRow = (props: Props) => {
                             run();
                         }}
                         disabled={!enableRunPlaybook}
+                        title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
                         css={`
                             height: 32px;
