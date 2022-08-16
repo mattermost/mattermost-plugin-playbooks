@@ -13,6 +13,6 @@ PREPARE addColumnIfNotExists FROM @preparedStatement;
 EXECUTE addColumnIfNotExists;
 DEALLOCATE PREPARE addColumnIfNotExists;
 
-UPDATE IR_Playbook 
+UPDATE IR_Incident 
 SET ReminderMessageTemplate = ''
 WHERE ReminderMessageTemplate IS NULL
