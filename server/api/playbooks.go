@@ -621,7 +621,11 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
 	teamID := params.Get("team_id")
-	if teamID != "" && !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		return
+	}
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
@@ -671,10 +675,13 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
-	if teamID != "" && !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
 		return
 	}
-
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+		return
+	}
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
