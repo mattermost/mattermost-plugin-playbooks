@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"strings"
 
@@ -1170,22 +1169,15 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 	return topPlaybooks, nil
 }
 
-func BoardInsightsFromJSON(data io.Reader) []app.PlaybookInsight {
-	var playbookInsights []app.PlaybookInsight
-	_ = json.NewDecoder(data).Decode(&playbookInsights)
-	return playbookInsights
-}
-
-// GetTopBoardInsightsListWithPagination adds a rank to each item in the given list of PlaybooksInsight and checks if there is
-// another page that can be fetched based on the given limit and offset. The given list of PlaybooksInsight is assumed to be
+// GetTopPlaybooksInsightsListWithPagination returns a page given a list of PlaybooksInsight assumed to be
 // sorted by Runs(score). Returns a PlaybooksInsightsList.
-func GetTopPlaybooksInsightsListWithPagination(boards []*app.PlaybookInsight, limit int) *app.PlaybooksInsightsList {
+func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight, limit int) *app.PlaybooksInsightsList {
 	// Add pagination support
 	var hasNext bool
-	if (limit != 0) && (len(boards) == limit+1) {
+	if (limit != 0) && (len(playbooks) == limit+1) {
 		hasNext = true
-		boards = boards[:len(boards)-1]
+		playbooks = playbooks[:len(playbooks)-1]
 	}
 
-	return &app.PlaybooksInsightsList{InsightsListData: model.InsightsListData{HasNext: hasNext}, Items: boards}
+	return &app.PlaybooksInsightsList{InsightsListData: model.InsightsListData{HasNext: hasNext}, Items: playbooks}
 }

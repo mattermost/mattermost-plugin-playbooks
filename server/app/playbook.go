@@ -536,13 +536,13 @@ func ProcessSignalAnyKeywords(keywords []string) []string {
 
 // models for playbooks-insights
 
-// BoardInsightsList is a response type with pagination support.
+// PlaybooksInsightsList is a response type with pagination support.
 type PlaybooksInsightsList struct {
 	model.InsightsListData
 	Items []*PlaybookInsight `json:"items"`
 }
 
-// BoardInsight gives insight into activities in a Board
+// PlaybookInsight gives insight into activities related to a playbook
 
 type PlaybookInsight struct {
 	// ID of the playbook
@@ -557,7 +557,7 @@ type PlaybookInsight struct {
 	// required: true
 	Title string `json:"title"`
 
-	// Title of the board
+	// Time the playbook was last run.
 	// required: false
 	LastRunAt int64 `json:"last_run_at"`
 }
