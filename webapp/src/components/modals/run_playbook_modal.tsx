@@ -97,7 +97,7 @@ const RunPlaybookModal = ({
                             <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
                         </PlaybookNameTitle>
                         <PlaybookName>
-                            {runName}
+                            {playbook.title}
                         </PlaybookName>
                     </PlaybookNameAndTitle>
                     <PlaybookOwnerAndTitle>
