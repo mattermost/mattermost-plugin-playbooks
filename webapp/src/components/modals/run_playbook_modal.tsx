@@ -36,9 +36,6 @@ type Props = {
     teamName: string
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const owner = 'Owner';
-const playbookRunDescription = 'A channel will be created with this name';
-
 const RunPlaybookModal = ({
     playbookId,
     description,
@@ -97,7 +94,7 @@ const RunPlaybookModal = ({
                             <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
                         </PlaybookNameTitle>
                         <PlaybookName>
-                            {playbook.title}
+                            {playbook?.title}
                         </PlaybookName>
                     </PlaybookNameAndTitle>
                     <PlaybookOwnerAndTitle>
