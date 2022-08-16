@@ -12,10 +12,14 @@ import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
+import {General} from 'mattermost-redux/constants';
+
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -185,8 +189,9 @@ export default class Plugin {
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
+        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type !== General.GM_CHANNEL && getCurrentChannel(state).type !== General.DM_CHANNEL;
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()));
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);

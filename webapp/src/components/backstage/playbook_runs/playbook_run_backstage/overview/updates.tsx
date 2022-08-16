@@ -76,7 +76,7 @@ type PostContentProps = {
 }
 
 const PostContent = (props: PostContentProps) => {
-    const post = usePost(props.postId);
+    const [post] = usePost(props.postId);
 
     if (!post) {
         return null;

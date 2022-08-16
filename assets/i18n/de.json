@@ -92,5 +92,9 @@
     {
         "id": "app.user.run.request_get_involved",
         "translation": "@here - @{{.Name}} möchten an diesem Durchlauf teilnehmen. Um sie als Teilnehmer hinzuzufügen, füge sie bitte diesem Kanal hinzu.\n"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{{.Name}} hat eine Retrospektive veröffentlicht\n[Ganze Retrospektive ansehen]({{.URL}})\n"
     }
 ]

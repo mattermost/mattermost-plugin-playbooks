@@ -74,7 +74,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/status-updates", withLogger(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withLogger(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-get-involved", withLogger(handler.requestGetInvolved)).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/leave", withLogger(handler.leave)).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -91,6 +90,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withLogger(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withLogger(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", withLogger(handler.updateRunActions)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/leave", withLogger(handler.leave)).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withLogger(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -906,12 +906,14 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request, logge
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not participant", nil)
+	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "leave failed", err)
 		return
 	}
 
-	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+	// Don't worry if the user could not be previously a follower
+	// Unfollow implementation is defensive about this.
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
 		h.HandleError(w, logger, err)
 		return
 	}

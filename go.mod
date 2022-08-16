@@ -8,8 +8,6 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
-replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220512052723-ea98f9f4a9dc
-
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/blang/semver v3.5.1+incompatible
@@ -17,12 +15,12 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/graph-gophers/graphql-go v1.4.0
-	github.com/isacikgoz/morph v0.0.0-20220406131225-b96d2fb806f1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
-	github.com/mattermost/mattermost-plugin-api v0.0.29-0.20220801143717-73008cfda2fb
+	github.com/mattermost/mattermost-plugin-api v0.0.29
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost-server/v6 v6.3.0
+	github.com/mattermost/mattermost-server/v6 v6.0.0-20220728170913-b9d062ddfa66
+	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
@@ -38,32 +36,32 @@ require (
 	github.com/JalfResi/justext v0.0.0-20170829062021-c0282dea7198 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
-	github.com/RoaringBitmap/roaring v0.9.4 // indirect
+	github.com/RoaringBitmap/roaring v1.2.1 // indirect
 	github.com/advancedlogic/GoOse v0.0.0-20210820140952-9d5822d4a625 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1 // indirect
-	github.com/aws/aws-sdk-go v1.44.9 // indirect
+	github.com/aws/aws-sdk-go v1.44.34 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.2 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blevesearch/bleve/v2 v2.3.2 // indirect
-	github.com/blevesearch/bleve_index_api v1.0.1 // indirect
+	github.com/blevesearch/bleve_index_api v1.0.2 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
-	github.com/blevesearch/mmap-go v1.0.3 // indirect
+	github.com/blevesearch/mmap-go v1.0.4 // indirect
 	github.com/blevesearch/scorch_segment_api/v2 v2.1.0 // indirect
 	github.com/blevesearch/segment v0.9.0 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
 	github.com/blevesearch/upsidedown_store_api v1.0.1 // indirect
-	github.com/blevesearch/vellum v1.0.7 // indirect
-	github.com/blevesearch/zapx/v11 v11.3.3 // indirect
-	github.com/blevesearch/zapx/v12 v12.3.3 // indirect
-	github.com/blevesearch/zapx/v13 v13.3.3 // indirect
-	github.com/blevesearch/zapx/v14 v14.3.3 // indirect
-	github.com/blevesearch/zapx/v15 v15.3.3 // indirect
+	github.com/blevesearch/vellum v1.0.8 // indirect
+	github.com/blevesearch/zapx/v11 v11.3.4 // indirect
+	github.com/blevesearch/zapx/v12 v12.3.4 // indirect
+	github.com/blevesearch/zapx/v13 v13.3.4 // indirect
+	github.com/blevesearch/zapx/v14 v14.3.4 // indirect
+	github.com/blevesearch/zapx/v15 v15.3.4 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
@@ -72,7 +70,7 @@ require (
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/dyatlov/go-opengraph v0.0.0-20210112100619-dae8665a5b09 // indirect
+	github.com/dyatlov/go-opengraph/opengraph v0.0.0-20220524092352-606d7b1e5f8a // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fatih/set v0.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
@@ -114,7 +112,6 @@ require (
 	github.com/mattermost/gziphandler v0.0.1 // indirect
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d // indirect
 	github.com/mattermost/logr/v2 v2.0.15 // indirect
-	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8 // indirect
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0 // indirect
 	github.com/mattermost/squirrel v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -176,10 +173,10 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
+	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/net v0.0.0-20220614195744-fb05da6f9022 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220614162138-6c1b26c55098 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

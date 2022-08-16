@@ -1008,6 +1008,14 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		playbookRun.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs, ",")
 	}
 
+	// force false bradcast-on-status-update flags if they have no destinations
+	if len(playbookRun.WebhookOnStatusUpdateURLs) == 0 {
+		playbookRun.StatusUpdateBroadcastWebhooksEnabled = false
+	}
+	if len(playbookRun.BroadcastChannelIDs) == 0 {
+		playbookRun.StatusUpdateBroadcastChannelsEnabled = false
+	}
+
 	return &playbookRun, nil
 }
 

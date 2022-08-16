@@ -748,6 +748,40 @@ func (p *playbookStore) GetNumMetrics(playbookID string) (int64, error) {
 	return count, nil
 }
 
+func (p *playbookStore) AddPlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_PlaybookMember").
+		Columns("PlaybookID", "MemberID", "Roles").
+		Values(id, memberID, app.PlaybookRoleMember))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) RemovePlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Delete("IR_PlaybookMember").
+		Where(sq.Eq{"PlaybookID": id}).
+		Where(sq.Eq{"MemberID": memberID}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
 // replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list

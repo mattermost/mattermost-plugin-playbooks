@@ -2783,7 +2783,7 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	return nil
 }
 
-// Leave removes user from the run's participants list
+// Leave removes user from the run's participants&followers lists
 func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
