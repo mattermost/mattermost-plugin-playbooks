@@ -1099,7 +1099,17 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 
 // insights - store manager functions
 
-func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*app.PlaybooksInsightsList, error) {
+func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+
+	permissionsAndFilter := sq.Expr(`(
+		EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
+		OR NOT EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID)
+	)`, userID)
 	offset := opts.Page * opts.PerPage
 	limit := opts.PerPage
 	query := p.queryBuilder.
@@ -1114,17 +1124,15 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 		Where(sq.And{
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
 			sq.Or{
-				sq.Eq{"p.ID": accessiblePlaybooks},
-				sq.And{
-					sq.Eq{"p.Public": true},
-					sq.Eq{"p.TeamID": teamID},
-				},
+				permissionsAndFilter,
+				sq.Eq{"p.Public": true},
 			},
+			sq.Eq{"p.TeamID": teamID},
 		}).
 		GroupBy("p.ID").
 		OrderBy("NumRuns desc").
 		Offset(uint64(offset)).
-		Limit(uint64(limit))
+		Limit(uint64(limit + 1))
 
 	topPlaybooksList := make([]*app.PlaybookInsight, 0)
 	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
@@ -1137,7 +1145,17 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 	return topPlaybooks, nil
 }
 
-func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*app.PlaybooksInsightsList, error) {
+func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+
+	permissionsAndFilter := sq.Expr(`(
+		EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
+		OR NOT EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID)
+	)`, userID)
 	offset := opts.Page * opts.PerPage
 	limit := opts.PerPage
 	query := p.queryBuilder.
@@ -1150,7 +1168,8 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 		From("IR_Playbook as p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
 		Where(sq.And{
-			sq.Eq{"p.ID": accessiblePlaybooks},
+			permissionsAndFilter,
+			sq.Eq{"p.TeamID": teamID},
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
 		}).
 		GroupBy("p.ID").
@@ -1179,5 +1198,5 @@ func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight,
 		playbooks = playbooks[:len(playbooks)-1]
 	}
 
-	return &app.PlaybooksInsightsList{InsightsListData: model.InsightsListData{HasNext: hasNext}, Items: playbooks}
+	return &app.PlaybooksInsightsList{HasNext: hasNext, Items: playbooks}
 }

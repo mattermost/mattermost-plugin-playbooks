@@ -194,11 +194,8 @@ func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *mo
 	if !permissionFlag {
 		return nil, errors.New("User cannot access playbooks insights")
 	}
-	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
-	}
-	return s.store.GetTopPlaybooksForTeam(teamID, userID, opts, accessiblePlaybooks)
+
+	return s.store.GetTopPlaybooksForTeam(teamID, userID, opts)
 }
 
 // get top playbooks for users
@@ -210,11 +207,8 @@ func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *mo
 	if !permissionFlag {
 		return nil, errors.New("User cannot access playbooks insights")
 	}
-	accessiblePlaybooks, err := s.store.GetPlaybookIDsForUser(userID, teamID)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get playbook ids for user")
-	}
-	return s.store.GetTopPlaybooksForUser(teamID, userID, opts, accessiblePlaybooks)
+
+	return s.store.GetTopPlaybooksForUser(teamID, userID, opts)
 }
 
 func licenseAndGuestCheck(s *playbookService, userID string) (bool, error) {

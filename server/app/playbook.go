@@ -376,10 +376,10 @@ type PlaybookStore interface {
 	DeleteMetric(id string) error
 
 	// Get top playbooks for teams
-	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// Get top playbooks for users
-	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts, accessiblePlaybooks []string) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// AddPlaybookMember adds a user as a member to a playbook
 	AddPlaybookMember(id string, memberID string) error
@@ -538,8 +538,8 @@ func ProcessSignalAnyKeywords(keywords []string) []string {
 
 // PlaybooksInsightsList is a response type with pagination support.
 type PlaybooksInsightsList struct {
-	model.InsightsListData
-	Items []*PlaybookInsight `json:"items"`
+	HasNext bool               `json:"has_next"`
+	Items   []*PlaybookInsight `json:"items"`
 }
 
 // PlaybookInsight gives insight into activities related to a playbook
