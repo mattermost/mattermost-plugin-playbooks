@@ -1,3 +1,11 @@
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }
+
+mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+	addRunParticipants(runID: $runID, userIDs: $userIDs)
+}
+
+mutation RemoveRunParticipant($runID: String!, $userID: String!) {
+	removeRunParticipant(runID: $runID, userID: $userID)
+}

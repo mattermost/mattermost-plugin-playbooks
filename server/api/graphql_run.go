@@ -32,3 +32,59 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 
 	return isFavorite, nil
 }
+
+// -----------------------------------------------------------------------------
+// Run mutations
+// -----------------------------------------------------------------------------
+
+func (r *RootResolver) AddRunParticipants(ctx context.Context, args struct {
+	RunID   string
+	UserIDs []string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunView(userID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to modify participants without permissions")
+	}
+
+	if err := c.playbookRunService.AddRunParticipants(args.RunID, args.UserIDs); err != nil {
+		return "", errors.Wrap(err, "failed to add participant from run")
+	}
+
+	return "", nil
+}
+
+func (r *RootResolver) RemoveRunParticipant(ctx context.Context, args struct {
+	RunID  string
+	UserID string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunView(userID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to modify participants without permissions")
+	}
+
+	if err := c.playbookRunService.RemoveRunParticipant(args.RunID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "failed to remove participant from run")
+	}
+
+	// Don't worry if the user could not be previously a follower
+	// Unfollow implementation is defensive about this.
+	if err := c.playbookRunService.Unfollow(args.RunID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "failed to make participant to unfollow run")
+	}
+
+	if err := c.permissions.RunView(userID, args.RunID); err != nil {
+		return "", nil
+	}
+
+	return "", nil
+}

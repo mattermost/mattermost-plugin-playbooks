@@ -2731,6 +2731,7 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	// TODO: must be changed to check run participant
 	// Check if user is already a member of the channel
 	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
 	if err == nil && member != nil {
@@ -2748,25 +2749,51 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	return nil
 }
 
-// Leave removes user from the run's participants&followers lists
-func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
+// RemoveRunParticipant removes user from the run's participants&followers lists
+func (s *PlaybookRunServiceImpl) AddRunParticipants(playbookRunID string, userIDs []string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// To be migrated to run participats store functions
+	// Once it's migrated, we might want to push run through websocket
+	for _, userID := range userIDs {
+		member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+		if member != nil {
+			return errors.Wrap(err, "user is already a participant")
+		}
+		if member == nil {
+			if _, err := s.api.AddChannelMember(playbookRun.ChannelID, userID); err != nil {
+				return errors.Wrap(err, "failed to add channel member")
+			}
+		}
+	}
+	return nil
+}
+
+// RemoveRunParticipant removes user from the run's participants&followers lists
+func (s *PlaybookRunServiceImpl) RemoveRunParticipant(playbookRunID, userID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
 	// Check if user is an owner
-	if playbookRun.OwnerUserID == requesterID {
+	if playbookRun.OwnerUserID == userID {
 		return errors.New("owner user can't leave the run")
 	}
 
+	// To be migrated to run participats store functions
+	// Once it's migrated, we might want to push run through websocket
+
 	// Check if user is not a member of the channel
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
 		return errors.New("user is not a participant")
 	}
 
-	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
 		return errors.Wrap(err, "failed to remove channel member")
 	}
 

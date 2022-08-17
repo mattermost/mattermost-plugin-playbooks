@@ -10,19 +10,20 @@ import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/
 import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
+
+import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
+import {useRunRemoveParticipant} from 'src/graphql/hooks';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {useLHSRefresh} from '../../lhs_navigation';
 
 import {useOnFinishRun} from './finish_run';
 
@@ -31,14 +32,15 @@ interface Props {
     role: Role;
     isFavoriteRun: boolean;
     isFollowing: boolean;
+    hasPermanentViewerAccess: boolean;
     toggleFavorite: () => void;
 }
 
-export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun, isFollowing);
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
@@ -134,24 +136,21 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     );
 };
 
-const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
+const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRun: PlaybookRun, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
-    const refreshLHS = useLHSRefresh();
+    const leaveRun = useRunRemoveParticipant(playbookRun.id, currentUserId);
 
     const onLeaveRun = async () => {
-        const response = await leaveRun(playbookRun.id);
-        if (response?.error) {
-            addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
-        } else {
-            refreshLHS();
-            addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
-            if (!response.has_view_permission) {
-                navigateToUrl(pluginUrl(''));
-            }
-        }
+        leaveRun()
+            .then(() => {
+                addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
+                if (!hasPermanentViewerAccess) {
+                    navigateToUrl(pluginUrl(''));
+                }
+            }).catch(() => addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure));
     };
     const leaveRunConfirmModal = (
         <ConfirmModal

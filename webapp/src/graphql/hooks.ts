@@ -10,8 +10,10 @@ import {
     PlaybookUpdates,
     RunUpdates,
     useAddPlaybookMemberMutation,
+    useAddRunParticipantsMutation,
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
+    useRemoveRunParticipantMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
 } from 'src/graphql/generated_types';
@@ -95,4 +97,42 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     }, [playbookID, userID, leavePlaybook]);
 
     return {join, leave};
+};
+
+export const useRunAddParticipants = (runID?: string, userIDs?: string[]) => {
+    const [addToRun] = useAddRunParticipantsMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            runID: runID || '',
+            userIDs: userIDs || [],
+        },
+    });
+
+    return useCallback(async () => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await addToRun();
+    }, [runID, JSON.stringify(userIDs), addToRun]);
+};
+
+export const useRunRemoveParticipant = (runID?: string, userID?: string) => {
+    const [removeFromRun] = useRemoveRunParticipantMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+        variables: {
+            runID: runID || '',
+            userID: userID || '',
+        },
+    });
+
+    return useCallback(async () => {
+        if (!runID || !userID) {
+            return;
+        }
+        await removeFromRun();
+    }, [runID, userID, removeFromRun]);
 };
