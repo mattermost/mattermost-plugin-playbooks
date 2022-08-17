@@ -67,8 +67,10 @@ export type Mutation = {
     __typename?: 'Mutation';
     addMetric: Scalars['String'];
     addPlaybookMember: Scalars['String'];
+    addRunParticipants: Scalars['String'];
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
+    removeRunParticipant: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
@@ -87,12 +89,22 @@ export type MutationAddPlaybookMemberArgs = {
     userID: Scalars['String'];
 };
 
+export type MutationAddRunParticipantsArgs = {
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']>;
+};
+
 export type MutationDeleteMetricArgs = {
     id: Scalars['String'];
 };
 
 export type MutationRemovePlaybookMemberArgs = {
     playbookID: Scalars['String'];
+    userID: Scalars['String'];
+};
+
+export type MutationRemoveRunParticipantArgs = {
+    runID: Scalars['String'];
     userID: Scalars['String'];
 };
 
@@ -280,6 +292,20 @@ export type UpdateRunMutationVariables = Exact<{
 }>;
 
 export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
+
+export type AddRunParticipantsMutationVariables = Exact<{
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']> | Scalars['String'];
+}>;
+
+export type AddRunParticipantsMutation = { __typename?: 'Mutation', addRunParticipants: string };
+
+export type RemoveRunParticipantMutationVariables = Exact<{
+    runID: Scalars['String'];
+    userID: Scalars['String'];
+}>;
+
+export type RemoveRunParticipantMutation = { __typename?: 'Mutation', removeRunParticipant: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -550,6 +576,70 @@ export function useUpdateRunMutation(baseOptions?: Apollo.MutationHookOptions<Up
 export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation>;
 export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
 export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
+export const AddRunParticipantsDocument = gql`
+    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+  addRunParticipants(runID: $runID, userIDs: $userIDs)
+}
+    `;
+export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
+
+/**
+ * __useAddRunParticipantsMutation__
+ *
+ * To run a mutation, you first call `useAddRunParticipantsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddRunParticipantsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addRunParticipantsMutation, { data, loading, error }] = useAddRunParticipantsMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      userIDs: // value for 'userIDs'
+ *   },
+ * });
+ */
+export function useAddRunParticipantsMutation(baseOptions?: Apollo.MutationHookOptions<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>(AddRunParticipantsDocument, options);
+}
+export type AddRunParticipantsMutationHookResult = ReturnType<typeof useAddRunParticipantsMutation>;
+export type AddRunParticipantsMutationResult = Apollo.MutationResult<AddRunParticipantsMutation>;
+export type AddRunParticipantsMutationOptions = Apollo.BaseMutationOptions<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
+export const RemoveRunParticipantDocument = gql`
+    mutation RemoveRunParticipant($runID: String!, $userID: String!) {
+  removeRunParticipant(runID: $runID, userID: $userID)
+}
+    `;
+export type RemoveRunParticipantMutationFn = Apollo.MutationFunction<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>;
+
+/**
+ * __useRemoveRunParticipantMutation__
+ *
+ * To run a mutation, you first call `useRemoveRunParticipantMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveRunParticipantMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removeRunParticipantMutation, { data, loading, error }] = useRemoveRunParticipantMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      userID: // value for 'userID'
+ *   },
+ * });
+ */
+export function useRemoveRunParticipantMutation(baseOptions?: Apollo.MutationHookOptions<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>(RemoveRunParticipantDocument, options);
+}
+export type RemoveRunParticipantMutationHookResult = ReturnType<typeof useRemoveRunParticipantMutation>;
+export type RemoveRunParticipantMutationResult = Apollo.MutationResult<RemoveRunParticipantMutation>;
+export type RemoveRunParticipantMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

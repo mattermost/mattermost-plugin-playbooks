@@ -41,13 +41,14 @@ interface Props {
     role: Role;
     channel: Channel | undefined | null;
     hasAccessToChannel: boolean;
+    hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -112,6 +113,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
                 isFavoriteRun={isFavoriteRun}
                 isFollowing={isFollowing}
                 toggleFavorite={toggleFavorite}
+                hasPermanentViewerAccess={hasPermanentViewerAccess}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
