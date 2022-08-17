@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {useIntl} from 'react-intl';
 
 import {useFloatingPortalNode} from '@floating-ui/react-dom-interactions';
@@ -76,10 +76,10 @@ export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlayboo
             value={playbookOptions?.find((p) => p.id === playbookId)}
             isClearable={false}
             maxMenuHeight={250}
-            styles={{indicatorSeparator: () => null, menuPortal: (base: CSSProperties) => ({...base, zIndex: 1041})}}
-
+            styles={{indicatorSeparator: () => null}}
             isDisabled={!editable}
-            menuPortalTarget={portalEl}
+            captureMenuScroll={false}
+            menuPlacement={'auto'}
         />
     );
 };
@@ -104,7 +104,6 @@ export const CategorizeChannelChildren = ({categoryName, onUpdate, editable}: Ca
             captureMenuScroll={false}
             shouldRenderValue={true}
             placeholder={formatMessage({defaultMessage: 'Enter category name'})}
-            menuPlacement={'bottom'}
         />
     );
 };

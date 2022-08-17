@@ -1,12 +1,10 @@
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
 import {makeGetCategoriesForTeam} from 'mattermost-redux/selectors/entities/channel_categories';
 
 import {ChannelCategory} from '@mattermost/types/channel_categories';
 import {GlobalState} from '@mattermost/types/store';
-
-import {useFloatingPortalNode} from '@floating-ui/react-dom-interactions';
 
 import {StyledCreatable} from './styles';
 
@@ -28,7 +26,6 @@ const getMyCategories = (state: GlobalState) => getCategoriesForTeam(state, stat
 
 const CategorySelector = (props: Props & { className?: string }) => {
     const selectableCategories = useSelector(getMyCategories);
-    const portalEl = useFloatingPortalNode();
 
     const options = React.useMemo(() => {
         return selectableCategories
@@ -62,9 +59,8 @@ const CategorySelector = (props: Props & { className?: string }) => {
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}
-            menuPlacement={props.menuPlacement ?? 'top'}
-            styles={{menuPortal: (base: CSSProperties) => ({...base, zIndex: 1041})}}
-            menuPortalTarget={portalEl}
+            menuPlacement={props.menuPlacement ?? 'auto'}
+            menuShouldScrollIntoView={false}
         />
     );
 };
