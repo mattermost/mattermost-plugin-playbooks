@@ -1272,6 +1272,9 @@ func TestLeave(t *testing.T) {
 		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NoError(t, err)
 
+		// 'Has' plugin events are asyncronous so we must wait
+		time.Sleep(time.Second)
+
 		// Assert is participant and follower
 		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
 		require.NoError(t, err)
@@ -1284,6 +1287,9 @@ func TestLeave(t *testing.T) {
 		// Leave
 		err = e.PlaybooksClient2.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
 		assert.NoError(t, err)
+
+		// 'Has' plugin events are asyncronous so we must wait
+		time.Sleep(time.Second)
 
 		// Assert is not participant and follower anymore
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
