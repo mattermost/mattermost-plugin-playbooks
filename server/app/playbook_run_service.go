@@ -2748,7 +2748,7 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	return nil
 }
 
-// Leave removes user from the run's participants&followers lists
+// Leave removes user from the run's participants
 func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -2768,6 +2768,14 @@ func (s *PlaybookRunServiceImpl) Leave(playbookRunID, requesterID string) error 
 
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, requesterID); err != nil {
 		return errors.Wrap(err, "failed to remove channel member")
+	}
+
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) Participate(playbookRunID, userID string) error {
+	if err := s.store.AddParticipant(playbookRunID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to participate the run `%s`", userID, playbookRunID)
 	}
 
 	return nil

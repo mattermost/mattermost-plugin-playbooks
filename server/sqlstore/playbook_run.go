@@ -1157,27 +1157,27 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 }
 
 func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
-	return s.followHelper(playbookRunID, userID, true)
+	return s.updateFollowing(playbookRunID, userID, true)
 }
 
 func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
-	return s.followHelper(playbookRunID, userID, false)
+	return s.updateFollowing(playbookRunID, userID, false)
 }
 
-func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
+func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	var err error
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, value).
-			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+			Values(playbookRunID, userID, isFollowing).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", isFollowing))
 	} else {
 		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, value).
-			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", value))
+			Values(playbookRunID, userID, isFollowing).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", isFollowing))
 	}
 
 	if err != nil {
@@ -1347,6 +1347,37 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 			return errors.Wrapf(err, "failed to upsert metric value '%s'", m.MetricConfigID)
 		}
 	}
+	return nil
+}
+
+func (s *playbookRunStore) AddParticipant(playbookRunID, userID string) error {
+	return s.updateParticipating(playbookRunID, userID, true)
+}
+
+func (s *playbookRunStore) RemoveParticipant(playbookRunID, userID string) error {
+	return s.updateParticipating(playbookRunID, userID, false)
+}
+
+func (s *playbookRunStore) updateParticipating(playbookRunID, userID string, isParticipating bool) error {
+	var err error
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsParticipant").
+			Values(playbookRunID, userID, isParticipating).
+			Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating))
+	} else {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, isParticipating).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating))
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert participant '%s' for run '%s'", userID, playbookRunID)
+	}
+
 	return nil
 }
 
