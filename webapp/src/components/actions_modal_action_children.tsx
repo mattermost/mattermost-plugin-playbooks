@@ -1,8 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {CSSProperties} from 'react';
 import {useIntl} from 'react-intl';
+
+import {useFloatingPortalNode} from '@floating-ui/react-dom-interactions';
 
 import {usePlaybook, usePlaybooksCrud} from 'src/hooks';
 
@@ -47,6 +49,7 @@ interface OptionType {
 
 export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlaybookProps) => {
     const {formatMessage} = useIntl();
+    const portalEl = useFloatingPortalNode();
     const [playbook] = usePlaybook(playbookId);
     const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
 
@@ -73,8 +76,10 @@ export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlayboo
             value={playbookOptions?.find((p) => p.id === playbookId)}
             isClearable={false}
             maxMenuHeight={250}
-            styles={{indicatorSeparator: () => null}}
+            styles={{indicatorSeparator: () => null, menuPortal: (base: CSSProperties) => ({...base, zIndex: 1041})}}
+
             isDisabled={!editable}
+            menuPortalTarget={portalEl}
         />
     );
 };
