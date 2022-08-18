@@ -60,7 +60,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getApiUrl, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getApiUrl, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -248,6 +248,21 @@ export default class Plugin {
         registry.registerPostTypeComponent('custom_run_update', UpdatePost);
         registry.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
         registry.registerPostTypeComponent('custom_retro', RetrospectivePost);
+
+        // Insights handler
+        if (registry.registerInsightsHandler) {
+            registry.registerInsightsHandler(async (timeRange: string, page: number, perPage: number, teamId: string, insightType: string) => {
+                if (insightType === 'MY') {
+                    const data = await getMyTopPlaybooks(timeRange, page, perPage, teamId);
+
+                    return data;
+                }
+
+                const data = await getTeamTopPlaybooks(timeRange, page, perPage, teamId);
+
+                return data;
+            });
+        }
     }
 
     userActivityWatch(): void {

@@ -5,8 +5,8 @@ import {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
