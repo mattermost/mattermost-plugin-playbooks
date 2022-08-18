@@ -223,6 +223,8 @@ export const TitleButton = styled.div<{isActive: boolean}>`
     color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
     background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
 
+    min-width: 0;
+
     &:hover {
         background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }
