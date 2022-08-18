@@ -70,7 +70,7 @@ export type Mutation = {
     addRunParticipants: Scalars['String'];
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
-    removeRunParticipant: Scalars['String'];
+    removeRunParticipants: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
@@ -103,9 +103,9 @@ export type MutationRemovePlaybookMemberArgs = {
     userID: Scalars['String'];
 };
 
-export type MutationRemoveRunParticipantArgs = {
+export type MutationRemoveRunParticipantsArgs = {
     runID: Scalars['String'];
-    userID: Scalars['String'];
+    userIDs: Array<Scalars['String']>;
 };
 
 export type MutationUpdateMetricArgs = {
@@ -300,12 +300,12 @@ export type AddRunParticipantsMutationVariables = Exact<{
 
 export type AddRunParticipantsMutation = { __typename?: 'Mutation', addRunParticipants: string };
 
-export type RemoveRunParticipantMutationVariables = Exact<{
+export type RemoveRunParticipantsMutationVariables = Exact<{
     runID: Scalars['String'];
-    userID: Scalars['String'];
+    userIDs: Array<Scalars['String']> | Scalars['String'];
 }>;
 
-export type RemoveRunParticipantMutation = { __typename?: 'Mutation', removeRunParticipant: string };
+export type RemoveRunParticipantsMutation = { __typename?: 'Mutation', removeRunParticipants: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -608,38 +608,38 @@ export function useAddRunParticipantsMutation(baseOptions?: Apollo.MutationHookO
 export type AddRunParticipantsMutationHookResult = ReturnType<typeof useAddRunParticipantsMutation>;
 export type AddRunParticipantsMutationResult = Apollo.MutationResult<AddRunParticipantsMutation>;
 export type AddRunParticipantsMutationOptions = Apollo.BaseMutationOptions<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
-export const RemoveRunParticipantDocument = gql`
-    mutation RemoveRunParticipant($runID: String!, $userID: String!) {
-  removeRunParticipant(runID: $runID, userID: $userID)
+export const RemoveRunParticipantsDocument = gql`
+    mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
+  removeRunParticipants(runID: $runID, userIDs: $userIDs)
 }
     `;
-export type RemoveRunParticipantMutationFn = Apollo.MutationFunction<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>;
+export type RemoveRunParticipantsMutationFn = Apollo.MutationFunction<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
 
 /**
- * __useRemoveRunParticipantMutation__
+ * __useRemoveRunParticipantsMutation__
  *
- * To run a mutation, you first call `useRemoveRunParticipantMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRemoveRunParticipantMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useRemoveRunParticipantsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveRunParticipantsMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [removeRunParticipantMutation, { data, loading, error }] = useRemoveRunParticipantMutation({
+ * const [removeRunParticipantsMutation, { data, loading, error }] = useRemoveRunParticipantsMutation({
  *   variables: {
  *      runID: // value for 'runID'
- *      userID: // value for 'userID'
+ *      userIDs: // value for 'userIDs'
  *   },
  * });
  */
-export function useRemoveRunParticipantMutation(baseOptions?: Apollo.MutationHookOptions<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>) {
+export function useRemoveRunParticipantsMutation(baseOptions?: Apollo.MutationHookOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>) {
     const options = {...defaultOptions, ...baseOptions};
-    return Apollo.useMutation<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>(RemoveRunParticipantDocument, options);
+    return Apollo.useMutation<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>(RemoveRunParticipantsDocument, options);
 }
-export type RemoveRunParticipantMutationHookResult = ReturnType<typeof useRemoveRunParticipantMutation>;
-export type RemoveRunParticipantMutationResult = Apollo.MutationResult<RemoveRunParticipantMutation>;
-export type RemoveRunParticipantMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantMutation, RemoveRunParticipantMutationVariables>;
+export type RemoveRunParticipantsMutationHookResult = ReturnType<typeof useRemoveRunParticipantsMutation>;
+export type RemoveRunParticipantsMutationResult = Apollo.MutationResult<RemoveRunParticipantsMutation>;
+export type RemoveRunParticipantsMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

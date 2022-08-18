@@ -58,9 +58,9 @@ func (r *RootResolver) AddRunParticipants(ctx context.Context, args struct {
 	return "", nil
 }
 
-func (r *RootResolver) RemoveRunParticipant(ctx context.Context, args struct {
-	RunID  string
-	UserID string
+func (r *RootResolver) RemoveRunParticipants(ctx context.Context, args struct {
+	RunID   string
+	UserIDs []string
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -72,18 +72,16 @@ func (r *RootResolver) RemoveRunParticipant(ctx context.Context, args struct {
 		return "", errors.Wrap(err, "attempted to modify participants without permissions")
 	}
 
-	if err := c.playbookRunService.RemoveRunParticipant(args.RunID, args.UserID); err != nil {
-		return "", errors.Wrap(err, "failed to remove participant from run")
-	}
+	for _, userID := range args.UserIDs {
+		if err := c.playbookRunService.RemoveRunParticipant(args.RunID, userID); err != nil {
+			return "", errors.Wrap(err, "failed to remove participant from run")
+		}
 
-	// Don't worry if the user could not be previously a follower
-	// Unfollow implementation is defensive about this.
-	if err := c.playbookRunService.Unfollow(args.RunID, args.UserID); err != nil {
-		return "", errors.Wrap(err, "failed to make participant to unfollow run")
-	}
-
-	if err := c.permissions.RunView(userID, args.RunID); err != nil {
-		return "", nil
+		// Don't worry if the user could not be previously a follower
+		// Unfollow implementation is defensive about this.
+		if err := c.playbookRunService.Unfollow(args.RunID, userID); err != nil {
+			return "", errors.Wrap(err, "failed to make participant to unfollow run")
+		}
 	}
 
 	return "", nil

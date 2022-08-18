@@ -6,6 +6,6 @@ mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
 	addRunParticipants(runID: $runID, userIDs: $userIDs)
 }
 
-mutation RemoveRunParticipant($runID: String!, $userID: String!) {
-	removeRunParticipant(runID: $runID, userID: $userID)
+mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
+	removeRunParticipants(runID: $runID, userIDs: $userIDs)
 }

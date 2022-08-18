@@ -29,7 +29,7 @@ type Mutation {
 
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!): String!
-	removeRunParticipant(runID: String!, userID: String!): String!
+	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 }
 
 input PlaybookUpdates {

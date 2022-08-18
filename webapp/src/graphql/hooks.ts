@@ -13,7 +13,7 @@ import {
     useAddRunParticipantsMutation,
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
-    useRemoveRunParticipantMutation,
+    useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
 } from 'src/graphql/generated_types';
@@ -118,21 +118,21 @@ export const useRunAddParticipants = (runID?: string, userIDs?: string[]) => {
     }, [runID, JSON.stringify(userIDs), addToRun]);
 };
 
-export const useRunRemoveParticipant = (runID?: string, userID?: string) => {
-    const [removeFromRun] = useRemoveRunParticipantMutation({
+export const useRunRemoveParticipants = (runID?: string, userIDs?: string[]) => {
+    const [removeFromRun] = useRemoveRunParticipantsMutation({
         refetchQueries: [
             PlaybookLhsDocument,
         ],
         variables: {
             runID: runID || '',
-            userID: userID || '',
+            userIDs: userIDs || [],
         },
     });
 
     return useCallback(async () => {
-        if (!runID || !userID) {
+        if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
         await removeFromRun();
-    }, [runID, userID, removeFromRun]);
+    }, [runID, JSON.stringify(userIDs), removeFromRun]);
 };
