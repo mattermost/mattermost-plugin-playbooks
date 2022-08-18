@@ -45,6 +45,10 @@ type playbookMember struct {
 	Roles      string
 }
 
+// definied to call a common insights query builder for both user and team insights
+const insightsQueryTypeUser = "insights_query_type_user"
+const insightsQueryTypeTeam = "insights_query_type_team"
+
 func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
 	var sort string
 	switch options.Sort {
@@ -1101,43 +1105,12 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 
 func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
 
-	permissionsAndFilter := sq.Expr(`(
-		EXISTS(SELECT 1
-				FROM IR_PlaybookMember as pm
-				WHERE pm.PlaybookID = p.ID
-				AND pm.MemberID = ?)
-		OR NOT EXISTS(SELECT 1
-				FROM IR_PlaybookMember as pm
-				WHERE pm.PlaybookID = p.ID)
-	)`, userID)
-	offset := opts.Page * opts.PerPage
-	limit := opts.PerPage
-	query := p.queryBuilder.
-		Select(
-			"p.ID as PlaybookID",
-			"p.Title",
-			"COUNT(i.ID) AS NumRuns",
-			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
-		).
-		From("IR_Playbook as p").
-		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
-		Where(sq.And{
-			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
-			sq.Or{
-				permissionsAndFilter,
-				sq.Eq{"p.Public": true},
-			},
-			sq.Eq{"p.TeamID": teamID},
-		}).
-		GroupBy("p.ID").
-		OrderBy("NumRuns desc").
-		Offset(uint64(offset)).
-		Limit(uint64(limit + 1))
+	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeTeam)
 
 	topPlaybooksList := make([]*app.PlaybookInsight, 0)
 	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get top playbooks for for user: %s", userID)
+		return nil, errors.Wrapf(err, "failed to get top team playbooks for for user: %s", userID)
 	}
 
 	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
@@ -1147,15 +1120,46 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 
 func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
 
+	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeUser)
+
+	topPlaybooksList := make([]*app.PlaybookInsight, 0)
+	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get top user playbooks for for user: %s", userID)
+	}
+
+	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
+
+	return topPlaybooks, nil
+}
+
+func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *model.InsightsOpts, queryType string) sq.SelectBuilder {
 	permissionsAndFilter := sq.Expr(`(
 		EXISTS(SELECT 1
 				FROM IR_PlaybookMember as pm
 				WHERE pm.PlaybookID = p.ID
 				AND pm.MemberID = ?)
-		OR NOT EXISTS(SELECT 1
-				FROM IR_PlaybookMember as pm
-				WHERE pm.PlaybookID = p.ID)
 	)`, userID)
+
+	var whereCondition sq.And
+	if queryType == insightsQueryTypeUser {
+		whereCondition = sq.And{
+			permissionsAndFilter,
+			sq.Eq{"p.TeamID": teamID},
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+		}
+	} else if queryType == insightsQueryTypeTeam {
+		whereCondition = sq.And{
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+			sq.Or{
+				permissionsAndFilter,
+				sq.Eq{"p.Public": true},
+			},
+			sq.Eq{"p.TeamID": teamID},
+		}
+	} else {
+		whereCondition = sq.And{}
+	}
 	offset := opts.Page * opts.PerPage
 	limit := opts.PerPage
 	query := p.queryBuilder.
@@ -1167,25 +1171,13 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 		).
 		From("IR_Playbook as p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
-		Where(sq.And{
-			permissionsAndFilter,
-			sq.Eq{"p.TeamID": teamID},
-			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
-		}).
+		Where(whereCondition).
 		GroupBy("p.ID").
 		OrderBy("NumRuns desc").
 		Offset(uint64(offset)).
 		Limit(uint64(limit + 1))
 
-	topPlaybooksList := make([]*app.PlaybookInsight, 0)
-	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get top playbooks for for user: %s", userID)
-	}
-
-	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
-
-	return topPlaybooks, nil
+	return query
 }
 
 // GetTopPlaybooksInsightsListWithPagination returns a page given a list of PlaybooksInsight assumed to be
