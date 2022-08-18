@@ -70,10 +70,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-        if (!channel) {
-            addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
-            return;
-        }
 
         // TODO: remove channel eval when participants are full-related to run
         if (!hasAccessToChannel) {

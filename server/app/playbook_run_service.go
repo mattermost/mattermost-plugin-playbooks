@@ -2758,6 +2758,7 @@ func (s *PlaybookRunServiceImpl) AddRunParticipants(playbookRunID string, userID
 
 	// To be migrated to run participats store functions
 	// Once it's migrated, we might want to push run through websocket
+	// (since we still rely on redux, not apollo cache)
 	for _, userID := range userIDs {
 		member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 		if member != nil {
