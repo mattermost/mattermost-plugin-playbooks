@@ -2108,7 +2108,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	// Automaticly participate if you join the channel
 	// To be removed when separating members and participants is complete.
-	if err := s.Participate(playbookRunID, user.Id); err != nil {
+	if err := s.AddParticipants(playbookRunID, user.Id); err != nil {
 		s.logger.Errorf("faied to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
@@ -2189,7 +2189,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 	// Automaticly leave if you leave the channel
 	// To be removed when separating members and participants is complete.
-	if err := s.Leave(playbookRunID, user.Id); err != nil {
+	if err := s.RemoveParticipants(playbookRunID, user.Id); err != nil {
 		s.logger.Errorf("faied to remove participant that left channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
@@ -2764,7 +2764,7 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 }
 
 // Leave removes user from the run's participants
-func (s *PlaybookRunServiceImpl) Leave(playbookRunID, userID string) error {
+func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID, userID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2797,7 +2797,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) Participate(playbookRunID, userID string) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID, userID string) error {
 	if err := s.store.AddParticipant(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to participate the run `%s`", userID, playbookRunID)
 	}
