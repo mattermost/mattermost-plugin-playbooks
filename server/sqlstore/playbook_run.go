@@ -1350,32 +1350,38 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 	return nil
 }
 
-func (s *playbookRunStore) AddParticipant(playbookRunID, userID string) error {
-	return s.updateParticipating(playbookRunID, userID, true)
+func (s *playbookRunStore) AddParticipants(playbookRunID string, userIDs []string) error {
+	return s.updateParticipating(playbookRunID, userIDs, true)
 }
 
-func (s *playbookRunStore) RemoveParticipant(playbookRunID, userID string) error {
-	return s.updateParticipating(playbookRunID, userID, false)
+func (s *playbookRunStore) RemoveParticipants(playbookRunID string, userIDs []string) error {
+	return s.updateParticipating(playbookRunID, userIDs, false)
 }
 
-func (s *playbookRunStore) updateParticipating(playbookRunID, userID string, isParticipating bool) error {
+func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []string, isParticipating bool) error {
+	query := sq.
+		Insert("IR_Run_Participants").
+		Columns("IncidentID", "UserID", "IsParticipant")
+
+	for _, userID := range userIDs {
+		query = query.Values(playbookRunID, userID, isParticipating)
+	}
+
 	var err error
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
-		_, err = s.store.execBuilder(s.store.db, sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsParticipant").
-			Values(playbookRunID, userID, isParticipating).
-			Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating))
+		_, err = s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating),
+		)
 	} else {
-		_, err = s.store.execBuilder(s.store.db, sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, isParticipating).
-			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating))
+		_, err = s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+		)
 	}
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to upsert participant '%s' for run '%s'", userID, playbookRunID)
+		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
 	}
 
 	return nil

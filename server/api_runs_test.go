@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -1264,8 +1263,6 @@ func TestLeave(t *testing.T) {
 	})
 
 	t.Run("join and leave run", func(t *testing.T) {
-		fmt.Println(e.BasicRun.ParticipantIDs)
-
 		// Join
 		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NoError(t, err)

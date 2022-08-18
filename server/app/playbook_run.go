@@ -744,10 +744,10 @@ type PlaybookRunService interface {
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
 	// RemoveParticipants removes user from the run's participants
-	RemoveParticipants(playbookRunID, userID string) error
+	RemoveParticipants(playbookRunID string, userIDs []string) error
 
 	// AddParticipants adds a user to the participants list
-	AddParticipants(playbookRunID, userID string) error
+	AddParticipants(playbookRunID string, userIDs []string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -843,11 +843,11 @@ type PlaybookRunStore interface {
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
 
-	// AddParticipant adds a particpant to the run
-	AddParticipant(playbookRunID, userID string) error
+	// AddParticipants adds a particpant to the run
+	AddParticipants(playbookRunID string, userIDs []string) error
 
-	// RemoveParticipant removes a participant from the run
-	RemoveParticipant(playbookRunID, userID string) error
+	// RemoveParticipants removes a participant from the run
+	RemoveParticipants(playbookRunID string, userIDs []string) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
