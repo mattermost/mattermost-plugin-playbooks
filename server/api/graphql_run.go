@@ -33,11 +33,61 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	return isFavorite, nil
 }
 
-// -----------------------------------------------------------------------------
-// Run mutations
-// -----------------------------------------------------------------------------
+// RunMutationCollection hold all mutation functions for a playbookRun
+type RunMutationCollection struct {
+}
 
-func (r *RootResolver) AddRunParticipants(ctx context.Context, args struct {
+func (r *RunMutationCollection) UpdateRun(ctx context.Context, args struct {
+	ID      string
+	Updates struct {
+		IsFavorite *bool
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return playbookRun.ID, nil
+}
+
+func (r *RunMutationCollection) AddRunParticipants(ctx context.Context, args struct {
 	RunID   string
 	UserIDs []string
 }) (string, error) {
@@ -58,7 +108,7 @@ func (r *RootResolver) AddRunParticipants(ctx context.Context, args struct {
 	return "", nil
 }
 
-func (r *RootResolver) RemoveRunParticipants(ctx context.Context, args struct {
+func (r *RunMutationCollection) RemoveRunParticipants(ctx context.Context, args struct {
 	RunID   string
 	UserIDs []string
 }) (string, error) {
