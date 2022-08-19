@@ -2142,7 +2142,7 @@ func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, c
 	}
 
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		errors.Wrap(err, "failed to create timeline event")
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
 	return nil
