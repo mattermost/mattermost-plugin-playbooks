@@ -278,12 +278,8 @@ const RowContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
-const ColumnContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
 
-const Container = styled(ColumnContainer)`
+const Container = styled.div`
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(400px, 2fr) minmax(400px, 1fr);
@@ -313,7 +309,7 @@ const Main = styled.main`
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header`    
+const Header = styled.header`
     height: 56px;
     min-height: 56px;
     background-color: var(--center-channel-bg);
