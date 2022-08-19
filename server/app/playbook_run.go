@@ -743,10 +743,10 @@ type PlaybookRunService interface {
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
-	// RemoveParticipants removes user from the run's participants
+	// RemoveParticipants removes users from the run's participants
 	RemoveParticipants(playbookRunID string, userIDs []string) error
 
-	// AddParticipants adds a user to the participants list
+	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string) error
 }
 
@@ -843,10 +843,10 @@ type PlaybookRunStore interface {
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
 
-	// AddParticipants adds a particpant to the run
+	// AddParticipants adds particpants to the run
 	AddParticipants(playbookRunID string, userIDs []string) error
 
-	// RemoveParticipants removes a participant from the run
+	// RemoveParticipants removes participants from the run
 	RemoveParticipants(playbookRunID string, userIDs []string) error
 }
 

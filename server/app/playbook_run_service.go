@@ -2190,7 +2190,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 		s.logger.Errorf("%w", err)
 	}
 
-	// Automaticly leave if you leave the channel
+	// Automatically leave run if you leave the channel
 	// To be removed when separating members and participants is complete.
 	if err := s.RemoveParticipants(playbookRunID, []string{user.Id}); err != nil {
 		s.logger.Errorf("faied to remove participant that left channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
