@@ -34,82 +34,82 @@ func NewSignalHandler(router *mux.Router, api *pluginapi.Client, playbookRunServ
 	signalRouter := router.PathPrefix("/signal").Subrouter()
 
 	keywordsRouter := signalRouter.PathPrefix("/keywords").Subrouter()
-	keywordsRouter.HandleFunc("/run-playbook", withLogger(handler.playbookRun)).Methods(http.MethodPost)
-	keywordsRouter.HandleFunc("/ignore-thread", withLogger(handler.ignoreKeywords)).Methods(http.MethodPost)
+	keywordsRouter.HandleFunc("/run-playbook", withContext(handler.playbookRun)).Methods(http.MethodPost)
+	keywordsRouter.HandleFunc("/ignore-thread", withContext(handler.ignoreKeywords)).Methods(http.MethodPost)
 
 	return handler
 }
 
-func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
 
 	var req *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 	if req == nil {
-		h.returnError(publicErrorMessage, errors.New("nil request"), logger, w)
+		h.returnError(publicErrorMessage, errors.New("nil request"), c.logger, w)
 		return
 	}
 
 	id, err := getStringField("selected_option", req.Context, w)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 
 	isMobile, err := getBoolField("isMobile", req.Context, w)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 
 	postID, err := getStringField("postID", req.Context, w)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 
 	post, err := h.api.Post.GetPost(req.PostId)
 	if err != nil {
-		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, logger, w)
+		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, c.logger, w)
 		return
 	}
 
 	pbook, err := h.playbookService.Get(id)
 	if err != nil {
-		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), logger, w)
+		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), c.logger, w)
 		return
 	}
 
 	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
-		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), logger, w)
+		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), c.logger, w)
 		return
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
 }
 
-func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
 
 	var req *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil || req == nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 
 	postID, err := getStringField("postID", req.Context, w)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 	post, err := h.api.Post.GetPost(postID)
 	if err != nil {
-		h.returnError(publicErrorMessage, err, logger, w)
+		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request, l
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
 	if err := h.api.Post.DeletePost(req.PostId); err != nil {
-		h.returnError("unable to delete original post", err, logger, w)
+		h.returnError("unable to delete original post", err, c.logger, w)
 		return
 	}
 }

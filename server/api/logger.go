@@ -22,33 +22,6 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.statusCode = code
 }
 
-// requestIDContextKeyType ensures requestIDContextKey can never collide with another context key
-// having the same value.
-type requestIDContextKeyType string
-
-// requestIDContextKey is the key for the incoming requestID.
-var requestIDContextKey = requestIDContextKeyType("requestID")
-
-// getLogger builds a logger with the requestID attached to the given request.
-func getLogger(r *http.Request) logrus.FieldLogger {
-	var logger logrus.FieldLogger = logrus.StandardLogger()
-
-	requestID, ok := r.Context().Value(requestIDContextKey).(string)
-	if ok {
-		logger = logger.WithField("request_id", requestID)
-	}
-
-	return logger
-}
-
-// withLogger passes a logger to http handler functions.
-func withLogger(handler func(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		logger := getLogger(r)
-		handler(w, r, logger)
-	}
-}
-
 // LogRequest logs each request, attaching a unique request_id to the request context to trace
 // logs throughout the request lifecycle.
 func LogRequest(next http.Handler) http.Handler {

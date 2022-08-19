@@ -75,15 +75,15 @@ func NewGraphQLHandler(
 		return nil
 	}
 
-	router.HandleFunc("/query", withLogger(graphiQL)).Methods("GET")
-	router.HandleFunc("/query", withLogger(handler.graphQL)).Methods("POST")
+	router.HandleFunc("/query", withContext(graphiQL)).Methods("GET")
+	router.HandleFunc("/query", withContext(handler.graphQL)).Methods("POST")
 
 	return handler
 }
 
 type ctxKey struct{}
 
-type Context struct {
+type GraphQLContext struct {
 	r                  *http.Request
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
@@ -97,7 +97,7 @@ type Context struct {
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
-func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Request) {
 	// Limit bodies to 100KiB.
 	r.Body = http.MaxBytesReader(w, r.Body, 102400)
 
@@ -107,24 +107,24 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger 
 		Variables     map[string]interface{} `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		logger.WithError(err).Debug("Unable to decode graphql query")
+		c.logger.WithError(err).Debug("Unable to decode graphql query")
 		return
 	}
 
 	if !h.config.IsConfiguredForDevelopmentAndTesting() {
 		if params.OperationName == "" {
-			logger.Debug("Invalid blank operation name")
+			c.logger.Debug("Invalid blank operation name")
 			return
 		}
 	}
 
-	c := &Context{
+	graphQLContext := &GraphQLContext{
 		r:                  r,
 		playbookService:    h.playbookService,
 		playbookRunService: h.playbookRunService,
 		categoryService:    h.categoryService,
 		pluginAPI:          h.pluginAPI,
-		logger:             logger,
+		logger:             c.logger,
 		config:             h.config,
 		permissions:        h.permissions,
 		playbookStore:      h.playbookStore,
@@ -133,7 +133,7 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger 
 
 	// Populate the context with required info.
 	reqCtx := r.Context()
-	reqCtx = context.WithValue(reqCtx, ctxKey{}, c)
+	reqCtx = context.WithValue(reqCtx, ctxKey{}, graphQLContext)
 
 	response := h.schema.Exec(reqCtx,
 		params.Query,
@@ -142,16 +142,16 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request, logger 
 	)
 
 	for _, err := range response.Errors {
-		logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")
+		c.logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.WithError(err).Warn("Error while writing response")
+		c.logger.WithError(err).Warn("Error while writing response")
 	}
 }
 
-func getContext(ctx context.Context) (*Context, error) {
-	c, ok := ctx.Value(ctxKey{}).(*Context)
+func getContext(ctx context.Context) (*GraphQLContext, error) {
+	c, ok := ctx.Value(ctxKey{}).(*GraphQLContext)
 	if !ok {
 		return nil, errors.New("custom context not found in context")
 	}
@@ -162,7 +162,7 @@ func getContext(ctx context.Context) (*Context, error) {
 //go:embed graphqli.html
 var GraphiqlPage []byte
 
-func graphiQL(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func graphiQL(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	_, _ = w.Write(GraphiqlPage)
 }

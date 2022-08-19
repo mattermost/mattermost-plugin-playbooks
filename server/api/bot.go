@@ -40,11 +40,11 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 	botRouter := router.PathPrefix("/bot").Subrouter()
 
 	notifyAdminsRouter := botRouter.PathPrefix("/notify-admins").Subrouter()
-	notifyAdminsRouter.HandleFunc("", withLogger(handler.notifyAdmins)).Methods(http.MethodPost)
-	notifyAdminsRouter.HandleFunc("/button-start-trial", withLogger(handler.startTrial)).Methods(http.MethodPost)
+	notifyAdminsRouter.HandleFunc("", withContext(handler.notifyAdmins)).Methods(http.MethodPost)
+	notifyAdminsRouter.HandleFunc("/button-start-trial", withContext(handler.startTrial)).Methods(http.MethodPost)
 
-	botRouter.HandleFunc("/prompt-for-feedback", withLogger(handler.promptForFeedback)).Methods(http.MethodPost)
-	botRouter.HandleFunc("/connect", withLogger(handler.connect)).Methods(http.MethodGet)
+	botRouter.HandleFunc("/prompt-for-feedback", withContext(handler.promptForFeedback)).Methods(http.MethodPost)
+	botRouter.HandleFunc("/connect", withContext(handler.connect)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -53,17 +53,17 @@ type messagePayload struct {
 	MessageType string `json:"message_type"`
 }
 
-func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *BotHandler) notifyAdmins(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var payload messagePayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode message", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode message", err)
 		return
 	}
 
 	if err := h.poster.NotifyAdmins(payload.MessageType, userID, !h.pluginAPI.System.IsEnterpriseReady()); err != nil {
-		h.HandleError(w, logger, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -78,44 +78,44 @@ func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
 	return nil
 }
 
-func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *BotHandler) startTrial(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	if err := CanStartTrialLicense(userID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "no permission to start a trial license", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to start a trial license", err)
 		return
 	}
 
 	var requestData *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to parse json", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to parse json", err)
 	}
 	if requestData == nil {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "missing request data", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
 
 	users, ok := requestData.Context["users"].(float64)
 	if !ok {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "malformed context: users is not a number", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "malformed context: users is not a number", nil)
 		return
 	}
 
 	termsAccepted, ok := requestData.Context["termsAccepted"].(bool)
 	if !ok {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "malformed context: termsAccepted is not a boolean", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "malformed context: termsAccepted is not a boolean", nil)
 		return
 	}
 
 	receiveEmailsAccepted, ok := requestData.Context["receiveEmailsAccepted"].(bool)
 	if !ok {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "malformed context: receiveEmailsAccepted is not a boolean", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "malformed context: receiveEmailsAccepted is not a boolean", nil)
 		return
 	}
 
 	originalPost, err := h.pluginAPI.Post.GetPost(requestData.PostId)
 	if err != nil {
-		h.HandleError(w, logger, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -144,7 +144,7 @@ outer:
 			logrus.WithError(postErr).WithField("post_id", post.Id).Error("unable to edit the admin notification post")
 		}
 
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "unable to request the trial license", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to request the trial license", err)
 		return
 	}
 
@@ -164,16 +164,16 @@ outer:
 	ReturnJSON(w, post, http.StatusOK)
 }
 
-func (h *BotHandler) promptForFeedback(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *BotHandler) promptForFeedback(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.config.SupportsGivingFeedback(); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "giving feedback not supported", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "giving feedback not supported", err)
 		return
 	}
 
 	if err := h.poster.PromptForFeedback(userID); err != nil {
-		h.HandleError(w, logger, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -181,7 +181,7 @@ func (h *BotHandler) promptForFeedback(w http.ResponseWriter, r *http.Request, l
 }
 
 // connect handles the GET /bot/connect endpoint (a notification sent when the client wakes up or reconnects)
-func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request, logger logrus.FieldLogger) {
+func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	info, err := h.userInfoStore.Get(userID)
@@ -190,7 +190,7 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request, logger logr
 			ID: userID,
 		}
 	} else if err != nil {
-		h.HandleError(w, logger, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -212,12 +212,12 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request, logger logr
 		// response if there's a failure later)
 		info.LastDailyTodoDMAt = now
 		if err = h.userInfoStore.Upsert(info); err != nil {
-			h.HandleError(w, logger, err)
+			h.HandleError(w, c.logger, err)
 			return
 		}
 
 		if err = h.playbookRunService.DMTodoDigestToUser(userID, false); err != nil {
-			h.HandleError(w, logger, errors.Wrapf(err, "failed to DMTodoDigest to userID '%s'", userID))
+			h.HandleError(w, c.logger, errors.Wrapf(err, "failed to DMTodoDigest to userID '%s'", userID))
 			return
 		}
 	}
