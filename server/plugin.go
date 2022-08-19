@@ -110,6 +110,7 @@ func (p *Plugin) OnActivate() error {
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
 		Description: "Playbooks bot.",
+		OwnerId:     "playbooks",
 	},
 		pluginapi.ProfileImagePath("assets/plugin_icon.png"),
 	)
