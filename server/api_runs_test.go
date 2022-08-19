@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -172,8 +171,6 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
-		// assert some data has been injected
-		assert.Len(t, run.ParticipantIDs, 1)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -1266,11 +1263,12 @@ func TestLeave(t *testing.T) {
 	})
 
 	t.Run("join and leave run", func(t *testing.T) {
-		fmt.Println(e.BasicRun.ParticipantIDs)
-
 		// Join
 		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NoError(t, err)
+
+		// 'Has' plugin events are asyncronous so we must wait
+		time.Sleep(time.Second)
 
 		// Assert is participant and follower
 		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
@@ -1284,6 +1282,9 @@ func TestLeave(t *testing.T) {
 		// Leave
 		err = e.PlaybooksClient2.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
 		assert.NoError(t, err)
+
+		// 'Has' plugin events are asyncronous so we must wait
+		time.Sleep(time.Second)
 
 		// Assert is not participant and follower anymore
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)

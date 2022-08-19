@@ -904,7 +904,7 @@ func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+	if err := h.playbookRunService.RemoveParticipants(playbookRunID, []string{userID}); err != nil {
 		h.HandleError(w, err)
 		return
 	}

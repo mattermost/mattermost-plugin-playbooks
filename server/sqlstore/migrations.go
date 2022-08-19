@@ -2131,4 +2131,27 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.56.0"),
+		toVersion:   semver.MustParse("0.57.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER COLUMN IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			}
+
+			return nil
+		},
+	},
 }
