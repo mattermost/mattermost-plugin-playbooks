@@ -211,8 +211,10 @@ const Title = styled.h1`
     font-size: 16px;
     line-height: 24px;
     margin: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
     white-space: nowrap;
-    `;
+`;
 
 export const TitleButton = styled.div<{isActive: boolean}>`
     padding: 2px 2px 2px 6px;
@@ -220,6 +222,8 @@ export const TitleButton = styled.div<{isActive: boolean}>`
     border-radius: 4px;
     color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
     background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
+
+    min-width: 0;
 
     &:hover {
         background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};

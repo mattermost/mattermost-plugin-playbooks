@@ -5,7 +5,7 @@
     "authenticator": "^1.1.5",
     "axios": "^0.21.1",
     "axios-retry": "^3.1.9",
-    "cypress": "^10.3.0",
+    "cypress": "^10.6.0",
     "cypress-multi-reporters": "^1.5.0",
     "cypress-plugin-tab": "^1.0.5",
     "cypress-terminal-report": "^4.1.1",
