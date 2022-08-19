@@ -2098,14 +2098,32 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 		return
 	}
 
+	_ = s.addChannelJoinTimelineEvent(user, channel, actorID, playbookRunID, userID)
+
+	if !user.IsBot {
+		if err := s.Follow(playbookRunID, user.Id); err != nil {
+			s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", user.Id, playbookRunID, err.Error())
+		}
+	}
+
+	// Automaticly participate if you join the channel
+	// To be removed when separating members and participants is complete.
+	if err := s.AddParticipants(playbookRunID, []string{user.Id}); err != nil {
+		s.logger.Errorf("faied to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
+
+	_ = s.sendPlaybookRunToClient(playbookRunID)
+}
+
+func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
 	title := fmt.Sprintf("@%s joined the channel", user.Username)
 
 	summary := fmt.Sprintf("@%s joined ~%s", user.Username, channel.Name)
 	if actorID != "" {
-		actor, err2 := s.pluginAPI.User.Get(actorID)
-		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
-			return
+		actor, err := s.pluginAPI.User.Get(actorID)
+		if err != nil {
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err.Error())
+			return err
 		}
 
 		summary = fmt.Sprintf("@%s added @%s to ~%s", actor.Username, user.Username, channel.Name)
@@ -2122,24 +2140,11 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 		CreatorUserID: actorID,
 	}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+		return err
 	}
-
-	_ = s.sendPlaybookRunToClient(playbookRunID)
-
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return
-	}
-
-	if user.IsBot {
-		return
-	}
-
-	if err := s.Follow(playbookRun.ID, userID); err != nil {
-		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
-	}
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
@@ -2163,7 +2168,6 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 // was removed from the channel by actorID.
 func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-
 	if err != nil {
 		// This is not a playbook run channel
 		return
@@ -2181,14 +2185,26 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 		return
 	}
 
+	_ = s.addChannelLeaveTimelineEvent(user, channel, actorID, playbookRunID, userID)
+
+	// Automaticly leave if you leave the channel
+	// To be removed when separating members and participants is complete.
+	if err := s.RemoveParticipants(playbookRunID, []string{user.Id}); err != nil {
+		s.logger.Errorf("faied to remove participant that left channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
+
+	_ = s.sendPlaybookRunToClient(playbookRunID)
+}
+
+func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
 	title := fmt.Sprintf("@%s left the channel", user.Username)
 
 	summary := fmt.Sprintf("@%s left ~%s", user.Username, channel.Name)
 	if actorID != "" {
-		actor, err2 := s.pluginAPI.User.Get(actorID)
-		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
-			return
+		actor, err := s.pluginAPI.User.Get(actorID)
+		if err != nil {
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err.Error())
+			return err
 		}
 
 		summary = fmt.Sprintf("@%s removed @%s from ~%s", actor.Username, user.Username, channel.Name)
@@ -2205,11 +2221,10 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 		CreatorUserID: actorID,
 	}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
 	}
-
-	_ = s.sendPlaybookRunToClient(playbookRunID)
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
@@ -2749,56 +2764,72 @@ func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID s
 	return nil
 }
 
-// RemoveRunParticipant removes user from the run's participants&followers lists
-func (s *PlaybookRunServiceImpl) AddRunParticipants(playbookRunID string, userIDs []string) error {
+// Leave removes user from the run's participants
+func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// To be migrated to run participats store functions
-	// Once it's migrated, we might want to push run through websocket
-	// (since we still rely on redux, not apollo cache)
+	// Check if any user is the owner
 	for _, userID := range userIDs {
-		member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
-		if member != nil {
-			return errors.Wrap(err, "user is already a participant")
-		}
-		if member == nil {
-			if _, err := s.api.AddChannelMember(playbookRun.ChannelID, userID); err != nil {
-				return errors.Wrap(err, "failed to add channel member")
-			}
+		if playbookRun.OwnerUserID == userID {
+			return errors.New("owner user can't leave the run")
 		}
 	}
+
+	if err := s.store.RemoveParticipants(playbookRunID, userIDs); err != nil {
+		return errors.Wrapf(err, "users `%+v` failed to remove participation in run `%s`", userIDs, playbookRunID)
+	}
+
+	for _, userID := range userIDs {
+		s.leaveActions(playbookRun, userID)
+	}
+
 	return nil
 }
 
-// RemoveRunParticipant removes user from the run's participants&followers lists
-func (s *PlaybookRunServiceImpl) RemoveRunParticipant(playbookRunID, userID string) error {
+func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
+	// Don't do anything if the user not a channel member
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+	if member == nil {
+		return
+	}
+
+	// To be added to the UI as an optional action
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
+		s.logger.Errorf("failed to remove user from linked channel, userID '%s'; error: %s", userID, err.Error())
+	}
+}
+
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string) error {
+	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
+		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
+	}
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Check if user is an owner
-	if playbookRun.OwnerUserID == userID {
-		return errors.New("owner user can't leave the run")
-	}
-
-	// To be migrated to run participats store functions
-	// Once it's migrated, we might want to push run through websocket
-
-	// Check if user is not a member of the channel
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
-	if member == nil {
-		return errors.New("user is not a participant")
-	}
-
-	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
-		return errors.Wrap(err, "failed to remove channel member")
+	for _, userID := range userIDs {
+		s.participateActions(playbookRun, userID)
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string) {
+	// Don't do anything if the user is a channel member
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+	if member != nil {
+		return
+	}
+
+	// To be added to the UI as an optional action
+	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, userID); err != nil {
+		s.logger.Errorf("failed to add user to linked channel, userID '%s'; error: %s", userID, err.Error())
+	}
 }
 
 func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID string, post *model.Post) error {
