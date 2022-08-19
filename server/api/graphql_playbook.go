@@ -111,11 +111,102 @@ func (r *ChecklistItemResolver) DueDate() float64 {
 	return float64(r.ChecklistItem.DueDate)
 }
 
-// RunMutationCollection hold all mutation functions for a playbookRun
-type PlaybookMutationCollection struct {
+type UpdateChecklist struct {
+	Title string                `json:"title"`
+	Items []UpdateChecklistItem `json:"items"`
 }
 
-func (r *PlaybookMutationCollection) UpdatePlaybook(ctx context.Context, args struct {
+type UpdateChecklistItem struct {
+	Title            string  `json:"title"`
+	State            string  `json:"state"`
+	StateModified    float64 `json:"state_modified"`
+	AssigneeID       string  `json:"assignee_id"`
+	AssigneeModified float64 `json:"assignee_modified"`
+	Command          string  `json:"command"`
+	CommandLastRun   float64 `json:"command_last_run"`
+	Description      string  `json:"description"`
+	LastSkipped      float64 `json:"delete_at"`
+	DueDate          float64 `json:"due_date"`
+}
+
+// RunMutationCollection hold all mutation functions for a playbookRun
+type PlaybookGQLHandler struct {
+}
+
+func (r *PlaybookGQLHandler) Playbook(ctx context.Context, args struct {
+	ID string
+}) (*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	playbookID := args.ID
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
+		c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+		return nil, errors.New("Not authorized")
+	}
+
+	playbook, err := c.playbookService.Get(playbookID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *PlaybookGQLHandler) Playbooks(ctx context.Context, args struct {
+	TeamID             string
+	Sort               string
+	Direction          string
+	SearchTerm         string
+	WithMembershipOnly bool
+	WithArchived       bool
+}) ([]*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if args.TeamID != "" {
+		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+			c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+			return nil, errors.New("Not authorized")
+		}
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	opts := app.PlaybookFilterOptions{
+		Sort:               app.SortField(args.Sort),
+		Direction:          app.SortDirection(args.Direction),
+		SearchTerm:         args.SearchTerm,
+		WithArchived:       args.WithArchived,
+		WithMembershipOnly: args.WithMembershipOnly,
+		Page:               0,
+		PerPage:            10000,
+	}
+
+	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
+	for _, pb := range playbookResults.Items {
+		ret = append(ret, &PlaybookResolver{pb})
+	}
+
+	return ret, nil
+}
+
+func (r *PlaybookGQLHandler) UpdatePlaybook(ctx context.Context, args struct {
 	ID      string
 	Updates struct {
 		Title                                *string
@@ -300,7 +391,7 @@ func (r *PlaybookMutationCollection) UpdatePlaybook(ctx context.Context, args st
 	return args.ID, nil
 }
 
-func (r *PlaybookMutationCollection) AddPlaybookMember(ctx context.Context, args struct {
+func (r *PlaybookGQLHandler) AddPlaybookMember(ctx context.Context, args struct {
 	PlaybookID string
 	UserID     string
 }) (string, error) {
@@ -330,7 +421,7 @@ func (r *PlaybookMutationCollection) AddPlaybookMember(ctx context.Context, args
 	return "", nil
 }
 
-func (r *PlaybookMutationCollection) RemovePlaybookMember(ctx context.Context, args struct {
+func (r *PlaybookGQLHandler) RemovePlaybookMember(ctx context.Context, args struct {
 	PlaybookID string
 	UserID     string
 }) (string, error) {
@@ -360,7 +451,7 @@ func (r *PlaybookMutationCollection) RemovePlaybookMember(ctx context.Context, a
 	return "", nil
 }
 
-func (r *PlaybookMutationCollection) AddMetric(ctx context.Context, args struct {
+func (r *PlaybookGQLHandler) AddMetric(ctx context.Context, args struct {
 	PlaybookID  string
 	Title       string
 	Description string
@@ -405,7 +496,7 @@ func (r *PlaybookMutationCollection) AddMetric(ctx context.Context, args struct 
 	return args.PlaybookID, nil
 }
 
-func (r *PlaybookMutationCollection) UpdateMetric(ctx context.Context, args struct {
+func (r *PlaybookGQLHandler) UpdateMetric(ctx context.Context, args struct {
 	ID          string
 	Title       *string
 	Description *string
@@ -450,7 +541,7 @@ func (r *PlaybookMutationCollection) UpdateMetric(ctx context.Context, args stru
 	return args.ID, nil
 }
 
-func (r *PlaybookMutationCollection) DeleteMetric(ctx context.Context, args struct {
+func (r *PlaybookGQLHandler) DeleteMetric(ctx context.Context, args struct {
 	ID string
 }) (string, error) {
 	c, err := getContext(ctx)

@@ -243,13 +243,62 @@ export type QueryRunsArgs = {
 
 export type Run = {
     __typename?: 'Run';
+    broadcastChannelIDs: Array<Scalars['String']>;
+    channelID: Scalars['String'];
+    checklists: Array<Checklist>;
+    createAt: Scalars['Float'];
+    currentStatus: Scalars['String'];
+    endAt: Scalars['Float'];
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
+    lastStatusUpdateAt: Scalars['Float'];
     name: Scalars['String'];
+    ownerUserID: Scalars['String'];
+    participantIDs: Array<Scalars['String']>;
+    playbookID: Scalars['String'];
+    postID: Scalars['String'];
+    previousReminder: Scalars['Float'];
+    reminderMessageTemplate: Scalars['String'];
+    reminderPostId: Scalars['String'];
+    reminderTimerDefaultSeconds: Scalars['Float'];
+    retrospective: Scalars['String'];
+    retrospectiveEnabled: Scalars['Boolean'];
+    retrospectivePublishedAt: Scalars['Float'];
+    retrospectiveReminderIntervalSeconds: Scalars['Float'];
+    retrospectiveWasCanceled: Scalars['Boolean'];
+    statusPosts: Array<StatusPost>;
+    statusUpdateBroadcastChannelsEnabled: Scalars['Boolean'];
+    statusUpdateBroadcastWebhooksEnabled: Scalars['Boolean'];
+    statusUpdateEnabled: Scalars['Boolean'];
+    summary: Scalars['String'];
+    summaryModifiedAt: Scalars['Float'];
+    teamID: Scalars['String'];
+    timelineEvents: Array<TimelineEvent>;
+    webhookOnStatusUpdateURLs: Array<Scalars['String']>;
 };
 
 export type RunUpdates = {
     isFavorite?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type StatusPost = {
+    __typename?: 'StatusPost';
+    createAt: Scalars['Float'];
+    deleteAt: Scalars['Float'];
+    id: Scalars['String'];
+};
+
+export type TimelineEvent = {
+    __typename?: 'TimelineEvent';
+    createAt: Scalars['Float'];
+    creatorUserID: Scalars['String'];
+    deleteAt: Scalars['Float'];
+    details: Scalars['String'];
+    eventType: Scalars['String'];
+    id: Scalars['String'];
+    postID: Scalars['String'];
+    subjectUserID: Scalars['String'];
+    summary: Scalars['String'];
 };
 
 export type PlaybookQueryVariables = Exact<{

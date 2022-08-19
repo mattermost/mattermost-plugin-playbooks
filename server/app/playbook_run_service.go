@@ -2109,10 +2109,16 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	// Automaticly participate if you join the channel
 	// To be removed when separating members and participants is complete.
 	if err := s.AddParticipants(playbookRunID, []string{user.Id}); err != nil {
-		s.logger.Errorf("faied to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+		s.logger.Errorf("failed to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
-	_ = s.sendPlaybookRunToClient(playbookRunID)
+	if err := s.Follow(playbookRunID, user.Id); err != nil {
+		s.logger.Errorf("failed to make participant to follow the run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
+
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		s.logger.Errorf("failed to to send run '%s' through ws, user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
 }
 
 func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
@@ -2193,7 +2199,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 		s.logger.Errorf("faied to remove participant that left channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
-	_ = s.sendPlaybookRunToClient(playbookRunID)
+	if err := s.Unfollow(playbookRunID, user.Id); err != nil {
+		s.logger.Errorf("failed to make participant to unfollow the run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
+
+	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		s.logger.Errorf("failed to send the run '%s' through ws, user '%s'; error: %s", playbookRunID, user.Id, err.Error())
+	}
 }
 
 func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {

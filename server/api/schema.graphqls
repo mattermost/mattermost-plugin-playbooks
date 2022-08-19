@@ -167,11 +167,64 @@ type PlaybookMetricConfig {
 	target: Int
 }
 
-# Note this is not a complete run yet. Just enough to make the LHS work.
 type Run {
 	id: String!
+	playbookID: String!
 	name: String!
+	ownerUserID: String!
+	channelID: String!
+	postID: String!
+	teamID: String!
 	isFavorite: Boolean!
+	currentStatus: String!
+	createAt: Float!
+	endAt: Float!
+	participantIDs: [String!]!
+
+	summary: String!
+	summaryModifiedAt: Float!
+	checklists: [Checklist!]!
+
+	retrospective: String!
+	retrospectivePublishedAt: Float!
+	retrospectiveReminderIntervalSeconds: Float!
+	retrospectiveEnabled: Boolean!
+	retrospectiveWasCanceled: Boolean!
+
+	statusUpdateEnabled: Boolean!
+	statusUpdateBroadcastWebhooksEnabled: Boolean!
+	lastStatusUpdateAt: Float!
+	statusPosts: [StatusPost!]!
+	reminderPostId: String!
+	reminderMessageTemplate: String!
+	reminderTimerDefaultSeconds: Float!
+	previousReminder: Float!
+
+	statusUpdateBroadcastChannelsEnabled: Boolean!
+	statusUpdateBroadcastWebhooksEnabled: Boolean!
+	broadcastChannelIDs: [String!]!
+	webhookOnStatusUpdateURLs: [String!]!
+
+	timelineEvents: [TimelineEvent!]!
+
+}
+
+type StatusPost {
+	id: String!
+	createAt: Float!
+	deleteAt: Float!
+}
+
+type TimelineEvent {
+	id: String!
+	createAt: Float!
+	deleteAt: Float!
+	eventType: String!
+	details: String!
+	postID: String!
+	summary: String!
+	subjectUserID: String!
+	creatorUserID: String!
 }
 
 input RunUpdates {

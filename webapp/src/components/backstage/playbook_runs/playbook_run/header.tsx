@@ -15,10 +15,9 @@ import {showRunActionsModal} from 'src/actions';
 import {
     getSiteUrl,
     telemetryEventForPlaybookRun,
-    requestGetInvolved,
 } from 'src/client';
 import {useFavoriteRun} from 'src/hooks';
-import {useRunAddParticipants} from 'src/graphql/hooks';
+import {useRunMembership} from 'src/graphql/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -39,7 +38,6 @@ interface Props {
     playbookRun: PlaybookRun;
     role: Role;
     channel: Channel | undefined | null;
-    hasAccessToChannel: boolean;
     hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
@@ -47,7 +45,7 @@ interface Props {
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -56,7 +54,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
-    const joinRun = useRunAddParticipants(playbookRun.id, [currentUserId]);
+    const {addToRun} = useRunMembership(playbookRun.id, [currentUserId]);
 
     const onParticipate = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
@@ -71,18 +69,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
             return;
         }
 
-        // TODO: remove channel eval when participants are full-related to run
-        if (!hasAccessToChannel) {
-            requestGetInvolved(playbookRun.id)
-                .then(() => addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success))
-                .catch(() => addToast(formatMessage({defaultMessage: 'Your request to join the run was unsuccessful.'}), ToastType.Failure));
-            return;
-        } else if (!channel) {
-            addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
-            return;
-        }
-
-        joinRun()
+        addToRun()
             .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
             .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
         telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);

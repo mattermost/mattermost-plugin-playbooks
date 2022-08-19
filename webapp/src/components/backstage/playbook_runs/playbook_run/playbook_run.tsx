@@ -216,7 +216,6 @@ const PlaybookRunDetails = () => {
                         onTimelineClick={onTimelineClick}
                         role={role}
                         channel={channel}
-                        hasAccessToChannel={!channelFetchMetadata.isErrorCode(403)}
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}

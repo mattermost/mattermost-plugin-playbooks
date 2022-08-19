@@ -17,7 +17,7 @@ import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
-import {useRunRemoveParticipants} from 'src/graphql/hooks';
+import {useRunMembership} from 'src/graphql/hooks';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -141,10 +141,10 @@ const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRun: PlaybookRun
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
-    const leaveRun = useRunRemoveParticipants(playbookRun.id, [currentUserId]);
+    const {removeFromRun} = useRunMembership(playbookRun.id, [currentUserId]);
 
     const onLeaveRun = async () => {
-        leaveRun()
+        removeFromRun()
             .then(() => {
                 addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
                 if (!hasPermanentViewerAccess) {

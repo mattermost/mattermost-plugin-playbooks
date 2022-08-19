@@ -99,8 +99,8 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useRunAddParticipants = (runID?: string, userIDs?: string[]) => {
-    const [addToRun] = useAddRunParticipantsMutation({
+export const useRunMembership = (runID?: string, userIDs?: string[]) => {
+    const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
             PlaybookLhsDocument,
         ],
@@ -110,16 +110,7 @@ export const useRunAddParticipants = (runID?: string, userIDs?: string[]) => {
         },
     });
 
-    return useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await addToRun();
-    }, [runID, JSON.stringify(userIDs), addToRun]);
-};
-
-export const useRunRemoveParticipants = (runID?: string, userIDs?: string[]) => {
-    const [removeFromRun] = useRemoveRunParticipantsMutation({
+    const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
             PlaybookLhsDocument,
         ],
@@ -129,10 +120,19 @@ export const useRunRemoveParticipants = (runID?: string, userIDs?: string[]) => 
         },
     });
 
-    return useCallback(async () => {
+    const addToRun = useCallback(async () => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await removeFromRun();
-    }, [runID, JSON.stringify(userIDs), removeFromRun]);
+        await add();
+    }, [runID, JSON.stringify(userIDs), add]);
+
+    const removeFromRun = useCallback(async () => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await remove();
+    }, [runID, JSON.stringify(userIDs), remove]);
+    return {addToRun, removeFromRun};
 };
+
