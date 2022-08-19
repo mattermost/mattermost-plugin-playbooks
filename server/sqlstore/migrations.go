@@ -2198,10 +2198,8 @@ var migrations = []Migration{
 					FROM IR_Incident as run
 					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
 					LEFT JOIN IR_Run_Participants as rp on rp.IncidentID = run.ID AND rp.UserID = cm.UserID
-					LEFT JOIN Bots as b ON b.UserID = cm.UserID
 					WHERE
-						rp.IncidentID IS NULL AND
-						b.UserId IS NULL
+						rp.IncidentID IS NULL
 			`); err != nil {
 				// Migration is optional so no failure just logging. (it will not try again)
 				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))

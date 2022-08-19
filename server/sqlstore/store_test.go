@@ -638,11 +638,10 @@ func TestMigrations(t *testing.T) {
 				Select("cm.UserID as UserID", "i.ID as IncidentID").
 				From("ChannelMembers as cm").
 				Join("IR_Incident AS i ON i.ChannelID = cm.ChannelID").
-				Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)")).
 				OrderBy("UserID ASC").
 				OrderBy("IncidentID ASC"))
 			require.NoError(t, err)
-			require.Len(t, runMembers, 6)
+			require.Len(t, runMembers, 10)
 			require.Equal(t, runMembers, channelMembers)
 
 			var count int64
@@ -654,13 +653,6 @@ func TestMigrations(t *testing.T) {
 				Where(sq.Eq{"IsFollower": true}))
 			require.NoError(t, err)
 			require.Equal(t, int64(1), count)
-
-			// Verify that bots are not in the run members list
-			err = sqlStore.getBuilder(sqlStore.db, &count, sqlStore.builder.
-				Select("COUNT(*)").
-				From("IR_Run_Participants"))
-			require.NoError(t, err)
-			require.Equal(t, int64(7), count) // 3 existing users + 4 new channel members
 		})
 	}
 }
