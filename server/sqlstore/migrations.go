@@ -2169,7 +2169,6 @@ var migrations = []Migration{
 					UPDATE IR_Run_Participants
 					SET IsParticipant = true
 					FROM IR_Incident
-					-- INNER JOIN IR_Incident ON IR_Run_Participants.IncidentID = IR_Incident.ID
 					INNER JOIN ChannelMembers ON ChannelMembers.ChannelID = IR_Incident.ChannelID
 					WHERE
 						IR_Run_Participants.UserID = ChannelMembers.UserID AND
@@ -2184,11 +2183,11 @@ var migrations = []Migration{
 			// Find all users who are members of channels where runs have been created.
 			// Add them as members of the playbook run
 			if _, err := e.Exec(`
-				INSERT INTO IR_Run_Participants
+				INSERT INTO IR_Run_Participants (UserID, IncidentID, IsFollower, IsParticipant)
 					SELECT DISTINCT
 						cm.UserID as UserID,
 						run.ID as IncidentID,
-						false as IsFollowing,
+						false as IsFollower,
 						true as IsParticipant
 					FROM IR_Incident as run
 					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
