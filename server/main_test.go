@@ -157,7 +157,6 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
-		sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
@@ -454,6 +453,8 @@ func (e *TestEnvironment) SetE20Licence() {
 }
 
 func (e *TestEnvironment) CreateBasic() {
+	e.T.Helper()
+
 	e.CreateClients()
 	e.CreateBasicServer()
 	e.SetE20Licence()
