@@ -2139,9 +2139,15 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
 				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER COLUMN IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
 				}
 			}
 
