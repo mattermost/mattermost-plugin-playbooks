@@ -1,7 +1,7 @@
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
-import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
