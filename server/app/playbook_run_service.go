@@ -2098,7 +2098,9 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 		return
 	}
 
-	_ = s.addChannelJoinTimelineEvent(user, channel, actorID, playbookRunID, userID)
+	if err := s.addChannelJoinTimelineEvent(user, channel, actorID, playbookRunID, userID); err != nil {
+		s.logger.Errorf("%w", err)
+	}
 
 	if !user.IsBot {
 		if err := s.Follow(playbookRunID, user.Id); err != nil {
@@ -2110,10 +2112,6 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	// To be removed when separating members and participants is complete.
 	if err := s.AddParticipants(playbookRunID, []string{user.Id}); err != nil {
 		s.logger.Errorf("failed to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
-	}
-
-	if err := s.Follow(playbookRunID, user.Id); err != nil {
-		s.logger.Errorf("failed to make participant to follow the run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
 	if err := s.sendPlaybookRunToClient(playbookRunID); err != nil {
@@ -2128,8 +2126,7 @@ func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, c
 	if actorID != "" {
 		actor, err := s.pluginAPI.User.Get(actorID)
 		if err != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err.Error())
-			return err
+			return errors.Wrapf(err, "failed to resolve user for userID '%s'", actorID)
 		}
 
 		summary = fmt.Sprintf("@%s added @%s to ~%s", actor.Username, user.Username, channel.Name)
@@ -2147,9 +2144,9 @@ func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, c
 	}
 
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
-		return err
+		return errors.Wrap(err, "failed to create timeline event")
 	}
+
 	return nil
 }
 
@@ -2191,9 +2188,11 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 		return
 	}
 
-	_ = s.addChannelLeaveTimelineEvent(user, channel, actorID, playbookRunID, userID)
+	if err := s.addChannelLeaveTimelineEvent(user, channel, actorID, playbookRunID, userID); err != nil {
+		s.logger.Errorf("%w", err)
+	}
 
-	// Automaticly leave if you leave the channel
+	// Automatically leave run if you leave the channel
 	// To be removed when separating members and participants is complete.
 	if err := s.RemoveParticipants(playbookRunID, []string{user.Id}); err != nil {
 		s.logger.Errorf("faied to remove participant that left channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
@@ -2215,8 +2214,7 @@ func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, 
 	if actorID != "" {
 		actor, err := s.pluginAPI.User.Get(actorID)
 		if err != nil {
-			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err.Error())
-			return err
+			return errors.Wrapf(err, "failed to resolve user for userID '%s'", actorID)
 		}
 
 		summary = fmt.Sprintf("@%s removed @%s from ~%s", actor.Username, user.Username, channel.Name)
@@ -2234,7 +2232,7 @@ func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, 
 	}
 
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 	return nil
 }

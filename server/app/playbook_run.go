@@ -843,10 +843,10 @@ type PlaybookRunStore interface {
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
 
-	// AddParticipants adds a particpant to the run
+	// AddParticipants adds particpants to the run
 	AddParticipants(playbookRunID string, userIDs []string) error
 
-	// RemoveParticipants removes a participant from the run
+	// RemoveParticipants removes participants from the run
 	RemoveParticipants(playbookRunID string, userIDs []string) error
 }
 
