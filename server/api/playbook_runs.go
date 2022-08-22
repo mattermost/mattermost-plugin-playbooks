@@ -885,6 +885,7 @@ func (h *PlaybookRunHandler) requestUpdate(w http.ResponseWriter, r *http.Reques
 
 // requestGetInvolved handles the request of a user who does not participate actively in a run
 // and can not join directly (need to ask others who have permissions to add them)
+// @deprecated Use GraphQL addRunParticipant mutation instead. Preserved for backwards compatibility.
 func (h *PlaybookRunHandler) requestGetInvolved(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -901,7 +902,7 @@ func (h *PlaybookRunHandler) requestGetInvolved(w http.ResponseWriter, r *http.R
 }
 
 // leave handles the POST request /runs/{id}/leave endpoint, caller user will be removed from participants.
-// @deprecated use GraphQL removeRunParticipant mutation instead
+// @deprecated Use GraphQL removeRunParticipant mutation instead. Preserved for backwards compatibility.
 func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
