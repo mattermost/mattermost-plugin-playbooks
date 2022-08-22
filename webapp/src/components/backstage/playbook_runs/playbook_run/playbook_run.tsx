@@ -97,9 +97,8 @@ const PlaybookRunDetails = () => {
     usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
-    const [metadata, metadataResult] = useRunMetadata(playbookRunId, [JSON.stringify(playbookRun?.participant_ids)]);
-
-    const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
+    const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
+    const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
     const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();

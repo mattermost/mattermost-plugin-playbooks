@@ -19,19 +19,34 @@ type MigrationMapping struct {
 func TestDBSchema(t *testing.T) {
 	migrationsMapping := []MigrationMapping{
 		{
-			Name:                 "0.1.0",
+			Name:                 "0.0.0",
 			LegacyMigrationIndex: 0,
-			MorphMigrationLimit:  4,
+			MorphMigrationLimit:  4, // 000001 <> 000004
+		},
+		{
+			Name:                 "0.2.0",
+			LegacyMigrationIndex: 2,
+			MorphMigrationLimit:  1, // 000005
 		},
 		{
 			Name:                 "0.3.0",
-			LegacyMigrationIndex: 2,
-			MorphMigrationLimit:  1,
+			LegacyMigrationIndex: 3,
+			MorphMigrationLimit:  4, // 000006 <> 000009
 		},
 		{
 			Name:                 "0.4.0",
-			LegacyMigrationIndex: 3,
-			MorphMigrationLimit:  4,
+			LegacyMigrationIndex: 4,
+			MorphMigrationLimit:  4, // 000010 <> 000013
+		},
+		{
+			Name:                 "0.5.0",
+			LegacyMigrationIndex: 5,
+			MorphMigrationLimit:  2, // 000014 <> 000015
+		},
+		{
+			Name:                 "0.6.0",
+			LegacyMigrationIndex: 6,
+			MorphMigrationLimit:  1, // 000016
 		},
 	}
 
@@ -206,6 +221,60 @@ func TestMigration_000005(t *testing.T) {
 	}
 }
 
+func TestMigration_000014(t *testing.T) {
+	insertData := func(t *testing.T, store *SQLStore) {
+		_, err := insertRun(store, NewRunMapBuilder().WithName("0").ToRunAsMap())
+		require.NoError(t, err)
+		_, err = insertRun(store, NewRunMapBuilder().WithName("1").WithEndAt(100000000000).ToRunAsMap())
+		require.NoError(t, err)
+		_, err = insertRun(store, NewRunMapBuilder().WithName("2").WithEndAt(0).ToRunAsMap())
+		require.NoError(t, err)
+		_, err = insertRun(store, NewRunMapBuilder().WithName("3").WithEndAt(123861298332).ToRunAsMap())
+		require.NoError(t, err)
+	}
+
+	type Run struct {
+		Name          string
+		CurrentStatus string
+		EndAt         int64
+	}
+
+	validateAfter := func(t *testing.T, store *SQLStore) {
+		var runs []Run
+		err := store.selectBuilder(store.db, &runs, store.builder.
+			Select("Name", "CurrentStatus", "EndAt").
+			From("IR_Incident"))
+
+		require.NoError(t, err)
+		require.Len(t, runs, 4)
+
+		runsStatuses := map[string]string{
+			"0": "Active",
+			"2": "Active",
+			"1": "Resolved",
+			"3": "Resolved",
+		}
+		for _, r := range runs {
+			require.Equal(t, runsStatuses[r.Name], r.CurrentStatus)
+		}
+	}
+
+	for _, driverName := range driverNames {
+		t.Run("run migration up", func(t *testing.T) {
+			db := setupTestDB(t, driverName)
+			_, store := setupTables(t, db)
+			engine, err := store.createMorphEngine()
+			require.NoError(t, err)
+			defer engine.Close()
+
+			runMigrationUp(t, store, engine, 13)
+			insertData(t, store)
+			runMigrationUp(t, store, engine, 1)
+			validateAfter(t, store)
+		})
+	}
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
@@ -293,6 +362,8 @@ func NewRunMapBuilder() *RunMapBuilder {
 			"CommanderUserID": "commander",
 			"TeamID":          "testTeam",
 			"ChannelID":       model.NewId(),
+			"ActiveStage":     0,
+			"ChecklistsJSON":  "[]",
 		},
 	}
 }
@@ -309,6 +380,11 @@ func (b *RunMapBuilder) WithActiveStage(activeStage int) *RunMapBuilder {
 
 func (b *RunMapBuilder) WithChecklists(checklistJSON string) *RunMapBuilder {
 	b.runAsMap["ChecklistsJSON"] = checklistJSON
+	return b
+}
+
+func (b *RunMapBuilder) WithEndAt(endAt int64) *RunMapBuilder {
+	b.runAsMap["EndAt"] = endAt
 	return b
 }
 

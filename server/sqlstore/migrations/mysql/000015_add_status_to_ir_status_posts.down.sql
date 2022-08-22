@@ -1,11 +1,11 @@
 SET @preparedStatement = (SELECT IF(
     EXISTS(
         SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE table_name = 'IR_Incident'
+        WHERE table_name = 'IR_StatusPosts'
         AND table_schema = DATABASE()
-        AND column_name = 'BroadcastChannelID'
+        AND column_name = 'Status'
     ),
-    'ALTER TABLE IR_Incident DROP COLUMN BroadcastChannelID;',
+    'ALTER TABLE IR_StatusPosts DROP COLUMN Status;',
     'SELECT 1;'
 ));
 

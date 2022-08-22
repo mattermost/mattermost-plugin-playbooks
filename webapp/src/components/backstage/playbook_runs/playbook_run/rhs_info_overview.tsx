@@ -23,8 +23,9 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {usePlaybook, useFormattedUsername} from 'src/hooks';
+import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
 import {FollowState} from './rhs_info';
@@ -72,12 +73,12 @@ interface Props {
     editable: boolean;
     channel: Channel | undefined | null;
     followState: FollowState;
+    playbook?: PlaybookWithChecklist;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const [playbook] = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
