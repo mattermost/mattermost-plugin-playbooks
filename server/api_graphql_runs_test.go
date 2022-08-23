@@ -60,6 +60,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
+		Password: "Password123!",
 	})
 	require.NoError(e.T, err)
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
