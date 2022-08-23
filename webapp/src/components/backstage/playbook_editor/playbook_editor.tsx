@@ -496,11 +496,10 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     ${Sections} {
         margin: 5rem 1.5rem;
         grid-area: content;
-
+        
         ${HorizontalBG} {
             /* sticky checklist header */
             top: var(--bar-height);
-            z-index: 1;
         }
     }
 

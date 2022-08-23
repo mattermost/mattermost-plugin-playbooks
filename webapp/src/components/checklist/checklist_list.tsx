@@ -349,7 +349,6 @@ const ChecklistList = ({
                                                 title={checklist.title}
                                                 items={checklist.items}
                                                 index={checklistIndex}
-                                                numChecklists={checklists.length}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}
                                                 disabled={disabled}
