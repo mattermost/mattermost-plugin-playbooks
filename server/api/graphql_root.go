@@ -5,8 +5,8 @@ import (
 )
 
 type RootResolver struct {
-	RunGQLHandler
-	PlaybookGQLHandler
+	RunRootResolver
+	PlaybookRootResolver
 }
 
 func addToSetmap[T any](setmap map[string]interface{}, name string, value *T) {
