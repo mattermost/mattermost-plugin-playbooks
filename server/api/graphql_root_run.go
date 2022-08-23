@@ -120,7 +120,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		return "", errors.Wrap(err, "attempted to modify participants without permissions")
 	}
 
-	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs); err != nil {
+	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 

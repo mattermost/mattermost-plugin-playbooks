@@ -66,7 +66,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
 	require.NoError(e.T, err)
 
-	t.Run("add one participant", func(t *testing.T) {
+	t.Run("add two participants", func(t *testing.T) {
 		testAddRunParticipantsMutation := `
 		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
 			addRunParticipants(runID: $runID, userIDs: $userIDs)
@@ -109,7 +109,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 
 	})
 
-	t.Run("remove one participant", func(t *testing.T) {
+	t.Run("remove two participants", func(t *testing.T) {
 		testAddRunParticipantsMutation := `
 		mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
 			removeRunParticipants(runID: $runID, userIDs: $userIDs)
@@ -145,5 +145,118 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		member, err = e.A.GetChannelMember(context.TODO(), e.BasicRun.ChannelID, user3.Id)
 		require.NotNil(t, err)
 		assert.Nil(t, member)
+	})
+
+	t.Run("add participant to a public run with private channel", func(t *testing.T) {
+
+		// This flow test a user with run access (regularUser) that adds another user (regularUser2)
+		// to a public run with a private channel
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                   "TestPrivatePlaybookNoMembers",
+			TeamID:                  e.BasicTeam.Id,
+			Public:                  true,
+			CreatePublicPlaybookRun: false,
+		})
+		require.NoError(e.T, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(e.T, err)
+		require.NotNil(e.T, run)
+
+		testAddRunParticipantsMutation := `
+		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+			addRunParticipants(runID: $runID, userIDs: $userIDs)
+		}
+		`
+		var response graphql.Response
+		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testAddRunParticipantsMutation,
+			OperationName: "AddRunParticipants",
+			Variables: map[string]interface{}{
+				"runID":   run.ID,
+				"userIDs": []string{e.RegularUser2.Id},
+			},
+		}, &response)
+
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
+		assert.Equal(t, e.RegularUser2.Id, run.ParticipantIDs[1])
+
+		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, meta.Followers, 2)
+		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
+		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
+
+		member, err := e.A.GetChannelMember(context.TODO(), run.ChannelID, e.RegularUser2.Id)
+		require.Nil(t, err)
+		assert.Equal(t, e.RegularUser2.Id, member.UserId)
+	})
+
+	t.Run("join a public run with private channel", func(t *testing.T) {
+
+		// This flow test a user (regularUser2) that wants to participate a public run with a private channel
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                   "TestPrivatePlaybookNoMembers",
+			TeamID:                  e.BasicTeam.Id,
+			Public:                  true,
+			CreatePublicPlaybookRun: false,
+		})
+		require.NoError(e.T, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(e.T, err)
+		require.NotNil(e.T, run)
+
+		testAddRunParticipantsMutation := `
+		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+			addRunParticipants(runID: $runID, userIDs: $userIDs)
+		}
+		`
+		var response graphql.Response
+		err = e.PlaybooksClient2.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testAddRunParticipantsMutation,
+			OperationName: "AddRunParticipants",
+			Variables: map[string]interface{}{
+				"runID":   run.ID,
+				"userIDs": []string{e.RegularUser2.Id},
+			},
+		}, &response)
+
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
+		assert.Equal(t, e.RegularUser2.Id, run.ParticipantIDs[1])
+
+		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, meta.Followers, 2)
+		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
+		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
+
+		member, err := e.A.GetChannelMember(context.TODO(), run.ChannelID, e.RegularUser2.Id)
+		require.Nil(t, member)
+		require.NotNil(t, err)
 	})
 }

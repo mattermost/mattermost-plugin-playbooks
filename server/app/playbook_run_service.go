@@ -2110,7 +2110,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	// Automaticly participate if you join the channel
 	// To be removed when separating members and participants is complete.
-	if err := s.AddParticipants(playbookRunID, []string{user.Id}); err != nil {
+	if err := s.AddParticipants(playbookRunID, []string{user.Id}, user.Id); err != nil {
 		s.logger.Errorf("failed to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
 	}
 
@@ -2812,7 +2812,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2823,16 +2823,26 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	for _, userID := range userIDs {
-		s.participateActions(playbookRun, userID)
+		s.participateActions(playbookRun, userID, requesterUserID)
 	}
 
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string) {
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string, requesterUserID string) {
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member != nil {
+		return
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		s.logger.Errorf("failed to get channel, channelID '%s'; error: %s", playbookRun.ChannelID, err.Error())
+	}
+
+	// DO not additionally add the user to the channel if the user is the requester (participate) and the channel is private
+	if channel.Type == "P" && requesterUserID == userID {
 		return
 	}
 
