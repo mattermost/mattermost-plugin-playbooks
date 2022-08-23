@@ -45,7 +45,6 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
-        adjustTop: 260,
     };
 
     state = {show: true};
@@ -131,7 +130,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 role='dialog'
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
-                $adjustTop={this.props.adjustTop}
+                container={document.getElementById('root-portal')}
             >
                 <Header
                     className='GenericModal__header'
@@ -158,8 +157,12 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-export const StyledModal = styled(Modal)<{$adjustTop: number}>`
+export const StyledModal = styled(Modal)`
     &&& {
+        display: grid !important;
+        grid-template-rows: 1fr auto 2fr;
+        place-content: start center;
+        padding: 8px;
         /* content-spacing */
         .modal-header {
             margin-bottom: 8px;
@@ -177,7 +180,9 @@ export const StyledModal = styled(Modal)<{$adjustTop: number}>`
             margin: 12px 12px 0 0;
         }
         .modal-dialog {
-            margin-top: calc(50vh - ${({$adjustTop}) => $adjustTop}px);
+            margin: 0px !important;
+            max-width: 100%;
+            grid-row: 2;
         }
     }
 
