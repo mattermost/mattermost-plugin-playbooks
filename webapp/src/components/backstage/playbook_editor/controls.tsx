@@ -63,6 +63,7 @@ type ControlProps = {
         public: boolean,
         default_playbook_member_role: string,
         default_owner_id: string,
+        default_owner_enabled: boolean,
         title: string,
         delete_at: number,
         team_id: string,
@@ -269,7 +270,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             onClick={() => {
                 dispatch(openPlaybookRunModal(
                     playbook.id,
-                    playbook.default_owner_id,
+                    playbook.default_owner_enabled ? playbook.default_owner_id : null,
                     playbook.description,
                     team.id,
                     team.name

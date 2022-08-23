@@ -3,7 +3,7 @@ import React, {ComponentProps, useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import {getCurrentUser, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Client4} from 'mattermost-redux/client';
 
@@ -25,7 +25,7 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 
 const ID = 'playbooks_run_playbook_dialog';
 
-export const makeModalDefinition = (playbookId: string, defaultOwnerId: string, description: string, teamId: string, teamName: string) => ({
+export const makeModalDefinition = (playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) => ({
     modalId: ID,
     dialogType: RunPlaybookModal,
     dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName},
@@ -33,7 +33,7 @@ export const makeModalDefinition = (playbookId: string, defaultOwnerId: string, 
 
 type Props = {
     playbookId: string,
-    defaultUserId: string,
+    defaultOwnerId: string | null,
     description: string,
     teamId: string,
     teamName: string
@@ -41,7 +41,7 @@ type Props = {
 
 const RunPlaybookModal = ({
     playbookId,
-    defaultUserId,
+    defaultOwnerId,
     description,
     teamId,
     ...modalProps
@@ -49,13 +49,15 @@ const RunPlaybookModal = ({
     const {formatMessage} = useIntl();
 
     const [runName, setRunName] = useState('');
-    const currentUser = useSelector(getCurrentUser);
-    const defaultUser = useSelector<GlobalState, UserProfile>((state) => getUser(state, defaultUserId));
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const currentUserName = getFullName(currentUser) || displayUsername(currentUser, teamnameNameDisplaySetting);
-    const playbookOwner = defaultUser ? displayUsername(defaultUser, teamnameNameDisplaySetting) : currentUserName;
+    let userId = useSelector(getCurrentUserId);
+    if (defaultOwnerId) {
+        userId = defaultOwnerId;
+    }
+    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
+    const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+    const playbookOwner = getFullName(user) || displayUsername(user, teammateNameDisplaySetting);
+    const profileUri = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
 
-    const profileUri = Client4.getProfilePictureUrl(currentUser.id, currentUser.last_picture_update);
     const playbook = usePlaybook(playbookId)[0];
 
     useEffect(() => {
@@ -65,7 +67,7 @@ const RunPlaybookModal = ({
     }, [playbook, playbook?.id]);
 
     const onSubmit = () => {
-        createPlaybookRun(playbookId, currentUser.id, teamId, runName, description)
+        createPlaybookRun(playbookId, user.id, teamId, runName, description)
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}`);
