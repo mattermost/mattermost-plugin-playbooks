@@ -2280,7 +2280,14 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
+	_, userRoleID, adminRoleID, err := s.store.GetSchemeRolesForChannel(channel.Id)
+	if err != nil {
+		s.logger.Errorf("failed to get channel scheme roles; error: %s", err.Error())
+		userRoleID = model.ChannelAdminRoleId
+		adminRoleID = model.ChannelUserRoleId
+	}
+
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
