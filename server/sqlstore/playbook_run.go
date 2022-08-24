@@ -1291,7 +1291,7 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	return count, nil
 }
 
-// GetSchemeRolesForChannel scheme role names for the channel
+// GetSchemeRolesForChannel scheme role ids for the channel
 func (s *playbookRunStore) GetSchemeRolesForChannel(channelID string) (string, string, string, error) {
 	query := s.queryBuilder.
 		Select("COALESCE(s.DefaultChannelGuestRole, 'channel_guest') DefaultChannelGuestRole",
@@ -1300,6 +1300,22 @@ func (s *playbookRunStore) GetSchemeRolesForChannel(channelID string) (string, s
 		From("Schemes as s").
 		Join("Channels AS c ON (c.SchemeId = s.Id)").
 		Where(sq.Eq{"c.Id": channelID})
+
+	var scheme model.Scheme
+	err := s.store.getBuilder(s.store.db, &scheme, query)
+
+	return scheme.DefaultChannelGuestRole, scheme.DefaultChannelUserRole, scheme.DefaultChannelAdminRole, err
+}
+
+// GetSchemeRolesForTeam scheme role ids for the team
+func (s *playbookRunStore) GetSchemeRolesForTeam(teamID string) (string, string, string, error) {
+	query := s.queryBuilder.
+		Select("COALESCE(s.DefaultChannelGuestRole, 'channel_guest') DefaultChannelGuestRole",
+			"COALESCE(s.DefaultChannelUserRole, 'channel_user') DefaultChannelUserRole",
+			"COALESCE(s.DefaultChannelAdminRole, 'channel_admin') DefaultChannelAdminRole").
+		From("Schemes as s").
+		Join("Teams AS t ON (t.SchemeId = s.Id)").
+		Where(sq.Eq{"t.Id": teamID})
 
 	var scheme model.Scheme
 	err := s.store.getBuilder(s.store.db, &scheme, query)

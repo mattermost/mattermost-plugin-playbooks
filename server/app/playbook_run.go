@@ -840,8 +840,11 @@ type PlaybookRunStore interface {
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
 
-	// GetSchemeRolesForChannel scheme role names for the channel
+	// GetSchemeRolesForChannel scheme role ids for the channel
 	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
