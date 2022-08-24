@@ -5,7 +5,6 @@ import {
     useRef,
     useState,
     useMemo,
-    useLayoutEffect,
     DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
@@ -32,7 +31,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
@@ -394,7 +393,7 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
  * @param id identifier of the run to fetch metadata
  * @returns data and fetchState in a array tuple
  */
-export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = []) {
+export function useRunMetadata(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunMetadata, noopSelector, deps);
 }
 
@@ -404,7 +403,7 @@ export function useRunMetadata(id: PlaybookRun['id'], deps: DependencyList = [])
  * @param deps Array of additional deps whose change will invoke again fetch
  * @returns data and fetchState in a array tuple
  */
-export function useRunStatusUpdates(id: PlaybookRun['id'], deps: DependencyList = []) {
+export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
 }
 
@@ -487,6 +486,9 @@ export function useOpenCloudModal() {
             openModal({
                 modalId: ModalIdentifiers.CLOUD_PURCHASE,
                 dialogType: PurchaseModal,
+                dialogProps: {
+                    callerCTA: 'playbooks',
+                },
             }),
         );
     };
@@ -641,22 +643,6 @@ export const usePrevious = (value: any) => {
     });
 
     return ref.current;
-};
-
-export const usePortal = () => {
-    const [el] = useState(document.createElement('div'));
-    useLayoutEffect(() => {
-        const rootPortal = document.getElementById('root-portal');
-        if (rootPortal) {
-            rootPortal.appendChild(el);
-        }
-        return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el);
-            }
-        };
-    }, [el]);
-    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {

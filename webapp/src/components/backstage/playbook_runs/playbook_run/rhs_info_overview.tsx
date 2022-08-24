@@ -8,7 +8,7 @@ import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon, ArrowForwardIosIcon} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
@@ -23,8 +23,9 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {usePlaybook, useFormattedUsername} from 'src/hooks';
+import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
 import {FollowState} from './rhs_info';
@@ -72,12 +73,12 @@ interface Props {
     editable: boolean;
     channel: Channel | undefined | null;
     followState: FollowState;
+    playbook?: PlaybookWithChecklist;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const [playbook] = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -117,6 +118,10 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
         }
     };
 
+    const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+        margin-left: 7px;
+    `;
+
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
@@ -146,12 +151,18 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
             >
-                <Participants>
-                    <UserList
-                        userIds={run.participant_ids}
-                        sizeInPx={20}
+                <ParticipantsContainer>
+                    <Participants>
+                        <UserList
+                            userIds={run.participant_ids}
+                            sizeInPx={20}
+                        />
+                    </Participants>
+                    <StyledArrowIcon
+                        size={12}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                </Participants>
+                </ParticipantsContainer>
             </Item>
             <Item
                 id='runinfo-following'
@@ -189,11 +200,11 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, onVi
                     >
                         <ItemContent >
                             {channel.display_name}
-                            <OpenInNewIcon
-                                size={14}
-                                color={'var(--button-bg)'}
-                            />
                         </ItemContent>
+                        <OpenInNewIcon
+                            size={14}
+                            color={'var(--button-bg)'}
+                        />
                     </ItemLink>
                 </Item>
             )}
@@ -273,21 +284,21 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    max-width: 230px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const ItemContent = styled.div`
-    display: flex;
+    display: flex;    
     flex-direction: row;
     align-items: center;
 
     svg {
         margin-left: 3px;
-    }
+    }    
+`;
+
+const ItemContent = styled.div`
+    max-width: 230px;
+    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
@@ -336,4 +347,10 @@ const UnfollowButton = styled(SecondaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
+`;
+
+const ParticipantsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;

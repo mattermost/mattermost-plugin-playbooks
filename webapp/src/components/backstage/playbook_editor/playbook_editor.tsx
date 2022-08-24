@@ -456,7 +456,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     --markdown-textbox-padding: 12px 16px;
 
     --bar-height: 60px;
-    --content-max-width: 780px;
+    --content-max-width: 1100px;
 
     /* === standard-full === */
     grid-template:
@@ -486,17 +486,20 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
         position: sticky;
         top: var(--bar-height);
+
+        min-width: 145px;
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
     }
 
 
     ${Sections} {
         margin: 5rem 1.5rem;
         grid-area: content;
-
+        
         ${HorizontalBG} {
             /* sticky checklist header */
             top: var(--bar-height);
-            z-index: 1;
         }
     }
 
@@ -585,13 +588,6 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         ${ScrollNav} {
             display: none;
         }
-    }
-    @media screen and (min-width: 1267px) {
-        --content-max-width: 900px;
-    }
-
-    @media screen and (min-width: 1680px) {
-        --content-max-width: 1100px;
     }
 `;
 

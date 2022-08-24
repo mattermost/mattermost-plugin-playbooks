@@ -20,18 +20,17 @@ import {
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
-import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 
 import {createGlobalState} from 'react-use';
 
-import {pluginUrl, navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
+import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
 import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
@@ -42,7 +41,6 @@ import {
     telemetryEventForPlaybook,
     playbookExportProps,
     archivePlaybook,
-    createPlaybookRun,
     clientFetchPlaybookFollowers,
     getSiteUrl,
 } from 'src/client';
@@ -51,7 +49,7 @@ import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/co
 import CheckboxInput from '../runs_list/checkbox_input';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
-import {displayEditPlaybookAccessModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
@@ -64,6 +62,8 @@ type ControlProps = {
         id: string,
         public: boolean,
         default_playbook_member_role: string,
+        default_owner_id: string,
+        default_owner_enabled: boolean,
         title: string,
         delete_at: number,
         team_id: string,
@@ -258,33 +258,24 @@ const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
 export const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
 
 export const RunPlaybook = ({playbook}: ControlProps) => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
-    const currentUser = useSelector(getCurrentUser);
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
 
-    const runPlaybook = async () => {
-        if (playbook && isTutorialPlaybook) {
-            const playbookRun = await createPlaybookRun(playbook.id, currentUser.id, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
-            const channel = await Client4.getChannel(playbookRun.channel_id);
-
-            navigateToUrl({
-                pathname: `/${team.name}/channels/${channel.name}`,
-                search: '?forceRHSOpen&openTakeATourDialog',
-            });
-            return;
-        }
-        if (playbook?.id) {
-            telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
-        }
-    };
-
     return (
         <PrimaryButtonLarger
-            onClick={runPlaybook}
+            onClick={() => {
+                dispatch(openPlaybookRunModal(
+                    playbook.id,
+                    playbook.default_owner_enabled ? playbook.default_owner_id : null,
+                    playbook.description,
+                    team.id,
+                    team.name
+                ));
+            }}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
@@ -304,8 +295,8 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 
 export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
     const {formatMessage} = useIntl();
-    const currentUser = useSelector(getCurrentUser);
-    const {join} = usePlaybookMembership(playbookId, currentUser.id);
+    const currentUserId = useSelector(getCurrentUserId);
+    const {join} = usePlaybookMembership(playbookId, currentUserId);
     const {setFollowing} = useEditorFollowersMeta(playbookId);
 
     return (

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {useSelector} from 'react-redux';
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 

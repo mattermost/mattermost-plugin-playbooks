@@ -12,10 +12,14 @@ import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
+import {General} from 'mattermost-redux/constants';
+
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -60,7 +64,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getApiUrl, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getApiUrl, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -185,8 +189,9 @@ export default class Plugin {
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
+        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type !== General.GM_CHANNEL && getCurrentChannel(state).type !== General.DM_CHANNEL;
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()));
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
@@ -248,6 +253,21 @@ export default class Plugin {
         registry.registerPostTypeComponent('custom_run_update', UpdatePost);
         registry.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
         registry.registerPostTypeComponent('custom_retro', RetrospectivePost);
+
+        // Insights handler
+        if (registry.registerInsightsHandler) {
+            registry.registerInsightsHandler(async (timeRange: string, page: number, perPage: number, teamId: string, insightType: string) => {
+                if (insightType === 'MY') {
+                    const data = await getMyTopPlaybooks(timeRange, page, perPage, teamId);
+
+                    return data;
+                }
+
+                const data = await getTeamTopPlaybooks(timeRange, page, perPage, teamId);
+
+                return data;
+            });
+        }
     }
 
     userActivityWatch(): void {
