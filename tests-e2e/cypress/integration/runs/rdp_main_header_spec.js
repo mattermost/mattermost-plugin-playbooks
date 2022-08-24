@@ -449,6 +449,7 @@ describe('runs > run details page > header', () => {
 
     describe('as viewer', () => {
         let playbookRunChannelName;
+        let playbookRunName;
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -457,7 +458,7 @@ describe('runs > run details page > header', () => {
             cy.apiLogin(testUser);
 
             const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
+            playbookRunName = 'Playbook Run (' + now + ')';
             playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -476,6 +477,44 @@ describe('runs > run details page > header', () => {
 
         describe('title, icons and buttons', () => {
             commonHeaderTests();
+
+            describe('Favorite', () => {
+                beforeEach(() => {
+                    // # Login as testUser
+                    cy.apiLogin(testUser);
+
+                    const now = Date.now();
+                    playbookRunName = 'Playbook Run (' + now + ')';
+                    playbookRunChannelName = 'playbook-run-' + now;
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: testPublicPlaybookAndChannel.id,
+                        playbookRunName,
+                        ownerUserId: testUser.id,
+                    }).then((run) => {
+                        playbookRun = run;
+
+                        cy.apiLogin(testViewerUser).then(() => {
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                        });
+                    });
+                });
+
+                it('add and remove from LHS', () => {
+                    // # Click fav icon
+                    getHeader().getStyledComponent('StarButton').click();
+
+                    // * Assert run appears in LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+
+                    // # Click fav icon again (unfav)
+                    getHeader().getStyledComponent('StarButton').click();
+
+                    // * Assert run disappeared from LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('not.exist');
+                });
+            });
 
             describe('Participate', () => {
                 it('shows button', () => {
@@ -538,10 +577,6 @@ describe('runs > run details page > header', () => {
                 it('click button and confirm to join public channel', () => {
                     // # Login as testUser
                     cy.apiLogin(testUser);
-
-                    const now = Date.now();
-                    const playbookRunName = 'Playbook Run (' + now + ')';
-                    playbookRunChannelName = 'playbook-run-' + now;
 
                     // Create a run with public chanel
                     cy.apiRunPlaybook({

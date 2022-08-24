@@ -352,7 +352,8 @@ func (r *RootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+	// Enough permissions to do a fav/unfav, check if future ops need RunManageProperties
+	if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
 		return "", err
 	}
 
