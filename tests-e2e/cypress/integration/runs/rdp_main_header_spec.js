@@ -497,6 +497,9 @@ describe('runs > run details page > header', () => {
                         cy.apiLogin(testViewerUser).then(() => {
                             // # Visit the playbook run
                             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+                            // # let the page render completely
+                            cy.wait(3000);
                         });
                     });
                 });
