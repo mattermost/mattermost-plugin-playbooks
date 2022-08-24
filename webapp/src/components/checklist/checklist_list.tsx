@@ -17,7 +17,7 @@ import {
 
 import classNames from 'classnames';
 
-import Portal from 'src/components/portal';
+import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
@@ -378,7 +378,7 @@ const ChecklistList = ({
                                         );
 
                                         if (snapshot.isDragging) {
-                                            return <Portal>{component}</Portal>;
+                                            return <FloatingPortal>{component}</FloatingPortal>;
                                         }
 
                                         return component;
