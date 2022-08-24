@@ -114,6 +114,7 @@ func (r *RootResolver) Runs(ctx context.Context, args struct {
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		IncludeFavorites:        true,
 		Page:                    0,
 		PerPage:                 10000,
 	}
