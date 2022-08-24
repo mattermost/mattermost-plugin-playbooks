@@ -177,6 +177,8 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
         last_run_at,
         description,
         team_id,
+        default_owner_enabled,
+        default_owner_id
     } = playbook;
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, team_id || ''));
     const {id: teamId, name: teamName} = team;
@@ -251,7 +253,13 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             <RunButton
                 data-testid={'run-playbook'}
                 onClick={() => {
-                    return dispatch(openPlaybookRunModal(id, description, teamId, teamName));
+                    return dispatch(openPlaybookRunModal(
+                        id,
+                        default_owner_enabled ? default_owner_id : null,
+                        description,
+                        teamId,
+                        teamName
+                    ));
                 }}
             >
                 <Icon
