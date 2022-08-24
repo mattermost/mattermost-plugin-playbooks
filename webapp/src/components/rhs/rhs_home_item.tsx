@@ -178,7 +178,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
         description,
         team_id,
         default_owner_enabled,
-        default_owner_id
+        default_owner_id,
     } = playbook;
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, team_id || ''));
     const {id: teamId, name: teamName} = team;
