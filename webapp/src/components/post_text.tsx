@@ -28,6 +28,7 @@ const PostText = (props: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
+        hasPluginTooltips: true,
         team: props.team,
         channelNamesMap,
     };

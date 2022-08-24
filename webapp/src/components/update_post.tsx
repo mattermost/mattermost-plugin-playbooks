@@ -35,6 +35,7 @@ export const UpdatePost = (props: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
+        hasPluginTooltips: true,
         team,
         channelNamesMap,
     };

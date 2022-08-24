@@ -48,6 +48,7 @@ const StatusUpdateCard = ({post}: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
+        hasPluginTooltips: true,
     };
 
     return (
