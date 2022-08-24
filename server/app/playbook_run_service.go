@@ -2822,23 +2822,23 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		s.logger.Errorf("failed to get channel, channelID '%s'; error: %s", playbookRun.ChannelID, err.Error())
+	}
+
 	for _, userID := range userIDs {
-		s.participateActions(playbookRun, userID, requesterUserID)
+		s.participateActions(playbookRun, userID, requesterUserID, channel)
 	}
 
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string, requesterUserID string) {
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string, requesterUserID string, channel *model.Channel) {
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member != nil {
 		return
-	}
-
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		s.logger.Errorf("failed to get channel, channelID '%s'; error: %s", playbookRun.ChannelID, err.Error())
 	}
 
 	// DO not additionally add the user to the channel if the user is the requester (participate) and the channel is private
