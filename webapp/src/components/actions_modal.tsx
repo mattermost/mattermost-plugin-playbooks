@@ -3,7 +3,6 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {Scrollbars} from 'react-custom-scrollbars';
 import {Modal} from 'react-bootstrap';
 
 import styled from 'styled-components';
@@ -22,7 +21,6 @@ interface Props {
     editable: boolean;
     onSave: () => void;
     children: React.ReactNode;
-    adjustTop?: number;
     isValid: boolean;
 }
 
@@ -72,20 +70,12 @@ const ActionsModal = (props: Props) => {
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={false}
             enforceFocus={true}
-            adjustTop={props.adjustTop}
             components={{
                 Header: ModalHeader,
                 FooterContainer: ModalFooter,
             }}
         >
-            <Scrollbars
-                autoHeight={true}
-                autoHeightMax={500}
-                renderThumbVertical={renderThumbVertical}
-                renderTrackVertical={renderTrackVertical}
-            >
-                {props.children}
-            </Scrollbars>
+            {props.children}
         </StyledModal>
     );
 };
