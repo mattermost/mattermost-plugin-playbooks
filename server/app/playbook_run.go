@@ -747,7 +747,7 @@ type PlaybookRunService interface {
 	RemoveParticipants(playbookRunID string, userIDs []string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string) error
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
