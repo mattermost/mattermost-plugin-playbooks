@@ -151,7 +151,7 @@ describe('runs > list', () => {
             cy.apiLogin(testAnotherUser);
 
             // # Open the product
-            cy.visit('/playbooks');
+            cy.visit('/playbooks/runs');
             cy.get('#playbookRunList').within(() => {
                 // # Filter to all runs
                 cy.findByTestId('my-runs-only').click();
@@ -193,7 +193,7 @@ describe('runs > list', () => {
             cy.apiLogin(testUser);
 
             // # Open the product
-            cy.visit('/playbooks');
+            cy.visit('/playbooks/runs');
 
             cy.get('#playbookRunList').within(() => {
                 // # Filter to all runs
