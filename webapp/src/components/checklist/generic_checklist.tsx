@@ -56,7 +56,7 @@ const GenericChecklist = (props: Props) => {
     const onDuplicateChecklistItem = (index: number) => {
         const newChecklistItems = [...props.checklist.items];
         const duplicate = {...newChecklistItems[index]};
-        newChecklistItems.push(duplicate);
+        newChecklistItems.splice(index, 0, duplicate);
         const newChecklist = {...props.checklist};
         newChecklist.items = newChecklistItems;
         props.onUpdateChecklist(newChecklist);
