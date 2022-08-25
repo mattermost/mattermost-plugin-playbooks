@@ -225,6 +225,11 @@ const TimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
+    case TimelineEventType.StatusUpdateSnoozed:
+        iconClass = 'icon icon-flag-outline';
+        summaryTitle = formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdateSnoozed;
+        break;
     case TimelineEventType.StatusUpdateRequested:
         iconClass = 'icon icon-update';
         summaryTitle = props.event.summary;

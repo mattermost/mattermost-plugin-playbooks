@@ -92,5 +92,9 @@
     {
         "id": "app.user.digest.runs_in_progress.heading",
         "translation": "Futások folyamatban"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{{.Name}} közzétett egy visszatekintőt\n[A teljes visszatekintő megtekintése]({{.URL}})\n"
     }
 ]

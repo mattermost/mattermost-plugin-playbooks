@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -32,19 +33,102 @@ func (r *RootResolver) Playbook(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
-	isFavorite, err := c.categoryService.IsItemFavorite(
-		app.CategoryItem{
-			ItemID: playbookID,
-			Type:   app.PlaybookItemType,
-		},
-		playbook.TeamID,
-		userID,
-	)
+
+	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *RootResolver) Playbooks(ctx context.Context, args struct {
+	TeamID             string
+	Sort               string
+	Direction          string
+	SearchTerm         string
+	WithMembershipOnly bool
+	WithArchived       bool
+}) ([]*PlaybookResolver, error) {
+	c, err := getContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't determine if item is favorite or not")
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if args.TeamID != "" {
+		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+			c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+			return nil, errors.New("Not authorized")
+		}
 	}
 
-	return &PlaybookResolver{playbook, isFavorite}, nil
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	opts := app.PlaybookFilterOptions{
+		Sort:               app.SortField(args.Sort),
+		Direction:          app.SortDirection(args.Direction),
+		SearchTerm:         args.SearchTerm,
+		WithArchived:       args.WithArchived,
+		WithMembershipOnly: args.WithMembershipOnly,
+		Page:               0,
+		PerPage:            10000,
+	}
+
+	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
+	for _, pb := range playbookResults.Items {
+		ret = append(ret, &PlaybookResolver{pb})
+	}
+
+	return ret, nil
+}
+
+func (r *RootResolver) Runs(ctx context.Context, args struct {
+	TeamID                  string `url:"team_id,omitempty"`
+	Sort                    string
+	Statuses                []string
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+}) ([]*RunResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  args.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	}
+
+	if args.ParticipantOrFollowerID == client.Me {
+		args.ParticipantOrFollowerID = userID
+	}
+
+	filterOptions := app.PlaybookRunFilterOptions{
+		Sort:                    app.SortField(args.Sort),
+		TeamID:                  args.TeamID,
+		Statuses:                args.Statuses,
+		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		Page:                    0,
+		PerPage:                 10000,
+	}
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*RunResolver, 0, len(runResults.Items))
+	for _, run := range runResults.Items {
+		ret = append(ret, &RunResolver{run})
+	}
+
+	return ret, nil
 }
 
 type UpdateChecklist struct {
@@ -248,6 +332,118 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 
 	return args.ID, nil
+}
+
+func (r *RootResolver) UpdateRun(ctx context.Context, args struct {
+	ID      string
+	Updates struct {
+		IsFavorite *bool
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	if args.Updates.IsFavorite != nil {
+		if *args.Updates.IsFavorite {
+			if err := c.categoryService.AddFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		} else {
+			if err := c.categoryService.DeleteFavorite(
+				app.CategoryItem{
+					ItemID: playbookRun.ID,
+					Type:   app.RunItemType,
+				},
+				playbookRun.TeamID,
+				userID,
+			); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return playbookRun.ID, nil
+}
+
+func (r *RootResolver) AddPlaybookMember(ctx context.Context, args struct {
+	PlaybookID string
+	UserID     string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+
+	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+		return "", errors.Wrap(err, "attempted to modify members without permissions")
+	}
+
+	if err := c.playbookStore.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "unable to add playbook member")
+	}
+
+	return "", nil
+}
+
+func (r *RootResolver) RemovePlaybookMember(ctx context.Context, args struct {
+	PlaybookID string
+	UserID     string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
+	}
+	// do not require manageMembers permission if the user want to leave playbook
+	if userID != args.UserID {
+		if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+			return "", errors.Wrap(err, "attempted to modify members without permissions")
+		}
+	}
+
+	if err := c.playbookStore.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", errors.Wrap(err, "unable to remove playbook member")
+	}
+
+	return "", nil
 }
 
 func (r *RootResolver) AddMetric(ctx context.Context, args struct {

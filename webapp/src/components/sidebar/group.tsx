@@ -69,6 +69,10 @@ const Chevron = styled.i<{isCollapsed?: boolean}>`
         transform: rotate(-90deg);
         transition: transform 0.15s ease-out; /* should match collapse animation speed */
     `};
+
+    & {
+        font-size: 12px;
+    }
 `;
 
 const GroupContainer = styled.div`
@@ -100,13 +104,14 @@ const HeaderButton = styled.button`
     padding: 0;
     border: none;
     background-color: transparent;
-    box-shadow: 0 0 0 0 rgb(0 0 0 / 33%);
     color: rgba(var(--sidebar-text-rgb), 0.6);
     text-align: left;
     text-transform: uppercase;
-    transition: box-shadow 0.25s ease-in-out;
     white-space: nowrap;
     cursor: pointer;
+    padding: 6px 20p 6px 4px;
+    font-size: 12px;
+    font-weight: 600;
 
     :hover{
         color: var(--sidebar-text);
