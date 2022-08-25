@@ -292,20 +292,31 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	}
 
 	if options.ParticipantOrFollowerID != "" {
-		participantOrFollower := s.queryBuilder.
-			Select("1").
-			Prefix("EXISTS(").
-			From("IR_Run_Participants AS p").
-			Where("p.IncidentID = i.ID").
-			Where(sq.Or{
-				sq.Eq{"p.IsParticipant": true},
-				sq.Eq{"p.IsFollower": true},
-			}).
-			Where(sq.Eq{"p.UserID": strings.ToLower(options.ParticipantOrFollowerID)}).
-			Suffix(")")
+		userIDFilter := strings.ToLower(options.ParticipantOrFollowerID)
+		followerFilterExpr := sq.Expr(`EXISTS(SELECT 1
+			FROM IR_Run_Participants as rp
+			WHERE rp.IncidentID = i.ID
+			AND rp.UserID = ?
+			AND rp.IsFollower = TRUE)`, userIDFilter)
+		participantFilterExpr := sq.Expr(`EXISTS(SELECT 1
+			FROM ChannelMembers AS cm
+			WHERE cm.ChannelId = i.ChannelID
+			AND cm.UserId = ?)`, userIDFilter)
+		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
-		queryForResults = queryForResults.Where(participantOrFollower)
-		queryForTotal = queryForTotal.Where(participantOrFollower)
+		if options.IncludeFavorites {
+			favoriteFilterExpr := sq.Expr(`EXISTS(SELECT 1
+				FROM IR_Category AS cat
+				INNER JOIN IR_Category_Item it ON cat.ID = it.CategoryID
+				WHERE cat.Name = 'Favorite'
+				AND	it.Type = 'r'
+				AND	it.ItemID = i.ID
+				AND cat.UserID = ?)`, userIDFilter)
+			myRunsClause = append(myRunsClause, favoriteFilterExpr)
+		}
+
+		queryForResults = queryForResults.Where(myRunsClause)
+		queryForTotal = queryForTotal.Where(myRunsClause)
 	}
 
 	if options.PlaybookID != "" {

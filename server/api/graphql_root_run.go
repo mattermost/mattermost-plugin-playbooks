@@ -39,6 +39,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		IncludeFavorites:        true,
 		Page:                    0,
 		PerPage:                 10000,
 	}
@@ -73,7 +74,8 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+	// Enough permissions to do a fav/unfav, check if future ops need RunManageProperties
+	if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
 		return "", err
 	}
 
