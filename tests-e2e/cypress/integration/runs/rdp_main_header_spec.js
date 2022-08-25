@@ -450,6 +450,7 @@ describe('runs > run details page > header', () => {
     describe('as viewer', () => {
         let playbookRunChannelName;
         let playbookRunName;
+
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -580,6 +581,10 @@ describe('runs > run details page > header', () => {
                 it('click button and confirm to join public channel', () => {
                     // # Login as testUser
                     cy.apiLogin(testUser);
+
+                    const now = Date.now();
+                    playbookRunName = 'Playbook Run (' + now + ')';
+                    playbookRunChannelName = 'playbook-run-' + now;
 
                     // Create a run with public chanel
                     cy.apiRunPlaybook({
