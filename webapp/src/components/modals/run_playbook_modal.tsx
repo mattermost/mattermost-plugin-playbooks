@@ -10,7 +10,7 @@ import {Client4} from 'mattermost-redux/client';
 import Icon from '@mdi/react';
 import {mdiNotebookOutline, mdiAccountOutline} from '@mdi/js';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {displayUsername, getFullName} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
