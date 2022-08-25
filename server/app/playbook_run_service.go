@@ -2744,36 +2744,6 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	return nil
 }
 
-// RequestUpdate posts a status update request message in the run's channel
-func (s *PlaybookRunServiceImpl) RequestGetInvolved(playbookRunID, requesterID string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	requesterUser, err := s.pluginAPI.User.Get(requesterID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get requester user")
-	}
-
-	// TODO: must be changed to check run participant
-	// Check if user is already a member of the channel
-	member, err := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, requesterID)
-	if err == nil && member != nil {
-		return errors.New("user is already involved")
-	}
-
-	T := i18n.GetUserTranslations(requesterUser.Locale)
-	data := map[string]interface{}{
-		"Name": requesterUser.Username,
-	}
-	if _, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_get_involved", data)); err != nil {
-		return errors.Wrap(err, "failed to post to channel")
-	}
-
-	return nil
-}
-
 // Leave removes user from the run's participants
 func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
@@ -2817,6 +2787,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
 
+	// TO be done, once actions are implemented
+	// return if action is disabled
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2827,28 +2800,57 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		s.logger.Errorf("failed to get channel, channelID '%s'; error: %s", playbookRun.ChannelID, err.Error())
 	}
 
+	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
 	for _, userID := range userIDs {
-		s.participateActions(playbookRun, userID, requesterUserID, channel)
+		user := requesterUser
+		if userID != requesterUserID {
+			user, err = s.pluginAPI.User.Get(userID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get requester user")
+			}
+		}
+		s.participateActions(playbookRun, channel, user, requesterUser)
 	}
 
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, userID string, requesterUserID string, channel *model.Channel) {
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User) {
 	// Don't do anything if the user is a channel member
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
 		return
 	}
 
-	// DO not additionally add the user to the channel if the user is the requester (participate) and the channel is private
-	if channel.Type == "P" && requesterUserID == userID {
+	// Send message to channel if one the following scenarios happens:
+	// - channel is private and is a "participate" action )
+	// - channel is private and the user adding a new participant has no access to it
+	requesterHasAccessToChannel := s.permissions.ChannelActionView(requesterUser.Id, playbookRun.ChannelID) == nil
+	isParticipateFlow := requesterUser.Id == user.Id
+	if channel.Type == "P" && (isParticipateFlow || !requesterHasAccessToChannel) {
+		T := i18n.GetUserTranslations(requesterUser.Locale)
+		data := map[string]interface{}{
+			"Name":          user.Username,
+			"RequesterName": requesterUser.Username,
+		}
+		msg := T("app.user.run.joined_run_channel_private_add_participant", data)
+		if isParticipateFlow {
+			msg = T("app.user.run.joined_run_channel_private_participate", data)
+		}
+
+		if _, err := s.poster.PostMessage(playbookRun.ChannelID, msg); err != nil {
+			s.logger.Errorf("participateActions: failed to send message to private channel, userID '%s'; error: %s", user.Id, err.Error())
+		}
 		return
 	}
 
-	// To be added to the UI as an optional action
-	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, userID); err != nil {
-		s.logger.Errorf("failed to add user to linked channel, userID '%s'; error: %s", userID, err.Error())
+	// Regular add channel member otherwise
+	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
+		s.logger.Errorf("participateActions: failed to add user to linked channel, userID '%s'; error: %s", user.Id, err.Error())
 	}
 }
 
