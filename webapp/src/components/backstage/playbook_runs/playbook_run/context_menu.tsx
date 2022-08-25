@@ -134,7 +134,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     );
 };
 
-const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
+export const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
@@ -179,7 +179,7 @@ const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
     };
 };
 
-const StyledDropdownMenuItem = styled(DropdownMenuItem)`
+export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
     align-items: center;
 
@@ -188,7 +188,7 @@ const StyledDropdownMenuItem = styled(DropdownMenuItem)`
         fill: rgb(var(--center-channel-color-rgb), 0.56);
     }
 `;
-const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
+export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
     && {
         color: var(--dnd-indicator);
 
