@@ -94,10 +94,6 @@
     "translation": "@here — @{{.Name}} has joined the run. They haven't been automatically added to the channel because it's private.\n"
   },
   {
-    "id": "app.user.run.request_get_involved",
-    "translation": ""
-  },
-  {
     "id": "app.user.run.request_update",
     "translation": "@here — @{{.Name}} requested a status update. \n"
   }
