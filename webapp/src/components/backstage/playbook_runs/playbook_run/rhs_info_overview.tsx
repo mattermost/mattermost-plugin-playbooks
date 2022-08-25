@@ -8,7 +8,7 @@ import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon, ArrowForwardIosIcon} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
@@ -118,6 +118,10 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
         }
     };
 
+    const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+        margin-left: 7px;
+    `;
+
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
@@ -147,12 +151,18 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
             >
-                <Participants>
-                    <UserList
-                        userIds={run.participant_ids}
-                        sizeInPx={20}
+                <ParticipantsContainer>
+                    <Participants>
+                        <UserList
+                            userIds={run.participant_ids}
+                            sizeInPx={20}
+                        />
+                    </Participants>
+                    <StyledArrowIcon
+                        size={12}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                </Participants>
+                </ParticipantsContainer>
             </Item>
             <Item
                 id='runinfo-following'
@@ -190,11 +200,11 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
                     >
                         <ItemContent >
                             {channel.display_name}
-                            <OpenInNewIcon
-                                size={14}
-                                color={'var(--button-bg)'}
-                            />
                         </ItemContent>
+                        <OpenInNewIcon
+                            size={14}
+                            color={'var(--button-bg)'}
+                        />
                     </ItemLink>
                 </Item>
             )}
@@ -274,21 +284,21 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    max-width: 230px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const ItemContent = styled.div`
-    display: flex;
+    display: flex;    
     flex-direction: row;
     align-items: center;
 
     svg {
         margin-left: 3px;
-    }
+    }    
+`;
+
+const ItemContent = styled.div`
+    max-width: 230px;
+    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
@@ -337,4 +347,10 @@ const UnfollowButton = styled(SecondaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
+`;
+
+const ParticipantsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;

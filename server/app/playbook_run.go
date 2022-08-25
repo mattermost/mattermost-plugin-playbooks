@@ -848,6 +848,12 @@ type PlaybookRunStore interface {
 
 	// RemoveParticipants removes participants from the run
 	RemoveParticipants(playbookRunID string, userIDs []string) error
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

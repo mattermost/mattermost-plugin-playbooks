@@ -321,8 +321,11 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 		return "", errors.New("archived playbooks can not be modified")
 	}
 
-	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
-		return "", errors.Wrap(err, "attempted to modify members without permissions")
+	// do not require manageMembers permission if the user want to leave playbook
+	if userID != args.UserID {
+		if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+			return "", errors.Wrap(err, "attempted to modify members without permissions")
+		}
 	}
 
 	if err := c.playbookStore.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {

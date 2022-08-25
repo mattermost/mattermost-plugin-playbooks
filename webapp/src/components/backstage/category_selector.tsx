@@ -59,7 +59,8 @@ const CategorySelector = (props: Props & { className?: string }) => {
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}
-            menuPlacement={props.menuPlacement ?? 'top'}
+            menuPlacement={props.menuPlacement ?? 'auto'}
+            menuShouldScrollIntoView={false}
         />
     );
 };

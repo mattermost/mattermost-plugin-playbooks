@@ -5,7 +5,6 @@ import {
     useRef,
     useState,
     useMemo,
-    useLayoutEffect,
     DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
@@ -32,7 +31,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
@@ -644,22 +643,6 @@ export const usePrevious = (value: any) => {
     });
 
     return ref.current;
-};
-
-export const usePortal = () => {
-    const [el] = useState(document.createElement('div'));
-    useLayoutEffect(() => {
-        const rootPortal = document.getElementById('root-portal');
-        if (rootPortal) {
-            rootPortal.appendChild(el);
-        }
-        return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el);
-            }
-        };
-    }, [el]);
-    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {

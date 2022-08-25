@@ -24,11 +24,13 @@ const editAndPublishRetro = () => {
         cy.findByRole('button', {name: 'Publish'}).click();
     });
 
-    // * Verify we're showing the publish retro confirmation modal
-    cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
+    cy.get('#confirm-modal-light').within(() => {
+        // * Verify we're showing the publish retro confirmation modal
+        cy.findByText('Are you sure you want to publish?');
 
-    // # Publish
-    cy.findByRole('button', {name: 'Publish'}).click();
+        // # Publish
+        cy.findByRole('button', {name: 'Publish'}).click();
+    });
 
     // * Verify that retro got published
     getRetro().get('.icon-check-all').should('be.visible');
@@ -435,11 +437,13 @@ describe('runs > run details page', () => {
                     cy.findByRole('button', {name: 'Publish'}).click();
                 });
 
-                // * Verify we're showing the publish retro confirmation modal
-                cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
+                cy.get('#confirm-modal-light').within(() => {
+                    // * Verify we're showing the publish retro confirmation modal
+                    cy.findByText('Are you sure you want to publish?');
 
-                // # Publish
-                cy.findByRole('button', {name: 'Publish'}).click();
+                    // # Publish
+                    cy.findByRole('button', {name: 'Publish'}).click();
+                });
 
                 getRetro().within(() => {
                     // * Verify that retro got published

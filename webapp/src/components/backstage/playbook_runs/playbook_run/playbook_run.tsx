@@ -278,15 +278,11 @@ const RowContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
-const ColumnContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
 
-const Container = styled(ColumnContainer)`
+const Container = styled.div`
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: 2fr minmax(400px, 1fr);
+    grid-auto-columns: minmax(400px, 2fr) minmax(400px, 1fr);
     overflow-y: hidden;
 
     @media screen and (min-width: 1600px) {
@@ -299,6 +295,7 @@ const MainWrapper = styled.div`
     grid-template-rows: 56px 1fr;
     grid-auto-flow: row;
     overflow-y: hidden;
+    grid-auto-columns: minmax(0, 1fr);
 `;
 
 const Main = styled.main`
