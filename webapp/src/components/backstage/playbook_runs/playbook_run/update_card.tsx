@@ -48,6 +48,9 @@ const StatusUpdateCard = ({post}: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
+    };
+
+    const messageHtmlToComponentOptions = {
         hasPluginTooltips: true,
     };
 
@@ -64,7 +67,7 @@ const StatusUpdateCard = ({post}: Props) => {
                 </Date>
             </Header>
             <Body>
-                {messageHtmlToComponent(formatText(post.message, markdownOptions), true, {})}
+                {messageHtmlToComponent(formatText(post.message, markdownOptions), true, messageHtmlToComponentOptions)}
             </Body>
         </Container>
     );

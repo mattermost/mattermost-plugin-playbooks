@@ -28,14 +28,17 @@ const PostText = (props: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
-        hasPluginTooltips: true,
         team: props.team,
         channelNamesMap,
     };
 
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
     return (
         <UpdateBody className={props.className}>
-            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
+            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, messageHtmlToComponentOptions)}
             {props.children}
         </UpdateBody>
     );
