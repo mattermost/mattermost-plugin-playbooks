@@ -301,6 +301,17 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 			AND cm.UserId = ?)`, userIDFilter)
 		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
+		if options.IncludeFavorites {
+			favoriteFilterExpr := sq.Expr(`EXISTS(SELECT 1
+				FROM IR_Category AS cat
+				INNER JOIN IR_Category_Item it ON cat.ID = it.CategoryID
+				WHERE cat.Name = 'Favorite'
+				AND	it.Type = 'r'
+				AND	it.ItemID = i.ID
+				AND cat.UserID = ?)`, userIDFilter)
+			myRunsClause = append(myRunsClause, favoriteFilterExpr)
+		}
+
 		queryForResults = queryForResults.Where(myRunsClause)
 		queryForTotal = queryForTotal.Where(myRunsClause)
 	}
