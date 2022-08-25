@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled, {css} from 'styled-components';
 
@@ -174,7 +175,7 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
     const addToast = useToaster().add;
 
-    useEffect(() => {
+    useUpdateEffect(() => {
         const newFollowers = metadata?.followers || [];
         setFollowers(newFollowers);
         setIsFollowing(newFollowers.includes(currentUser.id));
