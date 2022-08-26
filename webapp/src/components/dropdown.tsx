@@ -88,35 +88,33 @@ const Dropdown = (props: DropdownProps) => {
         useDismiss(context),
     ]);
 
-    const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment;
+    const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment; // 🤷
 
     return (
         <>
             {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
             <MaybePortal>
                 {open && (
-                    <>
-                        <FloatingFocusManager
-                            context={context}
-                            initialFocus={props.initialFocus}
+                    <FloatingFocusManager
+                        context={context}
+                        initialFocus={props.initialFocus}
+                    >
+                        <FloatingContainer
+                            {...getFloatingProps({
+                                ref: floating,
+                                style: {
+                                    position: strategy,
+                                    top: y ?? 0,
+                                    left: x ?? 0,
+                                },
+                            })}
+                            css={`
+                                ${props.containerStyles};
+                            `}
                         >
-                            <FloatingContainer
-                                {...getFloatingProps({
-                                    ref: floating,
-                                    style: {
-                                        position: strategy,
-                                        top: y ?? 0,
-                                        left: x ?? 0,
-                                    },
-                                })}
-                                css={`
-                                    ${props.containerStyles};
-                                `}
-                            >
-                                {props.children}
-                            </FloatingContainer>
-                        </FloatingFocusManager>
-                    </>
+                            {props.children}
+                        </FloatingContainer>
+                    </FloatingFocusManager>
                 )}
             </MaybePortal>
         </>
