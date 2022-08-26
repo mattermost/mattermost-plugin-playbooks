@@ -8,7 +8,6 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {StarIcon, StarOutlineIcon, LinkVariantIcon, CloseIcon, DotsVerticalIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {getSiteUrl} from 'src/client';
-import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {copyToClipboard} from 'src/utils';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -17,7 +16,7 @@ import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed, useLeaveRun} from './playbook_runs/playbook_run/context_menu';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRunId: string;
     role: Role;
     isFavoriteRun: boolean;
     isFollowing: boolean;
@@ -25,10 +24,10 @@ interface Props {
     toggleFollow: () => void;
 }
 
-export const LHSRunDotMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite, toggleFollow}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, role, isFavoriteRun, isFollowing, toggleFavorite, toggleFollow}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, isFollowing);
 
     return (
         <>
@@ -37,8 +36,8 @@ export const LHSRunDotMenu = ({playbookRun, role, isFavoriteRun, isFollowing, to
                 placement='bottom-end'
                 icon={(
                     <DotsVerticalIcon
-                        size={16}
-                        color={'currentColor'}
+                        size={14}
+                        color={'var(--button-color)'}
                     />
                 )}
                 dotMenuButton={DotMenuButtonStyled}
@@ -52,7 +51,7 @@ export const LHSRunDotMenu = ({playbookRun, role, isFavoriteRun, isFollowing, to
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem
                     onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
+                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRunId);
                         addToast(formatMessage({defaultMessage: 'Copied!'}));
                     }}
                 >

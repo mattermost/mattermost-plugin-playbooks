@@ -103,6 +103,7 @@ const DotMenu = (props: DotMenuProps) => {
             ref={reference}
             isActive={(props.isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
+                e.preventDefault();
                 e.stopPropagation();
                 toggleOpen();
             }}

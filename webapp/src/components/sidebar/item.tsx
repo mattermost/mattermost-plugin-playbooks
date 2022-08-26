@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {NavLink} from 'react-router-dom';
 import classNames from 'classnames';
 
@@ -18,8 +18,13 @@ interface ItemProps {
 }
 
 const Item = (props: ItemProps) => {
+    const [showMenu, setShowMenu] = useState(false);
     return (
-        <ItemContainer isCollapsed={props.isCollapsed}>
+        <ItemContainer
+            isCollapsed={props.isCollapsed}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
             <Tooltip
                 id={`sidebarTooltip_${props.id}`}
                 content={props.display_name}
@@ -35,7 +40,8 @@ const Item = (props: ItemProps) => {
                     <ItemDisplayLabel>
                         {props.display_name}
                     </ItemDisplayLabel>
-                    {props.itemMenu}
+                    {showMenu && <HoverMenu>{props.itemMenu}</HoverMenu>}
+                    {/* <CreatePlaybookDropdown team_id={''}/> */}
                 </StyledNavLink>
             </Tooltip>
         </ItemContainer>
@@ -60,7 +66,7 @@ export const Icon = styled.i`
 
 export const ItemContainer = styled.li<{isCollapsed?: boolean}>`
     display: flex;
-    overflow: hidden;
+
     height: 32px;
     align-items: center;
     list-style-type: none;
@@ -85,6 +91,10 @@ export const StyledNavLink = styled(NavLink)`
         color: rgba(var(--sidebar-text-rgb), 0.72);
         font-size: 14px;
         text-decoration: none;
+
+        :hover {
+            padding-right: 0;
+        }
 
         :hover,
         :focus {
@@ -111,6 +121,15 @@ export const StyledNavLink = styled(NavLink)`
             }
         }
     }
+`;
+
+const HoverMenu = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    margin-left: auto;
+    margin-right: 8px;
 `;
 
 export default Item;

@@ -40,8 +40,8 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite, toggleFavorite}: Pro
                 placement='bottom-end'
                 icon={(
                     <DotsVerticalIcon
-                        size={16}
-                        color={'currentColor'}
+                        size={14}
+                        color={'var(--button-color)'}
                     />
                 )}
                 dotMenuButton={DotMenuButtonStyled}

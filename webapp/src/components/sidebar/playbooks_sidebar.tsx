@@ -9,6 +9,9 @@ import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 
 import {pluginUrl} from 'src/browser_routing';
+import {LHSPlaybookDotMenu} from '../backstage/lhs_playbook_dot_menu';
+import {LHSRunDotMenu} from '../backstage/lhs_run_dot_menu';
+import {Role} from '../backstage/playbook_runs/shared';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -43,7 +46,12 @@ const useLHSData = (teamID: string) => {
             icon,
             link,
             isCollapsed: false,
-            itemMenu: null,
+            itemMenu: (
+                <LHSPlaybookDotMenu
+                    playbookId={pb.id}
+                    isFavorite={pb.isFavorite}
+                    toggleFavorite={() => null}
+                />),
             isFavorite: pb.isFavorite,
             className: '',
         };
@@ -54,6 +62,7 @@ const useLHSData = (teamID: string) => {
     const runItems = data.runs.map((run) => {
         const icon = 'icon-play-outline';
         const link = pluginUrl(`/runs/${run.id}`);
+
         return {
             areaLabel: run.name,
             display_name: run.name,
@@ -61,7 +70,15 @@ const useLHSData = (teamID: string) => {
             icon,
             link,
             isCollapsed: false,
-            itemMenu: null,
+            itemMenu: (
+                <LHSRunDotMenu
+                    playbookRunId={run.id}
+                    isFavoriteRun={run.isFavorite}
+                    isFollowing={true}
+                    role={Role.Participant}
+                    toggleFavorite={() => null}
+                    toggleFollow={() => null}
+                />),
             isFavorite: run.isFavorite,
             className: '',
         };
