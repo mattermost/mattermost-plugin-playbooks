@@ -1,10 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, ComponentProps} from 'react';
 import styled, {css} from 'styled-components';
-
-import {offset, Placement} from '@floating-ui/react-dom-interactions';
 
 import Tooltip from 'src/components/widgets/tooltip';
 import {useUniqueId} from 'src/utils';
@@ -56,23 +54,30 @@ export const DropdownMenu = styled.div`
     z-index: 12;
 `;
 
-interface DotMenuProps {
+type DotMenuProps = {
     children: React.ReactNode;
     icon: JSX.Element;
+    title?: string;
+    className?: string;
+    disabled?: boolean;
+    isActive?: boolean;
     dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
-    placement?: Placement;
-    offset?: Parameters<typeof offset>[0];
-    title?: string;
-    disabled?: boolean;
-    className?: string;
-    isActive?: boolean;
-}
+};
 
-const DotMenu = (props: DotMenuProps) => {
-    const MenuButton = props.dotMenuButton ?? DotMenuButton;
-    const Menu = props.dropdownMenu ?? DropdownMenu;
+type DropdownProps = Omit<ComponentProps<typeof Dropdown>, 'target' | 'children'>;
 
+const DotMenu = ({
+    children,
+    icon,
+    title,
+    className,
+    disabled,
+    isActive,
+    dotMenuButton: MenuButton = DotMenuButton,
+    dropdownMenu: Menu = DropdownMenu,
+    ...props
+}: DotMenuProps & DropdownProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(!isOpen);
@@ -82,8 +87,8 @@ const DotMenu = (props: DotMenuProps) => {
 
         // @ts-ignore
         <MenuButton
-            title={props.title}
-            isActive={(props.isActive ?? false) || isOpen}
+            title={title}
+            isActive={(isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 toggleOpen();
@@ -96,25 +101,30 @@ const DotMenu = (props: DotMenuProps) => {
                 }
             }}
             tabIndex={0}
-            className={props.className}
+            className={className}
             role={'button'}
-            disabled={props.disabled || false}
-            data-testid={'menuButton' + props.title}
+            disabled={disabled ?? false}
+            data-testid={'menuButton' + title}
         >
-            {props.icon}
+            {icon}
         </MenuButton>
     );
 
     return (
         <Dropdown
+            {...props}
             isOpen={isOpen}
             onOpenChange={setOpen}
-            placement={props.placement}
-            offset={props.offset}
             target={button}
         >
-            <Menu data-testid='dropdownmenu'>
-                {props.children}
+            <Menu
+                data-testid='dropdownmenu'
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                }}
+            >
+                {children}
             </Menu>
         </Dropdown>
     );
