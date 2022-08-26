@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {cloneElement, useState} from 'react';
+import React, {cloneElement, useState, ComponentProps} from 'react';
 import styled, {css} from 'styled-components';
 
 import {
@@ -53,8 +53,7 @@ type DropdownProps = {
     offset?: Parameters<typeof offset>[0];
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
-    initialFocus?: number;
-    manageFocus?: boolean;
+    focusManager?: boolean | Omit<ComponentProps<typeof FloatingFocusManager>, 'context' | 'children'>;
     portal?: boolean;
     containerStyles?: ReturnType<typeof css>;
 } & ({
@@ -109,11 +108,11 @@ const Dropdown = (props: DropdownProps) => {
         </FloatingContainer>
     );
 
-    if (props.manageFocus ?? true) {
+    if (props.focusManager ?? true) {
         content = (
             <FloatingFocusManager
+                {...typeof props.focusManager === 'boolean' ? false : props.focusManager}
                 context={context}
-                initialFocus={props.initialFocus}
             >
                 {content}
             </FloatingFocusManager>

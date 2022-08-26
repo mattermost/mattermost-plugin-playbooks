@@ -52,7 +52,7 @@ const RHSAboutButtons = (props: Props) => {
                 data-testid='run-dot-menu'
                 title={formatMessage({defaultMessage: 'More'})}
                 portal={false}
-                manageFocus={false}
+                focusManager={{returnFocus: false}}
             >
                 <StyledDropdownMenuItem
                     onClick={() => {
