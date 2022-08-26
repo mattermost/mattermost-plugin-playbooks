@@ -5,6 +5,8 @@ import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
 import Tooltip from 'src/components/widgets/tooltip';
+import CreatePlaybookDropdown from './create_playbook_dropdown';
+import { DotMenuButton } from '../dot_menu';
 
 interface ItemProps {
     icon: string;
@@ -45,7 +47,7 @@ const Item = (props: ItemProps) => {
                         </ItemDisplayLabel>
                     </NameIconContainer>
                 </Tooltip>
-                {showMenu && <HoverMenu>{props.itemMenu}</HoverMenu>}
+                {<HoverMenu>{props.itemMenu}</HoverMenu>}
                 {/* <CreatePlaybookDropdown team_id={''}/> */}
             </StyledNavLink>
         </ItemContainer>
@@ -96,10 +98,6 @@ export const StyledNavLink = styled(NavLink)`
         font-size: 14px;
         text-decoration: none;
 
-        :hover {
-            padding-right: 0;
-        }
-
         :hover,
         :focus {
             text-decoration: none;
@@ -134,6 +132,15 @@ const HoverMenu = styled.div`
 
     margin-left: auto;
     margin-right: 8px;
+    ${DotMenuButton} {
+        opacity: 0;
+    }
+
+    :hover {
+        ${DotMenuButton} {
+            opacity: 1;
+        }        
+    }
 `;
 
 const NameIconContainer = styled.div`
