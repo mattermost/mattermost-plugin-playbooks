@@ -25,25 +25,29 @@ const Item = (props: ItemProps) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <Tooltip
-                id={`sidebarTooltip_${props.id}`}
-                content={props.display_name}
+            <StyledNavLink
+                className={props.className}
+                id={`sidebarItem_${props.id}`}
+                aria-label={props.areaLabel}
+                to={props.link}
+                tabIndex={props.isCollapsed ? -1 : 0}
             >
-                <StyledNavLink
-                    className={props.className}
-                    id={`sidebarItem_${props.id}`}
-                    aria-label={props.areaLabel}
-                    to={props.link}
-                    tabIndex={props.isCollapsed ? -1 : 0}
+                <Tooltip
+                    id={`sidebarTooltip_${props.id}`}
+                    content={props.display_name}
                 >
-                    <Icon className={classNames('CompassIcon', props.icon)}/>
-                    <ItemDisplayLabel>
-                        {props.display_name}
-                    </ItemDisplayLabel>
-                    {showMenu && <HoverMenu>{props.itemMenu}</HoverMenu>}
-                    {/* <CreatePlaybookDropdown team_id={''}/> */}
-                </StyledNavLink>
-            </Tooltip>
+                    <NameIconContainer
+                        id={`sidebarItem_${props.id}`}
+                    >
+                        <Icon className={classNames('CompassIcon', props.icon)}/>
+                        <ItemDisplayLabel>
+                            {props.display_name}
+                        </ItemDisplayLabel>
+                    </NameIconContainer>
+                </Tooltip>
+                {showMenu && <HoverMenu>{props.itemMenu}</HoverMenu>}
+                {/* <CreatePlaybookDropdown team_id={''}/> */}
+            </StyledNavLink>
         </ItemContainer>
     );
 };
@@ -130,6 +134,12 @@ const HoverMenu = styled.div`
 
     margin-left: auto;
     margin-right: 8px;
+`;
+
+const NameIconContainer = styled.div`
+    display: flex;
+    align-items: center;
+    overflow: hidden;
 `;
 
 export default Item;

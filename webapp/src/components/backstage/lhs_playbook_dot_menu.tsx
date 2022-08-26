@@ -14,7 +14,7 @@ import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {copyToClipboard} from 'src/utils';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Separator} from 'src/components/backstage/playbook_runs/shared';
-import {usePlaybookMembership} from 'src/graphql/hooks';
+import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {StyledDropdownMenuItem} from './playbook_runs/playbook_run/context_menu';
 import {useLHSRefresh} from './lhs_navigation';
@@ -22,17 +22,19 @@ import {useLHSRefresh} from './lhs_navigation';
 interface Props {
     playbookId: string;
     isFavorite: boolean;
-    toggleFavorite: () => void;
 }
 
-export const LHSPlaybookDotMenu = ({playbookId, isFavorite, toggleFavorite}: Props) => {
+export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const currentUserId = useSelector(getCurrentUserId);
     const refreshLHS = useLHSRefresh();
+    const updatePlaybook = useUpdatePlaybook(playbookId);
 
     const {leave} = usePlaybookMembership(playbookId, currentUserId);
-
+    const toggleFavorite = () => {
+        updatePlaybook({isFavorite: !isFavorite});
+    };
     return (
         <>
             <DotMenu

@@ -50,7 +50,6 @@ const useLHSData = (teamID: string) => {
                 <LHSPlaybookDotMenu
                     playbookId={pb.id}
                     isFavorite={pb.isFavorite}
-                    toggleFavorite={() => null}
                 />),
             isFavorite: pb.isFavorite,
             className: '',
