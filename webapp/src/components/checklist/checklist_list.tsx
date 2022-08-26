@@ -38,8 +38,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, FullRun, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
 
@@ -51,7 +50,7 @@ import GenericChecklist, {generateKeys} from './generic_checklist';
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-    playbookRun?: PlaybookRun;
+    playbookRun?: PlaybookRun | FullRun;
     playbook?: Loaded<FullPlaybook>;
     enableFinishRun: boolean;
     isReadOnly: boolean;
@@ -267,7 +266,7 @@ const ChecklistList = ({
         // Update the store with the new checklists
         if (playbookRun) {
             dispatch(playbookRunUpdated({
-                ...playbookRun,
+                ...playbookRun as PlaybookRun,
                 checklists: newChecklists,
             }));
         } else {

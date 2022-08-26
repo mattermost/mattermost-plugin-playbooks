@@ -13,7 +13,7 @@ import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
 import {openUpdateRunStatusModal} from 'src/actions';
-import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
+import {PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
 import {useNow, useAllowRequestUpdate} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
@@ -24,6 +24,7 @@ import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Tooltip from 'src/components/widgets/tooltip';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {FullRun} from 'src/graphql/hooks';
 
 import {ToastType, useToaster} from '../../toast_banner';
 
@@ -39,7 +40,7 @@ enum dueType {
 
 // getDueInfo does all the computation to know the relative date and text
 // that should be done related to the last/next status update
-const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
+const getDueInfo = (playbookRun: FullRun, now: DateTime) => {
     const isFinished = playbookRun.current_status === PlaybookRunStatus.Finished;
     const isNextUpdateScheduled = playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(playbookRun, isNextUpdateScheduled);
@@ -74,7 +75,7 @@ const RHSTitle = <FormattedMessage defaultMessage={'Status updates'}/>;
 const openRHSText = <FormattedMessage defaultMessage={'View all updates'}/>;
 interface ViewerProps {
     id: string;
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     lastStatusUpdate?: StatusPostComplete;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
@@ -183,7 +184,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
 
 interface ParticipantProps {
     id: string;
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
@@ -425,6 +426,6 @@ const ViewAllUpdates = styled.div`
     cursor: pointer;
     color: var(--button-bg);
     font-weight: 600;
-    width: fit-content;    
+    width: fit-content;
 `;
 

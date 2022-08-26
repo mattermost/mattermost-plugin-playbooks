@@ -47,7 +47,6 @@ func (r *RunResolver) Checklists() []*ChecklistResolver {
 	for _, checklist := range r.PlaybookRun.Checklists {
 		checklistResolvers = append(checklistResolvers, &ChecklistResolver{checklist})
 	}
-
 	return checklistResolvers
 }
 
@@ -56,7 +55,6 @@ func (r *RunResolver) StatusPosts() []*StatusPostResolver {
 	for _, statusPost := range r.PlaybookRun.StatusPosts {
 		statusPostResolvers = append(statusPostResolvers, &StatusPostResolver{statusPost})
 	}
-
 	return statusPostResolvers
 }
 
@@ -65,8 +63,15 @@ func (r *RunResolver) TimelineEvents() []*TimelineEventResolver {
 	for _, event := range r.PlaybookRun.TimelineEvents {
 		timelineEventResolvers = append(timelineEventResolvers, &TimelineEventResolver{event})
 	}
-
 	return timelineEventResolvers
+}
+
+func (r *RunResolver) MetricsData() []*RunMetricDataResolver {
+	metricsResolvers := make([]*RunMetricDataResolver, 0, len(r.PlaybookRun.MetricsData))
+	for _, metric := range r.PlaybookRun.MetricsData {
+		metricsResolvers = append(metricsResolvers, &RunMetricDataResolver{metric})
+	}
+	return metricsResolvers
 }
 
 func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
@@ -121,4 +126,16 @@ func (r *TimelineEventResolver) DeleteAt() float64 {
 
 func (r *TimelineEventResolver) EventAt() float64 {
 	return float64(r.TimelineEvent.EventAt)
+}
+
+type RunMetricDataResolver struct {
+	app.RunMetricData
+}
+
+func (r *RunMetricDataResolver) Value() *int32 {
+	if r.RunMetricData.Value.Valid {
+		intvalue := int32(r.RunMetricData.Value.ValueOrZero())
+		return &intvalue
+	}
+	return nil
 }

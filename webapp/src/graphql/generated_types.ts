@@ -259,6 +259,7 @@ export type Run = {
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
     lastStatusUpdateAt: Scalars['Float'];
+    metricsData: Array<RunMetricData>;
     name: Scalars['String'];
     ownerUserID: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
@@ -282,6 +283,12 @@ export type Run = {
     teamID: Scalars['String'];
     timelineEvents: Array<TimelineEvent>;
     webhookOnStatusUpdateURLs: Array<Scalars['String']>;
+};
+
+export type RunMetricData = {
+    __typename?: 'RunMetricData';
+    metricConfigID: Scalars['String'];
+    value?: Maybe<Scalars['Int']>;
 };
 
 export type RunUpdates = {
@@ -347,7 +354,7 @@ export type RunQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, summary: string, summary_modified_at: number, owner_user_id: string, team_id: string, channel_id: string, create_at: number, end_at: number, playbook_id: string, post_id: string, current_status: string, last_status_update_at: number, reminder_post_id: string, previous_reminder: number, reminder_message_template: string, reminder_timer_default_seconds: number, status_update_enabled: boolean, checklists: Array<{ __typename?: 'Checklist', id: string, title: string, items: Array<{ __typename?: 'ChecklistItem', id: string, title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, timelineEvents: Array<{ __typename?: 'TimelineEvent', id: string, summary: string, details: string, event_type: string, create_at: number, post_id: string, delete_at: number, event_at: number, creator_user_id: string, subject_user_id: string }>, statusPosts: Array<{ __typename?: 'StatusPost', id: string, create_at: number, delete_at: number }> } | null };
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, summary: string, retrospective: string, participant_ids: Array<string>, summary_modified_at: number, owner_user_id: string, team_id: string, channel_id: string, create_at: number, end_at: number, playbook_id: string, post_id: string, current_status: string, last_status_update_at: number, reminder_post_id: string, previous_reminder: number, reminder_message_template: string, reminder_timer_default_seconds: number, status_update_enabled: boolean, status_update_broadcast_channels_enabled: boolean, status_update_broadcast_webhooks_enabled: boolean, retrospective_enabled: boolean, retrospective_was_canceled: boolean, retrospective_published_at: number, webhook_on_status_update_urls: Array<string>, broadcast_channel_ids: Array<string>, checklists: Array<{ __typename?: 'Checklist', id: string, title: string, items: Array<{ __typename?: 'ChecklistItem', id: string, title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, timeline_events: Array<{ __typename?: 'TimelineEvent', id: string, summary: string, details: string, event_type: string, create_at: number, post_id: string, delete_at: number, event_at: number, creator_user_id: string, subject_user_id: string }>, status_posts: Array<{ __typename?: 'StatusPost', id: string, create_at: number, delete_at: number }>, metrics_data: Array<{ __typename?: 'RunMetricData', value?: number | null, metric_config_id: string }> } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -613,6 +620,7 @@ export const RunDocument = gql`
     id
     name
     summary
+    participant_ids: participantIDs
     summary_modified_at: summaryModifiedAt
     owner_user_id: ownerUserID
     team_id: teamID
@@ -628,6 +636,14 @@ export const RunDocument = gql`
     reminder_message_template: reminderMessageTemplate
     reminder_timer_default_seconds: reminderTimerDefaultSeconds
     status_update_enabled: statusUpdateEnabled
+    status_update_broadcast_channels_enabled: statusUpdateBroadcastChannelsEnabled
+    status_update_broadcast_webhooks_enabled: statusUpdateBroadcastWebhooksEnabled
+    retrospective
+    retrospective_enabled: retrospectiveEnabled
+    retrospective_was_canceled: retrospectiveWasCanceled
+    retrospective_published_at: retrospectivePublishedAt
+    webhook_on_status_update_urls: webhookOnStatusUpdateURLs
+    broadcast_channel_ids: broadcastChannelIDs
     checklists {
       id
       title
@@ -644,7 +660,7 @@ export const RunDocument = gql`
         due_date: dueDate
       }
     }
-    timelineEvents {
+    timeline_events: timelineEvents {
       id
       event_type: eventType
       summary
@@ -657,10 +673,14 @@ export const RunDocument = gql`
       creator_user_id: creatorUserID
       subject_user_id: subjectUserID
     }
-    statusPosts {
+    status_posts: statusPosts {
       id
       create_at: createAt
       delete_at: deleteAt
+    }
+    metrics_data: metricsData {
+      metric_config_id: metricConfigID
+      value
     }
   }
 }

@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import {FullRun} from 'src/graphql/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
@@ -11,7 +12,7 @@ import {Role} from 'src/components/backstage/playbook_runs/shared';
 
 interface Props {
     id: string;
-    playbookRun: PlaybookRun;
+    playbookRun: PlaybookRun | FullRun;
     role: Role;
 }
 const Checklists = ({id, playbookRun, role}: Props) => {

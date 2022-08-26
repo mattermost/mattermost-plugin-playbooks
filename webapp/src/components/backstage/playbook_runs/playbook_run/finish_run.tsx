@@ -8,7 +8,8 @@ import {useDispatch} from 'react-redux';
 import Icon from '@mdi/react';
 import {mdiFlagOutline} from '@mdi/js';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
@@ -16,7 +17,7 @@ import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {useLHSRefresh} from '../../lhs_navigation';
 
-export const useOnFinishRun = (playbookRun: PlaybookRun) => {
+export const useOnFinishRun = (playbookRun: FullRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
@@ -49,7 +50,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
 };
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
 }
 
 const FinishRun = ({playbookRun}: Props) => {

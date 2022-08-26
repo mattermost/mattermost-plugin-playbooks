@@ -17,8 +17,8 @@ import {
     telemetryEventForPlaybookRun,
 } from 'src/client';
 import {useFavoriteRun} from 'src/hooks';
-import {useRunMembership} from 'src/graphql/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {useRunMembership, FullRun} from 'src/graphql/hooks';
+import {Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
@@ -35,7 +35,7 @@ import HeaderButton from './header_button';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     role: Role;
     channel: Channel | undefined | null;
     hasPermanentViewerAccess: boolean;
@@ -100,7 +100,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                 toggleFavorite={toggleFavorite}
                 hasPermanentViewerAccess={hasPermanentViewerAccess}
             />
-            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+            <StyledBadge status={BadgeType[playbookRun.current_status as BadgeType]}/>
             <HeaderButton
                 tooltipId={'run-actions-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}

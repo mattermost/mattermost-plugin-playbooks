@@ -10,11 +10,11 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {usePlaybook, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {useRun, FullRun} from 'src/graphql/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
@@ -34,7 +34,7 @@ import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
-const useRHS = (playbookRun?: PlaybookRun|null) => {
+const useRHS = (playbookRun?: FullRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);

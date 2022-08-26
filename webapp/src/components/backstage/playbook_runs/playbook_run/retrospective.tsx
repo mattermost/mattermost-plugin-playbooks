@@ -3,13 +3,14 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import debounce from 'debounce';
 
-import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
+import {RunMetricData} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {publishRetrospective, updateRetrospective} from 'src/client';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
+import {FullRun} from 'src/graphql/hooks';
 import {AnchorLinkTitle, Content, Role} from 'src/components/backstage/playbook_runs/shared';
 import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
 import Report from '../playbook_run_backstage/retrospective/report';
@@ -19,7 +20,7 @@ import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
     id: string;
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     playbook: PlaybookWithChecklist | null;
     role: Role;
     focusMetricId?: string;
@@ -69,7 +70,7 @@ const Retrospective = ({
     }
 
     const onConfirmPublish = () => {
-        publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
+        publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data as RunMetricData[]);
         setShowConfirmation(false);
     };
 
@@ -117,7 +118,7 @@ const Retrospective = ({
         updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
     }, DEBOUNCE_2_SECS);
     const onReportChange = debounce((retrospective: string) => {
-        updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
+        updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data as RunMetricData[]);
     }, DEBOUNCE_2_SECS);
 
     return (
@@ -142,7 +143,7 @@ const Retrospective = ({
                         <MetricsData
                             idPrefix={id}
                             ref={childRef}
-                            metricsData={playbookRun.metrics_data}
+                            metricsData={playbookRun.metrics_data as RunMetricData[]}
                             metricsConfigs={playbook.metrics}
                             notEditable={notEditable}
                             onEdit={onMetricsChange}

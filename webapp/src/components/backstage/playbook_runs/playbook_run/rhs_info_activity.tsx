@@ -12,7 +12,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {ItemList} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
 import {TimelineEventsFilterDefault} from 'src/types/rhs';
@@ -23,7 +23,7 @@ import {useTimelineEvents} from './timeline_utils';
 const SHOWED_EVENTS = 5;
 
 interface Props {
-    run: PlaybookRun;
+    run: FullRun;
     role: Role;
     onViewTimeline: () => void;
 }

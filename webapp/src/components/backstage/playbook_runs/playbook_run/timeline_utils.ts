@@ -13,11 +13,12 @@ import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 import {TimelineEvent, TimelineEventsFilter, TimelineEventType, TimelineEventsFilterDefault} from 'src/types/rhs';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 
-export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
+export const useTimelineEvents = (playbookRun: FullRun|PlaybookRun, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
@@ -36,7 +37,8 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
             timeline_events: events,
         } = playbookRun;
 
-        const statusDeleteAtByPostId = statuses.reduce<{[id: string]: number}>((map, post) => {
+        // Needs to be checked: not sure why I had to force type casting
+        const statusDeleteAtByPostId = (statuses as StatusPost[]).reduce<{[id: string]: number}>((map, post) => {
             if (post.delete_at !== 0) {
                 map[post.id] = post.delete_at;
             }

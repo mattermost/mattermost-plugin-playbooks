@@ -6,12 +6,15 @@ import {
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookQuery,
+    RunQuery,
     PlaybookQueryHookResult,
+    RunQueryHookResult,
     PlaybookUpdates,
     RunUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
     usePlaybookQuery,
+    useRunQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
@@ -97,6 +100,22 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     }, [playbookID, userID, leavePlaybook]);
 
     return {join, leave};
+};
+
+export type FullRun = NonNullable<RunQuery['run']>
+export const useRun = (id: string): [RunQuery['run'], RunQueryHookResult] => {
+    const result = useRunQuery({
+        variables: {
+            id,
+        },
+        fetchPolicy: 'network-only',
+        nextFetchPolicy: 'cache-first',
+    });
+
+    let run = result.data?.run;
+    run = run === null ? undefined : run;
+
+    return [run, result];
 };
 
 export const useRunMembership = (runID?: string, userIDs?: string[]) => {

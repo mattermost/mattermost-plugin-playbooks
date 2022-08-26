@@ -3,6 +3,7 @@
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {Checklist, isChecklist} from 'src/types/playbook';
+import {FullRun} from 'src/graphql/hooks';
 
 export interface PlaybookRun {
     id: string;
@@ -147,7 +148,7 @@ function isString(arg: any): arg is string {
     return Boolean(typeof arg === 'string');
 }
 
-export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
+export function playbookRunIsActive(playbookRun: PlaybookRun|FullRun): boolean {
     return playbookRun.current_status === PlaybookRunStatus.InProgress;
 }
 

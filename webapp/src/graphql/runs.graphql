@@ -3,6 +3,7 @@ query Run($id: String!) {
 		id
 		name
 		summary
+		participant_ids: participantIDs
 		summary_modified_at: summaryModifiedAt
 		owner_user_id: ownerUserID
 		team_id: teamID
@@ -18,6 +19,15 @@ query Run($id: String!) {
     	reminder_message_template: reminderMessageTemplate
     	reminder_timer_default_seconds: reminderTimerDefaultSeconds
     	status_update_enabled: statusUpdateEnabled
+		status_update_broadcast_channels_enabled: statusUpdateBroadcastChannelsEnabled
+		status_update_broadcast_webhooks_enabled: statusUpdateBroadcastWebhooksEnabled
+		retrospective
+		retrospective_enabled: retrospectiveEnabled
+		retrospective_was_canceled: retrospectiveWasCanceled
+		retrospective_published_at: retrospectivePublishedAt
+		webhook_on_status_update_urls: webhookOnStatusUpdateURLs
+		broadcast_channel_ids: broadcastChannelIDs
+
 		checklists {
 			id
 			title
@@ -34,7 +44,7 @@ query Run($id: String!) {
 				due_date: dueDate
 			}
         }
-		timelineEvents {
+		timeline_events: timelineEvents {
 			id
 			event_type: eventType
 			summary
@@ -47,10 +57,14 @@ query Run($id: String!) {
 			creator_user_id: creatorUserID
 			subject_user_id: subjectUserID
 		}
-		statusPosts {
+		status_posts: statusPosts {
 			id
 			create_at: createAt
 			delete_at: deleteAt
+		}
+		metrics_data: metricsData {
+			metric_config_id: metricConfigID
+			value
 		}
     }
 }

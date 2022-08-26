@@ -209,8 +209,15 @@ type Run {
 	webhookOnStatusUpdateURLs: [String!]!
 
 	timelineEvents: [TimelineEvent!]!
+	metricsData: [RunMetricData!]!
 
 }
+
+type RunMetricData {
+	metricConfigID: String!
+	value: Int
+}
+
 
 type StatusPost {
 	id: String!

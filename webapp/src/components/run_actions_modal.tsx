@@ -8,9 +8,9 @@ import styled from 'styled-components';
 
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {updateRunActions} from 'src/client';
-
+import {FullRun} from 'src/graphql/hooks';
+import {PlaybookRun} from 'src/types/playbook_run';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
@@ -18,7 +18,7 @@ import BroadcastChannelSelector from 'src/components/broadcast_channel_selector'
 import PatternedTextArea from 'src/components/patterned_text_area';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun | PlaybookRun;
     readOnly: boolean;
 }
 

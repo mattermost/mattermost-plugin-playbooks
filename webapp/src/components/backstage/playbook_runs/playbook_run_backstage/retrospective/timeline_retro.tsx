@@ -6,10 +6,11 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import Timeline from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {Content, TabPageContainer, Title} from 'src/components/backstage/playbook_runs/shared';
 import MultiCheckbox from 'src/components/multi_checkbox';
 import {useTimelineEvents, useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 const Header = styled.div`
     display: flex;
@@ -53,7 +54,7 @@ const TextContainer = styled.span`
 `;
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: PlaybookRun | FullRun;
     deleteTimelineEvent: (id: string) => void;
 }
 

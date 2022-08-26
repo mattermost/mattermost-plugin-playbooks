@@ -12,8 +12,8 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {FullRun} from 'src/graphql/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {TimelineEvent} from 'src/types/rhs';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -42,7 +42,7 @@ const NoEventsNotice = styled.div`
 `;
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun|PlaybookRun;
     filteredEvents: TimelineEvent[];
     deleteTimelineEvent: (id: string) => void;
 }

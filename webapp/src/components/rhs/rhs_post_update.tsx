@@ -18,6 +18,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import Clock from 'src/components/assets/icons/clock';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {FullRun} from 'src/graphql/hooks';
 
 import {useNow} from 'src/hooks';
 
@@ -133,7 +134,7 @@ const RHSPostUpdate = (props: Props) => {
     );
 };
 
-export const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
+export const getTimestamp = (playbookRun: PlaybookRun|FullRun, isNextUpdateScheduled: boolean) => {
     let timestampValue = playbookRun.last_status_update_at;
 
     if (playbookRun.current_status === PlaybookRunStatus.Finished) {

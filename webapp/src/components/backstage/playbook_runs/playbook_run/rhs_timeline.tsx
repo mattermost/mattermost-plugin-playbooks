@@ -13,7 +13,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {clientRemoveTimelineEvent} from 'src/client';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -21,7 +21,7 @@ import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook
 import {TimelineEventsFilter} from 'src/types/rhs';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     role: Role;
     options: CheckboxOption[];
     selectOption: (value: string, checked: boolean) => void;

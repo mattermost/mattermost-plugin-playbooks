@@ -10,6 +10,7 @@ import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {
     Checklist,
     ChecklistItem,
@@ -23,7 +24,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-    playbookRun?: PlaybookRun;
+    playbookRun?: PlaybookRun | FullRun;
     disabled: boolean;
     checklist: Checklist;
     checklistIndex: number;

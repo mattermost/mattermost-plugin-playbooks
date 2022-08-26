@@ -24,7 +24,8 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
 import {useFormattedUsername} from 'src/hooks';
-import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {Metadata} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
@@ -68,7 +69,7 @@ export const useFollow = (runID: string, followState: FollowState) => {
 };
 
 interface Props {
-    run: PlaybookRun;
+    run: FullRun;
     runMetadata?: Metadata;
     editable: boolean;
     channel: Channel | undefined | null;
@@ -284,18 +285,18 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    display: flex;    
+    display: flex;
     flex-direction: row;
     align-items: center;
 
     svg {
         margin-left: 3px;
-    }    
+    }
 `;
 
 const ItemContent = styled.div`
     max-width: 230px;
-    
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

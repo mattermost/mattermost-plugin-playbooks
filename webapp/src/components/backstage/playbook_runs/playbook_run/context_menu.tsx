@@ -13,11 +13,11 @@ import {showRunActionsModal} from 'src/actions';
 
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
-import {useRunMembership} from 'src/graphql/hooks';
+import {useRunMembership, FullRun} from 'src/graphql/hooks';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -28,7 +28,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {useOnFinishRun} from './finish_run';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     role: Role;
     isFavoriteRun: boolean;
     isFollowing: boolean;
@@ -136,7 +136,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     );
 };
 
-const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRun: PlaybookRun, isFollowing: boolean) => {
+const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRun: FullRun, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;

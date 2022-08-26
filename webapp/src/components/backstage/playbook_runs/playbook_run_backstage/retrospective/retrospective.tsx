@@ -16,12 +16,12 @@ import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
+import {RunMetricData, PlaybookRun} from 'src/types/playbook_run';
 import {Metric} from 'src/types/playbook';
 
 import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-
+import {FullRun} from 'src/graphql/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
@@ -33,7 +33,7 @@ import TimelineRetro from './timeline_retro';
 const editDebounceDelayMilliseconds = 2000;
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: PlaybookRun | FullRun;
     metricsConfigs?: Metric[];
     deleteTimelineEvent: (id: string) => void;
     setRetrospective: (retrospective: string) => void;
@@ -53,7 +53,7 @@ export const Retrospective = (props: Props) => {
 
     useEffect(() => {
         if (didMountRef.current) {
-            updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
+            updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data as RunMetricData[]);
         }
         didMountRef.current = true;
     }, [retrospectiveInfoUpdated]);
@@ -71,7 +71,7 @@ export const Retrospective = (props: Props) => {
     }
 
     const confirmedPublish = () => {
-        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data as RunMetricData[]);
         props.setPublishedAt(DateTime.now().valueOf());
         props.setCanceled(false);
         setShowConfirmation(false);
@@ -143,7 +143,7 @@ export const Retrospective = (props: Props) => {
                             {props.metricsConfigs && metricsAvailable &&
                                 <MetricsData
                                     ref={childRef}
-                                    metricsData={props.playbookRun.metrics_data}
+                                    metricsData={props.playbookRun.metrics_data as RunMetricData[]}
                                     metricsConfigs={props.metricsConfigs}
                                     notEditable={isPublished}
                                     onEdit={debouncedPersistMetricEditEvent}

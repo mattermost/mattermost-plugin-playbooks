@@ -9,10 +9,11 @@ import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {PlaybookRun, PlaybookRunStatus, Metadata} from 'src/types/playbook_run';
+import {PlaybookRunStatus, Metadata, RunMetricData} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 interface Props {
-    run: PlaybookRun;
+    run: FullRun;
     playbook?: PlaybookWithChecklist;
     runMetadata?: Metadata;
     role: Role;
@@ -47,7 +48,7 @@ const RHSInfo = (props: Props) => {
             {props.run.retrospective_enabled ? (
                 <RHSInfoMetrics
                     runID={props.run.id}
-                    metricsData={props.run.metrics_data}
+                    metricsData={props.run.metrics_data as RunMetricData[]}
                     metricsConfig={props.playbook?.metrics}
                     editable={editable}
                 />

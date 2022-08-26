@@ -14,6 +14,7 @@ import {DateTime} from 'luxon';
 import {GlobalState} from 'mattermost-webapp/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
@@ -43,7 +44,7 @@ import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: PlaybookRun | FullRun;
     parentContainer: ChecklistParent;
     id?: string;
     viewerMode: boolean;

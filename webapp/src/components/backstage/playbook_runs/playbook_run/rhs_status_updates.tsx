@@ -4,12 +4,13 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {PlaybookRun, StatusPostComplete} from 'src/types/playbook_run';
+import {StatusPostComplete} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 
 import StatusUpdateCard from './update_card';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun;
     statusUpdates: StatusPostComplete[] | null;
 }
 

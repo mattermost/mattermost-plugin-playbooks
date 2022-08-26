@@ -6,12 +6,13 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
+import {FullRun} from 'src/graphql/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
 import ReportTextArea
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/report_text_area';
 
 interface ReportProps {
-    playbookRun: PlaybookRun;
+    playbookRun: FullRun | PlaybookRun;
     notEditable: boolean;
     onEdit: (report: string) => void;
     flushChanges: () => void;

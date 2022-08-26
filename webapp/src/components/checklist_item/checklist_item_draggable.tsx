@@ -8,9 +8,10 @@ import {setChecklistItemState} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat, ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {FullRun} from 'src/graphql/hooks';
 
 interface Props {
-    playbookRun?: PlaybookRun;
+    playbookRun?: PlaybookRun | FullRun;
     checklistIndex: number;
     item: ChecklistItemType;
     itemIndex: number;
