@@ -20,6 +20,7 @@ export type Scalars = {
 
 export type Checklist = {
     __typename?: 'Checklist';
+    id: Scalars['String'];
     items: Array<ChecklistItem>;
     title: Scalars['String'];
 };
@@ -32,6 +33,7 @@ export type ChecklistItem = {
     commandLastRun: Scalars['Float'];
     description: Scalars['String'];
     dueDate: Scalars['Float'];
+    id: Scalars['String'];
     state: Scalars['String'];
     stateModified: Scalars['Float'];
     title: Scalars['String'];
@@ -218,6 +220,7 @@ export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
     playbooks: Array<Playbook>;
+    run?: Maybe<Run>;
     runs: Array<Run>;
 };
 
@@ -232,6 +235,10 @@ export type QueryPlaybooksArgs = {
     teamID?: InputMaybe<Scalars['String']>;
     withArchived?: InputMaybe<Scalars['Boolean']>;
     withMembershipOnly?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type QueryRunArgs = {
+    id: Scalars['String'];
 };
 
 export type QueryRunsArgs = {
@@ -294,6 +301,7 @@ export type TimelineEvent = {
     creatorUserID: Scalars['String'];
     deleteAt: Scalars['Float'];
     details: Scalars['String'];
+    eventAt: Scalars['Float'];
     eventType: Scalars['String'];
     id: Scalars['String'];
     postID: Scalars['String'];
@@ -334,6 +342,12 @@ export type RemovePlaybookMemberMutationVariables = Exact<{
 }>;
 
 export type RemovePlaybookMemberMutation = { __typename?: 'Mutation', removePlaybookMember: string };
+
+export type RunQueryVariables = Exact<{
+    id: Scalars['String'];
+}>;
+
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, summary: string, summary_modified_at: number, owner_user_id: string, team_id: string, channel_id: string, create_at: number, end_at: number, playbook_id: string, post_id: string, current_status: string, last_status_update_at: number, reminder_post_id: string, previous_reminder: number, reminder_message_template: string, reminder_timer_default_seconds: number, status_update_enabled: boolean, checklists: Array<{ __typename?: 'Checklist', id: string, title: string, items: Array<{ __typename?: 'ChecklistItem', id: string, title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, timelineEvents: Array<{ __typename?: 'TimelineEvent', id: string, summary: string, details: string, event_type: string, create_at: number, post_id: string, delete_at: number, event_at: number, creator_user_id: string, subject_user_id: string }>, statusPosts: Array<{ __typename?: 'StatusPost', id: string, create_at: number, delete_at: number }> } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -593,6 +607,92 @@ export function useRemovePlaybookMemberMutation(baseOptions?: Apollo.MutationHoo
 export type RemovePlaybookMemberMutationHookResult = ReturnType<typeof useRemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationResult = Apollo.MutationResult<RemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationOptions = Apollo.BaseMutationOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
+export const RunDocument = gql`
+    query Run($id: String!) {
+  run(id: $id) {
+    id
+    name
+    summary
+    summary_modified_at: summaryModifiedAt
+    owner_user_id: ownerUserID
+    team_id: teamID
+    channel_id: channelID
+    create_at: createAt
+    end_at: endAt
+    playbook_id: playbookID
+    post_id: postID
+    current_status: currentStatus
+    last_status_update_at: lastStatusUpdateAt
+    reminder_post_id: reminderPostId
+    previous_reminder: previousReminder
+    reminder_message_template: reminderMessageTemplate
+    reminder_timer_default_seconds: reminderTimerDefaultSeconds
+    status_update_enabled: statusUpdateEnabled
+    checklists {
+      id
+      title
+      items {
+        id
+        title
+        description
+        state
+        state_modified: stateModified
+        assignee_id: assigneeID
+        assignee_modified: assigneeModified
+        command
+        command_last_run: commandLastRun
+        due_date: dueDate
+      }
+    }
+    timelineEvents {
+      id
+      event_type: eventType
+      summary
+      create_at: createAt
+      details
+      post_id: postID
+      create_at: createAt
+      delete_at: deleteAt
+      event_at: eventAt
+      creator_user_id: creatorUserID
+      subject_user_id: subjectUserID
+    }
+    statusPosts {
+      id
+      create_at: createAt
+      delete_at: deleteAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useRunQuery__
+ *
+ * To run a query within a React component, call `useRunQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRunQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRunQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useRunQuery(baseOptions: Apollo.QueryHookOptions<RunQuery, RunQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<RunQuery, RunQueryVariables>(RunDocument, options);
+}
+export function useRunLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunQuery, RunQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<RunQuery, RunQueryVariables>(RunDocument, options);
+}
+export type RunQueryHookResult = ReturnType<typeof useRunQuery>;
+export type RunLazyQueryHookResult = ReturnType<typeof useRunLazyQuery>;
+export type RunQueryResult = Apollo.QueryResult<RunQuery, RunQueryVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)

@@ -1,3 +1,60 @@
+query Run($id: String!) {
+    run(id: $id) {
+		id
+		name
+		summary
+		summary_modified_at: summaryModifiedAt
+		owner_user_id: ownerUserID
+		team_id: teamID
+		channel_id: channelID
+		create_at: createAt
+		end_at: endAt
+		playbook_id: playbookID
+		post_id: postID
+    	current_status: currentStatus
+    	last_status_update_at: lastStatusUpdateAt
+    	reminder_post_id: reminderPostId
+    	previous_reminder: previousReminder
+    	reminder_message_template: reminderMessageTemplate
+    	reminder_timer_default_seconds: reminderTimerDefaultSeconds
+    	status_update_enabled: statusUpdateEnabled
+		checklists {
+			id
+			title
+			items {
+				id
+				title
+				description
+				state
+				state_modified: stateModified
+				assignee_id: assigneeID
+				assignee_modified: assigneeModified
+				command
+				command_last_run: commandLastRun
+				due_date: dueDate
+			}
+        }
+		timelineEvents {
+			id
+			event_type: eventType
+			summary
+			create_at: createAt
+			details
+			post_id: postID
+			create_at: createAt
+			delete_at: deleteAt
+			event_at: eventAt
+			creator_user_id: creatorUserID
+			subject_user_id: subjectUserID
+		}
+		statusPosts {
+			id
+			create_at: createAt
+			delete_at: deleteAt
+		}
+    }
+}
+
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }

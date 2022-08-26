@@ -9,6 +9,7 @@ type Query {
 		withMembershipOnly: Boolean = false,
 	): [Playbook!]!
 
+	run(id: String!): Run
 	runs(
 		teamID: String = "",
 		sort: String = "",
@@ -131,6 +132,7 @@ type Playbook {
 }
 
 type Checklist {
+	id: String!
 	title: String!
 	items: [ChecklistItem!]!
 }
@@ -142,6 +144,7 @@ type Member {
 }
 
 type ChecklistItem {
+	id: String!
 	title: String!
 	description: String!
 	state: String!
@@ -219,6 +222,7 @@ type TimelineEvent {
 	id: String!
 	createAt: Float!
 	deleteAt: Float!
+	eventAt: Float!
 	eventType: String!
 	details: String!
 	postID: String!

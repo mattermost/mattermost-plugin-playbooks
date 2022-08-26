@@ -118,3 +118,7 @@ func (r *TimelineEventResolver) EventType() string {
 func (r *TimelineEventResolver) DeleteAt() float64 {
 	return float64(r.TimelineEvent.DeleteAt)
 }
+
+func (r *TimelineEventResolver) EventAt() float64 {
+	return float64(r.TimelineEvent.EventAt)
+}
