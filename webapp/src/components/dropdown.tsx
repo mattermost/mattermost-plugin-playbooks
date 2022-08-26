@@ -20,7 +20,7 @@ import {
 } from '@floating-ui/react-dom-interactions';
 
 const FloatingContainer = styled.div`
-    min-width: 20rem;
+    min-width: 16rem;
 	z-index: 50;
 
 	.PlaybookRunProfileButton {
