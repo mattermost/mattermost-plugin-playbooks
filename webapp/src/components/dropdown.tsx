@@ -54,6 +54,7 @@ type DropdownProps = {
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
     initialFocus?: number;
+    manageFocus?: boolean;
     portal?: boolean;
     containerStyles?: ReturnType<typeof css>;
 } & ({
@@ -90,32 +91,40 @@ const Dropdown = (props: DropdownProps) => {
 
     const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment; // 🤷
 
+    let content = (
+        <FloatingContainer
+            {...getFloatingProps({
+                ref: floating,
+                style: {
+                    position: strategy,
+                    top: y ?? 0,
+                    left: x ?? 0,
+                },
+            })}
+            css={`
+                ${props.containerStyles};
+            `}
+        >
+            {props.children}
+        </FloatingContainer>
+    );
+
+    if (props.manageFocus ?? true) {
+        content = (
+            <FloatingFocusManager
+                context={context}
+                initialFocus={props.initialFocus}
+            >
+                {content}
+            </FloatingFocusManager>
+        );
+    }
+
     return (
         <>
             {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
             <MaybePortal>
-                {open && (
-                    <FloatingFocusManager
-                        context={context}
-                        initialFocus={props.initialFocus}
-                    >
-                        <FloatingContainer
-                            {...getFloatingProps({
-                                ref: floating,
-                                style: {
-                                    position: strategy,
-                                    top: y ?? 0,
-                                    left: x ?? 0,
-                                },
-                            })}
-                            css={`
-                                ${props.containerStyles};
-                            `}
-                        >
-                            {props.children}
-                        </FloatingContainer>
-                    </FloatingFocusManager>
-                )}
+                {open && content}
             </MaybePortal>
         </>
     );
