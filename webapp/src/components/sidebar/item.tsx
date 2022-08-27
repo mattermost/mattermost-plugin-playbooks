@@ -86,7 +86,7 @@ export const StyledNavLink = styled(NavLink)`
         width: 240px;
         height: 32px;
         align-items: center;
-        padding: 7px 16px 7px 19px;
+        padding: 7px 0 7px 19px;
         border-top: 0;
         border-bottom: 0;
         margin-right: 0;
