@@ -1,12 +1,11 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {NavLink} from 'react-router-dom';
 import classNames from 'classnames';
 
 import styled, {css} from 'styled-components';
 
 import Tooltip from 'src/components/widgets/tooltip';
-import CreatePlaybookDropdown from './create_playbook_dropdown';
-import { DotMenuButton } from '../dot_menu';
+import {DotMenuButton} from '../dot_menu';
 
 interface ItemProps {
     icon: string;
@@ -20,12 +19,9 @@ interface ItemProps {
 }
 
 const Item = (props: ItemProps) => {
-    const [showMenu, setShowMenu] = useState(false);
     return (
         <ItemContainer
             isCollapsed={props.isCollapsed}
-            onMouseEnter={() => setShowMenu(true)}
-            onMouseLeave={() => setShowMenu(false)}
         >
             <StyledNavLink
                 className={props.className}
@@ -122,6 +118,17 @@ export const StyledNavLink = styled(NavLink)`
                 content: "";
             }
         }
+
+        ${DotMenuButton} {
+            opacity: 0;
+        }
+
+        &:hover,
+        &:focus-within {
+            ${DotMenuButton} {
+                opacity: 1;
+            }
+        }    
     }
 `;
 
@@ -132,15 +139,6 @@ const HoverMenu = styled.div`
 
     margin-left: auto;
     margin-right: 8px;
-    ${DotMenuButton} {
-        opacity: 0;
-    }
-
-    :hover {
-        ${DotMenuButton} {
-            opacity: 1;
-        }        
-    }
 `;
 
 const NameIconContainer = styled.div`

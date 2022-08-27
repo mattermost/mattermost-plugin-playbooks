@@ -33,7 +33,7 @@ export const LHSRunDotMenu = ({playbookRunId, role, isFavoriteRun, isFollowing, 
         <>
             <DotMenu
                 title={formatMessage({defaultMessage: 'Run options'})}
-                placement='bottom-end'
+                placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon
                         size={14}

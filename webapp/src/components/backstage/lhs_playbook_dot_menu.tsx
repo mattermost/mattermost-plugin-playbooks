@@ -39,7 +39,7 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
         <>
             <DotMenu
                 title={formatMessage({defaultMessage: 'Playbook options'})}
-                placement='bottom-end'
+                placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon
                         size={14}
