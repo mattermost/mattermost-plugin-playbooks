@@ -699,6 +699,9 @@ type PlaybookRunService interface {
 	// PublishRetrospective publishes the retrospective.
 	PublishRetrospective(playbookRunID, userID string, retrospective RetrospectiveUpdate) error
 
+	// ToggleRetrospective enables or disabled the retrospective.
+	ToggleRetrospective(playbookRunID, retrospective RetrospectiveUpdate) error
+
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
 
@@ -928,6 +931,9 @@ type PlaybookRunTelemetry interface {
 
 	// PublishRetrospective event
 	PublishRetrospective(playbookRun *PlaybookRun, userID string)
+
+	// ToggleRetrospective event
+	ToggleRetrospective(PlaybookRun *PlaybookRun)
 
 	// Follow tracks userID following a playbook run.
 	Follow(playbookRun *PlaybookRun, userID string)

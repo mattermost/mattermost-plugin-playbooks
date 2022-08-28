@@ -346,3 +346,18 @@ func (s *PlaybookRunService) Leave(ctx context.Context, playbookRunID string) er
 
 	return err
 }
+
+func (s *PlaybookRunService) ToggleRetrospective(ctx context.Context, playbookRunID string) error {
+	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/retrospective/enable", playbookRunID), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp.StatusCode != http.StatusOK {
+
+		return fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return err
+}

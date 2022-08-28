@@ -126,6 +126,7 @@ func NewPlaybookRunHandler(
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
+	retrospectiveRouter.HandleFunc("/toggle", handler.toggleRetrospective).Methods(http.MethodPost)
 
 	followersRouter := playbookRunRouter.PathPrefix("/followers").Subrouter()
 	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
@@ -1825,6 +1826,25 @@ func (h *PlaybookRunHandler) getFollowers(w http.ResponseWriter, r *http.Request
 	}
 
 	ReturnJSON(w, followers, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) toggleRetrospective(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+
+	var retroUpdate app.RetrospectiveUpdate
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.playbookRunService.ToggleRetrospective(playbookRunID, retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to enable retrospective", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.

@@ -2612,6 +2612,21 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	return nil
 }
 
+func (s *PlaybookRunServiceImpl) ToggleRetrospective(playbookRunID, retrospective RetrospectiveUpdate) error {
+	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// Update the text to keep syncronized
+	playbookRunToPublish.RetrospectiveEnabled = true
+	if err = s.store.UpdatePlaybookRun(playbookRunToPublish); err != nil {
+		return errors.Wrap(err, "failed to update playbook run")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
 	props := map[string]interface{}{
 		"metricsData":       "null",
