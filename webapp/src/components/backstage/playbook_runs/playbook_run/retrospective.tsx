@@ -118,19 +118,18 @@ const Retrospective = ({
                 </PublishButton>
                 {
                     isEnabled &&
-                    <DotMenu
-                        icon={<HamburgerButton/>}
+                    <StyledMenu
+                        icon={<StyledHamburgerButton/>}
                         dotMenuButton={DotMenuButton}
                         dropdownMenu={DropdownMenu}
                         placement='bottom-end'
-                        title={formatMessage({defaultMessage: 'More'})}
                     >
                         <DropdownMenuItem
                             onClick={onDisableClick}
                         >
                             {formatMessage({defaultMessage: 'Disable retrospectives'})}
                         </DropdownMenuItem>
-                    </DotMenu>
+                    </StyledMenu>
                 }
             </>
         );
@@ -241,3 +240,16 @@ const PublishButton = styled(TertiaryButton)`
     height: 32px;
     padding: 0 16px;
 `;
+
+const StyledMenu = styled(DotMenu)`
+    background: rgba(var(--button-bg-rgb),0.08);
+`;
+
+const StyledHamburgerButton = styled(HamburgerButton)`
+    color: (var(--button-bg));
+    background: (var(--button-bg));
+`;
+
+const StyleDotMenuButton = styled(DotMenuButton)`
+    color: (var(--button-bg));
+`

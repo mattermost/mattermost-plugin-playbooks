@@ -7,10 +7,10 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
+import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, CheckIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
+import {exportChannelUrl, getSiteUrl, leaveRun, toggleRetrospective} from 'src/client';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -52,6 +52,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
         window.location.href = exportChannelUrl(playbookRun.channel_id);
     };
 
+    const onRetrospectEnableClick = () => {
+        toggleRetrospective(playbookRun.id, playbookRun.metrics_data);
+    };
+
     const onFinishRun = useOnFinishRun(playbookRun);
 
     return (
@@ -90,6 +94,15 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     <LightningBoltOutlineIcon size={18}/>
                     <FormattedMessage defaultMessage='Run actions'/>
                 </StyledDropdownMenuItem>
+
+                <StyledDropdownMenuItem
+                    disabled={playbookRun.retrospective_enabled}
+                    onClick={onRetrospectEnableClick}
+                >
+                    <CheckIcon size={18}/>
+                    <FormattedMessage defaultMessage='Enable retrospective'/>
+                </StyledDropdownMenuItem>
+
                 <StyledDropdownMenuItem
                     disabled={!exportAvailable}
                     disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
