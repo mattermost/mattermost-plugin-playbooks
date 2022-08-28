@@ -25,6 +25,7 @@ import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {useLHSRefresh} from '../../lhs_navigation';
 
 import {useOnFinishRun} from './finish_run';
+import {useOnRestoreRun} from './restore_run';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -53,6 +54,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     };
 
     const onFinishRun = useOnFinishRun(playbookRun);
+    const onRestoreRun = useOnRestoreRun(playbookRun);
 
     return (
         <>
@@ -107,6 +109,18 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                             >
                                 <FlagOutlineIcon size={18}/>
                                 <FormattedMessage defaultMessage='Finish run'/>
+                            </StyledDropdownMenuItem>
+                        </>
+                }
+                {
+                    !playbookRunIsActive(playbookRun) && role === Role.Participant &&
+                        <>
+                            <Separator/>
+                            <StyledDropdownMenuItem
+                                onClick={onRestoreRun}
+                            >
+                                <FlagOutlineIcon size={18}/>
+                                <FormattedMessage defaultMessage='Restart run'/>
                             </StyledDropdownMenuItem>
                         </>
                 }
