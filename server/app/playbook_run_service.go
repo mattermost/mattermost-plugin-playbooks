@@ -2619,7 +2619,7 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospective(playbookRunID string, retro
 	}
 
 	// Update the text to keep syncronized
-	playbookRunToPublish.RetrospectiveEnabled = true
+	playbookRunToPublish.RetrospectiveEnabled = !playbookRunToPublish.RetrospectiveEnabled
 	if err = s.store.UpdatePlaybookRun(playbookRunToPublish); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
