@@ -249,7 +249,3 @@ const StyledHamburgerButton = styled(HamburgerButton)`
     color: (var(--button-bg));
     background: (var(--button-bg));
 `;
-
-const StyleDotMenuButton = styled(DotMenuButton)`
-    color: (var(--button-bg));
-`
