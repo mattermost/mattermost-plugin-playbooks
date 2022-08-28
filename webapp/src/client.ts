@@ -929,3 +929,11 @@ export async function getTeamTopPlaybooks(timeRange: string, page: number, perPa
     }
     return data as InsightsResponse;
 }
+
+export async function toggleRetrospective(playbookRunID: string, metrics: RunMetricData[]) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/toggle`,
+        JSON.stringify({
+            metrics,
+        }));
+    return data;
+}

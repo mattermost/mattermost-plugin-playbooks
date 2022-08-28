@@ -5,7 +5,7 @@ import debounce from 'debounce';
 
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {publishRetrospective, updateRetrospective} from 'src/client';
+import {publishRetrospective, updateRetrospective, toggleRetrospective} from 'src/client';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
@@ -16,6 +16,8 @@ import Report from '../playbook_run_backstage/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
+import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 
 interface Props {
     id: string;
@@ -83,6 +85,10 @@ const Retrospective = ({
         setShowConfirmation(true);
     };
 
+    const onDisableClick = () => {
+        toggleRetrospective(playbookRun.id, playbookRun.metrics_data);
+    };
+
     const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
     const notEditable = isPublished || role === Role.Viewer;
 
@@ -109,6 +115,19 @@ const Retrospective = ({
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
+                <DotMenu
+                    icon={<HamburgerButton/>}
+                    dotMenuButton={DotMenuButton}
+                    dropdownMenu={DropdownMenu}
+                    placement='bottom-end'
+                    title={formatMessage({defaultMessage: 'More'})}
+                >
+                    <DropdownMenuItem
+                        onClick={onDisableClick}
+                    >
+                        {formatMessage({defaultMessage: 'Disable retrospectives'})}
+                    </DropdownMenuItem>
+                </DotMenu>
             </>
         );
     };
