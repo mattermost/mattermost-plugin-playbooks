@@ -91,6 +91,7 @@ const Retrospective = ({
 
     const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
     const notEditable = isPublished || role === Role.Viewer;
+    const isEnabled = playbook?.retrospective_enabled;
 
     const renderPublishComponent = () => {
         const publishedAt = (
@@ -115,19 +116,22 @@ const Retrospective = ({
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
                 </PublishButton>
-                <DotMenu
-                    icon={<HamburgerButton/>}
-                    dotMenuButton={DotMenuButton}
-                    dropdownMenu={DropdownMenu}
-                    placement='bottom-end'
-                    title={formatMessage({defaultMessage: 'More'})}
-                >
-                    <DropdownMenuItem
-                        onClick={onDisableClick}
+                {
+                    isEnabled &&
+                    <DotMenu
+                        icon={<HamburgerButton/>}
+                        dotMenuButton={DotMenuButton}
+                        dropdownMenu={DropdownMenu}
+                        placement='bottom-end'
+                        title={formatMessage({defaultMessage: 'More'})}
                     >
-                        {formatMessage({defaultMessage: 'Disable retrospectives'})}
-                    </DropdownMenuItem>
-                </DotMenu>
+                        <DropdownMenuItem
+                            onClick={onDisableClick}
+                        >
+                            {formatMessage({defaultMessage: 'Disable retrospectives'})}
+                        </DropdownMenuItem>
+                    </DotMenu>
+                }
             </>
         );
     };
