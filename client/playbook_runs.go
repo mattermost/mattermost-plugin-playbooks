@@ -348,7 +348,7 @@ func (s *PlaybookRunService) Leave(ctx context.Context, playbookRunID string) er
 }
 
 func (s *PlaybookRunService) ToggleRetrospective(ctx context.Context, playbookRunID string) error {
-	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/retrospective/enable", playbookRunID), nil)
+	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/retrospective/toggle", playbookRunID), nil)
 	if err != nil {
 		return err
 	}
