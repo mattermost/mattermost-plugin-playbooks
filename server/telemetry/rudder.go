@@ -33,6 +33,7 @@ const (
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
 	actionUpdateRetrospective      = "update_retrospective"
 	actionPublishRetrospective     = "publish_retrospective"
+	actionToggleRetrospective      = "toggle_retrospective"
 	actionRemoveTimelineEvent      = "remove_timeline_event"
 	actionFollow                   = "follow"
 	actionUnfollow                 = "unfollow"
@@ -419,6 +420,13 @@ func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, user
 
 func (t *RudderTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionPublishRetrospective
+	properties["NumMetrics"] = len(playbookRun.MetricsData)
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) ToggleRetrospective(playbookRun *app.PlaybookRun, userId string) {
+	properties := playbookRunProperties(playbookRun, userId)
 	properties["Action"] = actionPublishRetrospective
 	properties["NumMetrics"] = len(playbookRun.MetricsData)
 	t.track(eventTasks, properties)

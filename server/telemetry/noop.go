@@ -137,6 +137,10 @@ func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID
 func (t *NoopTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
+// ToggleRetrospective does nothing
+func (t *NoopTelemetry) ToggleRetrospective(playbookRun *app.PlaybookRun, userID string) {
+}
+
 // StartTrial does nothing.
 func (t *NoopTelemetry) StartTrial(userID string, action string) {
 }

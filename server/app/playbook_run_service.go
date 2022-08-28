@@ -2612,7 +2612,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) ToggleRetrospective(playbookRunID, retrospective RetrospectiveUpdate) error {
+func (s *PlaybookRunServiceImpl) ToggleRetrospective(playbookRunID string, retrospective RetrospectiveUpdate) error {
 	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
