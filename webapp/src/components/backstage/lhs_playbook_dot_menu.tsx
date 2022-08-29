@@ -32,8 +32,9 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbookId);
 
     const {leave} = usePlaybookMembership(playbookId, currentUserId);
-    const toggleFavorite = () => {
-        updatePlaybook({isFavorite: !isFavorite});
+    const toggleFavorite = async () => {
+        await updatePlaybook({isFavorite: !isFavorite});
+        refreshLHS();
     };
     return (
         <>

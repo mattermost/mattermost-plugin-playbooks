@@ -11,7 +11,6 @@ import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 import {pluginUrl} from 'src/browser_routing';
 import {LHSPlaybookDotMenu} from '../backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from '../backstage/lhs_run_dot_menu';
-import {Role} from '../backstage/playbook_runs/shared';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -72,11 +71,7 @@ const useLHSData = (teamID: string) => {
             itemMenu: (
                 <LHSRunDotMenu
                     playbookRunId={run.id}
-                    isFavoriteRun={run.isFavorite}
-                    isFollowing={true}
-                    role={Role.Participant}
-                    toggleFavorite={() => null}
-                    toggleFollow={() => null}
+                    teamId={teamID}
                 />),
             isFavorite: run.isFavorite,
             className: '',

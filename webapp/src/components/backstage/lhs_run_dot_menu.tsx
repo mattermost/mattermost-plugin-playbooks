@@ -6,28 +6,48 @@ import styled from 'styled-components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {StarIcon, StarOutlineIcon, LinkVariantIcon, CloseIcon, DotsVerticalIcon, BullhornOutlineIcon} from '@mattermost/compass-icons/components';
+import {useSelector} from 'react-redux';
+import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
-import {getSiteUrl} from 'src/client';
+import {followPlaybookRun, getSiteUrl, unfollowPlaybookRun} from 'src/client';
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {copyToClipboard} from 'src/utils';
-import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
+import {useFavoriteRun, useRun, useRunMetadata} from 'src/hooks';
 
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed, useLeaveRun} from './playbook_runs/playbook_run/context_menu';
+import {useFollowers} from './playbook_runs/playbook_run/playbook_run';
 
 interface Props {
     playbookRunId: string;
-    role: Role;
-    isFavoriteRun: boolean;
-    isFollowing: boolean;
-    toggleFavorite: () => void;
-    toggleFollow: () => void;
+    teamId: string
 }
 
-export const LHSRunDotMenu = ({playbookRunId, role, isFavoriteRun, isFollowing, toggleFavorite, toggleFollow}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, teamId}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
+    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(teamId, playbookRunId);
+    const [playbookRun] = useRun(playbookRunId);
+    const currentUser = useSelector(getCurrentUser);
+    const [metadata] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
+    const followState = useFollowers(metadata?.followers || []);
+    const {isFollowing, followers, setFollowers} = followState;
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, isFollowing);
+
+    const role = playbookRun?.participant_ids.includes(currentUser.id) ? Role.Participant : Role.Viewer;
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(playbookRunId)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
 
     return (
         <>
