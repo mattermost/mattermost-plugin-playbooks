@@ -64,6 +64,10 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "NumRuns"
 	case app.SortByCreateAt:
 		sort = "CreateAt"
+	case app.SortByLastRunAt:
+		sort = "LastRunAt"
+	case app.SortByActiveRuns:
+		sort = "ActiveRuns"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -411,6 +415,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"p.DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"p.DefaultCommanderID AS DefaultOwnerID",
 			"COUNT(i.ID) AS NumRuns",
+			"COUNT(CASE WHEN i.CurrentStatus='InProgress' THEN 1 END) AS ActiveRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
 				1 + -- Channel creation is hard-coded
