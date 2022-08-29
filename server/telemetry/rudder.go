@@ -33,7 +33,6 @@ const (
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
 	actionUpdateRetrospective      = "update_retrospective"
 	actionPublishRetrospective     = "publish_retrospective"
-	actionToggleRetrospective      = "toggle_retrospective"
 	actionRemoveTimelineEvent      = "remove_timeline_event"
 	actionFollow                   = "follow"
 	actionUnfollow                 = "unfollow"
