@@ -107,8 +107,8 @@ const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
     ranges: [
         {within: ['minute', -1], display: ['second', 0]},
         {within: ['hour', -1], display: ['minute']},
-        {within: ['hour', -24], display: ['hour']},
-        {within: ['day', -30], display: ['day']},
+        {within: ['day', -1], display: ['hour']}, // today, yesterday: N hours ago
+        {within: ['month', -1], display: ['day']}, // this month, last month: N days ago
         {within: ['month', -11], display: ['month']},
         {within: ['year', -1000], display: ['year']},
     ],
