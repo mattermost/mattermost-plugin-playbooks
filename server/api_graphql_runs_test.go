@@ -67,21 +67,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	require.NoError(e.T, err)
 
 	t.Run("add two participants", func(t *testing.T) {
-		testAddRunParticipantsMutation := `
-		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-			addRunParticipants(runID: $runID, userIDs: $userIDs)
-		}
-		`
-		var response graphql.Response
-		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         testAddRunParticipantsMutation,
-			OperationName: "AddRunParticipants",
-			Variables: map[string]interface{}{
-				"runID":   e.BasicRun.ID,
-				"userIDs": []string{e.RegularUser2.Id, user3.Id},
-			},
-		}, &response)
-
+		response, err := addParticipants(e.PlaybooksClient, e.BasicRun.ID, []string{e.RegularUser2.Id, user3.Id})
 		require.Empty(t, response.Errors)
 		require.NoError(t, err)
 
@@ -110,21 +96,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	})
 
 	t.Run("remove two participants", func(t *testing.T) {
-		testAddRunParticipantsMutation := `
-		mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
-			removeRunParticipants(runID: $runID, userIDs: $userIDs)
-		}
-		`
-		var response graphql.Response
-		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         testAddRunParticipantsMutation,
-			OperationName: "RemoveRunParticipants",
-			Variables: map[string]interface{}{
-				"runID":   e.BasicRun.ID,
-				"userIDs": []string{e.RegularUser2.Id, user3.Id},
-			},
-		}, &response)
-
+		response, err := removeParticipants(e.PlaybooksClient, e.BasicRun.ID, []string{e.RegularUser2.Id, user3.Id})
 		require.Empty(t, response.Errors)
 		require.NoError(t, err)
 
@@ -169,21 +141,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		require.NoError(e.T, err)
 		require.NotNil(e.T, run)
 
-		testAddRunParticipantsMutation := `
-		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-			addRunParticipants(runID: $runID, userIDs: $userIDs)
-		}
-		`
-		var response graphql.Response
-		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         testAddRunParticipantsMutation,
-			OperationName: "AddRunParticipants",
-			Variables: map[string]interface{}{
-				"runID":   run.ID,
-				"userIDs": []string{e.RegularUser2.Id},
-			},
-		}, &response)
-
+		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
 		require.Empty(t, response.Errors)
 		require.NoError(t, err)
 
@@ -225,21 +183,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		require.NoError(e.T, err)
 		require.NotNil(e.T, run)
 
-		testAddRunParticipantsMutation := `
-		mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-			addRunParticipants(runID: $runID, userIDs: $userIDs)
-		}
-		`
-		var response graphql.Response
-		err = e.PlaybooksClient2.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         testAddRunParticipantsMutation,
-			OperationName: "AddRunParticipants",
-			Variables: map[string]interface{}{
-				"runID":   run.ID,
-				"userIDs": []string{e.RegularUser2.Id},
-			},
-		}, &response)
-
+		response, err := addParticipants(e.PlaybooksClient2, run.ID, []string{e.RegularUser2.Id})
 		require.Empty(t, response.Errors)
 		require.NoError(t, err)
 
@@ -259,4 +203,44 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		require.Nil(t, member)
 		require.NotNil(t, err)
 	})
+}
+
+// AddParticipants adds participants to the run
+func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
+	mutation := `
+	mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+		addRunParticipants(runID: $runID, userIDs: $userIDs)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "AddRunParticipants",
+		Variables: map[string]interface{}{
+			"runID":   playbookRunID,
+			"userIDs": userIDs,
+		},
+	}, &response)
+
+	return response, err
+}
+
+// RemoveParticipants removes participants from the run
+func removeParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
+	mutation := `
+	mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
+		removeRunParticipants(runID: $runID, userIDs: $userIDs)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "RemoveRunParticipants",
+		Variables: map[string]interface{}{
+			"runID":   playbookRunID,
+			"userIDs": userIDs,
+		},
+	}, &response)
+
+	return response, err
 }
