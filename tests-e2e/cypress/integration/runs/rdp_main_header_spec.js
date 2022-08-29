@@ -76,7 +76,7 @@ describe('runs > run details page > header', () => {
 
     const getDropdownItemByText = (text) => {
         cy.findByTestId('run-header-section').find('h1').click();
-        return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
+        return cy.findByTestId('dropdownmenu').findByText(text);
     };
 
     const commonHeaderTests = () => {
@@ -114,7 +114,7 @@ describe('runs > run details page > header', () => {
             cy.findByTestId('run-header-section').find('h1').click();
 
             // * Assert context menu is opened
-            cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
+            cy.findByTestId('dropdownmenu').should('be.visible');
         });
 
         it('can copy link', () => {
