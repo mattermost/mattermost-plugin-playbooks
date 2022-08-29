@@ -17,7 +17,8 @@
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
     "check-types": "tsc",
     "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
-    "graphql": "graphql-codegen --config graphql_gen.yml"
+    "graphql": "graphql-codegen --config graphql_gen.yml",
+    "deadcode": "ts-prune"
   },
   "author": "",
   "license": "",
@@ -130,6 +131,7 @@
     "react-use": "17.3.2",
     "redux": "4.1.2",
     "styled-components": "5.3.3",
+    "ts-prune": "0.10.3",
     "typescript": "4.3.4"
   },
   "jest": {

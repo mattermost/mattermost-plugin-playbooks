@@ -70,4 +70,5 @@ const ProfileVertical = (props: Props) => {
     );
 };
 
+// ts-prune-ignore-next
 export default ProfileVertical;
