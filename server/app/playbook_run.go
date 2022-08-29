@@ -839,6 +839,12 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -973,6 +979,10 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
+	// IncludeFavorites filters playbook runs that ParticipantOrFollowerID has marked as favorite.
+	// There's no impact if ParticipantOrFollowerID is empty.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

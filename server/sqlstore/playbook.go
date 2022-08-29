@@ -408,6 +408,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"p.DeleteAt",
 			"p.NumStages",
 			"p.NumSteps",
+			"p.DefaultCommanderEnabled AS DefaultOwnerEnabled",
+			"p.DefaultCommanderID AS DefaultOwnerID",
 			"COUNT(i.ID) AS NumRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
