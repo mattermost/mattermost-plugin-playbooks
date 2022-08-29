@@ -4,6 +4,8 @@
 import React, {useState, ComponentProps} from 'react';
 import styled, {css} from 'styled-components';
 
+import {useUpdateEffect} from 'react-use';
+
 import Tooltip from 'src/components/widgets/tooltip';
 import {useUniqueId} from 'src/utils';
 
@@ -61,8 +63,10 @@ type DotMenuProps = {
     className?: string;
     disabled?: boolean;
     isActive?: boolean;
+    onOpenChange?: (isOpen: boolean) => void;
     dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
+
 };
 
 type DropdownProps = Omit<ComponentProps<typeof Dropdown>, 'target' | 'children'>;
@@ -76,12 +80,16 @@ const DotMenu = ({
     isActive,
     dotMenuButton: MenuButton = DotMenuButton,
     dropdownMenu: Menu = DropdownMenu,
+    onOpenChange,
     ...props
 }: DotMenuProps & DropdownProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(!isOpen);
     };
+    useUpdateEffect(() => {
+        onOpenChange?.(isOpen);
+    }, [isOpen]);
 
     const button = (
 
