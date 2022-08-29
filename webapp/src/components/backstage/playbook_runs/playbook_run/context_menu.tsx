@@ -75,7 +75,6 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     exportAvailable={exportAvailable}
                     onExportClick={onExportClick}
                 />
-                <Separator/>
                 <FinishRunMenuItem
                     playbookRun={playbookRun}
                     role={role}
