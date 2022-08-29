@@ -123,8 +123,7 @@ export const StyledNavLink = styled(NavLink)`
             opacity: 0;
         }
 
-        &:hover,
-        &:focus-within {
+        &:hover {
             ${DotMenuButton} {
                 opacity: 1;
             }
