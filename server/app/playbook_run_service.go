@@ -2108,7 +2108,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 		}
 	}
 
-	// Automaticly participate if you join the channel
+	// Automatically participate if you join the channel
 	// To be removed when separating members and participants is complete.
 	if err := s.AddParticipants(playbookRunID, []string{user.Id}, user.Id); err != nil {
 		s.logger.Errorf("failed to add participant that joined channel for run '%s', user '%s'; error: %s", playbookRunID, user.Id, err.Error())
