@@ -8,6 +8,8 @@ import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
+import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+
 import {
     clientEditChecklistItem,
     clientAddChecklistItem,
@@ -18,7 +20,6 @@ import {
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 
-import Portal from 'src/components/portal';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
 
@@ -52,6 +53,7 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
+    channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -169,6 +171,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
+                channelId={props.channelId}
                 assignee_id={assigneeID || ''}
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
@@ -197,8 +200,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderDueDate = (): null | React.ReactNode => {
-        const isTaskOpenOrInProgress = props.checklistItem.state === ChecklistItemState.Open || props.checklistItem.state === ChecklistItemState.InProgress;
-        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate || !isTaskOpenOrInProgress) && !isEditing) {
+        const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || props.checklistItem.state === ChecklistItemState.Skip;
+
+        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
             return null;
         }
 
@@ -206,6 +210,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <DueDateButton
                 editable={!props.disabled}
                 date={dueDate}
+                ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
                 placement={'bottom-start'}
@@ -239,6 +244,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.disabled && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
+                        channelId={props.channelId}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
@@ -336,7 +342,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     );
 
     if (props.dragging) {
-        return <Portal>{content}</Portal>;
+        return <FloatingPortal>{content}</FloatingPortal>;
     }
 
     return content;

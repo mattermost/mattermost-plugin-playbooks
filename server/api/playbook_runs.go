@@ -92,6 +92,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -898,6 +899,32 @@ func (h *PlaybookRunHandler) requestGetInvolved(w http.ResponseWriter, r *http.R
 	}
 }
 
+// leave handles the POST request /runs/{id}/leave endpoint, caller user will be removed from participants.
+func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	// Don't worry if the user could not be previously a follower
+	// Unfollow implementation is defensive about this.
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	hasViewPermission := h.permissions.RunView(userID, playbookRunID) == nil
+
+	type RunPermission struct {
+		HasViewPermission bool `json:"has_view_permission"`
+	}
+
+	ReturnJSON(w, RunPermission{HasViewPermission: hasViewPermission}, http.StatusOK)
+}
+
 // updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
 // user submits the Finish Run dialog.
 func (h *PlaybookRunHandler) finishDialog(w http.ResponseWriter, r *http.Request) {
@@ -1032,7 +1059,7 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err = h.playbookRunService.SetNewReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
+	if err = h.playbookRunService.ResetReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
 		err = errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID)
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
 		return

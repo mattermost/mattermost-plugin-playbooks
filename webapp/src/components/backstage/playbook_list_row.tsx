@@ -20,7 +20,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {GlobalState} from '@mattermost/types/store';
 
-import {useHasPlaybookPermission, useHasTeamPermission, useLegacyUpdatePlaybook} from 'src/hooks';
+import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 
@@ -28,9 +28,9 @@ import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyle
 
 import Tooltip from 'src/components/widgets/tooltip';
 
-import {autoFollowPlaybook, createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
+import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 
-import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
 
@@ -38,19 +38,20 @@ import {navigateToUrl} from 'src/browser_routing';
 
 import {DotMenuButton} from '../dot_menu';
 
+import {usePlaybookMembership} from 'src/graphql/hooks';
+
 import {Timestamp} from 'src/webapp_globals';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
 
 interface Props {
-    playbook: Playbook;
-    displayTeam: boolean;
-    onClick: () => void;
-    onEdit: () => void;
-    onArchive: () => void;
-    onRestore: () => void;
-    onDuplicate: () => void;
+    playbook: Playbook
+    onClick: () => void
+    onEdit: () => void
+    onArchive: () => void
+    onRestore: () => void
+    onDuplicate: () => void
     onMembershipChanged: (joined: boolean) => void;
 }
 
@@ -100,11 +101,6 @@ export const ArchiveIcon = styled.i`
     font-size: 11px;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 3px;
-`;
-
 const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
     useTime: false,
     style: 'narrow',
@@ -126,29 +122,7 @@ const PlaybookListRow = (props: Props) => {
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
 
-    const updatePlaybook = useLegacyUpdatePlaybook(props.playbook.id);
-
-    const join = async () => {
-        if (props.playbook.members.find(({user_id}) => user_id === currentUser.id)) {
-            return;
-        }
-        await updatePlaybook((playbook) => {
-            return {
-                members: [...playbook.members, {user_id: currentUser.id, roles: [PlaybookRole.Member]}],
-            };
-        });
-        await autoFollowPlaybook(props.playbook.id, currentUser.id);
-        props.onMembershipChanged(true);
-    };
-
-    const leave = async () => {
-        await updatePlaybook(({members}) => {
-            return {
-                members: [...members.filter(({user_id}) => user_id !== currentUser.id)],
-            };
-        });
-        props.onMembershipChanged(false);
-    };
+    const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
@@ -230,6 +204,7 @@ const PlaybookListRow = (props: Props) => {
                             run();
                         }}
                         disabled={!enableRunPlaybook}
+                        title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
                         css={`
                             height: 32px;
@@ -246,9 +221,10 @@ const PlaybookListRow = (props: Props) => {
                     </SecondaryButton>
                 ) : (
                     <TertiaryButton
-                        onClick={(e) => {
+                        onClick={async (e) => {
                             e.stopPropagation();
-                            join();
+                            await join();
+                            props.onMembershipChanged(true);
                         }}
                         data-testid='join-playbook'
                         css={`
@@ -266,6 +242,7 @@ const PlaybookListRow = (props: Props) => {
                     </TertiaryButton>
                 )}
                 <DotMenu
+                    title={'Actions'}
                     placement='bottom-end'
                     icon={(
                         <DotsVerticalIcon
@@ -327,7 +304,10 @@ const PlaybookListRow = (props: Props) => {
                         <>
                             <div className='MenuGroup menu-divider'/>
                             <DropdownMenuItem
-                                onClick={() => leave()}
+                                onClick={async () => {
+                                    await leave();
+                                    props.onMembershipChanged(false);
+                                }}
                             >
                                 <CloseIcon
                                     size={18}

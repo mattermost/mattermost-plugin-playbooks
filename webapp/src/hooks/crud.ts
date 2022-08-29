@@ -20,6 +20,8 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
 import {resolve} from 'src/utils';
 
+import {useThing} from './general';
+
 type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
 
 const searchDebounceDelayMilliseconds = 300;
@@ -35,18 +37,7 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @returns undefined == loading; null == not found
  */
 export function usePlaybook(id: Playbook['id'] | undefined) {
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined | null>();
-    useEffect(() => {
-        if (!id) {
-            setPlaybook(null);
-            return;
-        }
-        clientFetchPlaybook(id)
-            .then(setPlaybook)
-            .catch(() => setPlaybook(null));
-    }, [id]);
-
-    return playbook;
+    return useThing(id, clientFetchPlaybook);
 }
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]

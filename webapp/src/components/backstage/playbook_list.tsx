@@ -1,9 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from '@mattermost/types/store';
-import {Team} from '@mattermost/types/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
@@ -26,22 +24,15 @@ import {
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
+import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {Playbook} from 'src/types/playbook';
-
 import PresetTemplates from 'src/components/templates/template_data';
-
 import {RegularHeading} from 'src/styles/headings';
-
-import {importFile} from 'src/client';
-
 import {pluginUrl} from 'src/browser_routing';
 
 import Header from '../widgets/header';
 
-import TeamSelector from '../team/team_selector';
-
 import CheckboxInput from './runs_list/checkbox_input';
-
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
@@ -117,10 +108,8 @@ const PlaybooksListFilters = styled.div`
 const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
-    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
+    const teamId = useSelector(getCurrentTeamId);
     const content = useRef<JSX.Element | null>(null);
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [importTargetTeam, setImportTargetTeam] = useState('');
     const selectorRef = useRef<HTMLDivElement>(null);
 
     const [
@@ -132,7 +121,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
-    const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+    const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => edit(id));
 
     const hasPlaybooks = Boolean(playbooks?.length);
 
@@ -156,9 +146,8 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             <PlaybookListRow
                 key={p.id}
                 playbook={p}
-                displayTeam={teams.length > 1}
-                onClick={() => view(p)}
-                onEdit={() => edit(p)}
+                onClick={() => view(p.id)}
+                onEdit={() => edit(p.id)}
                 onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
@@ -179,24 +168,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             );
         }
 
-        const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                let teamId = teams[0].id;
-
-                if (teams.length !== 1) {
-                    teamId = importTargetTeam;
-                }
-
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    const {id} = await importFile(ev?.target?.result, teamId);
-                    edit(id);
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        };
-
         return (
             <TableContainer>
                 <Header
@@ -206,31 +177,15 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                     subtitle={formatMessage({defaultMessage: 'All the playbooks that you can access will show here'})}
                     right={(
                         <TitleActions>
-                            {teams.length > 1 && (
-                                <TeamSelector
-                                    placeholder={<ImportButton/>}
-                                    onlyPlaceholder={true}
-                                    enableEdit={true}
-                                    teams={teams}
-                                    onSelectedChange={(teamId: string) => {
-                                        setImportTargetTeam(teamId);
-                                        if (fileInputRef && fileInputRef.current) {
-                                            fileInputRef.current.click();
-                                        }
-                                    }}
-                                />
-                            )}
-                            {teams.length <= 1 && (
-                                <ImportButton
-                                    onClick={() => {
-                                        if (fileInputRef && fileInputRef.current) {
-                                            fileInputRef.current.click();
-                                        }
-                                    }}
-                                />
-                            )}
                             {canCreatePlaybooks && (
                                 <>
+                                    <ImportButton
+                                        onClick={() => {
+                                            if (fileInputRef && fileInputRef.current) {
+                                                fileInputRef.current.click();
+                                            }
+                                        }}
+                                    />
                                     <HorizontalSpacer size={12}/>
                                     <PlaybookModalButton/>
                                 </>
@@ -256,13 +211,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         onChange={setWithArchived}
                     />
                     <HorizontalSpacer size={12}/>
-                    <input
-                        type='file'
-                        accept='*.json,application/JSON'
-                        onChange={importUpload}
-                        ref={fileInputRef}
-                        style={{display: 'none'}}
-                    />
+                    {inputImportPlaybook}
                 </PlaybooksListFilters>
                 <BackstageListHeader $edgeless={true}>
                     <div className='row'>

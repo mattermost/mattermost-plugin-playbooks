@@ -101,7 +101,9 @@
   "dependencies": {
     "@apollo/client": "3.5.10",
     "@floating-ui/react-dom-interactions": "0.6.3",
+    "@mattermost/client": "7.1.0",
     "@mattermost/compass-icons": "0.1.24",
+    "@mattermost/types": "7.1.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",
     "@tippyjs/react": "4.2.6",
@@ -114,7 +116,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "2.3.1",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#6dcac2993000139f19c1b018f7fa6b9266973918",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#c00fde021889aaddfcd3afa5ce18254756fc4185",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
@@ -124,7 +126,7 @@
     "react-intl": "5.24.1",
     "react-redux": "7.2.6",
     "react-router-hash-link": "2.4.3",
-    "react-select": "3.2.0",
+    "react-select": "4.3.1",
     "react-use": "17.3.2",
     "redux": "4.1.2",
     "styled-components": "5.3.3",
@@ -154,7 +156,7 @@
       "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//types/src/$1"
     },
     "moduleDirectories": [
-      "",
+      "<rootDir>",
       "node_modules",
       "non_npm_dependencies"
     ],

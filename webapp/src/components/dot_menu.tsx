@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 
-import {useFloating, offset, flip, shift, Placement} from '@floating-ui/react-dom';
+import {useFloating, offset, flip, shift, autoUpdate, Placement} from '@floating-ui/react-dom-interactions';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -76,6 +76,7 @@ const DotMenu = (props: DotMenuProps) => {
     const {strategy, x, y, reference, floating, refs} = useFloating<HTMLElement>({
         placement: props.placement ?? 'bottom',
         middleware: [offset(props.offset ?? 2), flip(), shift()],
+        whileElementsMounted: autoUpdate,
     });
 
     const [isOpen, setOpen] = useState(false);
@@ -116,7 +117,7 @@ const DotMenu = (props: DotMenuProps) => {
             className={props.className}
             role={'button'}
             disabled={props.disabled || false}
-            data-testid='menu-button'
+            data-testid={'menuButton' + props.title}
         >
             {props.icon}
             <DropdownMenuWrapper>

@@ -7,7 +7,7 @@ import {Team} from '@mattermost/types/teams';
 import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -25,8 +25,6 @@ import {
     PlaybookRunUpdated,
     PLAYBOOK_RUN_UPDATED,
     REMOVED_FROM_CHANNEL,
-    SetPlaybookRunEventsFilter,
-    SET_PLAYBOOK_RUN_EVENTS_FILTER,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
@@ -174,18 +172,6 @@ const myPlaybookRunsByTeam = (
     }
 };
 
-const eventsFilterByPlaybookRun = (state: Record<string, TimelineEventsFilter> = {}, action: SetPlaybookRunEventsFilter) => {
-    switch (action.type) {
-    case SET_PLAYBOOK_RUN_EVENTS_FILTER:
-        return {
-            ...state,
-            [action.playbookRunId]: action.nextState,
-        };
-    default:
-        return state;
-    }
-};
-
 const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
     case RECEIVED_GLOBAL_SETTINGS:
@@ -312,7 +298,6 @@ const reducer = combineReducers({
     clientId,
     myPlaybookRunsByTeam,
     rhsState,
-    eventsFilterByPlaybookRun,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,

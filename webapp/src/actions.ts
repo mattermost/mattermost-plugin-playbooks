@@ -10,9 +10,11 @@ import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -25,11 +27,9 @@ import {
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
     SET_CLIENT_ID,
-    SET_PLAYBOOK_RUN_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
     SetClientId,
-    SetPlaybookRunEventsFilter,
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
@@ -91,23 +91,14 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        // Add unique id
-        const clientId = generateId();
-        dispatch(setClientId(clientId));
-
-        const command = `/playbook run-playbook ${playbookId} ${clientId}`;
-
-        // When dispatching from the playbooks product, the switch to channels resets the websocket
-        // connection, losing the event that opens this dialog. Allow the caller to specify a
-        // timeout as a gross workaround.
-        await new Promise((resolve) => setTimeout(() => {
-            clientExecuteCommand(dispatch, getState, command, teamId);
-            // eslint-disable-next-line no-undefined
-            resolve(undefined);
-        }, timeout));
-    };
+export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) {
+    return modals.openModal(makePlaybookRunModalDefinition(
+        playbookId,
+        defaultOwnerId,
+        description,
+        teamId,
+        teamName
+    ));
 }
 
 export function promptUpdateStatus(
@@ -276,12 +267,6 @@ export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedT
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({
     type: REMOVED_FROM_CHANNEL,
     channelId,
-});
-
-export const setPlaybookRunEventsFilter = (playbookRunId: string, nextState: TimelineEventsFilter): SetPlaybookRunEventsFilter => ({
-    type: SET_PLAYBOOK_RUN_EVENTS_FILTER,
-    playbookRunId,
-    nextState,
 });
 
 export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({

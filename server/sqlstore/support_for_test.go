@@ -42,7 +42,7 @@ func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
+func setupTables(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
@@ -75,6 +75,12 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupRolesTable(t, db)
 	setupSchemesTable(t, db)
 	setupTeamMembersTable(t, db)
+
+	return logger, sqlStore
+}
+
+func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
+	logger, sqlStore := setupTables(t, db)
 
 	err := sqlStore.RunMigrations()
 	require.NoError(t, err)

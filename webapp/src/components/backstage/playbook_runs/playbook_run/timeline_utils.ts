@@ -5,33 +5,30 @@ import {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
-import {eventsFilterForPlaybookRun} from 'src/selectors';
+import {TimelineEvent, TimelineEventsFilter, TimelineEventType, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
-import {setPlaybookRunEventsFilter} from 'src/actions';
 
-export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilterOverride?: TimelineEventsFilter) => {
+export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-    const eventsFilter = useSelector((state: GlobalState) => eventsFilterForPlaybookRun(state, playbookRun.id));
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector((state: GlobalState) => (userId: string) => getUser(state, userId));
 
     useEffect(() => {
-        setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilterOverride || eventsFilter)));
-    }, [eventsFilter, eventsFilterOverride, allEvents]);
+        setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
+    }, [eventsFilter, allEvents]);
 
     useEffect(() => {
         const {
@@ -84,20 +81,20 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     return filterRecord[eventType] || (filterRecord[TimelineEventType.StatusUpdated] && statusUpdateTypes.includes(eventType as TimelineEventType));
 };
 
-export const useFilter = (playbookRun: PlaybookRun) => {
+export const useFilter = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const eventsFilter = useSelector((state: GlobalState) => eventsFilterForPlaybookRun(state, playbookRun.id));
+    const [eventsFilter, setEventsFilter] = useState<TimelineEventsFilter>(TimelineEventsFilterDefault);
+
+    const resetFilters = () => setEventsFilter(TimelineEventsFilterDefault);
 
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {
             return;
         }
-
-        dispatch(setPlaybookRunEventsFilter(playbookRun.id, {
+        setEventsFilter({
             ...eventsFilter,
             [value]: checked,
-        }));
+        });
     };
 
     const options = [
@@ -147,5 +144,5 @@ export const useFilter = (playbookRun: PlaybookRun) => {
             disabled: eventsFilter.all,
         },
     ];
-    return {options, selectOption};
+    return {options, selectOption, eventsFilter, resetFilters};
 };

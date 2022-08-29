@@ -10,6 +10,8 @@ export interface Playbook {
     delete_at: number;
     run_summary_template_enabled: boolean;
     public: boolean;
+    default_owner_id: string;
+    default_owner_enabled: boolean;
 
     /** @alias num_checklists */
     num_stages: number;

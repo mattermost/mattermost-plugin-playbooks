@@ -10,15 +10,15 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
-
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -35,7 +35,6 @@ import RHSTimeline from './rhs_timeline';
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
@@ -62,6 +61,22 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+const useFollowers = (metadataFollowers: string[]) => {
+    const currentUser = useSelector(getCurrentUser);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useUpdateEffect(() => {
+        setFollowers(metadataFollowers);
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
+
+    useUpdateEffect(() => {
+        setIsFollowing(followers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(followers)]);
+
+    return {isFollowing, followers, setFollowers};
+};
+
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -76,14 +91,24 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const playbookRun = useRun(playbookRunId);
-    const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [metadata, metadataResult] = useRunMetadata(playbookRunId);
-    const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
-    const channel = useChannel(playbookRun?.channel_id ?? '');
+    const [playbookRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
+
+    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
+
+    // we must force metadata refetch when participants change (leave&unfollow)
+    const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
+    const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
+    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
+    const {options, selectOption, eventsFilter, resetFilters} = useFilter();
+    const followState = useFollowers(metadata?.followers || []);
 
     const RHS = useRHS(playbookRun);
+
+    useUpdateEffect(() => {
+        resetFilters();
+    }, [playbookRunId]);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
@@ -98,7 +123,6 @@ const PlaybookRunDetails = () => {
         if (!teamId) {
             return;
         }
-
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
@@ -121,7 +145,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataResult.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
@@ -147,6 +171,7 @@ const PlaybookRunDetails = () => {
                 playbook={playbook ?? undefined}
                 runMetadata={metadata ?? undefined}
                 role={role}
+                followState={followState}
                 channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
@@ -166,6 +191,9 @@ const PlaybookRunDetails = () => {
             <RHSTimeline
                 playbookRun={playbookRun}
                 role={role}
+                options={options}
+                selectOption={selectOption}
+                eventsFilter={eventsFilter}
             />
         );
         break;
@@ -187,7 +215,9 @@ const PlaybookRunDetails = () => {
                         onTimelineClick={onTimelineClick}
                         role={role}
                         channel={channel}
+                        hasAccessToChannel={!channelFetchMetadata.isErrorCode(403)}
                         rhsSection={RHS.isOpen ? RHS.section : null}
+                        isFollowing={followState.isFollowing}
                     />
                 </Header>
                 <Main>
@@ -247,15 +277,11 @@ const RowContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
-const ColumnContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
 
-const Container = styled(ColumnContainer)`
+const Container = styled.div`
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: 2fr minmax(400px, 1fr);
+    grid-auto-columns: minmax(400px, 2fr) minmax(400px, 1fr);
     overflow-y: hidden;
 
     @media screen and (min-width: 1600px) {
@@ -265,8 +291,10 @@ const Container = styled(ColumnContainer)`
 
 const MainWrapper = styled.div`
     display: grid;
+    grid-template-rows: 56px 1fr;
     grid-auto-flow: row;
     overflow-y: hidden;
+    grid-auto-columns: minmax(0, 1fr);
 `;
 
 const Main = styled.main`
