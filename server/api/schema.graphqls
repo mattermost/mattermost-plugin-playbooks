@@ -29,6 +29,7 @@ type Mutation {
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
 	updateRun(id: String!, updates: RunUpdates!): String!
+	postRunStatusUpdate(runID: String!, update: RunStatusPostUpdate!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 }
@@ -225,6 +226,12 @@ type StatusPost {
 	deleteAt: Float!
 }
 
+input RunStatusPostUpdate {
+	message:   String!
+	reminder:  Float!
+	finishRun: Boolean!
+}
+
 type TimelineEvent {
 	id: String!
 	createAt: Float!
@@ -239,5 +246,7 @@ type TimelineEvent {
 }
 
 input RunUpdates {
+	summary: String
+	retrospective: String
 	isFavorite: Boolean
 }

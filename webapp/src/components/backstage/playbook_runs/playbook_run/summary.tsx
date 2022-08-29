@@ -7,8 +7,7 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import MarkdownEdit from 'src/components/markdown_edit';
-import {FullRun} from 'src/graphql/hooks';
-import {updatePlaybookRunDescription} from 'src/client';
+import {FullRun, useUpdateRun} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle, Role} from 'src/components/backstage/playbook_runs/shared';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
@@ -23,7 +22,7 @@ const Summary = ({
     id, playbookRun, role,
 }: Props) => {
     const {formatMessage} = useIntl();
-
+    const updateRun = useUpdateRun(playbookRun.id);
     const title = formatMessage({defaultMessage: 'Summary'});
     const modifiedAt = (
         <Timestamp
@@ -57,7 +56,7 @@ const Summary = ({
                 placeholder={placeholder}
                 value={playbookRun.summary}
                 onSave={(value) => {
-                    updatePlaybookRunDescription(playbookRun.id, value);
+                    updateRun({summary: value});
                 }}
             />
         </Container>

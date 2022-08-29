@@ -71,6 +71,7 @@ export type Mutation = {
     addPlaybookMember: Scalars['String'];
     addRunParticipants: Scalars['String'];
     deleteMetric: Scalars['String'];
+    postRunStatusUpdate: Scalars['String'];
     removePlaybookMember: Scalars['String'];
     removeRunParticipants: Scalars['String'];
     updateMetric: Scalars['String'];
@@ -98,6 +99,11 @@ export type MutationAddRunParticipantsArgs = {
 
 export type MutationDeleteMetricArgs = {
     id: Scalars['String'];
+};
+
+export type MutationPostRunStatusUpdateArgs = {
+    runID: Scalars['String'];
+    update: RunStatusPostUpdate;
 };
 
 export type MutationRemovePlaybookMemberArgs = {
@@ -291,8 +297,16 @@ export type RunMetricData = {
     value?: Maybe<Scalars['Int']>;
 };
 
+export type RunStatusPostUpdate = {
+    finishRun: Scalars['Boolean'];
+    message: Scalars['String'];
+    reminder: Scalars['Float'];
+};
+
 export type RunUpdates = {
     isFavorite?: InputMaybe<Scalars['Boolean']>;
+    retrospective?: InputMaybe<Scalars['String']>;
+    summary?: InputMaybe<Scalars['String']>;
 };
 
 export type StatusPost = {
@@ -376,6 +390,13 @@ export type RemoveRunParticipantsMutationVariables = Exact<{
 }>;
 
 export type RemoveRunParticipantsMutation = { __typename?: 'Mutation', removeRunParticipants: string };
+
+export type PostRunStatusUpdateMutationVariables = Exact<{
+    runID: Scalars['String'];
+    update: RunStatusPostUpdate;
+}>;
+
+export type PostRunStatusUpdateMutation = { __typename?: 'Mutation', postRunStatusUpdate: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -809,6 +830,38 @@ export function useRemoveRunParticipantsMutation(baseOptions?: Apollo.MutationHo
 export type RemoveRunParticipantsMutationHookResult = ReturnType<typeof useRemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationResult = Apollo.MutationResult<RemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
+export const PostRunStatusUpdateDocument = gql`
+    mutation PostRunStatusUpdate($runID: String!, $update: RunStatusPostUpdate!) {
+  postRunStatusUpdate(runID: $runID, update: $update)
+}
+    `;
+export type PostRunStatusUpdateMutationFn = Apollo.MutationFunction<PostRunStatusUpdateMutation, PostRunStatusUpdateMutationVariables>;
+
+/**
+ * __usePostRunStatusUpdateMutation__
+ *
+ * To run a mutation, you first call `usePostRunStatusUpdateMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `usePostRunStatusUpdateMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [postRunStatusUpdateMutation, { data, loading, error }] = usePostRunStatusUpdateMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      update: // value for 'update'
+ *   },
+ * });
+ */
+export function usePostRunStatusUpdateMutation(baseOptions?: Apollo.MutationHookOptions<PostRunStatusUpdateMutation, PostRunStatusUpdateMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<PostRunStatusUpdateMutation, PostRunStatusUpdateMutationVariables>(PostRunStatusUpdateDocument, options);
+}
+export type PostRunStatusUpdateMutationHookResult = ReturnType<typeof usePostRunStatusUpdateMutation>;
+export type PostRunStatusUpdateMutationResult = Apollo.MutationResult<PostRunStatusUpdateMutation>;
+export type PostRunStatusUpdateMutationOptions = Apollo.BaseMutationOptions<PostRunStatusUpdateMutation, PostRunStatusUpdateMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

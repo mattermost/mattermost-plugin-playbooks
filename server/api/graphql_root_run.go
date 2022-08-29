@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -82,7 +84,9 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	ID      string
 	Updates struct {
-		IsFavorite *bool
+		Summary       *string
+		Retrospective *string
+		IsFavorite    *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -96,12 +100,10 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
-	// Enough permissions to do a fav/unfav, check if future ops need RunManageProperties
-	if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
-		return "", err
-	}
-
 	if args.Updates.IsFavorite != nil {
+		if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
+			return "", err
+		}
 		if *args.Updates.IsFavorite {
 			if err := c.categoryService.AddFavorite(
 				app.CategoryItem{
@@ -127,7 +129,72 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		}
 	}
 
+	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "Description", args.Updates.Summary)
+	addToSetmap(setmap, "Retrospective", args.Updates.Retrospective)
+	if len(setmap) > 0 {
+		if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+			return "", err
+		}
+	}
+
 	return playbookRun.ID, nil
+}
+
+func (r *RunRootResolver) PostRunStatusUpdate(ctx context.Context, args struct {
+	RunID  string
+	Update app.StatusUpdateOptions
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	playbookRunToModify, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if err != nil {
+		return "", err
+	}
+
+	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, c.pluginAPI) {
+		// h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRunToModify.ChannelID))
+		return "", err
+	}
+
+	if publicMsg, internalErr := r.postStatusUpdate(c, args.RunID, userID, args.Update); internalErr != nil {
+		// h.HandleErrorWithCode(w, http.StatusBadRequest, publicMsg, internalErr)
+		return publicMsg, err
+	}
+
+	return "", nil
+}
+
+// updateStatus returns a publicMessage and an internal error
+func (r *RunRootResolver) postStatusUpdate(c *Context, playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
+	options.Message = strings.TrimSpace(options.Message)
+	if options.Message == "" {
+		return "message must not be empty", errors.New("message field empty")
+	}
+
+	if options.Reminder <= 0 && !options.FinishRun {
+		return "the reminder must be set and not 0", errors.New("reminder was 0")
+	}
+	if options.Reminder < 0 || options.FinishRun {
+		options.Reminder = 0
+	}
+	options.Reminder = options.Reminder * time.Second
+
+	if err := c.playbookRunService.UpdateStatus(playbookRunID, userID, options); err != nil {
+		return "An internal error has occurred. Check app server logs for details.", err
+	}
+
+	if options.FinishRun {
+		if err := c.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+			return "An internal error has occurred. Check app server logs for details.", err
+		}
+	}
+
+	return "", nil
 }
 
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {

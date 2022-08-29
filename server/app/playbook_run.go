@@ -748,6 +748,9 @@ type PlaybookRunService interface {
 
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -854,6 +857,9 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
+
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

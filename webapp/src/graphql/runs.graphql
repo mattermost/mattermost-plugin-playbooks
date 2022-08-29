@@ -80,3 +80,7 @@ mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
 mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
 	removeRunParticipants(runID: $runID, userIDs: $userIDs)
 }
+
+mutation PostRunStatusUpdate($runID: String!, $update: RunStatusPostUpdate!) {
+	postRunStatusUpdate(runID: $runID, update: $update)
+}

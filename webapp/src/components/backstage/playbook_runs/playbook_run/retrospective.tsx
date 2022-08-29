@@ -10,7 +10,7 @@ import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/ho
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
-import {FullRun} from 'src/graphql/hooks';
+import {FullRun, useUpdateRun} from 'src/graphql/hooks';
 import {AnchorLinkTitle, Content, Role} from 'src/components/backstage/playbook_runs/shared';
 import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
 import Report from '../playbook_run_backstage/retrospective/report';
@@ -40,6 +40,7 @@ const Retrospective = ({
     const [showConfirmation, setShowConfirmation] = useState(false);
     const childRef = useRef<any>();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
+    const updateRun = useUpdateRun(playbookRun.id);
 
     if (!playbookRun.retrospective_enabled) {
         return null;
@@ -118,6 +119,7 @@ const Retrospective = ({
         updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
     }, DEBOUNCE_2_SECS);
     const onReportChange = debounce((retrospective: string) => {
+        updateRun({retrospective});
         updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data as RunMetricData[]);
     }, DEBOUNCE_2_SECS);
 

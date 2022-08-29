@@ -3243,3 +3243,7 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 		}
 	}
 }
+
+func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	return s.store.GraphqlUpdate(id, setmap)
+}

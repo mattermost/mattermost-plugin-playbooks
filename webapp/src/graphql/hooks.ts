@@ -5,6 +5,7 @@ import {autoFollowPlaybook} from 'src/client';
 import {
     PlaybookDocument,
     PlaybookLhsDocument,
+    RunDocument,
     PlaybookQuery,
     RunQuery,
     PlaybookQueryHookResult,
@@ -19,6 +20,8 @@ import {
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    usePostRunStatusUpdateMutation,
+    RunStatusPostUpdate,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -54,13 +57,23 @@ export const useUpdatePlaybook = (id?: string) => {
 export const useUpdateRun = (id?: string) => {
     const [innerUpdateRun] = useUpdateRunMutation({
         refetchQueries: [
-            PlaybookLhsDocument,
+            RunDocument,
         ],
     });
 
     return useCallback((updates: RunUpdates) => {
         return innerUpdateRun({variables: {id: id || '', updates}});
     }, [id, innerUpdateRun]);
+};
+
+export const useRunPostStatusUpdate = (id?: string) => {
+    const [innerPostUpdate] = usePostRunStatusUpdateMutation({
+        refetchQueries: [RunDocument],
+    });
+
+    return useCallback((update: RunStatusPostUpdate) => {
+        return innerPostUpdate({variables: {runID: id || '', update}});
+    }, [id, innerPostUpdate]);
 };
 
 export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
