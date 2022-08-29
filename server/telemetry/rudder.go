@@ -425,8 +425,8 @@ func (t *RudderTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, use
 	t.track(eventTasks, properties)
 }
 
-func (t *RudderTelemetry) ToggleRetrospective(playbookRun *app.PlaybookRun, userId string) {
-	properties := playbookRunProperties(playbookRun, userId)
+func (t *RudderTelemetry) ToggleRetrospective(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionPublishRetrospective
 	properties["NumMetrics"] = len(playbookRun.MetricsData)
 	t.track(eventTasks, properties)
