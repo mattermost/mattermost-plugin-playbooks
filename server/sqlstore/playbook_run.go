@@ -301,6 +301,17 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 			AND cm.UserId = ?)`, userIDFilter)
 		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
+		if options.IncludeFavorites {
+			favoriteFilterExpr := sq.Expr(`EXISTS(SELECT 1
+				FROM IR_Category AS cat
+				INNER JOIN IR_Category_Item it ON cat.ID = it.CategoryID
+				WHERE cat.Name = 'Favorite'
+				AND	it.Type = 'r'
+				AND	it.ItemID = i.ID
+				AND cat.UserID = ?)`, userIDFilter)
+			myRunsClause = append(myRunsClause, favoriteFilterExpr)
+		}
+
 		queryForResults = queryForResults.Where(myRunsClause)
 		queryForTotal = queryForTotal.Where(myRunsClause)
 	}
@@ -1289,6 +1300,38 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	}
 
 	return count, nil
+}
+
+// GetSchemeRolesForChannel scheme role ids for the channel
+func (s *playbookRunStore) GetSchemeRolesForChannel(channelID string) (string, string, string, error) {
+	query := s.queryBuilder.
+		Select("COALESCE(s.DefaultChannelGuestRole, 'channel_guest') DefaultChannelGuestRole",
+			"COALESCE(s.DefaultChannelUserRole, 'channel_user') DefaultChannelUserRole",
+			"COALESCE(s.DefaultChannelAdminRole, 'channel_admin') DefaultChannelAdminRole").
+		From("Schemes as s").
+		Join("Channels AS c ON (c.SchemeId = s.Id)").
+		Where(sq.Eq{"c.Id": channelID})
+
+	var scheme model.Scheme
+	err := s.store.getBuilder(s.store.db, &scheme, query)
+
+	return scheme.DefaultChannelGuestRole, scheme.DefaultChannelUserRole, scheme.DefaultChannelAdminRole, err
+}
+
+// GetSchemeRolesForTeam scheme role ids for the team
+func (s *playbookRunStore) GetSchemeRolesForTeam(teamID string) (string, string, string, error) {
+	query := s.queryBuilder.
+		Select("COALESCE(s.DefaultChannelGuestRole, 'channel_guest') DefaultChannelGuestRole",
+			"COALESCE(s.DefaultChannelUserRole, 'channel_user') DefaultChannelUserRole",
+			"COALESCE(s.DefaultChannelAdminRole, 'channel_admin') DefaultChannelAdminRole").
+		From("Schemes as s").
+		Join("Teams AS t ON (t.SchemeId = s.Id)").
+		Where(sq.Eq{"t.Id": teamID})
+
+	var scheme model.Scheme
+	err := s.store.getBuilder(s.store.db, &scheme, query)
+
+	return scheme.DefaultChannelGuestRole, scheme.DefaultChannelUserRole, scheme.DefaultChannelAdminRole, err
 }
 
 // updateRunMetrics updates run metrics values.
