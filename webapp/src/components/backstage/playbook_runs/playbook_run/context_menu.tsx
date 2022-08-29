@@ -4,14 +4,13 @@
 import styled from 'styled-components';
 
 import React, {useState} from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-import {LightningBoltOutlineIcon, ArrowDownIcon, FlagOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, leaveRun} from 'src/client';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
@@ -23,10 +22,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {useLHSRefresh} from '../../lhs_navigation';
 
-import {StyledDropdownMenuItem} from '../../shared';
-
-import {useOnFinishRun} from './finish_run';
-import {CopyRunLinkMenuItem, FavoriteRunMenuItem, LeaveRunMenuItem} from './controls';
+import {CopyRunLinkMenuItem, ExportLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -37,9 +33,6 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    const {add: addToast} = useToaster();
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun.id, isFollowing);
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
@@ -53,8 +46,6 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
 
         window.location.href = exportChannelUrl(playbookRun.channel_id);
     };
-
-    const onFinishRun = useOnFinishRun(playbookRun);
 
     return (
         <>
@@ -77,33 +68,18 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     playbookRunId={playbookRun.id}
                 />
                 <Separator/>
-
-                <StyledDropdownMenuItem
-                    onClick={() => dispatch(showRunActionsModal())}
-                >
-                    <LightningBoltOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Run actions'/>
-                </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem
-                    disabled={!exportAvailable}
-                    disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
-                    onClick={onExportClick}
-                >
-                    <ArrowDownIcon size={18}/>
-                    <FormattedMessage defaultMessage='Export channel log'/>
-                </StyledDropdownMenuItem>
-                {
-                    playbookRunIsActive(playbookRun) && role === Role.Participant &&
-                        <>
-                            <Separator/>
-                            <StyledDropdownMenuItem
-                                onClick={onFinishRun}
-                            >
-                                <FlagOutlineIcon size={18}/>
-                                <FormattedMessage defaultMessage='Finish run'/>
-                            </StyledDropdownMenuItem>
-                        </>
-                }
+                <RunActionsMenuItem
+                    showRunActionsModal={showRunActionsModal}
+                />
+                <ExportLogsMenuItem
+                    exportAvailable={exportAvailable}
+                    onExportClick={onExportClick}
+                />
+                <Separator/>
+                <FinishRunMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
                 <LeaveRunMenuItem
                     isFollowing={isFollowing}
                     role={role}

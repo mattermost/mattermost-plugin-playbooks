@@ -1,15 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BullhornOutlineIcon, CloseIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {ArrowDownIcon, BullhornOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+import {useDispatch} from 'react-redux';
 
 import {getSiteUrl} from 'src/client';
+import {ShowRunActionsModal} from 'src/types/actions';
+import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
 import {useToaster} from '../../toast_banner';
 import {Role, Separator} from '../shared';
+
+import {useOnFinishRun} from './finish_run';
 
 export const FavoriteRunMenuItem = (props: {isFavoriteRun: boolean, toggleFavorite: () => void}) => {
     return (
@@ -77,3 +82,52 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
 
     return null;
 };
+
+export const RunActionsMenuItem = (props: {showRunActionsModal(): ShowRunActionsModal}) => {
+    const dispatch = useDispatch();
+
+    return (
+        <StyledDropdownMenuItem
+            onClick={() => dispatch(props.showRunActionsModal())}
+        >
+            <LightningBoltOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Run actions'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
+export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportClick: () => void}) => {
+    const {formatMessage} = useIntl();
+
+    return (
+        <StyledDropdownMenuItem
+            disabled={!props.exportAvailable}
+            disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
+            onClick={props.onExportClick}
+        >
+            <ArrowDownIcon size={18}/>
+            <FormattedMessage defaultMessage='Export channel log'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
+export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const onFinishRun = useOnFinishRun(props.playbookRun);
+
+    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+        return (
+            <>
+                <Separator/>
+                <StyledDropdownMenuItem
+                    onClick={onFinishRun}
+                >
+                    <FlagOutlineIcon size={18}/>
+                    <FormattedMessage defaultMessage='Finish run'/>
+                </StyledDropdownMenuItem>
+            </>
+        );
+    }
+
+    return null;
+};
+
