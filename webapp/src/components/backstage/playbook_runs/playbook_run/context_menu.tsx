@@ -7,14 +7,13 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
+import {LightningBoltOutlineIcon, ArrowDownIcon, FlagOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
+import {exportChannelUrl, leaveRun} from 'src/client';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {copyToClipboard} from 'src/utils';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {useAllowChannelExport, useExportLogAvailable, useRun} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -24,7 +23,10 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {useLHSRefresh} from '../../lhs_navigation';
 
+import {StyledDropdownMenuItem} from '../../shared';
+
 import {useOnFinishRun} from './finish_run';
+import {CopyRunLinkMenuItem, FavoriteRunMenuItem, LeaveRunMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -66,24 +68,16 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     </>
                 }
             >
-                <StyledDropdownMenuItem onClick={toggleFavorite}>
-                    {isFavoriteRun ? (
-                        <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
-                    ) : (
-                        <><StarIcon size={18}/>{formatMessage({defaultMessage: 'Favorite'})}</>
-                    )}
-                </StyledDropdownMenuItem>
+
+                <FavoriteRunMenuItem
+                    isFavoriteRun={isFavoriteRun}
+                    toggleFavorite={toggleFavorite}
+                />
+                <CopyRunLinkMenuItem
+                    playbookRunId={playbookRun.id}
+                />
                 <Separator/>
 
-                <StyledDropdownMenuItem
-                    onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
-                        addToast(formatMessage({defaultMessage: 'Copied!'}));
-                    }}
-                >
-                    <LinkVariantIcon size={18}/>
-                    <FormattedMessage defaultMessage='Copy link'/>
-                </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem
                     onClick={() => dispatch(showRunActionsModal())}
                 >
@@ -110,19 +104,11 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                             </StyledDropdownMenuItem>
                         </>
                 }
-                {
-                    role === Role.Participant &&
-                    <>
-                        <Separator/>
-                        <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
-                            <CloseIcon size={18}/>
-                            <FormattedMessage
-                                defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
-                                values={{isFollowing}}
-                            />
-                        </StyledDropdownMenuItemRed>
-                    </>
-                }
+                <LeaveRunMenuItem
+                    isFollowing={isFollowing}
+                    role={role}
+                    showLeaveRunConfirm={showLeaveRunConfirm}
+                />
             </DotMenu>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
@@ -179,32 +165,6 @@ export const useLeaveRun = (playbookRunId: string, isFollowing: boolean) => {
         },
     };
 };
-
-export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
-    display: flex;
-    align-items: center;
-
-    svg {
-        margin-right: 11px;
-        fill: rgb(var(--center-channel-color-rgb), 0.56);
-    }
-`;
-export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
-    && {
-        color: var(--dnd-indicator);
-
-        :hover {
-            background: var(--dnd-indicator);
-            color: var(--button-color);
-        }
-    }
-    svg{
-        fill: var(--dnd-indicator);
-        :hover {
-            fill: var(--button-color);
-        }
-    }
-`;
 
 const Title = styled.h1`
     ${SemiBoldHeading}
