@@ -6,10 +6,11 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiNotebookOutline, mdiPencil} from '@mdi/js';
+import {mdiClipboardPlayOutline} from '@mdi/js';
+
+import {NotebookOutlineIcon, PencilOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
@@ -57,10 +58,12 @@ const RHSAboutButtons = (props: Props) => {
                         props.editSummary();
                     }}
                 >
-                    <DropdownIcon
-                        path={mdiPencil}
-                        size={1.25}
-                    />
+                    <IconWrapper>
+                        <PencilOutlineIcon
+                            size={20}
+                            color={'rgba(var(--center-channel-color-rgb), 0.56);'}
+                        />
+                    </IconWrapper>
                     <FormattedMessage defaultMessage='Edit run summary'/>
                 </StyledDropdownMenuItem>
                 <Separator/>
@@ -72,10 +75,12 @@ const RHSAboutButtons = (props: Props) => {
                     <FormattedMessage defaultMessage='Go to run overview'/>
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
-                    <DropdownIcon
-                        path={mdiNotebookOutline}
-                        size={1.25}
-                    />
+                    <IconWrapper>
+                        <NotebookOutlineIcon
+                            size={20}
+                            color={'rgba(var(--center-channel-color-rgb), 0.56);'}
+                        />
+                    </IconWrapper>
                     <PlaybookInfo>
                         <FormattedMessage defaultMessage='Go to playbook'/>
                         {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
@@ -92,7 +97,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
 `;
 
 const ExpandCollapseButton = styled(HoverMenuButton)`
-    margin-left: 2px
+    margin-left: 2px;
 `;
 
 const ThreeDotsIcon = styled(HamburgerButton)`
@@ -102,6 +107,10 @@ const ThreeDotsIcon = styled(HamburgerButton)`
 
 const DropdownIcon = styled(Icon)`
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    margin-right: 11px;
+`;
+
+const IconWrapper = styled.div`
     margin-right: 11px;
 `;
 

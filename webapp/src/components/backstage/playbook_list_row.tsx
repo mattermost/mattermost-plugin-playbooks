@@ -8,11 +8,10 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
+import {PlayOutlineIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
 
 import Icon from '@mdi/react';
-
-import {mdiRestore, mdiPlayOutline} from '@mdi/js';
+import {mdiRestore} from '@mdi/js';
 
 import {Client4} from 'mattermost-redux/client';
 
@@ -213,9 +212,9 @@ const PlaybookListRow = (props: Props) => {
                             padding: 0 20px;
                         `}
                     >
-                        <Icon
-                            path={mdiPlayOutline}
-                            size={1.25}
+                        <PlayOutlineIcon
+                            size={22}
+                            color={'var(--button-bg)'}
                         />
                         {formatMessage({defaultMessage: 'Run'})}
                     </SecondaryButton>

@@ -8,7 +8,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
+import {mdiClipboardPlayOutline} from '@mdi/js';
+import {CheckAllIcon, SyncIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
@@ -196,9 +197,9 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                             parentRef={linkRef}
 
                         />
-                        <Icon
-                            path={mdiOpenInNew}
-                            size={0.85}
+                        <OpenInNewIcon
+                            size={14}
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
                         />
                     </Link>
                 </Title>
@@ -230,18 +231,18 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                 </Sub>
                 <Meta>
                     <MetaItem>
-                        <Icon
-                            path={mdiCheckAll}
-                            size={1}
+                        <CheckAllIcon
+                            size={16}
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
                         />
                         {formatMessage({
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: num_stages})}
                     </MetaItem>
                     <MetaItem>
-                        <Icon
-                            path={mdiSync}
-                            size={1}
+                        <SyncIcon
+                            size={16}
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
                         />
                         {formatMessage({
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
@@ -304,27 +305,27 @@ export const RHSHomeTemplate = ({
                             parentRef={linkRef}
 
                         />
-                        <Icon
-                            path={mdiOpenInNew}
-                            size={0.85}
+                        <OpenInNewIcon
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
+                            size={14}
                         />
                     </Link>
                 </Title>
                 <Sub/>
                 <Meta>
                     <MetaItem>
-                        <Icon
-                            path={mdiCheckAll}
-                            size={1}
+                        <CheckAllIcon
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
+                            size={16}
                         />
                         {formatMessage({
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: template.num_stages})}
                     </MetaItem>
                     <MetaItem>
-                        <Icon
-                            path={mdiSync}
-                            size={1}
+                        <SyncIcon
+                            size={16}
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
                         />
                         {formatMessage({
 
@@ -334,9 +335,9 @@ export const RHSHomeTemplate = ({
                 </Meta>
             </div>
             <RunButton onClick={() => onUse(template)}>
-                <Icon
-                    path={mdiOpenInNew}
-                    size={1.5}
+                <OpenInNewIcon
+                    size={24}
+                    color={'var(--button-bg)'}
                 />
                 {formatMessage({defaultMessage: 'Use'})}
             </RunButton>
