@@ -100,7 +100,7 @@ const DotMenu = (props: DotMenuProps) => {
             className={props.className}
             role={'button'}
             disabled={props.disabled || false}
-            data-testid={'menuButton' + props.title}
+            data-testid={'menuButton' + (props.title ?? '')}
         >
             {props.icon}
         </MenuButton>

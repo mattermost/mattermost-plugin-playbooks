@@ -22,6 +22,7 @@ const Item = (props: ItemProps) => {
     return (
         <ItemContainer
             isCollapsed={props.isCollapsed}
+            data-testid={props.display_name}
         >
             <StyledNavLink
                 className={props.className}
@@ -116,17 +117,7 @@ export const StyledNavLink = styled(NavLink)`
                 border-radius: 4px;
                 content: "";
             }
-        }
-
-        ${DotMenuButton} {
-            opacity: 0;
-        }
-
-        &:hover {
-            ${DotMenuButton} {
-                opacity: 1;
-            }
-        }    
+        }  
     }
 `;
 

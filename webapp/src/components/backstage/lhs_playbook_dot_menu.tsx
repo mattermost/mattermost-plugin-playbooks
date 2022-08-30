@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useIntl} from 'react-intl';
 import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
 
 import DotMenu from 'src/components/dot_menu';
@@ -19,7 +18,6 @@ interface Props {
 }
 
 export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
-    const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const updatePlaybook = useUpdatePlaybook(playbookId);
 
@@ -30,7 +28,6 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
     return (
         <>
             <DotMenu
-                title={formatMessage({defaultMessage: 'Playbook options'})}
                 placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon

@@ -51,7 +51,6 @@ export const LHSRunDotMenu = ({playbookRunId, teamId}: Props) => {
     return (
         <>
             <DotMenu
-                title={formatMessage({defaultMessage: 'Run options'})}
                 placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon
