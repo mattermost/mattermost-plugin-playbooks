@@ -63,6 +63,7 @@ type Playbook struct {
 	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
 	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	ActiveRuns                           int64                  `json:"active_runs" export:"-"`
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
