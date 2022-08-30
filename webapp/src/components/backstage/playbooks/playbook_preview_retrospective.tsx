@@ -6,10 +6,9 @@ import {useIntl} from 'react-intl';
 
 import {Duration} from 'luxon';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import FormattedMarkdown from 'src/components/formatted_markdown';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {TextBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
@@ -22,11 +21,8 @@ interface Props {
 }
 
 const PlaybookPreviewRetrospective = (props: Props) => {
-    const retrospectiveAccess = useAllowRetrospectiveAccess();
-
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
-    const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
 
     if (!retrospectiveAccess || !props.playbook.retrospective_enabled) {
         return null;
@@ -58,7 +54,7 @@ const PlaybookPreviewRetrospective = (props: Props) => {
                         })}
                         enabled={props.playbook.retrospective_template !== ''}
                     >
-                        {renderMarkdown(props.playbook.retrospective_template)}
+                        <FormattedMarkdown value={props.playbook.retrospective_template}/>
                     </CardSubEntry>
                 </CardEntry>
             </Card>

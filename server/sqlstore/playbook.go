@@ -45,6 +45,10 @@ type playbookMember struct {
 	Roles      string
 }
 
+// definied to call a common insights query builder for both user and team insights
+const insightsQueryTypeUser = "insights_query_type_user"
+const insightsQueryTypeTeam = "insights_query_type_team"
+
 func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
 	var sort string
 	switch options.Sort {
@@ -60,6 +64,10 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "NumRuns"
 	case app.SortByCreateAt:
 		sort = "CreateAt"
+	case app.SortByLastRunAt:
+		sort = "LastRunAt"
+	case app.SortByActiveRuns:
+		sort = "ActiveRuns"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -236,7 +244,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
@@ -382,12 +390,14 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
-			p.Public = true
-			OR EXISTS(SELECT 1
-					FROM IR_PlaybookMember as pm
-					WHERE pm.PlaybookID = p.ID
-					AND pm.MemberID = ?)
+			EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
 		)`, requesterInfo.UserID)
+	if !opts.WithMembershipOnly { // return all public playbooks and private ones user is member of
+		permissionsAndFilter = sq.Or{sq.Expr(`p.Public = true`), permissionsAndFilter}
+	}
 	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
 
 	queryForResults := p.store.builder.
@@ -402,7 +412,10 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"p.DeleteAt",
 			"p.NumStages",
 			"p.NumSteps",
+			"p.DefaultCommanderEnabled AS DefaultOwnerEnabled",
+			"p.DefaultCommanderID AS DefaultOwnerID",
 			"COUNT(i.ID) AS NumRuns",
+			"COUNT(CASE WHEN i.CurrentStatus='InProgress' THEN 1 END) AS ActiveRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
 				1 + -- Channel creation is hard-coded
@@ -586,6 +599,23 @@ func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]s
 	return playbookIDs, nil
 }
 
+func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
 // Update updates a playbook
 func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {
@@ -625,7 +655,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled, //nolint
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
@@ -714,6 +744,56 @@ func (p *playbookStore) GetPlaybooksActiveTotal() (int64, error) {
 	}
 
 	return count, nil
+}
+
+// Get number of active playbooks.
+func (p *playbookStore) GetNumMetrics(playbookID string) (int64, error) {
+	var count int64
+
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookID})
+
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count metrics")
+	}
+
+	return count, nil
+}
+
+func (p *playbookStore) AddPlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_PlaybookMember").
+		Columns("PlaybookID", "MemberID", "Roles").
+		Values(id, memberID, app.PlaybookRoleMember))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) RemovePlaybookMember(id string, memberID string) error {
+	if id == "" || memberID == "" {
+		return errors.New("ids should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Delete("IR_PlaybookMember").
+		Where(sq.Eq{"PlaybookID": id}).
+		Where(sq.Eq{"MemberID": memberID}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
+	}
+
+	return nil
 }
 
 // replacePlaybookMembers replaces the members of a playbook
@@ -827,6 +907,84 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	}
 
 	return autoFollows, nil
+}
+
+func (p *playbookStore) GetMetric(id string) (*app.PlaybookMetricConfig, error) {
+	metricSelect := p.queryBuilder.
+		Select(
+			"c.ID",
+			"c.PlaybookID",
+			"c.Title",
+			"c.Description",
+			"c.Type",
+			"c.Target",
+		).
+		From("IR_MetricConfig c").
+		Where(sq.Eq{"c.ID": id})
+
+	var metric app.PlaybookMetricConfig
+	err := p.store.getBuilder(p.store.db, &metric, metricSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metric, nil
+}
+
+func (p *playbookStore) AddMetric(playbookID string, config app.PlaybookMetricConfig) error {
+	numExistingMetrics, err := p.GetNumMetrics(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if numExistingMetrics >= app.MaxMetricsPerPlaybook {
+		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
+	}
+
+	_, err = p.store.execBuilder(p.store.db, sq.
+		Insert("IR_MetricConfig").
+		Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
+		Values(model.NewId(), playbookID, config.Title, config.Description, config.Type, config.Target, numExistingMetrics))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to add metric")
+	}
+
+	return nil
+}
+
+func (p *playbookStore) DeleteMetric(id string) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete metric with id %q", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_MetricConfig").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update metric with id %q", id)
+	}
+
+	return nil
 }
 
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {
@@ -948,4 +1106,96 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	}
 
 	return p, nil
+}
+
+// insights - store manager functions
+
+func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+
+	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeTeam)
+
+	topPlaybooksList := make([]*app.PlaybookInsight, 0)
+	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get top team playbooks for for user: %s", userID)
+	}
+
+	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
+
+	return topPlaybooks, nil
+}
+
+func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+
+	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeUser)
+
+	topPlaybooksList := make([]*app.PlaybookInsight, 0)
+	err := p.store.selectBuilder(p.store.db, &topPlaybooksList, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get top user playbooks for for user: %s", userID)
+	}
+
+	topPlaybooks := GetTopPlaybooksInsightsListWithPagination(topPlaybooksList, opts.PerPage)
+
+	return topPlaybooks, nil
+}
+
+func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *model.InsightsOpts, queryType string) sq.SelectBuilder {
+	permissionsAndFilter := sq.Expr(`(
+		EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
+	)`, userID)
+
+	var whereCondition sq.And
+	if queryType == insightsQueryTypeUser {
+		whereCondition = sq.And{
+			permissionsAndFilter,
+			sq.Eq{"p.TeamID": teamID},
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+		}
+	} else if queryType == insightsQueryTypeTeam {
+		whereCondition = sq.And{
+			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
+			sq.Or{
+				permissionsAndFilter,
+				sq.Eq{"p.Public": true},
+			},
+			sq.Eq{"p.TeamID": teamID},
+		}
+	} else {
+		whereCondition = sq.And{}
+	}
+	offset := opts.Page * opts.PerPage
+	limit := opts.PerPage
+	query := p.queryBuilder.
+		Select(
+			"p.ID as PlaybookID",
+			"p.Title",
+			"COUNT(i.ID) AS NumRuns",
+			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+		).
+		From("IR_Playbook as p").
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		Where(whereCondition).
+		GroupBy("p.ID").
+		OrderBy("NumRuns desc").
+		Offset(uint64(offset)).
+		Limit(uint64(limit + 1))
+
+	return query
+}
+
+// GetTopPlaybooksInsightsListWithPagination returns a page given a list of PlaybooksInsight assumed to be
+// sorted by Runs(score). Returns a PlaybooksInsightsList.
+func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight, limit int) *app.PlaybooksInsightsList {
+	// Add pagination support
+	var hasNext bool
+	if (limit != 0) && (len(playbooks) == limit+1) {
+		hasNext = true
+		playbooks = playbooks[:len(playbooks)-1]
+	}
+
+	return &app.PlaybooksInsightsList{HasNext: hasNext, Items: playbooks}
 }

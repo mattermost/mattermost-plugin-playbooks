@@ -4,7 +4,7 @@
 import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {Post} from 'mattermost-redux/types/posts';
+import {Post} from '@mattermost/types/posts';
 import {WebSocketMessage} from 'mattermost-redux/types/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -219,6 +219,12 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
     return async (msg: WebSocketMessage<{ channel_id: string }>) => {
         const channelId = msg.data.channel_id;
 
+        // if the user has already viewed the channel,
+        // there's no need to fetch actions again
+        if (hasViewedByChannelID(getState())[channelId]) {
+            return;
+        }
+
         // If there are no welcome message actions enabled, stop
         const actions = await fetchChannelActions(channelId, ChannelTriggerType.NewMemberJoins);
 
@@ -229,11 +235,9 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
             return;
         }
 
-        if (!hasViewedByChannelID(getState())[channelId]) {
-            const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
-            if (hasViewed) {
-                dispatch(setHasViewedChannel(channelId));
-            }
+        const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
+        if (hasViewed) {
+            dispatch(setHasViewedChannel(channelId));
         }
     };
 };

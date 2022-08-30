@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect, Dispatch, SetStateAction} from 'react';
+import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
-
+import {useUpdateEffect} from 'react-use';
 import {useSelector} from 'react-redux';
-import {Team} from 'mattermost-redux/types/teams';
+
+import {Team} from '@mattermost/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
 
 import PostText from 'src/components/post_text';
-import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
 interface DescriptionProps {
     value: string;
@@ -24,12 +24,8 @@ interface DescriptionProps {
 const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
-
     const [editedValue, setEditedValue] = useState(props.value);
-
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
-    const textareaRef = useRef(null);
 
     const saveAndClose = () => {
         const newValue = editedValue.trim();
@@ -38,10 +34,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
         props.setEditing(false);
     };
 
-    useClickOutsideRef(textareaRef, saveAndClose);
-    useKeyPress((e: KeyboardEvent) => e.ctrlKey && e.key === 'Enter', saveAndClose);
-
-    useEffect(() => {
+    useUpdateEffect(() => {
         setEditedValue(props.value);
     }, [props.value]);
 
@@ -51,9 +44,11 @@ const RHSAboutDescription = (props: DescriptionProps) => {
             <RenderedDescription
                 data-testid='rendered-description'
                 onClick={(event) => {
-                    // Enter edit mode only if the user is not clicking a link
+                    // Enter edit mode only if the user is not clicking a link and there's no selected text
                     const targetNode = event.target as Node;
-                    if (targetNode.nodeName !== 'A') {
+                    const selectedText = window.getSelection();
+                    const hasSelectedText = selectedText !== null && selectedText.toString() !== '';
+                    if (targetNode.nodeName !== 'A' && !hasSelectedText) {
                         props.setEditing(true);
                     }
                 }}
@@ -80,7 +75,6 @@ const RHSAboutDescription = (props: DescriptionProps) => {
             data-testid='textarea-description'
             value={editedValue}
             placeholder={placeholder}
-            ref={textareaRef}
             onChange={(e) => setEditedValue(e.target.value)}
             autoFocus={true}
             onFocus={(e) => {
@@ -88,6 +82,15 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 e.target.value = '';
                 e.target.value = val;
                 computeHeight(e);
+            }}
+            onBlur={saveAndClose}
+            onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    saveAndClose();
+                } else if (e.key === 'Escape') {
+                    setEditedValue(props.value);
+                    props.setEditing(false);
+                }
             }}
             onInput={computeHeight}
         />

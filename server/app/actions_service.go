@@ -143,9 +143,6 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
-		if err := checkValidWelcomeMessagePayload(payload); err != nil {
-			return err
-		}
 	case ActionTypePromptRunPlaybook:
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
@@ -159,9 +156,6 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
-		if err := checkValidCategorizeChannelPayload(payload); err != nil {
-			return err
-		}
 
 	default:
 		return fmt.Errorf("action type %q not recognized", action.ActionType)
@@ -170,41 +164,21 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 	return nil
 }
 
-func checkValidWelcomeMessagePayload(payload WelcomeMessagePayload) error {
-	if payload.Message == "" {
-		return fmt.Errorf("payload field 'message' must be non-empty")
-	}
-
-	return nil
-}
-
 func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFromKeywordsPayload) error {
-	if len(payload.Keywords) == 0 {
-		return fmt.Errorf("payload field 'keywords' must contain at least one keyword")
-	}
-
 	for _, keyword := range payload.Keywords {
 		if keyword == "" {
 			return fmt.Errorf("payload field 'keywords' must contain only non-empty keywords")
 		}
 	}
 
-	if !model.IsValidId(payload.PlaybookID) {
+	if payload.PlaybookID != "" && !model.IsValidId(payload.PlaybookID) {
 		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
 	}
 
 	return nil
 }
 
-func checkValidCategorizeChannelPayload(payload CategorizeChannelPayload) error {
-	if payload.CategoryName == "" {
-		return fmt.Errorf("payload field 'category_name' must be non-empty")
-	}
-
-	return nil
-}
-
-func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
+func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID string) error {
 	oldAction, err := a.Get(action.ID)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve existing action with ID %q", action.ID)
@@ -216,7 +190,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 		}
 	}
 
-	return a.store.Update(action)
+	if err := a.store.Update(action); err != nil {
+		return err
+	}
+
+	a.telemetry.UpdateChannelAction(action, userID)
+
+	return nil
 }
 
 // UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
@@ -247,8 +227,11 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		return
 	}
 
-	if len(actions) != 1 {
+	if len(actions) > 1 {
 		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+	}
+
+	if len(actions) != 1 {
 		return
 	}
 
@@ -431,6 +414,10 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 			continue
 		}
 
+		if len(payload.Keywords) == 0 || payload.PlaybookID == "" {
+			continue
+		}
+
 		suggestedPlaybook, err := a.playbookGetter.Get(payload.PlaybookID)
 		if err != nil {
 			a.api.Log.Error("unable to get playbook to run action", "playbookID", payload.PlaybookID)
@@ -440,7 +427,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		triggers := payload.Keywords
 		actionExecuted := false
 		for _, trigger := range triggers {
-			if strings.Contains(post.Message, trigger) {
+			if strings.Contains(post.Message, trigger) || containsAttachments(post.Attachments(), trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
 				actionExecuted = true
@@ -561,4 +548,23 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
 	}
 	return attachment
+}
+
+func containsAttachments(attachments []*model.SlackAttachment, trigger string) bool {
+	// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
+	for _, attachment := range attachments {
+		switch {
+		case strings.Contains(attachment.Pretext, trigger):
+			return true
+		case strings.Contains(attachment.Title, trigger):
+			return true
+		case strings.Contains(attachment.Text, trigger):
+			return true
+		case strings.Contains(attachment.Footer, trigger):
+			return true
+		default:
+			continue
+		}
+	}
+	return false
 }

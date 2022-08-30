@@ -3,11 +3,11 @@
 
 import {combineReducers} from 'redux';
 
-import {Team} from 'mattermost-redux/types/teams';
-import {Channel} from 'mattermost-redux/types/channels';
+import {Team} from '@mattermost/types/teams';
+import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState} from 'src/types/rhs';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -25,24 +25,19 @@ import {
     PlaybookRunUpdated,
     PLAYBOOK_RUN_UPDATED,
     REMOVED_FROM_CHANNEL,
-    SetRHSEventsFilter,
-    SET_RHS_EVENTS_FILTER,
-    PLAYBOOK_CREATED,
-    PlaybookCreated,
-    PLAYBOOK_ARCHIVED,
-    PlaybookArchived,
-    PLAYBOOK_RESTORED,
-    PlaybookRestored,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
     HidePostMenuModal,
     SHOW_POST_MENU_MODAL,
     HIDE_POST_MENU_MODAL,
-    ShowActionsModal,
-    HideActionsModal,
-    SHOW_ACTIONS_MODAL,
-    HIDE_ACTIONS_MODAL,
+    ShowChannelActionsModal,
+    SHOW_CHANNEL_ACTIONS_MODAL,
+    HIDE_CHANNEL_ACTIONS_MODAL,
+    ShowRunActionsModal,
+    HideRunActionsModal,
+    SHOW_RUN_ACTIONS_MODAL,
+    HIDE_RUN_ACTIONS_MODAL,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -51,8 +46,8 @@ import {
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SetEachChecklistCollapsedState,
-    SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    SetEveryChecklistCollapsedState,
+    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
@@ -177,18 +172,6 @@ const myPlaybookRunsByTeam = (
     }
 };
 
-const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {}, action: SetRHSEventsFilter) => {
-    switch (action.type) {
-    case SET_RHS_EVENTS_FILTER:
-        return {
-            ...state,
-            [action.channelId]: action.nextState,
-        };
-    default:
-        return state;
-    }
-};
-
 const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
     case RECEIVED_GLOBAL_SETTINGS:
@@ -209,11 +192,22 @@ const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | Hide
     }
 };
 
-const postActionsModalVisibility = (state = false, action: ShowActionsModal | HideActionsModal) => {
+const channelActionsModalVisibility = (state = false, action: ShowChannelActionsModal) => {
     switch (action.type) {
-    case SHOW_ACTIONS_MODAL:
+    case SHOW_CHANNEL_ACTIONS_MODAL:
         return true;
-    case HIDE_ACTIONS_MODAL:
+    case HIDE_CHANNEL_ACTIONS_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
+const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | HideRunActionsModal) => {
+    switch (action.type) {
+    case SHOW_RUN_ACTIONS_MODAL:
+        return true;
+    case HIDE_RUN_ACTIONS_MODAL:
         return false;
     default:
         return state;
@@ -250,15 +244,15 @@ const checklistCollapsedState = (
     action:
     | SetChecklistCollapsedState
     | SetAllChecklistsCollapsedState
-    | SetEachChecklistCollapsedState
+    | SetEveryChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
         const setAction = action as SetChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: {
-                ...state[setAction.channelId],
+            [setAction.key]: {
+                ...state[setAction.key],
                 [setAction.checklistIndex]: setAction.collapsed,
             },
         };
@@ -271,14 +265,14 @@ const checklistCollapsedState = (
         }
         return {
             ...state,
-            [setAction.channelId]: newState,
+            [setAction.key]: newState,
         };
     }
-    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
-        const setAction = action as SetEachChecklistCollapsedState;
+    case SET_EVERY_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEveryChecklistCollapsedState;
         return {
             ...state,
-            [setAction.channelId]: setAction.state,
+            [setAction.key]: setAction.state,
         };
     }
     default:
@@ -291,7 +285,7 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     case SET_CHECKLIST_ITEMS_FILTER:
         return {
             ...state,
-            [action.channelId]: action.nextState,
+            [action.key]: action.nextState,
         };
     default:
         return state;
@@ -304,10 +298,10 @@ const reducer = combineReducers({
     clientId,
     myPlaybookRunsByTeam,
     rhsState,
-    eventsFilterByChannel,
     globalSettings,
     postMenuModalVisibility,
-    postActionsModalVisibility,
+    channelActionsModalVisibility,
+    runActionsModalVisibility,
     hasViewedByChannel,
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,

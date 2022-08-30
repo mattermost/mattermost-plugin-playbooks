@@ -24,7 +24,8 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
-    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200}).type('{enter}');
+    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200});
+    cy.findByTestId('post_textbox').type('{enter}');
 });
 
 // Opens playbook run dialog using the `/playbook run` slash command
@@ -40,6 +41,13 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
+// Selects Playbooks icon in the App Bar
+Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
+    cy.apiGetConfig(true).then(({config}) => {
+        return cy.get(`.app-bar .app-bar__icon-inner img[src="${config.SiteURL}/plugins/playbooks/public/app-bar-icon.png"]`);
+    });
+});
+
 // Starts playbook run from the playbook run RHS
 // function startPlaybookRunFromRHS(playbookName, playbookRunName) {
 Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) => {
@@ -48,7 +56,7 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
         cy.get('#channelHeaderFlagButton').click();
 
         // open the playbook run RHS
-        cy.get('#incidentIcon').click();
+        cy.getPlaybooksAppBarIcon().should('exist').click();
     });
 
     cy.get('#rhsContainer').should('exist').within(() => {
@@ -60,16 +68,14 @@ Cypress.Commands.add('startPlaybookRunFromRHS', (playbookName, playbookRunName) 
 
 // Create a new task from the RHS
 Cypress.Commands.add('addNewTaskFromRHS', (taskname) => {
-    // Hover over the header to reveal the add task
-    cy.findByTestId('checklistHeader').trigger('mouseover').within(() => {
-        cy.findByTestId('addNewTask').click();
-    });
+    // Click add new task
+    cy.findByTestId('add-new-task-0').click();
 
     // Type a name
-    cy.findByTestId('nameinput').type(taskname);
+    cy.findByTestId('checklist-item-textarea-title').type(taskname);
 
-    // Submit the dialog
-    cy.findByText('Add task').click();
+    // Save task
+    cy.findByTestId('checklist-item-save-button').click();
 });
 
 // Starts playbook run from the post menu
@@ -141,7 +147,7 @@ Cypress.Commands.add('openSelector', () => {
 });
 
 Cypress.Commands.add('openChannelSelector', () => {
-    cy.findByText('Select a channel').click({force: true});
+    cy.findByText('Select channels').click({force: true});
 });
 
 Cypress.Commands.add('openCategorySelector', () => {
@@ -190,7 +196,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     cy.executeSlashCommand('/playbook update');
 
     // # Get the interactive dialog modal.
-    cy.get('.GenericModal').within(() => {
+    cy.getStatusUpdateDialog().within(() => {
         // # remove what's there if applicable, and type the new update in the textbox.
         cy.findByTestId('update_run_status_textbox').clear().type(message);
 
@@ -205,7 +211,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     });
 
     // * Verify that the interactive dialog has gone.
-    cy.get('.GenericModal').should('not.exist');
+    cy.getStatusUpdateDialog().should('not.exist');
 
     // # Return the post ID of the status update.
     return cy.getLastPostId();
@@ -243,6 +249,10 @@ Cypress.Commands.add('uiSwitchChannel', (channelName) => {
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStatusUpdateDialog', () => {
+    return cy.findByRole('dialog', {name: /post update/i});
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {

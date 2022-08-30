@@ -6,10 +6,10 @@ import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -87,14 +87,14 @@ const PlaceholderText = styled.span`
 `;
 
 const commonTitleStyle = css`
-    color: var(--center-channel-color-72);
+    color: var(--center-channel-color);
     border: none;
     background: none;
     font-style: normal;
     font-weight: 400;
     font-size: 14px;
     line-height: 20px;
-    padding: 0px;
+    padding: 0 4px 0 0;
 
     p {
         white-space: pre-wrap;
@@ -130,7 +130,7 @@ const TitleTextArea = styled.textarea`
     }
 `;
 
-const StrikeThrough = styled.text`
+const StrikeThrough = styled.div`
     text-decoration: line-through;
 `;
 

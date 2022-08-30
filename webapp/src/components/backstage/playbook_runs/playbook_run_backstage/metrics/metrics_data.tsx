@@ -1,43 +1,45 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {forwardRef, useImperativeHandle, useRef, useState} from 'react';
+import React, {forwardRef, useImperativeHandle, useState} from 'react';
 import {useIntl} from 'react-intl';
+import {useUpdateEffect} from 'react-use';
 
 import {RunMetricData} from 'src/types/playbook_run';
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {isMetricValueValid, stringToMetric, metricToString} from 'src/components/backstage/playbook_edit/metrics/shared';
-import {useClickOutsideRef} from 'src/hooks';
 import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 
 interface MetricsProps {
     metricsData: RunMetricData[];
     metricsConfigs: Metric[];
-    isPublished: boolean;
+    notEditable: boolean;
     onEdit: (metricsData: RunMetricData[]) => void;
     flushChanges: () => void;
+    focusMetricId?: string;
+    idPrefix?: string;
 }
 
-const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdit, flushChanges}: MetricsProps, ref) => {
+const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdit, flushChanges, focusMetricId, idPrefix}: MetricsProps, ref) => {
     const {formatMessage} = useIntl();
 
-    const [inputsValues, setInputsValues] = useState(() => {
-        const initialValues = new Array(metricsConfigs.length);
+    const produceValues = (config: Metric[], data: RunMetricData[]) => {
+        const values = new Array(config.length);
         metricsConfigs.forEach((mc, index) => {
-            const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
-            initialValues[index] = md ? metricToString(md.value, mc.type) : '';
+            const md = data.find((metric) => metric.metric_config_id === mc.id);
+            values[index] = md ? metricToString(md.value, mc.type) : '';
         });
-        return initialValues;
-    });
+        return values;
+    };
+
+    const [inputsValues, setInputsValues] = useState(() => produceValues(metricsConfigs, metricsData));
     const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs.length).fill(''));
 
-    // Handles click outside of metrics inputs to save changes
-    const inputRef = useRef(null);
-    useClickOutsideRef(inputRef, () => {
-        flushChanges();
-    });
+    useUpdateEffect(() => {
+        setInputsValues(produceValues(metricsConfigs, metricsData));
+    }, [metricsData, metricsConfigs]);
 
     //  validateInputs function is called from retrospective component on publish button click, to validate metrics inputs
     useImperativeHandle(
@@ -117,6 +119,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                         <div key={mc.id}>
                             <VerticalSpacer size={24}/>
                             <MetricInput
+                                id={(idPrefix ?? '') + mc.id}
                                 title={mc.title}
                                 value={inputsValues[idx]}
                                 placeholder={placeholder}
@@ -125,9 +128,10 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                                 targetValue={metricToString(mc.target, mc.type, true)}
                                 mandatory={true}
                                 inputIcon={inputIcon}
-                                inputRef={inputRef}
                                 onChange={(e) => updateMetrics(idx, e)}
-                                disabled={isPublished}
+                                disabled={notEditable}
+                                autofocus={focusMetricId === mc.id}
+                                onClickOutside={flushChanges}
                             />
                         </div>
                     );

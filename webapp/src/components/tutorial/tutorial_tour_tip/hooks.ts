@@ -1,6 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {ElementRef, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
 import throttle from 'lodash/throttle';
 
@@ -8,7 +8,7 @@ import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {TutorialTourTipPunchout} from './backdrop';
 

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {Store} from 'redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -42,6 +42,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 per_page: 0,
                 team_id: currentTeam.id,
                 participant_id: currentUserId,
+                statuses: [PlaybookRunStatus.InProgress],
             });
             store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }

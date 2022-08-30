@@ -48,11 +48,13 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
-	eventChecklists       = "checklists"
-	actionAddChecklist    = "add_checklist"
-	actionRemoveChecklist = "remove_checklist"
-	actionRenameChecklist = "rename_checklist"
-	actionMoveChecklist   = "move_checklist"
+	eventChecklists        = "checklists"
+	actionAddChecklist     = "add_checklist"
+	actionRemoveChecklist  = "remove_checklist"
+	actionRenameChecklist  = "rename_checklist"
+	actionMoveChecklist    = "move_checklist"
+	actionSkipChecklist    = "skip_checklist"
+	actionRestoreChecklist = "restore_checklist"
 
 	eventPlaybook      = "playbook"
 	actionUpdate       = "update"
@@ -73,8 +75,19 @@ const (
 	eventSettings = "settings"
 	actionDigest  = "digest"
 
-	eventChannelAction     = "channel_action"
-	actionRunChannelAction = "run_channel_action"
+	eventChannelAction        = "channel_action"
+	actionRunChannelAction    = "run_channel_action"
+	actionChannelActionUpdate = "update_channel_action"
+
+	eventRunAction         = "playbookrun_action"
+	actionRunAction        = "run_playbookrun_action"
+	actionRunActionsUpdate = "update_playbookrun_actions"
+
+	eventSidebarCategory     = "lhs_category"
+	actionFavoriteRun        = "favorite_run"
+	actionUnfavoriteRun      = "unfavorite_run"
+	actionFavoritePlaybook   = "favorite_playbook"
+	actionUnfavoritePlaybook = "unfavorite_playbook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -146,26 +159,37 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
+	role := "viewer"
+	for _, p := range playbookRun.ParticipantIDs {
+		if p == userID {
+			role = "participant"
+			break
+		}
+	}
+
 	return map[string]interface{}{
-		"UserActualID":              userID,
-		telemetryKeyPlaybookRunID:   playbookRun.ID,
-		"HasDescription":            playbookRun.Summary != "",
-		"CommanderUserID":           playbookRun.OwnerUserID,
-		"ReporterUserID":            playbookRun.ReporterUserID,
-		"TeamID":                    playbookRun.TeamID,
-		"ChannelID":                 playbookRun.ChannelID,
-		"CreateAt":                  playbookRun.CreateAt,
-		"EndAt":                     playbookRun.EndAt,
-		"DeleteAt":                  playbookRun.DeleteAt, //nolint
-		"PostID":                    playbookRun.PostID,
-		"PlaybookID":                playbookRun.PlaybookID,
-		"NumChecklists":             len(playbookRun.Checklists),
-		"TotalChecklistItems":       totalChecklistItems,
-		"ChecklistItemsWithDueDate": itemsWithDueDate,
-		"NumStatusPosts":            len(playbookRun.StatusPosts),
-		"CurrentStatus":             playbookRun.CurrentStatus,
-		"PreviousReminder":          playbookRun.PreviousReminder,
-		"NumTimelineEvents":         len(playbookRun.TimelineEvents),
+		"UserActualID":                         userID,
+		"UserActualRole":                       role,
+		telemetryKeyPlaybookRunID:              playbookRun.ID,
+		"HasDescription":                       playbookRun.Summary != "",
+		"CommanderUserID":                      playbookRun.OwnerUserID,
+		"ReporterUserID":                       playbookRun.ReporterUserID,
+		"TeamID":                               playbookRun.TeamID,
+		"ChannelID":                            playbookRun.ChannelID,
+		"CreateAt":                             playbookRun.CreateAt,
+		"EndAt":                                playbookRun.EndAt,
+		"DeleteAt":                             playbookRun.DeleteAt, //nolint
+		"PostID":                               playbookRun.PostID,
+		"PlaybookID":                           playbookRun.PlaybookID,
+		"NumChecklists":                        len(playbookRun.Checklists),
+		"TotalChecklistItems":                  totalChecklistItems,
+		"ChecklistItemsWithDueDate":            itemsWithDueDate,
+		"NumStatusPosts":                       len(playbookRun.StatusPosts),
+		"CurrentStatus":                        playbookRun.CurrentStatus,
+		"PreviousReminder":                     playbookRun.PreviousReminder,
+		"NumTimelineEvents":                    len(playbookRun.TimelineEvents),
+		"StatusUpdateBroadcastChannelsEnabled": playbookRun.StatusUpdateBroadcastChannelsEnabled,
+		"StatusUpdateBroadcastWebhooksEnabled": playbookRun.StatusUpdateBroadcastWebhooksEnabled,
 	}
 }
 
@@ -282,6 +306,22 @@ func (t *RudderTelemetry) RenameTask(playbookRunID, userID string, task app.Chec
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRenameTask
 	t.track(eventTasks, properties)
+}
+
+// SkipChecklist tracks the skipping of a checklist by the user
+// identified by userID in the given playbook run.
+func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionSkipChecklist
+	t.track(eventChecklists, properties)
+}
+
+// RestoreChecklist tracks the restoring of a checklist by the user
+// identified by userID in the given playbook run.
+func (t *RudderTelemetry) RestoreChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionRestoreChecklist
+	t.track(eventChecklists, properties)
 }
 
 // SkipTask tracks the skipping of a checklist item by the user
@@ -416,7 +456,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"DefaultCommanderID":          playbook.DefaultOwnerID,
 		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         playbook.BroadcastChannelIDs,
-		"BroadcastEnabled":            playbook.BroadcastEnabled,
+		"BroadcastEnabled":            playbook.BroadcastEnabled, //nolint
 		"NumWebhookOnCreationURLs":    len(playbook.WebhookOnCreationURLs),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
@@ -570,6 +610,7 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
+		"ChannelID":    action.ChannelID,
 		"ActionType":   action.ActionType,
 		"TriggerType":  action.TriggerType,
 	}
@@ -579,4 +620,66 @@ func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, user
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionRunChannelAction
 	t.track(eventChannelAction, properties)
+}
+
+// UpdateRunActions tracks actions settings update
+func (t *RudderTelemetry) UpdateChannelAction(action app.GenericChannelAction, userID string) {
+	properties := channelActionProperties(action, userID)
+	properties["Action"] = actionChannelActionUpdate
+	t.track(eventChannelAction, properties)
+}
+
+func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID":  userID,
+		"ActionType":    actionType,
+		"TriggerType":   triggerType,
+		"NumBroadcasts": numBroadcasts,
+		"PlaybookRunID": playbookRun.ID,
+		"PlaybookID":    playbookRun.PlaybookID,
+	}
+}
+
+// RunAction tracks the run actions, i.e., status broadcast action
+func (t *RudderTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
+	properties := runActionProperties(playbookRun, userID, triggerType, actionType, numBroadcasts)
+	properties["Action"] = actionRunAction
+	t.track(eventRunAction, properties)
+}
+
+// UpdateRunActions tracks actions settings update
+func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionRunActionsUpdate
+	t.track(eventRunAction, properties)
+}
+
+// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionFavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionFavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
+}
+
+// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
+func (t *RudderTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
+	properties := map[string]interface{}{}
+	properties["UserActualID"] = userID
+	switch item.Type {
+	case app.PlaybookItemType:
+		properties["PlaybookID"] = item.ItemID
+		properties["Action"] = actionUnfavoritePlaybook
+	case app.RunItemType:
+		properties["PlaybookRunID"] = item.ItemID
+		properties["Action"] = actionUnfavoriteRun
+	}
+	t.track(eventSidebarCategory, properties)
 }

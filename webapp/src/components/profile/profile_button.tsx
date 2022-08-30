@@ -12,11 +12,15 @@ interface Props {
     withoutProfilePic?: boolean;
     withoutName?: boolean;
     profileButtonClass?: string;
+    customDropdownArrow?: React.ReactNode;
     onClick: () => void;
 }
 
 export default function ProfileButton(props: Props) {
-    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-1 mr-2'/> : <></>;
+    const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
+        <i className='icon-chevron-down mr-2'/>
+    );
+    const downChevron = props.enableEdit ? dropdownArrow : null;
 
     const formatName = (preferredName: string, userName: string) => {
         let name = preferredName;
@@ -64,12 +68,12 @@ const Button = styled.button`
         color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
-    .PlaybookRunProfile {
-        &:active {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
-        }
+    cursor: default;
+    &.active {
+        cursor: pointer;
+    }
 
+    .PlaybookRunProfile {
         &.active {
             cursor: pointer;
             color: var(--center-channel-color);
@@ -96,11 +100,6 @@ const Button = styled.button`
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
             color: rgba(var(--center-channel-color-rgb), 0.72);
-        }
-
-        &:active {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
         }
 
         &.active {

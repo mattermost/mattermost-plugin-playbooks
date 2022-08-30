@@ -90,7 +90,7 @@ describe('runs > list', () => {
         });
 
         // * Verify that the header contains the playbook run name
-        cy.findByTestId('playbook-run-title').contains(playbookRunName);
+        cy.findByTestId('run-header-section').get('h1').contains(playbookRunName);
     });
 
     describe('filters my runs only', () => {
@@ -127,21 +127,23 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks/runs');
 
-            // # Filter to all runs
-            cy.findByTestId('my-runs-only').click();
+            cy.get('#playbookRunList').within(() => {
+                // # Filter to all runs
+                cy.findByTestId('my-runs-only').click();
 
-            // # Make sure both runs are visible by default
-            cy.findByText('testUsers Run').should('be.visible');
-            cy.findByText('testAnotherUsers Run').should('be.visible');
+                // # Make sure both runs are visible by default
+                cy.findByText('testUsers Run').should('be.visible');
+                cy.findByText('testAnotherUsers Run').should('be.visible');
 
-            // # Filter to only my runs
-            cy.findByTestId('my-runs-only').click();
+                // # Filter to only my runs
+                cy.findByTestId('my-runs-only').click();
 
-            // # Verify runs by testAnotherUser are not visible
-            cy.findByText('testAnotherUsers Run').should('not.exist');
+                // # Verify runs by testAnotherUser are not visible
+                cy.findByText('testAnotherUsers Run').should('not.exist');
 
-            // # Verify runs by testUser remain visible
-            cy.findByText('testUsers Run').should('be.visible');
+                // # Verify runs by testUser remain visible
+                cy.findByText('testUsers Run').should('be.visible');
+            });
         });
 
         it('for testAnotherUser', () => {
@@ -150,22 +152,23 @@ describe('runs > list', () => {
 
             // # Open the product
             cy.visit('/playbooks');
+            cy.get('#playbookRunList').within(() => {
+                // # Filter to all runs
+                cy.findByTestId('my-runs-only').click();
 
-            // # Filter to all runs
-            cy.findByTestId('my-runs-only').click();
+                // Make sure both runs are visible by default
+                cy.findByText('testUsers Run').should('be.visible');
+                cy.findByText('testAnotherUsers Run').should('be.visible');
 
-            // Make sure both runs are visible by default
-            cy.findByText('testUsers Run').should('be.visible');
-            cy.findByText('testAnotherUsers Run').should('be.visible');
+                // # Filter to only my runs
+                cy.findByTestId('my-runs-only').click();
 
-            // # Filter to only my runs
-            cy.findByTestId('my-runs-only').click();
+                // # Verify runs by testUser are not visible
+                cy.findByText('testUsers Run').should('not.exist');
 
-            // # Verify runs by testUser are not visible
-            cy.findByText('testUsers Run').should('not.exist');
-
-            // # Verify runs by testAnotherUser remain visible
-            cy.findByText('testAnotherUsers Run').should('be.visible');
+                // # Verify runs by testAnotherUser remain visible
+                cy.findByText('testAnotherUsers Run').should('be.visible');
+            });
         });
     });
 
@@ -192,23 +195,74 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks');
 
-            // # Filter to all runs
-            cy.findByTestId('my-runs-only').click();
+            cy.get('#playbookRunList').within(() => {
+                // # Filter to all runs
+                cy.findByTestId('my-runs-only').click();
 
-            // # Make sure runs are visible by default, and finished is not
-            cy.findByText('testUsers Run').should('be.visible');
-            cy.findByText('testAnotherUsers Run').should('be.visible');
-            cy.findByText('testUsers Run to be finished').should('not.exist');
+                // # Make sure runs are visible by default, and finished is not
+                cy.findByText('testUsers Run').should('be.visible');
+                cy.findByText('testAnotherUsers Run').should('be.visible');
+                cy.findByText('testUsers Run to be finished').should('not.exist');
 
-            // # Filter to finished runs as well
-            cy.findByTestId('finished-runs').click();
+                // # Filter to finished runs as well
+                cy.findByTestId('finished-runs').click();
 
-            // # Verify runs remain visible
-            cy.findByText('testUsers Run').should('be.visible');
-            cy.findByText('testAnotherUsers Run').should('be.visible');
+                // # Verify runs remain visible
+                cy.findByText('testUsers Run').should('be.visible');
+                cy.findByText('testAnotherUsers Run').should('be.visible');
 
-            // # Verify finished run is visible
-            cy.findByText('testUsers Run to be finished').should('be.visible');
+                // # Verify finished run is visible
+                cy.findByText('testUsers Run to be finished').should('be.visible');
+            });
+        });
+    });
+
+    describe('LHS run list', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            const runs = [
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 0',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 1',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 2',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 3',
+                    ownerUserId: testUser.id,
+                }
+            ];
+
+            Promise.all(runs.map((run) => {
+                return new Promise((resolve) => cy.apiRunPlaybook(run).then(resolve));
+            })).then(() => {
+                cy.visit('/playbooks');
+            });
+        });
+
+        it('lhs run list sorted by name', () => {
+            cy.findByTestId('lhs-navigation').within(() => {
+                cy.get('li:contains(run-sort-check)').each((item, index) => {
+                    // * Verify run list order
+                    cy.wrap(item).should('have.text', 'run-sort-check ' + index);
+                });
+            });
         });
     });
 });

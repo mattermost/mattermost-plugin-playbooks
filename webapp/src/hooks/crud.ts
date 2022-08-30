@@ -2,6 +2,10 @@ import {useEffect, useState} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';
 
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
 import {
     archivePlaybook as clientArchivePlaybook,
     restorePlaybook as clientRestorePlaybook,
@@ -9,11 +13,15 @@ import {
     clientFetchPlaybook,
     clientFetchPlaybooks,
     savePlaybook,
+    fetchMyCategories,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
-import {useToasts} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {Category} from 'src/types/category';
 
-type ParamsState = Required<FetchPlaybooksParams>;
+import {useThing} from './general';
+
+type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
 
 const searchDebounceDelayMilliseconds = 300;
 
@@ -27,15 +35,8 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @remarks lightweight alternative to {@link usePlaybooksCrud}
  * @returns undefined == loading; null == not found
  */
-export function usePlaybook(id: Playbook['id']) {
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined | null>();
-    useEffect(() => {
-        clientFetchPlaybook(id)
-            .then(setPlaybook)
-            .catch(() => setPlaybook(null));
-    }, [id]);
-
-    return playbook;
+export function usePlaybook(id: Playbook['id'] | undefined) {
+    return useThing(id, clientFetchPlaybook);
 }
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
@@ -62,13 +63,13 @@ export function usePlaybooksCrud(
     {infinitePaging} = {infinitePaging: false},
 ) {
     const {formatMessage} = useIntl();
+    const teamId = useSelector(getCurrentTeamId);
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybookState] = useState<Playbook | null>();
     const [params, setParamsState] = useState<ParamsState>({
-        team_id: '',
         sort: 'title',
         direction: 'asc',
         page: 0,
@@ -84,9 +85,9 @@ export function usePlaybooksCrud(
 
     useEffect(() => {
         fetchPlaybooks();
-    }, [params]);
+    }, [params, teamId]);
 
-    const addToast = useToasts().add;
+    const addToast = useToaster().add;
 
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {
@@ -110,7 +111,7 @@ export function usePlaybooksCrud(
 
     const fetchPlaybooks = async () => {
         setLoading(true);
-        const result = await clientFetchPlaybooks(params.team_id, params);
+        const result = await clientFetchPlaybooks(teamId, params);
         if (result) {
             setPlaybooks(infinitePaging && playbooks ? [...playbooks, ...result.items] : result.items);
             setTotalCount(result.total_count);
@@ -123,7 +124,7 @@ export function usePlaybooksCrud(
         await clientArchivePlaybook(playbookId);
 
         // Fetch latest count
-        const result = await clientFetchPlaybooks(params.team_id, params);
+        const result = await clientFetchPlaybooks(teamId, params);
 
         if (result) {
             // Go back to previous page if the last item on this page was just deleted
@@ -156,7 +157,7 @@ export function usePlaybooksCrud(
 
     const setSearchTerm = (term: string) => {
         setLoading(true);
-        setParams({search_term: term});
+        setParams({search_term: term, page: 0});
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
 
@@ -181,6 +182,28 @@ export function usePlaybooksCrud(
             setSearchTerm: setSearchTermDebounced,
             setWithArchived,
             isFiltering,
+            fetchPlaybooks,
         },
     ] as const;
+}
+
+/**
+ * Read-only logic to fetch categories
+ * @param team_id identifier of the team of current user to fetch categories from
+ * @returns [] == loading or fetch error
+ */
+export function useCategories(team_id: string) {
+    const [categories, setCategories] = useState([] as Category[]);
+
+    useEffect(() => {
+        if (!team_id) {
+            setCategories([]);
+            return;
+        }
+        fetchMyCategories(team_id)
+            .then(setCategories)
+            .catch(() => setCategories([]));
+    }, [team_id]);
+
+    return categories;
 }

@@ -17,6 +17,7 @@ import InviteUsersSelector from 'src/components/backstage/playbook_edit/automati
 
 interface Props {
     enabled: boolean;
+    disabled?: boolean;
     onToggle: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
@@ -32,12 +33,13 @@ export const InviteUsers = (props: Props) => {
                 <Toggle
                     isChecked={props.enabled}
                     onChange={props.onToggle}
+                    disabled={props.disabled}
                 />
                 <div><FormattedMessage defaultMessage='Invite members'/></div>
             </AutomationTitle>
             <SelectorWrapper>
                 <InviteUsersSelector
-                    isDisabled={!props.enabled}
+                    isDisabled={props.disabled || !props.enabled}
                     onAddUser={props.onAddUser}
                     onRemoveUser={props.onRemoveUser}
                     userIds={props.userIds}

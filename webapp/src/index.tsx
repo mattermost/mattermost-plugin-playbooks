@@ -8,12 +8,18 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
+import {General} from 'mattermost-redux/constants';
 
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
+import {FormattedMessage} from 'react-intl';
+
+import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
@@ -34,9 +40,9 @@ import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
-import ActionsModal from 'src/components/actions_modal';
+import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -58,13 +64,15 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getApiUrl, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
+
+import {setPlaybooksGraphQLClient} from './graphql_client';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -82,13 +90,59 @@ const OldRoutesRedirect = () => {
     );
 };
 
+const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<NormalizedCacheObject>}) => {
+    return (
+        <ApolloProvider client={props.client}>
+            {props.component}
+        </ApolloProvider>
+    );
+};
+
+type WindowObject = {
+    location: {
+        origin: string;
+        protocol: string;
+        hostname: string;
+        port: string;
+    };
+    basename?: string;
+}
+
+// From mattermost-webapp/utils
+function getSiteURLFromWindowObject(obj: WindowObject): string {
+    let siteURL = '';
+    if (obj.location.origin) {
+        siteURL = obj.location.origin;
+    } else {
+        siteURL = obj.location.protocol + '//' + obj.location.hostname + (obj.location.port ? ':' + obj.location.port : '');
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    if (obj.basename) {
+        siteURL += obj.basename;
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    return siteURL;
+}
+
+function getSiteURL(): string {
+    return getSiteURLFromWindowObject(window);
+}
+
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>): void {
+    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -100,35 +154,75 @@ export default class Plugin {
             }
         });
 
+        const BackstageWrapped = () => (
+            <ApolloWrapped
+                component={<Backstage/>}
+                client={graphqlClient}
+            />
+        );
+
+        const RHSWrapped = () => (
+            <ApolloWrapped
+                component={<RightHandSidebar/>}
+                client={graphqlClient}
+            />
+        );
+
+        const enableTeamSidebar = true;
+
         registry.registerProduct(
             '/playbooks',
             'product-playbooks',
             'Playbooks',
             '/playbooks',
-            Backstage,
+            BackstageWrapped,
             GlobalHeaderCenter,
+            () => null,
+            enableTeamSidebar
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitle/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
+        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type !== General.GM_CHANNEL && getCurrentChannel(state).type !== General.DM_CHANNEL;
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
-        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showActionsModal()));
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
-        registry.registerRootComponent(ActionsModal);
+        registry.registerRootComponent(ChannelActionsModal);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
             const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
             registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
+        }
+
+        // Site statistics handler
+        if (registry.registerSiteStatisticsHandler) {
+            registry.registerSiteStatisticsHandler(async () => {
+                const siteStats = await fetchSiteStats();
+                return {
+                    playbook_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbooks'}/>,
+                        id: 'total_playbooks',
+                        icon: 'fa-book', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbooks,
+                    },
+                    playbook_run_count: {
+                        name: <FormattedMessage defaultMessage={'Total Playbook Runs'}/>,
+                        id: 'total_playbook_runs',
+                        icon: 'fa-list-alt', // font-awesome-4.7.0 handler
+                        value: siteStats?.total_playbook_runs,
+                    },
+                };
+            });
         }
 
         // Websocket listeners
@@ -159,6 +253,21 @@ export default class Plugin {
         registry.registerPostTypeComponent('custom_run_update', UpdatePost);
         registry.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
         registry.registerPostTypeComponent('custom_retro', RetrospectivePost);
+
+        // Insights handler
+        if (registry.registerInsightsHandler) {
+            registry.registerInsightsHandler(async (timeRange: string, page: number, perPage: number, teamId: string, insightType: string) => {
+                if (insightType === 'MY') {
+                    const data = await getMyTopPlaybooks(timeRange, page, perPage, teamId);
+
+                    return data;
+                }
+
+                const data = await getTeamTopPlaybooks(timeRange, page, perPage, teamId);
+
+                return data;
+            });
+        }
     }
 
     userActivityWatch(): void {
@@ -182,16 +291,29 @@ export default class Plugin {
     }
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
-        this.doRegistrations(registry, store);
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
-        const siteUrl = getConfig(store.getState())?.SiteURL || '';
+        const siteUrl = getSiteURL();
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
+
+        // Setup our graphql client
+        const graphqlFetch = (_: RequestInfo, options: any) => {
+            return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
+        };
+        const graphqlClient = new ApolloClient({
+            link: new HttpLink({fetch: graphqlFetch}),
+            cache: new InMemoryCache(),
+        });
+
+        // Store graphql client for bad modals.
+        setPlaybooksGraphQLClient(graphqlClient);
+
+        this.doRegistrations(registry, store, graphqlClient);
 
         // Grab global settings
         const getGlobalSettings = async () => {

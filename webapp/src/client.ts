@@ -5,11 +5,11 @@ import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {Channel} from 'mattermost-redux/types/channels';
+import {UserProfile} from '@mattermost/types/users';
+import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
@@ -20,6 +20,7 @@ import {
     isMetadata,
     Metadata,
     RunMetricData,
+    StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -32,13 +33,18 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
+    ChecklistItem,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
+import {RunActions} from 'src/types/run_actions';
+import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
+import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
+import {Category} from './types/category';
+import {InsightsResponse} from './types/insights';
 
 let siteURL = '';
 let basePath = '';
@@ -58,6 +64,10 @@ export const setSiteUrl = (url?: string): void => {
 
 export const getSiteUrl = (): string => {
     return siteURL;
+};
+
+export const getApiUrl = (): string => {
+    return apiUrl;
 };
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
@@ -82,6 +92,10 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function fetchPlaybookRunStatusUpdates(id: string) {
+    return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
 export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
@@ -134,7 +148,7 @@ export async function postStatusUpdate(
 }
 
 export async function fetchPlaybookRunMetadata(id: string) {
-    const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
+    const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
         if (!isMetadata(data)) {
@@ -143,7 +157,7 @@ export async function fetchPlaybookRunMetadata(id: string) {
         }
     }
 
-    return data as Metadata;
+    return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
@@ -281,6 +295,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     return data as OwnerInfo[];
 }
 
+export async function finishRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
@@ -310,11 +332,12 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
 }
 
 export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    return doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`,
-        JSON.stringify({
-            new_state: newState,
-        }),
-    );
+    const body = JSON.stringify({new_state: newState});
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);
+    } catch (error) {
+        return {error: error as ClientError};
+    }
 }
 
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
@@ -334,6 +357,20 @@ export async function clientDuplicateChecklistItem(playbookRunID: string, checkl
 export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
         method: 'put',
+        body: '',
+    });
+}
+
+export async function clientSkipChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/skip`, {
+        method: 'PUT',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklist(playbookRunID: string, checklistNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/restore`, {
+        method: 'PUT',
         body: '',
     });
 }
@@ -362,6 +399,14 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
     return data;
 }
 
+export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, item: ChecklistItem) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
+        JSON.stringify(item)
+    );
+
+    return data;
+}
+
 export async function clientSetChecklistItemCommand(playbookRunID: string, checklistNum: number, itemNum: number, command: string) {
     const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/command`,
         JSON.stringify({
@@ -383,6 +428,13 @@ export async function clientRemoveChecklist(playbookRunID: string, checklistNum:
     const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
 
     return data;
+}
+
+export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
+        method: 'post',
+        body: '',
+    });
 }
 
 export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
@@ -426,6 +478,15 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
     });
 }
 
+// fetchSiteStats collect the stats we want to expose in system console
+export async function fetchSiteStats(): Promise<SiteStats | null> {
+    const data = await doGet(`${apiUrl}/stats/site`);
+    if (!data) {
+        return null;
+    }
+    return data as SiteStats;
+}
+
 export async function fetchStats(teamID: string): Promise<Stats | null> {
     const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
     if (!data) {
@@ -444,7 +505,11 @@ export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookSt
     return data as PlaybookStats;
 }
 
-export async function telemetryEventForPlaybookRun(playbookRunID: string, action: string) {
+// telemetryRunAction are the event types that can be reported to telemetry server re: PlaybookRun
+// string is kept to do progressive migration to enum
+type telemetryRunAction = PlaybookRunViewTarget | PlaybookRunEventTarget | string;
+
+export async function telemetryEventForPlaybookRun(playbookRunID: string, action: telemetryRunAction) {
     await doFetchWithoutResponse(`${apiUrl}/telemetry/run/${playbookRunID}`, {
         method: 'POST',
         body: JSON.stringify({action}),
@@ -527,9 +592,7 @@ export const requestTrialLicense = async (users: number, action: string) => {
     trackRequestTrialLicense(action);
 
     try {
-        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
-            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
-        });
+        const response = await Client4.requestTrialLicense({users, terms_accepted: true, receive_emails_accepted: true});
         return {data: response};
     } catch (e) {
         return {error: e.message};
@@ -653,6 +716,83 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
     return action.id;
 };
 
+export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
+    try {
+        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestUpdate = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestGetInvolved = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const leaveRun = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/leave`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    try {
+        return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
+            item_id: itemID,
+            type: itemType,
+        }));
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const isFavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
+    const data = await doGet<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}&item_id=${itemID}&type=${itemType}`);
+    return Boolean(data);
+};
+
+export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {
+    const queryParams = `?team_id=${teamID}`;
+    const data = await doGet(`${apiUrl}/my_categories${queryParams}`);
+    if (!data) {
+        return [];
+    }
+
+    return data;
+};
+
+export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
+    try {
+        return await doPut(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
@@ -755,8 +895,37 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
     });
 };
 
-export const playbookExportProps = (playbook: Playbook) => {
+export const playbookExportProps = (playbook: {id: string, title: string}) => {
     const href = `${apiUrl}/playbooks/${playbook.id}/export`;
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];
 };
+
+export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+        team_id: teamId,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/user/me${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}
+
+export async function getTeamTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/teams/${teamId}${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}

@@ -1950,4 +1950,185 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.51.0"),
+		toVersion:   semver.MustParse("0.52.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// moved migration code to the next version to remove an unnecessary column
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.52.0"),
+		toVersion:   semver.MustParse("0.53.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
+				}
+				if err := dropColumnMySQL(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastChannelsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastChannelsEnabled to table IR_Incident")
+				}
+				if err := dropColumnPG(e, "IR_Incident", "StatusUpdateBroadcastFollowersEnabled"); err != nil {
+					return errors.Wrapf(err, "failed dropping column StatusUpdateBroadcastFollowersEnabled from table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateBroadcastWebhooksEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateBroadcastWebhooksEnabled to table IR_Incident")
+				}
+			}
+
+			// enable channels broadcast where channels ids list is not empty
+			channelsBroadcast := sqlStore.builder.
+				Update("IR_Incident").
+				Set("StatusUpdateBroadcastChannelsEnabled", true).
+				Where(sq.NotEq{"ConcatenatedBroadcastChannelIDs": ""})
+
+			if _, err := sqlStore.execBuilder(e, channelsBroadcast); err != nil {
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastChannelsEnabled column")
+			}
+
+			// enable webhooks broadcast where webhooks list is not empty
+			webhooksBroadcast := sqlStore.builder.
+				Update("IR_Incident").
+				Set("StatusUpdateBroadcastWebhooksEnabled", true).
+				Where(sq.NotEq{"ConcatenatedWebhookOnStatusUpdateURLs": ""})
+
+			if _, err := sqlStore.execBuilder(e, webhooksBroadcast); err != nil {
+				return errors.Wrapf(err, "failed updating the StatusUpdateBroadcastWebhooksEnabled column")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.53.0"),
+		toVersion:   semver.MustParse("0.54.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "SummaryModifiedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "SummaryModifiedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.54.0"),
+		toVersion:   semver.MustParse("0.55.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category (
+						ID VARCHAR(26) PRIMARY KEY,
+						Name VARCHAR(512) NOT NULL,
+						TeamID VARCHAR(26) NOT NULL,
+						UserID VARCHAR(26) NOT NULL,
+						Collapsed BOOLEAN DEFAULT FALSE,
+						CreateAt BIGINT NOT NULL,
+						UpdateAt BIGINT NOT NULL DEFAULT 0,
+						DeleteAt BIGINT NOT NULL DEFAULT 0,
+						INDEX IR_Category_TeamID_UserID (TeamID, UserID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category")
+				}
+
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Category_Item (
+					Type VARCHAR(1) NOT NULL,
+					CategoryID VARCHAR(26) NOT NULL REFERENCES IR_Category(ID),
+					ItemID VARCHAR(26) NOT NULL,
+					INDEX IR_Category_Item_CategoryID (CategoryID)
+				)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category_Item")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "IR_Category_Item", "(CategoryID, ItemID, Type)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category (
+						ID TEXT PRIMARY KEY,
+						Name TEXT NOT NULL,
+						TeamID TEXT NOT NULL,
+						UserID TEXT NOT NULL,
+						Collapsed BOOLEAN DEFAULT FALSE,
+						CreateAt BIGINT NOT NULL,
+						UpdateAt BIGINT NOT NULL DEFAULT 0,
+						DeleteAt BIGINT NOT NULL DEFAULT 0
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Category_TeamID_UserID", "IR_Category", "TeamID, UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Category_TeamID_UserID")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Category_Item (
+						Type TEXT NOT NULL,
+						CategoryID TEXT NOT NULL REFERENCES IR_Category(ID),
+						ItemID TEXT NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Category_Item")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Category_Item_CategoryID", "IR_Category_Item", "CategoryID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Category_Item_CategoryID")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_category_item", "(CategoryID, ItemID, Type)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Category_Item")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.55.0"),
+		toVersion:   semver.MustParse("0.56.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Find all users who are members of channels where runs have been created.
+			// Add them as members of the playbook but only if it's a public playbook.
+			if _, err := e.Exec(`
+				INSERT INTO IR_PlaybookMember
+					SELECT DISTINCT
+						pb.ID as PlaybookID,
+						cm.UserID as MemberID,
+						'playbook_member' as Roles
+					FROM IR_Playbook as pb
+					JOIN IR_Incident as run on run.PlaybookID = pb.ID
+					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
+					LEFT JOIN IR_PlaybookMember as pm on pm.PlaybookID = pb.ID AND pm.MemberID = cm.UserID
+					LEFT JOIN Bots as b ON b.UserID = cm.UserID
+					WHERE
+						pb.Public = true AND
+						pb.DeleteAt = 0 AND
+						pm.PlaybookID IS NULL AND
+						b.UserId IS NULL
+			`); err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+			}
+
+			return nil
+		},
+	},
 }

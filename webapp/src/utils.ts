@@ -99,3 +99,11 @@ export function isKeyPressed(event: KeyboardEvent, key: [string, number]): boole
     // legacy
     return event.keyCode === key[1];
 }
+
+type ResolvableFunction<TVal> = (...TArgs: any) => TVal;
+
+export type Resolvable<TVal> = ResolvableFunction<TVal> | TVal;
+
+export function resolve<TVal>(prop: Resolvable<TVal>, ...args: any): TVal {
+    return typeof prop === 'function' ? (prop as ResolvableFunction<TVal>)(...args) : prop;
+}

@@ -1,10 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {HTMLAttributes, useEffect} from 'react';
 import styled from 'styled-components';
 
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookStats} from 'src/types/stats';
 import {useAllowPlaybookAndRunMetrics, useRunsList} from 'src/hooks';
 import UpgradeKeyMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/upgrade_key_metrics_placeholder';
@@ -13,6 +12,9 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import MetricsRunList from 'src/components/backstage/playbooks/metrics/metrics_run_list';
 import NoMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/no_metrics_placeholder';
+import {Metric} from 'src/types/playbook';
+import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookViewTarget} from 'src/types/telemetry';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -23,58 +25,63 @@ const defaultPlaybookFetchParams = {
 };
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookID: string
+    playbookMetrics: Metric[]
     stats: PlaybookStats;
 }
 
-const PlaybookKeyMetrics = ({playbook, stats}: Props) => {
+type Attrs = HTMLAttributes<HTMLElement>;
+
+const PlaybookKeyMetrics = ({
+    playbookID,
+    playbookMetrics,
+    stats,
+    ...attrs
+}: Props & Attrs) => {
+    usePlaybookViewTelemetry(PlaybookViewTarget.Reports, playbookID);
     const allowStatsView = useAllowPlaybookAndRunMetrics();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: playbook.id};
+            return {...oldParams, playbook_id: playbookID};
         });
-    }, [playbook.id, setFetchParams]);
+    }, [playbookID, setFetchParams]);
+
+    let content;
 
     if (!allowStatsView) {
-        return (
-            <OuterContainer>
-                <InnerContainer>
-                    <PlaceholderRow>
-                        <UpgradeKeyMetricsPlaceholder/>
-                    </PlaceholderRow>
-                </InnerContainer>
-            </OuterContainer>
+        content = (
+            <PlaceholderRow>
+                <UpgradeKeyMetricsPlaceholder/>
+            </PlaceholderRow>
         );
-    }
-
-    if (playbook.metrics.length === 0) {
-        return (
-            <OuterContainer>
-                <InnerContainer>
-                    <NoMetricsPlaceholder/>
-                </InnerContainer>
-            </OuterContainer>
-        );
-    }
-
-    return (
-        <OuterContainer>
-            <InnerContainer>
+    } else if (playbookMetrics.length === 0) {
+        content = <NoMetricsPlaceholder/>;
+    } else {
+        content = (
+            <>
                 <MetricsStatsView
-                    playbook={playbook}
+                    playbookMetrics={playbookMetrics}
                     stats={stats}
                 />
                 <RunListContainer>
                     <MetricsRunList
-                        playbook={playbook}
+                        playbookMetrics={playbookMetrics}
                         playbookRuns={playbookRuns}
                         totalCount={totalCount}
                         fetchParams={fetchParams}
                         setFetchParams={setFetchParams}
                     />
                 </RunListContainer>
+            </>
+        );
+    }
+
+    return (
+        <OuterContainer {...attrs}>
+            <InnerContainer>
+                {content}
             </InnerContainer>
         </OuterContainer>
     );
@@ -87,7 +94,6 @@ const PlaceholderRow = styled.div`
 
 const OuterContainer = styled.div`
     height: 100%;
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const InnerContainer = styled.div`
@@ -107,4 +113,4 @@ const RunListContainer = styled.div`
     }
 `;
 
-export default PlaybookKeyMetrics;
+export default styled(PlaybookKeyMetrics)``;

@@ -4,7 +4,7 @@
 import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
-import {useIntl} from 'react-intl';
+import {FormattedNumber, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
@@ -191,7 +191,10 @@ const percentageChange = (change: number) => {
     return (
         <PercentageChange>
             <i className={'icon ' + changeSymbol}/>
-            {change + '%'}
+            <FormattedNumber
+                value={change / 100}
+                style={'percent'}
+            />
         </PercentageChange>
     );
 };
@@ -222,6 +225,8 @@ const StatCard = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.32);
     border-radius: 4px;
+
+    background-color: var(--center-channel-bg);
 `;
 
 const StatText = styled.div`
@@ -279,6 +284,7 @@ const GraphBox = styled.div`
     flex-grow: 1;
     max-width: 532px;
     max-height: 180px;
+    background-color: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.32);
     border-radius: 4px;

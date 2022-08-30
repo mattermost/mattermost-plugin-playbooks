@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -170,6 +172,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		// assert some data has been injected
+		assert.Len(t, run.ParticipantIDs, 1)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -218,6 +222,64 @@ func TestRunCreation(t *testing.T) {
 			PlaybookID:  e.ArchivedPlaybook.ID,
 		})
 		assert.Error(t, err)
+	})
+
+	t.Run("create valid run using playbook with due dates", func(t *testing.T) {
+		durations := []int64{
+			4 * time.Hour.Milliseconds(),      // 4 hours
+			30 * time.Minute.Milliseconds(),   // 30 min
+			4 * 24 * time.Hour.Milliseconds(), // 4 days
+		}
+
+		// create playbook with relative due dates
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Public: true,
+			Title:  "PB",
+			TeamID: e.BasicTeam.Id,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[0],
+						},
+						{
+							Title:   "Do this2",
+							DueDate: durations[1],
+						},
+					},
+				},
+				{
+					Title: "B",
+					Items: []client.ChecklistItem{
+						{
+							Title:   "Do this1",
+							DueDate: durations[2],
+						},
+						{
+							Title: "Do this2",
+						},
+					},
+				},
+			},
+		})
+		assert.NoError(t, err)
+
+		now := model.GetMillis()
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "With due dates",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		// compare date with 10^4 precision because run creation might take more than a second
+		assert.Equal(t, (now+durations[0])/10000, run.Checklists[0].Items[0].DueDate/10000)
+		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
+		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
+		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
 	})
 }
 
@@ -466,16 +528,15 @@ func TestChecklistManagement(t *testing.T) {
 	t.Run("checklist removal - success: still some checklists", func(t *testing.T) {
 		run := createNewRunWithNoChecklists(t)
 
-		// Create two valid checklists -- the first call to CreateChecklist will be the last checklist,
-		// as CreateChecklist prepends the checklist
+		// Create two valid checklists
 		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
-			Title: "Second checklist",
+			Title: "First checklist",
 			Items: []client.ChecklistItem{},
 		})
 		require.NoError(t, err)
 
 		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
-			Title: "First checklist",
+			Title: "Second checklist",
 			Items: []client.ChecklistItem{},
 		})
 		require.NoError(t, err)
@@ -644,21 +705,21 @@ func TestChecklistManagement(t *testing.T) {
 		},
 		{
 			"Multiple checklists - move from one to another",
-			[][]string{{"00", "01", "02"}, {"10", "11", "12"}},
+			[][]string{{"10", "11", "12"}, {"00", "01", "02"}},
 			0, 1, 1, 0,
 			[][]string{{"00", "02"}, {"01", "10", "11", "12"}},
 			nil,
 		},
 		{
 			"Multiple checklists - move to an empty checklist",
-			[][]string{{"00", "01"}, {}},
+			[][]string{{}, {"00", "01"}},
 			0, 0, 1, 0,
 			[][]string{{"01"}, {"00"}},
 			nil,
 		},
 		{
 			"Multiple checklists - leave the original checklist empty",
-			[][]string{{"00"}, {"10"}},
+			[][]string{{"10"}, {"00"}},
 			0, 0, 1, 1,
 			[][]string{{}, {"10", "00"}},
 			nil,
@@ -786,84 +847,84 @@ func TestChecklistManagement(t *testing.T) {
 		},
 		{
 			"Swap two checklists, moving the first one",
-			[]string{"0", "1"},
+			[]string{"1", "0"},
 			0, 1,
 			[]string{"1", "0"},
 			nil,
 		},
 		{
 			"Swap two checklists, moving the second one",
-			[]string{"0", "1"},
+			[]string{"1", "0"},
 			1, 0,
 			[]string{"1", "0"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - first to second ",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 1,
 			[]string{"1", "0", "2"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - first to third",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 2,
 			[]string{"1", "2", "0"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - second to first",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			1, 0,
 			[]string{"1", "0", "2"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - second to third",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			1, 2,
 			[]string{"0", "2", "1"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - third to first",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			2, 0,
 			[]string{"2", "0", "1"},
 			nil,
 		},
 		{
 			"Move a checklist in a list of three checklists - third to second",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			2, 1,
 			[]string{"0", "2", "1"},
 			nil,
 		},
 		{
 			"Wrong destination index - greater than length of list",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, 5,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong destination index - negative",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			0, -5,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong source index - greater than length of list",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			5, 0,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
 		},
 		{
 			"Wrong source index - negative",
-			[]string{"0", "1", "2"},
+			[]string{"2", "1", "0"},
 			-5, 0,
 			[]string{"0", "1", "2"},
 			&ExpectedError{500},
@@ -903,4 +964,334 @@ func TestChecklistManagement(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRunActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("actions set settings", func(t *testing.T) {
+		settings := client.RunAction{
+			StatusUpdateBroadcastChannelsEnabled: true,
+			StatusUpdateBroadcastWebhooksEnabled: true,
+			BroadcastChannelIDs:                  []string{"chn1", "chn2"},
+			WebhookOnStatusUpdateURLs:            []string{"url1", "url2"},
+		}
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
+		assert.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
+		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
+	})
+
+	t.Run("actions update settings", func(t *testing.T) {
+		settings := client.RunAction{
+			StatusUpdateBroadcastChannelsEnabled: false,
+			StatusUpdateBroadcastWebhooksEnabled: false,
+			BroadcastChannelIDs:                  []string{"chn1", "chn3"},
+			WebhookOnStatusUpdateURLs:            []string{"url3", "url4"},
+		}
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
+		assert.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
+		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
+	})
+}
+
+func TestRunGetStatusUpdates(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public - get no updates", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("public - get 2 updates as participant", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+	})
+
+	t.Run("public - get 2 updates as viewer", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[1].AuthorUserName)
+	})
+
+	t.Run("public - fails because not in team", func(t *testing.T) {
+		statusUpdates, err := e.PlaybooksClientNotInTeam.PlaybookRuns.GetStatusUpdates(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("private - get no updates", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		assert.NoError(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+
+	t.Run("private - get 2 updates as participant", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[1].AuthorUserName)
+	})
+
+	t.Run("private - get 2 updates as viewer", func(t *testing.T) {
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privatePlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(e.T, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 1", 5000)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), privateRun.ID, "update 2", 10000)
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Len(t, statusUpdates, 2)
+		assert.Equal(t, "update 2", statusUpdates[0].Message)
+		assert.Equal(t, "update 1", statusUpdates[1].Message)
+		assert.Equal(t, e.RegularUser.Username, statusUpdates[0].AuthorUserName)
+	})
+
+	t.Run("private - fails because not in playbook members", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		statusUpdates, err := e.PlaybooksClient2.PlaybookRuns.GetStatusUpdates(context.Background(), privateRun.ID)
+		require.Error(t, err)
+		assert.Len(t, statusUpdates, 0)
+	})
+}
+
+func TestRequestUpdate(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("private - no viewer access ", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.Error(t, err)
+
+		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUserNotInTeam.Id)
+		assert.Error(t, err)
+	})
+
+	t.Run("private - viewer access ", func(t *testing.T) {
+		privatePlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privatePlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(e.T, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		assert.NoError(t, err)
+
+		// No access, RegularUser2 is not a Viewer
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.Error(t, err)
+
+		// Add RegularUser2 as a Viewer
+		privatePlaybook.Members = append(privatePlaybook.Members, client.PlaybookMember{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}})
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *privatePlaybook)
+		assert.NoError(t, err)
+
+		// Gained Viewer access
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), privateRun.ID, e.RegularUser2.Id)
+		assert.NoError(t, err)
+
+		// Assert that timeline event is created
+		privateRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), privateRun.ID)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, privateRun.TimelineEvents)
+		lastEvent := privateRun.TimelineEvents[len(privateRun.TimelineEvents)-1]
+		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
+		assert.NotZero(t, lastEvent.PostID)
+		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+	})
+
+	t.Run("public - viewer access ", func(t *testing.T) {
+		publicRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		assert.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUser2.Id)
+		assert.NoError(t, err)
+
+		// Assert that timeline event is created
+		publicRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), publicRun.ID)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, publicRun.TimelineEvents)
+		lastEvent := publicRun.TimelineEvents[len(publicRun.TimelineEvents)-1]
+		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+
+		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
+		assert.Error(t, err)
+	})
+}
+
+func TestReminderReset(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("reminder reset - event created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 100,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		statusSnoozed := make([]client.TimelineEvent, 0)
+		for _, te := range pb.TimelineEvents {
+			if te.EventType == "status_update_snoozed" {
+				statusSnoozed = append(statusSnoozed, te)
+			}
+		}
+
+		require.Len(t, statusSnoozed, 1)
+	})
+}
+
+func TestLeave(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("owner can not leave run", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+	})
+
+	t.Run("join and leave run", func(t *testing.T) {
+		fmt.Println(e.BasicRun.ParticipantIDs)
+
+		// Join
+		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// Assert is participant and follower
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Contains(t, meta.Followers, e.RegularUser2.Id)
+
+		// Leave
+		err = e.PlaybooksClient2.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		// Assert is not participant and follower anymore
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		meta, err = e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, meta.Followers, e.RegularUser2.Id)
+	})
 }

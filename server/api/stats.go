@@ -6,6 +6,8 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -37,28 +39,29 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
+	statsRouter.HandleFunc("/site", handler.playbookSiteStats).Methods(http.MethodGet)
 	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
 
 	return handler
 }
 
 type PlaybookStats struct {
-	RunsInProgress                int       `json:"runs_in_progress"`
-	ParticipantsActive            int       `json:"participants_active"`
-	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
-	MetricOverallAverage          []int64   `json:"metric_overall_average"`
-	MetricRollingAverage          []int64   `json:"metric_rolling_average"`
-	MetricRollingAverageChange    []int64   `json:"metric_rolling_average_change"`
-	MetricValueRange              [][]int64 `json:"metric_value_range"`
-	MetricRollingValues           [][]int64 `json:"metric_rolling_values"`
-	LastXRunNames                 []string  `json:"last_x_run_names"`
+	RunsInProgress                int        `json:"runs_in_progress"`
+	ParticipantsActive            int        `json:"participants_active"`
+	RunsFinishedPrev30Days        int        `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int        `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int      `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64  `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int      `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64  `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int      `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64  `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []null.Int `json:"metric_overall_average"`
+	MetricRollingAverage          []null.Int `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []null.Int `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64  `json:"metric_value_range"`
+	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
+	LastXRunNames                 []string   `json:"last_x_run_names"`
 }
 
 const (
@@ -77,6 +80,7 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	}, nil
 }
 
+// playbookStats handles the internal plugin stats
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	if !h.licenseChecker.StatsAllowed() {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
@@ -107,10 +111,10 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeRunsPerDay, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
-	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
-	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
-	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
-	metricValueRange := h.statsStore.MetricValueRange(filters)
+	metricOverallAverage := h.statsStore.MetricOverallAverage(*filters)
+	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, *filters)
+	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, *filters)
+	metricValueRange := h.statsStore.MetricValueRange(*filters)
 
 	ReturnJSON(w, &PlaybookStats{
 		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
@@ -129,5 +133,37 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		MetricRollingAverage:          metricRollingAverage,
 		MetricRollingAverageChange:    metricRollingAverageChange,
 		LastXRunNames:                 lastXRunNames,
+	}, http.StatusOK)
+}
+
+type PlaybookSiteStats struct {
+	TotalPlaybooks    int `json:"total_playbooks"`
+	TotalPlaybookRuns int `json:"total_playbook_runs"`
+}
+
+// playbooSitekStats collects and sends the stats used for system-console > statistics
+//
+// Response 200: PlaybookSiteStats
+// Response 401: when user is not authenticated
+// Response 403: when user has no permissions to see stats
+func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// user must have right to access analytics
+	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
+		return
+	}
+	totalPlaybooks, err := h.statsStore.TotalPlaybooks()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
+	totalRuns, err := h.statsStore.TotalPlaybookRuns()
+	if err != nil {
+		h.log.Warnf("playbookSiteStats failed: %w", err)
+	}
+	ReturnJSON(w, &PlaybookSiteStats{
+		TotalPlaybooks:    totalPlaybooks,
+		TotalPlaybookRuns: totalRuns,
 	}, http.StatusOK)
 }

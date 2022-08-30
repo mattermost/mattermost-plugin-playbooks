@@ -47,8 +47,7 @@ describe('playbooks > creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'playbooks/new';
-        const playbookName = 'Untitled playbook';
+        const playbookName = 'Untitled Playbook';
 
         // # Open the product
         cy.visit('/playbooks');
@@ -60,14 +59,14 @@ describe('playbooks > creation button', () => {
         cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
         cy.get('#playbooks_create').findByText('Create playbook').click();
 
-        // * Verify a new playbook creation page opened
-        verifyPlaybookCreationPageOpened(url, playbookName);
+        // * Verify playbook outline page opened
+        verifyPlaybookOutlineOpened(playbookName);
+
+        // * Verify playbook was added to the LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
     });
 
     it('auto creates a playbook with "Blank" template option', () => {
-        const url = 'playbooks/new';
-        const playbookName = 'Untitled playbook';
-
         // # Open the product
         cy.visit('/playbooks');
 
@@ -77,41 +76,43 @@ describe('playbooks > creation button', () => {
         // # Click 'Blank'
         cy.findByText('Blank').click();
 
-        // * Verify playbook preview opened
-        verifyPreviewOpened();
+        const playbookName = `@${testUser.username}'s Blank`;
+
+        // * Verify playbook outline opened
+        verifyPlaybookOutlineOpened(playbookName);
+
+        // * Verify playbook was added to the LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
     });
 
-    it('opens Service Outage Incident page from its template option', () => {
-        const playbookName = 'Incident Resolution';
+    it('opens Service Outage Incident page from its template option (multiple teams)', () => {
+        cy.apiCreateTeam('second-team', 'Second Team').then(() => {
+            // # Open the product
+            cy.visit('/playbooks');
 
-        // # Open the product
-        cy.visit('/playbooks');
+            // # Switch to playbooks
+            cy.findByTestId('playbooksLHSButton').click();
 
-        // # Switch to playbooks
-        cy.findByTestId('playbooksLHSButton').click();
+            // # Click 'Incident Resolution'
+            cy.findByText('Incident Resolution').click();
 
-        // # Click 'Incident Resolution'
-        cy.findByText('Incident Resolution').click();
+            const playbookName = `@${testUser.username}'s Incident Resolution`;
 
-        // * Verify playbook preview opened
-        verifyPreviewOpened();
+            // * Verify playbook outline opened
+            verifyPlaybookOutlineOpened(playbookName);
+
+            // * Verify the playbook was added to the lhs of current team
+            cy.findByTestId('lhs-navigation').findByText(playbookName).should('exist');
+        });
     });
 });
 
-function verifyPlaybookCreationPageOpened(url, playbookName) {
+function verifyPlaybookOutlineOpened(playbookName) {
     // * Verify the page url contains 'playbooks/playbooks/new'
-    cy.url().should('include', url);
+    cy.url().should('contain', '/outline');
 
     // * Verify the playbook name matches the one provided
-    cy.findByTestId('backstage-nav-bar').within(() => {
+    cy.findByTestId('playbook-editor-title').within(() => {
         cy.findByText(playbookName).should('be.visible');
     });
-
-    // * Verify there is 'Save' button
-    cy.findByTestId('save_playbook').should('be.visible');
-}
-
-function verifyPreviewOpened() {
-    // * Verify the page url contains 'preview'
-    cy.url().should('include', 'preview');
 }

@@ -5,17 +5,19 @@ import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
-    clientSetChecklistItemCommand,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {useTimeout} from 'src/hooks';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
 
+import Dropdown from 'src/components/dropdown';
+
 import {CancelSaveButtons} from './inputs';
+import {DropdownArrow} from './assign_to';
 
 interface CommandProps {
-    playbookRunId: string;
+    playbookRunId?: string;
     checklistNum: number;
     itemNum: number;
 
@@ -23,6 +25,8 @@ interface CommandProps {
     command_last_run: number;
     command: string;
     isEditing: boolean;
+
+    onChangeCommand: (newCommand: string) => void;
 }
 
 const RunningTimeout = 1000;
@@ -31,34 +35,28 @@ const Command = (props: CommandProps) => {
     const {formatMessage} = useIntl();
     const commandRef = useRef(null);
     const [running, setRunning] = useState(false);
+    const [command, setCommand] = useState(props.command);
     const dispatch = useDispatch();
 
     const [commandOpen, setCommandOpen] = useState(false);
-    const [wasOpened, setWasOpened] = useState(false);
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
 
-    // nothing to show if we have not selected command and we are not editing
-    if (props.command === '' && !props.isEditing) {
-        return null;
-    }
-
     const placeholder = (
         <PlaceholderDiv
             onClick={() => {
-                setWasOpened(true);
-                setCommandOpen(true);
+                setCommandOpen((open) => !open);
             }}
         >
             <CommandIcon
-                title={formatMessage({defaultMessage: 'Add slash command'})}
-                className={'icon-slash-forward icon-16 btn-icon'}
+                title={formatMessage({defaultMessage: 'Command...'})}
+                className={'icon-slash-forward icon-12'}
             />
             <CommandTextContainer>
-                {formatMessage({defaultMessage: 'Add slash command'})}
+                {formatMessage({defaultMessage: 'Command...'})}
             </CommandTextContainer>
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
     );
 
@@ -69,7 +67,7 @@ const Command = (props: CommandProps) => {
             onClick={() => {
                 if (!running) {
                     setRunning(true);
-                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
+                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId || '', props.checklistNum, props.itemNum);
                 }
             }}
         >
@@ -80,33 +78,24 @@ const Command = (props: CommandProps) => {
     const commandButton = (
         <CommandText
             onClick={() => {
-                setWasOpened(true);
-                setCommandOpen(true);
+                if (!props.disabled) {
+                    setCommandOpen((open) => !open);
+                }
             }}
+            isDisabled={props.disabled}
         >
             <TextWithTooltipWhenEllipsis
                 id={`checklist-command-button-tooltip-${props.checklistNum}`}
                 text={props.command}
                 parentRef={commandRef}
             />
-            {props.isEditing && <i className={'icon-chevron-down'}/>}
+            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
         </CommandText>
-    );
-
-    const commandDropdown = (
-        <EditCommandDropdown
-            playbookRunId={props.playbookRunId}
-            checklistNum={props.checklistNum}
-            itemNum={props.itemNum}
-            onDone={() => setCommandOpen(false)}
-            taskCommand={props.command}
-            grabFocus={wasOpened}
-        />
     );
 
     const notEditingCommand = (
         <>
-            {!props.disabled && runButton}
+            {!props.disabled && props.playbookRunId !== undefined && runButton}
             {commandButton}
             {!props.disabled && running && <StyledSpinner/>}
         </>
@@ -115,17 +104,40 @@ const Command = (props: CommandProps) => {
     const editingCommand = (
         <>
             {props.command === '' ? placeholder : commandButton}
-            {commandOpen && commandDropdown}
         </>
     );
 
     return (
-        <CommandContainer
-            ref={commandRef}
-            editing={props.isEditing}
+        <Dropdown
+            isOpen={commandOpen}
+            onOpenChange={setCommandOpen}
+            target={(
+                <CommandButton
+                    editing={props.isEditing}
+                    isDisabled={props.disabled}
+                    isPlaceholder={props.command === ''}
+                >
+                    {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
+                </CommandButton>
+            )}
         >
-            {props.isEditing ? editingCommand : notEditingCommand}
-        </CommandContainer>
+            <FormContainer>
+                <CommandInputContainer>
+                    <CommandInput
+                        command={command === '' ? '/' : command}
+                        setCommand={setCommand}
+                        autocompleteOnBottom={true}
+                    />
+                </CommandInputContainer>
+                <CancelSaveButtons
+                    onCancel={() => setCommandOpen(false)}
+                    onSave={() => {
+                        setCommandOpen(false);
+                        props.onChangeCommand(command);
+                    }}
+                />
+            </FormContainer>
+        </Dropdown>
     );
 };
 
@@ -133,17 +145,31 @@ const PlaceholderDiv = styled.div`
     display: flex;
     align-items: center;
     flex-direction: row;
+
+    &:hover {
+        cursor: pointer;
+    }
 `;
 
-const CommandContainer = styled.div<{editing: boolean}>`
-    ${({editing}) => editing && css`
-        z-index: 49;
-    `}
-
-    background: var(--center-channel-color-08);
+const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlaceholder: boolean}>`
+    display: flex;
     border-radius: 54px;
     padding: 0px 4px;
     height: 24px;
+    max-width: 100%;
+
+    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+
+    ${({isDisabled}) => (isDisabled ? css`
+        cursor: default;
+    ` : css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
+        }
+    `)}
 `;
 
 interface RunProps {
@@ -156,13 +182,13 @@ const Run = styled.div<RunProps>`
     display: inline;
     color: var(--link-color);
     cursor: pointer;
-    margin: 2px 4px 0 0;
+    margin: 2px 4px 2px 4px;
 
     &:hover {
         text-decoration: underline;
     }
 
-    ${({running}) => running && `
+    ${({running}) => running && css`
         color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 
@@ -172,7 +198,7 @@ const Run = styled.div<RunProps>`
     `}
 `;
 
-const CommandText = styled.div`
+const CommandText = styled.div<{isDisabled: boolean}>`
     word-break: break-word;
     display: inline;
     overflow: hidden;
@@ -181,6 +207,12 @@ const CommandText = styled.div`
     padding: 2px 4px;
     border-radius: 4px;
     font-size: 12px;
+
+    ${({isDisabled}) => !isDisabled && css`
+        :hover {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const StyledSpinner = styled(Spinner)`
@@ -189,72 +221,35 @@ const StyledSpinner = styled(Spinner)`
 `;
 
 const CommandIcon = styled.i`
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
     display: flex;
     align-items: center;
     text-align: center;
     flex: table;
+    color: rgba(var(--center-channel-color-rgb),0.56);
 `;
 
 const CommandTextContainer = styled.div`
-    color: var(--center-channel-color);
-    font-weight: 600;
+    font-weight: 400;
     font-size: 12px;
     line-height: 15px;
-    margin-right: 8px;
+    margin-right: 4px;
     white-space: nowrap;
 `;
 
 export default Command;
 
-interface EditCommandDropdownProps {
-    onDone: () => void;
-    checklistNum: number;
-    playbookRunId: string;
-    itemNum: number;
-    taskCommand: string;
-    grabFocus: boolean;
-}
-
-const EditCommandDropdown = (props: EditCommandDropdownProps) => {
-    const [command, setCommand] = useState(props.taskCommand);
-
-    return (
-        <FormContainer>
-            <CommandInputContainer>
-                <CommandInput
-                    command={command === '' ? '/' : command}
-                    setCommand={setCommand}
-                    autocompleteOnBottom={true}
-                    grabFocus={props.grabFocus}
-                />
-            </CommandInputContainer>
-            <CancelSaveButtons
-                onCancel={props.onDone}
-                onSave={() => {
-                    clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, command);
-                    props.onDone();
-                }}
-            />
-            <Blanket onClick={props.onDone}/>
-        </FormContainer>
-    );
-};
-
 const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
-    position: absolute;
     box-sizing: border-box;
     box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
     border-radius: 8px;
     background: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    margin-top: 4px;
-    left: 50px;
-    right: 50px;
-
+    min-width: 340px;
     > * {
         margin-bottom: 10px;
     }
@@ -263,13 +258,5 @@ const FormContainer = styled.div`
 const CommandInputContainer = styled.div`
     margin: 16px;
     border-radius: 4px;
-`;
-
-const Blanket = styled.div`
-    bottom: 0;
-    left: 0;
-    top: 0;
-    right: 0;
-    position: fixed;
-    z-index: 1;
+    z-index: 3;
 `;

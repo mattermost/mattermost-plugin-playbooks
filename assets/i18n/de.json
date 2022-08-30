@@ -1,0 +1,100 @@
+[
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "Du hast eine zugewiesene Aufgabe:",
+            "other": "Du hast insgesamt {{.Count}} zugewiesene Aufgaben:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.zero_assigned",
+        "translation": "Du hast keine zugewiesene Aufgabe."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "Du hast eine zugewiesene Aufgabe, die jetzt fällig ist:",
+            "other": "Du hast {{.Count}} zugewiesene Aufgaben, die jetzt fällig sind:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Deine zugewiesenen Aufgaben"
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Gestern fällig"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Fällig vor {{.Count}} Tagen"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Fällig heute"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Fällig morgen",
+            "other": "Fällig in {{.Count}} Tagen"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Du hast **eine zugewiesene Aufgabe, die nach dem heutige Tag fällig ist**.",
+            "other": "Du hast **{{.Count}} zugewiesene Aufgaben, die nach dem heutige Tag fällig sind**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Bitte benutze `/playbook todo` um alle deine Aufgaben anzuzeigen."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Du hast keinen laufenden Durchlauf."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Du hast einen laufenden Durchlauf:",
+            "other": "Du hast {{.Count}} laufende Durchläufe:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Laufende Durchläufe"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Du hast keine überfälligen Durchläufe."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Du hast einen überfälligen Durchlauf für einen Statusaktualisierung:",
+            "other": "Du hast {{.Count}} überfällige Durchläufe für einen Statusaktualisierung:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Überfällige Statusaktualisierungen"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Kann Befehl nicht ausführen."
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} hat eine Statusaktualisierung angefordert. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here - @{{.Name}} möchten an diesem Durchlauf teilnehmen. Um sie als Teilnehmer hinzuzufügen, füge sie bitte diesem Kanal hinzu.\n"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{{.Name}} hat eine Retrospektive veröffentlicht\n[Ganze Retrospektive ansehen]({{.URL}})\n"
+    }
+]

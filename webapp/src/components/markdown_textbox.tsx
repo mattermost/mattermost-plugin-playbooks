@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {MouseEvent, ChangeEvent, useState, ComponentProps} from 'react';
+import React, {MouseEvent, ChangeEvent, useState, ComponentProps, useRef} from 'react';
 import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
@@ -11,6 +11,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
+import {useEffectOnce} from 'react-use';
 
 import {Textbox} from 'src/webapp_globals';
 
@@ -23,8 +25,11 @@ type Props = {
     id: string;
     className?: string;
     disabled?: boolean;
+    previewDisabled?: boolean;
     hideHelpText?: boolean;
+    hideHelpBar?: boolean;
     previewByDefault?: boolean;
+    autoFocus?: boolean;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
@@ -33,14 +38,24 @@ const MarkdownTextbox = ({
     className,
     placeholder = '',
     disabled,
+    previewDisabled,
     hideHelpText,
     previewByDefault,
+    autoFocus,
+    hideHelpBar,
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(previewByDefault);
-    const config = useSelector(getConfig);
+    const {MaxPostSize} = useSelector(getConfig);
+    const textboxRef = useRef<{focus:() => void}>(null);
 
-    const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
+    const charLimit = parseInt(MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
+
+    useEffectOnce(() => {
+        if (autoFocus && textboxRef.current) {
+            textboxRef.current?.focus();
+        }
+    });
 
     return (
         <Wrapper className={className}>
@@ -54,6 +69,7 @@ const MarkdownTextbox = ({
                 useChannelMentions={false}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
                 characterLimit={charLimit}
+                ref={textboxRef}
                 createMessage={placeholder}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
@@ -61,14 +77,16 @@ const MarkdownTextbox = ({
                 disabled={disabled}
                 {...textboxProps}
             />
-            <StyledTextboxLinks
-                disabled={disabled}
-                characterLimit={charLimit}
-                showPreview={showPreview}
-                updatePreview={setShowPreview}
-                message={value}
-                hideHelpText={hideHelpText}
-            />
+            {!hideHelpBar && (
+                <StyledTextboxLinks
+                    disabled={disabled}
+                    previewDisabled={previewDisabled}
+                    characterLimit={charLimit}
+                    showPreview={showPreview}
+                    updatePreview={setShowPreview}
+                    message={value}
+                    hideHelpText={hideHelpText}
+                />)}
         </Wrapper>
     );
 };
@@ -78,7 +96,7 @@ const Wrapper = styled.div`
         margin-bottom: 6px;
     }
 
-    &&&& {
+    && {
         .custom-textarea.custom-textarea {
             background-color: var(--center-channel-bg);;
 
@@ -114,6 +132,7 @@ type TextboxLinksProps = {
     updatePreview: (showPreview: boolean) => void;
     message: string;
     disabled?: boolean;
+    previewDisabled?: boolean;
     className?: string;
     hideHelpText?: boolean;
 };
@@ -125,6 +144,7 @@ function TextboxLinks({
     className,
     updatePreview,
     disabled,
+    previewDisabled,
     hideHelpText,
 }: TextboxLinksProps) {
     const togglePreview = (e: MouseEvent) => {
@@ -152,22 +172,26 @@ function TextboxLinks({
             >
                 {!hideHelpText &&
                 <HelpText>
+                    {/* eslint-disable formatjs/no-literal-string-in-jsx */}
                     <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
                     <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
                     <span>{'~~'}<s>{formatMessage({defaultMessage: 'strike'})}</s>{'~~ '}</span>
                     <span>{'`'}{formatMessage({defaultMessage: 'inline code'})}{'`'}</span>
                     <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
                     <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
+                    {/* eslint-enable formatjs/no-literal-string-in-jsx */}
                 </HelpText>
                 }
             </div>
             <NoWrap>
-                <button
-                    onClick={togglePreview}
-                    className='style--none textbox-preview-link color--link'
-                >
-                    {showPreview ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'Preview'})}
-                </button>
+                {!previewDisabled && (
+                    <button
+                        onClick={togglePreview}
+                        className='style--none textbox-preview-link color--link'
+                    >
+                        {showPreview ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'Preview'})}
+                    </button>
+                )}
                 <Link
                     target='_blank'
                     rel='noopener noreferrer'

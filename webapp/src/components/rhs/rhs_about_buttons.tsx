@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
@@ -47,9 +47,10 @@ const RHSAboutButtons = (props: Props) => {
             />
             <DotMenu
                 icon={<ThreeDotsIcon/>}
-                left={true}
+                placement='bottom-end'
                 dotMenuButton={StyledDotMenuButton}
                 data-testid='run-dot-menu'
+                title={formatMessage({defaultMessage: 'More'})}
             >
                 <StyledDropdownMenuItem
                     onClick={() => {
@@ -86,11 +87,6 @@ const RHSAboutButtons = (props: Props) => {
 };
 
 const StyledDotMenuButton = styled(DotMenuButton)`
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-
     width: 28px;
     height: 28px;
 `;

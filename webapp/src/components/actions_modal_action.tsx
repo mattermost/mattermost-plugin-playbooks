@@ -2,34 +2,20 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 import {Toggle as BasicToggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import ActionChildren from 'src/components/actions_modal_action_children';
-import {ChannelAction, ChannelActionType} from 'src/types/channel_actions';
 
 interface Props {
-    action: ChannelAction;
-    onUpdate: (newAction: ChannelAction) => void;
+    enabled: boolean;
+    title: string;
+    onToggle: () => void;
     editable: boolean;
+    children: React.ReactNode;
 }
 
-const titles = {
-    [ChannelActionType.WelcomeMessage]: <FormattedMessage defaultMessage={'Send a temporary welcome message to the user'}/>,
-    [ChannelActionType.PromptRunPlaybook]: <FormattedMessage defaultMessage={'Prompt to run a playbook'}/>,
-    [ChannelActionType.CategorizeChannel]: <FormattedMessage defaultMessage={'Add the channel to a sidebar category for the user'}/>,
-};
-
 const Action = (props: Props) => {
-    const onToggle = () => {
-        props.onUpdate({
-            ...props.action,
-            enabled: !props.action.enabled,
-        });
-    };
-
-    const onChange = props.editable ? onToggle : () => {/* do nothing */};
+    const onChange = props.editable ? props.onToggle : () => {/* do nothing */};
 
     return (
         <Wrapper>
@@ -40,16 +26,16 @@ const Action = (props: Props) => {
                 }}
                 clickable={props.editable}
             >
-                <Title clickable={props.editable}>{titles[props.action.action_type]}</Title>
+                <Title clickable={props.editable}>{props.title}</Title>
                 <Toggle
-                    isChecked={props.action.enabled}
+                    isChecked={props.enabled}
                     onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
                     disabled={!props.editable}
                 />
             </Container>
-            {props.action.enabled &&
+            {props.enabled &&
             <ChildrenContainer>
-                <ActionChildren {...props}/>
+                {props.children}
             </ChildrenContainer>
             }
         </Wrapper>

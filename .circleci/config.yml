@@ -6,23 +6,23 @@ orbs:
 executors:
   default:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
 
 aliases:
   - &restore_go_cache
     restore_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
   - &save_go_cache
     save_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-mod-v2-{{ checksum "go.sum" }}
       paths:
         - /go/pkg/mod
   - &restore_cypress_cache
     restore_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
   - &save_cypress_cache
     save_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: v2-deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
       paths:
         - /go/pkg/mod
         - ./webapp/node_modules
@@ -35,7 +35,7 @@ commands:
     steps:
       - restore_cache:
           name: Restore npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
       - run:
           name: Getting JavaScript dependencies
           command: |
@@ -43,9 +43,26 @@ commands:
             NODE_ENV=development npm install --ignore-scripts --no-save
       - save_cache:
           name: Save npm cache
-          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
           paths:
             - ./webapp/node_modules
+
+  npm-e2e-dependencies:
+    description: "Get E2E tests JavaScript dependencies"
+    steps:
+      - restore_cache:
+          name: Restore E2E npm cache
+          key: v1-e2e-npm-{{ checksum "./tests-e2e/package-lock.json" }}-{{ arch }}
+      - run:
+          name: Getting E2E JavaScript dependencies
+          command: |
+            cd tests-e2e
+            NODE_ENV=development npm install --ignore-scripts --no-save
+      - save_cache:
+          name: Save E2E npm cache
+          key: v1-e2e-npm-{{ checksum "./tests-e2e/package-lock.json" }}-{{ arch }}
+          paths:
+            - ./tests-e2e/node_modules
 
   deploy:
     parameters:
@@ -120,7 +137,7 @@ commands:
           command: |
             TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
             TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+            STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
             if test $STATUSCODE -ne 200; then exit 1; fi
       - *restore_cypress_cache
       - run:
@@ -135,17 +152,18 @@ commands:
       - run:
           name: Install Playbooks
           command: |
-            make deploy
+            make deploy CGO_ENABLED=0
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
           command: |
             cd tests-e2e
-            circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
-            npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
+            SPECS=$(circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings | tr '\n' ',')
+            SPECS=${SPECS::-1}
+            npm run test -- --spec "${SPECS}"
       - *save_cypress_cache
       - store_test_results:
-          path: tests-e2e/cypress/results
+          path: tests-e2e/cypress/results/junit
       - store_artifacts:
           path: tests-e2e/cypress/videos
 
@@ -158,6 +176,12 @@ jobs:
       - checkout
       - *restore_go_cache
       - npm-dependencies
+      - npm-e2e-dependencies
+      # Base image already bundle a golanci-lint but it's not updated enough (staticcheck linter needed)
+      - run:
+          name: install golangci-lint 1.46.2
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin v1.46.2
       - run:
           name: Checking code style
           command: |
@@ -181,7 +205,11 @@ jobs:
           name: Checking diff of server i18n files
           command: |
             git --no-pager diff --exit-code assets/i18n/en.json || (echo "Please run \"make i18n-extract\", add messages to any empty translations, and commit the changes in assets/i18n/en.json." && exit 1)
-
+      - run: make graphql
+      - run:
+          name: Checking diff of webapp graphql generated files
+          command: |
+            git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
       - *save_go_cache
 
   build:
@@ -197,7 +225,7 @@ jobs:
       - run:
           name: Building Plugin Bundle
           command: |
-            make dist
+            make dist CGO_ENABLED=0
       - run:
           name: Generating Release Notes
           command: |
@@ -254,7 +282,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
@@ -272,7 +300,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:11.13
         environment:
           POSTGRES_USER: mmuser
@@ -290,7 +318,7 @@ jobs:
 
   test-MariaDB10-Postgres12:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:12.9
         environment:
           POSTGRES_USER: mmuser
@@ -309,7 +337,7 @@ jobs:
   # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
       - image: cimg/postgres:14.1
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -329,7 +357,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -380,7 +408,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
@@ -396,6 +424,7 @@ jobs:
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
+      CYPRESS_serverEdition: Cloud
     parallelism: 4
     steps:
       - run-e2e-tests
@@ -403,7 +432,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: cimg/go:1.18.1-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -454,7 +483,7 @@ jobs:
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
@@ -471,6 +500,7 @@ jobs:
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
+      CYPRESS_serverEdition: E20
     parallelism: 4
     steps:
       - run-e2e-tests

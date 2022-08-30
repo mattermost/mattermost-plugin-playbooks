@@ -8,41 +8,36 @@ import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
+    maxUsers?: number;
 }
 
 const Following = (props: Props) => {
     if (props.userIds.length === 0) {
         return null;
     }
+
+    const maxUsers = props.maxUsers ?? 5;
+
     return (
         <>
-            <FollowingWrapper>
-                {props.userIds.length + ' following'}
-            </FollowingWrapper>
             <UserRow
                 tabIndex={0}
-                role={'button'}
             >
-                {props.userIds.slice(0, 5).map((userId: string) => (
+                {props.userIds.slice(0, maxUsers).map((userId: string) => (
                     <RHSParticipant
                         key={userId}
                         userId={userId}
                         sizeInPx={20}
                     />
                 ))}
-                {props.userIds.length > 5 &&
-                    <Rest sizeInPx={20}>{'+' + (props.userIds.length - 5)}</Rest>
+                {props.userIds.length > maxUsers &&
+                    // eslint-disable-next-line formatjs/no-literal-string-in-jsx
+                    <Rest sizeInPx={20}>{'+' + (props.userIds.length - maxUsers)}</Rest>
                 }
             </UserRow>
         </>
     );
 };
-
-const FollowingWrapper = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 11px;
-    line-height: 16px;
-`;
 
 const UserRow = styled.div`
     width: max-content;

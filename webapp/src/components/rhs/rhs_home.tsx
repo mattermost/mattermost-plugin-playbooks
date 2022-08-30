@@ -25,7 +25,7 @@ import {
     RHSContainer,
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {setRHSViewingPlaybookRun} from 'src/actions';
+import {setRHSViewingPlaybookRun, displayPlaybookCreateModal} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 import {telemetryEventForTemplate} from 'src/client';
 
@@ -33,7 +33,7 @@ import {
     usePlaybooksCrud,
     getPlaybookOrFetch,
     usePlaybooksRouting,
-    useCanCreatePlaybooksOnAnyTeam,
+    useHasTeamPermission,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
@@ -194,17 +194,19 @@ const RHSHome = () => {
     const hasCurrentRun = Boolean(currentRun);
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
+    const permissionForPublic = useHasTeamPermission(currentTeam.id || '', 'playbook_public_create');
+    const permissionForPrivate = useHasTeamPermission(currentTeam.id || '', 'playbook_private_create');
+    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
+
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
-
-    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
 
-        create({teamId: currentTeam.id, template: template?.title});
+        dispatch(displayPlaybookCreateModal({startingTemplate: template?.title, startingTeamId: currentTeam.id}));
     };
 
     useEffect(() => {
@@ -288,6 +290,7 @@ const RHSHome = () => {
                         <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
                                 <FormattedMessage defaultMessage='View run details'/>
+                                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 {' '}
                             </span>
                             <Icon

@@ -1,26 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import React from 'react';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
 import KeywordsSelector from 'src/components/keywords_selector';
-import {ChannelAction, ChannelTriggerType, PromptRunPlaybookFromKeywordsPayload} from 'src/types/channel_actions';
 
 interface Props {
-    editable: boolean;
+    title: string;
+    triggerModifier?: React.ReactNode;
     children: React.ReactNode;
-    triggerType: ChannelTriggerType;
-    actions: ChannelAction[];
-    onUpdate: (newAction: ChannelAction) => void;
 }
-
-const titles = {
-    [ChannelTriggerType.NewMemberJoins]: <FormattedMessage defaultMessage={'When a user joins the channel'}/>,
-    [ChannelTriggerType.KeywordsPosted]: <FormattedMessage defaultMessage={'When a message with these keywords is posted'}/>,
-};
 
 const Trigger = (props: Props) => {
     const {formatMessage} = useIntl();
@@ -30,15 +22,9 @@ const Trigger = (props: Props) => {
             <Header>
                 <Legend>
                     <Label>{formatMessage({defaultMessage: 'Trigger'})}</Label>
-                    <Title>{titles[props.triggerType]}</Title>
+                    <Title>{props.title}</Title>
                 </Legend>
-                {props.triggerType === ChannelTriggerType.KeywordsPosted &&
-                <TriggerKeywords
-                    editable={props.editable}
-                    actions={props.actions}
-                    onUpdate={props.onUpdate}
-                />
-                }
+                {props.triggerModifier}
             </Header>
             <Body>
                 {props.children}
@@ -49,40 +35,17 @@ const Trigger = (props: Props) => {
 
 interface TriggerKeywordsProps {
     editable: boolean;
-    actions: ChannelAction[];
-    onUpdate: (newAction: ChannelAction) => void;
+    keywords: string[];
+    onUpdate: (newKeywords: string[]) => void;
 }
 
-const TriggerKeywords = ({editable, actions, onUpdate}: TriggerKeywordsProps) => {
-    let initialKeywords = [] as string[];
-    if (actions.length > 0) {
-        // All actions should have the same keywords as trigger, so pick the first one
-        const payload = actions[0].payload as PromptRunPlaybookFromKeywordsPayload;
-        initialKeywords = payload.keywords;
-    }
-
-    const [keywords, setKeywords] = useState(initialKeywords);
-
-    const onKeywordsChange = (newKeywords: string[]) => {
-        actions.forEach((action) => {
-            onUpdate({
-                ...action,
-                payload: {
-                    ...action.payload,
-                    keywords: newKeywords,
-                },
-            });
-        });
-
-        setKeywords(keywords);
-    };
-
+export const TriggerKeywords = ({editable, keywords, onUpdate}: TriggerKeywordsProps) => {
     return (
         <StyledKeywordsSelector
             enabled={editable}
             placeholderText={'Add keywords'}
             keywords={keywords}
-            onKeywordsChange={onKeywordsChange}
+            onKeywordsChange={onUpdate}
         />
     );
 };

@@ -7,11 +7,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
@@ -64,66 +66,40 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
 	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
 
+	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
+	insightsRouter.HandleFunc("/user/me", handler.getTopPlaybooksForUser).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/teams/{teamID}", handler.getTopPlaybooksForTeam).Methods(http.MethodGet)
+
 	return handler
 }
 
 func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Playbook) bool {
 	if playbook.WebhookOnCreationEnabled {
-		if len(playbook.WebhookOnCreationURLs) > 64 {
-			msg := "too many registered creation webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := app.ValidateWebhookURLs(playbook.WebhookOnCreationURLs); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
 			return false
-		}
-
-		for _, webhook := range playbook.WebhookOnCreationURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-				return false
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return false
-			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
-			msg := "too many registered update webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := app.ValidateWebhookURLs(playbook.WebhookOnStatusUpdateURLs); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
 			return false
-		}
-
-		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-				return false
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return false
-			}
 		}
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+		if err := app.ValidateCategoryName(playbook.CategoryName); err != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return false
 		}
 	}
 
 	if len(playbook.SignalAnyKeywords) != 0 {
-		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+		playbook.SignalAnyKeywords = app.ProcessSignalAnyKeywords(playbook.SignalAnyKeywords)
 	}
 
-	if playbook.BroadcastEnabled {
+	if playbook.BroadcastEnabled { //nolint
 		for _, channelID := range playbook.BroadcastChannelIDs {
 			channel, err := h.pluginAPI.Channel.Get(channelID)
 			if err != nil {
@@ -388,8 +364,12 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		sortField = app.SortBySteps
 	case "runs":
 		sortField = app.SortByRuns
+	case "last_run_at":
+		sortField = app.SortByLastRunAt
+	case "active_runs":
+		sortField = app.SortByActiveRuns
 	default:
-		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages', 'steps', 'runs', 'last_run_at'", param)
 	}
 
 	var sortDirection app.SortDirection
@@ -439,29 +419,6 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		SearchTerm:   searchTerm,
 		WithArchived: withArchived,
 	}, nil
-}
-
-func removeDuplicates(a []string) []string {
-	items := make(map[string]bool)
-	for _, item := range a {
-		if item != "" {
-			items[item] = true
-		}
-	}
-	res := make([]string, 0, len(items))
-	for item := range items {
-		res = append(res, item)
-	}
-	return res
-}
-
-func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
-	categoryNameLength := len(categoryName)
-	if categoryNameLength > 22 {
-		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
-		return errors.Errorf(msg)
-	}
-	return nil
 }
 
 func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
@@ -661,4 +618,110 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 		titles[m.Title] = true
 	}
 	return nil
+}
+
+func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	timeRange := params.Get("time_range")
+	teamID := params.Get("team_id")
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		return
+	}
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+		return
+	}
+
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		return
+	}
+	perPage, err := strconv.Atoi(params.Get("per_page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		return
+	}
+
+	// setting startTime as per user's location
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		return
+	}
+	timezone, err := timeutils.GetUserTimezone(user)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		return
+	}
+	if timezone == nil {
+		timezone = time.Now().UTC().Location()
+	}
+	// get unix time for duration
+	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &model.InsightsOpts{
+		StartUnixMilli: model.GetMillisForTime(*startTime),
+		Page:           page,
+		PerPage:        perPage,
+	})
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	ReturnJSON(w, &topPlaybooks, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	teamID := vars["teamID"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	timeRange := params.Get("time_range")
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		return
+	}
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+		return
+	}
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		return
+	}
+	perPage, err := strconv.Atoi(params.Get("per_page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		return
+	}
+
+	// setting startTime as per user's location
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		return
+	}
+	timezone, err := timeutils.GetUserTimezone(user)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		return
+	}
+	if timezone == nil {
+		timezone = time.Now().UTC().Location()
+	}
+	// get unix time for duration
+	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &model.InsightsOpts{
+		StartUnixMilli: model.GetMillisForTime(*startTime),
+		Page:           page,
+		PerPage:        perPage,
+	})
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	ReturnJSON(w, &topPlaybooks, http.StatusOK)
 }

@@ -37,6 +37,9 @@ type PlaybookRun struct {
 	// Summary is a short string, in Markdown, describing what the run is.
 	Summary string `json:"summary"`
 
+	// SummaryModifiedAt is date when the summary was modified
+	SummaryModifiedAt int64 `json:"summary_modified_at"`
+
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`
 
@@ -131,6 +134,14 @@ type PlaybookRun struct {
 	// whole playbook run as payload every time the status of the playbook run is updated.
 	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
 
+	// StatusUpdateBroadcastChannelsEnabled is true if the channels broadcast action is enabled for
+	// the run status update event, false otherwise.
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+
+	// StatusUpdateBroadcastWebhooksEnabled is true if the webhooks broadcast action is enabled for
+	// the run status update event, false otherwise.
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+
 	// Retrospective is a string containing the currently saved retrospective.
 	// If RetrospectivePublishedAt is different than 0, this is the final published retrospective.
 	Retrospective string `json:"retrospective"`
@@ -164,30 +175,30 @@ type PlaybookRun struct {
 	MetricsData []RunMetricData `json:"metrics_data"`
 }
 
-func (i *PlaybookRun) Clone() *PlaybookRun {
-	newPlaybookRun := *i
+func (r *PlaybookRun) Clone() *PlaybookRun {
+	newPlaybookRun := *r
 	var newChecklists []Checklist
-	for _, c := range i.Checklists {
+	for _, c := range r.Checklists {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybookRun.Checklists = newChecklists
 
-	newPlaybookRun.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
-	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
-	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
-	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
-	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
-	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
-	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
-	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
+	newPlaybookRun.StatusPosts = append([]StatusPost(nil), r.StatusPosts...)
+	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), r.TimelineEvents...)
+	newPlaybookRun.InvitedUserIDs = append([]string(nil), r.InvitedUserIDs...)
+	newPlaybookRun.InvitedGroupIDs = append([]string(nil), r.InvitedGroupIDs...)
+	newPlaybookRun.ParticipantIDs = append([]string(nil), r.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
+	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 
 	return &newPlaybookRun
 }
 
-func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
+func (r *PlaybookRun) MarshalJSON() ([]byte, error) {
 	type Alias PlaybookRun
 
-	old := (*Alias)(i.Clone())
+	old := (*Alias)(r.Clone())
 	// replace nils with empty slices for the frontend
 	if old.Checklists == nil {
 		old.Checklists = []Checklist{}
@@ -228,6 +239,64 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+// SetChecklistFromPlaybook overwrites this run's checklists with the ones in the provided playbook.
+func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
+	r.Checklists = playbook.Checklists
+
+	// Playbooks can only have due dates relative to when a run starts,
+	// so we should convert them to absolute timestamp.
+	now := model.GetMillis()
+	for i := range r.Checklists {
+		for j := range r.Checklists[i].Items {
+			if r.Checklists[i].Items[j].DueDate > 0 {
+				r.Checklists[i].Items[j].DueDate += now
+			}
+		}
+	}
+}
+
+// SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
+// effectively snapshoting the playbook's configuration in this moment of time.
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
+	if playbook.RunSummaryTemplateEnabled {
+		r.Summary = playbook.RunSummaryTemplate
+	}
+	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
+	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
+	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
+	r.ReminderTimerDefaultSeconds = playbook.ReminderTimerDefaultSeconds
+
+	r.InvitedUserIDs = []string{}
+	r.InvitedGroupIDs = []string{}
+	if playbook.InviteUsersEnabled {
+		r.InvitedUserIDs = playbook.InvitedUserIDs
+		r.InvitedGroupIDs = playbook.InvitedGroupIDs
+	}
+
+	if playbook.DefaultOwnerEnabled {
+		r.DefaultOwnerID = playbook.DefaultOwnerID
+	}
+
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
+	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
+
+	r.WebhookOnCreationURLs = []string{}
+	if playbook.WebhookOnCreationEnabled {
+		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
+	}
+
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
+	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
+
+	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
+	if playbook.RetrospectiveEnabled {
+		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
+		r.Retrospective = playbook.RetrospectiveTemplate
+	}
+}
+
 type StatusPost struct {
 	// ID is the identifier of the post containing the status update.
 	ID string `json:"id"`
@@ -239,6 +308,41 @@ type StatusPost struct {
 	// DeleteAt is the timestamp, in milliseconds since epoch, of the time the post containing this
 	// status update was deleted. 0 if it was never deleted.
 	DeleteAt int64 `json:"delete_at"`
+}
+
+// StatusPostComplete is the "complete" representation of a status update
+//
+// This type is part of an effort to decopuple channels and playbooks, where
+// status updates will stop being -only- Posts in a channel.
+type StatusPostComplete struct {
+	// ID is the identifier of the post containing the status update.
+	ID string `json:"id"`
+
+	// CreateAt is the timestamp, in milliseconds since epoch, of the time this status update was
+	// posted.
+	CreateAt int64 `json:"create_at"`
+
+	// DeleteAt is the timestamp, in milliseconds since epoch, of the time the post containing this
+	// status update was deleted. 0 if it was never deleted.
+	DeleteAt int64 `json:"delete_at"`
+
+	// Message is the content of the status update. It supports markdown.
+	Message string `json:"message"`
+
+	// AuthorUserName is the username of the user who sent the status update.
+	AuthorUserName string `json:"author_user_name"`
+}
+
+// NewStatusPostComplete creates a StatusUpdate from a channel Post
+func NewStatusPostComplete(post *model.Post) *StatusPostComplete {
+	author, _ := post.GetProp("authorUsername").(string)
+	return &StatusPostComplete{
+		ID:             post.Id,
+		CreateAt:       post.CreateAt,
+		DeleteAt:       post.DeleteAt,
+		Message:        post.Message,
+		AuthorUserName: author,
+	}
 }
 
 type UpdateOptions struct {
@@ -268,6 +372,7 @@ const (
 	PlaybookRunCreated     timelineEventType = "incident_created"
 	TaskStateModified      timelineEventType = "task_state_modified"
 	StatusUpdated          timelineEventType = "status_updated"
+	StatusUpdateRequested  timelineEventType = "status_update_requested"
 	OwnerChanged           timelineEventType = "owner_changed"
 	AssigneeChanged        timelineEventType = "assignee_changed"
 	RanSlashCommand        timelineEventType = "ran_slash_command"
@@ -277,6 +382,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 )
 
 type TimelineEvent struct {
@@ -299,7 +405,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", "canceled_retrospective" or "status_update_snoozed".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -415,6 +521,22 @@ type AssignedTask struct {
 	ChecklistItem
 }
 
+// RunAction represents the run action settings. Frontend passes this struct to update settings.
+type RunAction struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
+const (
+	ActionTypeBroadcastChannels = "broadcast_to_channels"
+	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
+
+	TriggerTypeStatusUpdatePosted = "status_update_posted"
+)
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -499,6 +621,15 @@ type PlaybookRunService interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
+	// DuplicateChecklist duplicates a checklist
+	DuplicateChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// SkipChecklist skips a checklist
+	SkipChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// RestoreChecklist restores a skipped checklist
+	RestoreChecklist(playbookRunID, userID string, checklistNumber int) error
+
 	// SkipChecklistItem removes an item from the specified checklist
 	SkipChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
@@ -546,6 +677,10 @@ type PlaybookRunService interface {
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
 	SetNewReminder(playbookRunID string, newReminder time.Duration) error
+
+	// ResetReminder records an event for snoozing a reminder, then calls SetNewReminder to create
+	// the next reminder
+	ResetReminder(playbookRunID string, newReminder time.Duration) error
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
@@ -598,6 +733,18 @@ type PlaybookRunService interface {
 
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
+
+	// UpdateRunActions updates status update broadcast settings
+	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
+
+	// RequestUpdate posts a status update request message in the run's channel
+	RequestUpdate(playbookRunID, requesterID string) error
+
+	// RequestGetInvolved posts a join request message in the run's channel
+	RequestGetInvolved(playbookRunID, requesterID string) error
+
+	// Leave removes user from the run's participants&followers list
+	Leave(playbookRunID, requesterID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -692,6 +839,12 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -736,6 +889,12 @@ type PlaybookRunTelemetry interface {
 	// RemoveTask tracks the removal of a checklist item.
 	RemoveTask(playbookRunID, userID string, task ChecklistItem)
 
+	// SkipChecklist tracks the skipping of a checklist.
+	SkipChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RestoreChecklist tracks the restoring of a checklist.
+	RestoreChecklist(playbookRunID, userID string, checklist Checklist)
+
 	// SkipTask tracks the skipping of a checklist item.
 	SkipTask(playbookRunID, userID string, task ChecklistItem)
 
@@ -775,6 +934,12 @@ type PlaybookRunTelemetry interface {
 
 	// Unfollow tracks userID following a playbook run.
 	Unfollow(playbookRun *PlaybookRun, userID string)
+
+	// RunAction tracks the run actions, i.e., status broadcast action
+	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numBroadcasts int)
+
+	// UpdateRunActions tracks actions settings update
+	UpdateRunActions(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {
@@ -814,6 +979,10 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
+	// IncludeFavorites filters playbook runs that ParticipantOrFollowerID has marked as favorite.
+	// There's no impact if ParticipantOrFollowerID is empty.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

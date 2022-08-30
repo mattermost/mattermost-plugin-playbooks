@@ -1,19 +1,42 @@
 
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {ClientError} from '@mattermost/client';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
-    onChange: (item: ChecklistItemState) => void;
+    onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     item: ChecklistItem;
     disabled: boolean;
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
-    const isChecked = props.item.state === ChecklistItemState.Closed;
+    const [isChecked, setIsChecked] = useState(props.item.state === ChecklistItemState.Closed);
+
+    useUpdateEffect(() => {
+        setIsChecked(props.item.state === ChecklistItemState.Closed);
+    }, [props.item.state]);
+
+    // handleOnChange optimistic update approach: first do UI change, then
+    // call to server and finally revert UI state if there's error
+    //
+    // There are two main reasons why we do this:
+    // 1 - Happy path: avoid waiting 300ms to see checkbox update in the UI
+    // 2 - Websocket failure: we'll still mark the checkbox correctly
+    //     Additionally, we prevent the user from clicking multiple times
+    //     and leaving the item in an unknown state
+    const handleOnChange = async () => {
+        const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
+        setIsChecked(!isChecked);
+        const res = await props.onChange(newValue);
+        if (res?.error) {
+            setIsChecked(isChecked);
+        }
+    };
 
     return (
         <ChecklistItemInput
@@ -21,13 +44,7 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
             type='checkbox'
             checked={isChecked}
             disabled={props.disabled}
-            onChange={() => {
-                if (isChecked) {
-                    props.onChange(ChecklistItemState.Open);
-                } else {
-                    props.onChange(ChecklistItemState.Closed);
-                }
-            }}
+            onChange={handleOnChange}
         />);
 };
 
@@ -62,8 +79,8 @@ const ChecklistItemDescription = styled.div<{height: string}>`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    max-width: 630px;
-    margin: 4px 0 0 35px;
+    margin-left: 36px;
+    padding-right: 8px;
 
     // Fix default markdown styling in the paragraphs
     p {
@@ -82,37 +99,42 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
     const {formatMessage} = useIntl();
 
-    return (<CancelSaveContainer>
-        <CancelButton
-            onClick={props.onCancel}
-        >
-            {formatMessage({defaultMessage: 'Cancel'})}
-        </CancelButton>
-        <SaveButton
-            onClick={props.onSave}
-        >
-            {formatMessage({defaultMessage: 'Save'})}
-        </SaveButton>
-    </CancelSaveContainer>
+    return (
+        <CancelSaveContainer>
+            <CancelButton
+                onClick={props.onCancel}
+            >
+                {formatMessage({defaultMessage: 'Cancel'})}
+            </CancelButton>
+            <SaveButton
+                onClick={props.onSave}
+                data-testid='checklist-item-save-button'
+            >
+                {formatMessage({defaultMessage: 'Save'})}
+            </SaveButton>
+        </CancelSaveContainer>
     );
 };
 
-const CancelSaveContainer = styled.div`
+export const CancelSaveContainer = styled.div`
     text-align: right;
     padding: 8px;
     z-index: 2;
+    white-space: nowrap;
 `;
 
-const CancelButton = styled(SecondaryButton)`
+const CancelButton = styled(TertiaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin-left: 8px;
     border-radius: 4px;
+    font-size: 12px;
 `;
 
 const SaveButton = styled(PrimaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin: 0px 4px;
+    margin-left: 8px;
     border-radius: 4px;
+    font-size: 12px;
 `;

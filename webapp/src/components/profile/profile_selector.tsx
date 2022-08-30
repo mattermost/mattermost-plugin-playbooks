@@ -5,16 +5,17 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import classNames from 'classnames';
-import styled, {css} from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
+
+import {Placement} from '@floating-ui/react-dom-interactions';
+
+import {useUpdateEffect} from 'react-use';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
 import Dropdown from 'src/components/dropdown';
 
@@ -47,9 +48,11 @@ interface Props {
     getUsersInTeam: () => Promise<UserProfile[]>;
     onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
+    placement?: Placement;
     className?: string;
     selectWithoutName?: boolean;
+    customDropdownArrow?: React.ReactNode;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -64,10 +67,13 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
+    useUpdateEffect(() => {
+        props.onOpenChange?.(isOpen);
+    }, [isOpen]);
+
     // Allow the parent component to control the open state -- only after mounting.
     const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);
     useEffect(() => {
-        // eslint-disable-next-line no-undefined
         if (props.controlledOpenToggle !== undefined && props.controlledOpenToggle !== oldOpenToggle) {
             setOpen(!isOpen);
             setOldOpenToggle(props.controlledOpenToggle);
@@ -78,19 +84,6 @@ export default function ProfileSelector(props: Props) {
     const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        const formatName = (descriptionSuffix: string) => {
-            return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-                const name = '@' + userName;
-                const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
-                return (
-                    <>
-                        <span>{name}</span>
-                        {description && <span className={'description'}>{description}</span>}
-                    </>
-                );
-            };
-        };
-
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
@@ -108,7 +101,7 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
                 userType: 'NonMember',
@@ -122,7 +115,7 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
                 userType: 'Member',
@@ -176,25 +169,9 @@ export default function ProfileSelector(props: Props) {
         }
     };
 
-    // Decide where to open the profile selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, userOptions.length);
-        const spacePerProfile = 48;
-        const dropdownYShift = 27;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, userOptions.length]);
+    const dropdownArrow = props.customDropdownArrow ? props.customDropdownArrow : (
+        <i className={'icon-chevron-down icon--small ml-2'}/>
+    );
 
     let target;
     if (props.selectedUserId) {
@@ -206,6 +183,7 @@ export default function ProfileSelector(props: Props) {
                 withoutName={props.selectWithoutName}
                 profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
+                customDropdownArrow={props.customDropdownArrow}
             />
         );
     } else if (props.placeholderButtonClass) {
@@ -219,7 +197,7 @@ export default function ProfileSelector(props: Props) {
                 className={props.placeholderButtonClass}
             >
                 {props.placeholder}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                {dropdownArrow}
             </button>
         );
     } else {
@@ -233,16 +211,14 @@ export default function ProfileSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                {dropdownArrow}
             </PlaybookRunFilterButton>
         );
     }
 
     if (props.onlyPlaceholder) {
         target = (
-            <div
-                onClick={toggleOpen}
-            >
+            <div>
                 {props.placeholder}
             </div>
         );
@@ -250,7 +226,7 @@ export default function ProfileSelector(props: Props) {
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            ref={ref}
+            onClick={props.enableEdit ? toggleOpen : () => null}
             className={props.className}
         >
             {target}
@@ -268,11 +244,10 @@ export default function ProfileSelector(props: Props) {
 
     return (
         <Dropdown
-            isOpen={isOpen}
-            onClose={toggleOpen}
             target={targetWrapped}
-            showOnRight={props.showOnRight}
-            moveUp={moveUp}
+            placement={props.placement}
+            isOpen={isOpen}
+            onOpenChange={setOpen}
         >
             <ReactSelect
                 autoFocus={true}
@@ -283,7 +258,7 @@ export default function ProfileSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={selectOptions}
-                placeholder={'Search'}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
@@ -325,4 +300,17 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
     }
 
     return '';
+};
+
+export const formatProfileName = (descriptionSuffix: string) => {
+    return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+        const name = '@' + userName;
+        const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+        return (
+            <>
+                <span>{name}</span>
+                {description && <span className={'description'}>{description}</span>}
+            </>
+        );
+    };
 };

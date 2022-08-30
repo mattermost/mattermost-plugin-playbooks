@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -72,6 +73,9 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", handler.getPlaybookRun).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", handler.getPlaybookRunMetadata).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/status-updates", handler.getStatusUpdates).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/request-update", handler.requestUpdate).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/request-get-involved", handler.requestGetInvolved).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -87,6 +91,8 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -101,6 +107,9 @@ func NewPlaybookRunHandler(
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPost)
 	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
+	checklistRouter.HandleFunc("/skip", handler.checklistSkip).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/restore", handler.checklistRestore).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/duplicate", handler.duplicateChecklist).Methods(http.MethodPost)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
@@ -407,6 +416,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.
 }
 
 func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
+	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
 	}
@@ -419,6 +429,15 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
+
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
+	}
+
+	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
 	var channel *model.Channel
@@ -436,14 +455,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
-	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
-	}
-
+	// Copy data from playbook if needed
 	public := true
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
@@ -451,60 +463,24 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
+		playbook = &pb
 
-		if pb.DeleteAt != 0 {
+		if playbook.DeleteAt != 0 {
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err := h.permissions.RunCreate(userID, pb); err != nil {
+		if err := h.permissions.RunCreate(userID, *playbook); err != nil {
 			return nil, err
 		}
 
-		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		if pb.RunSummaryTemplateEnabled {
-			playbookRun.Summary = pb.RunSummaryTemplate
-		}
-		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
-		playbookRun.StatusUpdateEnabled = pb.StatusUpdateEnabled
-		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
-		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
-
-		playbookRun.InvitedUserIDs = []string{}
-		playbookRun.InvitedGroupIDs = []string{}
-		if pb.InviteUsersEnabled {
-			playbookRun.InvitedUserIDs = pb.InvitedUserIDs
-			playbookRun.InvitedGroupIDs = pb.InvitedGroupIDs
-		}
-
-		if pb.DefaultOwnerEnabled {
-			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
-		}
-
-		if pb.BroadcastEnabled {
-			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
-		}
-
-		playbookRun.WebhookOnCreationURLs = []string{}
-		if pb.WebhookOnCreationEnabled {
-			playbookRun.WebhookOnCreationURLs = pb.WebhookOnCreationURLs
-		}
-
-		playbookRun.WebhookOnStatusUpdateURLs = []string{}
-		if pb.WebhookOnStatusUpdateEnabled {
-			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
-		}
-
-		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
-		if pb.RetrospectiveEnabled {
-			playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-			playbookRun.Retrospective = pb.RetrospectiveTemplate
-		}
-
-		playbook = &pb
+		playbookRun.SetChecklistFromPlaybook(*playbook)
+		playbookRun.SetConfigurationFromPlaybook(*playbook)
 	}
 
+	// Check the permissions on the channel: the user must be able to create it or,
+	// if one's already provided, they need to be able to manage it.
 	if channel == nil {
 		permission := model.PermissionCreatePrivateChannel
 		permissionMessage := "You are not able to create a private channel"
@@ -531,6 +507,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
+	// Check the permissions on the provided post: the user must have access to the post's channel
 	if playbookRun.PostID != "" {
 		post, err := h.pluginAPI.Post.GetPost(playbookRun.PostID)
 		if err != nil {
@@ -541,7 +518,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	if err != nil {
+		return nil, err
+	}
+
+	// force database retrieval to ensure all data is processed correctly (i.e participantIds)
+	return h.playbookRunService.GetPlaybookRun(playbookRunReturned.ID)
+
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
@@ -617,13 +601,6 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunViewByChannel(userID, channelID); err != nil {
-		h.log.Warnf("User %s does not have permissions to get playbook run for channel %s", userID, channelID)
-		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
-			errors.Errorf("playbook run for channel id %s not found", channelID))
-		return
-	}
-
 	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -633,6 +610,13 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 			return
 		}
 		h.HandleError(w, err)
+		return
+	}
+
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.log.Warnf("User %s does not have permissions to get playbook run %s for channel %s", userID, playbookRunID, channelID)
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
@@ -807,6 +791,51 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
+// getStatusUpdates handles the GET /runs/{id}/status endpoint
+//
+// Our goal is to deliver status updates to any user (when playbook is public) or
+// any playbook member (when playbook is private). To do that we need to bypass the
+// permissions system and avoid checking channel membership.
+//
+// This approach will be deprecated as a step towards channel-playbook decoupling.
+func (h *PlaybookRunHandler) getStatusUpdates(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to get status updates", nil)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	posts := make([]*app.StatusPostComplete, 0)
+	for _, p := range playbookRun.StatusPosts {
+		post, err := h.pluginAPI.Post.GetPost(p.ID)
+		if err != nil {
+			h.log.Warnf("statusUpdates: can not retrieve post %s: %v ", p.ID, err)
+			continue
+		}
+
+		// Given the fact that we are bypassing some permissions,
+		// an additional check is added to limit the risk
+		if post.Type == "custom_run_update" {
+			posts = append(posts, app.NewStatusPostComplete(post))
+		}
+	}
+
+	// sort by creation date, so that the first element is the newest post
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreateAt > posts[j].CreateAt
+	})
+
+	ReturnJSON(w, posts, http.StatusOK)
+}
+
 // restore "un-finishes" a playbook run
 func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
@@ -819,6 +848,81 @@ func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateRunActions modifies status update broadcast settings.
+func (h *PlaybookRunHandler) updateRunActions(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	var params app.RunAction
+
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal status update broadcast settings params state", err)
+		return
+	}
+
+	if err := h.playbookRunService.UpdateRunActions(playbookRunID, userID, params); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+}
+
+// RequestUpdate posts a status update request message in the run's channel
+func (h *PlaybookRunHandler) requestUpdate(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to post update request", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RequestUpdate(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+}
+
+// requestGetInvolved handles the request of a user who does not participate actively in a run
+func (h *PlaybookRunHandler) requestGetInvolved(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "not authorized to post get-involved request", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RequestGetInvolved(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+}
+
+// leave handles the POST request /runs/{id}/leave endpoint, caller user will be removed from participants.
+func (h *PlaybookRunHandler) leave(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	// Don't worry if the user could not be previously a follower
+	// Unfollow implementation is defensive about this.
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	hasViewPermission := h.permissions.RunView(userID, playbookRunID) == nil
+
+	type RunPermission struct {
+		HasViewPermission bool `json:"has_view_permission"`
+	}
+
+	ReturnJSON(w, RunPermission{HasViewPermission: hasViewPermission}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
@@ -955,7 +1059,7 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err = h.playbookRunService.SetNewReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
+	if err = h.playbookRunService.ResetReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
 		err = errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID)
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
 		return
@@ -1306,6 +1410,24 @@ func (h *PlaybookRunHandler) removeChecklist(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (h *PlaybookRunHandler) duplicateChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.DuplicateChecklist(playbookRunID, userID, checklistNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func (h *PlaybookRunHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -1405,6 +1527,42 @@ func (h *PlaybookRunHandler) itemDelete(w http.ResponseWriter, r *http.Request) 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.RemoveChecklistItem(id, userID, checklistNum, itemNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlaybookRunHandler) checklistSkip(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.SkipChecklist(id, userID, checklistNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlaybookRunHandler) checklistRestore(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.RestoreChecklist(id, userID, checklistNum); err != nil {
 		h.HandleError(w, err)
 		return
 	}

@@ -1,6 +1,10 @@
 package client
 
-import "time"
+import (
+	"time"
+
+	"gopkg.in/guregu/null.v4"
+)
 
 // Me is a constant that refers to the current user, and can be used in various APIs in place of
 // explicitly specifying the current user's id.
@@ -8,30 +12,47 @@ const Me = "me"
 
 // PlaybookRun represents a playbook run.
 type PlaybookRun struct {
-	ID                       string          `json:"id"`
-	Name                     string          `json:"name"`
-	Description              string          `json:"description"`
-	OwnerUserID              string          `json:"owner_user_id"`
-	ReporterUserID           string          `json:"reporter_user_id"`
-	TeamID                   string          `json:"team_id"`
-	ChannelID                string          `json:"channel_id"`
-	CreateAt                 int64           `json:"create_at"`
-	EndAt                    int64           `json:"end_at"`
-	DeleteAt                 int64           `json:"delete_at"`
-	ActiveStage              int             `json:"active_stage"`
-	ActiveStageTitle         string          `json:"active_stage_title"`
-	PostID                   string          `json:"post_id"`
-	PlaybookID               string          `json:"playbook_id"`
-	Checklists               []Checklist     `json:"checklists"`
-	StatusPosts              []StatusPost    `json:"status_posts"`
-	ReminderPostID           string          `json:"reminder_post_id"`
-	PreviousReminder         time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID       string          `json:"broadcast_channel_id"`
-	ReminderMessageTemplate  string          `json:"reminder_message_template"`
-	InvitedUserIDs           []string        `json:"invited_user_ids"`
-	InvitedGroupIDs          []string        `json:"invited_group_ids"`
-	TimelineEvents           []TimelineEvent `json:"timeline_events"`
-	CategorizeChannelEnabled bool            `json:"categorize_channel_enabled"`
+	ID                                   string          `json:"id"`
+	Name                                 string          `json:"name"`
+	Summary                              string          `json:"summary"`
+	OwnerUserID                          string          `json:"owner_user_id"`
+	ReporterUserID                       string          `json:"reporter_user_id"`
+	TeamID                               string          `json:"team_id"`
+	ChannelID                            string          `json:"channel_id"`
+	CreateAt                             int64           `json:"create_at"`
+	EndAt                                int64           `json:"end_at"`
+	DeleteAt                             int64           `json:"delete_at"`
+	ActiveStage                          int             `json:"active_stage"`
+	ActiveStageTitle                     string          `json:"active_stage_title"`
+	PostID                               string          `json:"post_id"`
+	PlaybookID                           string          `json:"playbook_id"`
+	Checklists                           []Checklist     `json:"checklists"`
+	StatusPosts                          []StatusPost    `json:"status_posts"`
+	CurrentStatus                        string          `json:"current_status"`
+	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
+	ReminderPostID                       string          `json:"reminder_post_id"`
+	PreviousReminder                     time.Duration   `json:"previous_reminder"`
+	ReminderTimerDefaultSeconds          int64           `json:"reminder_timer_default_seconds"`
+	StatusUpdateEnabled                  bool            `json:"status_update_enabled"`
+	BroadcastChannelIDs                  []string        `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs            []string        `json:"webhook_on_status_update_urls"`
+	StatusUpdateBroadcastChannelsEnabled bool            `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool            `json:"status_update_broadcast_webhooks_enabled"`
+	ReminderMessageTemplate              string          `json:"reminder_message_template"`
+	InvitedUserIDs                       []string        `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
+	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
+	DefaultOwnerID                       string          `json:"default_owner_id"`
+	WebhookOnCreationURLs                []string        `json:"webhook_on_creation_urls"`
+	Retrospective                        string          `json:"retrospective"`
+	RetrospectivePublishedAt             int64           `json:"retrospective_published_at"`
+	RetrospectiveWasCanceled             bool            `json:"retrospective_was_canceled"`
+	RetrospectiveReminderIntervalSeconds int64           `json:"retrospective_reminder_interval_seconds"`
+	RetrospectiveEnabled                 bool            `json:"retrospective_enabled"`
+	MessageOnJoin                        string          `json:"message_on_join"`
+	ParticipantIDs                       []string        `json:"participant_ids"`
+	CategoryName                         string          `json:"category_name"`
+	MetricsData                          []RunMetricData `json:"metrics_data"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -42,8 +63,19 @@ type StatusPost struct {
 	DeleteAt int64  `json:"delete_at"`
 }
 
-// PlaybookRunMetadata tracks ancillary metadata about a playbook run.
-type PlaybookRunMetadata struct {
+// StatusPostComplete is the complete status update (post)
+// it's similar to StatusPost but with extended info.
+type StatusPostComplete struct {
+	Id             string `json:"id"`
+	CreateAt       int64  `json:"create_at"`
+	UpdateAt       int64  `json:"update_at"`
+	DeleteAt       int64  `json:"delete_at"`
+	Message        string `json:"message"`
+	AuthorUserName string `json:"author_user_name"`
+}
+
+// Metadata tracks ancillary metadata about a playbook run.
+type Metadata struct {
 	ChannelName        string   `json:"channel_name"`
 	ChannelDisplayName string   `json:"channel_display_name"`
 	TeamName           string   `json:"team_name"`
@@ -56,12 +88,19 @@ type PlaybookRunMetadata struct {
 type TimelineEventType string
 
 const (
-	PlaybookRunCreated TimelineEventType = "incident_created"
-	TaskStateModified  TimelineEventType = "task_state_modified"
-	StatusUpdated      TimelineEventType = "status_updated"
-	OwnerChanged       TimelineEventType = "owner_changed"
-	AssigneeChanged    TimelineEventType = "assignee_changed"
-	RanSlashCommand    TimelineEventType = "ran_slash_command"
+	PlaybookRunCreated     TimelineEventType = "incident_created"
+	TaskStateModified      TimelineEventType = "task_state_modified"
+	StatusUpdated          TimelineEventType = "status_updated"
+	StatusUpdateRequested  TimelineEventType = "status_update_requested"
+	OwnerChanged           TimelineEventType = "owner_changed"
+	AssigneeChanged        TimelineEventType = "assignee_changed"
+	RanSlashCommand        TimelineEventType = "ran_slash_command"
+	EventFromPost          TimelineEventType = "event_from_post"
+	UserJoinedLeft         TimelineEventType = "user_joined_left"
+	PublishedRetrospective TimelineEventType = "published_retrospective"
+	CanceledRetrospective  TimelineEventType = "canceled_retrospective"
+	RunFinished            TimelineEventType = "run_finished"
+	RunRestored            TimelineEventType = "run_restored"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.
@@ -88,6 +127,21 @@ type PlaybookRunCreateOptions struct {
 	Description string `json:"description"`
 	PostID      string `json:"post_id"`
 	PlaybookID  string `json:"playbook_id"`
+}
+
+// RunAction represents the run action settings. Frontend passes this struct to update settings.
+type RunAction struct {
+	BroadcastChannelIDs       []string `json:"broadcast_channel_ids"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
+
+	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
+	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+}
+
+// RetrospectiveUpdate represents the run retrospective info
+type RetrospectiveUpdate struct {
+	Text    string          `json:"retrospective"`
+	Metrics []RunMetricData `json:"metrics"`
 }
 
 // Sort enumerates the available fields we can sort on.
@@ -204,11 +258,16 @@ type GetPlaybookRunsResults struct {
 	PageCount  int           `json:"page_count"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
-	Disabled   bool          `json:"disabled"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
 type StatusUpdateOptions struct {
-	Message           string `json:"message"`
-	ReminderInSeconds int64  `json:"reminder"`
+	Message   string        `json:"message"`
+	Reminder  time.Duration `json:"reminder"`
+	FinishRun bool          `json:"finish_run"`
+}
+
+type RunMetricData struct {
+	MetricConfigID string   `json:"metric_config_id"`
+	Value          null.Int `json:"value"`
 }

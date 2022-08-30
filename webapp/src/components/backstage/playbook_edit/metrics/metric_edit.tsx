@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -72,21 +72,42 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
         }
     }
 
-    let typeTitle = <Bold><DollarSign sizePx={18}/>{' Dollars'}</Bold>;
     let inputIcon = <DollarSign sizePx={18}/>;
+    let typeTitle = (
+        <FormattedMessage
+            defaultMessage='{icon} Dollars'
+            values={{icon: inputIcon}}
+            tagName={React.Fragment}
+        />
+    );
     if (metric.type === MetricType.Integer) {
-        typeTitle = <Bold><PoundSign sizePx={18}/>{' Integer'}</Bold>;
         inputIcon = <PoundSign sizePx={18}/>;
+        typeTitle = (
+            <FormattedMessage
+                defaultMessage='{icon} Integer'
+                values={{icon: inputIcon}}
+                tagName={React.Fragment}
+            />
+        );
     } else if (metric.type === MetricType.Duration) {
-        typeTitle = <Bold><ClockOutline sizePx={18}/>{' Duration (in dd:hh:mm)'}</Bold>;
         inputIcon = <ClockOutline sizePx={18}/>;
+        typeTitle = (
+            <FormattedMessage
+                defaultMessage='{icon} Duration (in dd:hh:mm)'
+                values={{icon: inputIcon}}
+                tagName={React.Fragment}
+            />
+        );
     }
 
     return (
         <Container>
             <EditHeader>
-                {'Type: '}
-                {typeTitle}
+                <FormattedMessage
+                    defaultMessage='Type: {typeTitle}'
+                    values={{typeTitle: <Bold>{typeTitle}</Bold>}}
+                    tagName={React.Fragment}
+                />
                 <Button
                     data-testid={'delete-metric'}
                     onClick={deleteClick}
@@ -113,6 +134,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 <VerticalSpacer size={16}/>
 
                 <MetricInput
+                    id={metric.id}
                     title={formatMessage({defaultMessage: 'Target per run'})}
                     value={curTargetString}
                     placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
@@ -137,7 +159,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 />
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
                 <VerticalSpacer size={16}/>
-                <PrimaryButton onClick={verifyAndSave}>{'Add'}</PrimaryButton>
+                <PrimaryButton onClick={verifyAndSave}>{formatMessage({defaultMessage: 'Save'})}</PrimaryButton>
             </EditContainer>
         </Container>
     );

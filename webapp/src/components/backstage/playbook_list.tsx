@@ -1,9 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
@@ -13,13 +11,8 @@ import {Redirect} from 'react-router-dom';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import LeftDots from 'src/components/assets/left_dots';
-import LeftFade from 'src/components/assets/left_fade';
-import RightDots from 'src/components/assets/right_dots';
-import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
 import {BackstageSubheader, HorizontalSpacer} from 'src/components/backstage/styles';
 import TemplateSelector from 'src/components/templates/template_selector';
@@ -31,47 +24,40 @@ import {
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
+import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {Playbook} from 'src/types/playbook';
-
 import PresetTemplates from 'src/components/templates/template_data';
-
 import {RegularHeading} from 'src/styles/headings';
+import {pluginUrl} from 'src/browser_routing';
 
-import {importFile, fetchPlaybookRuns} from 'src/client';
-
-import TeamSelector from '../team/team_selector';
-
-import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+import Header from '../widgets/header';
 
 import CheckboxInput from './runs_list/checkbox_input';
-
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
 import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
-const PlaybooksHeader = styled(BackstageSubheader)`
-    display: flex;
-    padding: 4rem 0 3.2rem;
-    align-items: center;
-`;
-
 const ContainerMedium = styled.article`
-    margin: 0 auto;
-    max-width: 1160px;
     padding: 0 20px;
     scroll-margin-top: 20px;
 `;
 
 const PlaybookListContainer = styled.div`
-    font-family: $font-family;
-    color: rgba(var(--center-channel-color-rgb), 0.90);
+    color: rgba(var(--center-channel-color-rgb), 0.9);
+`;
 
+const TableContainer = styled.div`
+    overflow-x: hidden;
+    overflow-x: clip;
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
     margin-top: 4rem;
     padding: 4rem 0 3.2rem;
+    display: grid;
+    justify-items: space-between;
 `;
+
 export const Heading = styled.h1`
     ${RegularHeading} {
     }
@@ -109,26 +95,34 @@ const AltSub = styled(Sub)`
     margin-bottom: 36px;
 `;
 
+const TitleActions = styled.div`
+    display: flex;
+`;
+
+const PlaybooksListFilters = styled.div`
+    display: flex;
+    padding: 16px;
+    align-items: center;
+`;
+
 const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
-    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
+    const teamId = useSelector(getCurrentTeamId);
     const content = useRef<JSX.Element | null>(null);
-    const dispatch = useDispatch();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [importTargetTeam, setImportTargetTeam] = useState('');
     const selectorRef = useRef<HTMLDivElement>(null);
 
     const [
         playbooks,
         {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
-    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
+    ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
-    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
 
-    const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+    const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => edit(id));
 
     const hasPlaybooks = Boolean(playbooks?.length);
 
@@ -152,12 +146,12 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             <PlaybookListRow
                 key={p.id}
                 playbook={p}
-                displayTeam={teams.length > 1}
-                onClick={() => view(p)}
-                onEdit={() => edit(p)}
-                onRestore={() => openConfirmRestoreModal(p)}
+                onClick={() => view(p.id)}
+                onEdit={() => edit(p.id)}
+                onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
+                onMembershipChanged={() => fetchPlaybooks()}
             />
         ));
     }
@@ -174,137 +168,98 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             );
         }
 
-        const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                let teamId = teams[0].id;
-
-                if (teams.length !== 1) {
-                    teamId = importTargetTeam;
-                }
-
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    const {id} = await importFile(ev?.target?.result, teamId);
-                    navigateToPluginUrl(`/playbooks/${id}`);
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        };
-
         return (
-            <>
-                <RightDots/>
-                <RightFade/>
-                <LeftDots/>
-                <LeftFade/>
-                <ContainerMedium>
-                    <PlaybooksHeader data-testid='titlePlaybook'>
-                        <Heading>
-                            {formatMessage({defaultMessage: 'Playbooks'})}
-                        </Heading>
-                        <ExpandRight/>
-                        <SearchInput
-                            testId={'search-filter'}
-                            default={params.search_term}
-                            onSearch={setSearchTerm}
-                            placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <CheckboxInput
-                            testId={'with-archived'}
-                            text={formatMessage({defaultMessage: 'With archived'})}
-                            checked={params.with_archived}
-                            onChange={setWithArchived}
-                        />
-                        <HorizontalSpacer size={12}/>
-                        <input
-                            type='file'
-                            accept='*.json,application/JSON'
-                            onChange={importUpload}
-                            ref={fileInputRef}
-                            style={{display: 'none'}}
-                        />
-                        { teams.length > 1 &&
-                        <TeamSelector
-                            placeholder={
-                                <ImportButton/>
-                            }
-                            onlyPlaceholder={true}
-                            enableEdit={true}
-                            teams={teams}
-                            onSelectedChange={(teamId: string) => {
-                                setImportTargetTeam(teamId);
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                        }
-                        { teams.length <= 1 &&
-                        <ImportButton
-                            onClick={() => {
-                                if (fileInputRef && fileInputRef.current) {
-                                    fileInputRef.current.click();
-                                }
-                            }}
-                        />
-                        }
-                        {canCreatePlaybooks &&
-                        <>
-                            <HorizontalSpacer size={12}/>
-                            <PlaybookModalButton/>
-                        </>
-                        }
-                    </PlaybooksHeader>
-                    <BackstageListHeader>
-                        <div className='row'>
-                            <div className='col-sm-4'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Name'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'title'}
-                                    onClick={() => sortBy('title')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Checklists'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'stages'}
-                                    onClick={() => sortBy('stages')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={'Tasks'}
-                                    direction={params.direction}
-                                    active={params.sort === 'steps'}
-                                    onClick={() => sortBy('steps')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <SortableColHeader
-                                    name={formatMessage({defaultMessage: 'Runs'})}
-                                    direction={params.direction}
-                                    active={params.sort === 'runs'}
-                                    onClick={() => sortBy('runs')}
-                                />
-                            </div>
-                            <div className='col-sm-2'>
-                                <FormattedMessage defaultMessage='Actions'/>
-                            </div>
-                        </div>
-                    </BackstageListHeader>
-                    {listBody}
-                    <PaginationRow
-                        page={params.page}
-                        perPage={params.per_page}
-                        totalCount={totalCount}
-                        setPage={setPage}
+            <TableContainer>
+                <Header
+                    data-testid='titlePlaybook'
+                    level={2}
+                    heading={formatMessage({defaultMessage: 'Playbooks'})}
+                    subtitle={formatMessage({defaultMessage: 'All the playbooks that you can access will show here'})}
+                    right={(
+                        <TitleActions>
+                            {canCreatePlaybooks && (
+                                <>
+                                    <ImportButton
+                                        onClick={() => {
+                                            if (fileInputRef && fileInputRef.current) {
+                                                fileInputRef.current.click();
+                                            }
+                                        }}
+                                    />
+                                    <HorizontalSpacer size={12}/>
+                                    <PlaybookModalButton/>
+                                </>
+                            )}
+                        </TitleActions>
+                    )}
+                    css={`
+                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+                    `}
+                />
+                <PlaybooksListFilters>
+                    <SearchInput
+                        testId={'search-filter'}
+                        default={params.search_term}
+                        onSearch={setSearchTerm}
+                        placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                     />
-                </ContainerMedium>
-            </>
+                    <HorizontalSpacer size={12}/>
+                    <CheckboxInput
+                        testId={'with-archived'}
+                        text={formatMessage({defaultMessage: 'With archived'})}
+                        checked={params.with_archived}
+                        onChange={setWithArchived}
+                    />
+                    <HorizontalSpacer size={12}/>
+                    {inputImportPlaybook}
+                </PlaybooksListFilters>
+                <BackstageListHeader $edgeless={true}>
+                    <div className='row'>
+                        <div className='col-sm-4'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Name'})}
+                                direction={params.direction}
+                                active={params.sort === 'title'}
+                                onClick={() => sortBy('title')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Last used'})}
+                                direction={params.direction}
+                                active={params.sort === 'last_run_at'}
+                                onClick={() => sortBy('last_run_at')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Active Runs'})}
+                                direction={params.direction}
+                                active={params.sort === 'active_runs'}
+                                onClick={() => sortBy('active_runs')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={formatMessage({defaultMessage: 'Runs'})}
+                                direction={params.direction}
+                                active={params.sort === 'runs'}
+                                onClick={() => sortBy('runs')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <FormattedMessage defaultMessage='Actions'/>
+                        </div>
+                    </div>
+                </BackstageListHeader>
+                {listBody}
+                <PaginationRow
+                    page={params.page}
+                    perPage={params.per_page}
+                    totalCount={totalCount}
+                    setPage={setPage}
+                />
+            </TableContainer>
         );
     };
 
@@ -318,7 +273,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             {content.current}
             {canCreatePlaybooks && (
                 <>
-                    <ContainerMedium ref={selectorRef}>
+                    <ContainerMedium
+                        ref={selectorRef}
+                    >
                         {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>

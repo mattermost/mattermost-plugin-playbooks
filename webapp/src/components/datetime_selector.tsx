@@ -6,17 +6,17 @@ import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {parse, ParsingOption} from 'chrono-node';
-
 import {DateTime, Duration} from 'luxon';
 import debounce from 'debounce';
 
-import {useClientRect} from 'src/hooks';
+import {Placement} from '@floating-ui/react-dom-interactions';
+
 import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
 
-import {defaultMakeOptions, infer, Mode, Option} from './datetime_input';
+import {defaultMakeOptions, Option} from './datetime_input';
+import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
 import {formatDuration} from './formatted_duration';
 
@@ -24,33 +24,29 @@ interface ActionObj {
     action: ActionTypes;
 }
 
-export type DateTimeOption = {
-    value: DateTime | Duration | null;
-    label?: string | JSX.Element | null;
-    mode?: Mode.DateTimeValue | Mode.DurationValue;
-    labelRHS?: JSX.Element;
-}
+export type DateTimeOption = Option & {labelRHS?: JSX.Element;}
 
 type Props = {
-    testId?: string
-    date?:number
+    testId?: string;
+    date?: number;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
     placeholder: React.ReactNode;
     onlyPlaceholder?: boolean;
-    suggestedOptions: DateTimeOption[]
+    suggestedOptions: DateTimeOption[];
     customControl?: (props: ControlProps<DateTimeOption, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
+    onOpenChange?: (isOpen: boolean) => void;
     customControlProps?: any;
-    showOnRight?: boolean;
+    placement?: Placement;
     className?: string;
+
     makeOptions?: (
         query: string,
         datetimeResults: DateTime[],
         durationResults: Duration[],
         mode: Mode,
     ) => Option[] | null;
-
 }
 
 export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
@@ -58,17 +54,20 @@ export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.Dur
     mode,
 });
 
-const chronoParsingOptions: ParsingOption = {forwardDate: true};
-
 export const DateTimeSelector = ({
     mode = Mode.DateTimeValue,
     suggestedOptions,
     makeOptions = defaultMakeOptions,
     ...props
 }: Props) => {
-    const {formatMessage} = useIntl();
+    const {locale, formatMessage} = useIntl();
 
-    const [isOpen, setOpen] = useState(false);
+    const [isOpen, realSetOpen] = useState(false);
+    const setOpen = (open: boolean) => {
+        props.onOpenChange?.(open);
+        realSetOpen(open);
+    };
+
     const toggleOpen = () => {
         setOpen(!isOpen);
     };
@@ -98,26 +97,6 @@ export const DateTimeSelector = ({
         setOptionsDateTime(suggestedOptions);
     }, [suggestedOptions]);
 
-    // Decide where to open the datetime selector
-    const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
-
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
-        const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, options.length);
-        const spacePerProfile = 48;
-        const dropdownYShift = 27;
-        const dropdownReqSpace = 80;
-        const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, options.length]);
-
     let target;
     if (props.onlyPlaceholder) {
         target = (
@@ -131,7 +110,6 @@ export const DateTimeSelector = ({
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            ref={ref}
             className={props.className}
         >
             {target}
@@ -139,15 +117,10 @@ export const DateTimeSelector = ({
     );
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        // eslint-disable-next-line no-undefined
-        const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(query, Mode.DurationValue);
-        let optionsNew;
-        if (makeOptions) {
-            optionsNew = makeOptions(query, datetimes, duration ? [duration] : [], mode) as DateTimeOption[];
-        }
+        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
+        const duration = parse(locale, query, Mode.DurationValue);
 
-        setOptionsDateTime(optionsNew || suggestedOptions);
+        setOptionsDateTime(makeOptions?.(query, datetimes, duration ? [duration] : [], mode) ?? suggestedOptions);
     }, 150), [makeOptions, suggestedOptions, mode]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
@@ -159,10 +132,9 @@ export const DateTimeSelector = ({
     return (
         <Dropdown
             isOpen={isOpen}
-            onClose={toggleOpen}
+            onOpenChange={setOpen}
             target={targetWrapped}
-            showOnRight={props.showOnRight}
-            moveUp={moveUp}
+            placement={props.placement}
         >
             <ReactSelect
                 isMulti={false}
@@ -171,13 +143,16 @@ export const DateTimeSelector = ({
                 autoFocus={true}
                 components={components}
                 controlShouldRenderValue={false}
+                backspaceRemovesValue={false}
+                tabSelectsValue={false}
+                hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={options}
-                placeholder={formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'})}
+                placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
                 styles={selectStyles}
                 onChange={onSelectedChange}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-run-user-select' // TODO debt: rename
+                className='playbook-run-user-select' // TODO debt: rename
                 formatOptionLabel={OptionLabel}
                 {...props.customControlProps}
             />
@@ -186,7 +161,6 @@ export const DateTimeSelector = ({
 };
 
 const TIME_SPEC = {
-    locale: 'en',
     useDate: (_: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
 };
 
@@ -242,7 +216,7 @@ const Wrapper = styled.div`
     display: flex;
     flex: 1;
     color: var(--center-channel-color);
-    font-weight 400;
+    font-weight: 400;
     font-size: 14px;
     line-height: 20px;
 `;

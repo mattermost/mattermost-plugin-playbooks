@@ -1,15 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps, useMemo, useEffect} from 'react';
-import styled from 'styled-components';
-import {parse, parseDate, ParsingOption} from 'chrono-node';
-import parseDuration from 'parse-duration';
+import React, {useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';
 
-import {DateTime, Duration} from 'luxon';
+import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
 
 import {useIntl} from 'react-intl';
 
@@ -18,58 +15,24 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
-export enum Mode {
-    DateTimeValue = 'DateTimeValue',
-
-    DurationValue = 'DurationValue',
-
-    AutoValue = 'AutoValue'
-}
-
-const chronoParsingOptions: ParsingOption = {forwardDate: true};
-
-const durationFromQuery = (query: string): Duration | null => {
-    const ms = parseDuration(query);
-    return (ms && Duration.fromMillis(ms)) || null;
-};
-
-const dateTimeFromQuery = (query: string, acceptDurationInput = false): DateTime | null => {
-    // eslint-disable-next-line no-undefined
-    const date: Date = parseDate(query, undefined, chronoParsingOptions);
-    if (date == null && acceptDurationInput) {
-        const duration = durationFromQuery(query);
-
-        if (duration?.isValid) {
-            return DateTime.now().plus(duration);
-        }
-    }
-    return (date && DateTime.fromJSDate(date)) || null;
-};
-
-export function infer(query: string, mode: Mode.DateTimeValue): DateTime | null;
-export function infer(query: string, mode: Mode.DurationValue): Duration | null;
-export function infer(query: string, mode?: Mode): Option['value'];
-export function infer(query: string, mode = Mode.AutoValue): Option['value'] {
-    switch (mode) {
-    case Mode.DateTimeValue:
-        return dateTimeFromQuery(query, true);
-    case Mode.DurationValue:
-        return durationFromQuery(query);
-    case Mode.AutoValue:
-    default:
-        return dateTimeFromQuery(query) ?? durationFromQuery(query);
-    }
-}
+import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
-export const makeOption = (input: string, mode = Mode.AutoValue): Option => ({
-    label: input,
-    value: infer(input, mode),
-});
+export const useMakeOption = (mode: Mode) => {
+    const {locale} = useIntl();
+    return (input: string | DateObjectUnits | DurationLikeObject, label?: string): Option => {
+        const value = parse(locale, input, mode);
+        return {
+            label: label ?? (value && labelFrom(value, mode)),
+            value,
+        };
+    };
+};
+
 export type Option = {
     value: DateTime | Duration | null;
-    label?: string | null;
+    label?: ReactNode | null;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
 }
 
@@ -121,14 +84,13 @@ const DateTimeInput = ({
     ...selectProps
 }: Props) => {
     const [options, setOptions] = useState<Option[] | null>(null);
-    const {formatMessage} = useIntl();
+    const {locale, formatMessage} = useIntl();
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        // eslint-disable-next-line no-undefined
-        const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(query, Mode.DurationValue);
+        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
+        const duration = parse(locale, query, Mode.DurationValue);
         setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
-    }, 150), [setOptions, makeOptions]);
+    }, 150), [locale, setOptions, makeOptions]);
 
     return (
         <StyledSelect
@@ -161,7 +123,6 @@ const customStyles: ComponentProps<typeof Select>['styles'] = {
 };
 
 const TIME_SPEC = {
-    locale: 'en',
     useDate: (_: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
 };
 
@@ -174,6 +135,10 @@ const OptionLabel = ({label, value, mode}: Option) => {
         return null;
     }
 
+    return labelFrom(value, mode);
+};
+
+export const labelFrom = (value: DateTime | Duration, mode?: Mode) => {
     if (mode === Mode.DateTimeValue || (!mode && DateTime.isDateTime(value))) {
         return (
             <Timestamp
@@ -189,7 +154,6 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
     const [value, setValue] = useState<Option | null>();
 
     useEffect(() => {
-        // eslint-disable-next-line no-undefined
         if (value === undefined) {
             setValue(defaultValue);
         }
@@ -207,3 +171,4 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
 };
 
 export default DateTimeInput;
+export {Mode};

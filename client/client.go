@@ -44,6 +44,10 @@ type Client struct {
 	Settings *SettingsService
 	// Actions is a collection of methods used to interact with actions.
 	Actions *ActionsService
+	// Stats is a collection of methods used to interact with stats.
+	Stats *StatsService
+	// Reminders is a collection of methods used to interact with reminders.
+	Reminders *RemindersService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -68,6 +72,8 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.Playbooks = &PlaybooksService{c}
 	c.Settings = &SettingsService{c}
 	c.Actions = &ActionsService{c}
+	c.Stats = &StatsService{c}
+	c.Reminders = &RemindersService{c}
 	return c, nil
 }
 
@@ -157,6 +163,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	}
 
 	return resp, err
+}
+
+type GraphQLInput struct {
+	Query         string                 `json:"query"`
+	OperationName string                 `json:"operationName"`
+	Variables     map[string]interface{} `json:"variables"`
+}
+
+func (c *Client) DoGraphql(ctx context.Context, input *GraphQLInput, v interface{}) error {
+	url := "query"
+	req, err := c.newRequest(http.MethodPost, url, input)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(ctx, req, v)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // checkResponse checks the API response for an error.

@@ -6,9 +6,8 @@ import {useIntl} from 'react-intl';
 
 import {Duration} from 'luxon';
 
-import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
+import FormattedMarkdown from 'src/components/formatted_markdown';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 import {TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
@@ -22,8 +21,6 @@ interface Props {
 
 const PlaybookPreviewStatusUpdates = (props: Props) => {
     const {formatMessage} = useIntl();
-    const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
-    const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
     // The following booleans control the rendering of each of the CardEntry comopnents in this section,
     // hiding them if they don't have any visible subentries.
@@ -76,7 +73,7 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
                         })}
                         enabled={updateTemplateEnabled}
                     >
-                        {renderMarkdown(props.playbook.reminder_message_template)}
+                        <FormattedMarkdown value={props.playbook.reminder_message_template}/>
                     </CardSubEntry>
                 </CardEntry>
                 <CardEntry

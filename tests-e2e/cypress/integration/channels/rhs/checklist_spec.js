@@ -57,23 +57,76 @@ describe('channels > rhs > checklist', () => {
             cy.apiCreatePlaybook({
                 teamId: team.id,
                 title: 'Playbook',
-                checklists: [{
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1', command: '/invalid'},
-                        {title: 'Step 2', command: '/echo VALID'},
-                        {title: 'Step 3'},
-                        {title: 'Step 4'},
-                        {title: 'Step 5'},
-                        {title: 'Step 6'},
-                        {title: 'Step 7'},
-                        {title: 'Step 8'},
-                        {title: 'Step 9'},
-                        {title: 'Step 10'},
-                        {title: 'Step 11'},
-                        {title: 'Step 12'},
-                    ],
-                }],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 3',
+                        items: [
+                            {title: 'Step 1', command: '/invalid'},
+                            {title: 'Step 2', command: '/echo VALID'},
+                            {title: 'Step 3'},
+                            {title: 'Step 4'},
+                            {title: 'Step 5'},
+                            {title: 'Step 6'},
+                            {title: 'Step 7'},
+                            {title: 'Step 8'},
+                            {title: 'Step 9'},
+                            {title: 'Step 10'},
+                            {title: 'Step 11'},
+                            {title: 'Step 12'},
+                        ],
+                    }
+                ],
                 memberIDs: [
                     user.id,
                 ],
@@ -187,25 +240,16 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('can skip and restore task', () => {
+            // # Skip task and verify
+            skipTask(0);
+
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
             // # Click dot menu
-            cy.findByTitle('More').click();
-
-            // # Click the skip button
-            cy.findByRole('button', {name: 'Skip task'}).click();
-
-            // * Verify the item has been skipped
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
-                cy.get('[data-cy=skipped]').should('exist');
+                cy.findByTitle('More').click();
             });
-
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
-
-            // # Click dot menu
-            cy.findByTitle('More').click();
 
             // # Click the restore button
             cy.findByRole('button', {name: 'Restore task'}).click();
@@ -234,30 +278,16 @@ describe('channels > rhs > checklist', () => {
             cy.findByText(newTasktext).should('exist');
         });
 
-        it('assignee selector is shifted up if it falls below window', {
-            retries: {runMode: 3},
-        }, () => {
-            // Hover over a checklist item at the end
-            cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
-                // Click the profile icon
-                cy.get('.icon-account-plus-outline').click().wait(HALF_SEC);
-
-                cy.isInViewport('.playbook-run-user-select');
-            });
-        });
-
         it('creates a new checklist', () => {
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
-                cy.findByText('Checklists').trigger('mouseover').within(() => {
-                    cy.findByTitle('Add checklist').click();
-                });
+                cy.findByTestId('add-a-checklist-button').click();
             });
 
             // # Type a title and click on the Add button
             const title = 'Checklist - ' + Date.now();
-            cy.findByLabelText('Checklist name').type(title);
-            cy.findByRole('button', {name: 'Add'}).click();
+            cy.findByTestId('checklist-title-input').type(title);
+            cy.findByTestId('checklist-item-save-button').click();
 
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
@@ -272,65 +302,26 @@ describe('channels > rhs > checklist', () => {
             // # Open the dot menu and click on the rename button
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).trigger('mouseover');
-                cy.findByTitle('More').click();
+                cy.findAllByTestId('checklistHeader').eq(0).within(() => {
+                    cy.findByTitle('More').click();
+                });
                 cy.findByRole('button', {name: 'Rename checklist'}).click();
             });
 
-            // # Clear the text in the input
-            cy.findByLabelText('Checklist name').clear();
-
-            // * Verify that the confirm button is disabled
-            cy.findByRole('button', {name: 'Rename'}).should('be.disabled');
-
             // # Type the new title and click the confirm button
-            cy.findByLabelText('Checklist name').type(newTitle);
-            cy.findByRole('button', {name: 'Rename'}).click();
+            cy.findByTestId('checklist-title-input').type(newTitle);
+            cy.findByTestId('checklist-item-save-button').click();
 
             // * Verify that the checklist changed its name
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).should('not.exist');
-                cy.findByText(newTitle).should('exist');
-            });
-        });
-
-        it('deletes a checklist', () => {
-            const title = 'Stage 1';
-
-            // # Open the dot menu and click on the delete button
-            cy.get('#rhsContainer').within(() => {
-                cy.findByText(title).trigger('mouseover');
-                cy.findByTitle('More').click();
-                cy.findByRole('button', {name: 'Delete checklist'}).click();
-            });
-
-            // # Click the confirm button
-            cy.findByRole('button', {name: 'Delete'}).click();
-
-            // * Verify that the checklist is no longer there
-            cy.get('#rhsContainer').within(() => {
-                cy.findByText(title).should('not.exist');
+                cy.findByText(oldTitle + newTitle).should('exist');
             });
         });
 
         it('can set due date, from hover menu', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
-
-            // # Click the set due date button
-            cy.get('.icon-calendar-outline').click();
-
-            // # Enter due date in 10 min
-            cy.get('.playbook-run-user-select__value-container').type('in 10 min')
-                .wait(HALF_SEC)
-                .trigger('keydown', {
-                    key: 'Enter',
-                });
-
-            // * Verify if Due in 10 minutes info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('in 10 minutes').should('exist');
-                cy.findByText('Due').should('exist');
-            });
+            // # Set due date and verify
+            setTaskDueDate(6, 'in 10 minutes');
         });
 
         it('can set due date, from edit mode', () => {
@@ -356,27 +347,44 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it('filter overdue tasks', () => {
-            // # Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(6).trigger('mouseover');
+        it('filter overdue tasks', {retries: {runMode: 3}}, () => {
+            // # Set overdue date for several items
+            setTaskDueDate(2, '1 hour ago');
 
-            // # Click the edit button
-            cy.findAllByTestId('hover-menu-edit-button').eq(0).click();
+            setTaskDueDate(3, '7 hours ago', 1);
+            setTaskDueDate(5, '3 hours ago', 2);
+            setTaskDueDate(6, '6 hours ago', 3);
 
-            cy.findAllByTestId('due-date-info-button').eq(0).click();
+            // # Skip task
+            skipTask(3);
 
-            // # Enter due 1 min ago
-            cy.get('.playbook-run-user-select__value-container').type('1 min ago')
-                .wait(HALF_SEC)
-                .trigger('keydown', {
-                    key: 'Enter',
-                });
-
-            // * Verify if Due 1 minute ago info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('1 minute ago').should('exist');
-                cy.findByText('Due').should('exist');
+            // # Mark a task as completed
+            cy.findAllByTestId('checkbox-item-container').eq(5).within(() => {
+                // # Check the overdue task
+                cy.get('input').click();
             });
+
+            // * Verify if overdue tasks info was added. Should not include skipped / completed tasks.
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
+                cy.findByText('2 tasks overdue').should('exist');
+            });
+
+            // # Filter overdue tasks
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+
+            // * Verify if filter works. Should not include skipped / completed tasks.
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 2);
+
+            // # Cancel filter overdue tasks
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+
+            // * Verify if filter was canceled
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
+        });
+
+        it('filter overdue automatically disappear if we check all overdue items', () => {
+            // # Set due date
+            setTaskDueDate(2, '1 minute ago');
 
             // * Verify if overdue tasks info was added
             cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
@@ -389,11 +397,86 @@ describe('channels > rhs > checklist', () => {
             // * Verify if filter works
             cy.findAllByTestId('checkbox-item-container').should('have.length', 1);
 
-            // # Cancel filter overdue tasks
-            cy.findAllByTestId('overdue-tasks-filter').eq(0).click();
+            // # Mark a task as completed
+            cy.findAllByTestId('checkbox-item-container').within(() => {
+                // # Check the overdue task
+                cy.get('input').click();
+            });
+
+            // * Verify there is no filter
+            cy.findAllByTestId('overdue-tasks-filter').should('not.exist');
 
             // * Verify if filter was canceled
-            cy.findAllByTestId('checkbox-item-container').should('have.length', 12);
+            cy.findAllByTestId('checkbox-item-container').should('have.length', 48);
+        });
+
+        it('switching between runs with the same checklist', () => {
+            // # Create another run using the same playbook
+            const playbookRunName2 = 'RunWithSameChecklist';
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: playbookRunName2,
+                ownerUserId: testUser.id,
+            });
+
+            // # Set due date for the first channel's task
+            setTaskDueDate(2, 'in 2 hours');
+
+            // # Switch to the second run channel
+            cy.get('#sidebarItem_runwithsamechecklist').click();
+
+            // * Verify that tasks do not have due dates
+            cy.findAllByTestId('checkbox-item-container').eq(2).within(() => {
+                cy.findAllByTestId('due-date-info-button').should('not.exist');
+            });
+        });
+
+        it('scroll 2-3 pages and open due date selector- unexpected scroll issue', () => {
+            // # Hover over the checklist item that is ~3 pages down
+            cy.findAllByTestId('checkbox-item-container').eq(26).trigger('mouseover').within(() => {
+                // # Click the set due date button
+                cy.get('.icon-calendar-outline').click();
+            });
+
+            // * Verify if date selector is visible
+            cy.get('.playbook-run-user-select').should('be.visible');
         });
     });
 });
+
+const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
+    // # Hover over the checklist item
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).trigger('mouseover').within(() => {
+        // # Click the set due date button
+        cy.get('.icon-calendar-outline').click();
+    });
+
+    // # Enter due date query
+    cy.get('.playbook-run-user-select').within(() => {
+        cy.get('input').type(dateQuery, {force: true})
+            .wait(HALF_SEC)
+            .trigger('keydown', {
+                key: 'Enter',
+            });
+    });
+
+    // * Verify if Due date info is added
+    cy.findAllByTestId('due-date-info-button').eq(offset).should('exist').within(() => {
+        cy.findByText(dateQuery).should('exist');
+        cy.findByText('Due').should('exist');
+    });
+};
+
+const skipTask = (taskIndex) => {
+    // # Hover over the checklist item
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).trigger('mouseover');
+
+    // # Click dot menu
+    cy.findAllByTestId('checkbox-item-container').eq(taskIndex).within(() => {
+        cy.findByTitle('More').click();
+    });
+
+    // # Click the skip button
+    cy.findByRole('button', {name: 'Skip task'}).click();
+};

@@ -3,8 +3,8 @@
 
 import React, {useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
@@ -18,7 +18,7 @@ interface Props {
     userId: string;
     classNames?: Record<string, boolean>;
     className?: string;
-    extra?: JSX.Element;
+    extra?: React.ReactNode;
     withoutProfilePic?: boolean;
     withoutName?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
@@ -50,11 +50,15 @@ const ProfileImage = styled.img`
     }
 `;
 
-const ProfileName = styled.div`
+const ProfileName = styled.div<{hasExtra: boolean}>`
     padding: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-height: 18px;
+    display: flex;
+    align-items: center;
+    padding-right: ${({hasExtra}) => (hasExtra ? '4px' : '8px')};
 
     .description {
         color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -94,7 +98,10 @@ const Profile = (props: Props) => {
                 />
             }
             { !props.withoutName &&
-                <ProfileName className='name'>{name}</ProfileName>
+                <ProfileName
+                    hasExtra={Boolean(props.extra)}
+                    className='name'
+                >{name}</ProfileName>
             }
             {props.extra}
         </PlaybookRunProfile>

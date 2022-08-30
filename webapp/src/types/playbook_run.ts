@@ -8,6 +8,7 @@ export interface PlaybookRun {
     id: string;
     name: string;
     summary: string;
+    summary_modified_at: number;
     owner_user_id: string;
     reporter_user_id: string;
     team_id: string;
@@ -24,10 +25,15 @@ export interface PlaybookRun {
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     status_update_enabled: boolean;
+    broadcast_channel_ids: string[];
+    status_update_broadcast_webhooks_enabled: boolean;
+    webhook_on_status_update_urls: string[];
+
+    /** Whether run updates should be broadcasted to channels */
+    status_update_broadcast_channels_enabled: boolean;
 
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
-    broadcast_channel_ids: string[];
     timeline_events: TimelineEvent[];
     retrospective: string;
     retrospective_published_at: number;
@@ -42,6 +48,14 @@ export interface StatusPost {
     id: string;
     create_at: number;
     delete_at: number;
+}
+
+export interface StatusPostComplete {
+    id: string;
+    create_at: number;
+    delete_at: number;
+    message: string;
+    author_user_name: string;
 }
 
 export interface Metadata {

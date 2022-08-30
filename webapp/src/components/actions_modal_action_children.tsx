@@ -4,48 +4,29 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {CategorizeChannelPayload, ChannelAction, ChannelActionType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
+import {useFloatingPortalNode} from '@floating-ui/react-dom-interactions';
 
-import {usePlaybooksCrud} from 'src/hooks';
+import {usePlaybook, usePlaybooksCrud} from 'src/hooks';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 import {StyledSelect} from 'src/components/backstage/styles';
 import CategorySelector from 'src/components/backstage/category_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
-import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
-interface Props {
-    action: ChannelAction;
-    onUpdate: (action: ChannelAction) => void;
+interface WelcomeProps {
+    message: string;
+    onUpdate: (newMessage: string) => void;
     editable: boolean;
 }
 
-const ActionChildren = (props: Props) => {
-    switch (props.action.action_type) {
-    case ChannelActionType.WelcomeMessage:
-        return <WelcomeActionChildren {...props}/>;
-    case ChannelActionType.PromptRunPlaybook:
-        return <RunPlaybookChildren {...props}/>;
-    case ChannelActionType.CategorizeChannel:
-        return <CategorizeChannelChildren {...props}/>;
-    }
-
-    return null;
-};
-
-const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
+export const WelcomeActionChildren = ({message, onUpdate, editable}: WelcomeProps) => {
     const {formatMessage} = useIntl();
 
     return (
         <MarkdownTextbox
             placeholder={formatMessage({defaultMessage: 'Define a message to welcome users joining the channel.'})}
-            value={(action.payload as WelcomeMessageActionPayload).message}
-            setValue={(newMessage: string) => {
-                onUpdate({
-                    ...action,
-                    payload: {message: newMessage} as WelcomeMessageActionPayload,
-                });
-            }}
+            value={message}
+            setValue={onUpdate}
             id={'channel-actions-modal_welcome-msg'}
             hideHelpText={true}
             previewByDefault={!editable}
@@ -54,72 +35,75 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
     );
 };
 
-const RunPlaybookChildren = ({action, onUpdate, editable}: Props) => {
-    const {formatMessage} = useIntl();
-    const [playbooks] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: true});
+interface RunPlaybookProps {
+    playbookId: string;
+    onUpdate: (newPlaybookId: string) => void;
+    editable: boolean;
+}
 
-    const playbookOptions = playbooks?.map((playbook) => (
-        {
+interface OptionType {
+    id: string;
+    value: string;
+    label: string;
+}
+
+export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlaybookProps) => {
+    const {formatMessage} = useIntl();
+    const portalEl = useFloatingPortalNode();
+    const [playbook] = usePlaybook(playbookId);
+    const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
+
+    // Format the playbooks for use with StyledSelect.
+    const playbookOptions = playbooks?.map((p) => ({value: p.title, label: p.title, id: p.id})) || [];
+
+    // Add the currently selected playbook, unless we're filtering.
+    const playbookOptionsWithSelected = playbookOptions;
+    if (playbook && params.search_term?.length === 0 && playbookOptions.findIndex((p) => p.id === playbook.id) === -1) {
+        playbookOptionsWithSelected.unshift({
             value: playbook.title,
             label: playbook.title,
             id: playbook.id,
-        }
-    ));
-
-    const payload = action.payload as PromptRunPlaybookFromKeywordsPayload;
-
-    const onSelectedChange = ({id}: {id: string}) => {
-        onUpdate({
-            ...action,
-            payload: {
-                ...action.payload,
-                playbook_id: id,
-            },
         });
-    };
+    }
 
     return (
         <StyledSelect
             placeholder={formatMessage({defaultMessage: 'Select a playbook'})}
-            onChange={onSelectedChange}
-            options={playbookOptions || []}
-            value={playbookOptions?.find((p) => p.id === payload.playbook_id)}
+            onInputChange={setSearchTerm}
+            filterOption={() => true}
+            onChange={(option: OptionType) => onUpdate(option.id)}
+            options={playbookOptionsWithSelected}
+            value={playbookOptions?.find((p) => p.id === playbookId)}
             isClearable={false}
             maxMenuHeight={250}
             styles={{indicatorSeparator: () => null}}
             isDisabled={!editable}
+            captureMenuScroll={false}
+            menuPlacement={'auto'}
         />
     );
 };
 
-const CategorizeChannelChildren = ({action, onUpdate, editable}: Props) => {
-    const {formatMessage} = useIntl();
-    const payload = action.payload as CategorizeChannelPayload;
+interface CategorizeChannelProps {
+    categoryName: string;
+    onUpdate: (newCategoryName: string) => void;
+    editable: boolean;
+}
 
-    const onCategorySelected = (name: string) => {
-        onUpdate({
-            ...action,
-            payload: {
-                ...action.payload,
-                category_name: name,
-            },
-        });
-    };
+export const CategorizeChannelChildren = ({categoryName, onUpdate, editable}: CategorizeChannelProps) => {
+    const {formatMessage} = useIntl();
 
     return (
         <CategorySelector
             id='channel-actions-categorize-playbook-run'
-            onCategorySelected={onCategorySelected}
-            categoryName={payload.category_name}
+            onCategorySelected={onUpdate}
+            categoryName={categoryName}
             isClearable={true}
             selectComponents={{ClearIndicator, IndicatorSeparator: () => null}}
             isDisabled={!editable}
             captureMenuScroll={false}
             shouldRenderValue={true}
             placeholder={formatMessage({defaultMessage: 'Enter category name'})}
-            menuPlacement={'bottom'}
         />
     );
 };
-
-export default ActionChildren;

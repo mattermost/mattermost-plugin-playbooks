@@ -2,15 +2,16 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useEffect, useState, ReactNode} from 'react';
+import React, {useEffect, useState, ReactNode, HTMLAttributes} from 'react';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {useRunsList} from 'src/hooks';
 import RunList from '../runs_list/runs_list';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
+import {PlaybookViewTarget} from 'src/types/telemetry';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -21,25 +22,32 @@ const defaultPlaybookFetchParams = {
 };
 
 interface Props {
-    playbook: PlaybookWithChecklist;
+    playbookID: string;
     stats: PlaybookStats;
 }
 
-const PlaybookUsage = (props: Props) => {
+type Attrs = HTMLAttributes<HTMLElement>;
+
+const PlaybookUsage = ({
+    playbookID,
+    stats,
+    ...attrs
+}: Props & Attrs) => {
+    usePlaybookViewTelemetry(PlaybookViewTarget.Usage, playbookID);
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: props.playbook.id, page: 0};
+            return {...oldParams, playbook_id: playbookID, page: 0};
         });
-    }, [props.playbook.id, setFetchParams]);
+    }, [playbookID, setFetchParams]);
 
     return (
-        <OuterContainer>
+        <OuterContainer {...attrs}>
             <InnerContainer>
                 <StatsView
-                    stats={props.stats}
+                    stats={stats}
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     setFilterPill={setFilterPill}
@@ -85,4 +93,4 @@ const RunListContainer = styled.div`
     }
 `;
 
-export default PlaybookUsage;
+export default styled(PlaybookUsage)``;

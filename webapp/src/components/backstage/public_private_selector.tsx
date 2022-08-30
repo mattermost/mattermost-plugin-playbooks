@@ -3,7 +3,7 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {useAllowPrivatePlaybooks} from 'src/hooks/general';
+import {useAllowPrivatePlaybooks} from 'src/hooks';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import Tooltip from 'src/components/widgets/tooltip';
 
@@ -96,8 +96,8 @@ const PublicPrivateSelector = (props: Props) => {
                     className={'icon-globe'}
                 />
                 <StackedText>
-                    <BigText>{'Public playbook'}</BigText>
-                    <SmallText>{'Anyone on the team can view'}</SmallText>
+                    <BigText>{formatMessage({defaultMessage: 'Public playbook'})}</BigText>
+                    <SmallText>{formatMessage({defaultMessage: 'Anyone on the team can view'})}</SmallText>
                 </StackedText>
                 {props.public &&
                 <CheckIcon
@@ -134,12 +134,12 @@ const PrivateButton = (props: {public: boolean, publicButtonDisabled: boolean, p
             />
             <StackedText>
                 <BigText>
-                    {'Private playbook'}
+                    {formatMessage({defaultMessage: 'Private playbook'})}
                     {!privatePlaybooksAllowed &&
                     <PositionedUpgradeBadge/>
                     }
                 </BigText>
-                <SmallText>{'Only invited members'}</SmallText>
+                <SmallText>{formatMessage({defaultMessage: 'Only invited members'})}</SmallText>
             </StackedText>
             {!props.public &&
             <CheckIcon

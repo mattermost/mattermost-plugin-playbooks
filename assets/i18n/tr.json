@@ -1,0 +1,100 @@
+[
+    {
+        "id": "app.user.digest.tasks.zero_assigned",
+        "translation": "0 atanmış göreviniz var."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "Süresi dolmuş {{.Count}} atanmış göreviniz var:",
+            "other": "Süresi dolmuş {{.Count}} atanmış göreviniz var:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "{{.Count}} atanmış göreviniz var:",
+            "other": "{{.Count}} atanmış göreviniz var:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Atanmış görevleriniz"
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Süresi dün doldu"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Süresi {{.Count}} gün önce doldu"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Süresi bugün dolacak"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "{{.Count}} gun içinde süresi dolacak",
+            "other": "{{.Count}} gun içinde süresi dolacak"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Bugünden sonra atanmış **{{.Count}} göreviniz var**.",
+            "other": "Bugünden sonra atanmış **{{.Count}} göreviniz var**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Tüm görevlerinizi görüntülemek için `/playbook todo` kullanın."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Süren 0 çalışmanız var."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Süren {{.Count}} çalışmanız var:",
+            "other": "Süren {{.Count}} çalışmanız var:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Süren çalışmalar"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "0 çalışma gecikmeniz var."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Bir durum güncellemesi için {{.Count}} çalışma gecikmeniz var:",
+            "other": "Bir durum güncellemesi için {{.Count}} çalışma gecikmeniz var:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Gecikmiş durum güncellemeleri"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Komut yürütülemedi."
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} bir durum güncellemesi istedi. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here — @{{.Name}} bu oyuna katılmak istiyor. Oyuna katılabilmesi için lütfen onu bu kanala ekleyin.\n"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{{.Name}} bir geçmiş değerlendirmesi yayınladı\n[Geçmiş değerlendirmesine bakın]({{.URL}})\n"
+    }
+]

@@ -5,20 +5,26 @@ import React from 'react';
 import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
 import {setChecklistItemState} from 'src/client';
-import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
+import {ButtonsFormat as ItemButtonsFormat, ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun?: PlaybookRun;
     checklistIndex: number;
     item: ChecklistItemType;
     itemIndex: number;
+    newItem: boolean;
+    disabled?: boolean;
+    cancelAddingItem: () => void;
+    onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
+    onAddChecklistItem?: (newItem: ChecklistItemType) => void;
+    onDuplicateChecklistItem?: () => void;
+    onDeleteChecklistItem?: () => void;
+    itemButtonsFormat?: ItemButtonsFormat;
 }
 
 const DraggableChecklistItem = (props: Props) => {
-    const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
-
     return (
         <Draggable
             draggableId={props.item.title + props.itemIndex}
@@ -29,15 +35,20 @@ const DraggableChecklistItem = (props: Props) => {
                     checklistItem={props.item}
                     checklistNum={props.checklistIndex}
                     itemNum={props.itemIndex}
-                    channelId={props.playbookRun.channel_id}
-                    playbookRunId={props.playbookRun.id}
-                    onChange={(newState: ChecklistItemState) => {
-                        setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
-                    }}
+                    playbookRunId={props.playbookRun?.id}
+                    channelId={props.playbookRun?.channel_id}
+                    onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
                     draggableProvided={draggableProvided}
-                    dragging={snapshot.isDragging}
-                    disabled={finished}
+                    dragging={snapshot.isDragging || snapshot.combineWith != null}
+                    disabled={props.disabled ?? false}
                     collapsibleDescription={true}
+                    newItem={props.newItem}
+                    cancelAddingItem={props.cancelAddingItem}
+                    onUpdateChecklistItem={props.onUpdateChecklistItem}
+                    onAddChecklistItem={props.onAddChecklistItem}
+                    onDuplicateChecklistItem={props.onDuplicateChecklistItem}
+                    onDeleteChecklistItem={props.onDeleteChecklistItem}
+                    buttonsFormat={props.itemButtonsFormat}
                 />
             )}
         </Draggable>

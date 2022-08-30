@@ -12,7 +12,8 @@ import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/a
 type Props = {
     className?: string;
     onHide: () => void;
-    modalHeaderText: React.ReactNode;
+    onExited?: () => void;
+    modalHeaderText?: React.ReactNode;
     show?: boolean;
     showCancel?: boolean;
     handleCancel?: (() => void) | null;
@@ -44,7 +45,6 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
-        adjustTop: 260,
     };
 
     state = {show: true};
@@ -124,21 +124,23 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 dialogClassName={classNames('a11y__modal GenericModal', this.props.className)}
                 show={this.props.show ?? this.state.show}
                 onHide={this.onHide}
-                onExited={this.onHide}
+                onExited={this.props.onExited || this.onHide}
                 enforceFocus={this.props.enforceFocus}
                 restoreFocus={true}
                 role='dialog'
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
-                adjustTop={this.props.adjustTop}
+                container={document.getElementById('root-portal')}
             >
                 <Header
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    {Boolean(this.props.modalHeaderText) && (
+                        <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
+                    )}
                 </Header>
-                <form>
+                <>
                     <Modal.Body>{this.props.children}</Modal.Body>
                     <Modal.Footer>
                         <FooterContainer>
@@ -149,14 +151,18 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                             {this.props.footer}
                         </FooterContainer>
                     </Modal.Footer>
-                </form>
+                </>
             </StyledModal>
         );
     }
 }
 
-export const StyledModal = styled(Modal)<{adjustTop: number}>`
+export const StyledModal = styled(Modal)`
     &&& {
+        display: grid !important;
+        grid-template-rows: 1fr auto 2fr;
+        place-content: start center;
+        padding: 8px;
         /* content-spacing */
         .modal-header {
             margin-bottom: 8px;
@@ -174,7 +180,9 @@ export const StyledModal = styled(Modal)<{adjustTop: number}>`
             margin: 12px 12px 0 0;
         }
         .modal-dialog {
-            margin-top: calc(50vh - ${({adjustTop}) => adjustTop}px);
+            margin: 0px !important;
+            max-width: 100%;
+            grid-row: 2;
         }
     }
 
@@ -219,7 +227,7 @@ export const ModalSubheading = styled.h6`
 `;
 
 export const Description = styled.p`
-    font-size: 12px;
+    font-size: 14px;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 

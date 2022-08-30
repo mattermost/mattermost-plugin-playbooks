@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {BackstageGroupToggleHeader, SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import {
@@ -47,7 +47,7 @@ const RetrospectiveEdit = ({
     if (!retrospectiveAccess) {
         return (
             <TabContainer>
-                {'Upgrade required for access to retrospective features.'}
+                <FormattedMessage defaultMessage='Upgrade required for access to retrospective features.'/>
             </TabContainer>
         );
     }
@@ -94,7 +94,7 @@ const RetrospectiveEdit = ({
                 <BackstageSubheader>
                     {formatMessage({defaultMessage: 'Key metrics'})}
                     <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics

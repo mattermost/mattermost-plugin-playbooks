@@ -4,15 +4,15 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentTeamId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/teams';
 
-import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate, savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
-import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
 import {setPlaybookDefaults} from 'src/types/playbook';
-import {navigateToPluginUrl} from 'src/browser_routing';
+import {usePlaybooksRouting} from 'src/hooks';
+import {useLHSRefresh} from '../backstage/lhs_navigation';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';
@@ -52,7 +52,7 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
 const SelectorGrid = styled.div`
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: min(4vw, 5rem);
+    gap: 2.5rem;
     place-items: flex-start center;
     padding: 0 0 100px;
 `;
@@ -70,9 +70,11 @@ const instantCreatePlaybook = async (template: PresetTemplate, teamID: string, u
 };
 
 const TemplateSelector = ({templates = PresetTemplates}: Props) => {
-    const dispatch = useDispatch();
-    const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
+    const teamId = useSelector(getCurrentTeamId);
     const currentUser = useSelector(getCurrentUser);
+    const {edit} = usePlaybooksRouting();
+    const refreshLHS = useLHSRefresh();
+
     return (
         <SelectorGrid>
             {templates.map((template: PresetTemplate) => (
@@ -92,12 +94,9 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                         if (isTutorial) {
                             username = '';
                         }
-                        if (isTutorial || teams.length === 1) {
-                            const playbookID = await instantCreatePlaybook(template, teams[0].id, username);
-                            navigateToPluginUrl(`/playbooks/${playbookID}`);
-                        } else {
-                            dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
-                        }
+                        const playbookID = await instantCreatePlaybook(template, teamId, username);
+                        refreshLHS();
+                        edit(playbookID);
                     }}
                 />
             ))}

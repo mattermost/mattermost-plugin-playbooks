@@ -6,7 +6,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {savePreferences as storeSavePreferences} from 'mattermost-redux/actions/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';

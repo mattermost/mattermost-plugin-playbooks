@@ -2,46 +2,33 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {
-    DragDropContext,
-    DropResult,
-    Droppable,
-    DroppableProvided,
-    Draggable,
-    DraggableProvided,
-    DraggableStateSnapshot,
-} from 'react-beautiful-dnd';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
+import {GlobalState} from 'mattermost-webapp/types/store';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 import {
-    finishRun,
-    playbookRunUpdated,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
-    setEachChecklistCollapsedState,
+    setEveryChecklistCollapsedStateChange,
 } from 'src/actions';
 import {
     Checklist,
+    ChecklistItem,
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
 import {
-    clientMoveChecklist,
-    clientMoveChecklistItem,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import CollapsibleChecklist from 'src/components/collapsible_checklist';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {
     currentChecklistAllCollapsed,
@@ -50,56 +37,99 @@ import {
 } from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
-import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
-import RHSChecklist from 'src/components/rhs/rhs_checklist';
-import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
-import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-
-// disable all react-beautiful-dnd development warnings
-// @ts-ignore
-window['__react-beautiful-dnd-disable-dev-warnings'] = true;
-
-// Create a portal for the checklist to render while dragging
-const portal: HTMLElement = document.createElement('div');
-document.body.appendChild(portal);
+import ChecklistList from 'src/components/checklist/checklist_list';
+import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
+import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 interface Props {
     playbookRun: PlaybookRun;
+    parentContainer: ChecklistParent;
+    id?: string;
+    viewerMode: boolean;
 }
 
-const RHSChecklistList = (props: Props) => {
+export enum ChecklistParent {
+    RHS = 'rhs',
+    RunDetails = 'run_details',
+}
+
+const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
-    const checklistsState = useSelector(currentChecklistCollapsedState);
-    const allCollapsed = useSelector(currentChecklistAllCollapsed);
-    const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
+    const stateKey = parentContainer + '_' + (parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id);
+    const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
+    const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
+    const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
     const myUser = useSelector(getCurrentUser);
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
-    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
-    const checklistsPunchout = useMeasurePunchouts(
-        ['pb-checklists-inner-container'],
-        [],
-        {y: -5, height: 10, x: -5, width: 10},
-    );
-    const showRunDetailsChecklistsStep = useShowTutorialStep(
-        RunDetailsTutorialSteps.Checklists,
-        TutorialTourCategories.RUN_DETAILS
-    );
 
-    const checklists = props.playbookRun.checklists || [];
-    const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = props.playbookRun.current_status === PlaybookRunStatus.InProgress;
-    const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+    const checklists = playbookRun.checklists || [];
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
-    const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
+    const overdueTasksNum = overdueTasks(checklists);
+
+    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
+        dispatch(setChecklistCollapsedState(stateKey, checklistIndex, state));
+    };
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+        dispatch(setEveryChecklistCollapsedStateChange(stateKey, state));
+    };
+
+    const showItem = (checklistItem: ChecklistItem, myId: string) => {
+        if (checklistItemsFilter.all) {
+            return true;
+        }
+
+        // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
+        if (!checklistItemsFilter.checked && checklistItem.state === ChecklistItemState.Closed) {
+            return false;
+        }
+
+        // "Me" is not checked, so if assignee_id is me, don't show it.
+        if (!checklistItemsFilter.me && checklistItem.assignee_id === myId) {
+            return false;
+        }
+
+        // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
+        if (!checklistItemsFilter.unassigned && checklistItem.assignee_id === '') {
+            return false;
+        }
+
+        // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+        if (!checklistItemsFilter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
+            return false;
+        }
+
+        // "Overdue" is checked
+        if (checklistItemsFilter.overdueOnly) {
+            // if an item doesn't have a due date or is due in the future, don't show it.
+            if (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now()) {
+                return false;
+            }
+
+            // if an item is skipped or closed, don't show it.
+            if (checklistItem.state === ChecklistItemState.Closed || checklistItem.state === ChecklistItemState.Skip) {
+                return false;
+            }
+        }
+
+        // We should show it!
+        return true;
+    };
+
+    // Cancel overdueOnly filter if there are no overdue tasks anymore
+    if (overdueTasksNum === 0 && checklistItemsFilter.overdueOnly) {
+        dispatch(setChecklistItemsFilter(stateKey, {
+            ...checklistItemsFilter,
+            overdueOnly: false,
+        }));
+    }
 
     const selectOption = (value: string, checked: boolean) => {
-        telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
+        telemetryEventForPlaybookRun(playbookRun.id, 'checklists_filter_selected');
 
         if (checklistItemsFilter.all && value !== 'all') {
             return;
@@ -108,101 +138,29 @@ const RHSChecklistList = (props: Props) => {
             return;
         }
 
-        dispatch(setChecklistItemsFilter(channelId, {
+        dispatch(setChecklistItemsFilter(stateKey, {
             ...checklistItemsFilter,
             [value]: checked,
         }));
     };
 
-    const onDragEnd = (result: DropResult) => {
-        // If the item is dropped out of any droppable zones, do nothing
-        if (!result.destination) {
-            return;
+    const title = parentContainer === ChecklistParent.RunDetails ? (
+        <AnchorLinkTitle
+            title={formatMessage({defaultMessage: 'Tasks'})}
+            id={id || ''}
+        />
+    ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
+
+    const itemButtonsFormat = () => {
+        if (parentContainer === ChecklistParent.RHS) {
+            return ItemButtonsFormat.Short;
         }
 
-        const [srcIdx, dstIdx] = [result.source.index, result.destination.index];
-
-        // If the source and desination are the same, do nothing
-        if (result.destination.droppableId === result.source.droppableId && srcIdx === dstIdx) {
-            return;
+        if (viewerMode) {
+            return ItemButtonsFormat.Mixed;
         }
 
-        // Copy the data to modify it
-        const newChecklists = Array.from(checklists);
-
-        // Move a checklist item, either inside of the same checklist, or between checklists
-        if (result.type === 'checklist-item') {
-            const srcChecklistIdx = parseInt(result.source.droppableId, 10);
-            const dstChecklistIdx = parseInt(result.destination.droppableId, 10);
-
-            if (srcChecklistIdx === dstChecklistIdx) {
-                // Remove the dragged item from the checklist
-                const newChecklistItems = Array.from(checklists[srcChecklistIdx].items);
-                const [removed] = newChecklistItems.splice(srcIdx, 1);
-
-                // Add the dragged item to the checklist
-                newChecklistItems.splice(dstIdx, 0, removed);
-                newChecklists[srcChecklistIdx] = {
-                    ...newChecklists[srcChecklistIdx],
-                    items: newChecklistItems,
-                };
-            } else {
-                const srcChecklist = checklists[srcChecklistIdx];
-                const dstChecklist = checklists[dstChecklistIdx];
-
-                // Remove the dragged item from the source checklist
-                const newSrcChecklistItems = Array.from(srcChecklist.items);
-                const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
-
-                // Add the dragged item to the destination checklist
-                const newDstChecklistItems = Array.from(dstChecklist.items);
-                newDstChecklistItems.splice(dstIdx, 0, moved);
-
-                // Modify the new checklists array with the new source and destination checklists
-                newChecklists[srcChecklistIdx] = {
-                    ...srcChecklist,
-                    items: newSrcChecklistItems,
-                };
-                newChecklists[dstChecklistIdx] = {
-                    ...dstChecklist,
-                    items: newDstChecklistItems,
-                };
-            }
-
-            // Persist the new data in the server
-            clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
-        }
-
-        // Move a whole checklist
-        if (result.type === 'checklist') {
-            const [moved] = newChecklists.splice(srcIdx, 1);
-            newChecklists.splice(dstIdx, 0, moved);
-
-            // The collapsed state of a checklist in the store is linked to the index in the list,
-            // so we need to shift all indices between srcIdx and dstIdx to the left (or to the
-            // right, depending on whether srcIdx < dstIdx) one position
-            const newState = {...checklistsState};
-            if (srcIdx < dstIdx) {
-                for (let i = srcIdx; i < dstIdx; i++) {
-                    newState[i] = checklistsState[i + 1];
-                }
-            } else {
-                for (let i = dstIdx + 1; i <= srcIdx; i++) {
-                    newState[i] = checklistsState[i - 1];
-                }
-            }
-            newState[dstIdx] = checklistsState[srcIdx];
-            dispatch(setEachChecklistCollapsedState(channelId, newState));
-
-            // Persist the new data in the server
-            clientMoveChecklist(props.playbookRun.id, srcIdx, dstIdx);
-        }
-
-        // Update the store with the new checklists
-        dispatch(playbookRunUpdated({
-            ...props.playbookRun,
-            checklists: newChecklists,
-        }));
+        return ItemButtonsFormat.Long;
     };
 
     return (
@@ -210,10 +168,11 @@ const RHSChecklistList = (props: Props) => {
             id='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
+            parentContainer={parentContainer}
         >
             <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle>
-                    {formatMessage({defaultMessage: 'Checklists'})}
+                <MainTitle parentContainer={parentContainer}>
+                    {title}
                     {
                         overdueTasksNum > 0 &&
                         <OverdueTasksToggle
@@ -230,19 +189,15 @@ const RHSChecklistList = (props: Props) => {
                             <ExpandHoverButton
                                 title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                                onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
-                            />
-                            <HoverMenuButton
-                                title={formatMessage({defaultMessage: 'Add checklist'})}
-                                className={'icon-plus icon-16 btn-icon'}
-                                onClick={() => setShowAddChecklistDialog(true)}
+                                onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
                             />
                             <MultiCheckbox
                                 options={filterOptions}
                                 onselect={selectOption}
+                                placement='bottom-end'
                                 dotMenuButton={StyledDotMenuButton}
                                 icon={
-                                    <IconWrapper>
+                                    <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
                                         <i className='icon icon-filter-variant'/>
                                     </IconWrapper>
                                 }
@@ -251,129 +206,59 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable
-                    droppableId={'all-checklists'}
-                    direction={'vertical'}
-                    type={'checklist'}
-                >
-                    {(droppableProvided: DroppableProvided) => (
-                        <ChecklistsContainer
-                            {...droppableProvided.droppableProps}
-                            ref={droppableProvided.innerRef}
-                        >
-                            {checklists.map((checklist: Checklist, checklistIndex: number) => (
-                                <Draggable
-                                    key={checklist.title}
-                                    draggableId={checklist.title + checklistIndex}
-                                    index={checklistIndex}
-                                >
-                                    {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
-                                        const component = (
-                                            <CollapsibleChecklist
-                                                draggableProvided={draggableProvided}
-                                                title={checklist.title}
-                                                items={checklist.items}
-                                                index={checklistIndex}
-                                                numChecklists={checklists.length}
-                                                collapsed={Boolean(checklistsState[checklistIndex])}
-                                                setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                                                disabledOrRunID={finished || props.playbookRun.id}
-                                            >
-                                                <RHSChecklist
-                                                    playbookRun={props.playbookRun}
-                                                    checklist={checklist}
-                                                    checklistIndex={checklistIndex}
-                                                />
-                                            </CollapsibleChecklist>
-                                        );
-
-                                        if (snapshot.isDragging) {
-                                            return ReactDOM.createPortal(component, portal);
-                                        }
-
-                                        return component;
-                                    }}
-                                </Draggable>
-                            ))}
-                            {droppableProvided.placeholder}
-                        </ChecklistsContainer>
-                    )}
-                </Droppable>
-            </DragDropContext>
-            {
-                active &&
-                <FinishButton onClick={() => dispatch(finishRun(props.playbookRun.team_id))}>
-                    {formatMessage({defaultMessage: 'Finish run'})}
-                </FinishButton>
-            }
-            <AddChecklistDialog
-                playbookRunID={props.playbookRun.id}
-                show={showAddChecklistDialog}
-                onHide={() => setShowAddChecklistDialog(false)}
+            <ChecklistList
+                playbookRun={playbookRun}
+                enableFinishRun={parentContainer === ChecklistParent.RHS}
+                isReadOnly={viewerMode}
+                checklistsCollapseState={checklistsState}
+                onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
+                onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
+                showItem={showItem}
+                itemButtonsFormat={itemButtonsFormat()}
             />
-            {showRunDetailsChecklistsStep && (
-                <TutorialTourTip
-                    title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
-                    screen={<FormattedMessage defaultMessage='Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.'/>}
-                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
-                    step={RunDetailsTutorialSteps.Checklists}
-                    showOptOut={false}
-                    placement='left'
-                    pulsatingDotPlacement='top-start'
-                    pulsatingDotTranslate={{x: 0, y: 0}}
-                    width={352}
-                    autoTour={true}
-                    punchOut={checklistsPunchout}
-                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.Checklists}_Checklists`}
-                />
-            )}
         </InnerContainer>
     );
 };
 
-const InnerContainer = styled.div`
+const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     position: relative;
     z-index: 1;
 
     display: flex;
     flex-direction: column;
-    padding: 0 12px 24px 12px;
 
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    }
+    ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && `
+        padding: 0 12px 24px 12px;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        }
+    `}
+
     .pb-tutorial-tour-tip__pulsating-dot-ctr {
         z-index: 1000;
     }
 `;
 
-const MainTitleBG = styled.div<{ numChecklists: number }>`
+const MainTitleBG = styled.div<{numChecklists: number}>`
     background-color: var(--center-channel-bg);
     z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
     top: 0;
 `;
 
-const MainTitle = styled.div`
+const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
     ${SemiBoldHeading} {
-    }
-
-    ${InnerContainer}:hover & {
-        background-color: rgba(var(--center-channel-color-rgb), .04);
     }
 
     font-size: 16px;
     line-height: 24px;
-    padding: 12px 0 12px 8px;
-`;
-
-const ChecklistsContainer = styled.div`
+    padding: ${(props) => (props.parentContainer === ChecklistParent.RunDetails ? '12px 0' : '12px 0 12px 8px')};
 `;
 
 const HoverRow = styled(HoverMenu)`
     top: 6px;
-    right: 15px;
+    right: 0px;
 `;
 
 const ExpandHoverButton = styled(HoverMenuButton)`
@@ -384,26 +269,11 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     display: inline-block;
     width: 28px;
     height: 28px;
-
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
 `;
 
 const IconWrapper = styled.div`
     padding: 3px 0 0 1px;
     margin: 0;
-`;
-
-const StyledTertiaryButton = styled(TertiaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: inline-block;
-    margin: 12px 0;
 `;
 
 const OverdueTasksToggle = styled.div<{toggled: boolean}>`
@@ -416,6 +286,7 @@ const OverdueTasksToggle = styled.div<{toggled: boolean}>`
     align-items: center;
     border-radius: 4px;
     user-select: none;
+    cursor: pointer;
     background-color: ${(props) => (props.toggled ? 'var(--dnd-indicator)' : 'rgba(var(--dnd-indicator-rgb), 0.08)')};
     color: ${(props) => (props.toggled ? 'var(--button-color)' : 'var(--dnd-indicator)')};
 `;
@@ -429,22 +300,6 @@ const overdueTasks = (checklists: Checklist[]) => {
         for (const item of list.items) {
             if ((item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) &&
                 item.due_date > 0 && DateTime.fromMillis(item.due_date) <= now) {
-                count++;
-            }
-        }
-    }
-    return count;
-};
-
-const allComplete = (checklists: Checklist[]) => {
-    return notFinishedTasks(checklists) === 0;
-};
-
-const notFinishedTasks = (checklists: Checklist[]) => {
-    let count = 0;
-    for (const list of checklists) {
-        for (const item of list.items) {
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
                 count++;
             }
         }

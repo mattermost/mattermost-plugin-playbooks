@@ -52,8 +52,10 @@ describe('channels > general actions', () => {
             cy.contains('sidebar category').click();
             cy.contains('Enter category name').click().type('example category{enter}');
 
-            // # Save action
-            cy.findByRole('button', {name: /save/i}).click();
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
 
             // # Switch to another user and reload
             // # This drops them into the same channel
@@ -82,8 +84,10 @@ describe('channels > general actions', () => {
             cy.findByTestId('channel-actions-modal_welcome-msg')
                 .type('test ephemeral welcome message');
 
-            // # Save action
-            cy.findByRole('button', {name: /save/i}).click();
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
 
             // # Switch to another user and reload
             // # This drops them into the same channel
@@ -131,8 +135,10 @@ describe('channels > general actions', () => {
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -189,8 +195,10 @@ describe('channels > general actions', () => {
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -265,8 +273,10 @@ describe('channels > general actions', () => {
                 cy.findByText('Public Playbook').click();
                 cy.contains('Prompt to run a playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -296,6 +306,52 @@ describe('channels > general actions', () => {
         // * Verify the toggles are disabled
         cy.findByRole('dialog', {name: /channel actions/i}).within(() => {
             cy.get('input').should('be.disabled');
+        });
+    });
+
+    it('action settings are reset to the default when switching to a channel with no actions configured', () => {
+        // # Create an additional channel
+        const name = 'New channel ' + Date.now();
+        cy.apiCreateChannel(
+            testTeam.id,
+            'new-channel',
+            name,
+            'O'
+        ).then(({channel}) => {
+            // # Visit the first channel
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open Channel Header and the Channel Actions modal
+            cy.get('#channelHeaderTitle').click();
+            cy.findByText('Channel Actions').click();
+
+            // # Enable the categorization action and set the name
+            const categoryName = 'example category ' + Date.now();
+            cy.contains('sidebar category').click();
+            cy.contains('Enter category name').click().type(categoryName + '{enter}');
+
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
+
+            // # wait to avoid MM-45969
+            cy.wait(5000);
+
+            // # Switch to the additional channel
+            cy.get('#sidebarItem_' + channel.name).click();
+
+            // # Open Channel Header and the Channel Actions modal
+            cy.get('#channelHeaderTitle').click();
+            cy.findByText('Channel Actions').click();
+
+            // * Verify that the categorization action is disabled
+            cy.findByText('Add the channel to a sidebar category for the user').parent().within(() => {
+                cy.get('input').should('not.be.checked');
+            });
+
+            // * Verify that the category name is not there
+            cy.findByText(categoryName).should('not.exist');
         });
     });
 });

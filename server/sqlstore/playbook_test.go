@@ -299,10 +299,15 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		Name: "Desmond",
 	}
 
-	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond}
+	jack := userInfo{
+		ID:   model.NewId(),
+		Name: "Jack",
+	}
+
+	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond, jack}
 
 	pb01 := NewPBBuilder().
-		WithTitle("playbook 1").
+		WithTitle("playbook 01").
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
@@ -313,7 +318,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb02 := NewPBBuilder().
-		WithTitle("playbook 2").
+		WithTitle("playbook 02").
 		WithTeamID(team1id).
 		WithCreateAt(600).
 		WithUpdateAt(0).
@@ -324,7 +329,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb03 := NewPBBuilder().
-		WithTitle("playbook 3").
+		WithTitle("playbook 03").
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
@@ -334,7 +339,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb04 := NewPBBuilder().
-		WithTitle("playbook 4").
+		WithTitle("playbook 04").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
@@ -344,7 +349,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb05 := NewPBBuilder().
-		WithTitle("playbook 5").
+		WithTitle("playbook 05").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
 		WithUpdateAt(0).
@@ -353,7 +358,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb06 := NewPBBuilder().
-		WithTitle("playbook 6").
+		WithTitle("playbook 06").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
 		WithUpdateAt(0).
@@ -362,7 +367,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb07 := NewPBBuilder().
-		WithTitle("playbook 7").
+		WithTitle("playbook 07").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
 		WithUpdateAt(0).
@@ -371,7 +376,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb08 := NewPBBuilder().
-		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
+		WithTitle("playbook 008 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
 		WithUpdateAt(0).
@@ -381,7 +386,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		ToPlaybook()
 
 	pb09 := NewPBBuilder().
-		WithTitle("playbook 9 -- all access").
+		WithTitle("playbook 09 -- all access").
 		WithTeamID(team3id).
 		WithCreateAt(1600).
 		WithUpdateAt(0).
@@ -401,7 +406,16 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
 
-	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09, pb10}
+	pb11 := NewPBBuilder().
+		WithTitle("playbook 11").
+		WithTeamID(team1id).
+		WithCreateAt(1800).
+		WithUpdateAt(0).
+		WithCreatePublicPlaybook(true).
+		WithMembers([]userInfo{jack}).
+		ToPlaybook()
+
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09, pb10, pb11}
 
 	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
@@ -433,10 +447,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 2,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb02},
+				Items:      []app.Playbook{pb01, pb02, pb11},
 			},
 			expectedErr: nil,
 		},
@@ -454,10 +468,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				WithArchived: true,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 3,
+				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb02, pb10},
+				Items:      []app.Playbook{pb01, pb02, pb10, pb11},
 			},
 			expectedErr: nil,
 		},
@@ -474,10 +488,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 2,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb03},
+				Items:      []app.Playbook{pb01, pb03, pb11},
 			},
 			expectedErr: nil,
 		},
@@ -495,10 +509,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage:   1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 2,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb03, pb01},
+				Items:      []app.Playbook{pb11, pb03, pb01},
 			},
 			expectedErr: nil,
 		},
@@ -516,10 +530,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage:   1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 2,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb03, pb01},
+				Items:      []app.Playbook{pb03, pb01, pb11},
 			},
 			expectedErr: nil,
 		},
@@ -536,10 +550,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 1,
+				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb03},
+				Items:      []app.Playbook{pb03, pb11},
 			},
 			expectedErr: nil,
 		},
@@ -832,10 +846,31 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 3,
+				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb02, pb05},
+				Items:      []app.Playbook{pb01, pb02, pb05, pb11},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "playbooks Andrew is member of",
+			teamID: team1id,
+			requesterInfo: app.RequesterInfo{
+				UserID: andrew.ID,
+				TeamID: team1id,
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:               app.SortByTitle,
+				Page:               0,
+				PerPage:            1000,
+				WithMembershipOnly: true,
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb01, pb02},
 			},
 			expectedErr: nil,
 		},
@@ -1734,6 +1769,12 @@ func (p *PlaybookBuilder) WithCreatePublic(public bool) *PlaybookBuilder {
 	return p
 }
 
+func (p *PlaybookBuilder) WithCreatePublicPlaybook(public bool) *PlaybookBuilder {
+	p.Public = public
+
+	return p
+}
+
 func (p *PlaybookBuilder) WithCreateAt(createAt int64) *PlaybookBuilder {
 	p.CreateAt = createAt
 
@@ -1842,4 +1883,167 @@ func setupPlaybookStore(t *testing.T, db *sqlx.DB) app.PlaybookStore {
 	logger, sqlStore := setupSQLStore(t, db)
 
 	return NewPlaybookStore(pluginAPIClient, logger, sqlStore)
+}
+
+func TestGetTopPlaybooks(t *testing.T) {
+	for _, driverName := range driverNames {
+		team1id := model.NewId()
+		team2id := model.NewId()
+
+		jon := userInfo{
+			ID:   model.NewId(),
+			Name: "jon",
+		}
+
+		matt := userInfo{
+			ID:   model.NewId(),
+			Name: "Matt",
+		}
+
+		desmond := userInfo{
+			ID:   model.NewId(),
+			Name: "Desmond",
+		}
+
+		pb01 := NewPBBuilder().
+			WithTitle("playbook 1").
+			WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
+			WithTeamID(team1id).
+			WithCreateAt(500).
+			WithChecklists([]int{1, 2}).
+			WithMembers([]userInfo{jon, matt, desmond}).
+			ToPlaybook()
+
+		pb02 := NewPBBuilder().
+			WithTitle("playbook 2").
+			WithTeamID(team1id).
+			WithCreateAt(600).
+			WithChecklists([]int{1, 4, 6, 7, 1}). // 19
+			WithMembers([]userInfo{matt}).
+			WithMetrics([]string{"name11", "name12"}).
+			ToPlaybook()
+
+		pb03 := NewPBBuilder().
+			WithTitle("playbook 3").
+			WithTeamID(team2id).
+			WithChecklists([]int{1, 2, 3}).
+			WithCreateAt(700).
+			WithMembers([]userInfo{jon, matt}).
+			WithMetrics([]string{"name14", "name12", "name13", "name11"}).
+			ToPlaybook()
+
+		pb04 := NewPBBuilder().
+			WithTitle("playbook 4").
+			WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
+			WithTeamID(team1id).
+			WithCreateAt(800).
+			WithChecklists([]int{20}).
+			WithMembers([]userInfo{matt}).
+			WithCreatePublicPlaybook(true).
+			WithMetrics([]string{"name17"}).
+			ToPlaybook()
+
+		playbooks := []app.Playbook{pb01, pb02, pb03, pb04}
+
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+
+		// create playbooks
+		createPlaybooks := func(store app.PlaybookStore) {
+			t.Helper()
+
+			for index, p := range playbooks {
+				p.ID = ""
+				playbookCreatedID, err := store.Create(p)
+				playbooks[index].ID = playbookCreatedID
+				require.NoError(t, err)
+			}
+		}
+		createPlaybooks(playbookStore)
+		playbookRuns := []*app.PlaybookRun{
+			NewBuilder(t).WithName("pb01-0").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-1").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-2").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb01-3").WithPlaybookID(playbooks[0].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-0").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-1").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-2").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-3").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-4").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb02-5").WithPlaybookID(playbooks[1].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-0").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-1").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb03-2").WithPlaybookID(playbooks[2].ID).WithCreateAt(200).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb04-0").WithPlaybookID(playbooks[3].ID).WithCreateAt(400).ToPlaybookRun(),
+			NewBuilder(t).WithName("pb04-1").WithPlaybookID(playbooks[3].ID).WithCreateAt(400).ToPlaybookRun(),
+		}
+		// create playbook runs
+		for _, playbookRun := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(playbookRun)
+			require.NoError(t, err)
+		}
+
+		t.Run(driverName+" - get top team playbooks", func(t *testing.T) {
+			// for jon
+			topPlaybooks, err := playbookStore.GetTopPlaybooksForTeam(team1id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100})
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 2)
+
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[3].ID)
+
+			// for matt
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForTeam(team1id, matt.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100})
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, pb02.ID and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 3)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 6)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[1].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[2].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
+		})
+
+		t.Run(driverName+" - get top user playbooks", func(t *testing.T) {
+			// for jon
+			topPlaybooks, err := playbookStore.GetTopPlaybooksForUser(team1id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100})
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 1)
+			// fmt.Println(topPlaybooks.Items)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[0].ID)
+
+			// for team 2
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForUser(team2id, jon.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100})
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 1)
+			// fmt.Println(topPlaybooks.Items)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 3)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[2].ID)
+
+			// for matt
+			topPlaybooks, err = playbookStore.GetTopPlaybooksForUser(team1id, matt.ID, &model.InsightsOpts{StartUnixMilli: 0, Page: 0, PerPage: 100})
+			require.NoError(t, err)
+			// should get top playbooks as pb01.ID, and pb04.ID
+			// implicitly means there's no playbooks from other team
+			require.Len(t, topPlaybooks.Items, 3)
+			require.Equal(t, topPlaybooks.Items[0].NumRuns, 6)
+			require.Equal(t, topPlaybooks.Items[0].PlaybookID, playbooks[1].ID)
+			require.Equal(t, topPlaybooks.Items[1].NumRuns, 4)
+			require.Equal(t, topPlaybooks.Items[1].PlaybookID, playbooks[0].ID)
+			require.Equal(t, topPlaybooks.Items[2].NumRuns, 2)
+			require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
+		})
+	}
 }

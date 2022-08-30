@@ -45,7 +45,7 @@ apply:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules
+check-style: apply webapp/node_modules check-golangci
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -53,16 +53,22 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
-ifneq ($(HAS_SERVER),)
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
+	cd tests-e2e && npm run check
 
+ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
-	golangci-lint --version
-	golangci-lint run ./...
+	$(GOBIN)/golangci-lint run ./...
 endif
+
+.PHONY: check-golangci
+check-golangci:
+ifneq ($(HAS_SERVER),)
+	@echo Ckecking golangci-lint
+
+	@# Keep the version in sync with the command in .circleci/config.yml
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+endif
+
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
 .PHONY: server
@@ -83,6 +89,7 @@ else
 	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
 ifneq ($(MM_SERVICESETTINGS_ENABLEDEVELOPER),)
 	cd server && $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
+	cd server && ./dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH) graphqlcheck
 else
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -trimpath -o dist/plugin-darwin-arm64;
@@ -105,6 +112,7 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run graphql;
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
@@ -276,6 +284,12 @@ disable: detach
 .PHONY: enable
 enable:
 	./build/bin/pluginctl enable $(PLUGIN_ID)
+
+## Generate derived types from schema files
+.PHONY: graphql
+graphql:
+	cd webapp && npm run graphql
+
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
 .PHONY: reset

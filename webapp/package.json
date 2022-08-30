@@ -16,7 +16,8 @@
     "test:watch": "jest --watch",
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
     "check-types": "tsc",
-    "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json"
+    "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
+    "graphql": "graphql-codegen --config graphql_gen.yml"
   },
   "author": "",
   "license": "",
@@ -30,15 +31,22 @@
     "@babel/preset-react": "7.16.7",
     "@babel/preset-typescript": "7.16.7",
     "@formatjs/cli": "4.7.0",
+    "@graphql-codegen/cli": "2.6.2",
+    "@graphql-codegen/fragment-matcher": "3.2.1",
+    "@graphql-codegen/introspection": "2.1.1",
+    "@graphql-codegen/typescript": "2.4.5",
+    "@graphql-codegen/typescript-operations": "2.3.2",
+    "@graphql-codegen/typescript-react-apollo": "3.2.8",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
+    "@testing-library/react-hooks": "8.0.0",
     "@types/chart.js": "2.7.3",
     "@types/chartjs-plugin-annotation": "^0.5.2",
     "@types/classnames": "2.3.1",
     "@types/debounce": "1.2.1",
     "@types/history": "4.7.8",
     "@types/jest": "27.4.0",
-    "@types/lodash": "^4.14.178",
-    "@types/luxon": "2.0.2",
+    "@types/lodash": "4.14.178",
+    "@types/luxon": "2.0.9",
     "@types/qs": "6.9.7",
     "@types/react": "16.9.35",
     "@types/react-beautiful-dnd": "13.1.2",
@@ -47,6 +55,7 @@
     "@types/react-dom": "16.9.8",
     "@types/react-redux": "7.1.21",
     "@types/react-router-dom": "5.3.2",
+    "@types/react-router-hash-link": "2.4.5",
     "@types/react-select": "3.1.2",
     "@types/react-test-renderer": "17.0.1",
     "@types/redux-mock-store": "1.0.3",
@@ -58,6 +67,7 @@
     "babel-eslint": "10.1.0",
     "babel-jest": "27.4.6",
     "babel-loader": "8.2.3",
+    "babel-plugin-add-react-displayname": "0.0.5",
     "babel-plugin-formatjs": "10.3.14",
     "babel-plugin-styled-components": "2.0.2",
     "babel-plugin-typescript-to-proptypes": "2.0.0",
@@ -65,10 +75,11 @@
     "css-loader": "6.5.1",
     "eslint": "8.6.0",
     "eslint-import-resolver-webpack": "0.13.2",
-    "eslint-plugin-formatjs": "2.20.1",
+    "eslint-plugin-formatjs": "4.0.2",
     "eslint-plugin-import": "2.25.4",
     "eslint-plugin-react": "7.28.0",
     "eslint-plugin-react-hooks": "4.3.0",
+    "eslint-plugin-unused-imports": "2.0.0",
     "file-loader": "^6.2.0",
     "image-webpack-loader": "^8.0.1",
     "jest": "27.4.7",
@@ -88,6 +99,11 @@
     "webpack-dev-server": "4.7.2"
   },
   "dependencies": {
+    "@apollo/client": "3.5.10",
+    "@floating-ui/react-dom-interactions": "0.6.3",
+    "@mattermost/client": "7.1.0",
+    "@mattermost/compass-icons": "0.1.24",
+    "@mattermost/types": "7.1.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",
     "@tippyjs/react": "4.2.6",
@@ -96,10 +112,11 @@
     "chrono-node": "2.3.5",
     "core-js": "3.20.2",
     "debounce": "1.2.1",
+    "graphql": "16.3.0",
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
-    "luxon": "2.0.2",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#4d7dc89146d33bc833c9926d296e8738fc7b7b0f",
+    "luxon": "2.3.1",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#c00fde021889aaddfcd3afa5ce18254756fc4185",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
@@ -108,10 +125,11 @@
     "react-infinite-scroll-component": "^6.1.0",
     "react-intl": "5.24.1",
     "react-redux": "7.2.6",
-    "react-select": "3.2.0",
+    "react-router-hash-link": "2.4.3",
+    "react-select": "4.3.1",
+    "react-use": "17.3.2",
     "redux": "4.1.2",
     "styled-components": "5.3.3",
-    "tippy.js": "6.3.7",
     "typescript": "4.3.4"
   },
   "jest": {
@@ -134,10 +152,11 @@
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
       "^bundle-loader\\?lazy\\!(.*)$": "$1",
       "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src",
-      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1"
+      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1",
+      "^@mattermost/types(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages//types/src/$1"
     },
     "moduleDirectories": [
-      "",
+      "<rootDir>",
       "node_modules",
       "non_npm_dependencies"
     ],
@@ -150,9 +169,6 @@
     ],
     "setupFiles": [
       "jest-canvas-mock"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.js"
     ],
     "testURL": "http://localhost:8065"
   },

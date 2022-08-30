@@ -1,0 +1,96 @@
+[
+    {
+        "id": "app.command.execute.error",
+        "translation": "Kunde inte utföra kommandot."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Status om förseningar"
+    },
+    {
+        "id": "app.user.digest.tasks.zero_assigned",
+        "translation": "Du har 0 tilldelade uppgifter."
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "Du har {{.Count}} tilldelad uppgift som nu är försenad:",
+            "other": "Du har {{.Count}} tilldelade uppgifter som nu är försenade:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "Du har tilldelats {{.Count}} uppgift:",
+            "other": "Du har tilldelats totalt {{.Count}} uppgifter:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Dina tilldelade uppgifter"
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Skulle utförts igår"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Försenad {{.Count}} dagar"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Ska utföras idag"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Ska utföras inom {{.Count}} dag",
+            "other": "Ska utföras inom {{.Count}} dagar"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Du har **{{.Count}} tilldelad uppgift som ska utföras idag**.",
+            "other": "Du har **{{.Count}} tilldelade uppgifter som ska utföras idag**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Använd `/playbook todo` för att se alla dina uppgifter."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Du har 0 pågående körningar."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Du har {{.Count}} körning som för närvarande pågår:",
+            "other": "Du har {{.Count}} körningar som för närvarande pågår:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Körningar som pågår"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Du har 0 försenade körningar."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Du har {{.Count}} körning som borde ha fått en statusuppdatering:",
+            "other": "Du har {{.Count}} körningar som borde ha fått en statusuppdatering:"
+        }
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here - @{{.Name}} begärde en statusuppdatering. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here - @{{.Name}} vill delta i denna körning. Om du vill inkludera dem som deltagare lägger du till dem i den här kanalen.\n"
+    }
+]

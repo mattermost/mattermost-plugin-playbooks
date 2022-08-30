@@ -6,8 +6,6 @@ import styled, {css} from 'styled-components';
 
 import {FormattedMessage} from 'react-intl';
 
-import {PlaybookRunStatus} from 'src/types/playbook_run';
-
 export enum BadgeType {
     InProgress = 'InProgress',
     Finished = 'Finished',
@@ -77,7 +75,14 @@ const StatusBadge = (props: BadgeProps) => {
         break;
     }
 
-    return <Badge {...props}>{message}</Badge>;
+    return (
+        <Badge
+            data-testid={'badge'}
+            {...props}
+        >
+            {message}
+        </Badge>
+    );
 };
 
 export default StatusBadge;
