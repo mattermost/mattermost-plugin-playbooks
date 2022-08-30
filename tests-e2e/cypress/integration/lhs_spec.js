@@ -58,7 +58,7 @@ describe('lhs', () => {
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
                 // # LHS render takes a few seconds, wait for it
-                cy.wait(3000);
+                cy.wait(5000);
             });
         });
 
