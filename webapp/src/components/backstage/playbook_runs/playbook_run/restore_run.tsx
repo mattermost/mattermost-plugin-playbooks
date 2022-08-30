@@ -16,7 +16,7 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun) => {
     const refreshLHS = useLHSRefresh();
 
     return () => {
-        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to restart the run ?'});
+        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to restart the run?'});
 
         const onConfirm = async () => {
             await restoreRun(playbookRun.id);
