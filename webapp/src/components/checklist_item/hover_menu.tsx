@@ -88,6 +88,8 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 dropdownMenu={StyledDropdownMenu}
                 placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
+                onOpenChange={props.onItemOpenChange}
+                focusManager={{returnFocus: false}}
             >
                 <StyledDropdownMenuItem
                     onClick={() => {

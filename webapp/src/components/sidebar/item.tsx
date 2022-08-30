@@ -117,7 +117,16 @@ export const StyledNavLink = styled(NavLink)`
                 border-radius: 4px;
                 content: "";
             }
-        }  
+        }
+
+        ${DotMenuButton} {
+            opacity: 0;
+        }
+        &:hover {
+            ${DotMenuButton} {
+                opacity: 1;
+            }
+        }        
     }
 `;
 
