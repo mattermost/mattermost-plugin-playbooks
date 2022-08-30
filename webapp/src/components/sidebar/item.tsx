@@ -44,7 +44,6 @@ const Item = (props: ItemProps) => {
                     </NameIconContainer>
                 </Tooltip>
                 {<HoverMenu>{props.itemMenu}</HoverMenu>}
-                {/* <CreatePlaybookDropdown team_id={''}/> */}
             </StyledNavLink>
         </ItemContainer>
     );

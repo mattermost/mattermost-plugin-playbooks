@@ -111,7 +111,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     };
 
     return (
-        <Dropdown stopPropagationOnToggle={true}>
+        <Dropdown>
             <OverlayTrigger
                 delay={OVERLAY_DELAY}
                 placement='top'

@@ -2,20 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {StarIcon, StarOutlineIcon, LinkVariantIcon, CloseIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
-import {useSelector} from 'react-redux';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
+import {useIntl} from 'react-intl';
+import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
 
-import {getSiteUrl} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
-import {copyToClipboard} from 'src/utils';
-import {useToaster} from 'src/components/backstage/toast_banner';
 import {Separator} from 'src/components/backstage/playbook_runs/shared';
-import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
+import {useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useLHSRefresh} from './lhs_navigation';
-import {DotMenuButtonStyled, StyledDropdownMenuItem} from './shared';
+import {DotMenuButtonStyled} from './shared';
+import {CopyPlaybookLinkMenuItem, FavoritePlaybookMenuItem, LeavePlaybookMenuItem} from './playbook_editor/controls';
 
 interface Props {
     playbookId: string;
@@ -24,12 +20,9 @@ interface Props {
 
 export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
     const {formatMessage} = useIntl();
-    const {add: addToast} = useToaster();
-    const currentUserId = useSelector(getCurrentUserId);
     const refreshLHS = useLHSRefresh();
     const updatePlaybook = useUpdatePlaybook(playbookId);
 
-    const {leave} = usePlaybookMembership(playbookId, currentUserId);
     const toggleFavorite = async () => {
         await updatePlaybook({isFavorite: !isFavorite});
         refreshLHS();
@@ -47,35 +40,13 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
                 )}
                 dotMenuButton={DotMenuButtonStyled}
             >
-                <StyledDropdownMenuItem onClick={toggleFavorite}>
-                    {isFavorite ? (
-                        <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
-                    ) : (
-                        <><StarIcon size={18}/>{formatMessage({defaultMessage: 'Favorite'})}</>
-                    )}
-                </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem
-                    onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbookId);
-                        addToast(formatMessage({defaultMessage: 'Copied!'}));
-                    }}
-                >
-                    <LinkVariantIcon size={18}/>
-                    <FormattedMessage defaultMessage='Copy link'/>
-                </StyledDropdownMenuItem>
+                <FavoritePlaybookMenuItem
+                    isFavorite={isFavorite}
+                    toggleFavorite={toggleFavorite}
+                />
+                <CopyPlaybookLinkMenuItem playbookId={playbookId}/>
                 <Separator/>
-                <StyledDropdownMenuItem
-                    onClick={async () => {
-                        await leave();
-                        refreshLHS();
-                    }}
-                >
-                    <CloseIcon
-                        size={18}
-                        color='currentColor'
-                    />
-                    <FormattedMessage defaultMessage='Leave'/>
-                </StyledDropdownMenuItem>
+                <LeavePlaybookMenuItem playbookId={playbookId}/>
             </DotMenu>
         </>
     );
