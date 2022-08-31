@@ -19,20 +19,28 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
         margin-right: 11px;
         fill: rgb(var(--center-channel-color-rgb), 0.56);
     }
+
+    &&:focus {
+        text-decoration: none;
+        color: inherit;
+  }
 `;
+
 export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
     && {
         color: var(--dnd-indicator);
 
+        svg {
+            fill: var(--dnd-indicator);
+        }
+
         :hover {
             background: var(--dnd-indicator);
             color: var(--button-color);
-        }
-    }
-    svg{
-        fill: var(--dnd-indicator);
-        :hover {
-            fill: var(--button-color);
+
+            svg {
+                fill: var(--button-color);
+            }            
         }
     }
 `;
