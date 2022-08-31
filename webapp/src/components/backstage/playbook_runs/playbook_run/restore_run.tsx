@@ -29,8 +29,7 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun) => {
             message: confirmationMessage,
             confirmButtonText: formatMessage({defaultMessage: 'Restart run'}),
             onConfirm,
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            onCancel: () => {},
+            onCancel: () => null,
         })));
     };
 };
