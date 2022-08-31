@@ -3,6 +3,7 @@ query Run($id: String!) {
       id
       name
       participant_ids: participantIDs
+      metadata { followers }
     }
 }
 

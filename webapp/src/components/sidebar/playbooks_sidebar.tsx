@@ -73,6 +73,7 @@ const useLHSData = (teamID: string) => {
                     playbookRunId={run.id}
                     isFavorite={run.isFavorite}
                     participantIDs={run.participantIDs}
+                    followerIDs={run.metadata.followers}
                 />),
             isFavorite: run.isFavorite,
             className: '',

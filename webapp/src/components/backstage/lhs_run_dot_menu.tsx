@@ -11,7 +11,6 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {useRunMetadata} from 'src/hooks';
 
 import {useUpdateRun} from 'src/graphql/hooks';
 
@@ -24,17 +23,16 @@ interface Props {
     playbookRunId: string;
     isFavorite: boolean;
     participantIDs: string[];
+    followerIDs: string[];
 }
 
-export const LHSRunDotMenu = ({playbookRunId, isFavorite, participantIDs}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, isFavorite, participantIDs, followerIDs}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const updateRun = useUpdateRun(playbookRunId);
     const currentUser = useSelector(getCurrentUser);
 
-    const [metadata] = useRunMetadata(playbookRunId, [JSON.stringify(participantIDs)]);
-
-    const followState = useFollowers(metadata?.followers || []);
+    const followState = useFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, isFollowing);
 

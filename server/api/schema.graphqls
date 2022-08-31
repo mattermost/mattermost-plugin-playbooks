@@ -172,8 +172,13 @@ type Run {
 	name: String!
 	isFavorite: Boolean!
 	participantIDs: [String!]!
+	metadata: Metadata!
 }
 
 input RunUpdates {
 	isFavorite: Boolean
+}
+
+type Metadata {
+	followers: [String!]!
 }

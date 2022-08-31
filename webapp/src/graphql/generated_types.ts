@@ -61,6 +61,11 @@ export type Member = {
     userID: Scalars['String'];
 };
 
+export type Metadata = {
+    __typename?: 'Metadata';
+    followers: Array<Scalars['String']>;
+};
+
 export {MetricType};
 
 export type Mutation = {
@@ -238,6 +243,7 @@ export type Run = {
     __typename?: 'Run';
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
+    metadata: Metadata;
     name: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
 };
@@ -264,7 +270,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, participantIDs: Array<string> }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -284,7 +290,7 @@ export type RunQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, participant_ids: Array<string> } | null };
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, participant_ids: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -429,6 +435,9 @@ export const PlaybookLhsDocument = gql`
     name
     isFavorite
     participantIDs
+    metadata {
+      followers
+    }
   }
   playbooks(teamID: $teamID, withMembershipOnly: true) {
     id
@@ -537,6 +546,9 @@ export const RunDocument = gql`
     id
     name
     participant_ids: participantIDs
+    metadata {
+      followers
+    }
   }
 }
     `;

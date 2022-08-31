@@ -71,6 +71,7 @@ query PlaybookLHS($userID: String!, $teamID: String!) {
 		name
 		isFavorite
 		participantIDs
+		metadata { followers }
 	}
 	playbooks (teamID: $teamID, withMembershipOnly: true) {
 		id
