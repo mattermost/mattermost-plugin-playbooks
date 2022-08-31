@@ -126,6 +126,7 @@ export const useLeaveRun = (playbookRunId: string, isFollowing: boolean) => {
                 setLeaveRunConfirm(false);
             }}
             onCancel={() => setLeaveRunConfirm(false)}
+            stopPropagationOnClick={true}
         />
     );
 
