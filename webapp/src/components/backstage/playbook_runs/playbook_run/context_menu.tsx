@@ -64,7 +64,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                 icon={
                     <>
                         <Title>{playbookRun.name}</Title>
-                        <i className={'icon icon-chevron-down'}/>
+                        <i
+                            className={'icon icon-chevron-down'}
+                            data-testid='runDropdown'
+                        />
                     </>
                 }
             >
@@ -118,9 +121,12 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                             <Separator/>
                             <StyledDropdownMenuItem
                                 onClick={onRestoreRun}
+                                className='restartRun'
                             >
                                 <FlagOutlineIcon size={18}/>
-                                <FormattedMessage defaultMessage='Restart run'/>
+                                <FormattedMessage
+                                    defaultMessage='Restart run'
+                                />
                             </StyledDropdownMenuItem>
                         </>
                 }
