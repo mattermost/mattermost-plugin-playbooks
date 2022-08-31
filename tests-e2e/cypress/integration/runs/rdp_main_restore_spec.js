@@ -97,6 +97,7 @@ describe('runs > run details page > restart run', () => {
             cy.get('#confirmModal').get('#confirmModalButton').click();
             cy.wait('@routeRestore');
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+            cy.findByTestId('lhs-navigation').findByText(testRun.name).should('exist');
         }
         );
     });
