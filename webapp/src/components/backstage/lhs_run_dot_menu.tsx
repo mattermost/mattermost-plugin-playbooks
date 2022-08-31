@@ -11,7 +11,9 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {useFavoriteRun, useRun, useRunMetadata} from 'src/hooks';
+import {useRunMetadata} from 'src/hooks';
+
+import {useUpdateRun} from 'src/graphql/hooks';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
 import {useFollowers} from './playbook_runs/playbook_run/playbook_run';
@@ -20,21 +22,27 @@ import {DotMenuButtonStyled} from './shared';
 
 interface Props {
     playbookRunId: string;
-    teamId: string
+    isFavorite: boolean;
+    participantIDs: string[];
 }
 
-export const LHSRunDotMenu = ({playbookRunId, teamId}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, isFavorite, participantIDs}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(teamId, playbookRunId);
-    const [playbookRun] = useRun(playbookRunId);
+    const updateRun = useUpdateRun(playbookRunId);
     const currentUser = useSelector(getCurrentUser);
-    const [metadata] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
+
+    const [metadata] = useRunMetadata(playbookRunId, [JSON.stringify(participantIDs)]);
+
     const followState = useFollowers(metadata?.followers || []);
     const {isFollowing, followers, setFollowers} = followState;
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, isFollowing);
 
-    const role = playbookRun?.participant_ids.includes(currentUser.id) ? Role.Participant : Role.Viewer;
+    const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
+
+    const toggleFavorite = () => {
+        updateRun({isFavorite: !isFavorite});
+    };
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
@@ -61,7 +69,7 @@ export const LHSRunDotMenu = ({playbookRunId, teamId}: Props) => {
                 dotMenuButton={DotMenuButtonStyled}
             >
                 <FavoriteRunMenuItem
-                    isFavoriteRun={isFavoriteRun}
+                    isFavoriteRun={isFavorite}
                     toggleFavorite={toggleFavorite}
                 />
                 <CopyRunLinkMenuItem

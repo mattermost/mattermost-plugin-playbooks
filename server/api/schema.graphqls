@@ -9,6 +9,7 @@ type Query {
 		withMembershipOnly: Boolean = false,
 	): [Playbook!]!
 
+	run(id: String!): Run
 	runs(
 		teamID: String = "",
 		sort: String = "",
@@ -170,6 +171,7 @@ type Run {
 	id: String!
 	name: String!
 	isFavorite: Boolean!
+	participantIDs: [String!]!
 }
 
 input RunUpdates {

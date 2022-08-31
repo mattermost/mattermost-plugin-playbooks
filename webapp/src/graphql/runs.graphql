@@ -1,3 +1,11 @@
+query Run($id: String!) {
+    run(id: $id) {
+      id
+      name
+      participant_ids: participantIDs
+    }
+}
+
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }

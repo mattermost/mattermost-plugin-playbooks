@@ -71,7 +71,8 @@ const useLHSData = (teamID: string) => {
             itemMenu: (
                 <LHSRunDotMenu
                     playbookRunId={run.id}
-                    teamId={teamID}
+                    isFavorite={run.isFavorite}
+                    participantIDs={run.participantIDs}
                 />),
             isFavorite: run.isFavorite,
             className: '',

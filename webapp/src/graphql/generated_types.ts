@@ -206,6 +206,7 @@ export type Query = {
     __typename?: 'Query';
     playbook?: Maybe<Playbook>;
     playbooks: Array<Playbook>;
+    run?: Maybe<Run>;
     runs: Array<Run>;
 };
 
@@ -222,6 +223,10 @@ export type QueryPlaybooksArgs = {
     withMembershipOnly?: InputMaybe<Scalars['Boolean']>;
 };
 
+export type QueryRunArgs = {
+    id: Scalars['String'];
+};
+
 export type QueryRunsArgs = {
     participantOrFollowerID?: InputMaybe<Scalars['String']>;
     sort?: InputMaybe<Scalars['String']>;
@@ -234,6 +239,7 @@ export type Run = {
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
     name: Scalars['String'];
+    participantIDs: Array<Scalars['String']>;
 };
 
 export type RunUpdates = {
@@ -258,7 +264,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, participantIDs: Array<string> }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -273,6 +279,12 @@ export type RemovePlaybookMemberMutationVariables = Exact<{
 }>;
 
 export type RemovePlaybookMemberMutation = { __typename?: 'Mutation', removePlaybookMember: string };
+
+export type RunQueryVariables = Exact<{
+    id: Scalars['String'];
+}>;
+
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, participant_ids: Array<string> } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -416,6 +428,7 @@ export const PlaybookLhsDocument = gql`
     id
     name
     isFavorite
+    participantIDs
   }
   playbooks(teamID: $teamID, withMembershipOnly: true) {
     id
@@ -518,6 +531,43 @@ export function useRemovePlaybookMemberMutation(baseOptions?: Apollo.MutationHoo
 export type RemovePlaybookMemberMutationHookResult = ReturnType<typeof useRemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationResult = Apollo.MutationResult<RemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationOptions = Apollo.BaseMutationOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
+export const RunDocument = gql`
+    query Run($id: String!) {
+  run(id: $id) {
+    id
+    name
+    participant_ids: participantIDs
+  }
+}
+    `;
+
+/**
+ * __useRunQuery__
+ *
+ * To run a query within a React component, call `useRunQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRunQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRunQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useRunQuery(baseOptions: Apollo.QueryHookOptions<RunQuery, RunQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<RunQuery, RunQueryVariables>(RunDocument, options);
+}
+export function useRunLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunQuery, RunQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<RunQuery, RunQueryVariables>(RunDocument, options);
+}
+export type RunQueryHookResult = ReturnType<typeof useRunQuery>;
+export type RunLazyQueryHookResult = ReturnType<typeof useRunLazyQuery>;
+export type RunQueryResult = Apollo.QueryResult<RunQuery, RunQueryVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
