@@ -120,10 +120,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         <>
             <StyledSection>
                 <StyledSectionTitle>
-                    <PlayIcon
-                        size={24}
-                        color={'rgba(var(--center-channel-color-rgb), 0.48)'}
-                    />
+                    <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
                 <Setting id={'create-channel'}>

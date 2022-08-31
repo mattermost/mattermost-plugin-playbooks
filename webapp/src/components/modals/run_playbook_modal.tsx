@@ -88,10 +88,7 @@ const RunPlaybookModal = ({
                 <PlaybookDetail>
                     <PlaybookNameAndTitle>
                         <PlaybookNameTitle>
-                            <NotebookOutlineIcon
-                                size={14}
-                                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                            />
+                            <NotebookOutlineIcon size={14}/>
                             <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
                         </PlaybookNameTitle>
                         <PlaybookName>
@@ -100,10 +97,7 @@ const RunPlaybookModal = ({
                     </PlaybookNameAndTitle>
                     <PlaybookOwnerAndTitle>
                         <PlaybookOwnerTitle>
-                            <AccountOutlineIcon
-                                size={14}
-                                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                            />
+                            <AccountOutlineIcon size={14}/>
                             <div>
                                 {formatMessage({defaultMessage: 'Owner'})}
                             </div>

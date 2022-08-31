@@ -59,10 +59,7 @@ const RHSAboutButtons = (props: Props) => {
                     }}
                 >
                     <IconWrapper>
-                        <PencilOutlineIcon
-                            size={20}
-                            color={'rgba(var(--center-channel-color-rgb), 0.56);'}
-                        />
+                        <PencilOutlineIcon size={20}/>
                     </IconWrapper>
                     <FormattedMessage defaultMessage='Edit run summary'/>
                 </StyledDropdownMenuItem>
@@ -76,10 +73,7 @@ const RHSAboutButtons = (props: Props) => {
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
                     <IconWrapper>
-                        <NotebookOutlineIcon
-                            size={20}
-                            color={'rgba(var(--center-channel-color-rgb), 0.56);'}
-                        />
+                        <NotebookOutlineIcon size={20}/>
                     </IconWrapper>
                     <PlaybookInfo>
                         <FormattedMessage defaultMessage='Go to playbook'/>

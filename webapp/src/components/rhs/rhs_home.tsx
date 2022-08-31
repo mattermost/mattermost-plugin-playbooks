@@ -240,18 +240,12 @@ const RHSHome = () => {
                         <WelcomeButtonCreate
                             onClick={() => newPlaybook()}
                         >
-                            <PlusIcon
-                                size={16}
-                                color={'var(--button-color)'}
-                            />
+                            <PlusIcon size={16}/>
                             <FormattedMessage defaultMessage='Create playbook'/>
                         </WelcomeButtonCreate>
                         <WelcomeCreateAlt>
                             <FormattedMessage defaultMessage='…or start with a template'/>
-                            <ArrowDownIcon
-                                size={16}
-                                color={'rgba(var(--center-channel-color-rgb), 0.72)'}
-                            />
+                            <ArrowDownIcon size={16}/>
                         </WelcomeCreateAlt>
                     </div>
                 ) : (
@@ -292,10 +286,7 @@ const RHSHome = () => {
                                 {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 {' '}
                             </span>
-                            <ArrowRightIcon
-                                size={16}
-                                color={'var(--button-color)'}
-                            />
+                            <ArrowRightIcon size={16}/>
                         </RunDetailButton>
                     )}
                 </div>

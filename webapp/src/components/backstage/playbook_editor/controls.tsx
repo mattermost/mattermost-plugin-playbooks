@@ -309,10 +309,7 @@ export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps
             }}
             data-testid='join-playbook'
         >
-            <PlusIcon
-                size={16}
-                color='currentColor'
-            />
+            <PlusIcon size={16}/>
             {formatMessage({defaultMessage: 'Join playbook'})}
         </PrimaryButtonLarger>
     );
@@ -364,10 +361,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         <DropdownMenuItem
                             onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
                         >
-                            <AccountMultipleOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <AccountMultipleOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Manage access'/>
                         </DropdownMenuItem>
                         <div className='MenuGroup menu-divider'/>
@@ -376,10 +370,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             disabled={archived}
                             disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
                         >
-                            <PencilOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <PencilOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Rename'/>
                         </DropdownMenuItem>
                     </>
@@ -394,10 +385,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     disabled={!permissionForDuplicate}
                     disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                 >
-                    <ContentCopyIcon
-                        size={18}
-                        color='currentColor'
-                    />
+                    <ContentCopyIcon size={18}/>
                     <FormattedMessage defaultMessage='Duplicate'/>
                 </DropdownMenuItem>
                 <DropdownMenuItemStyled
@@ -407,10 +395,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     css={`${iconSplitStyling}`}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                 >
-                    <ExportVariantIcon
-                        size={18}
-                        color='currentColor'
-                    />
+                    <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
                 {currentUserMember && (
@@ -422,10 +407,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                                 refetch();
                             }}
                         >
-                            <CloseIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <CloseIcon size={18}/>
                             <FormattedMessage defaultMessage='Leave'/>
                         </DropdownMenuItem>
                         <div className='MenuGroup menu-divider'/>
@@ -444,10 +426,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                                 onClick={() => openDeletePlaybookModal(playbook)}
                             >
                                 <RedText css={`${iconSplitStyling}`}>
-                                    <ArchiveOutlineIcon
-                                        size={18}
-                                        color='currentColor'
-                                    />
+                                    <ArchiveOutlineIcon size={18}/>
                                     <FormattedMessage defaultMessage='Archive'/>
                                 </RedText>
                             </DropdownMenuItem>

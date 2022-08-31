@@ -212,10 +212,7 @@ const PlaybookListRow = (props: Props) => {
                             padding: 0 20px;
                         `}
                     >
-                        <PlayOutlineIcon
-                            size={22}
-                            color={'var(--button-bg)'}
-                        />
+                        <PlayOutlineIcon size={22}/>
                         {formatMessage({defaultMessage: 'Run'})}
                     </SecondaryButton>
                 ) : (
@@ -233,10 +230,7 @@ const PlaybookListRow = (props: Props) => {
                             padding: 0 20px;
                         `}
                     >
-                        <AccountPlusOutlineIcon
-                            size={16}
-                            color='currentColor'
-                        />
+                        <AccountPlusOutlineIcon size={16}/>
                         {formatMessage({defaultMessage: 'Join'})}
                     </TertiaryButton>
                 )}
@@ -255,20 +249,14 @@ const PlaybookListRow = (props: Props) => {
                         <DropdownMenuItem
                             onClick={props.onEdit}
                         >
-                            <PencilOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <PencilOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Edit'/>
                         </DropdownMenuItem>
                     ) : (
                         <DropdownMenuItem
                             onClick={props.onClick}
                         >
-                            <EyeOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <EyeOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='View'/>
                         </DropdownMenuItem>
                     )}
@@ -280,10 +268,7 @@ const PlaybookListRow = (props: Props) => {
                         disabled={!permissionForDuplicate}
                         disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                     >
-                        <ContentCopyIcon
-                            size={18}
-                            color='currentColor'
-                        />
+                        <ContentCopyIcon size={18}/>
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
                     <DropdownMenuItemStyled
@@ -293,10 +278,7 @@ const PlaybookListRow = (props: Props) => {
                         css={`${iconSplitStyling}`}
                         onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
-                        <ExportVariantIcon
-                            size={18}
-                            color='currentColor'
-                        />
+                        <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
                     {currentUserPlaybookMember && (
@@ -308,10 +290,7 @@ const PlaybookListRow = (props: Props) => {
                                     props.onMembershipChanged(false);
                                 }}
                             >
-                                <CloseIcon
-                                    size={18}
-                                    color='currentColor'
-                                />
+                                <CloseIcon size={18}/>
                                 <FormattedMessage defaultMessage='Leave'/>
                             </DropdownMenuItem>
                             <div className='MenuGroup menu-divider'/>
@@ -330,10 +309,7 @@ const PlaybookListRow = (props: Props) => {
                                     onClick={props.onArchive}
                                 >
                                     <RedText css={`${iconSplitStyling}`}>
-                                        <ArchiveOutlineIcon
-                                            size={18}
-                                            color='currentColor'
-                                        />
+                                        <ArchiveOutlineIcon size={18}/>
                                         <FormattedMessage defaultMessage='Archive'/>
                                     </RedText>
                                 </DropdownMenuItem>

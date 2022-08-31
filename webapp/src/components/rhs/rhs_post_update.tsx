@@ -57,9 +57,7 @@ const RHSPostUpdate = (props: Props) => {
     let icon: JSX.Element;
     if (isFinished) {
         icon = (
-            <FlagCheckeredIcon
-                size={34}
-            />
+            <FlagCheckeredIcon size={34}/>
         );
     } else if (isDue) {
         icon = <Exclamation/>;

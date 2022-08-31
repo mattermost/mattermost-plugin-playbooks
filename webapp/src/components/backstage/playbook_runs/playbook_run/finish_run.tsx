@@ -64,10 +64,7 @@ const FinishRun = ({playbookRun}: Props) => {
         <Container data-testid={'run-finish-section'}>
             <Content>
                 <IconWrapper>
-                    <FlagOutlineIcon
-                        size={24}
-                        color={'rgba(var(--center-channel-color-rgb), 0.32)'}
-                    />
+                    <FlagOutlineIcon size={24}/>
                 </IconWrapper>
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
