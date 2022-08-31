@@ -86,7 +86,7 @@ export const StyledNavLink = styled(NavLink)`
         width: 240px;
         height: 32px;
         align-items: center;
-        padding: 7px 0 7px 19px;
+        padding: 7px 16px 7px 19px;
         border-top: 0;
         border-bottom: 0;
         margin-right: 0;
@@ -123,6 +123,7 @@ export const StyledNavLink = styled(NavLink)`
             opacity: 0;
         }
         &:hover {
+            padding-right: 32px;
             ${DotMenuButton} {
                 opacity: 1;
             }
@@ -135,8 +136,8 @@ const HoverMenu = styled.div`
     flex-direction: row;
     align-items: center;
 
-    margin-left: auto;
-    margin-right: 8px;
+    position: absolute;
+    right: 8px;
 `;
 
 const NameIconContainer = styled.div`

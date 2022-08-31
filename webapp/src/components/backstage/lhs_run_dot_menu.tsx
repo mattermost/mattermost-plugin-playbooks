@@ -54,7 +54,7 @@ export const LHSRunDotMenu = ({playbookRunId, teamId}: Props) => {
                 placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon
-                        size={14}
+                        size={14.4}
                         color={'var(--button-color)'}
                     />
                 )}

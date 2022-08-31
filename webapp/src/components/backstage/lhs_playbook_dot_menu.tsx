@@ -31,7 +31,7 @@ export const LHSPlaybookDotMenu = ({playbookId, isFavorite}: Props) => {
                 placement='bottom-start'
                 icon={(
                     <DotsVerticalIcon
-                        size={14}
+                        size={14.4}
                         color={'var(--button-color)'}
                     />
                 )}
