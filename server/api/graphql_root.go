@@ -241,8 +241,11 @@ func (r *RootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
-		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
-			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
+		// Do not check permissions if we want to unset the DefaultOwnerID
+		if *args.Updates.DefaultOwnerID != "" {
+			if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
+				return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
+			}
 		}
 		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)
 	}
