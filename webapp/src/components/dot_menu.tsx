@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
-import {useFloating, offset, flip, shift, Placement} from '@floating-ui/react-dom';
+import {useFloating, offset, flip, shift, autoUpdate, Placement} from '@floating-ui/react-dom-interactions';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -76,6 +76,7 @@ const DotMenu = (props: DotMenuProps) => {
     const {strategy, x, y, reference, floating, refs} = useFloating<HTMLElement>({
         placement: props.placement ?? 'bottom',
         middleware: [offset(props.offset ?? 2), flip(), shift()],
+        whileElementsMounted: autoUpdate,
     });
 
     const [isOpen, setOpen] = useState(false);
@@ -116,6 +117,7 @@ const DotMenu = (props: DotMenuProps) => {
             className={props.className}
             role={'button'}
             disabled={props.disabled || false}
+            data-testid={'menuButton' + props.title}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -167,9 +169,15 @@ export const DisabledDropdownMenuItemStyled = styled.div`
     font-weight: normal;
     font-size: 14px;
     color: var(--center-channel-color-40);
-    padding: 10px 20px;
+    padding: 8px 20px;
     text-decoration: unset;
 }
+`;
+
+export const iconSplitStyling = css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
 `;
 
 export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {

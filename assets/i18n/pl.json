@@ -98,5 +98,9 @@
     {
         "id": "app.user.run.request_get_involved",
         "translation": "@here - @{.Name}} chce wziąć udział w tym uruchomieniu. Aby uwzględnić ich jako uczestników, dodaj ich do tego kanału.\n"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{.Name}} opublikował retrospektywę\n[Zobacz pełną retrospektywę]({{.URL}}).\n"
     }
 ]

@@ -277,7 +277,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.DefaultOwnerID = playbook.DefaultOwnerID
 	}
 
-	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
 	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
 
 	r.WebhookOnCreationURLs = []string{}
@@ -285,7 +286,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
 	}
 
-	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
 	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
 
 	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
@@ -741,7 +743,7 @@ type PlaybookRunService interface {
 	// RequestGetInvolved posts a join request message in the run's channel
 	RequestGetInvolved(playbookRunID, requesterID string) error
 
-	// Leave removes user from the run's participants list
+	// Leave removes user from the run's participants&followers list
 	Leave(playbookRunID, requesterID string) error
 }
 
@@ -837,6 +839,12 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -971,6 +979,10 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
+	// IncludeFavorites filters playbook runs that ParticipantOrFollowerID has marked as favorite.
+	// There's no impact if ParticipantOrFollowerID is empty.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

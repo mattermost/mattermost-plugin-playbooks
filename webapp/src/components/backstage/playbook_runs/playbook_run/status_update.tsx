@@ -251,8 +251,8 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                                 {openRHSText}
                             </DropdownItem>
                             <DropdownItem
-                                onClick={showRequestUpdateConfirm}
-                                disabled={false}
+                                onClick={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm}
+                                disabled={playbookRun.current_status === PlaybookRunStatus.Finished}
                             >
                                 {formatMessage({defaultMessage: 'Request update...'})}
                             </DropdownItem>
@@ -425,5 +425,6 @@ const ViewAllUpdates = styled.div`
     cursor: pointer;
     color: var(--button-bg);
     font-weight: 600;
+    width: fit-content;    
 `;
 

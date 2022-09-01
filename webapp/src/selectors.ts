@@ -23,7 +23,7 @@ import {
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
+import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
@@ -35,6 +35,10 @@ import {PlaybooksPluginState} from 'src/reducer';
 
 // Assert known typing
 const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
+
+// Fake selector to use it as a selector that always fails to get info from store
+// It's useful to be compliant with some sort of selector-based parameters
+export const noopSelector = () => undefined;
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 

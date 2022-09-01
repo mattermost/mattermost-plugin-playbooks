@@ -62,7 +62,11 @@ const RHSAboutTitle = (props: Props) => {
     let onRenderedTitleClick = () => { /* do nothing */};
     if (permissionToChangeTitle) {
         onRenderedTitleClick = () => {
-            setEditing(true);
+            const selectedText = window.getSelection();
+            const hasSelectedText = selectedText !== null && selectedText.toString() !== '';
+            if (!hasSelectedText) {
+                setEditing(true);
+            }
         };
     }
 

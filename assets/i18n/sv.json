@@ -84,5 +84,13 @@
             "one": "Du har {{.Count}} körning som borde ha fått en statusuppdatering:",
             "other": "Du har {{.Count}} körningar som borde ha fått en statusuppdatering:"
         }
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here - @{{.Name}} begärde en statusuppdatering. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here - @{{.Name}} vill delta i denna körning. Om du vill inkludera dem som deltagare lägger du till dem i den här kanalen.\n"
     }
 ]

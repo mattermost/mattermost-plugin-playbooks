@@ -7,13 +7,16 @@ import (
 	"path/filepath"
 
 	"github.com/blang/semver"
+
+	"github.com/mattermost/morph"
+	"github.com/mattermost/morph/drivers"
+	"github.com/mattermost/morph/sources"
+	"github.com/mattermost/morph/sources/embedded"
 	"github.com/pkg/errors"
 
-	"github.com/isacikgoz/morph"
-	"github.com/isacikgoz/morph/drivers"
-	ms "github.com/isacikgoz/morph/drivers/mysql"
-	ps "github.com/isacikgoz/morph/drivers/postgres"
-	"github.com/isacikgoz/morph/sources/embedded"
+	ms "github.com/mattermost/morph/drivers/mysql"
+	ps "github.com/mattermost/morph/drivers/postgres"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
@@ -28,9 +31,10 @@ func (sqlStore *SQLStore) RunMigrations() error {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}
 
-	if err := sqlStore.runMigrationsWithMorph(); err != nil {
-		return fmt.Errorf("failed to complete migrations (with morph): %w", err)
-	}
+	// WARNING: Disable morph migrations until proper testing
+	// if err := sqlStore.runMigrationsWithMorph(); err != nil {
+	// 	return fmt.Errorf("failed to complete migrations (with morph): %w", err)
+	// }
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		if err := sqlStore.runMigrationsLegacy(currentSchemaVersion); err != nil {
@@ -79,34 +83,15 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 	return nil
 }
 
-func (sqlStore *SQLStore) runMigrationsWithMorph() error {
+func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
 	driverName := sqlStore.db.DriverName()
-	assetsList, err := assets.ReadDir(filepath.Join("migrations", driverName))
-	if err != nil {
-		return err
-	}
-
-	assetNamesForDriver := make([]string, len(assetsList))
-	for i, entry := range assetsList {
-		assetNamesForDriver[i] = entry.Name()
-	}
-
-	src, err := embedded.WithInstance(&embedded.AssetSource{
-		Names: assetNamesForDriver,
-		AssetFunc: func(name string) ([]byte, error) {
-			return assets.ReadFile(filepath.Join("migrations", driverName, name))
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	config := drivers.Config{
 		StatementTimeoutInSecs: 100000,
 		MigrationsTable:        "IR_db_migrations",
 	}
 
 	var driver drivers.Driver
+	var err error
 	switch driverName {
 	case model.DatabaseDriverMysql:
 		driver, err = ms.WithInstance(sqlStore.db.DB, &ms.Config{
@@ -120,22 +105,61 @@ func (sqlStore *SQLStore) runMigrationsWithMorph() error {
 	default:
 		err = fmt.Errorf("unsupported database type %s for migration", driverName)
 	}
+	return driver, err
+}
+
+func (sqlStore *SQLStore) createSource() (sources.Source, error) {
+	driverName := sqlStore.db.DriverName()
+	assetsList, err := assets.ReadDir(filepath.Join("migrations", driverName))
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	assetNamesForDriver := make([]string, len(assetsList))
+	for i, entry := range assetsList {
+		assetNamesForDriver[i] = entry.Name()
+	}
+
+	src, err := embedded.WithInstance(&embedded.AssetSource{
+		Names: assetNamesForDriver,
+		AssetFunc: func(name string) ([]byte, error) {
+			return assets.ReadFile(filepath.Join("migrations", driverName, name))
+		},
+	})
+
+	return src, err
+}
+
+func (sqlStore *SQLStore) createMorphEngine() (*morph.Morph, error) {
+	src, err := sqlStore.createSource()
+	if err != nil {
+		return nil, err
+	}
+
+	driver, err := sqlStore.createDriver()
+	if err != nil {
+		return nil, err
 	}
 
 	opts := []morph.EngineOption{
 		morph.WithLock("mm-playbooks-lock-key"),
 	}
 	engine, err := morph.New(context.Background(), driver, src, opts...)
-	if err != nil {
-		return err
-	}
-	defer engine.Close()
 
-	if err := engine.ApplyAll(); err != nil {
-		return fmt.Errorf("could not apply migrations: %w", err)
-	}
-
-	return nil
+	return engine, err
 }
+
+// WARNING: We don't use morph migration until proper testing
+// func (sqlStore *SQLStore) runMigrationsWithMorph() error {
+// 	engine, err := sqlStore.createMorphEngine()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer engine.Close()
+
+// 	if err := engine.ApplyAll(); err != nil {
+// 		return fmt.Errorf("could not apply migrations: %w", err)
+// 	}
+
+// 	return nil
+// }

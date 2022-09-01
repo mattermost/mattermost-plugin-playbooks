@@ -16,8 +16,6 @@ import Report from 'src/components/backstage/playbook_runs/playbook_run/retrospe
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
 
 interface Props {
     id: string;
@@ -36,8 +34,6 @@ const Retrospective = ({
     role,
     focusMetricId,
 }: Props) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Retrospective, playbookRun.id);
-
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);

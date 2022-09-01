@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon, ArrowForwardIosIcon} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
@@ -22,26 +22,67 @@ import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/pla
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {usePlaybook, useFormattedUsername} from 'src/hooks';
+import {pluginUrl} from 'src/browser_routing';
+import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
+
+import {FollowState} from './rhs_info';
+
+export const useFollow = (runID: string, followState: FollowState) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const {isFollowing, followers, setFollowers} = followState;
+    const currentUser = useSelector(getCurrentUser);
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(runID)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
+
+    const FollowingButton = () => {
+        if (isFollowing) {
+            return (
+                <UnfollowButton onClick={toggleFollow}>
+                    {formatMessage({defaultMessage: 'Following'})}
+                </UnfollowButton>
+            );
+        }
+
+        return (
+            <FollowButton onClick={toggleFollow}>
+                {formatMessage({defaultMessage: 'Follow'})}
+            </FollowButton>
+        );
+    };
+
+    return FollowingButton;
+};
 
 interface Props {
     run: PlaybookRun;
     runMetadata?: Metadata;
     editable: boolean;
     channel: Channel | undefined | null;
+    followState: FollowState;
+    playbook?: PlaybookWithChecklist;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
+    const FollowingButton = useFollow(run.id, followState);
 
     const setOwner = async (userID: string) => {
         try {
@@ -77,6 +118,10 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
         }
     };
 
+    const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+        margin-left: 7px;
+    `;
+
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
@@ -84,7 +129,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                 id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
-                onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
                 {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
             </Item>
@@ -107,12 +151,18 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
             >
-                <Participants>
-                    <UserList
-                        userIds={run.participant_ids}
-                        sizeInPx={20}
+                <ParticipantsContainer>
+                    <Participants>
+                        <UserList
+                            userIds={run.participant_ids}
+                            sizeInPx={20}
+                        />
+                    </Participants>
+                    <StyledArrowIcon
+                        size={12}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                </Participants>
+                </ParticipantsContainer>
             </Item>
             <Item
                 id='runinfo-following'
@@ -122,7 +172,7 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                 <FollowersWrapper>
                     <FollowingButton/>
                     <Following
-                        userIds={followers}
+                        userIds={followState.followers}
                         maxUsers={4}
                     />
                 </FollowersWrapper>
@@ -138,21 +188,23 @@ const RHSInfoOverview = ({run, channel, runMetadata, editable, onViewParticipant
                     setSelectedUser(null);
                 }}
             />}
-            {channel && runMetadata && editable && (
+            {channel && runMetadata && (
                 <Item
                     id='runinfo-channel'
                     icon={ProductChannelsIcon}
                     name={formatMessage({defaultMessage: 'Channel'})}
-                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${channel.name}`)}
                 >
-                    <ItemLink to={`/${runMetadata.team_name}/channels/${channel.name}`}>
+                    <ItemLink
+                        to={`/${runMetadata.team_name}/channels/${channel.name}`}
+                        data-testid='runinfo-channel-link'
+                    >
                         <ItemContent >
                             {channel.display_name}
-                            <OpenInNewIcon
-                                size={14}
-                                color={'var(--button-bg)'}
-                            />
                         </ItemContent>
+                        <OpenInNewIcon
+                            size={14}
+                            color={'var(--button-bg)'}
+                        />
                     </ItemLink>
                 </Item>
             )}
@@ -201,51 +253,6 @@ const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChann
     );
 };
 
-const useFollowing = (runID: string, metadataFollowers: string[]) => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useEffect(() => {
-        setFollowers(metadataFollowers);
-        setIsFollowing(metadataFollowers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    const toggleFollow = () => {
-        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        action(runID)
-            .then(() => {
-                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
-                setIsFollowing(!isFollowing);
-                setFollowers(newFollowers);
-            })
-            .catch(() => {
-                setIsFollowing(isFollowing);
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
-            });
-    };
-
-    const FollowingButton = () => {
-        if (isFollowing) {
-            return (
-                <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
-                </UnfollowButton>
-            );
-        }
-
-        return (
-            <FollowButton onClick={toggleFollow}>
-                {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
-        );
-    };
-
-    return [FollowingButton, followers] as const;
-};
-
 interface ItemProps {
     id: string;
     icon: CompassIcon;
@@ -277,21 +284,21 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    max-width: 230px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const ItemContent = styled.div`
-    display: flex;
+    display: flex;    
     flex-direction: row;
     align-items: center;
 
     svg {
         margin-left: 3px;
-    }
+    }    
+`;
+
+const ItemContent = styled.div`
+    max-width: 230px;
+    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
@@ -340,4 +347,10 @@ const UnfollowButton = styled(SecondaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
+`;
+
+const ParticipantsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;

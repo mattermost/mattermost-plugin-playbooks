@@ -10,6 +10,8 @@ export interface Playbook {
     delete_at: number;
     run_summary_template_enabled: boolean;
     public: boolean;
+    default_owner_id: string;
+    default_owner_enabled: boolean;
 
     /** @alias num_checklists */
     num_stages: number;
@@ -19,6 +21,7 @@ export interface Playbook {
     last_run_at: number;
     members: PlaybookMember[];
     default_playbook_member_role: string;
+    active_runs: number;
 }
 
 export interface PlaybookMember {
@@ -78,7 +81,7 @@ export interface FetchPlaybooksParams {
     team_id?: string;
     page?: number;
     per_page?: number;
-    sort?: 'title' | 'stages' | 'steps' | 'runs';
+    sort?: 'title' | 'stages' | 'steps' | 'runs' | 'last_run_at' | 'active_runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
     with_archived?: boolean;
@@ -181,6 +184,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         default_playbook_member_role: '',
         metrics: [],
         is_favorite: false,
+        active_runs: 0,
     };
 }
 

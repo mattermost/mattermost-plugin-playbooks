@@ -138,7 +138,7 @@ describe('runs > run details page > header', () => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPublicPlaybook.id,
-                playbookRunName: 'the run name',
+                playbookRunName: 'the run name(' + Date.now() + ')',
                 ownerUserId: testUser.id,
             }).then((run) => {
                 playbookRun = run;
@@ -173,6 +173,31 @@ describe('runs > run details page > header', () => {
 
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
+                    });
+
+                    it('can not save an invalid form', () => {
+                        // * Verify that the run actions modal is shown when clicking on the button
+                        openRunActionsModal();
+
+                        cy.findByRole('dialog', {name: /Run Actions/i}).within(() => {
+                            // # click on webhooks toggle
+                            cy.findByText('Send outgoing webhook').click();
+
+                            // # Type an invalid webhook URL
+                            cy.getStyledComponent('TextArea').clear().type('invalidurl');
+
+                            // # Click outside textarea
+                            cy.findByText('Run Actions').click();
+
+                            // * Assert the error message is displayed
+                            cy.findByText('Invalid webhook URLs').should('be.visible');
+
+                            // # Click save
+                            cy.findByTestId('modal-confirm-button').click();
+
+                            // * Assert that modal is still open
+                            cy.findByText('Run Actions').should('be.visible');
+                        });
                     });
 
                     it('honours the settings from the playbook', () => {
@@ -395,11 +420,37 @@ describe('runs > run details page > header', () => {
                     cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
                 });
             });
+
+            describe('leave run', () => {
+                it('can leave run', () => {
+                    // # Add viewer user to the channel
+                    cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+
+                    // # Change the owner to testViewerUser
+                    cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
+                    cy.wait(500);
+
+                    // # Click on leave run
+                    getDropdownItemByText('Leave and unfollow run').click();
+
+                    // # confirm modal
+                    cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                    // NOTE: this check fails because the front doesn't receive updated run object. Will deal in separate PR.
+                    // * Assert that the Participate button is shown
+                    // getHeader().findByText('Participate').should('be.visible');
+
+                    // * Verify run has been removed from LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
+                });
+            });
         });
     });
 
     describe('as viewer', () => {
         let playbookRunChannelName;
+        let playbookRunName;
+
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
@@ -408,7 +459,7 @@ describe('runs > run details page > header', () => {
             cy.apiLogin(testUser);
 
             const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
+            playbookRunName = 'Playbook Run (' + now + ')';
             playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -427,6 +478,47 @@ describe('runs > run details page > header', () => {
 
         describe('title, icons and buttons', () => {
             commonHeaderTests();
+
+            describe('Favorite', () => {
+                beforeEach(() => {
+                    // # Login as testUser
+                    cy.apiLogin(testUser);
+
+                    const now = Date.now();
+                    playbookRunName = 'Playbook Run (' + now + ')';
+                    playbookRunChannelName = 'playbook-run-' + now;
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: testPublicPlaybookAndChannel.id,
+                        playbookRunName,
+                        ownerUserId: testUser.id,
+                    }).then((run) => {
+                        playbookRun = run;
+
+                        cy.apiLogin(testViewerUser).then(() => {
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+                            // # let the page render completely
+                            cy.wait(3000);
+                        });
+                    });
+                });
+
+                it('add and remove from LHS', () => {
+                    // # Click fav icon
+                    getHeader().getStyledComponent('StarButton').click();
+
+                    // * Assert run appears in LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+
+                    // # Click fav icon again (unfav)
+                    getHeader().getStyledComponent('StarButton').click();
+
+                    // * Assert run disappeared from LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('not.exist');
+                });
+            });
 
             describe('Participate', () => {
                 it('shows button', () => {
@@ -491,7 +583,7 @@ describe('runs > run details page > header', () => {
                     cy.apiLogin(testUser);
 
                     const now = Date.now();
-                    const playbookRunName = 'Playbook Run (' + now + ')';
+                    playbookRunName = 'Playbook Run (' + now + ')';
                     playbookRunChannelName = 'playbook-run-' + now;
 
                     // Create a run with public chanel
@@ -523,6 +615,9 @@ describe('runs > run details page > header', () => {
 
                         // # Wait for useChannel
                         cy.wait(500);
+
+                        // * Verify run has been added to LHS
+                        cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                         // # Visit the channel run (now we joined)
                         cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);

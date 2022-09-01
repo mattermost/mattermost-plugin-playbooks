@@ -1,0 +1,3 @@
+mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+  updateRun(id: $id, updates: $updates)
+}

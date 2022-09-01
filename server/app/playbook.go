@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mattermost/mattermost-server/v6/model"
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/pkg/errors"
@@ -62,6 +63,7 @@ type Playbook struct {
 	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
 	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
+	ActiveRuns                           int64                  `json:"active_runs" export:"-"`
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -305,6 +307,12 @@ type PlaybookService interface {
 
 	// Duplicate duplicates a playbook
 	Duplicate(playbook Playbook, userID string) (string, error)
+
+	// Get top playbooks for teams
+	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+
+	// Get top playbooks for users
+	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -367,6 +375,18 @@ type PlaybookStore interface {
 
 	// DeleteMetric deletes a metric
 	DeleteMetric(id string) error
+
+	// Get top playbooks for teams
+	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+
+	// Get top playbooks for users
+	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+
+	// AddPlaybookMember adds a user as a member to a playbook
+	AddPlaybookMember(id string, memberID string) error
+
+	// RemovePlaybookMember removes a user from a playbook
+	RemovePlaybookMember(id string, memberID string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -513,4 +533,32 @@ func removeDuplicates(a []string) []string {
 
 func ProcessSignalAnyKeywords(keywords []string) []string {
 	return removeDuplicates(keywords)
+}
+
+// models for playbooks-insights
+
+// PlaybooksInsightsList is a response type with pagination support.
+type PlaybooksInsightsList struct {
+	HasNext bool               `json:"has_next"`
+	Items   []*PlaybookInsight `json:"items"`
+}
+
+// PlaybookInsight gives insight into activities related to a playbook
+
+type PlaybookInsight struct {
+	// ID of the playbook
+	// required: true
+	PlaybookID string `json:"playbook_id"`
+
+	// Run count of playbook
+	// required: true
+	NumRuns int `json:"num_runs"`
+
+	// Title of playbook
+	// required: true
+	Title string `json:"title"`
+
+	// Time the playbook was last run.
+	// required: false
+	LastRunAt int64 `json:"last_run_at"`
 }
