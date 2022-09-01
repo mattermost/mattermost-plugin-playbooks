@@ -463,10 +463,10 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
 
 const DropdownMenuItem = styled(DropdownMenuItemBase)`
     ${iconSplitStyling};
+    min-width: 220px;
 `;
 
 export const TitleMenu = styled(TitleMenuImpl)`
-
 `;
 
 const buttonCommon = css`
