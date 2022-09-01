@@ -40,6 +40,8 @@ import {DotMenuButton} from '../dot_menu';
 
 import {usePlaybookMembership} from 'src/graphql/hooks';
 
+import {Timestamp} from 'src/webapp_globals';
+
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
 
@@ -99,10 +101,18 @@ export const ArchiveIcon = styled.i`
     font-size: 11px;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 3px;
-`;
+const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
+    useTime: false,
+    style: 'narrow',
+    ranges: [
+        {within: ['minute', -1], display: ['second', 0]},
+        {within: ['hour', -1], display: ['minute']},
+        {within: ['day', -1], display: ['hour']}, // today, yesterday: N hours ago
+        {within: ['month', -1], display: ['day']}, // this month, last month: N days ago
+        {within: ['month', -11], display: ['month']},
+        {within: ['year', -1000], display: ['year']},
+    ],
+};
 
 const PlaybookListRow = (props: Props) => {
     const team = useSelector((state: GlobalState) => getTeam(state, props.playbook.team_id || ''));
@@ -169,8 +179,17 @@ const PlaybookListRow = (props: Props) => {
                     </InfoLine>
                 }
             </PlaybookItemTitle>
-            <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
-            <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
+            <PlaybookItemRow>
+                {props.playbook.last_run_at ? (
+                    <Timestamp
+                        {...TIME_SPEC}
+                        value={props.playbook.last_run_at}
+                    />
+                ) : (
+                    '-'
+                )}
+            </PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.active_runs}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol
                 css={`
