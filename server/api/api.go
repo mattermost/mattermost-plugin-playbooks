@@ -14,6 +14,17 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+// MaxRequestSize is the size limit for any incoming request
+// The default limit set by mattermost-server is the configured max file size, and
+// is not low enough to prevent some cases.
+//
+// This is important to prevent huge payloads from being sent
+// that could end as a DoS
+//
+// If an endpoint need a lower limit, it can add their own BEFORE reading teh body
+// r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)
+const MaxRequestSize = 5 * 1024 * 1024 // 5MB
+
 // Handler Root API handler.
 type Handler struct {
 	*ErrorHandler
@@ -46,6 +57,7 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logg
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)
 	h.root.ServeHTTP(w, r)
 }
 
