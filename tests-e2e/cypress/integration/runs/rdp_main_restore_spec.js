@@ -81,13 +81,13 @@ describe('runs > run details page > restart run', () => {
             cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/finish`).as('routeFinish');
             cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/restore`).as('routeRestore');
 
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+
             // # Click finish run button
             cy.findByTestId('run-finish-section').find('button').click();
             cy.get('#confirmModal').get('#confirmModalButton').click();
 
             cy.wait('@routeFinish');
-            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
-
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
 
             cy.findByTestId('runDropdown').click();
