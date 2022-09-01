@@ -106,6 +106,7 @@ const DropdownIcon = styled(Icon)`
 
 const IconWrapper = styled.div`
     margin-right: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const StyledDropdownMenuItem = styled(DropdownMenuItem)`

@@ -238,10 +238,7 @@ const PlaybookListRow = (props: Props) => {
                     title={'Actions'}
                     placement='bottom-end'
                     icon={(
-                        <DotsVerticalIcon
-                            size={18}
-                            color={'currentColor'}
-                        />
+                        <DotsVerticalIcon size={18}/>
                     )}
                     dotMenuButton={DotMenuButtonStyled}
                 >
