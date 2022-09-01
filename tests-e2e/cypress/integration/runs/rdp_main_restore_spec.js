@@ -85,8 +85,8 @@ describe('runs > run details page > restart run', () => {
             cy.findByTestId('run-finish-section').find('button').click();
             cy.get('#confirmModal').get('#confirmModalButton').click();
 
-            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
             cy.wait('@routeFinish');
+            cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
 
