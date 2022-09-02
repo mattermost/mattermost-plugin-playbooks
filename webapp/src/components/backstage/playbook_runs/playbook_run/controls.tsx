@@ -16,6 +16,7 @@ import {useToaster} from '../../toast_banner';
 import {Role, Separator} from '../shared';
 
 import {useOnFinishRun} from './finish_run';
+import {useOnRestoreRun} from './restore_run';
 
 export const FavoriteRunMenuItem = (props: {isFavoriteRun: boolean, toggleFavorite: () => void}) => {
     return (
@@ -153,3 +154,23 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
+export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const onRestoreRun = useOnRestoreRun(props.playbookRun);
+
+    if (!playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+        return (
+            <>
+                <Separator/>
+                <StyledDropdownMenuItem
+                    onClick={onRestoreRun}
+                    className='restartRun'
+                >
+                    <FlagOutlineIcon size={18}/>
+                    <FormattedMessage defaultMessage='Restart run'/>
+                </StyledDropdownMenuItem>
+            </>
+        );
+    }
+
+    return null;
+};

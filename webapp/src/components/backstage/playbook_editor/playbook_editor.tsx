@@ -290,7 +290,6 @@ const PlaybookEditor = () => {
 
 const titleCommon = css`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
@@ -363,7 +362,6 @@ const titleMenuOverrides = css`
 
 const Heading = styled.h1`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 32px;
     line-height: 40px;
     color: var(--center-channel-color);
@@ -381,7 +379,6 @@ const Heading = styled.h1`
 
 const Title = styled.h1`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
@@ -496,7 +493,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     ${Sections} {
         margin: 5rem 1.5rem;
         grid-area: content;
-        
+
         ${HorizontalBG} {
             /* sticky checklist header */
             top: var(--bar-height);

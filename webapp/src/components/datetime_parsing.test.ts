@@ -2,7 +2,7 @@ import {Duration, DurationObjectUnits, Settings} from 'luxon';
 
 import range from 'lodash/range';
 
-import {durationFromQuery} from './datetime_parsing';
+import {durationFromQuery, parse, Mode} from './datetime_parsing';
 
 describe('durationFromQuery', () => {
     const locales = [
@@ -33,6 +33,7 @@ describe('durationFromQuery', () => {
     ];
 
     test.each([
+
         ...range(1, 60).map((n) => ({seconds: n})),
         ...range(1, 60).map((n) => ({minutes: n})),
         ...range(1, 24).map((n) => ({hours: n})),
@@ -77,3 +78,10 @@ describe('durationFromQuery', () => {
     });
 });
 
+// Failing test to reproduce https://mattermost.atlassian.net/browse/MM-44810
+describe.skip('parse', () => {
+    it('Mode.DurationValue', () => {
+        const duration = parse('en', '1 month', Mode.DurationValue);
+        expect(duration?.milliseconds).toEqual(2592000000); // 30 days
+    });
+});

@@ -21,7 +21,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {useLHSRefresh} from '../../lhs_navigation';
 
-import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RunActionsMenuItem} from './controls';
+import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -43,7 +43,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                 icon={
                     <>
                         <Title>{playbookRun.name}</Title>
-                        <i className={'icon icon-chevron-down'}/>
+                        <i
+                            className={'icon icon-chevron-down'}
+                            data-testid='runDropdown'
+                        />
                     </>
                 }
             >
@@ -64,6 +67,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     setShowModal={setShowModal}
                 />
                 <FinishRunMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
+                <RestoreRunMenuItem
                     playbookRun={playbookRun}
                     role={role}
                 />

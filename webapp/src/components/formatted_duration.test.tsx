@@ -39,6 +39,8 @@ describe('formatDuration', () => {
         [{days: 99, hours: 10, minutes: 45}, '99d, 10h, 45m', '99 days, 10 hours, 45 minutes'],
         [{weeks: 6}, '42d', '42 days'],
         [{weeks: 2, days: 6, minutes: 12}, '20d, 12m', '20 days, 12 minutes'],
+        [{months: 1}, '30d', '30 days'],
+        [{months: 2}, '60d', '60 days'],
         [{years: 2, days: 6, minutes: 12}, '2y, 6d, 12m', '2 years, 6 days, 12 minutes'],
     ])('should format %p as %p and %p', (durationObj, expectedNarrow, expectedLong) => {
         const duration = Duration.fromObject(durationObj);
