@@ -59,7 +59,7 @@ import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyle
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
-import {usePlaybookMembership} from 'src/graphql/hooks';
+import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
 import {StyledDropdownMenuItem} from '../shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from '../lhs_navigation';
@@ -324,11 +324,17 @@ export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps
     );
 };
 
-export const FavoritePlaybookMenuItem = (props: {isFavorite: boolean, toggleFavorite: () => void}) => {
+export const FavoritePlaybookMenuItem = (props: {playbookId: string, isFavorite: boolean}) => {
     const {formatMessage} = useIntl();
+    const refreshLHS = useLHSRefresh();
+    const updatePlaybook = useUpdatePlaybook(props.playbookId);
 
+    const toggleFavorite = async () => {
+        await updatePlaybook({isFavorite: !props.isFavorite});
+        refreshLHS();
+    };
     return (
-        <StyledDropdownMenuItem onClick={props.toggleFavorite}>
+        <StyledDropdownMenuItem onClick={toggleFavorite}>
             {props.isFavorite ? (
                 <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
             ) : (
