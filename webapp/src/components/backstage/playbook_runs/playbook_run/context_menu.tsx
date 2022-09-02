@@ -9,12 +9,11 @@ import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import {showRunActionsModal} from 'src/actions';
-import {exportChannelUrl, leaveRun} from 'src/client';
+import {leaveRun} from 'src/client';
 import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
-import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
@@ -22,7 +21,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {useLHSRefresh} from '../../lhs_navigation';
 
-import {CopyRunLinkMenuItem, ExportLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RunActionsMenuItem} from './controls';
+import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -34,18 +33,7 @@ interface Props {
 
 export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun.id, playbookRun.owner_user_id, isFollowing);
-    const exportAvailable = useExportLogAvailable();
-    const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
-
-    const onExportClick = () => {
-        if (!allowChannelExport) {
-            setShowModal(true);
-            return;
-        }
-
-        window.location.href = exportChannelUrl(playbookRun.channel_id);
-    };
 
     return (
         <>
@@ -71,9 +59,9 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                 <RunActionsMenuItem
                     showRunActionsModal={showRunActionsModal}
                 />
-                <ExportLogsMenuItem
-                    exportAvailable={exportAvailable}
-                    onExportClick={onExportClick}
+                <ExportChannelLogsMenuItem
+                    channelId={playbookRun.channel_id}
+                    setShowModal={setShowModal}
                 />
                 <FinishRunMenuItem
                     playbookRun={playbookRun}

@@ -6,7 +6,8 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
-import {getSiteUrl} from 'src/client';
+import {exportChannelUrl, getSiteUrl} from 'src/client';
+import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
@@ -129,5 +130,26 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role})
     }
 
     return null;
+};
+
+export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModal: (show: boolean) => void}) => {
+    const exportAvailable = useExportLogAvailable();
+    const allowChannelExport = useAllowChannelExport();
+
+    const onExportClick = () => {
+        if (!allowChannelExport) {
+            props.setShowModal(true);
+            return;
+        }
+
+        window.location.href = exportChannelUrl(props.channelId);
+    };
+
+    return (
+        <ExportLogsMenuItem
+            exportAvailable={exportAvailable}
+            onExportClick={onExportClick}
+        />
+    );
 };
 
