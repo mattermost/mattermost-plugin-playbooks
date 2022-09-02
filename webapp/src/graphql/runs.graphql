@@ -2,7 +2,8 @@ query Run($id: String!) {
     run(id: $id) {
       id
       name
-      participant_ids: participantIDs
+      ownerUserID
+      participantIDs
       metadata { followers }
     }
 }

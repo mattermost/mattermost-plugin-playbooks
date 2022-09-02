@@ -171,6 +171,7 @@ type Run {
 	id: String!
 	name: String!
 	isFavorite: Boolean!
+	ownerUserID: String!
 	participantIDs: [String!]!
 	metadata: Metadata!
 }

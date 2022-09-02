@@ -14,7 +14,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
-import {useAllowChannelExport, useExportLogAvailable, useRun} from 'src/hooks';
+import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
@@ -33,7 +33,7 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun.id, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const exportAvailable = useExportLogAvailable();
     const allowChannelExport = useAllowChannelExport();
     const [showModal, setShowModal] = useState(false);
@@ -95,11 +95,10 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     );
 };
 
-export const useLeaveRun = (playbookRunId: string, isFollowing: boolean) => {
+export const useLeaveRun = (playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
-    const [playbookRun] = useRun(playbookRunId);
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
     const refreshLHS = useLHSRefresh();
 
@@ -133,7 +132,7 @@ export const useLeaveRun = (playbookRunId: string, isFollowing: boolean) => {
     return {
         leaveRunConfirmModal,
         showLeaveRunConfirm: () => {
-            if (currentUserId === playbookRun?.owner_user_id) {
+            if (currentUserId === ownerUserId) {
                 addToast(formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}), ToastType.Failure);
                 return;
             }

@@ -72,6 +72,7 @@ const useLHSData = (teamID: string) => {
                 <LHSRunDotMenu
                     playbookRunId={run.id}
                     isFavorite={run.isFavorite}
+                    ownerUserId={run.ownerUserID}
                     participantIDs={run.participantIDs}
                     followerIDs={run.metadata.followers}
                 />),

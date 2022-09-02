@@ -245,6 +245,7 @@ export type Run = {
     isFavorite: Scalars['Boolean'];
     metadata: Metadata;
     name: Scalars['String'];
+    ownerUserID: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
 };
 
@@ -270,7 +271,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -290,7 +291,7 @@ export type RunQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, participant_ids: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -434,6 +435,7 @@ export const PlaybookLhsDocument = gql`
     id
     name
     isFavorite
+    ownerUserID
     participantIDs
     metadata {
       followers
@@ -545,7 +547,8 @@ export const RunDocument = gql`
   run(id: $id) {
     id
     name
-    participant_ids: participantIDs
+    ownerUserID
+    participantIDs
     metadata {
       followers
     }

@@ -22,11 +22,12 @@ import {DotMenuButtonStyled} from './shared';
 interface Props {
     playbookRunId: string;
     isFavorite: boolean;
+    ownerUserId: string;
     participantIDs: string[];
     followerIDs: string[];
 }
 
-export const LHSRunDotMenu = ({playbookRunId, isFavorite, participantIDs, followerIDs}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participantIDs, followerIDs}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const updateRun = useUpdateRun(playbookRunId);
@@ -34,7 +35,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, participantIDs, follow
 
     const followState = useFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, ownerUserId, isFollowing);
 
     const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
 
