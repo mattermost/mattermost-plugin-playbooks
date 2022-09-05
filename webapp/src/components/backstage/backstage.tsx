@@ -12,7 +12,7 @@ import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 import {GlobalState} from '@mattermost/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
-import {Theme} from '@mattermost/types/themes';
+import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {BookOutlineIcon} from '@mattermost/compass-icons/components';

@@ -1590,7 +1590,10 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	checklistItem.ID = ""
 
-	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
+	playbookRunToModify.Checklists[checklistNumber].Items = append(
+		playbookRunToModify.Checklists[checklistNumber].Items[:itemNumber+1],
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber:]...)
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1] = checklistItem
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -2307,14 +2310,30 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
+	_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"channel_id":    channel.Id,
 			"owner_user_id": playbookRun.OwnerUserID,
 		}).Warn("failed to promote owner to admin")
-	}
+
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel) (string, string, string) {
+	// get channel roles
+	if guestRole, userRole, adminRole, err := s.store.GetSchemeRolesForChannel(channel.Id); err == nil {
+		return guestRole, userRole, adminRole
+	}
+
+	// get team roles if channel roles are not available
+	if guestRole, userRole, adminRole, err := s.store.GetSchemeRolesForTeam(channel.TeamId); err == nil {
+		return guestRole, userRole, adminRole
+	}
+
+	// return default roles
+	return model.ChannelGuestRoleId, model.ChannelUserRoleId, model.ChannelAdminRoleId
 }
 
 func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {

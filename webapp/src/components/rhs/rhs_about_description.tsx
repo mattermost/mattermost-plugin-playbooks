@@ -24,9 +24,7 @@ interface DescriptionProps {
 const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
-
     const [editedValue, setEditedValue] = useState(props.value);
-
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const saveAndClose = () => {
@@ -46,9 +44,11 @@ const RHSAboutDescription = (props: DescriptionProps) => {
             <RenderedDescription
                 data-testid='rendered-description'
                 onClick={(event) => {
-                    // Enter edit mode only if the user is not clicking a link
+                    // Enter edit mode only if the user is not clicking a link and there's no selected text
                     const targetNode = event.target as Node;
-                    if (targetNode.nodeName !== 'A') {
+                    const selectedText = window.getSelection();
+                    const hasSelectedText = selectedText !== null && selectedText.toString() !== '';
+                    if (targetNode.nodeName !== 'A' && !hasSelectedText) {
                         props.setEditing(true);
                     }
                 }}

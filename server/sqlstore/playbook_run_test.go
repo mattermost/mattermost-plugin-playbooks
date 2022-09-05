@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -1189,6 +1190,62 @@ func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	sqlStore := setupSQLStore(t, db)
 
 	return NewPlaybookRunStore(pluginAPIClient, sqlStore)
+}
+
+func TestGetSchemeRolesForChannel(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		t.Run("channel with no scheme", func(t *testing.T) {
+			_, err := store.execBuilder(store.db, sq.
+				Insert("Schemes").
+				SetMap(map[string]interface{}{
+					"ID":                      "scheme_0",
+					"DefaultChannelGuestRole": "guest0",
+					"DefaultChannelUserRole":  "user0",
+					"DefaultChannelAdminRole": "admin0",
+				}))
+			require.NoError(t, err)
+
+			_, err = store.execBuilder(store.db, sq.
+				Insert("Channels").
+				SetMap(map[string]interface{}{
+					"ID": "channel_0",
+				}))
+			require.NoError(t, err)
+
+			_, _, _, err = playbookRunStore.GetSchemeRolesForChannel("channel_0")
+			require.Error(t, err)
+		})
+
+		t.Run("channel with scheme", func(t *testing.T) {
+			_, err := store.execBuilder(store.db, sq.
+				Insert("Schemes").
+				SetMap(map[string]interface{}{
+					"ID":                      "scheme_1",
+					"DefaultChannelGuestRole": nil,
+					"DefaultChannelUserRole":  "user1",
+					"DefaultChannelAdminRole": "admin1",
+				}))
+			require.NoError(t, err)
+
+			_, err = store.execBuilder(store.db, sq.
+				Insert("Channels").
+				SetMap(map[string]interface{}{
+					"ID":       "channel_1",
+					"SchemeId": "scheme_1",
+				}))
+			require.NoError(t, err)
+
+			guest, user, admin, err := playbookRunStore.GetSchemeRolesForChannel("channel_1")
+			require.NoError(t, err)
+			require.Equal(t, guest, model.ChannelGuestRoleId)
+			require.Equal(t, user, "user1")
+			require.Equal(t, admin, "admin1")
+		})
+	}
 }
 
 // PlaybookRunBuilder is a utility to build playbook runs with a default base.

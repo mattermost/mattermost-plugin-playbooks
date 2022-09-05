@@ -7,10 +7,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -61,6 +63,10 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
 	autoFollowRouter.HandleFunc("", withContext(handler.autoFollow)).Methods(http.MethodPut)
 	autoFollowRouter.HandleFunc("", withContext(handler.autoUnfollow)).Methods(http.MethodDelete)
+
+	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
+	insightsRouter.HandleFunc("/user/me", handler.getTopPlaybooksForUser).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/teams/{teamID}", handler.getTopPlaybooksForTeam).Methods(http.MethodGet)
 
 	return handler
 }
@@ -356,8 +362,12 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		sortField = app.SortBySteps
 	case "runs":
 		sortField = app.SortByRuns
+	case "last_run_at":
+		sortField = app.SortByLastRunAt
+	case "active_runs":
+		sortField = app.SortByActiveRuns
 	default:
-		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages', 'steps', 'runs', 'last_run_at'", param)
 	}
 
 	var sortDirection app.SortDirection
@@ -606,4 +616,110 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 		titles[m.Title] = true
 	}
 	return nil
+}
+
+func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	timeRange := params.Get("time_range")
+	teamID := params.Get("team_id")
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		return
+	}
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+		return
+	}
+
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		return
+	}
+	perPage, err := strconv.Atoi(params.Get("per_page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		return
+	}
+
+	// setting startTime as per user's location
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		return
+	}
+	timezone, err := timeutils.GetUserTimezone(user)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		return
+	}
+	if timezone == nil {
+		timezone = time.Now().UTC().Location()
+	}
+	// get unix time for duration
+	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &model.InsightsOpts{
+		StartUnixMilli: model.GetMillisForTime(*startTime),
+		Page:           page,
+		PerPage:        perPage,
+	})
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	ReturnJSON(w, &topPlaybooks, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	teamID := vars["teamID"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	params := r.URL.Query()
+	timeRange := params.Get("time_range")
+	if teamID == "" {
+		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		return
+	}
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+		return
+	}
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		return
+	}
+	perPage, err := strconv.Atoi(params.Get("per_page"))
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		return
+	}
+
+	// setting startTime as per user's location
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		return
+	}
+	timezone, err := timeutils.GetUserTimezone(user)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		return
+	}
+	if timezone == nil {
+		timezone = time.Now().UTC().Location()
+	}
+	// get unix time for duration
+	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &model.InsightsOpts{
+		StartUnixMilli: model.GetMillisForTime(*startTime),
+		Page:           page,
+		PerPage:        perPage,
+	})
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+	ReturnJSON(w, &topPlaybooks, http.StatusOK)
 }
