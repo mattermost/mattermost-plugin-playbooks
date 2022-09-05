@@ -13,11 +13,18 @@ describe('lhs', () => {
     let testUser;
     let testPublicPlaybook;
     let playbookRun;
+    let testViewerUser;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // # Create another user in the same team
+            cy.apiCreateUser().then(({user: viewer}) => {
+                testViewerUser = viewer;
+                cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
+            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -92,6 +99,32 @@ describe('lhs', () => {
                     cy.findByTestId('Runs').findByTestId(playbookRun.name).should('exist');
                 });
             });
+        });
+
+        it('leave run', () => {
+            // # Add viewer user to the channel
+            cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+
+            // # Visit the playbook run
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+            // # Click on leave menu item
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            cy.wait(200);
+
+            // * Verify that owner can't leave.
+            cy.get('#confirmModal').should('not.exist');
+
+            // # Change the owner to testViewerUser
+            cy.findByTestId('runinfo-owner').findByTestId('assignee-profile-selector').click();
+            cy.get('.playbook-run-user-select').findByText('@' + testViewerUser.username).click();
+            cy.wait(500);
+
+            // # Click on leave menu item
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+
+            // * Verify that confirm leave modal is visible.
+            cy.get('#confirmModal').should('exist');
         });
     });
 
