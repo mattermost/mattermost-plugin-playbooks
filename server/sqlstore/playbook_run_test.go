@@ -1196,7 +1196,7 @@ func TestGetSchemeRolesForChannel(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		t.Run("channel with no scheme", func(t *testing.T) {
 			_, err := store.execBuilder(store.db, sq.

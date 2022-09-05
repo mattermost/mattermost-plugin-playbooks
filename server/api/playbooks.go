@@ -65,8 +65,8 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter.HandleFunc("", withContext(handler.autoUnfollow)).Methods(http.MethodDelete)
 
 	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
-	insightsRouter.HandleFunc("/user/me", handler.getTopPlaybooksForUser).Methods(http.MethodGet)
-	insightsRouter.HandleFunc("/teams/{teamID}", handler.getTopPlaybooksForTeam).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/user/me", withContext(handler.getTopPlaybooksForUser)).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/teams/{teamID}", withContext(handler.getTopPlaybooksForTeam)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -618,39 +618,39 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	return nil
 }
 
-func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
 	teamID := params.Get("team_id")
 	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
 		return
 	}
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting page parameter to integer", err)
 		return
 	}
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting per_page parameter to integer", err)
 		return
 	}
 
 	// setting startTime as per user's location
 	user, err := h.pluginAPI.User.Get(userID)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
 		return
 	}
 	if timezone == nil {
@@ -665,45 +665,45 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.
 		PerPage:        perPage,
 	})
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)
 }
 
-func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	teamID := vars["teamID"]
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
 	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
 		return
 	}
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting page parameter to integer", err)
 		return
 	}
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting per_page parameter to integer", err)
 		return
 	}
 
 	// setting startTime as per user's location
 	user, err := h.pluginAPI.User.Get(userID)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
 		return
 	}
 	if timezone == nil {
@@ -718,7 +718,7 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.
 		PerPage:        perPage,
 	})
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)

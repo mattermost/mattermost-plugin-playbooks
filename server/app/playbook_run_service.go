@@ -2316,7 +2316,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 			"channel_id":    channel.Id,
 			"owner_user_id": playbookRun.OwnerUserID,
 		}).Warn("failed to promote owner to admin")
-
+	}
 
 	return nil
 }
