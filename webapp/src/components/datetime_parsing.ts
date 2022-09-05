@@ -47,7 +47,7 @@ export const parseDateTimes = (locale: string, query: string) => {
     return datetimes;
 };
 
-const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acceptDurationInput = false): DateTime | null => {
+const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acceptDurationInput = false, timezone = 'utc'): DateTime | null => {
     if (typeof query !== 'string') {
         return DateTime.fromObject(query);
     }
@@ -58,28 +58,28 @@ const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acce
         const duration = durationFromQuery(locale, query);
 
         if (duration?.isValid) {
-            return DateTime.now().plus(duration);
+            return DateTime.now().setZone(timezone).plus(duration);
         }
     }
-    return (date && DateTime.fromJSDate(date)) || null;
+    return (date && DateTime.fromJSDate(date).setZone(timezone)) || null;
 };
 
-export function parse(locale: string, query: string, mode?: Mode.DateTimeValue): DateTime | null;
-export function parse(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue): DateTime;
+export function parse(locale: string, query: string, mode?: Mode.DateTimeValue, timezone?: string): DateTime | null;
+export function parse(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue, timezone?: string): DateTime;
 
-export function parse(locale: string, query: string, mode?: Mode.DurationValue): Duration | null;
-export function parse(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue): Duration;
+export function parse(locale: string, query: string, mode?: Mode.DurationValue, timezone?: string): Duration | null;
+export function parse(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue, timezone?: string): Duration;
 
-export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode): DateTime | Duration | null;
-export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue): DateTime | Duration | null {
+export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode, timezone?: string): DateTime | Duration | null;
+export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue, timezone?: string): DateTime | Duration | null {
     switch (mode) {
     case Mode.DateTimeValue:
-        return dateTimeFromQuery(locale, query, true);
+        return dateTimeFromQuery(locale, query, true, timezone);
     case Mode.DurationValue:
         return durationFromQuery(locale, query);
     case Mode.AutoValue:
     default:
-        return dateTimeFromQuery(locale, query) ?? durationFromQuery(locale, query);
+        return dateTimeFromQuery(locale, query, false, timezone) ?? durationFromQuery(locale, query);
     }
 }
 

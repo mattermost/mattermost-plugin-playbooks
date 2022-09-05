@@ -10,10 +10,14 @@ import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
 
 import {useIntl} from 'react-intl';
 
+import {useSelector} from 'react-redux';
+
 import {StyledSelect} from 'src/components/backstage/styles';
 
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
+
+import {getCurrentUserTimezone} from 'src/selectors';
 
 import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
@@ -21,8 +25,9 @@ export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
 export const useMakeOption = (mode: Mode) => {
     const {locale} = useIntl();
+    const timezone = useSelector(getCurrentUserTimezone);
     return (input: string | DateObjectUnits | DurationLikeObject, label?: string): Option => {
-        const value = parse(locale, input, mode);
+        const value = parse(locale, input, mode, timezone);
         return {
             label: label ?? (value && labelFrom(value, mode)),
             value,

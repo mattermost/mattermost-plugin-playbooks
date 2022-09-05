@@ -14,6 +14,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from '@mattermost/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getTimezoneForUserProfile} from 'mattermost-redux/selectors/entities/timezone';
 
 import {
     haveIChannelPermission,
@@ -250,6 +251,33 @@ export const currentRHSAboutCollapsedState = createSelector(
     rhsAboutCollapsedState,
     (channelId, stateByChannel) => {
         return stateByChannel[channelId] ?? false;
+    },
+);
+
+export function areTimezonesEnabledAndSupported(state: GlobalState) {
+    const userAgent = () => window.navigator.userAgent;
+    const isInternetExplorer = userAgent().indexOf('Trident') !== -1;
+
+    if (isInternetExplorer) {
+        return false;
+    }
+
+    const config = getConfig(state);
+    return config.ExperimentalTimezone === 'true';
+}
+
+export const getCurrentUserTimezone = createSelector(
+    'getCurrentUserTimezone',
+    getCurrentUser,
+    areTimezonesEnabledAndSupported,
+    (user, enabledTimezone) => {
+        let timezone;
+        if (enabledTimezone) {
+            const userTimezone = getTimezoneForUserProfile(user);
+            timezone = userTimezone.useAutomaticTimezone ? userTimezone.automaticTimezone : userTimezone.manualTimezone;
+        }
+
+        return timezone;
     },
 );
 
