@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -18,7 +19,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/config"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/mattermost/mattermost-server/v6/utils"
 	"github.com/pkg/errors"
@@ -126,7 +126,19 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
-	_, _, err := configStore.Set(config)
+	config.LogSettings.EnableConsole = model.NewBool(false)
+	config.LogSettings.EnableFile = model.NewBool(false)
+
+	// override config with e2etest.config.json if it exists
+	textConfig, err := ioutil.ReadFile("./e2etest.config.json")
+	if err == nil {
+		err := json.Unmarshal(textConfig, config)
+		if err != nil {
+			require.NoError(t, err)
+		}
+	}
+
+	_, _, err = configStore.Set(config)
 	require.NoError(t, err)
 
 	// Copy ourselves into the correct directory so we are executed.
@@ -145,18 +157,12 @@ func Setup(t *testing.T) *TestEnvironment {
 	err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
 	require.NoError(t, err)
 
-	// Create a logger to override
-	testLogger, err := mlog.NewLogger()
-	require.NoError(t, err)
-	testLogger.LockConfiguration()
-
 	// Create a server with our specified options
 	err = utils.TranslationsPreInit()
 	require.NoError(t, err)
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
-		sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)

@@ -106,6 +106,10 @@ func toSQLUserInfo(userInfo app.UserInfo) (*sqlUserInfo, error) {
 		return nil, errors.Wrapf(err, "failed to marshal DigestNotificationSettings for userid: %s", userInfo.ID)
 	}
 
+	if len(digestNotificationSettingsJSON) > MaxJSONLength {
+		return nil, errors.Wrapf(err, "digestNotificationSettings json for user id '%s' is too long (max %d)", userInfo.ID, MaxJSONLength)
+	}
+
 	return &sqlUserInfo{
 		UserInfo:                       userInfo,
 		DigestNotificationSettingsJSON: digestNotificationSettingsJSON,

@@ -1055,6 +1055,10 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
 	}
 
+	if len(checklistsJSON) > MaxJSONLength {
+		return nil, errors.Wrapf(err, "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, MaxJSONLength)
+	}
+
 	return &sqlPlaybook{
 		Playbook:                              playbook,
 		ChecklistsJSON:                        checklistsJSON,
