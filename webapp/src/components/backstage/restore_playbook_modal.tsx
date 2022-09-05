@@ -1,9 +1,9 @@
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {restorePlaybook} from 'src/client';
 import {Banner} from 'src/components/backstage/styles';
 import ConfirmModal from '../widgets/confirmation_modal';
+import {Playbook} from 'src/types/playbook';
 
 import {useLHSRefresh} from './lhs_navigation';
 
@@ -11,7 +11,7 @@ const RestoreBannerTimeout = 5000;
 
 type Props = {id: string; title: string};
 
-const useConfirmPlaybookRestoreModal = (): [React.ReactNode, (context: Props, callback?: () => void) => void] => {
+const useConfirmPlaybookRestoreModal = (restorePlaybook: (id: Playbook['id']) => void) : [React.ReactNode, (context: Props, callback?: () => void) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
     const cbRef = useRef<() => void>();

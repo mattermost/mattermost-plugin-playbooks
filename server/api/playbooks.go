@@ -364,8 +364,12 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		sortField = app.SortBySteps
 	case "runs":
 		sortField = app.SortByRuns
+	case "last_run_at":
+		sortField = app.SortByLastRunAt
+	case "active_runs":
+		sortField = app.SortByActiveRuns
 	default:
-		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages', 'steps', 'runs', 'last_run_at'", param)
 	}
 
 	var sortDirection app.SortDirection

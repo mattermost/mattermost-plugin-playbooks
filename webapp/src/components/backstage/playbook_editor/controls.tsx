@@ -43,6 +43,7 @@ import {
     archivePlaybook,
     clientFetchPlaybookFollowers,
     getSiteUrl,
+    restorePlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -332,7 +333,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             navigateToPluginUrl('/playbooks');
         }
     });
-    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
 
     const {add: addToast} = useToaster();
 
@@ -462,10 +463,10 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
 
 const DropdownMenuItem = styled(DropdownMenuItemBase)`
     ${iconSplitStyling};
+    min-width: 220px;
 `;
 
 export const TitleMenu = styled(TitleMenuImpl)`
-
 `;
 
 const buttonCommon = css`
