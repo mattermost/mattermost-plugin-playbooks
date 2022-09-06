@@ -32,3 +32,21 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 
 	return isFavorite, nil
 }
+
+func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := c.playbookRunService.GetPlaybookRunMetadata(r.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata")
+	}
+
+	return &MetadataResolver{*metadata}, nil
+}
+
+type MetadataResolver struct {
+	app.Metadata
+}

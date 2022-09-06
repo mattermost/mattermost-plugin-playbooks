@@ -17,6 +17,9 @@ import {
     ContentCopyIcon,
     PencilOutlineIcon,
     AccountMultipleOutlineIcon,
+    StarOutlineIcon,
+    StarIcon,
+    LinkVariantIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -56,7 +59,10 @@ import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyle
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
-import {usePlaybookMembership} from 'src/graphql/hooks';
+import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
+import {StyledDropdownMenuItem} from '../shared';
+import {copyToClipboard} from 'src/utils';
+import {useLHSRefresh} from '../lhs_navigation';
 
 type ControlProps = {
     playbook: {
@@ -318,6 +324,64 @@ export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps
     );
 };
 
+export const FavoritePlaybookMenuItem = (props: {playbookId: string, isFavorite: boolean}) => {
+    const {formatMessage} = useIntl();
+    const refreshLHS = useLHSRefresh();
+    const updatePlaybook = useUpdatePlaybook(props.playbookId);
+
+    const toggleFavorite = async () => {
+        await updatePlaybook({isFavorite: !props.isFavorite});
+        refreshLHS();
+    };
+    return (
+        <StyledDropdownMenuItem onClick={toggleFavorite}>
+            {props.isFavorite ? (
+                <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
+            ) : (
+                <><StarIcon size={18}/>{formatMessage({defaultMessage: 'Favorite'})}</>
+            )}
+        </StyledDropdownMenuItem>
+    );
+};
+
+export const CopyPlaybookLinkMenuItem = (props: {playbookId: string}) => {
+    const {formatMessage} = useIntl();
+    const {add: addToast} = useToaster();
+
+    return (
+        <StyledDropdownMenuItem
+            onClick={() => {
+                copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + props.playbookId);
+                addToast(formatMessage({defaultMessage: 'Copied!'}));
+            }}
+        >
+            <LinkVariantIcon size={18}/>
+            <FormattedMessage defaultMessage='Copy link'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
+export const LeavePlaybookMenuItem = (props: {playbookId: string}) => {
+    const currentUserId = useSelector(getCurrentUserId);
+    const refreshLHS = useLHSRefresh();
+
+    const {leave} = usePlaybookMembership(props.playbookId, currentUserId);
+    return (
+        <StyledDropdownMenuItem
+            onClick={async () => {
+                await leave();
+                refreshLHS();
+            }}
+        >
+            <CloseIcon
+                size={18}
+                color='currentColor'
+            />
+            <FormattedMessage defaultMessage='Leave'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
 type TitleMenuProps = {
     className?: string;
     editTitle: () => void;
@@ -352,6 +416,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 dotMenuButton={TitleButton}
                 className={className}
                 placement='bottom-start'
+                focusManager={{returnFocus: false}}
                 icon={
                     <>
                         {children}
