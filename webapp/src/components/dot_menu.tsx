@@ -127,10 +127,7 @@ const DotMenu = ({
         >
             <Menu
                 data-testid='dropdownmenu'
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen(false);
-                }}
+                onClick={(e) => e.stopPropagation()}
             >
                 {children}
             </Menu>

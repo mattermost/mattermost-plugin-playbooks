@@ -124,6 +124,9 @@ describe('runs > run details page > header', () => {
                 // * Verify clipboard content
                 cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRun.id}`);
             });
+
+            // * Verify context menu is opened
+            cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
         });
     };
 
