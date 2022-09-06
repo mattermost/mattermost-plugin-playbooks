@@ -130,12 +130,13 @@ describe('channels > rhs > header', () => {
             cy.get('#rhsContainer').within(() => {
                 cy.findByTestId('buttons-row').invoke('show').within(() => {
                     cy.findAllByRole('button').eq(1).click();
-                    cy.findByText('Edit run summary').click({force: true});
                 });
             });
 
+            cy.findByText('Edit run summary').click({force: true});
+
             // # type text in textarea
-            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.visible').type('new summary{ctrl+enter}');
+            cy.focused().should('be.visible').type('new summary{ctrl+enter}');
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');

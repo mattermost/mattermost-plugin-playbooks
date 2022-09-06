@@ -15,7 +15,7 @@ const Group = (props: GroupProps) => {
     const [collapsed, setCollapsed] = useState(props.group.collapsed);
 
     return (
-        <GroupContainer>
+        <GroupContainer data-testid={props.group.id}>
             <Header>
                 <HeaderButton
                     aria-label={props.group.display_name}
