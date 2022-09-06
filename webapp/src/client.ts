@@ -538,6 +538,35 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     });
 }
 
+export async function telemetryEvent(name: string, data: {[key: string]: string}) {
+    delete data.type;
+    delete data.event;
+    const view = {
+        type: 'event',
+        event: name,
+        ...data,
+    };
+    await telemetry(view);
+}
+
+export async function telemetryView(name: string, data: {[key: string]: string}) {
+    delete data.type;
+    delete data.event;
+    const view = {
+        type: 'view',
+        event: name,
+        ...data,
+    };
+    await telemetry(view);
+}
+
+export async function telemetry(data: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
