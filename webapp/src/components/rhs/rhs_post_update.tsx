@@ -5,9 +5,8 @@ import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {DateTime} from 'luxon';
-import Icon from '@mdi/react';
-import {mdiFlagCheckered} from '@mdi/js';
 import {FormattedMessage} from 'react-intl';
+import {FlagCheckeredIcon} from '@mattermost/compass-icons/components';
 
 import {Timestamp} from 'src/webapp_globals';
 
@@ -58,10 +57,7 @@ const RHSPostUpdate = (props: Props) => {
     let icon: JSX.Element;
     if (isFinished) {
         icon = (
-            <Icon
-                path={mdiFlagCheckered}
-                size={2.6}
-            />
+            <FlagCheckeredIcon size={34}/>
         );
     } else if (isDue) {
         icon = <Exclamation/>;
