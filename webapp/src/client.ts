@@ -303,6 +303,14 @@ export async function finishRun(playbookRunId: string) {
     }
 }
 
+export async function restoreRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/restore`);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
@@ -738,22 +746,6 @@ export const favoriteItem = async (teamID: string, itemID: string, itemType: str
             item_id: itemID,
             type: itemType,
         }));
-    } catch (error) {
-        return {error};
-    }
-};
-
-export const requestGetInvolved = async (playbookRunId: string) => {
-    try {
-        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
-    } catch (error) {
-        return {error};
-    }
-};
-
-export const leaveRun = async (playbookRunId: string) => {
-    try {
-        return await doPost(`${apiUrl}/runs/${playbookRunId}/leave`);
     } catch (error) {
         return {error};
     }

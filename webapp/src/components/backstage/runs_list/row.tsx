@@ -222,10 +222,7 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
             data-testid='follow-playbook'
             css={`${iconSplitStyling}`}
         >
-            <BullhornOutlineIcon
-                size={16}
-                color='currentColor'
-            />
+            <BullhornOutlineIcon size={16}/>
             {formatMessage({defaultMessage: 'Follow'})}
         </FollowButton>
     );
