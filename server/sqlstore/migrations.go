@@ -2134,8 +2134,8 @@ var migrations = []Migration{
 		},
 	},
 	{
-		fromVersion: semver.MustParse("0.56.0"),
-		toVersion:   semver.MustParse("0.57.0"),
+		fromVersion: semver.MustParse("0.58.0"),
+		toVersion:   semver.MustParse("0.59.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 
 			type ColTypeChange struct {
