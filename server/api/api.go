@@ -22,7 +22,7 @@ import (
 // that could end in a bigger problem.
 //
 // If an endpoint needs a smaller limit than this one, it could be solved by adding their
-// own limit BEFORE reading the request body `r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)``
+// own limit BEFORE reading the request body `r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)`
 const MaxRequestSize = 5 * 1024 * 1024 // 5MB
 
 // Handler Root API handler.
