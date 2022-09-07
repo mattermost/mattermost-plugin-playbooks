@@ -126,7 +126,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
-	config.LogSettings.EnableConsole = model.NewBool(false)
+	config.LogSettings.EnableConsole = model.NewBool(true)
 	config.LogSettings.EnableFile = model.NewBool(false)
 
 	// override config with e2etest.config.json if it exists
