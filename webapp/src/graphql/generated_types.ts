@@ -330,7 +330,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -508,6 +508,7 @@ export const PlaybookLhsDocument = gql`
     id
     name
     isFavorite
+    playbookID
     ownerUserID
     participantIDs
     metadata {

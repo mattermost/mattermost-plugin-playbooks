@@ -105,8 +105,9 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                 refreshLHS();
                 addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
 
-                // TODO: navigate just if we are at RDP for the run I want to leave and it's not pubic (this can be called from LHS)
-                if (!hasPermanentViewerAccess) {
+                const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
+
+                if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }
             }).catch(() => addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure));
