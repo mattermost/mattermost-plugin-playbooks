@@ -12,6 +12,28 @@ import (
 type RunRootResolver struct {
 }
 
+func (r *RunRootResolver) Run(ctx context.Context, args struct {
+	ID string `url:"id,omitempty"`
+}) (*RunResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
+		c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+		return nil, errors.New("Not authorized")
+	}
+
+	run, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RunResolver{*run}, nil
+}
+
 func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	TeamID                  string `url:"team_id,omitempty"`
 	Sort                    string

@@ -118,3 +118,21 @@ func (r *TimelineEventResolver) EventType() string {
 func (r *TimelineEventResolver) DeleteAt() float64 {
 	return float64(r.TimelineEvent.DeleteAt)
 }
+
+func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := c.playbookRunService.GetPlaybookRunMetadata(r.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata")
+	}
+
+	return &MetadataResolver{*metadata}, nil
+}
+
+type MetadataResolver struct {
+	app.Metadata
+}

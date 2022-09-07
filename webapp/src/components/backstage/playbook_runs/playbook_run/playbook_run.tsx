@@ -61,7 +61,7 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
-const useFollowers = (metadataFollowers: string[]) => {
+export const useFollowers = (metadataFollowers: string[]) => {
     const currentUser = useSelector(getCurrentUser);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));

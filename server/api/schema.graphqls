@@ -9,6 +9,7 @@ type Query {
 		withMembershipOnly: Boolean = false,
 	): [Playbook!]!
 
+	run(id: String!): Run
 	runs(
 		teamID: String = "",
 		sort: String = "",
@@ -206,7 +207,7 @@ type Run {
 	webhookOnStatusUpdateURLs: [String!]!
 
 	timelineEvents: [TimelineEvent!]!
-
+	metadata: Metadata!
 }
 
 type StatusPost {
@@ -229,4 +230,8 @@ type TimelineEvent {
 
 input RunUpdates {
 	isFavorite: Boolean
+}
+
+type Metadata {
+	followers: [String!]!
 }

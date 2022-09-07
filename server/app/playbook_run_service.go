@@ -1566,7 +1566,10 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	checklistItem.ID = ""
 
-	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
+	playbookRunToModify.Checklists[checklistNumber].Items = append(
+		playbookRunToModify.Checklists[checklistNumber].Items[:itemNumber+1],
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber:]...)
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1] = checklistItem
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")

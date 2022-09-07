@@ -56,7 +56,7 @@ const GenericChecklist = (props: Props) => {
     const onDuplicateChecklistItem = (index: number) => {
         const newChecklistItems = [...props.checklist.items];
         const duplicate = {...newChecklistItems[index]};
-        newChecklistItems.push(duplicate);
+        newChecklistItems.splice(index + 1, 0, duplicate);
         const newChecklist = {...props.checklist};
         newChecklist.items = newChecklistItems;
         props.onUpdateChecklist(newChecklist);
@@ -171,7 +171,6 @@ const AddTaskLink = styled.button`
     background: none;
     border: none;
 
-    border-radius: 8px;
     display: flex;
     flex-direction: row;
     align-items: center;
