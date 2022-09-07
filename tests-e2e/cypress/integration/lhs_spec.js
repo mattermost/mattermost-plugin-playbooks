@@ -107,6 +107,7 @@ describe('lhs', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.wait(3000);
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -145,7 +146,7 @@ describe('lhs', () => {
                 testPublicPlaybook = playbook;
 
                 // # Visit the playbooks page
-                cy.visit('/playbooks/playbooks}');
+                cy.visit('/playbooks/playbooks');
 
                 // # LHS render takes a few seconds, wait for it
                 cy.wait(5000);
