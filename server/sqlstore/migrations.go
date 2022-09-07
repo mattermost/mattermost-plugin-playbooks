@@ -2143,7 +2143,7 @@ var migrations = []Migration{
 				Size    uint32
 			}
 
-			// Migrations block only for postgres
+			// Migrations are only for postgres
 			if e.DriverName() == model.DatabaseDriverMysql {
 				return nil
 			}
@@ -2169,6 +2169,7 @@ var migrations = []Migration{
 					{"defaultcommanderid", 26},
 					{"announcementchannelid", 26},
 					{"concatenatedwebhookoncreationurls", 65535},
+					{"concatenatedwebhookonstatusupdateurls", 65535},
 					{"concatenatedinvitedgroupids", 65535},
 					{"retrospective", 65535},
 					{"messageonjoin", 65535},
@@ -2212,7 +2213,7 @@ var migrations = []Migration{
 					{"categoryid", 26},
 					{"itemid", 26},
 				},
-				"ir_channelactions": {
+				"ir_channelaction": {
 					{"id", 26},
 					{"actiontype", 65535},
 					{"triggertype", 65535},
@@ -2240,6 +2241,10 @@ var migrations = []Migration{
 				"ir_run_participants": {
 					{"userid", 26},
 					{"incidentid", 26},
+				},
+				"ir_viewedchannel": {
+					{"userid", 26},
+					{"channelid", 26},
 				},
 				"ir_timelineevent": {
 					{"id", 26},

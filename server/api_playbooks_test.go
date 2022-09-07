@@ -243,7 +243,7 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 				{
 					Title: "checklist",
 					Items: []client.ChecklistItem{
-						{Description: strings.Repeat("A", 65536)},
+						{Description: strings.Repeat("A", (256*1024)+1)},
 					},
 				},
 			},

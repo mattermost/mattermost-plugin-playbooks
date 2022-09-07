@@ -17,6 +17,7 @@ ALTER TABLE ir_incident ALTER COLUMN concatenatedinviteduserids TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN defaultcommanderid TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN announcementchannelid TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN concatenatedwebhookoncreationurls TYPE text;
+ALTER TABLE ir_incident ALTER COLUMN concatenatedwebhookonstatusupdateurls TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN concatenatedinvitedgroupids TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN retrospective TYPE text;
 ALTER TABLE ir_incident ALTER COLUMN messageonjoin TYPE text;
@@ -90,3 +91,6 @@ ALTER TABLE ir_timelineevent ALTER COLUMN subjectuserid TYPE text;
 ALTER TABLE ir_timelineevent ALTER COLUMN creatoruserid TYPE text;
 
 ALTER TABLE ir_userinfo ALTER COLUMN id TYPE text;
+
+ALTER TABLE ir_viewedchannel ALTER COLUMN userid TYPE text;
+ALTER TABLE ir_viewedchannel ALTER COLUMN channelid TYPE text;

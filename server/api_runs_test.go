@@ -1001,7 +1001,7 @@ func TestChecklisFailTooLarge(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
 			Title: "My regular title",
 			Items: []client.ChecklistItem{
-				{Title: "Item title", Description: strings.Repeat("A", 65536)},
+				{Title: "Item title", Description: strings.Repeat("A", (256*1024)+1)},
 			},
 		})
 		require.Error(t, err)
