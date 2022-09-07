@@ -234,7 +234,7 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 	e.CreateClients()
 	e.CreateBasicServer()
 
-	t.Run("fails if json is larger than 65535", func(t *testing.T) {
+	t.Run("fails if json is larger than 256K", func(t *testing.T) {
 		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
 			TeamID: e.BasicTeam.Id,
