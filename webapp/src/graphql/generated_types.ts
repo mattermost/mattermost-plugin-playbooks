@@ -72,8 +72,10 @@ export type Mutation = {
     __typename?: 'Mutation';
     addMetric: Scalars['String'];
     addPlaybookMember: Scalars['String'];
+    addRunParticipants: Scalars['String'];
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
+    removeRunParticipants: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
@@ -92,6 +94,11 @@ export type MutationAddPlaybookMemberArgs = {
     userID: Scalars['String'];
 };
 
+export type MutationAddRunParticipantsArgs = {
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']>;
+};
+
 export type MutationDeleteMetricArgs = {
     id: Scalars['String'];
 };
@@ -99,6 +106,11 @@ export type MutationDeleteMetricArgs = {
 export type MutationRemovePlaybookMemberArgs = {
     playbookID: Scalars['String'];
     userID: Scalars['String'];
+};
+
+export type MutationRemoveRunParticipantsArgs = {
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']>;
 };
 
 export type MutationUpdateMetricArgs = {
@@ -241,16 +253,63 @@ export type QueryRunsArgs = {
 
 export type Run = {
     __typename?: 'Run';
+    broadcastChannelIDs: Array<Scalars['String']>;
+    channelID: Scalars['String'];
+    checklists: Array<Checklist>;
+    createAt: Scalars['Float'];
+    currentStatus: Scalars['String'];
+    endAt: Scalars['Float'];
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
+    lastStatusUpdateAt: Scalars['Float'];
     metadata: Metadata;
     name: Scalars['String'];
     ownerUserID: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
+    playbookID: Scalars['String'];
+    postID: Scalars['String'];
+    previousReminder: Scalars['Float'];
+    reminderMessageTemplate: Scalars['String'];
+    reminderPostId: Scalars['String'];
+    reminderTimerDefaultSeconds: Scalars['Float'];
+    retrospective: Scalars['String'];
+    retrospectiveEnabled: Scalars['Boolean'];
+    retrospectivePublishedAt: Scalars['Float'];
+    retrospectiveReminderIntervalSeconds: Scalars['Float'];
+    retrospectiveWasCanceled: Scalars['Boolean'];
+    statusPosts: Array<StatusPost>;
+    statusUpdateBroadcastChannelsEnabled: Scalars['Boolean'];
+    statusUpdateBroadcastWebhooksEnabled: Scalars['Boolean'];
+    statusUpdateEnabled: Scalars['Boolean'];
+    summary: Scalars['String'];
+    summaryModifiedAt: Scalars['Float'];
+    teamID: Scalars['String'];
+    timelineEvents: Array<TimelineEvent>;
+    webhookOnStatusUpdateURLs: Array<Scalars['String']>;
 };
 
 export type RunUpdates = {
     isFavorite?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type StatusPost = {
+    __typename?: 'StatusPost';
+    createAt: Scalars['Float'];
+    deleteAt: Scalars['Float'];
+    id: Scalars['String'];
+};
+
+export type TimelineEvent = {
+    __typename?: 'TimelineEvent';
+    createAt: Scalars['Float'];
+    creatorUserID: Scalars['String'];
+    deleteAt: Scalars['Float'];
+    details: Scalars['String'];
+    eventType: Scalars['String'];
+    id: Scalars['String'];
+    postID: Scalars['String'];
+    subjectUserID: Scalars['String'];
+    summary: Scalars['String'];
 };
 
 export type PlaybookQueryVariables = Exact<{
@@ -271,7 +330,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } }>, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -299,6 +358,20 @@ export type UpdateRunMutationVariables = Exact<{
 }>;
 
 export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
+
+export type AddRunParticipantsMutationVariables = Exact<{
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']> | Scalars['String'];
+}>;
+
+export type AddRunParticipantsMutation = { __typename?: 'Mutation', addRunParticipants: string };
+
+export type RemoveRunParticipantsMutationVariables = Exact<{
+    runID: Scalars['String'];
+    userIDs: Array<Scalars['String']> | Scalars['String'];
+}>;
+
+export type RemoveRunParticipantsMutation = { __typename?: 'Mutation', removeRunParticipants: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -435,6 +508,7 @@ export const PlaybookLhsDocument = gql`
     id
     name
     isFavorite
+    playbookID
     ownerUserID
     participantIDs
     metadata {
@@ -615,6 +689,70 @@ export function useUpdateRunMutation(baseOptions?: Apollo.MutationHookOptions<Up
 export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation>;
 export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
 export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
+export const AddRunParticipantsDocument = gql`
+    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+  addRunParticipants(runID: $runID, userIDs: $userIDs)
+}
+    `;
+export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
+
+/**
+ * __useAddRunParticipantsMutation__
+ *
+ * To run a mutation, you first call `useAddRunParticipantsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddRunParticipantsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addRunParticipantsMutation, { data, loading, error }] = useAddRunParticipantsMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      userIDs: // value for 'userIDs'
+ *   },
+ * });
+ */
+export function useAddRunParticipantsMutation(baseOptions?: Apollo.MutationHookOptions<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>(AddRunParticipantsDocument, options);
+}
+export type AddRunParticipantsMutationHookResult = ReturnType<typeof useAddRunParticipantsMutation>;
+export type AddRunParticipantsMutationResult = Apollo.MutationResult<AddRunParticipantsMutation>;
+export type AddRunParticipantsMutationOptions = Apollo.BaseMutationOptions<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
+export const RemoveRunParticipantsDocument = gql`
+    mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
+  removeRunParticipants(runID: $runID, userIDs: $userIDs)
+}
+    `;
+export type RemoveRunParticipantsMutationFn = Apollo.MutationFunction<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
+
+/**
+ * __useRemoveRunParticipantsMutation__
+ *
+ * To run a mutation, you first call `useRemoveRunParticipantsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveRunParticipantsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removeRunParticipantsMutation, { data, loading, error }] = useRemoveRunParticipantsMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      userIDs: // value for 'userIDs'
+ *   },
+ * });
+ */
+export function useRemoveRunParticipantsMutation(baseOptions?: Apollo.MutationHookOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>(RemoveRunParticipantsDocument, options);
+}
+export type RemoveRunParticipantsMutationHookResult = ReturnType<typeof useRemoveRunParticipantsMutation>;
+export type RemoveRunParticipantsMutationResult = Apollo.MutationResult<RemoveRunParticipantsMutation>;
+export type RemoveRunParticipantsMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

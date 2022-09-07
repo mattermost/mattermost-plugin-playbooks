@@ -103,6 +103,7 @@ const PlaybookRunDetails = () => {
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
     const followState = useFollowers(metadata?.followers || []);
+    const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const RHS = useRHS(playbookRun);
 
@@ -215,7 +216,7 @@ const PlaybookRunDetails = () => {
                         onTimelineClick={onTimelineClick}
                         role={role}
                         channel={channel}
-                        hasAccessToChannel={!channelFetchMetadata.isErrorCode(403)}
+                        hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
                     />

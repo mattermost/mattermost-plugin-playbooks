@@ -25,9 +25,10 @@ interface Props {
     ownerUserId: string;
     participantIDs: string[];
     followerIDs: string[];
+    hasPermanentViewerAccess: boolean;
 }
 
-export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participantIDs, followerIDs}: Props) => {
+export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participantIDs, followerIDs, hasPermanentViewerAccess}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const updateRun = useUpdateRun(playbookRunId);
@@ -35,8 +36,8 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
 
     const followState = useFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRunId, ownerUserId, isFollowing);
 
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing);
     const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
 
     const toggleFavorite = () => {

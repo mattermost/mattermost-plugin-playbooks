@@ -2131,4 +2131,81 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.56.0"),
+		toVersion:   semver.MustParse("0.57.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER COLUMN IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.57.0"),
+		toVersion:   semver.MustParse("0.58.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Find all users who are members of channels where runs have been created and are followers of the run.
+			// Update them to become members of the playbook run
+			var err error
+			if e.DriverName() == model.DatabaseDriverMysql {
+				_, err = e.Exec(`
+					UPDATE IR_Run_Participants
+					INNER JOIN IR_Incident ON IR_Run_Participants.IncidentID = IR_Incident.ID
+					INNER JOIN ChannelMembers ON ChannelMembers.ChannelID = IR_Incident.ChannelID
+					SET IR_Run_Participants.IsParticipant = true
+					WHERE
+						IR_Run_Participants.UserID = ChannelMembers.UserID
+				`)
+			} else {
+				_, err = e.Exec(`
+					UPDATE IR_Run_Participants
+					SET IsParticipant = true
+					FROM IR_Incident
+					INNER JOIN ChannelMembers ON ChannelMembers.ChannelID = IR_Incident.ChannelID
+					WHERE
+						IR_Run_Participants.UserID = ChannelMembers.UserID AND
+						IR_Run_Participants.IncidentID = IR_Incident.ID;
+				`)
+			}
+			if err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to update existing users as playbook members"))
+			}
+
+			// Find all users who are members of channels where runs have been created.
+			// Add them as members of the playbook run
+			if _, err := e.Exec(`
+				INSERT INTO IR_Run_Participants (UserID, IncidentID, IsFollower, IsParticipant)
+					SELECT DISTINCT
+						cm.UserID as UserID,
+						run.ID as IncidentID,
+						false as IsFollower,
+						true as IsParticipant
+					FROM IR_Incident as run
+					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
+					LEFT JOIN IR_Run_Participants as rp on rp.IncidentID = run.ID AND rp.UserID = cm.UserID
+					WHERE
+						rp.IncidentID IS NULL
+			`); err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+			}
+
+			return nil
+		},
+	},
 }
