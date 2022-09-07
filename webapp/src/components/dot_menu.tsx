@@ -131,7 +131,7 @@ const DotMenu = ({
                 data-testid='dropdownmenu'
                 onClick={(e) => {
                     e.stopPropagation();
-                    !isMultiCheckbox ? setOpen(false) : null;
+                    return isMultiCheckbox ? null : setOpen(false);
                 }}
             >
                 {children}
