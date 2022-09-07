@@ -66,7 +66,7 @@ type DotMenuProps = {
     className?: string;
     isActive?: boolean;
     onOpenChange?: (isOpen: boolean) => void;
-    isMultiCheckbox?: boolean;
+    closeOnClick?: boolean;
 };
 
 type DropdownProps = Omit<ComponentProps<typeof Dropdown>, 'target' | 'children'>;
@@ -78,7 +78,7 @@ const DotMenu = ({
     className,
     disabled,
     isActive,
-    isMultiCheckbox,
+    closeOnClick = true,
     dotMenuButton: MenuButton = DotMenuButton,
     dropdownMenu: Menu = DropdownMenu,
     onOpenChange,
@@ -131,7 +131,9 @@ const DotMenu = ({
                 data-testid='dropdownmenu'
                 onClick={(e) => {
                     e.stopPropagation();
-                    return isMultiCheckbox ? null : setOpen(false);
+                    if (closeOnClick) {
+                        setOpen(false);
+                    }
                 }}
             >
                 {children}
