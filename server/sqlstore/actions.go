@@ -58,6 +58,10 @@ func (c *channelActionStore) Create(action app.GenericChannelAction) (string, er
 		return "", errors.Wrapf(err, "failed to marshal payload json for action id: %q", action.ID)
 	}
 
+	if len(payloadJSON) > maxJSONLength {
+		return "", errors.Wrapf(err, "payload json for action id '%s' is too long (max %d)", action.ID, maxJSONLength)
+	}
+
 	_, err = c.store.execBuilder(c.store.db, sq.
 		Insert("IR_ChannelAction").
 		SetMap(map[string]interface{}{

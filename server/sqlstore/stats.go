@@ -94,11 +94,12 @@ func (s *StatsStore) TotalPlaybookRuns() (int, error) {
 
 func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 	query := s.store.builder.
-		Select("COUNT(DISTINCT cm.UserId)").
-		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Select("COUNT(DISTINCT rp.UserId)").
+		From("IR_Run_Participants as rp").
+		Join("IR_Incident AS i ON i.ID = rp.IncidentID").
 		Where("i.EndAt = 0").
-		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where("rp.IsParticipant = true").
+		Where(sq.Expr("rp.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	query = applyFilters(query, filters)
 

@@ -9,9 +9,9 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-
+import {PlayIcon} from '@mattermost/compass-icons/components';
 import Icon from '@mdi/react';
-import {mdiPlay, mdiAccountCheckOutline} from '@mdi/js';
+import {mdiAccountCheckOutline} from '@mdi/js';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -120,10 +120,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         <>
             <StyledSection>
                 <StyledSectionTitle>
-                    <Icon
-                        path={mdiPlay}
-                        size={1.75}
-                    />
+                    <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
                 <Setting id={'create-channel'}>

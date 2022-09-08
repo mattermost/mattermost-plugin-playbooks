@@ -75,6 +75,8 @@ type Props = {
      * Set to hide the cancel button
      */
     hideCancel?: boolean;
+
+    stopPropagationOnClick?: boolean;
 };
 
 type State = {
@@ -200,7 +202,12 @@ export default class ConfirmModal extends React.Component<Props, State> {
             cancelButton = (
                 <TertiaryButton
                     type='button'
-                    onClick={this.handleCancel}
+                    onClick={(e) => {
+                        if (this.props.stopPropagationOnClick) {
+                            e.stopPropagation();
+                        }
+                        this.handleCancel();
+                    }}
                     id='cancelModalButton'
                 >
                     {cancelText}
@@ -240,7 +247,12 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                 autoFocus={true}
                                 type='button'
                                 className={this.props.confirmButtonClass}
-                                onClick={this.handleConfirm}
+                                onClick={(e) => {
+                                    if (this.props.stopPropagationOnClick) {
+                                        e.stopPropagation();
+                                    }
+                                    this.handleConfirm();
+                                }}
                                 id='confirmModalButton'
                             >
                                 {this.props.confirmButtonText}

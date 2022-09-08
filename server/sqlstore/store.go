@@ -12,6 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// maxJSONLength holds the limit we set for JSON data in postgres
+// Since JSON data type is unboounded, we need to set a limit
+// that we'll control manually.
+const maxJSONLength = 256 * 1024 // 256KB
+
 type SQLStore struct {
 	log       bot.Logger
 	db        *sqlx.DB

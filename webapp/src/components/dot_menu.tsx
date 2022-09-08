@@ -1,15 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, ComponentProps} from 'react';
 import styled, {css} from 'styled-components';
 
-import {useFloating, offset, flip, shift, autoUpdate, Placement} from '@floating-ui/react-dom-interactions';
+import {useUpdateEffect} from 'react-use';
 
-import {useKeyPress, useClickOutsideRef} from 'src/hooks';
-import {PrimaryButton} from 'src/components/assets/buttons';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useUniqueId} from 'src/utils';
+
+import Dropdown from './dropdown';
+import {PrimaryButton} from './assets/buttons';
 
 export const DotMenuButton = styled.div<{isActive: boolean}>`
     display: inline-flex;
@@ -30,16 +31,12 @@ export const DotMenuButton = styled.div<{isActive: boolean}>`
     }
 `;
 
-const DropdownMenuWrapper = styled.div`
-    position: relative;
-`;
-
 export const DropdownMenu = styled.div`
     display: flex;
     flex-direction: column;
 
     width: max-content;
-    min-width: 160px;
+    min-width: 16rem;
     text-align: left;
     list-style: none;
 
@@ -59,50 +56,50 @@ export const DropdownMenu = styled.div`
     z-index: 12;
 `;
 
-interface DotMenuProps {
+type DotMenuProps = {
     children: React.ReactNode;
     icon: JSX.Element;
     dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
-    placement?: Placement;
-    offset?: Parameters<typeof offset>[0];
     title?: string;
     disabled?: boolean;
     className?: string;
     isActive?: boolean;
-}
+    onOpenChange?: (isOpen: boolean) => void;
+    closeOnClick?: boolean;
+};
 
-const DotMenu = (props: DotMenuProps) => {
-    const {strategy, x, y, reference, floating, refs} = useFloating<HTMLElement>({
-        placement: props.placement ?? 'bottom',
-        middleware: [offset(props.offset ?? 2), flip(), shift()],
-        whileElementsMounted: autoUpdate,
-    });
+type DropdownProps = Omit<ComponentProps<typeof Dropdown>, 'target' | 'children'>;
 
+const DotMenu = ({
+    children,
+    icon,
+    title,
+    className,
+    disabled,
+    isActive,
+    closeOnClick = true,
+    dotMenuButton: MenuButton = DotMenuButton,
+    dropdownMenu: Menu = DropdownMenu,
+    onOpenChange,
+    ...props
+}: DotMenuProps & DropdownProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(!isOpen);
     };
+    useUpdateEffect(() => {
+        onOpenChange?.(isOpen);
+    }, [isOpen]);
 
-    useClickOutsideRef(refs.reference, () => {
-        setOpen(false);
-    });
-
-    useKeyPress('Escape', () => {
-        setOpen(false);
-    });
-
-    const MenuButton = props.dotMenuButton ?? DotMenuButton;
-    const Menu = props.dropdownMenu ?? DropdownMenu;
-
-    return (
+    const button = (
 
         // @ts-ignore
         <MenuButton
-            title={props.title}
-            ref={reference}
-            isActive={(props.isActive ?? false) || isOpen}
+            title={title}
+            isActive={(isActive ?? false) || isOpen}
             onClick={(e: MouseEvent) => {
+                e.preventDefault();
                 e.stopPropagation();
                 toggleOpen();
             }}
@@ -114,33 +111,34 @@ const DotMenu = (props: DotMenuProps) => {
                 }
             }}
             tabIndex={0}
-            className={props.className}
+            className={className}
             role={'button'}
-            disabled={props.disabled || false}
-            data-testid={'menuButton' + props.title}
+            disabled={disabled ?? false}
+            data-testid={'menuButton' + (title ?? '')}
         >
-            {props.icon}
-            <DropdownMenuWrapper>
-                {
-                    isOpen &&
-                    <Menu
-                        ref={floating}
-                        style={{
-                            position: strategy,
-                            top: y ?? '',
-                            left: x ?? '',
-                        }}
-                        data-testid='dropdownmenu'
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setOpen(false);
-                        }}
-                    >
-                        {props.children}
-                    </Menu>
-                }
-            </DropdownMenuWrapper>
+            {icon}
         </MenuButton>
+    );
+
+    return (
+        <Dropdown
+            {...props}
+            isOpen={isOpen}
+            onOpenChange={setOpen}
+            target={button}
+        >
+            <Menu
+                data-testid='dropdownmenu'
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (closeOnClick) {
+                        setOpen(false);
+                    }
+                }}
+            >
+                {children}
+            </Menu>
+        </Dropdown>
     );
 };
 

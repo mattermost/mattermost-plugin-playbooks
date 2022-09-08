@@ -102,8 +102,8 @@ type Context struct {
 
 // When moving over to the multi-product architecture this should be handled by the server.
 func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
-	// Limit bodies to 100KiB.
-	r.Body = http.MaxBytesReader(w, r.Body, 102400)
+	// Limit bodies to 300KiB.
+	r.Body = http.MaxBytesReader(w, r.Body, 300*1024)
 
 	var params struct {
 		Query         string                 `json:"query"`
@@ -111,13 +111,13 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		Variables     map[string]interface{} `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.log.Debugf("Unable to decode graphql query: %v", err)
+		h.log.Errorf("Unable to decode graphql query: %v", err)
 		return
 	}
 
 	if !h.config.IsConfiguredForDevelopmentAndTesting() {
 		if params.OperationName == "" {
-			h.log.Debugf("Invalid blank operation name.")
+			h.log.Warnf("Invalid blank operation name.")
 			return
 		}
 	}
