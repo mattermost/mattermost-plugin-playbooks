@@ -13,9 +13,8 @@ import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {TimelineEvent} from 'src/types/rhs';
-import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
+import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {ChannelNamesMap} from 'src/types/backstage';
 
 const TimelineLine = styled.ul`
