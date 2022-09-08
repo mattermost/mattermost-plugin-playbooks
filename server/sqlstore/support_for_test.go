@@ -706,6 +706,21 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 	require.NoError(t, err)
 }
 
+func addUsersToRuns(t *testing.T, store *SQLStore, users []userInfo, runIDs []string) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("IR_Run_Participants").Columns("IncidentID", "UserId", "IsParticipant", "IsFollower")
+
+	for _, u := range users {
+		for _, runID := range runIDs {
+			insertBuilder = insertBuilder.Values(runID, u.ID, true, false)
+		}
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
 func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	t.Helper()
 

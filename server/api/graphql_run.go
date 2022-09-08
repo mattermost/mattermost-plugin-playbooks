@@ -11,6 +11,64 @@ type RunResolver struct {
 	app.PlaybookRun
 }
 
+func (r *RunResolver) CreateAt() float64 {
+	return float64(r.PlaybookRun.CreateAt)
+}
+
+func (r *RunResolver) EndAt() float64 {
+	return float64(r.PlaybookRun.EndAt)
+}
+
+func (r *RunResolver) SummaryModifiedAt() float64 {
+	return float64(r.PlaybookRun.SummaryModifiedAt)
+}
+func (r *RunResolver) LastStatusUpdateAt() float64 {
+	return float64(r.PlaybookRun.LastStatusUpdateAt)
+}
+
+func (r *RunResolver) RetrospectivePublishedAt() float64 {
+	return float64(r.PlaybookRun.RetrospectivePublishedAt)
+}
+
+func (r *RunResolver) ReminderTimerDefaultSeconds() float64 {
+	return float64(r.PlaybookRun.ReminderTimerDefaultSeconds)
+}
+
+func (r *RunResolver) PreviousReminder() float64 {
+	return float64(r.PlaybookRun.PreviousReminder)
+}
+
+func (r *RunResolver) RetrospectiveReminderIntervalSeconds() float64 {
+	return float64(r.PlaybookRun.RetrospectiveReminderIntervalSeconds)
+}
+
+func (r *RunResolver) Checklists() []*ChecklistResolver {
+	checklistResolvers := make([]*ChecklistResolver, 0, len(r.PlaybookRun.Checklists))
+	for _, checklist := range r.PlaybookRun.Checklists {
+		checklistResolvers = append(checklistResolvers, &ChecklistResolver{checklist})
+	}
+
+	return checklistResolvers
+}
+
+func (r *RunResolver) StatusPosts() []*StatusPostResolver {
+	statusPostResolvers := make([]*StatusPostResolver, 0, len(r.PlaybookRun.StatusPosts))
+	for _, statusPost := range r.PlaybookRun.StatusPosts {
+		statusPostResolvers = append(statusPostResolvers, &StatusPostResolver{statusPost})
+	}
+
+	return statusPostResolvers
+}
+
+func (r *RunResolver) TimelineEvents() []*TimelineEventResolver {
+	timelineEventResolvers := make([]*TimelineEventResolver, 0, len(r.PlaybookRun.StatusPosts))
+	for _, event := range r.PlaybookRun.TimelineEvents {
+		timelineEventResolvers = append(timelineEventResolvers, &TimelineEventResolver{event})
+	}
+
+	return timelineEventResolvers
+}
+
 func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -31,6 +89,34 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	}
 
 	return isFavorite, nil
+}
+
+type StatusPostResolver struct {
+	app.StatusPost
+}
+
+func (r *StatusPostResolver) CreateAt() float64 {
+	return float64(r.StatusPost.CreateAt)
+}
+
+func (r *StatusPostResolver) DeleteAt() float64 {
+	return float64(r.StatusPost.DeleteAt)
+}
+
+type TimelineEventResolver struct {
+	app.TimelineEvent
+}
+
+func (r *TimelineEventResolver) CreateAt() float64 {
+	return float64(r.TimelineEvent.CreateAt)
+}
+
+func (r *TimelineEventResolver) EventType() string {
+	return string(r.TimelineEvent.EventType)
+}
+
+func (r *TimelineEventResolver) DeleteAt() float64 {
+	return float64(r.TimelineEvent.DeleteAt)
 }
 
 func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {

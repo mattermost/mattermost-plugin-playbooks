@@ -12,6 +12,7 @@ describe('lhs', () => {
     let testTeam;
     let testUser;
     let testPublicPlaybook;
+    let testPrivatePlaybook;
     let playbookRun;
     let testViewerUser;
 
@@ -36,6 +37,16 @@ describe('lhs', () => {
                 memberIDs: [],
             }).then((playbook) => {
                 testPublicPlaybook = playbook;
+            });
+
+            // # Create a private playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Private Playbook',
+                memberIDs: [],
+                public: false,
+            }).then((playbook) => {
+                testPrivatePlaybook = playbook;
             });
         });
     });
@@ -107,6 +118,7 @@ describe('lhs', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.wait(3000);
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -128,6 +140,64 @@ describe('lhs', () => {
         });
     });
 
+    describe('leave run - no permanent access', () => {
+        beforeEach(() => {
+            // # Size the viewport to show the RHS without covering posts.
+            cy.viewport('macbook-13');
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPrivatePlaybook.id,
+                playbookRunName: 'the run name(' + Date.now() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                playbookRun = run;
+
+                // # Add viewer user to the channel
+                cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+
+                cy.apiLogin(testViewerUser).then(() => {
+                    // # Visit the playbook run
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+                    // # LHS render takes a few seconds, wait for it
+                    cy.wait(5000);
+                });
+            });
+        });
+
+        it('leave run, when on rdp of the same run', () => {
+            // # Click on leave menu item
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            cy.wait(200);
+
+            // # confirm modal
+            cy.get('#confirmModal').get('#confirmModalButton').click();
+
+            // * Verify that user was redirected to the run list page
+            cy.url().should('include', 'playbooks/runs?sort=');
+        });
+
+        it('leave run, when not on rdp of the same run', () => {
+            // # Visit playbooks list page
+            cy.visit('/playbooks/playbooks');
+
+            // # Click on leave menu item
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            cy.wait(200);
+
+            // # confirm modal
+            cy.get('#confirmModal').get('#confirmModalButton').click();
+            cy.wait(500);
+
+            // * Verify that user was not redirected to the run list page
+            cy.url().should('not.include', 'playbooks/runs?sort=');
+        });
+    });
+
     describe('playbook dot menu', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
@@ -145,7 +215,7 @@ describe('lhs', () => {
                 testPublicPlaybook = playbook;
 
                 // # Visit the playbooks page
-                cy.visit('/playbooks/playbooks}');
+                cy.visit('/playbooks/playbooks');
 
                 // # LHS render takes a few seconds, wait for it
                 cy.wait(5000);

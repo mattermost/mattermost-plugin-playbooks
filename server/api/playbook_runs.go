@@ -73,7 +73,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/request-get-involved", withContext(handler.requestGetInvolved)).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -90,7 +89,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", withContext(handler.updateRunActions)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/leave", withContext(handler.leave)).Methods(http.MethodPost)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -883,48 +881,6 @@ func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r 
 		h.HandleError(w, c.logger, err)
 		return
 	}
-}
-
-// requestGetInvolved handles the request of a user who does not participate actively in a run
-func (h *PlaybookRunHandler) requestGetInvolved(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to post get-involved request", nil)
-		return
-	}
-
-	if err := h.playbookRunService.RequestGetInvolved(playbookRunID, userID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-}
-
-// leave handles the POST request /runs/{id}/leave endpoint, caller user will be removed from participants.
-func (h *PlaybookRunHandler) leave(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if err := h.playbookRunService.Leave(playbookRunID, userID); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "leave failed", err)
-		return
-	}
-
-	// Don't worry if the user could not be previously a follower
-	// Unfollow implementation is defensive about this.
-	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	hasViewPermission := h.permissions.RunView(userID, playbookRunID) == nil
-
-	type RunPermission struct {
-		HasViewPermission bool `json:"has_view_permission"`
-	}
-
-	ReturnJSON(w, RunPermission{HasViewPermission: hasViewPermission}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a

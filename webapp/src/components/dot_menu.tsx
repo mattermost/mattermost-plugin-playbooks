@@ -66,6 +66,7 @@ type DotMenuProps = {
     className?: string;
     isActive?: boolean;
     onOpenChange?: (isOpen: boolean) => void;
+    closeOnClick?: boolean;
 };
 
 type DropdownProps = Omit<ComponentProps<typeof Dropdown>, 'target' | 'children'>;
@@ -77,6 +78,7 @@ const DotMenu = ({
     className,
     disabled,
     isActive,
+    closeOnClick = true,
     dotMenuButton: MenuButton = DotMenuButton,
     dropdownMenu: Menu = DropdownMenu,
     onOpenChange,
@@ -129,7 +131,9 @@ const DotMenu = ({
                 data-testid='dropdownmenu'
                 onClick={(e) => {
                     e.stopPropagation();
-                    setOpen(false);
+                    if (closeOnClick) {
+                        setOpen(false);
+                    }
                 }}
             >
                 {children}

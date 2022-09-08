@@ -127,7 +127,19 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
-	_, _, err := configStore.Set(config)
+	config.LogSettings.EnableConsole = model.NewBool(true)
+	config.LogSettings.EnableFile = model.NewBool(false)
+
+	// override config with e2etest.config.json if it exists
+	textConfig, err := os.ReadFile("./e2etest.config.json")
+	if err == nil {
+		err := json.Unmarshal(textConfig, config)
+		if err != nil {
+			require.NoError(t, err)
+		}
+	}
+
+	_, _, err = configStore.Set(config)
 	require.NoError(t, err)
 
 	// Copy ourselves into the correct directory so we are executed.
@@ -157,6 +169,7 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
+		sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)

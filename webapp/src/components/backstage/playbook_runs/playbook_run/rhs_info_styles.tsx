@@ -5,11 +5,6 @@ import React from 'react';
 import {HashLink as Link} from 'react-router-hash-link';
 import styled, {css} from 'styled-components';
 
-export const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
 export const Section = styled.section`
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     padding: 24px 0;

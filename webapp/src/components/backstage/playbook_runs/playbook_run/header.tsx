@@ -7,7 +7,6 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {joinChannel} from 'mattermost-redux/actions/channels';
 import {Channel} from '@mattermost/types/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -15,10 +14,10 @@ import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {
     getSiteUrl,
-    requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
 import {useFavoriteRun} from 'src/hooks';
+import {useRunMembership} from 'src/graphql/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -30,7 +29,6 @@ import {ToastType, useToaster} from '../../toast_banner';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {StarButton} from '../../playbook_editor/playbook_editor';
-import {useLHSRefresh} from '../../lhs_navigation';
 
 import {ContextMenu} from './context_menu';
 import HeaderButton from './header_button';
@@ -40,14 +38,14 @@ interface Props {
     playbookRun: PlaybookRun;
     role: Role;
     channel: Channel | undefined | null;
-    hasAccessToChannel: boolean;
+    hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAccessToChannel, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
@@ -55,9 +53,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
 
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
-    const refreshLHS = useLHSRefresh();
 
-    const onGetInvolved = async () => {
+    const {addToRun} = useRunMembership(playbookRun.id, [currentUserId]);
+
+    const onParticipate = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
@@ -65,28 +64,15 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
         setShowGetInvolvedConfirm(true);
     };
 
-    const onConfirmGetInvolved = async () => {
+    const onConfirmParticipate = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
-        if (!hasAccessToChannel) {
-            const response = await requestGetInvolved(playbookRun.id);
-            if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'Your request to join the run was unsuccessful. '}), ToastType.Failure);
-            } else {
-                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel. '}), ToastType.Success);
-            }
-            return;
-        } else if (!channel) {
-            addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
-            return;
-        }
 
-        // if channel is not null, join the channel
-        await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
+        addToRun()
+            .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
+            .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
         telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
-        refreshLHS();
-        addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
     };
 
     const confirmGetInvolvedMessage = () => {
@@ -112,6 +98,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
                 isFavoriteRun={isFavoriteRun}
                 isFollowing={isFollowing}
                 toggleFavorite={toggleFavorite}
+                hasPermanentViewerAccess={hasPermanentViewerAccess}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
@@ -145,7 +132,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
                 data-testid={'rhs-header-button-info'}
             />
             {role === Role.Viewer &&
-                <GetInvolved onClick={onGetInvolved}>
+                <GetInvolved onClick={onParticipate}>
                     <GetInvolvedIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
@@ -160,7 +147,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasAcc
                 message={confirmGetInvolvedMessage()}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
-                    onConfirmGetInvolved();
+                    onConfirmParticipate();
                     setShowGetInvolvedConfirm(false);
                 }}
                 onCancel={() => setShowGetInvolvedConfirm(false)}

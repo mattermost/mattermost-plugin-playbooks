@@ -8,8 +8,8 @@ import {useUpdateEffect} from 'react-use';
 import {RunMetricData} from 'src/types/playbook_run';
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import MetricInput from 'src/components/backstage/playbook_runs/playbook_run/metrics/metric_input';
 import {isMetricValueValid, stringToMetric, metricToString} from 'src/components/backstage/playbook_edit/metrics/shared';
-import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 
 interface MetricsProps {

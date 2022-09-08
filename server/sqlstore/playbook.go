@@ -601,6 +601,13 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		return errors.New("id should not be empty")
 	}
 
+	// if checklists are passed and len (as string) is bigger than limit -> fails
+	if _, exists := setmap["ChecklistsJSON"]; exists {
+		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
+			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+		}
+	}
+
 	_, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		SetMap(setmap).
@@ -1050,6 +1057,10 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
+	}
+
+	if len(checklistsJSON) > maxJSONLength {
+		return nil, errors.Wrapf(err, "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybook{
