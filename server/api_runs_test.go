@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -277,6 +278,23 @@ func TestRunCreation(t *testing.T) {
 		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
 		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
 		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
+	})
+}
+
+func TestCreateInvalidRuns(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("fails if description is longer than 4096", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "test run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			Description: strings.Repeat("A", 4097),
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Nil(t, run)
 	})
 }
 
@@ -961,6 +979,30 @@ func TestChecklistManagement(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChecklisFailTooLarge(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("checklist creation - failure: too large checklist", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "My regular title",
+			Items: []client.ChecklistItem{
+				{Title: "Item title", Description: strings.Repeat("A", (256*1024)+1)},
+			},
+		})
+		require.Error(t, err)
+	})
 }
 
 func TestRunActions(t *testing.T) {
