@@ -139,12 +139,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 			},
 		})
 		require.Error(t, err)
-
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": strings.Repeat("A", 1025)})
-		require.Error(t, err)
-
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": strings.Repeat("A", 4097)})
-		require.Error(t, err)
 	})
 }
 
