@@ -5,8 +5,13 @@ import styled, {css} from 'styled-components';
 import React from 'react';
 
 import Tooltip from 'src/components/widgets/tooltip';
-import {HeaderIcon} from '../playbook_run_backstage/playbook_run_backstage';
 import {CompassIcon} from 'src/types/compass';
+
+declare module 'react-bootstrap/esm/OverlayTrigger' {
+    interface OverlayTriggerProps {
+        shouldUpdatePosition?: boolean;
+    }
+}
 
 interface HeaderButtonProps {
     tooltipId: string;
@@ -47,10 +52,37 @@ const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, click
     );
 };
 
-const StyledHeaderIcon = styled(HeaderIcon)<{isActive: boolean; size?: number}>`
+const Icon = styled.button`
+    display: block;
+    padding: 0;
+    border: none;
+    background: transparent;
+    line-height: 24px;
+    cursor: pointer;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const StyledHeaderIcon = styled(Icon)<{isActive: boolean; size?: number, clicked: boolean}>`
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    border-radius: 4px;
     margin-left: 4px;
-    width: ${(props) => (`${props.size}px` ?? '28px')};
-    height: ${(props) => (`${props.size}px` ?? '28px')};
+    width: ${(props) => (props.size ?? 28)}px;
+    height: ${(props) => (props.size ?? 28)}px;
+
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
+
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
+
     ${({isActive: active}) => active && css`
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
