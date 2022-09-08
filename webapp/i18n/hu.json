@@ -688,5 +688,13 @@
     "Q4sutg": "Kilépés jóváhagyása{isFollowing, select, true { és követés kikapcsolása} other {}}",
     "P6PLpi": "Csatlakozás",
     "FgydNe": "Megtekintés",
-    "iEtImk": "Amikor kilép egy futásból{isFollowing, select, true { és kikapcsolja a követést}}, az el lesz távolítva a bal oldali oldalsávból. Újra megtalálhatja, ha megtekinti az összes futást."
+    "iEtImk": "Amikor kilép egy futásból{isFollowing, select, true { és kikapcsolja a követést}}, az el lesz távolítva a bal oldali oldalsávból. Újra megtalálhatja, ha megtekinti az összes futást.",
+    "j2FnDV": "Egy csatorna lesz létrehozva ezzel a névvel",
+    "qGlwfc": "Futás indítása",
+    "iQhFxR": "Legutóbb használt",
+    "03oqA2": "Aktív futások",
+    "vqmRBs": "Futás újraindításán",
+    "Zg0obP": "Futás újraindítása",
+    "KjNfA8": "Érvénytelen idő intervallum",
+    "k5EChD": "Biztos benne, hogy szeretné újraindítani a futást?"
 }

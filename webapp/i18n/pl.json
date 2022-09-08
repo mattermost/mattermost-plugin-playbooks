@@ -686,5 +686,13 @@
     "Q4sutg": "Potwierdź opuszczenie{isFollowing, select, true { i wyłączenie obserwowania} other {}}",
     "P6PLpi": "Dołącz do",
     "FgydNe": "Zobacz",
-    "5PpBsd": "Twoja prośba nie powiodła się."
+    "5PpBsd": "Twoja prośba nie powiodła się.",
+    "qGlwfc": "Uruchom przebieg",
+    "j2FnDV": "Zostanie utworzony kanał o tej nazwie",
+    "iQhFxR": "Ostatnio używane",
+    "03oqA2": "Aktywuj Uruchomienia",
+    "vqmRBs": "Potwierdź ponowne uruchomienie",
+    "k5EChD": "Czy na pewno chcesz ponownie uruchomić przebieg?",
+    "Zg0obP": "Uruchom ponownie",
+    "KjNfA8": "Nieważny czas trwania"
 }

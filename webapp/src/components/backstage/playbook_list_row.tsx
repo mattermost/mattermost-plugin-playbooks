@@ -5,7 +5,7 @@ import React, {Fragment, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {PlayOutlineIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
@@ -40,6 +40,8 @@ import {DotMenuButton} from '../dot_menu';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 
 import {Timestamp} from 'src/webapp_globals';
+
+import {openPlaybookRunModal} from 'src/actions';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -115,6 +117,7 @@ const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
 
 const PlaybookListRow = (props: Props) => {
     const team = useSelector((state: GlobalState) => getTeam(state, props.playbook.team_id || ''));
+    const dispatch = useDispatch();
     const currentUser = useSelector(getCurrentUser);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
 
@@ -140,7 +143,13 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            navigateToUrl(`/${team.name || ''}/_playbooks/${props.playbook?.id || ''}/run`);
+            dispatch(openPlaybookRunModal(
+                props.playbook.id,
+                props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
+                props.playbook.description,
+                props.playbook.team_id,
+                team.name
+            ));
         }
     };
 

@@ -684,5 +684,13 @@
     "QegBKq": "Join playbook",
     "Q4sutg": "Confirm leave{isFollowing, select, true { and unfollow} other {}}",
     "P6PLpi": "Join",
-    "FgydNe": "View"
+    "FgydNe": "View",
+    "qGlwfc": "Start run",
+    "vqmRBs": "Confirm restart run",
+    "k5EChD": "Are you sure you want to restart the run?",
+    "j2FnDV": "A channel will be created with this name",
+    "iQhFxR": "Last used",
+    "Zg0obP": "Restart run",
+    "KjNfA8": "Invalid time duration",
+    "03oqA2": "Active Runs"
 }
