@@ -1235,7 +1235,7 @@ describe('playbooks > edit', () => {
             cy.findByText('Rename').click();
 
             // # Change the name and save
-            cy.focused().type('{selectAll}{del}renamed playbook');
+            cy.findByTestId('rendered-editable-text').type('{selectAll}{del}renamed playbook');
             cy.findByRole('button', {name: /save/i}).click();
 
             cy.reload();

@@ -2,12 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef, useEffect} from 'react';
-
 import {useSelector} from 'react-redux';
-
 import styled, {css} from 'styled-components';
-
 import {FormattedMessage} from 'react-intl';
+
+import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/components';
 
 import {getIsRhsExpanded} from 'src/selectors';
 
@@ -82,7 +81,7 @@ const ShowMoreButton = styled.button`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
     border-radius: 2px;
 
-    display: inline-block;
+    display: inline-flex;
     flex-shrink: 0;
     font-size: 13px;
     font-weight: bold;
@@ -93,17 +92,6 @@ const ShowMoreButton = styled.button`
     background: var(--center-channel-bg);
     color: var(--link-color);
 
-    .fa {
-        font-size: 1.4em;
-        font-weight: bold;
-        margin-right: 5px;
-        position: relative;
-        top: 2px;
-
-        &.fa-angle-up {
-            top: 1px;
-        }
-    }
 
     &:focus {
         outline: none;
@@ -193,10 +181,10 @@ const ShowMore = (props: Props) => {
         );
     }
 
-    let showIcon = 'fa fa-angle-up';
+    let showIcon = <ChevronUpIcon color={'currentColor'}/>;
     let showText = <FormattedMessage defaultMessage='Show less'/>;
     if (isCollapsed) {
-        showIcon = 'fa fa-angle-down';
+        showIcon = <ChevronDownIcon color={'currentColor'}/>;
         showText = <FormattedMessage defaultMessage='Show more'/>;
     }
 
@@ -214,7 +202,7 @@ const ShowMore = (props: Props) => {
                 <ShowMoreContainer isCollapsed={isCollapsed}>
                     <ShowMoreLine/>
                     <ShowMoreButton onClick={toggleCollapsed}>
-                        <span className={showIcon}/>
+                        {showIcon}
                         {showText}
                     </ShowMoreButton>
                     <ShowMoreLine/>

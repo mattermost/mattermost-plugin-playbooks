@@ -28,6 +28,8 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
+import {useLHSRefresh} from '../../lhs_navigation';
+
 import {FollowState} from './rhs_info';
 
 export const useFollow = (runID: string, followState: FollowState) => {
@@ -83,6 +85,7 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const FollowingButton = useFollow(run.id, followState);
+    const refreshLHS = useLHSRefresh();
 
     const setOwner = async (userID: string) => {
         try {
@@ -99,6 +102,8 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
                 }
 
                 addToast(message, ToastType.Failure);
+            } else {
+                refreshLHS();
             }
         } catch (error) {
             addToast(formatMessage({defaultMessage: 'It was not possible to change the owner'}), ToastType.Failure);
