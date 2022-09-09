@@ -1203,3 +1203,87 @@ func TestPlaybookGetAutoFollows(t *testing.T) {
 	}
 
 }
+
+func TestPlaybookChecklistCleanup(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook", func(t *testing.T) {
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "id1",
+						AssigneeModified: 101,
+						State:            "Closed",
+						StateModified:    102,
+						CommandLastRun:   103,
+					},
+				},
+			},
+		}
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		actual := []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "",
+						AssigneeModified: 0,
+						State:            "",
+						StateModified:    0,
+						CommandLastRun:   0,
+					},
+				},
+			},
+		}
+		require.Equal(t, pb.Checklists, actual)
+	})
+
+	t.Run("create playbook", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "test1",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:            "title1",
+							AssigneeID:       "id1",
+							AssigneeModified: 101,
+							State:            "Closed",
+							StateModified:    102,
+							CommandLastRun:   103,
+						},
+					},
+				},
+			}})
+		require.NoError(t, err)
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		actual := []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "",
+						AssigneeModified: 0,
+						State:            "",
+						StateModified:    0,
+						CommandLastRun:   0,
+					},
+				},
+			},
+		}
+		require.Equal(t, pb.Checklists, actual)
+	})
+}

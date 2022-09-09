@@ -158,6 +158,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	cleanUpChecklist(playbook.Checklists)
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -227,6 +229,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	cleanUpChecklist(playbook.Checklists)
+
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -234,6 +238,19 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// cleanUpChecklist sets empty values for playbooks checklist fields that are not editable
+func cleanUpChecklist(checklists []app.Checklist) {
+	for listIndex := range checklists {
+		for itemIndex := range checklists[listIndex].Items {
+			checklists[listIndex].Items[itemIndex].AssigneeID = ""
+			checklists[listIndex].Items[itemIndex].AssigneeModified = 0
+			checklists[listIndex].Items[itemIndex].State = ""
+			checklists[listIndex].Items[itemIndex].StateModified = 0
+			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
+		}
+	}
 }
 
 func (h *PlaybookHandler) archivePlaybook(w http.ResponseWriter, r *http.Request) {
