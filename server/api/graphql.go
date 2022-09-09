@@ -102,8 +102,8 @@ type Context struct {
 
 // When moving over to the multi-product architecture this should be handled by the server.
 func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
-	// Limit bodies to 100KiB.
-	r.Body = http.MaxBytesReader(w, r.Body, 102400)
+	// Limit bodies to 300KiB.
+	r.Body = http.MaxBytesReader(w, r.Body, 300*1024)
 
 	var params struct {
 		Query         string                 `json:"query"`
