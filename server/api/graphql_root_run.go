@@ -22,7 +22,7 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.RunView(userID, args.ID); err != nil {
-		c.log.Warnf("public error message: %v; internal details: %v", "Not authorized", err)
+		c.logger.WithError(err).Warn("Not authorized")
 		return nil, errors.New("Not authorized")
 	}
 

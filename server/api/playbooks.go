@@ -11,11 +11,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -25,7 +25,6 @@ type PlaybookHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
 	pluginAPI       *pluginapi.Client
-	log             bot.Logger
 	config          config.Service
 	permissions     *app.PermissionsService
 }
@@ -34,63 +33,62 @@ const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, log bot.Logger, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
 	handler := &PlaybookHandler{
-		ErrorHandler:    &ErrorHandler{log: log},
+		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
 		pluginAPI:       api,
-		log:             log,
 		config:          configService,
 		permissions:     permissions,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
 
-	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
+	playbooksRouter.HandleFunc("", withContext(handler.createPlaybook)).Methods(http.MethodPost)
 
-	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
-	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
-	playbooksRouter.HandleFunc("/import", handler.importPlaybook).Methods(http.MethodPost)
+	playbooksRouter.HandleFunc("", withContext(handler.getPlaybooks)).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/autocomplete", withContext(handler.getPlaybooksAutoComplete)).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/import", withContext(handler.importPlaybook)).Methods(http.MethodPost)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
-	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
-	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
-	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
-	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
-	playbookRouter.HandleFunc("/export", handler.exportPlaybook).Methods(http.MethodGet)
-	playbookRouter.HandleFunc("/duplicate", handler.duplicatePlaybook).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("", withContext(handler.getPlaybook)).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("", withContext(handler.updatePlaybook)).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("", withContext(handler.archivePlaybook)).Methods(http.MethodDelete)
+	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
-	autoFollowsRouter.HandleFunc("", handler.getAutoFollows).Methods(http.MethodGet)
+	autoFollowsRouter.HandleFunc("", withContext(handler.getAutoFollows)).Methods(http.MethodGet)
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
-	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
-	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
+	autoFollowRouter.HandleFunc("", withContext(handler.autoFollow)).Methods(http.MethodPut)
+	autoFollowRouter.HandleFunc("", withContext(handler.autoUnfollow)).Methods(http.MethodDelete)
 
 	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
-	insightsRouter.HandleFunc("/user/me", handler.getTopPlaybooksForUser).Methods(http.MethodGet)
-	insightsRouter.HandleFunc("/teams/{teamID}", handler.getTopPlaybooksForTeam).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/user/me", withContext(handler.getTopPlaybooksForUser)).Methods(http.MethodGet)
+	insightsRouter.HandleFunc("/teams/{teamID}", withContext(handler.getTopPlaybooksForTeam)).Methods(http.MethodGet)
 
 	return handler
 }
 
-func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Playbook) bool {
+func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
 	if playbook.WebhookOnCreationEnabled {
 		if err := app.ValidateWebhookURLs(playbook.WebhookOnCreationURLs); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 			return false
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
 		if err := app.ValidateWebhookURLs(playbook.WebhookOnStatusUpdateURLs); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 			return false
 		}
 	}
 
 	if playbook.CategorizeChannelEnabled {
 		if err := app.ValidateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid category name", err)
 			return false
 		}
 	}
@@ -103,12 +101,12 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Pla
 		for _, channelID := range playbook.BroadcastChannelIDs {
 			channel, err := h.pluginAPI.Channel.Get(channelID)
 			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
 				return false
 			}
 			// check if channel is archived
 			if channel.DeleteAt != 0 {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "broadcasting to archived channel", err)
 				return false
 			}
 		}
@@ -117,25 +115,25 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Pla
 	return true
 }
 
-func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	var playbook app.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
 	if playbook.ID != "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
 	}
 
 	if playbook.ReminderTimerDefaultSeconds <= 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
 	}
 
@@ -149,18 +147,18 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if !h.validPlaybook(w, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
 	}
 
 	if err := h.validateMetrics(playbook); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -174,30 +172,30 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
-func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	ReturnJSON(w, &playbook, http.StatusOK)
 }
 
-func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 	var playbook app.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -205,96 +203,96 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	playbook.ID = vars["id"]
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	if err := h.validateMetrics(playbook); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
 
 	if oldPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' cannot be modified because it is archived", playbook.ID))
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' cannot be modified because it is archived", playbook.ID))
 		return
 	}
 
-	if !h.validPlaybook(w, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
 	}
 
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) archivePlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) archivePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	playbookToArchive, err := h.playbookService.Get(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.DeletePlaybook(userID, playbookToArchive)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.DeletePlaybook(userID, playbookToArchive)) {
 		return
 	}
 
 	err = h.playbookService.Archive(playbookToArchive, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *PlaybookHandler) restorePlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) restorePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	playbookToRestore, err := h.playbookService.Get(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.DeletePlaybook(userID, playbookToRestore)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.DeletePlaybook(userID, playbookToRestore)) {
 		return
 	}
 
 	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
 
-	if teamID != "" && !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if teamID != "" && !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
@@ -306,19 +304,19 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	ReturnJSON(w, playbookResults, http.StatusOK)
 }
 
-func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
@@ -334,7 +332,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 		WithArchived: query.Get("with_archived") == "true",
 	})
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -421,44 +419,44 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 	}, nil
 }
 
-func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) autoFollow(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
 	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
 	if err := h.playbookService.AutoFollow(playbookID, userID); err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) autoUnfollow(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
 	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
 	if err := h.playbookService.AutoUnfollow(playbookID, userID); err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -466,40 +464,40 @@ func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 }
 
 // getAutoFollows returns the list of users that have marked this playbook for auto-following runs
-func (h *PlaybookHandler) getAutoFollows(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getAutoFollows(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(currentUserID, playbookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(currentUserID, playbookID)) {
 		return
 	}
 
 	autoFollowers, err := h.playbookService.GetAutoFollows(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 	ReturnJSON(w, autoFollowers, http.StatusOK)
 }
 
-func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
 		return
 	}
 
 	export, err := app.GeneratePlaybookExport(playbook)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -508,28 +506,28 @@ func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request)
 	_, _ = w.Write(export)
 }
 
-func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
 	}
 
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -541,7 +539,7 @@ func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Reque
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
-func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -550,18 +548,18 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		Version int `json:"version"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&importBlock); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook import", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook import", err)
 		return
 	}
 	playbook := importBlock.Playbook
 
 	if playbook.ID != "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook import should not have ID field", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook import should not have ID field", nil)
 		return
 	}
 
 	if importBlock.Version != app.CurrentPlaybookExportVersion {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Unsupported import version", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Unsupported import version", nil)
 		return
 	}
 
@@ -580,17 +578,17 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		playbook.TeamID = teamID
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
 	}
 
-	if !h.validPlaybook(w, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
 	}
 
 	id, err := h.playbookService.Import(playbook, userID)
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -620,39 +618,39 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	return nil
 }
 
-func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
 	teamID := params.Get("team_id")
 	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
 		return
 	}
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting page parameter to integer", err)
 		return
 	}
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting per_page parameter to integer", err)
 		return
 	}
 
 	// setting startTime as per user's location
 	user, err := h.pluginAPI.User.Get(userID)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
 		return
 	}
 	if timezone == nil {
@@ -667,45 +665,45 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(w http.ResponseWriter, r *http.
 		PerPage:        perPage,
 	})
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)
 }
 
-func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	teamID := vars["teamID"]
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
 	timeRange := params.Get("time_range")
 	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotImplemented, "invalid team_id parameter", errors.New("teamID cannot be empty"))
 		return
 	}
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting page parameter to integer", err)
 		return
 	}
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error converting per_page parameter to integer", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error converting per_page parameter to integer", err)
 		return
 	}
 
 	// setting startTime as per user's location
 	user, err := h.pluginAPI.User.Get(userID)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to get user timezone", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
 		return
 	}
 	if timezone == nil {
@@ -720,7 +718,7 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(w http.ResponseWriter, r *http.
 		PerPage:        perPage,
 	})
 	if err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -19,6 +18,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/config"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/mattermost/mattermost-server/v6/utils"
 	"github.com/pkg/errors"
@@ -66,6 +66,7 @@ type TestEnvironment struct {
 	A   *sapp.App
 
 	Permissions PermissionsHelper
+	logger      mlog.LoggerIFace
 
 	ServerAdminClient        *model.Client4
 	PlaybooksAdminClient     *client.Client
@@ -130,7 +131,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.LogSettings.EnableFile = model.NewBool(false)
 
 	// override config with e2etest.config.json if it exists
-	textConfig, err := ioutil.ReadFile("./e2etest.config.json")
+	textConfig, err := os.ReadFile("./e2etest.config.json")
 	if err == nil {
 		err := json.Unmarshal(textConfig, config)
 		if err != nil {
@@ -157,12 +158,18 @@ func Setup(t *testing.T) *TestEnvironment {
 	err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
 	require.NoError(t, err)
 
+	// Create a logger to override
+	testLogger, err := mlog.NewLogger()
+	require.NoError(t, err)
+	testLogger.LockConfiguration()
+
 	// Create a server with our specified options
 	err = utils.TranslationsPreInit()
 	require.NoError(t, err)
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
+		sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
@@ -188,6 +195,7 @@ func Setup(t *testing.T) *TestEnvironment {
 				App:    ap,
 			},
 		},
+		logger: testLogger,
 	}
 }
 
@@ -195,28 +203,28 @@ func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
 	userPassword := "Password123!"
-	admin, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	admin, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksadmin@example.com",
 		Username: "playbooksadmin",
 		Password: userPassword,
 	})
 	e.AdminUser = admin
 
-	user, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	user, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksuser@example.com",
 		Username: "playbooksuser",
 		Password: userPassword,
 	})
 	e.RegularUser = user
 
-	user2, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	user2, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksuser2@example.com",
 		Username: "playbooksuser2",
 		Password: userPassword,
 	})
 	e.RegularUser2 = user2
 
-	notInTeam, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	notInTeam, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksusernotinteam@example.com",
 		Username: "playbooksusenotinteam",
 		Password: userPassword,
@@ -458,6 +466,8 @@ func (e *TestEnvironment) SetE20Licence() {
 }
 
 func (e *TestEnvironment) CreateBasic() {
+	e.T.Helper()
+
 	e.CreateClients()
 	e.CreateBasicServer()
 	e.SetE20Licence()

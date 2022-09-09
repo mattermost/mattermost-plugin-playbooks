@@ -886,7 +886,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 		addUsersToTeam(t, store, users, team1id)
@@ -1546,7 +1546,7 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 
@@ -1880,9 +1880,9 @@ func setupPlaybookStore(t *testing.T, db *sqlx.DB) app.PlaybookStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewPlaybookStore(pluginAPIClient, logger, sqlStore)
+	return NewPlaybookStore(pluginAPIClient, sqlStore)
 }
 
 func TestGetTopPlaybooks(t *testing.T) {

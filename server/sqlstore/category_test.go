@@ -21,15 +21,15 @@ func setupCategoryStore(t *testing.T, db *sqlx.DB) app.CategoryStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewCategoryStore(pluginAPIClient, logger, sqlStore)
+	return NewCategoryStore(pluginAPIClient, sqlStore)
 }
 
 func TestCategories(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, _ = setupSQLStore(t, db)
+		_ = setupSQLStore(t, db)
 		categoryStore := setupCategoryStore(t, db)
 
 		t.Run("create category, add items, get category", func(t *testing.T) {

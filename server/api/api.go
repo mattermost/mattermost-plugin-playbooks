@@ -6,8 +6,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 
@@ -35,15 +33,16 @@ type Handler struct {
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logger) *Handler {
+func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	handler := &Handler{
-		ErrorHandler: &ErrorHandler{log: log},
+		ErrorHandler: &ErrorHandler{},
 		pluginAPI:    pluginAPI,
 		config:       config,
 	}
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
+	api.Use(LogRequest)
 	api.Use(MattermostAuthorizationRequired)
 
 	api.Handle("{anything:.*}", http.NotFoundHandler())
@@ -61,32 +60,41 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.root.ServeHTTP(w, r)
 }
 
-// HandleErrorWithCode logs the internal error and sends the public facing error
+// handleResponseWithCode logs the internal error and sends the public facing error
 // message as JSON in a response with the provided code.
-func HandleErrorWithCode(logger bot.Logger, w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
+func handleResponseWithCode(w http.ResponseWriter, code int, publicMsg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-
-	details := ""
-	if internalErr != nil {
-		details = internalErr.Error()
-	}
-
-	logger.Errorf("public error message: %v; internal details: %v", publicErrorMsg, details)
 
 	responseMsg, _ := json.Marshal(struct {
 		Error string `json:"error"` // A public facing message providing details about the error.
 	}{
-		Error: publicErrorMsg,
+		Error: publicMsg,
 	})
 	_, _ = w.Write(responseMsg)
+}
+
+// HandleErrorWithCode logs the internal error and sends the public facing error
+// message as JSON in a response with the provided code.
+func HandleErrorWithCode(logger logrus.FieldLogger, w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
+	if internalErr != nil {
+		logger = logger.WithError(internalErr)
+	}
+
+	if code >= http.StatusInternalServerError {
+		logger.Error(publicErrorMsg)
+	} else {
+		logger.Warn(publicErrorMsg)
+	}
+
+	handleResponseWithCode(w, code, publicErrorMsg)
 }
 
 // ReturnJSON writes the given pointerToObject as json with the provided httpStatus
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
-		logrus.Warnf("Unable to marshall JSON. Error details: %s", err.Error())
+		logrus.WithError(err).Error("Unable to marshal JSON")
 		return
 	}
 
@@ -94,7 +102,7 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus i
 	w.WriteHeader(httpStatus)
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		logrus.Warnf("Unable to write to http.ResponseWriter. Error details: %s", err.Error())
+		logrus.WithError(err).Warn("Unable to write to http.ResponseWriter")
 		return
 	}
 }

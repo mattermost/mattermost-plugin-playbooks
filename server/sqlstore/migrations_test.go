@@ -71,7 +71,7 @@ func TestDBSchema(t *testing.T) {
 
 		// create database for morph migration
 		db := setupTestDB(t, driverName)
-		_, store := setupTables(t, db)
+		store := setupTables(t, db)
 
 		engine, err := store.createMorphEngine()
 		require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestMigration_000005(t *testing.T) {
 	for _, driverName := range driverNames {
 		t.Run("run migration up", func(t *testing.T) {
 			db := setupTestDB(t, driverName)
-			_, store := setupTables(t, db)
+			store := setupTables(t, db)
 			engine, err := store.createMorphEngine()
 			require.NoError(t, err)
 			defer engine.Close()
@@ -221,7 +221,7 @@ func TestMigration_000005(t *testing.T) {
 
 		t.Run("run migration down", func(t *testing.T) {
 			db := setupTestDB(t, driverName)
-			_, store := setupTables(t, db)
+			store := setupTables(t, db)
 			engine, err := store.createMorphEngine()
 			require.NoError(t, err)
 			defer engine.Close()
@@ -277,7 +277,7 @@ func TestMigration_000014(t *testing.T) {
 	for _, driverName := range driverNames {
 		t.Run("run migration up", func(t *testing.T) {
 			db := setupTestDB(t, driverName)
-			_, store := setupTables(t, db)
+			store := setupTables(t, db)
 			engine, err := store.createMorphEngine()
 			require.NoError(t, err)
 			defer engine.Close()
@@ -321,7 +321,7 @@ func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
 	// create database for legacy migration
 	db := setupTestDB(t, driverName)
-	_, store := setupTables(t, db)
+	store := setupTables(t, db)
 
 	list := make([][]TableInfo, len(migrationsToRun)+1)
 	schema, err := getDBSchemaInfo(store)
@@ -344,7 +344,7 @@ func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migratio
 func indexInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]IndexInfo {
 	// create database for legacy migration
 	db := setupTestDB(t, driverName)
-	_, store := setupTables(t, db)
+	store := setupTables(t, db)
 
 	list := make([][]IndexInfo, len(migrationsToRun)+1)
 	indexes, err := getDBIndexesInfo(store)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,11 +86,11 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
 		assert.Equal(t, user3.Id, meta.Followers[2])
 
-		member, err := e.A.GetChannelMember(context.TODO(), e.BasicRun.ChannelID, e.RegularUser2.Id)
+		member, err := e.A.GetChannelMember(request.EmptyContext(nil), e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.Nil(t, err)
 		assert.Equal(t, e.RegularUser2.Id, member.UserId)
 
-		member, err = e.A.GetChannelMember(context.TODO(), e.BasicRun.ChannelID, user3.Id)
+		member, err = e.A.GetChannelMember(request.EmptyContext(nil), e.BasicRun.ChannelID, user3.Id)
 		require.Nil(t, err)
 		assert.Equal(t, user3.Id, member.UserId)
 
@@ -110,11 +111,11 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		require.Len(t, meta.Followers, 1)
 		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
 
-		member, err := e.A.GetChannelMember(context.TODO(), e.BasicRun.ChannelID, e.RegularUser2.Id)
+		member, err := e.A.GetChannelMember(request.EmptyContext(nil), e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NotNil(t, err)
 		assert.Nil(t, member)
 
-		member, err = e.A.GetChannelMember(context.TODO(), e.BasicRun.ChannelID, user3.Id)
+		member, err = e.A.GetChannelMember(request.EmptyContext(nil), e.BasicRun.ChannelID, user3.Id)
 		require.NotNil(t, err)
 		assert.Nil(t, member)
 	})
@@ -157,7 +158,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
 		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
 
-		member, err := e.A.GetChannelMember(context.TODO(), run.ChannelID, e.RegularUser2.Id)
+		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
 		require.Nil(t, err)
 		assert.Equal(t, e.RegularUser2.Id, member.UserId)
 	})
@@ -199,7 +200,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
 		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
 
-		member, err := e.A.GetChannelMember(context.TODO(), run.ChannelID, e.RegularUser2.Id)
+		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
 		require.Nil(t, member)
 		require.NotNil(t, err)
 	})

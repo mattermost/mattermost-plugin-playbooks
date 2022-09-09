@@ -29,7 +29,7 @@
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.23.4",
     "eslint-plugin-mattermost": "github:mattermost/eslint-plugin-mattermost#46ad99355644a719bf32082f472048f526605181",
-    "eslint-plugin-no-only-tests": "^2.6.0",
+    "eslint-plugin-no-only-tests": "^3.0.0",
     "eslint-plugin-react": "7.24.0"
   },
   "scripts": {

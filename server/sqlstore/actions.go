@@ -9,7 +9,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -17,14 +16,13 @@ import (
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type channelActionStore struct {
 	pluginAPI           PluginAPIClient
-	log                 bot.Logger
 	store               *SQLStore
 	queryBuilder        sq.StatementBuilderType
 	channelActionSelect sq.SelectBuilder
 }
 
 // NewPlaybookStore creates a new store for playbook service.
-func NewChannelActionStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.ChannelActionStore {
+func NewChannelActionStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.ChannelActionStore {
 	channelActionSelect := sqlStore.builder.
 		Select(
 			"c.ID",
@@ -39,7 +37,6 @@ func NewChannelActionStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *
 
 	return &channelActionStore{
 		pluginAPI:           pluginAPI,
-		log:                 log,
 		store:               sqlStore,
 		queryBuilder:        sqlStore.builder,
 		channelActionSelect: channelActionSelect,

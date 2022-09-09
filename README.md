@@ -48,6 +48,34 @@ This plugin contains both a server and web app portion. Read our documentation a
 
 For more information about contributing to Mattermost, and the different ways you can contribute, see https://www.mattermost.org/contribute-to-mattermost.
 
+### Logging
+
+Logging should use the logrus package (not `pluginAPI.Log`, `mlog`, or `log`). The standard logger is automatically wired into the pluginAPI and proxied through the server:
+
+```go
+logger := logrus.WithField("playbook_run_id", playbookRunID)
+
+err := findUserForPlaybookRunAndTeam(playbookRunID, userID, teamID)
+if err != nil {
+    logrus.WithError(err).WithFields(logrus.Fields{
+        "user_id": userID,
+        "team_id": teamID,
+    }).Warn("Failed to find user for playbook run and team")
+}
+```
+
+A few guidelines when logging:
+* Use the appropriate level:
+  * Error: an error log should require some human action to fix something upon receipt
+  * Warn: a warning log might require investigation if it occurs in bulk, but does not require human action
+  * Info: a information log provides context that will typically be logged by default
+  * Debug: a debug log provides context that will typically be logged only on demand
+* Write static log messages (`Failed to find user for playbook run and team`) instead of interpolating parameters into the log message itself (`Failed to find user %s for playbook run %s and team %s`)
+* Use snake case when naming fields. Try to name these fields consistently with other usage.
+* Pass errors using `WithError`.
+* Use `WithFields` when passing more than one field that is not an `err`.
+* Common fields can be set once instead of being passed for every log
+
 ## Popular searches for Help Wanted issues:
 
 * [Help wanted tickets currently up for grab](https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Up+For+Grabs%22)

@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type PlaybookGetter interface {
@@ -19,7 +20,6 @@ type PlaybookGetter interface {
 }
 
 type channelActionServiceImpl struct {
-	logger                bot.Logger
 	poster                bot.Poster
 	configService         config.Service
 	store                 ChannelActionStore
@@ -29,9 +29,8 @@ type channelActionServiceImpl struct {
 	telemetry             ChannelActionTelemetry
 }
 
-func NewChannelActionsService(api *pluginapi.Client, logger bot.Logger, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
+func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
 	return &channelActionServiceImpl{
-		logger:                logger,
 		poster:                poster,
 		configService:         configService,
 		store:                 store,
@@ -204,13 +203,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID st
 func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	user, err := a.api.User.Get(userID)
 	if err != nil {
-		a.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
 		return
 	}
 
 	channel, err := a.api.Channel.Get(channelID)
 	if err != nil {
-		a.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
 		return
 	}
 
@@ -223,12 +222,16 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		a.logger.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
+		logrus.WithError(err).Errorf("failed to get the channel actions for channelID %q", channelID)
 		return
 	}
 
 	if len(actions) > 1 {
-		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+		logrus.WithFields(logrus.Fields{
+			"action_type":  ActionTypeCategorizeChannel,
+			"trigger_type": TriggerTypeNewMemberJoins,
+			"num_actions":  len(actions),
+		}).Errorf("expected only one action to be retrived")
 	}
 
 	if len(actions) != 1 {
@@ -242,7 +245,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 	var payload CategorizeChannelPayload
 	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-		a.logger.Errorf("unable to decode payload of CategorizeChannelPayload")
+		logrus.WithError(err).Error("unable to decode payload of CategorizeChannelPayload")
 		return
 	}
 
@@ -260,7 +263,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 
 			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, payload.CategoryName)
 			if err != nil {
-				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+				logrus.WithError(err).Error("failed to categorize channel")
 			}
 
 			a.telemetry.RunChannelAction(action, userID)
@@ -347,7 +350,10 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		a.logger.Errorf("failed to resolve actions for channelID %q and trigger type %q; error: %q", channelID, TriggerTypeNewMemberJoins, err.Error())
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"channel_id":   channelID,
+			"trigger_type": TriggerTypeNewMemberJoins,
+		}).Error("failed to resolve actions")
 		return false
 	}
 
@@ -361,7 +367,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		if action.ActionType == ActionTypeWelcomeMessage {
 			var payload WelcomeMessagePayload
 			if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-				a.logger.Errorf("payload of action of type %q is not valid", action.ActionType)
+				logrus.WithError(err).WithField("action_type", action.ActionType).Error("payload of action is not valid")
 			}
 
 			// Run the action
@@ -386,7 +392,10 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		ActionType:  ActionTypePromptRunPlaybook,
 	})
 	if err != nil {
-		a.api.Log.Error("unable to retrieve channel actions", "channelID", post.ChannelId, "triggerType", TriggerTypeKeywordsPosted)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"channel_id":   post.ChannelId,
+			"trigger_type": TriggerTypeKeywordsPosted,
+		}).Error("unable to retrieve channel actions")
 		return
 	}
 
@@ -397,7 +406,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 	session, err := a.api.Session.Get(sessionID)
 	if err != nil {
-		a.api.Log.Error("can't get session", "sessionID", sessionID, "err", err.Error())
+		logrus.WithError(err).WithField("session_id", sessionID).Error("can't get session")
 		return
 	}
 
@@ -410,7 +419,11 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-			a.api.Log.Error("unable to decode payload from action", "payload", payload, "actionType", action.ActionType, "triggerType", action.TriggerType)
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"payload":     payload,
+				"actionType":  action.ActionType,
+				"triggerType": action.TriggerType,
+			}).Error("unable to decode payload from action")
 			continue
 		}
 
@@ -420,7 +433,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 		suggestedPlaybook, err := a.playbookGetter.Get(payload.PlaybookID)
 		if err != nil {
-			a.api.Log.Error("unable to get playbook to run action", "playbookID", payload.PlaybookID)
+			logrus.WithError(err).WithField("playbook_id", payload.PlaybookID).Error("unable to get playbook to run action")
 			continue
 		}
 
@@ -462,7 +475,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 	}
 	model.ParseSlackAttachment(newPost, []*model.SlackAttachment{attachment})
 	if err := a.poster.PostMessageToThread(rootID, newPost); err != nil {
-		a.api.Log.Error("unable to post message with suggestions to run playbooks", "error", err)
+		logrus.WithError(err).Error("unable to post message with suggestions to run playbooks")
 	}
 }
 

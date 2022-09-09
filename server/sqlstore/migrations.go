@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type Migration struct {
@@ -225,7 +226,11 @@ var migrations = []Migration{
 				}
 
 				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
+					logrus.WithFields(logrus.Fields{
+						"active_stage":    playbookRun.ActiveStage,
+						"playbook_run_id": playbookRun.ID,
+						"num_checklists":  numChecklists,
+					}).Warn("index out of bounds: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 
@@ -1235,12 +1240,12 @@ var migrations = []Migration{
 			// Best effort migration so we just log the error to avoid killing the plugin.
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			} else {
 
 				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			}
 
@@ -2127,7 +2132,7 @@ var migrations = []Migration{
 						b.UserId IS NULL
 			`); err != nil {
 				// Migration is optional so no failure just logging. (it will not try again)
-				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+				logrus.WithError(err).Warn("failed to add existing users as playbook members")
 			}
 
 			return nil
@@ -2185,7 +2190,7 @@ var migrations = []Migration{
 			}
 			if err != nil {
 				// Migration is optional so no failure just logging. (it will not try again)
-				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to update existing users as playbook members"))
+				logrus.WithError(err).Debug("failed to update existing users as playbook members")
 			}
 
 			// Find all users who are members of channels where runs have been created.
@@ -2204,7 +2209,7 @@ var migrations = []Migration{
 						rp.IncidentID IS NULL
 			`); err != nil {
 				// Migration is optional so no failure just logging. (it will not try again)
-				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+				logrus.WithError(err).Debug("failed to add existing users as playbook members")
 			}
 
 			return nil
