@@ -211,7 +211,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={!props.disabled}
                 date={dueDate}
                 ignoreOverdue={isTaskFinishedOrSkipped}
-                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
+                mode={Mode.DateTimeValue}
                 onSelectedChange={onDueDateChange}
                 placement={'bottom-start'}
             />
