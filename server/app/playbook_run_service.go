@@ -3262,9 +3262,7 @@ func (s *PlaybookRunServiceImpl) dmPostToAutoFollows(post *model.Post, playbookI
 }
 
 func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, post *model.Post, playbookRunID, authorID string) {
-	logger := logrus.WithFields(logrus.Fields{
-		"playbook_run_id": playbookRunID,
-	})
+	logger := logrus.WithFields(logrus.Fields{"playbook_run_id": playbookRunID})
 
 	for _, user := range users {
 		// Do not send update to the author
