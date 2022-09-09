@@ -3,12 +3,12 @@ import {useEffect} from 'react';
 import {telemetryEventForPlaybook, telemetryEventForPlaybookRun, telemetryView} from 'src/client';
 import {PlaybookViewTarget, PlaybookRunViewTarget, TelemetryViewTarget} from 'src/types/telemetry';
 
-export const useViewTelemetry = (target: TelemetryViewTarget, trigger?: string, data = {}) => {
+export const useViewTelemetry = (target: TelemetryViewTarget, dep?: string, data = {}) => {
     useEffect(() => {
-        if (trigger) {
+        if (dep) {
             telemetryView(target, data);
         }
-    }, [trigger]);
+    }, [dep]);
 };
 
 export const usePlaybookViewTelemetry = (target: PlaybookViewTarget, playbookID?: string) => {

@@ -103,7 +103,7 @@ const Row = (props: Props) => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToPluginUrl(`/runs/${playbookRun.id}`);
+        navigateToPluginUrl(`/runs/${playbookRun.id}?from=run_list`);
     }
 
     return (

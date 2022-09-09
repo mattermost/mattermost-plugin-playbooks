@@ -190,7 +190,7 @@ const UpdateRunStatusModal = ({
         const OverviewLink = (...chunks: string[]) => (
             <Link
                 data-testid='run-overview-link'
-                to={pluginUrl(`/runs/${playbookRunId}/overview`)}
+                to={pluginUrl(`/runs/${playbookRunId}?from=status_modal`)}
             >
                 {chunks}
             </Link>

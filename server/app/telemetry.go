@@ -16,6 +16,7 @@ type TelemetryPage string
 
 const (
 	telemetryRunStatusUpdate TelemetryPage = "run_status_update"
+	telemetryRunDetails      TelemetryPage = "run_details"
 )
 
 // NewTelemetryPage creates an instance of TelemetryPage from a string.
@@ -25,6 +26,8 @@ func NewTelemetryPage(name string) (TelemetryPage, error) {
 	switch name {
 	case string(telemetryRunStatusUpdate):
 		return telemetryRunStatusUpdate, nil
+	case string(telemetryRunDetails):
+		return telemetryRunDetails, nil
 	default:
 		return "", fmt.Errorf("unknown value '%s' for type TelemetryPage", name)
 	}

@@ -89,6 +89,11 @@ func (h *TelemetryHandler) createEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if event.Properties == nil {
+		event.Properties = map[string]interface{}{}
+	}
+	event.Properties["UserActualID"] = r.Header.Get("Mattermost-User-ID")
+
 	if event.Type == app.TelemetryTypePage {
 		name, err := app.NewTelemetryPage(event.Name)
 		if err != nil {

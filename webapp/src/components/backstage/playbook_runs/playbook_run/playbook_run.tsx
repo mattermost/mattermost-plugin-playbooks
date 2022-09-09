@@ -9,14 +9,15 @@ import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import qs from 'qs';
 
 import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
+import {useViewTelemetry} from 'src/hooks/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
@@ -94,8 +95,6 @@ const PlaybookRunDetails = () => {
     const [playbookRun] = useRun(playbookRunId);
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
-
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
@@ -104,6 +103,14 @@ const PlaybookRunDetails = () => {
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
     const followState = useFollowers(metadata?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
+
+    const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+    useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
+        from: queryParams.from ?? '',
+        playbook_id: playbookRun?.playbook_id,
+        playbookrun_id: playbookRun?.id,
+        role: playbookRun?.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer,
+    });
 
     const RHS = useRHS(playbookRun);
 
