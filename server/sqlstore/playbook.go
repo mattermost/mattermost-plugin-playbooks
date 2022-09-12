@@ -548,7 +548,6 @@ func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]s
 	return playbookIDs, nil
 }
 
-// Update updates a playbook
 func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {
 		return errors.New("id should not be empty")
@@ -801,6 +800,10 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
+	}
+
+	if len(checklistsJSON) > maxJSONLength {
+		return nil, errors.Wrapf(err, "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybook{

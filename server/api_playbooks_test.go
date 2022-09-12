@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
@@ -187,6 +188,30 @@ func TestPlaybooks(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
+	})
+}
+
+func TestCreateInvalidPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("fails if json is larger than 256K", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "test1",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "checklist",
+					Items: []client.ChecklistItem{
+						{Description: strings.Repeat("A", (256*1024)+1)},
+					},
+				},
+			},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Empty(t, id)
 	})
 }
 
