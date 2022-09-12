@@ -10,7 +10,6 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/pkg/errors"
 
@@ -20,18 +19,16 @@ import (
 type StatsHandler struct {
 	*ErrorHandler
 	pluginAPI       *pluginapi.Client
-	log             bot.Logger
 	statsStore      *sqlstore.StatsStore
 	playbookService app.PlaybookService
 	permissions     *app.PermissionsService
 	licenseChecker  app.LicenseChecker
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
 	handler := &StatsHandler{
-		ErrorHandler:    &ErrorHandler{log: log},
+		ErrorHandler:    &ErrorHandler{},
 		pluginAPI:       api,
-		log:             log,
 		statsStore:      statsStore,
 		playbookService: playbookService,
 		permissions:     permissions,
@@ -39,8 +36,8 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
-	statsRouter.HandleFunc("/site", handler.playbookSiteStats).Methods(http.MethodGet)
-	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
+	statsRouter.HandleFunc("/site", withContext(handler.playbookSiteStats)).Methods(http.MethodGet)
+	statsRouter.HandleFunc("/playbook", withContext(handler.playbookStats)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -81,9 +78,9 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 }
 
 // playbookStats handles the internal plugin stats
-func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
+func (h *StatsHandler) playbookStats(c *Context, w http.ResponseWriter, r *http.Request) {
 	if !h.licenseChecker.StatsAllowed() {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
 		return
 	}
 
@@ -91,11 +88,11 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 
 	filters, err := parsePlaybookStatsFilters(r.URL)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Bad filters", err)
 		return
 	}
 
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, filters.PlaybookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, filters.PlaybookID)) {
 		return
 	}
 
@@ -146,21 +143,21 @@ type PlaybookSiteStats struct {
 // Response 200: PlaybookSiteStats
 // Response 401: when user is not authenticated
 // Response 403: when user has no permissions to see stats
-func (h *StatsHandler) playbookSiteStats(w http.ResponseWriter, r *http.Request) {
+func (h *StatsHandler) playbookSiteStats(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	// user must have right to access analytics
 	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "user is not allowed to get site stats", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "user is not allowed to get site stats", nil)
 		return
 	}
 	totalPlaybooks, err := h.statsStore.TotalPlaybooks()
 	if err != nil {
-		h.log.Warnf("playbookSiteStats failed: %w", err)
+		c.logger.WithError(err).Warn("playbookSiteStats failed fetching total playbooks")
 	}
 	totalRuns, err := h.statsStore.TotalPlaybookRuns()
 	if err != nil {
-		h.log.Warnf("playbookSiteStats failed: %w", err)
+		c.logger.WithError(err).Warn("playbookSiteStats failed fetching total playbook runs")
 	}
 	ReturnJSON(w, &PlaybookSiteStats{
 		TotalPlaybooks:    totalPlaybooks,

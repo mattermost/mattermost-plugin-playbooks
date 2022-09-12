@@ -8,10 +8,6 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
-replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220711175838-7ee7523729e6
-
-replace github.com/mattermost/mattermost-plugin-api => github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
-
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/blang/semver v3.5.1+incompatible
@@ -21,9 +17,9 @@ require (
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
-	github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
+	github.com/mattermost/mattermost-plugin-api v0.0.29
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost-server/v6 v6.0.0-20220512052723-ea98f9f4a9dc
+	github.com/mattermost/mattermost-server/v6 v6.0.0-20220728170913-b9d062ddfa66
 	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
@@ -74,7 +70,7 @@ require (
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/dyatlov/go-opengraph v0.0.0-20210112100619-dae8665a5b09 // indirect
+	github.com/dyatlov/go-opengraph/opengraph v0.0.0-20220524092352-606d7b1e5f8a // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fatih/set v0.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
