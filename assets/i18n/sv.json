@@ -92,5 +92,13 @@
     {
         "id": "app.user.run.request_get_involved",
         "translation": "@here - @{{.Name}} vill delta i denna körning. Om du vill inkludera dem som deltagare lägger du till dem i den här kanalen.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_participate",
+        "translation": "@{{.Name}} har anslutit till körningen. De har inte lagts till i den privata kanalen men vilken medlem om helst kan bjuda in dem att ansluta.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_add_participant",
+        "translation": "@{{.Name}} har lagts till i körningen av @{{.RequesterName}}. De har inte blivit automatiskt tillagda i kanalen eftersom @{{.RequesterName}} inte är en kanalmedlem och detta är en privat kanal.\n"
     }
 ]
