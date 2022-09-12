@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -961,6 +962,30 @@ func TestChecklistManagement(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChecklisFailTooLarge(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("checklist creation - failure: too large checklist", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "My regular title",
+			Items: []client.ChecklistItem{
+				{Title: "Item title", Description: strings.Repeat("A", (256*1024)+1)},
+			},
+		})
+		require.Error(t, err)
+	})
 }
 
 func TestRunActions(t *testing.T) {
