@@ -29,13 +29,13 @@ func TestGraphQLPlaybooks(t *testing.T) {
 			}
 		}
 		testPlaybookQuery := `
-		query Playbook($id: String!) {
-			playbook(id: $id) {
-				id
-				title
+			query Playbook($id: String!) {
+				playbook(id: $id) {
+					id
+					title
+				}
 			}
-		}
-		`
+			`
 		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbook",
@@ -57,13 +57,13 @@ func TestGraphQLPlaybooks(t *testing.T) {
 			}
 		}
 		testPlaybookQuery := `
-		query Playbooks {
-			playbooks {
-				id
-				title
+			query Playbooks {
+				playbooks {
+					id
+					title
+				}
 			}
-		}
-		`
+			`
 		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbooks",
@@ -121,6 +121,55 @@ func TestGraphQLPlaybooks(t *testing.T) {
 			"defaultOwnerID": e.RegularUserNotInTeam.Id,
 		})
 		require.Error(t, err)
+	})
+	t.Run("checklist with preset values that need to be cleared", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       "id1",
+				"assigneeModified": 101,
+				"state":            "Closed",
+				"stateModified":    102,
+				"command":          "",
+				"commandLastRun":   103,
+				"lastSkipped":      104,
+				"dueDate":          100,
+			},
+		}
+
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+		})
+
+		require.NoError(t, err)
+
+		actual := []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						Description:      "description1",
+						AssigneeID:       "",
+						AssigneeModified: 0,
+						State:            "",
+						StateModified:    0,
+						Command:          "",
+						CommandLastRun:   0,
+						LastSkipped:      0,
+						DueDate:          100,
+					},
+				},
+			},
+		}
+		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+
+		require.Equal(t, updatedPlaybook.Checklists, actual)
 	})
 }
 func TestGraphQLUpdatePlaybookFails(t *testing.T) {

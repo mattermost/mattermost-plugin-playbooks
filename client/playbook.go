@@ -60,6 +60,7 @@ type ChecklistItem struct {
 	Command          string `json:"command"`
 	CommandLastRun   int64  `json:"command_last_run"`
 	Description      string `json:"description"`
+	LastSkipped      int64  `json:"delete_at"`
 	DueDate          int64  `json:"due_date"`
 }
 
