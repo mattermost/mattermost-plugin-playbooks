@@ -110,5 +110,13 @@
     {
         "id": "app.user.run.request_get_involved",
         "translation": "@here – @{{.Name}} želi sudjelovati u ovom izvođenju. Da bi postali članovi izvođenja, dodaj ih ovom kanalu.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_add_participant",
+        "translation": "@{{.RequesterName}} je dodao/la @{{.Name}} u izvođenje . Nisu automatski dodani u kanal jer @{{.RequesterName}} nije član kanala, a kanal je privatan.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_participate",
+        "translation": "@{{.Name}} se pridružio/la izvođenju. Nisu automatski dodani na ovaj privatni kanal, ali bilo koji član kanala ih može pozvati da se pridruže.\n"
     }
 ]
