@@ -2,12 +2,8 @@
 // See LICENSE.txt for license information.
 
 import styled, {createGlobalStyle, css} from 'styled-components';
-import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 import Creatable from 'react-select/creatable';
-
-import {RegularHeading} from 'src/styles/headings';
-import MarkdownTextbox from 'src/components/markdown_textbox';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -20,22 +16,6 @@ export const Banner = styled.div`
     overflow: hidden;
     padding: 1rem 2.4rem;
     text-align: center;
-`;
-
-export const BackstageHeader = styled.header`
-    ${RegularHeading} {
-    }
-
-    display: flex;
-    font-size: 2.8rem;
-    line-height: 3.6rem;
-    align-items: center;
-    padding: 4rem 0 3.2rem;
-`;
-
-export const TeamContainer = styled.div`
-    opacity: 0.56;
-    margin-left: 1rem;
 `;
 
 export const BackstageSubheader = styled.header`
@@ -53,11 +33,6 @@ export const BackstageSubheaderDescription = styled.div`
     margin: 4px 0 16px;
 `;
 
-export const TabContainer = styled.div`
-    margin: 24px;
-    max-width: 700px;
-`;
-
 export const StyledTextarea = styled.textarea`
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     width: 100%;
@@ -73,20 +48,6 @@ export const StyledTextarea = styled.textarea`
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);
-    }
-`;
-
-export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
-    .custom-textarea {
-        background-color: var(--center-channel-bg);
-        border-radius: 4px;
-        padding: 10px 25px 0 16px;
-        font-size: 14px;
-        line-height: 20px;
-    }
-
-    .textbox-preview-area {
-        z-index: auto;
     }
 `;
 
@@ -164,15 +125,6 @@ const commonSelectStyle = css`
     background-color: var(--center-channel-bg);
 `;
 
-export const StyledAsyncSelect = styled(AsyncSelect).attrs((props) => {
-    return {
-        classNamePrefix: 'playbooks-rselect',
-        ...props,
-    };
-})`
-    ${commonSelectStyle}
-`;
-
 export const StyledSelect = styled(Select).attrs((props) => {
     return {
         classNamePrefix: 'playbooks-rselect',
@@ -222,30 +174,6 @@ export const StyledCreatable = styled(Creatable)`
         }
     `}
 
-`;
-
-export const BackstageHorizontalContentSquish = styled.div`
-    margin: 0 auto;
-    max-width: 1160px;
-    padding: 0 20px;
-`;
-
-export const RadioContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    margin-top: 8px;
-    margin-bottom: 16px;
-`;
-
-export const RadioLabel = styled.label`
-    && {
-        margin: 0 0 8px;
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        font-weight: normal;
-        line-height: 20px;
-    }
 `;
 
 export const RadioInput = styled.input`
