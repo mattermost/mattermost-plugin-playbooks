@@ -4,8 +4,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {mdiClipboardPlayMultipleOutline, mdiImport} from '@mdi/js';
-import Icon from '@mdi/react';
+import {ImportIcon, PlayBoxMultipleOutlineIcon, PlusIcon, GlobeIcon} from '@mattermost/compass-icons/components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';
@@ -45,7 +44,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 onClick={() => {
                     navigateToPluginUrl('/playbooks');
                 }}
-                icon={<StyledIcon className='icon-globe'/>}
+                icon={<IconWrapper><GlobeIcon size={18}/></IconWrapper>}
                 text={formatMessage({defaultMessage: 'Browse Playbooks'})}
             />
         );
@@ -55,7 +54,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 id='createPlaybook'
                 show={true}
                 onClick={() => dispatch(displayPlaybookCreateModal({}))}
-                icon={<StyledIcon className='icon-plus'/>}
+                icon={<IconWrapper><PlusIcon size={18}/></IconWrapper>}
                 text={formatMessage({defaultMessage: 'Create New Playbook'})}
             />
         );
@@ -69,10 +68,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                         fileInputRef?.current?.click();
                     }}
                     icon={
-                        <StyledMDIIcon
-                            path={mdiImport}
-                            size={'18px'}
-                        />
+                        <IconWrapper><ImportIcon size={18}/></IconWrapper>
                     }
                     text={formatMessage({defaultMessage: 'Import Playbook'})}
                 />
@@ -87,10 +83,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                     navigateToPluginUrl('/runs');
                 }}
                 icon={
-                    <StyledMDIIcon
-                        path={mdiClipboardPlayMultipleOutline}
-                        size={'18px'}
-                    />
+                    <IconWrapper><PlayBoxMultipleOutlineIcon size={18}/></IconWrapper>
                 }
                 text={formatMessage({defaultMessage: 'Browse Runs'})}
             />
@@ -119,7 +112,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             >
                 <>
                     <Button aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}>
-                        <i className='icon-plus'/>
+                        <PlusIcon size={18}/>
                     </Button>
                     {inputImportPlaybook}
                 </>
@@ -161,22 +154,18 @@ const Button = styled.button`
     min-width: 28px;
     height: 28px;
     font-size: 18px;
-    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
 
     &.disabled {
         background: rgba(255, 255, 255, 0.08);
     }
 `;
 
-const StyledMDIIcon = styled(Icon)`
-    width: 25px;
-    height: 22px;
+const IconWrapper = styled.div`
     margin-right: 7px;
     margin-left: 4px;
-`;
-
-const StyledIcon = styled.i`
-    width: 25px;
-    height: 22px;
-    margin-right: 3px;
+    display: flex;
+    justify-items: center;
 `;
