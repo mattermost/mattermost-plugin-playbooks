@@ -18,19 +18,22 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 
+import {useManageRunMembership} from 'src/graphql/hooks';
+
 import {SendMessageButton} from './send_message_button';
 
 interface Props {
+    playbookRunId: string;
     participantsIds: string[];
     runOwnerUserId: string;
     playbookRunMetadata: PlaybookRunMetadata | null;
 }
 
-export const Participants = ({participantsIds, runOwnerUserId, playbookRunMetadata}: Props) => {
+export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, playbookRunMetadata}: Props) => {
     const {formatMessage} = useIntl();
     const [manageMode, setManageMode] = useState(false);
-
-    const setSearchTerm = (term: string) => null;
+    const [searchTerm, setSearchTerm] = useState('');
+    const {removeFromRun} = useManageRunMembership(playbookRunId);
 
     return (
         <>
@@ -79,6 +82,7 @@ export const Participants = ({participantsIds, runOwnerUserId, playbookRunMetada
                     teamName={playbookRunMetadata?.team_name}
                     isRunOwner={true}
                     manageMode={manageMode}
+                    removeFromRun={removeFromRun}
                 />
 
                 <SectionTitle>
@@ -98,6 +102,7 @@ export const Participants = ({participantsIds, runOwnerUserId, playbookRunMetada
                                     teamName={playbookRunMetadata?.team_name}
                                     isRunOwner={false}
                                     manageMode={manageMode}
+                                    removeFromRun={removeFromRun}
                                 />
                             );
                         })
@@ -113,9 +118,10 @@ interface ParticipantLineProps {
     teamName: string | undefined;
     isRunOwner: boolean;
     manageMode: boolean;
+    removeFromRun: (userIDs?: string[] | undefined) => Promise<void>;
 }
 
-const ParticipantLine = ({id, teamName, isRunOwner, manageMode}: ParticipantLineProps) => {
+const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun}: ParticipantLineProps) => {
     const {formatMessage} = useIntl();
 
     let rightButton = (
@@ -159,7 +165,7 @@ const ParticipantLine = ({id, teamName, isRunOwner, manageMode}: ParticipantLine
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                    onClick={() => null}
+                    onClick={() => removeFromRun([id])}
                 >
                     {formatMessage({defaultMessage: 'Remove from run'})}
                 </DropdownMenuItem>

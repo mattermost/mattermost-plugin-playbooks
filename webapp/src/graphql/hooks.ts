@@ -8,6 +8,7 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RunDocument,
     RunUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
@@ -136,3 +137,31 @@ export const useRunMembership = (runID?: string, userIDs?: string[]) => {
     return {addToRun, removeFromRun};
 };
 
+export const useManageRunMembership = (runID?: string) => {
+    const [add] = useAddRunParticipantsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const [remove] = useRemoveRunParticipantsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const addToRun = useCallback(async (userIDs?: string[]) => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await add({variables: {runID: runID || '', userIDs: userIDs || []}});
+    }, [runID, add]);
+
+    const removeFromRun = useCallback(async (userIDs?: string[]) => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await remove({variables: {runID: runID || '', userIDs: userIDs || []}});
+    }, [runID, remove]);
+    return {addToRun, removeFromRun};
+};
