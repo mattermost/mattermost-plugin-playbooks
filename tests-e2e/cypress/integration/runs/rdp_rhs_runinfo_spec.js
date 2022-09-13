@@ -231,9 +231,6 @@ describe('runs > run details page > run info', () => {
                 // # Confirm modal
                 cy.get('#confirmModal').get('#confirmModalButton').click();
 
-                // # reload (not real time yet)
-                cy.reload();
-
                 // Assert that request-join button exist
                 getOverviewEntry('channel').within(() => {
                     cy.get('button').click();
