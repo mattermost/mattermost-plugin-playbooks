@@ -12,6 +12,7 @@ import {
     RunUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
+    useChangeRunOwnerMutation,
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
@@ -150,6 +151,12 @@ export const useManageRunMembership = (runID?: string) => {
         ],
     });
 
+    const [changeOwner] = useChangeRunOwnerMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
     const addToRun = useCallback(async (userIDs?: string[]) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
@@ -163,5 +170,13 @@ export const useManageRunMembership = (runID?: string) => {
         }
         await remove({variables: {runID: runID || '', userIDs: userIDs || []}});
     }, [runID, remove]);
-    return {addToRun, removeFromRun};
+
+    const changeRunOwner = useCallback(async (ownerID?: string) => {
+        if (!runID || !ownerID) {
+            return;
+        }
+        await changeOwner({variables: {runID: runID || '', ownerID: ownerID || ''}});
+    }, [runID, changeOwner]);
+
+    return {addToRun, removeFromRun, changeRunOwner};
 };

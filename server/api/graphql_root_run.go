@@ -183,3 +183,24 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 
 	return "", nil
 }
+
+func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
+	RunID   string
+	OwnerID string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to modify participants without permissions")
+	}
+
+	if err := c.playbookRunService.ChangeOwner(args.RunID, userID, args.OwnerID); err != nil {
+		return "", errors.Wrap(err, "failed to remove participant from run")
+	}
+
+	return "", nil
+}

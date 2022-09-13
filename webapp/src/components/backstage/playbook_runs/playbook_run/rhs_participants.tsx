@@ -1,11 +1,17 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useDispatch} from 'react-redux';
+
+import {getProfilesByIds} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
+
+import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -30,10 +36,23 @@ interface Props {
 }
 
 export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, playbookRunMetadata}: Props) => {
+    const dispatch = useDispatch();
+
     const {formatMessage} = useIntl();
     const [manageMode, setManageMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const {removeFromRun} = useManageRunMembership(playbookRunId);
+    const [participantsProfiles, setParticipantsProfiles] = useState<UserProfile[]>([]);
+
+    const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRunId);
+
+    useEffect(() => {
+        const profiles = dispatch(getProfilesByIds(participantsIds));
+
+        //@ts-ignore
+        profiles.then(({data}: { data: UserProfile[] }) => {
+            setParticipantsProfiles(data || []);
+        });
+    }, [dispatch, participantsIds]);
 
     return (
         <>
@@ -42,7 +61,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
                     <ParticipantsNumber>
                         {formatMessage(
                             {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
-                            {num: participantsIds.length}
+                            {num: participantsProfiles.length}
                         )}
                     </ParticipantsNumber>
 
@@ -83,6 +102,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
                     isRunOwner={true}
                     manageMode={manageMode}
                     removeFromRun={removeFromRun}
+                    changeRunOwner={changeRunOwner}
                 />
 
                 <SectionTitle>
@@ -90,19 +110,24 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
                 </SectionTitle>
                 <ListSection>
                     {
-                        participantsIds.map((id: string) => {
+                        participantsProfiles.map((user: UserProfile) => {
                             // skip the owner
-                            if (id === runOwnerUserId) {
+                            if (user.id === runOwnerUserId) {
+                                return null;
+                            }
+                            const userInfo = user.first_name + ';' + user.last_name + ';' + user.nickname + ';' + user.username;
+                            if (!userInfo.toLowerCase().includes(searchTerm.toLowerCase())) {
                                 return null;
                             }
                             return (
                                 <ParticipantLine
-                                    key={id}
-                                    id={id}
+                                    key={user.id}
+                                    id={user.id}
                                     teamName={playbookRunMetadata?.team_name}
                                     isRunOwner={false}
                                     manageMode={manageMode}
                                     removeFromRun={removeFromRun}
+                                    changeRunOwner={changeRunOwner}
                                 />
                             );
                         })
@@ -119,51 +144,50 @@ interface ParticipantLineProps {
     isRunOwner: boolean;
     manageMode: boolean;
     removeFromRun: (userIDs?: string[] | undefined) => Promise<void>;
+    changeRunOwner: (ownerID?: string | undefined) => Promise<void>;
 }
 
-const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun}: ParticipantLineProps) => {
+const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun, changeRunOwner}: ParticipantLineProps) => {
     const {formatMessage} = useIntl();
 
-    let rightButton = (
-        <HoverButtonContainer>
-            <Tooltip
-                id={`${id}-tooltip`}
-                shouldUpdatePosition={true}
-                content={formatMessage({defaultMessage: 'Send message'})}
-            >
-                <SendMessageButton
-                    userId={id}
-                    teamName={teamName ?? null}
-                />
-            </Tooltip>
-        </HoverButtonContainer>
-    );
+    const renderRightButton = () => {
+        if (!manageMode) {
+            return (
+                <HoverButtonContainer>
+                    <Tooltip
+                        id={`${id}-tooltip`}
+                        shouldUpdatePosition={true}
+                        content={formatMessage({defaultMessage: 'Send message'})}
+                    >
+                        <SendMessageButton
+                            userId={id}
+                            teamName={teamName ?? null}
+                        />
+                    </Tooltip>
+                </HoverButtonContainer>
+            );
+        }
 
-    if (manageMode) {
-        rightButton = (
+        if (isRunOwner) {
+            return null;
+        }
+
+        return (
             <DotMenu
                 placement='bottom-end'
                 dotMenuButton={ParticipantButton}
                 icon={
                     <IconWrapper>
-                        {isRunOwner ? formatMessage({defaultMessage: 'Owner'}) : formatMessage({defaultMessage: 'Participant'})}
+                        {formatMessage({defaultMessage: 'Participant'})}
                         <i className={'icon-chevron-down'}/>
                     </IconWrapper>
                 }
             >
-                {isRunOwner ? (
-                    <DropdownMenuItem
-                        onClick={() => null}
-                    >
-                        {formatMessage({defaultMessage: 'Make run participant'})}
-                    </DropdownMenuItem>
-                ) : (
-                    <DropdownMenuItem
-                        onClick={() => null}
-                    >
-                        {formatMessage({defaultMessage: 'Make run owner'})}
-                    </DropdownMenuItem>
-                )}
+                <DropdownMenuItem
+                    onClick={() => changeRunOwner(id)}
+                >
+                    {formatMessage({defaultMessage: 'Make run owner'})}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => removeFromRun([id])}
                 >
@@ -171,7 +195,7 @@ const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun}: 
                 </DropdownMenuItem>
             </DotMenu>
         );
-    }
+    };
 
     return (
         <ProfileWrapper key={id}>
@@ -182,7 +206,7 @@ const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun}: 
                     margin-right: auto;
                 `}
             />
-            {rightButton}
+            {renderRightButton()}
         </ProfileWrapper>
     );
 };
