@@ -71,15 +71,6 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	return []string{}
 }
 
-func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
-	// For now, everyone with access to the channel is a run admin
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{RunRoleMember, RunRoleAdmin}
-	}
-
-	return []string{}
-}
-
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
 	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
@@ -88,16 +79,6 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 
 	// Cascade normally to higher level permissions
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
-}
-
-func (p *PermissionsService) hasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
-	// Check at run level
-	if p.pluginAPI.User.RolesGrantPermission(p.getRunRole(userID, run), permission.Id) {
-		return true
-	}
-
-	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
