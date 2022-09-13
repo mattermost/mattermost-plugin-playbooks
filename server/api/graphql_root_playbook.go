@@ -456,6 +456,8 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	return args.ID, nil
 }
 
+// cleanUpUpdateChecklist sets empty values for playbooks checklist fields that are not editable
+// NOTE: Any changes to this function must be made to function 'cleanUpChecklist' for the REST endpoint.
 func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
 	for listIndex := range checklists {
 		for itemIndex := range checklists[listIndex].Items {

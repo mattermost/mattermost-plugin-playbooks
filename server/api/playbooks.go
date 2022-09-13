@@ -241,6 +241,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 }
 
 // cleanUpChecklist sets empty values for playbooks checklist fields that are not editable
+// NOTE: Any changes to this function must be made to function 'cleanUpUpdateChecklist' for the GraphQL endpoint.
 func cleanUpChecklist(checklists []app.Checklist) {
 	for listIndex := range checklists {
 		for itemIndex := range checklists[listIndex].Items {
