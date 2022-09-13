@@ -156,6 +156,10 @@ export const DropdownMenuItemStyled = styled.a`
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
     }
+    &&:focus {
+        text-decoration: none;
+        color: inherit;
+  }    
 }
 `;
 

@@ -183,6 +183,7 @@ const PlaybookRunDetails = () => {
         rhsComponent = (
             <Participants
                 participantsIds={playbookRun.participant_ids}
+                runOwnerUserId={playbookRun.owner_user_id}
                 playbookRunMetadata={metadata ?? null}
             />
         );

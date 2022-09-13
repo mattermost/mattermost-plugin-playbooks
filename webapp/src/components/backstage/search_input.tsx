@@ -9,6 +9,7 @@ interface Props {
     default: string | undefined;
     onSearch: (term: string) => void;
     placeholder: string;
+    width?: string;
 }
 
 export default function SearchInput(props: Props) {
@@ -20,7 +21,10 @@ export default function SearchInput(props: Props) {
     const [term, setTerm] = useState(props.default ? props.default : '');
 
     return (
-        <Search data-testid={props.testId}>
+        <Search
+            data-testid={props.testId}
+            width={props.width}
+        >
             <input
                 type='text'
                 placeholder={props.placeholder}
@@ -31,7 +35,7 @@ export default function SearchInput(props: Props) {
     );
 }
 
-const Search = styled.div`
+export const Search = styled.div<{width?: string}>`
     position: relative;
     font-weight: 400;
 
@@ -44,7 +48,7 @@ const Search = styled.div`
         background-color: var(--center-channel-bg);
         border-radius: 4px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        width: 360px;
+        width: ${(props) => (props.width ? props.width : '360px')};
         height: 4rem;
         font-size: 14px;
         padding-left: 4rem;
