@@ -6,6 +6,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const maxAdminsToQueryForNotification = 1000
@@ -90,8 +91,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 func (b *Bot) DM(userID string, post *model.Post) error {
 	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
 	if err != nil {
-		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
-		return err
+		return errors.Wrapf(err, "failed to get bot DM channel with user_id %s", userID)
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
@@ -259,12 +259,15 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		go func(adminID string) {
 			channel, err := b.pluginAPI.Channel.GetDirect(adminID, b.botUserID)
 			if err != nil {
-				b.pluginAPI.Log.Warn("failed to get Direct Message channel between user and bot", "user ID", adminID, "bot ID", b.botUserID, "error", err)
+				logrus.WithError(err).WithFields(logrus.Fields{
+					"user_id": adminID,
+					"bot_id":  b.botUserID,
+				}).Warn("failed to get Direct Message channel between user and bot")
 				return
 			}
 
 			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
-				b.pluginAPI.Log.Warn("failed to send a DM to user", "user ID", adminID, "error", err)
+				logrus.WithError(err).WithField("user_id", adminID).Error("failed to send a DM to user")
 			}
 		}(admin.Id)
 	}
@@ -304,23 +307,8 @@ func (b *Bot) IsFromPoster(post *model.Post) bool {
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
-		b.With(LogContext{
-			"payload": payload,
-		}).Errorf("could not marshall payload")
+		logrus.WithError(err).Error("could not marshall payload")
 		payloadJSON = []byte("null")
 	}
 	return map[string]interface{}{"payload": string(payloadJSON)}
-}
-
-// DM posts a simple Direct Message to the specified user
-func (b *Bot) dmAdmins(format string, args ...interface{}) error {
-	for _, id := range b.configService.GetConfiguration().AllowedUserIDs {
-		err := b.DM(id, &model.Post{
-			Message: fmt.Sprintf(format, args...),
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

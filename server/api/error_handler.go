@@ -6,30 +6,29 @@ package api
 import (
 	"net/http"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/sirupsen/logrus"
 )
 
 type ErrorHandler struct {
-	log bot.Logger
 }
 
 // HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func (h *ErrorHandler) HandleError(w http.ResponseWriter, internalErr error) {
-	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
+func (h *ErrorHandler) HandleError(w http.ResponseWriter, logger logrus.FieldLogger, internalErr error) {
+	h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
 }
 
 // HandleErrorWithCode logs the internal error and sends the public facing error
 // message as JSON in a response with the provided code.
-func (h *ErrorHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
+func (h *ErrorHandler) HandleErrorWithCode(w http.ResponseWriter, logger logrus.FieldLogger, code int, publicErrorMsg string, internalErr error) {
+	HandleErrorWithCode(logger, w, code, publicErrorMsg, internalErr)
 }
 
 // PermissionsCheck handles the output of a permisions check
 // Automatically does the proper error handling.
 // Returns true if the check passed and false on failure. Correct use is: if !h.PermissionsCheck(w, check) { return }
-func (h *ErrorHandler) PermissionsCheck(w http.ResponseWriter, checkOutput error) bool {
+func (h *ErrorHandler) PermissionsCheck(w http.ResponseWriter, logger logrus.FieldLogger, checkOutput error) bool {
 	if checkOutput != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", checkOutput)
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "Not authorized", checkOutput)
 		return false
 	}
 

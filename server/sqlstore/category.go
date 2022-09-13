@@ -5,7 +5,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -13,7 +12,6 @@ import (
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type categoryStore struct {
 	pluginAPI          PluginAPIClient
-	log                bot.Logger
 	store              *SQLStore
 	queryBuilder       sq.StatementBuilderType
 	categorySelect     sq.SelectBuilder
@@ -23,7 +21,7 @@ type categoryStore struct {
 // Ensure playbookStore implements the playbook.Store interface.
 var _ app.CategoryStore = (*categoryStore)(nil)
 
-func NewCategoryStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.CategoryStore {
+func NewCategoryStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.CategoryStore {
 	categorySelect := sqlStore.builder.
 		Select(
 			"c.ID",
@@ -46,7 +44,6 @@ func NewCategoryStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	return &categoryStore{
 		pluginAPI:          pluginAPI,
-		log:                log,
 		store:              sqlStore,
 		queryBuilder:       sqlStore.builder,
 		categorySelect:     categorySelect,
