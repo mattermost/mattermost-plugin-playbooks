@@ -405,11 +405,11 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
-
-	if p.hasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
-		return nil
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
 	}
-
 	return ErrNoPermissions
 }
 
@@ -428,9 +428,11 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	// Has view permission if is in the channel
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return nil
+	// Has permission if is a participant of the run
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
 	}
 
 	// Or has view access to the playbook that created it

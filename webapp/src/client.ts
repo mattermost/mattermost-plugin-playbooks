@@ -740,6 +740,14 @@ export const requestUpdate = async (playbookRunId: string) => {
     }
 };
 
+export const requestJoinChannel = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-join-channel`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     try {
         return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({

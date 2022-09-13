@@ -2747,6 +2747,35 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	return nil
 }
 
+// RequestJoinChannel posts a channel-join request message in the run's channel
+func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	// avoid sending request if user is already a member of the channel
+	if s.pluginAPI.User.HasPermissionToChannel(requesterID, playbookRun.ChannelID, model.PermissionReadChannel) {
+		return fmt.Errorf("user %s is already a member of the channel %s", requesterID, playbookRunID)
+	}
+
+	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	T := i18n.GetUserTranslations(requesterUser.Locale)
+	data := map[string]interface{}{
+		"Name": requesterUser.Username,
+	}
+
+	_, err = s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_join_channel", data))
+	if err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+	return nil
+}
+
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
