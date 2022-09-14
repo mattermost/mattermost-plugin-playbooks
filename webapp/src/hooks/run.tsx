@@ -5,8 +5,13 @@ import React, {useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import styled from 'styled-components';
+import {useUpdateEffect} from 'react-use';
 
+import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {
+    followPlaybookRun,
+    unfollowPlaybookRun,
     isFavoriteItem,
     telemetryEventForPlaybookRun,
 } from 'src/client';
@@ -70,4 +75,85 @@ export const useParticipateInRun = (playbookRunId: string) => {
             telemetryEventForPlaybookRun(playbookRunId, PlaybookRunEventTarget.RequestUpdateClick);
         },
     };
+};
+
+interface FollowState {
+    isFollowing: boolean;
+    followers: string[];
+    setFollowers: (followers: string[]) => void;
+}
+
+export const useFollowRun = (runID: string, followState: FollowState | undefined) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const currentUserId = useSelector(getCurrentUserId);
+
+    if (followState === undefined) {
+        return null;
+    }
+    const {isFollowing, followers, setFollowers} = followState;
+
+    const FollowButton = styled(TertiaryButton)`
+        font-size: 12px;
+        height: 24px;
+        padding: 0 10px;
+    `;
+
+    const UnfollowButton = styled(SecondaryButton)`
+        font-size: 12px;
+        height: 24px;
+        padding: 0 10px;
+    `;
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(runID)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId: string) => userId !== currentUserId) : [...followers, currentUserId];
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
+
+    const FollowingButton = () => {
+        if (isFollowing) {
+            return (
+                <UnfollowButton
+                    className={'unfollowButton'}
+                    onClick={toggleFollow}
+                >
+                    {formatMessage({defaultMessage: 'Following'})}
+                </UnfollowButton>
+            );
+        }
+
+        return (
+            <FollowButton
+                className={'followButton'}
+                onClick={toggleFollow}
+            >
+                {formatMessage({defaultMessage: 'Follow'})}
+            </FollowButton>
+        );
+    };
+
+    return FollowingButton;
+};
+
+export const useRunFollowers = (metadataFollowers: string[]) => {
+    const currentUserId = useSelector(getCurrentUserId);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUserId));
+
+    useUpdateEffect(() => {
+        setFollowers(metadataFollowers);
+    }, [currentUserId, JSON.stringify(metadataFollowers)]);
+
+    useUpdateEffect(() => {
+        setIsFollowing(followers.includes(currentUserId));
+    }, [currentUserId, JSON.stringify(followers)]);
+
+    return {isFollowing, followers, setFollowers};
 };

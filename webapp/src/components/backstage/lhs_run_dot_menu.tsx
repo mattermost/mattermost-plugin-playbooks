@@ -13,9 +13,9 @@ import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 
 import {useUpdateRun} from 'src/graphql/hooks';
+import {useRunFollowers} from 'src/hooks';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
-import {useFollowers} from './playbook_runs/playbook_run/playbook_run';
 import {CopyRunLinkMenuItem, FavoriteRunMenuItem, FollowRunMenuItem, LeaveRunMenuItem} from './playbook_runs/playbook_run/controls';
 import {DotMenuButtonStyled} from './shared';
 
@@ -34,7 +34,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const updateRun = useUpdateRun(playbookRunId);
     const currentUser = useSelector(getCurrentUser);
 
-    const followState = useFollowers(followerIDs);
+    const followState = useRunFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
 
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing);

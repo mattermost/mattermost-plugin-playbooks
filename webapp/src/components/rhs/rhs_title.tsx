@@ -11,6 +11,7 @@ import {useIntl} from 'react-intl';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {useFollowRun, useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
@@ -25,6 +26,9 @@ const RHSTitle = () => {
 
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
+    const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
+    const followState = useRunFollowers(metadata?.followers || []);
+    const FollowingButton = useFollowRun(playbookRun?.id || '', metadata ? followState : undefined);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -58,6 +62,9 @@ const RHSTitle = () => {
                         </StyledButtonIcon>
                     </RHSTitleLink>
                 </OverlayTrigger>
+                <FollowingWrapper>
+                    {FollowingButton ? <FollowingButton/> : null}
+                </FollowingWrapper>
             </RHSTitleContainer>
         );
     }
@@ -76,6 +83,27 @@ const RHSTitleContainer = styled.div`
     justify-content: space-between;
     align-items: center;
     overflow: visible;
+    flex: 1;
+    justify-content: flex-start;
+`;
+
+const FollowingWrapper = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+
+    // override default styles
+    .unfollowButton {
+        border: 0;
+        color: var(--button-bg);
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+
+    .followButton {
+        border: 0;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
 `;
 
 const RHSTitleText = styled.div<{ clickable?: boolean }>`

@@ -10,7 +10,7 @@ import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -61,22 +61,6 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
-export const useFollowers = (metadataFollowers: string[]) => {
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useUpdateEffect(() => {
-        setFollowers(metadataFollowers);
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    useUpdateEffect(() => {
-        setIsFollowing(followers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(followers)]);
-
-    return {isFollowing, followers, setFollowers};
-};
-
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -99,10 +83,10 @@ const PlaybookRunDetails = () => {
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
-    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
+    const [channel] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
-    const followState = useFollowers(metadata?.followers || []);
+    const followState = useRunFollowers(metadata?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const RHS = useRHS(playbookRun);
