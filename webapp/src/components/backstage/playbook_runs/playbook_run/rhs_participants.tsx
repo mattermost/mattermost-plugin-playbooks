@@ -13,6 +13,8 @@ import {getProfilesByIds} from 'mattermost-webapp/packages/mattermost-redux/src/
 
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 
+import {sortByUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
+
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
@@ -50,9 +52,18 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
 
         //@ts-ignore
         profiles.then(({data}: { data: UserProfile[] }) => {
+            data.sort(sortByUsername);
             setParticipantsProfiles(data || []);
         });
     }, [dispatch, participantsIds]);
+
+    const includesTerm = (user: UserProfile) => {
+        const userInfo = user.first_name + ';' + user.last_name + ';' + user.nickname + ';' + user.username;
+        if (!userInfo.toLowerCase().includes(searchTerm.toLowerCase())) {
+            return false;
+        }
+        return true;
+    };
 
     return (
         <>
@@ -110,13 +121,9 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
                 </SectionTitle>
                 <ListSection>
                     {
-                        participantsProfiles.map((user: UserProfile) => {
+                        participantsProfiles.filter((user) => (includesTerm(user))).map((user: UserProfile) => {
                             // skip the owner
                             if (user.id === runOwnerUserId) {
-                                return null;
-                            }
-                            const userInfo = user.first_name + ';' + user.last_name + ';' + user.nickname + ';' + user.username;
-                            if (!userInfo.toLowerCase().includes(searchTerm.toLowerCase())) {
                                 return null;
                             }
                             return (
