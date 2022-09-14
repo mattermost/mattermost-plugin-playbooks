@@ -4,17 +4,21 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 
+import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
+    onParticipate?: () => void;
 }
 
 const RHSParticipants = (props: Props) => {
+    const {formatMessage} = useIntl();
     const openMembersModal = useOpenMembersModalIfPresent();
 
     if (props.userIds.length === 0) {
@@ -31,22 +35,34 @@ const RHSParticipants = (props: Props) => {
     const height = 28;
 
     return (
-        <UserRow
-            tabIndex={0}
-            role={'button'}
-            onClick={openMembersModal}
-            onKeyDown={(e) => {
-                // Handle Enter and Space as clicking on the button
-                if (e.keyCode === 13 || e.keyCode === 32) {
-                    openMembersModal();
-                }
-            }}
-        >
-            <UserList
-                userIds={props.userIds}
-                sizeInPx={height}
-            />
-        </UserRow>
+        <Container>
+            <UserRow
+                tabIndex={0}
+                role={'button'}
+                onClick={openMembersModal}
+                onKeyDown={(e) => {
+                    // Handle Enter and Space as clicking on the button
+                    if (e.keyCode === 13 || e.keyCode === 32) {
+                        openMembersModal();
+                    }
+                }}
+            >
+                <UserList
+                    userIds={props.userIds}
+                    sizeInPx={height}
+                />
+            </UserRow>
+            {props.onParticipate ? (
+                <Tooltip
+                    id={'rhs-participate'}
+                    content={formatMessage({defaultMessage: 'Become a participant'})}
+                >
+                    <IconWrapper onClick={props.onParticipate}>
+                        <AccountPlusOutlineIcon size={16}/>
+                    </IconWrapper>
+                </Tooltip>
+            ) : null}
+        </Container>
     );
 };
 
@@ -134,6 +150,12 @@ const NoParticipants = styled.div`
     margin-top: 12px;
 `;
 
+const Container = styled.div`
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+`;
+
 const UserRow = styled.div`
     width: max-content;
     padding: 0;
@@ -157,3 +179,23 @@ const UserRow = styled.div`
 `;
 
 export default RHSParticipants;
+
+const IconWrapper = styled.div`
+    margin-left: 10px;
+    margin-top: 6px;
+    border-radius: 50%;
+    border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    &:hover {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        border: 1px dashed rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+
+    }
+`;

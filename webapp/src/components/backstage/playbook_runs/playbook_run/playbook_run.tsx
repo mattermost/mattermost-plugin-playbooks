@@ -215,7 +215,6 @@ const PlaybookRunDetails = () => {
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
-                        channel={channel}
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
