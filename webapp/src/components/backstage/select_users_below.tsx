@@ -92,9 +92,9 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     });
 
     return (
-        <Container>
+        <Container data-testid='members-list'>
             {permissionToEditMembers &&
-            <ProfileAutocompleteContainer>
+            <ProfileAutocompleteContainer data-testid={'add-people-input'}>
                 <ProfileAutocomplete
                     onAddUser={handleAddUser}
                     userIds={props.members.map((val: PlaybookMember) => val.user_id)}

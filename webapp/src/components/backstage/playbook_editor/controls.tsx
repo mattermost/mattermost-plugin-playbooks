@@ -128,7 +128,10 @@ export const Back = styled((props: StyledProps) => {
 export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
     const dispatch = useDispatch();
     return (
-        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId, props.refetch))}>
+        <ButtonIconStyled
+            data-testid={'playbook-members'}
+            onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId, props.refetch))}
+        >
             <i className={'icon icon-account-multiple-outline'}/>
             <FormattedNumber value={props.numMembers}/>
         </ButtonIconStyled>

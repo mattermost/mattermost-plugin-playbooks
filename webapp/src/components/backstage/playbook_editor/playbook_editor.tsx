@@ -214,7 +214,7 @@ const PlaybookEditor = () => {
                     `}
                 >
                     {(edit) => (
-                        <Heading>
+                        <Heading data-testid={'playbook-editor-header'}>
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}
