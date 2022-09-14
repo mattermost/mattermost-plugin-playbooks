@@ -386,11 +386,21 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
+
+	if run.OwnerUserID == userID {
+		return nil
+	}
+
 	for _, participantID := range run.ParticipantIDs {
 		if participantID == userID {
 			return nil
 		}
 	}
+
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		return nil
+	}
+
 	return ErrNoPermissions
 }
 
@@ -409,7 +419,12 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	// Has permission if is a participant of the run
+	// Has permission if is the owner of the run
+	if run.OwnerUserID == userID {
+		return nil
+	}
+
+	// Or if is a participant of the run
 	for _, participantID := range run.ParticipantIDs {
 		if participantID == userID {
 			return nil
