@@ -891,7 +891,7 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 
 	// user must be a participant to be able to request to join the channel
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to post update request", nil)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to request join channel", nil)
 		return
 	}
 
