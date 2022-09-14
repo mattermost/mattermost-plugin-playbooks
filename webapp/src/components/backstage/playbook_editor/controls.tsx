@@ -125,10 +125,10 @@ export const Back = styled((props: StyledProps) => {
 
 `;
 
-export const Members = (props: {playbookId: string, numMembers: number}) => {
+export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
     const dispatch = useDispatch();
     return (
-        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId))}>
+        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId, props.refetch))}>
             <i className={'icon icon-account-multiple-outline'}/>
             <FormattedNumber value={props.numMembers}/>
         </ButtonIconStyled>
@@ -400,7 +400,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 {currentUserMember && (
                     <>
                         <DropdownMenuItem
-                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id, refetch))}
                         >
                             <AccountMultipleOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Manage access'/>

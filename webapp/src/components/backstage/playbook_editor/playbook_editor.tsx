@@ -175,6 +175,7 @@ const PlaybookEditor = () => {
                             <Controls.Members
                                 playbookId={playbook.id}
                                 numMembers={playbook.members.length}
+                                refetch={refetch}
                             />
                             <Controls.AutoFollowToggle playbook={playbook}/>
                             <Controls.RunPlaybook playbook={playbook}/>

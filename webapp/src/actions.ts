@@ -68,7 +68,7 @@ import {
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter, PlaybookWithChecklist} from 'src/types/playbook';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
@@ -133,10 +133,10 @@ export function openUpdateRunStatusModal(
 
 export function displayEditPlaybookAccessModal(
     playbookId: string,
-    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>,
+    refetch?: () => void,
 ) {
     return async (dispatch: Dispatch<AnyAction>) => {
-        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId, onPlaybookChange})));
+        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId, refetch})));
     };
 }
 
