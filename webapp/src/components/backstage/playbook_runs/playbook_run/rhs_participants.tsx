@@ -210,7 +210,7 @@ const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun, c
                 userId={id}
                 nameFormatter={formatProfileName('')}
                 css={`
-                    margin-right: auto;
+                    width: ${(manageMode ? '75%' : '95%')};
                 `}
             />
             {renderRightButton()}
@@ -283,7 +283,6 @@ const ProfileWrapper = styled.div<{manageMode: boolean}>`
             opacity: 1;
         }
     }  
-    width: ${({manageMode}) => (manageMode ? '75%' : '90%')};
 `;
 
 const HeaderSection = styled.div`
