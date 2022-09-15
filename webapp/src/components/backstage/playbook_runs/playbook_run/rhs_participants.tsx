@@ -18,7 +18,6 @@ import {sortByUsername} from 'mattermost-webapp/packages/mattermost-redux/src/ut
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
-import {Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 
 import SearchInput from '../../search_input';
 
@@ -34,10 +33,10 @@ interface Props {
     playbookRunId: string;
     participantsIds: string[];
     runOwnerUserId: string;
-    playbookRunMetadata: PlaybookRunMetadata | null;
+    teamName?: string;
 }
 
-export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, playbookRunMetadata}: Props) => {
+export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, teamName}: Props) => {
     const dispatch = useDispatch();
 
     const {formatMessage} = useIntl();
@@ -66,82 +65,80 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, pl
     };
 
     return (
-        <>
-            <Container>
-                <HeaderSection>
-                    <ParticipantsNumber>
-                        {formatMessage(
-                            {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
-                            {num: participantsProfiles.length}
-                        )}
-                    </ParticipantsNumber>
-
-                    {manageMode ? (
-                        <StyledPrimaryButton onClick={() => setManageMode(false)}>
-                            {formatMessage({defaultMessage: 'Done'})}
-                        </StyledPrimaryButton>
-                    ) : (
-                        <>
-                            <StyledSecondaryButton onClick={() => setManageMode(true)}>
-                                {formatMessage({defaultMessage: 'Manage'})}
-                            </StyledSecondaryButton>
-
-                            <StyledPrimaryButton onClick={() => null}>
-                                <AddParticipantIcon color={'var(--button-color)'}/>
-                                {formatMessage({defaultMessage: 'Add'})}
-                            </StyledPrimaryButton>
-                        </>
+        <Container>
+            <HeaderSection>
+                <ParticipantsNumber>
+                    {formatMessage(
+                        {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
+                        {num: participantsProfiles.length}
                     )}
-                </HeaderSection>
+                </ParticipantsNumber>
 
-                <SearchSection>
-                    <SearchInput
-                        testId={'search-filter'}
-                        default={''}
-                        onSearch={setSearchTerm}
-                        placeholder={formatMessage({defaultMessage: 'Search'})}
-                        width={'100%'}
-                    />
-                </SearchSection>
-                <SectionTitle>
-                    {formatMessage({defaultMessage: 'Owner'})}
-                </SectionTitle>
+                {manageMode ? (
+                    <StyledPrimaryButton onClick={() => setManageMode(false)}>
+                        {formatMessage({defaultMessage: 'Done'})}
+                    </StyledPrimaryButton>
+                ) : (
+                    <>
+                        <StyledSecondaryButton onClick={() => setManageMode(true)}>
+                            {formatMessage({defaultMessage: 'Manage'})}
+                        </StyledSecondaryButton>
 
-                <ParticipantLine
-                    id={runOwnerUserId}
-                    teamName={playbookRunMetadata?.team_name}
-                    isRunOwner={true}
-                    manageMode={manageMode}
-                    removeFromRun={removeFromRun}
-                    changeRunOwner={changeRunOwner}
+                        <StyledPrimaryButton onClick={() => null}>
+                            <AddParticipantIcon color={'var(--button-color)'}/>
+                            {formatMessage({defaultMessage: 'Add'})}
+                        </StyledPrimaryButton>
+                    </>
+                )}
+            </HeaderSection>
+
+            <SearchSection>
+                <SearchInput
+                    testId={'search-filter'}
+                    default={''}
+                    onSearch={setSearchTerm}
+                    placeholder={formatMessage({defaultMessage: 'Search'})}
+                    width={'100%'}
                 />
+            </SearchSection>
+            <SectionTitle>
+                {formatMessage({defaultMessage: 'Owner'})}
+            </SectionTitle>
 
-                <SectionTitle>
-                    {formatMessage({defaultMessage: 'Participants'})}
-                </SectionTitle>
-                <ListSection>
-                    {
-                        participantsProfiles.filter((user) => (includesTerm(user))).map((user: UserProfile) => {
-                            // skip the owner
-                            if (user.id === runOwnerUserId) {
-                                return null;
-                            }
-                            return (
-                                <ParticipantLine
-                                    key={user.id}
-                                    id={user.id}
-                                    teamName={playbookRunMetadata?.team_name}
-                                    isRunOwner={false}
-                                    manageMode={manageMode}
-                                    removeFromRun={removeFromRun}
-                                    changeRunOwner={changeRunOwner}
-                                />
-                            );
-                        })
-                    }
-                </ListSection>
-            </Container>
-        </>
+            <ParticipantLine
+                id={runOwnerUserId}
+                teamName={teamName}
+                isRunOwner={true}
+                manageMode={manageMode}
+                removeFromRun={removeFromRun}
+                changeRunOwner={changeRunOwner}
+            />
+
+            <SectionTitle>
+                {formatMessage({defaultMessage: 'Participants'})}
+            </SectionTitle>
+            <ListSection>
+                {
+                    participantsProfiles.filter((user) => (includesTerm(user))).map((user: UserProfile) => {
+                        // skip the owner
+                        if (user.id === runOwnerUserId) {
+                            return null;
+                        }
+                        return (
+                            <ParticipantLine
+                                key={user.id}
+                                id={user.id}
+                                teamName={teamName}
+                                isRunOwner={false}
+                                manageMode={manageMode}
+                                removeFromRun={removeFromRun}
+                                changeRunOwner={changeRunOwner}
+                            />
+                        );
+                    })
+                }
+            </ListSection>
+        </Container>
     );
 };
 
@@ -205,7 +202,10 @@ const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun, c
     };
 
     return (
-        <ProfileWrapper key={id}>
+        <ProfileWrapper
+            key={id}
+            manageMode={manageMode}
+        >
             <Profile
                 userId={id}
                 nameFormatter={formatProfileName('')}
@@ -258,9 +258,12 @@ const ListSection = styled.div`
     padding-bottom: 50px;
 `;
 
-const HoverButtonContainer = styled.div``;
+const HoverButtonContainer = styled.div`
+    position: absolute;
+    right: 20px;
+`;
 
-const ProfileWrapper = styled.div`
+const ProfileWrapper = styled.div<{manageMode: boolean}>`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -279,7 +282,8 @@ const ProfileWrapper = styled.div`
         ${HoverButtonContainer} {
             opacity: 1;
         }
-    }
+    }  
+    width: ${({manageMode}) => (manageMode ? '75%' : '90%')};
 `;
 
 const HeaderSection = styled.div`
@@ -324,6 +328,9 @@ const ParticipantButton = styled.div`
        background: rgba(var(--button-bg-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
+
+    position: absolute;
+    right: 20px;      
 `;
 
 const IconWrapper = styled.div`
