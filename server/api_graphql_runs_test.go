@@ -93,7 +93,6 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		member, err = e.A.GetChannelMember(request.EmptyContext(nil), e.BasicRun.ChannelID, user3.Id)
 		require.Nil(t, err)
 		assert.Equal(t, user3.Id, member.UserId)
-
 	})
 
 	t.Run("remove two participants", func(t *testing.T) {
@@ -203,6 +202,142 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
 		require.Nil(t, member)
 		require.NotNil(t, err)
+	})
+
+	t.Run("not participant tries to add other participant", func(t *testing.T) {
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                   "TestPrivatePlaybookNoMembers",
+			TeamID:                  e.BasicTeam.Id,
+			Public:                  true,
+			CreatePublicPlaybookRun: true,
+		})
+		require.NoError(e.T, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(e.T, err)
+
+		// Should not be able to add participants, because is not a participant
+		response, err := addParticipants(e.PlaybooksClient2, run.ID, []string{user3.Id})
+		require.NotEmpty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 1)
+
+		// Should be able to join the run
+		response, err = addParticipants(e.PlaybooksClient2, run.ID, []string{e.RegularUser2.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+
+		// After joining the run user should be able to add other participants
+		response, err = addParticipants(e.PlaybooksClient2, run.ID, []string{user3.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 3)
+	})
+
+	t.Run("leave run", func(t *testing.T) {
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                   "TestPrivatePlaybookNoMembers",
+			TeamID:                  e.BasicTeam.Id,
+			Public:                  true,
+			CreatePublicPlaybookRun: true,
+		})
+		require.NoError(e.T, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(e.T, err)
+
+		// join the run
+		response, err := addParticipants(e.PlaybooksClient2, run.ID, []string{e.RegularUser2.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+
+		// leave run
+		response, err = removeParticipants(e.PlaybooksClient2, run.ID, []string{e.RegularUser2.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 1)
+	})
+
+	t.Run("not participant tries to remove participant", func(t *testing.T) {
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                   "TestPrivatePlaybookNoMembers",
+			TeamID:                  e.BasicTeam.Id,
+			Public:                  true,
+			CreatePublicPlaybookRun: true,
+		})
+		require.NoError(e.T, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(e.T, err)
+
+		// add participant
+		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{user3.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+
+		// try to remove the participant
+		response, err = removeParticipants(e.PlaybooksClient2, run.ID, []string{user3.Id})
+		require.NotEmpty(t, response.Errors)
+		require.NoError(t, err)
+
+		// join the run
+		response, err = addParticipants(e.PlaybooksClient2, run.ID, []string{e.RegularUser2.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 3)
+
+		// now should be able to remove participant
+		response, err = removeParticipants(e.PlaybooksClient2, run.ID, []string{user3.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2)
+		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
+		assert.Equal(t, e.RegularUser2.Id, run.ParticipantIDs[1])
 	})
 }
 

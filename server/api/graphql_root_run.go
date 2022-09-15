@@ -140,8 +140,15 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.RunView(userID, args.RunID); err != nil {
-		return "", errors.Wrap(err, "attempted to modify participants without permissions")
+	// When user is joining run RunView permission is enough, otherwise user need manage permissions
+	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
+		if err := c.permissions.RunView(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to join run without permissions")
+		}
+	} else {
+		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
+		}
 	}
 
 	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID); err != nil {
@@ -167,8 +174,15 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.RunView(userID, args.RunID); err != nil {
-		return "", errors.Wrap(err, "attempted to modify participants without permissions")
+	// When user is leaving run RunView permission is enough, otherwise user need manage permissions
+	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
+		if err := c.permissions.RunView(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
+		}
+	} else {
+		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
+		}
 	}
 
 	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs); err != nil {
@@ -182,6 +196,10 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	}
 
 	return "", nil
+}
+
+func updatesOnlyRequesterMembership(requesterUserID string, userIDs []string) bool {
+	return len(userIDs) == 1 && userIDs[0] == requesterUserID
 }
 
 func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
