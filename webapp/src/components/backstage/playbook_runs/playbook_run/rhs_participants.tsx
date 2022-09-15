@@ -70,7 +70,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, te
                 <ParticipantsNumber>
                     {formatMessage(
                         {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
-                        {num: participantsProfiles.length}
+                        {num: participantsIds.length}
                     )}
                 </ParticipantsNumber>
 
