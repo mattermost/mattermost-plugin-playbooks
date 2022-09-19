@@ -7,9 +7,7 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline} from '@mdi/js';
-import {CheckAllIcon, SyncIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {CheckAllIcon, SyncIcon, OpenInNewIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
@@ -254,10 +252,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                     ));
                 }}
             >
-                <Icon
-                    path={mdiClipboardPlayOutline}
-                    size={1.5}
-                />
+                <PlayOutlineIcon/>
                 <FormattedMessage defaultMessage='Run'/>
             </RunButton>
             }
