@@ -6,9 +6,6 @@ import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiRestore} from '@mdi/js';
-
 import {
     PlusIcon,
     CloseIcon,
@@ -20,6 +17,8 @@ import {
     StarOutlineIcon,
     StarIcon,
     LinkVariantIcon,
+    RestoreIcon,
+    PlayOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -51,7 +50,6 @@ import {
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
-import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
@@ -136,16 +134,6 @@ export const Members = (props: {playbookId: string, numMembers: number}) => {
     );
 };
 
-export const Share = ({playbook: {id}}: ControlProps) => {
-    const dispatch = useDispatch();
-    return (
-        <TertiaryButtonLarger onClick={() => dispatch(displayEditPlaybookAccessModal(id))}>
-            <i className={'icon icon-lock-outline'}/>
-            <FormattedMessage defaultMessage='Share'/>
-        </TertiaryButtonLarger>
-    );
-};
-
 export const CopyPlaybook = ({playbook: {title, id}}: ControlProps) => {
     return (
         <CopyLink
@@ -153,19 +141,6 @@ export const CopyPlaybook = ({playbook: {title, id}}: ControlProps) => {
             to={getSiteUrl() + '/playbooks/playbooks/' + id}
             name={title}
             area-hidden={true}
-        />
-    );
-};
-
-export const ArchivedLabel = ({playbook: {delete_at}}: ControlProps) => {
-    const archived = delete_at !== 0;
-    if (!archived) {
-        return null;
-    }
-    return (
-        <StatusBadge
-            data-testid={'archived-badge'}
-            status={BadgeType.Archived}
         />
     );
 };
@@ -287,10 +262,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
         >
-            <Icon
-                path={mdiClipboardPlayOutline}
-                size={1.25}
-            />
+            <PlayOutlineIcon size={20}/>
             {isTutorialPlaybook ? (
                 <FormattedMessage defaultMessage='Start a test run'/>
             ) : (
@@ -480,10 +452,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             <DropdownMenuItem
                                 onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
                             >
-                                <Icon
-                                    path={mdiRestore}
-                                    size={'18px'}
-                                />
+                                <RestoreIcon size={18}/>
                                 <FormattedMessage defaultMessage='Restore'/>
                             </DropdownMenuItem>
                         ) : (

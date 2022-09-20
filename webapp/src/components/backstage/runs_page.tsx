@@ -24,8 +24,18 @@ import {pluginUrl} from 'src/browser_routing';
 import Header from '../widgets/header';
 
 import RunList from './runs_list/runs_list';
-import {statusOptions} from './runs_list/status_filter';
 import NoContentPage from './runs_page_no_content';
+
+const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
+];
+
+interface StatusOption {
+    value: string;
+    label: string;
+}
 
 const defaultPlaybookFetchParams = {
     page: 0,
