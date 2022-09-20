@@ -101,8 +101,13 @@ const FollowingWrapper = styled.div`
 
     .followButton {
         border: 0;
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        background: transparent;
+
+        &:hover {
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
     }
 `;
 

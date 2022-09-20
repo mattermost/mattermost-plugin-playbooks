@@ -49,7 +49,7 @@ const RHSAbout = (props: Props) => {
     const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const overviewURL = `/playbooks/runs/${props.playbookRun.id}`;
-    const shouldShowParticipate = props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
+    const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
     const markdownOptions = {
         singleline: true,
         mentionHighlight: true,
@@ -93,10 +93,6 @@ const RHSAbout = (props: Props) => {
             setShowAddToChannelConfirm(true);
         }
     };
-
-    const participantsIds = profilesInChannel
-        .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
-        .map((p) => p.id);
 
     const onTitleEdit = (value: string) => {
         changeChannelName(props.playbookRun.channel_id, value);
@@ -161,7 +157,8 @@ const RHSAbout = (props: Props) => {
                             <ParticipantsSection>
                                 <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
                                 <RHSParticipants
-                                    userIds={participantsIds}
+                                    userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
+                                    playbookId={props.playbookRun.id}
                                     onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
                                 />
                             </ParticipantsSection>

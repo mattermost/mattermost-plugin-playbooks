@@ -14,6 +14,7 @@ import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
+    playbookId: string;
     onParticipate?: () => void;
 }
 
@@ -21,14 +22,33 @@ const RHSParticipants = (props: Props) => {
     const {formatMessage} = useIntl();
     const openMembersModal = useOpenMembersModalIfPresent();
 
+    const becomeParticipant = (
+        <Tooltip
+            id={'rhs-participate'}
+            content={formatMessage({defaultMessage: 'Become a participant'})}
+        >
+            <IconWrapper
+                onClick={props.onParticipate}
+                data-testid={'rhs-participate-icon'}
+                format={props.userIds.length === 0 ? 'icontext' : 'icon'}
+            >
+                <AccountPlusOutlineIcon size={16}/>
+                {props.userIds.length === 0 ? formatMessage({defaultMessage: 'Participate'}) : null}
+            </IconWrapper>
+        </Tooltip>
+    );
+
     if (props.userIds.length === 0) {
         return (
-            <NoParticipants>
-                <FormattedMessage defaultMessage='Nobody yet.'/>
-                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                {' '}
-                <AddParticipants/>
-            </NoParticipants>
+            <Container>
+                <NoParticipants>
+                    <FormattedMessage defaultMessage='Nobody yet.'/>
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {' '}
+                    {props.onParticipate ? null : <a>{formatMessage({defaultMessage: 'PAdd participant'})}</a>}
+                </NoParticipants>
+                {props.onParticipate ? becomeParticipant : null}
+            </Container>
         );
     }
 
@@ -52,16 +72,7 @@ const RHSParticipants = (props: Props) => {
                     sizeInPx={height}
                 />
             </UserRow>
-            {props.onParticipate ? (
-                <Tooltip
-                    id={'rhs-participate'}
-                    content={formatMessage({defaultMessage: 'Become a participant'})}
-                >
-                    <IconWrapper onClick={props.onParticipate}>
-                        <AccountPlusOutlineIcon size={16}/>
-                    </IconWrapper>
-                </Tooltip>
-            ) : null}
+            {props.onParticipate ? becomeParticipant : null}
         </Container>
     );
 };
@@ -180,7 +191,7 @@ const UserRow = styled.div`
 
 export default RHSParticipants;
 
-const IconWrapper = styled.div`
+const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
     margin-left: 10px;
     margin-top: 6px;
     border-radius: 50%;

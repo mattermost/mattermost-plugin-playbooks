@@ -20,6 +20,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {CategoryItemType} from 'src/types/category';
+import Tooltip from 'src/components/widgets/tooltip';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
@@ -130,12 +131,18 @@ export const useFollowRun = (runID: string, followState: FollowState | undefined
         }
 
         return (
-            <FollowButton
-                className={'followButton'}
-                onClick={toggleFollow}
+            <Tooltip
+                id={'follow-tooltip'}
+                placement='bottom'
+                content={formatMessage({defaultMessage: 'Get run status update notifications'})}
             >
-                {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
+                <FollowButton
+                    className={'followButton'}
+                    onClick={toggleFollow}
+                >
+                    {formatMessage({defaultMessage: 'Follow'})}
+                </FollowButton>
+            </Tooltip>
         );
     };
 
