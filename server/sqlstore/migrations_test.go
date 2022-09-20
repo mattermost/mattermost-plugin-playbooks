@@ -19,49 +19,71 @@ type MigrationMapping struct {
 func TestDBSchema(t *testing.T) {
 	migrationsMapping := []MigrationMapping{
 		{
-			Name:                 "0.0.0",
+			Name:                 "0.0.0 > 0.0.1",
 			LegacyMigrationIndex: 0,
 			MorphMigrationLimit:  4, // 000001 <> 000004
 		},
 		{
-			Name:                 "0.2.0",
+			Name:                 "0.2.0 > 0.3.0",
 			LegacyMigrationIndex: 2,
 			MorphMigrationLimit:  1, // 000005
 		},
 		{
-			Name:                 "0.3.0",
+			Name:                 "0.3.0 > 0.4.0",
 			LegacyMigrationIndex: 3,
 			MorphMigrationLimit:  4, // 000006 <> 000009
 		},
 		{
-			Name:                 "0.4.0",
+			Name:                 "0.4.0 > 0.5.0",
 			LegacyMigrationIndex: 4,
 			MorphMigrationLimit:  4, // 000010 <> 000013
 		},
 		{
-			Name:                 "0.5.0",
+			Name:                 "0.5.0 > 0.6.0",
 			LegacyMigrationIndex: 5,
 			MorphMigrationLimit:  2, // 000014 <> 000015
 		},
 		{
-			Name:                 "0.6.0",
+			Name:                 "0.6.0 > 0.7.0",
 			LegacyMigrationIndex: 6,
 			MorphMigrationLimit:  1, // 000016
 		},
 		{
-			Name:                 "0.7.0",
+			Name:                 "0.7.0 > 0.8.0",
 			LegacyMigrationIndex: 7,
 			MorphMigrationLimit:  1, // 000017
 		},
 		{
-			Name:                 "0.8.0",
+			Name:                 "0.8.0 > 0.9.0",
 			LegacyMigrationIndex: 8,
 			MorphMigrationLimit:  3, // 000018 <> 000020
 		},
 		{
-			Name:                 "0.9.0",
+			Name:                 "0.9.0 > 0.10.0",
 			LegacyMigrationIndex: 9,
 			MorphMigrationLimit:  3, // 000021 <> 000023
+		},
+		{
+			Name:                 "0.11.0 > 0.12.0",
+			LegacyMigrationIndex: 11,
+			MorphMigrationLimit:  4, // 000024 <> 000027
+		},
+
+		{
+			Name:                 "0.12.0 > 0.13.0",
+			LegacyMigrationIndex: 12,
+			MorphMigrationLimit:  3, // 000028 <> 000030
+		},
+
+		{
+			Name:                 "0.13.0 > 0.14.0",
+			LegacyMigrationIndex: 13,
+			MorphMigrationLimit:  2, // 000031 <> 000032
+		},
+		{
+			Name:                 "0.14.0 > 0.15.0",
+			LegacyMigrationIndex: 14,
+			MorphMigrationLimit:  1, // 000033
 		},
 	}
 
