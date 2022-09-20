@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -28,14 +27,14 @@ func (s *TelemetryService) CreateEvent(ctx context.Context, name string, eventTy
 		return err
 	}
 
-	resp, err := s.client.do(ctx, req, ioutil.Discard)
+	resp, err := s.client.do(ctx, req, nil)
 	if err != nil {
 		return err
 	}
 	resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected status code %d", http.StatusNoContent)
+		return fmt.Errorf("expected status code %d, got %d", http.StatusNoContent, resp.StatusCode)
 	}
 
 	return nil

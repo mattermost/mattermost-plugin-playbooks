@@ -83,32 +83,29 @@ func (h *TelemetryHandler) createEvent(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	if event.Type != app.TelemetryTypePage && event.Type != app.TelemetryTypeTrack {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid type to be tracked", nil)
-		return
-	}
-
 	if event.Properties == nil {
 		event.Properties = map[string]interface{}{}
 	}
 	event.Properties["UserActualID"] = r.Header.Get("Mattermost-User-ID")
 
-	if event.Type == app.TelemetryTypePage {
+	switch event.Type {
+	case app.TelemetryTypePage:
 		name, err := app.NewTelemetryPage(event.Name)
 		if err != nil {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid page tracking", err)
 			return
 		}
 		h.genericTelemetry.Page(name, event.Properties)
-	}
-
-	if event.Type == app.TelemetryTypeTrack {
+	case app.TelemetryTypeTrack:
 		name, err := app.NewTelemetryTrack(event.Name)
 		if err != nil {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid event tracking", err)
 			return
 		}
 		h.genericTelemetry.Track(name, event.Properties)
+	default:
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid type to be tracked", nil)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

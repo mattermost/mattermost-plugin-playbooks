@@ -18,11 +18,11 @@ func (t *NoopTelemetry) Disable() error {
 	return nil
 }
 
-// CreatePlaybookRun does nothing
+// Page does nothing
 func (t *NoopTelemetry) Page(name app.TelemetryPage, properties map[string]interface{}) {
 }
 
-// CreatePlaybookRun does nothing
+// Track does nothing
 func (t *NoopTelemetry) Track(name app.TelemetryTrack, properties map[string]interface{}) {
 }
 

@@ -56,7 +56,7 @@ export const UpdatePost = (props: Props) => {
         post_id: props.post.id,
         playbook_id: currentRun?.playbook_id, // not always available
         channel_type: channel.type,
-        playbookrun_id: currentRun?.id, // not always available
+        playbook_run_id: currentRun?.id, // not always available
     });
 
     return (
