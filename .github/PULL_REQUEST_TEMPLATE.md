@@ -10,12 +10,12 @@ REMEMBER TO:
 - Run `make test` to ensure unit tests passed
 -->
 
-#### Summary
+## Summary
 <!--
 A description of what this pull request does
 -->
 
-#### Ticket Link
+## Ticket Link
 <!--
 If this pull request addresses a Help Wanted ticket, please link the relevant GitHub issue, e.g.:
 
@@ -24,7 +24,7 @@ If this pull request addresses a Help Wanted ticket, please link the relevant Gi
 Otherwise, link the Jira ticket.
 -->
 
-#### Checklist
+## Checklist
 <!-- Check off items as they are completed. ~~Strike through~~ items if they don't apply -->
 - [ ] Telemetry updated
 - [ ] Gated by experimental feature flag

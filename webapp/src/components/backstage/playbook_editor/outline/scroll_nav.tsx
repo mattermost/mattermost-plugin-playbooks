@@ -7,8 +7,7 @@ import {FormattedMessage} from 'react-intl';
 
 import {useLocation} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiTextBoxOutline} from '@mdi/js';
+import {TextBoxOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {telemetryEventForPlaybook} from 'src/client';
 import {BackstageID} from 'src/components/backstage/backstage';
@@ -118,10 +117,7 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
             {...attrs}
         >
             <Header>
-                <Icon
-                    path={mdiTextBoxOutline}
-                    size={1}
-                />
+                <TextBoxOutlineIcon size={16}/>
                 <FormattedMessage defaultMessage='Contents'/>
             </Header>
             <Items>
