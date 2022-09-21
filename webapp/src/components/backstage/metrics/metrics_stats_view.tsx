@@ -4,10 +4,11 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import MetricsCard from 'src/components/backstage/playbooks/metrics/metrics_card';
 import {PlaybookStats} from 'src/types/stats';
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+
+import MetricsCard from './metrics_card';
 
 interface Props {
     playbookMetrics: Metric[];

@@ -8,23 +8,26 @@ import {FormattedNumber, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
-import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import {
     DefaultFetchPlaybookRunsParamsTime,
     fetchParamsTimeEqual,
     FetchPlaybookRunsParams,
 } from 'src/types/playbook_run';
-import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import Profiles from 'src/components/assets/icons/profiles';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 import {PlaybookStats} from 'src/types/stats';
 import {useAllowPlaybookStatsView} from 'src/hooks';
-import UpgradePlaybookPlaceholder
-    from 'src/components/backstage/playbooks/upgrade_playbook_placeholder';
+
 import Pill from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import {DateTimeFormats} from 'src/constants';
+
+import UpgradePlaybookPlaceholder from './upgrade_playbook_placeholder';
+
+import BarGraph from './bar_graph';
+
+import LineGraph from './line_graph';
 
 interface Props {
     stats: PlaybookStats

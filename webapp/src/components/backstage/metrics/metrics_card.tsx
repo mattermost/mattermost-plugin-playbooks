@@ -6,11 +6,12 @@ import styled from 'styled-components';
 import {Duration} from 'luxon';
 import {FormattedNumber, useIntl} from 'react-intl';
 
+import BarGraph from 'src/components/backstage/bar_graph';
+
 import {Metric, MetricType} from 'src/types/playbook';
 import {HorizontalSpacer} from 'src/components/backstage/styles';
 import {NullNumber, PlaybookStats} from 'src/types/stats';
 import {formatDuration} from 'src/components/formatted_duration';
-import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 
 interface Props {
     playbookMetrics: Metric[];
