@@ -263,6 +263,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 </MainTitle>
             </MainTitleBG>
             <ChecklistList
+                stateKey={stateKey}
                 playbookRun={playbookRun}
                 isReadOnly={readOnly}
                 checklistsCollapseState={checklistsState}

@@ -20,9 +20,24 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {playbookRunUpdated} from 'src/actions';
-import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
+import {
+    finishRun,
+    playbookRunUpdated,
+    setAllChecklistsCollapsedState,
+} from 'src/actions';
+import {
+    Checklist,
+    ChecklistItemState,
+    ChecklistItem,
+} from 'src/types/playbook';
+import {
+    clientMoveChecklist,
+    clientMoveChecklistItem,
+    clientAddChecklist,
+} from 'src/client';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
+import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
@@ -40,6 +55,7 @@ import GenericChecklist, {generateKeys} from './generic_checklist';
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
+    stateKey?: string;
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
     isReadOnly: boolean;
@@ -52,6 +68,7 @@ interface Props {
 }
 
 const ChecklistList = ({
+    stateKey,
     playbookRun,
     playbook: inPlaybook,
     isReadOnly,
@@ -158,6 +175,12 @@ const ChecklistList = ({
         const newChecklists = [...checklists];
         newChecklists[index] = {...newChecklist};
         setChecklistsForPlaybook(newChecklists);
+    };
+
+    const onBeforeCapture = () => {
+        if (stateKey !== undefined && Boolean(stateKey)) {
+            dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
+        }
     };
 
     const onDragStart = () => {
@@ -315,6 +338,7 @@ const ChecklistList = ({
             <DragDropContext
                 onDragEnd={onDragEnd}
                 onDragStart={onDragStart}
+                onBeforeCapture={onBeforeCapture}
             >
                 <Droppable
                     droppableId={'all-checklists'}
