@@ -657,7 +657,11 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 		timezone = time.Now().UTC().Location()
 	}
 	// get unix time for duration
-	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+	startTime, err := model.StartOfDayForTimeRange(timeRange, timezone)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
 
 	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &model.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),
@@ -710,7 +714,11 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 		timezone = time.Now().UTC().Location()
 	}
 	// get unix time for duration
-	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+	startTime, err := model.StartOfDayForTimeRange(timeRange, timezone)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
 
 	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &model.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),
