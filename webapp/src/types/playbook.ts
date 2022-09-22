@@ -233,25 +233,6 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     overdueOnly: false,
 };
 
-// eslint-disable-next-line
-export function isChecklist(arg: any): arg is Checklist {
-    return arg &&
-        typeof arg.title === 'string' &&
-        arg.items && Array.isArray(arg.items) && arg.items.every(isChecklistItem);
-}
-
-// eslint-disable-next-line
-export function isChecklistItem(arg: any): arg is ChecklistItem {
-    return arg &&
-        typeof arg.title === 'string' &&
-        typeof arg.state_modified === 'number' &&
-        typeof arg.assignee_id === 'string' &&
-        typeof arg.assignee_modified === 'number' &&
-        typeof arg.state === 'string' &&
-        typeof arg.command === 'string' &&
-        typeof arg.command_last_run === 'number';
-}
-
 export const newMetric = (type: MetricType, title = '', description = '', target = null): Metric => ({
     id: '',
     type,
