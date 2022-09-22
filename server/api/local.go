@@ -53,13 +53,79 @@ func (h *LocalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LocalHandler) getMembers(c *Context, w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("members!"))
-	w.WriteHeader(http.StatusOK)
+	playbookIDs := strings.Split(r.URL.Query().Get("playbook_ids"), ",")
+
+	participantByPlaybook := make(map[string][]string, 0)
+	for _, playbookID := range playbookIDs {
+		playbook, err := h.playbookService.Get(playbookID)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+		if len(participantByPlaybook[playbookID]) == 0 {
+			participantByPlaybook[playbookID] = make([]string, 0)
+		}
+		for _, m := range playbook.Members {
+			participantByPlaybook[playbookID] = append(participantByPlaybook[playbookID], m.UserID)
+		}
+	}
+
+	finalMembers := make([]string, 0)
+	for _, sl := range participantByPlaybook {
+		if len(finalMembers) == 0 {
+			finalMembers = sl
+		} else {
+			finalMembers = intersection(finalMembers, sl)
+		}
+	}
+
+	members := make([]boards.BoardMember, 0)
+	for _, fm := range finalMembers {
+		members = append(members, boards.BoardMember{
+			UserID:       fm,
+			SchemeViewer: true,
+		})
+	}
+
+	ReturnJSON(w, members, http.StatusOK)
+
+}
+
+type PlaybookItem struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("playbooks!"))
-	w.WriteHeader(http.StatusOK)
+	userID := r.URL.Query().Get("user_id")
+	teamID := r.URL.Query().Get("team_id")
+
+	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{})
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	items := make([]PlaybookItem, 0)
+	for _, playbook := range playbooks.Items {
+		item := PlaybookItem{
+			ID:   playbook.ID,
+			Name: playbook.Title,
+			Type: "O",
+		}
+		if !playbook.Public {
+			item.Type = "P"
+		}
+		items = append(items, item)
+	}
+
+	ReturnJSON(w, items, http.StatusOK)
 }
 
 func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -129,4 +195,32 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 	// filter those the user don't have permission
 
 	ReturnJSON(w, blocks, http.StatusOK)
+}
+
+func intersection(s1, s2 []string) (inter []string) {
+	hash := make(map[string]bool)
+	for _, e := range s1 {
+		hash[e] = true
+	}
+	for _, e := range s2 {
+		// If elements present in the hashmap then append intersection list.
+		if hash[e] {
+			inter = append(inter, e)
+		}
+	}
+	//Remove dups from slice.
+	inter = removeDuplicates(inter)
+	return
+}
+
+//Remove duplicated values from slice.
+func removeDuplicates(elements []string) (nodups []string) {
+	encountered := make(map[string]bool)
+	for _, element := range elements {
+		if !encountered[element] {
+			nodups = append(nodups, element)
+			encountered[element] = true
+		}
+	}
+	return
 }
