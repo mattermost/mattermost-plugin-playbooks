@@ -79,6 +79,10 @@ interface Props {
     onViewParticipants: () => void;
 }
 
+const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+    margin-left: 7px;
+`;
+
 const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
@@ -122,10 +126,6 @@ const RHSInfoOverview = ({run, channel, runMetadata, followState, editable, play
             setShowAddToChannel(true);
         }
     };
-
-    const StyledArrowIcon = styled(ArrowForwardIosIcon)`
-        margin-left: 7px;
-    `;
 
     return (
         <Section>
@@ -266,10 +266,12 @@ interface ItemProps {
     onClick?: () => void;
 }
 
+const StyledIcon = styled.div`
+    margin-right: 11px;
+`;
+
 const Item = (props: ItemProps) => {
-    const StyledIcon = styled(props.icon)`
-        margin-right: 11px;
-    `;
+    const Icon = props.icon;
 
     return (
         <OverviewRow
@@ -277,10 +279,12 @@ const Item = (props: ItemProps) => {
             data-testid={props.id}
         >
             <OverviewItemName>
-                <StyledIcon
-                    size={18}
-                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                />
+                <StyledIcon>
+                    <Icon
+                        size={18}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                    />
+                </StyledIcon>
                 {props.name}
             </OverviewItemName>
             {props.children}
@@ -289,18 +293,18 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    display: flex;    
+    display: flex;
     flex-direction: row;
     align-items: center;
 
     svg {
         margin-left: 3px;
-    }    
+    }
 `;
 
 const ItemContent = styled.div`
     max-width: 230px;
-    
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
