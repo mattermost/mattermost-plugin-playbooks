@@ -7,41 +7,25 @@ import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-
-import {PlayOutlineIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
-
-import Icon from '@mdi/react';
-import {mdiRestore} from '@mdi/js';
-
+import {PlayOutlineIcon, RestoreIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
-
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-
 import {GlobalState} from '@mattermost/types/store';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
-
 import Tooltip from 'src/components/widgets/tooltip';
-
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
-
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-
 import {navigateToUrl} from 'src/browser_routing';
+import {usePlaybookMembership} from 'src/graphql/hooks';
+import {Timestamp} from 'src/webapp_globals';
+import {openPlaybookRunModal} from 'src/actions';
 
 import {DotMenuButton} from '../dot_menu';
-
-import {usePlaybookMembership} from 'src/graphql/hooks';
-
-import {Timestamp} from 'src/webapp_globals';
-
-import {openPlaybookRunModal} from 'src/actions';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -304,10 +288,7 @@ const PlaybookListRow = (props: Props) => {
                                 <DropdownMenuItem
                                     onClick={props.onRestore}
                                 >
-                                    <Icon
-                                        path={mdiRestore}
-                                        size='18px'
-                                    />
+                                    <RestoreIcon size={18}/>
                                     <FormattedMessage defaultMessage='Restore'/>
                                 </DropdownMenuItem>
                             ) : (
