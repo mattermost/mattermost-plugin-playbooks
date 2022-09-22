@@ -268,6 +268,35 @@ export default class Plugin {
                 return data;
             });
         }
+
+        // // Command Palette Handler
+        if (registry.registerSearchInProductHandler) {
+            registry.registerSearchInProductHandler(async (query) => {
+                console.log('got playbooks search', query);
+            });
+        }
+
+        if (registry.registerRecentlyViewedInProductHandler) {
+            registry.registerRecentlyViewedInProductHandler(() => {
+                let recentlyViewedPlaybooks;
+                try {
+                    recentlyViewedPlaybooks = JSON.parse(localStorage.getItem('recently-viewed-playbooks'));
+                } catch (e) {
+                }
+
+                if (!Array.isArray(recentlyViewedPlaybooks)) {
+                    recentlyViewedPlaybooks = [];
+                }
+
+                return recentlyViewedPlaybooks.map((playbook) => ({
+                    id: playbook.id,
+                    type: 'playbooks', // CommandPaletteEntities.Playbook,
+                    teamId: playbook.team_id,
+                    title: playbook.title,
+                    description: playbook.title,
+                }));
+            });
+        }
     }
 
     userActivityWatch(): void {

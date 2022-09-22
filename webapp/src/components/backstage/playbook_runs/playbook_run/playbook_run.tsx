@@ -16,6 +16,7 @@ import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
+import {useRunIsRecentlyViewed} from 'src/hooks/recently_viewed';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
@@ -95,6 +96,7 @@ const PlaybookRunDetails = () => {
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
     usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
+    useRunIsRecentlyViewed(playbookRun);
 
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);

@@ -20,6 +20,7 @@ import {pluginErrorUrl} from 'src/browser_routing';
 import {
     useForceDocumentTitle,
     useStats,
+    usePlaybookIsRecentlyViewed,
 } from 'src/hooks';
 
 import {telemetryEventForPlaybook} from 'src/client';
@@ -62,6 +63,7 @@ const PlaybookEditor = () => {
     const currentUserId = useSelector(getCurrentUserId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
+    usePlaybookIsRecentlyViewed(playbook);
 
     const headingRef = useRef<HTMLDivElement>(null);
     const headingIntersection = useIntersection(headingRef, {threshold: 1});
