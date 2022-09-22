@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useCallback} from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
@@ -21,12 +21,10 @@ import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
-    finishRun,
     playbookRunUpdated,
 } from 'src/actions';
 import {
     Checklist,
-    ChecklistItemState,
     ChecklistItem,
 } from 'src/types/playbook';
 import {
@@ -34,11 +32,7 @@ import {
     clientMoveChecklistItem,
     clientAddChecklist,
 } from 'src/client';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
-import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -54,7 +48,6 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
-    enableFinishRun: boolean;
     isReadOnly: boolean;
     checklistsCollapseState: Record<number, boolean>;
     onChecklistCollapsedStateChange: (checklistIndex: number, state: boolean) => void;
@@ -63,21 +56,9 @@ interface Props {
     itemButtonsFormat?: ItemButtonsFormat;
 }
 
-const RHSGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        color: var(--center-channel-color-64);
-    }
-
-    &&:hover:not([disabled]) {
-        color: var(--center-channel-color-72);
-        background-color: var(--center-channel-color-08);
-    }
-`;
-
 const ChecklistList = ({
     playbookRun,
     playbook: inPlaybook,
-    enableFinishRun,
     isReadOnly,
     checklistsCollapseState,
     onChecklistCollapsedStateChange,
@@ -87,16 +68,6 @@ const ChecklistList = ({
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-
-    const checklistsPunchout = useMeasurePunchouts(
-        ['pb-checklists-inner-container'],
-        [],
-        {y: -5, height: 10, x: -5, width: 10},
-    );
-    const showRunDetailsChecklistsStep = useShowTutorialStep(
-        RunDetailsTutorialSteps.Checklists,
-        TutorialTourCategories.RUN_DETAILS
-    );
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
@@ -125,8 +96,6 @@ const ChecklistList = ({
         updatePlaybook({checklists: updated});
     }, [updatePlaybook]), 0);
     const checklists = playbookRun?.checklists || playbook?.checklists || [];
-    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
     const disabled = finished || archived || isReadOnly;
@@ -378,6 +347,7 @@ const ChecklistList = ({
                                                 ) : undefined}
                                             >
                                                 <GenericChecklist
+                                                    id={playbookRun?.id || ''}
                                                     playbookRun={playbookRun}
                                                     disabled={disabled}
                                                     checklist={checklist}
@@ -403,29 +373,6 @@ const ChecklistList = ({
                 </Droppable>
                 {!disabled && addChecklist}
             </DragDropContext>
-            {
-                active && enableFinishRun && playbookRun &&
-                <FinishButton onClick={() => dispatch(finishRun(playbookRun?.team_id || ''))}>
-                    {formatMessage({defaultMessage: 'Finish run'})}
-                </FinishButton>
-            }
-            <RHSGiveFeedbackButton/>
-            {showRunDetailsChecklistsStep && (
-                <TutorialTourTip
-                    title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
-                    screen={<FormattedMessage defaultMessage='Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.'/>}
-                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
-                    step={RunDetailsTutorialSteps.Checklists}
-                    showOptOut={false}
-                    placement='left'
-                    pulsatingDotPlacement='top-start'
-                    pulsatingDotTranslate={{x: 0, y: 0}}
-                    width={352}
-                    autoTour={true}
-                    punchOut={checklistsPunchout}
-                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.Checklists}_Checklists`}
-                />
-            )}
         </>
     );
 };
@@ -485,30 +432,4 @@ const IconWrapper = styled.div`
     margin: 0;
 `;
 
-const StyledTertiaryButton = styled(TertiaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
 export default ChecklistList;
-
-const allComplete = (checklists: Checklist[]) => {
-    return notFinishedTasks(checklists) === 0;
-};
-
-const notFinishedTasks = (checklists: Checklist[]) => {
-    let count = 0;
-    for (const list of checklists) {
-        for (const item of list.items) {
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
-                count++;
-            }
-        }
-    }
-    return count;
-};

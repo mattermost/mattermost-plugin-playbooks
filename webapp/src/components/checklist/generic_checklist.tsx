@@ -9,7 +9,6 @@ import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {PlaybookRun} from 'src/types/playbook_run';
 import {
     Checklist,
     ChecklistItem,
@@ -17,13 +16,15 @@ import {
 } from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-    playbookRun?: PlaybookRun;
+    id: string
+    playbookRun?: PlaybookRun
     disabled: boolean;
     checklist: Checklist;
     checklistIndex: number;
@@ -70,7 +71,7 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    const keys = generateKeys(props.checklist.items.map((item) => props.playbookRun?.id + item.title));
+    const keys = generateKeys(props.checklist.items.map((item) => props.id + item.title));
 
     return (
         <Droppable
