@@ -17,16 +17,17 @@ require (
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
+	github.com/mattermost/focalboard/server v0.0.0-20220919151000-d45a5c7ec490
 	github.com/mattermost/mattermost-plugin-api v0.0.29
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost-server/v6 v6.0.0-20220728170913-b9d062ddfa66
+	github.com/mattermost/mattermost-server/v6 v6.0.0-20220802151854-f07c31c5d933
 	github.com/mattermost/morph v0.0.0-20220401091636-39f834798da8
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 	gopkg.in/guregu/null.v4 v4.0.0
 )
@@ -97,6 +98,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.1 // indirect
 	github.com/hashicorp/go-plugin v1.4.4 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -104,10 +106,12 @@ require (
 	github.com/klauspost/compress v1.15.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.13 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
+	github.com/krolaw/zipstream v0.0.0-20180621105154-0a2661891f94 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80 // indirect
 	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect
+	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattermost/go-i18n v1.11.1-0.20211013152124-5c415071e404 // indirect
 	github.com/mattermost/gziphandler v0.0.1 // indirect
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d // indirect
@@ -140,7 +144,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
+	github.com/prometheus/common v0.33.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/reflog/dateconstraints v0.2.1 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
@@ -150,11 +154,17 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
+	github.com/spf13/afero v1.8.2 // indirect
+	github.com/spf13/cast v1.4.1 // indirect
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/viper v1.10.1 // indirect
 	github.com/splitio/go-client/v6 v6.1.0 // indirect
 	github.com/splitio/go-split-commons/v3 v3.1.0 // indirect
 	github.com/splitio/go-toolkit/v4 v4.2.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
+	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/throttled/throttled v2.2.5+incompatible // indirect
 	github.com/tidwall/gjson v1.14.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -175,7 +185,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/net v0.0.0-20220614195744-fb05da6f9022 // indirect
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220614162138-6c1b26c55098 // indirect
 	golang.org/x/text v0.3.7 // indirect

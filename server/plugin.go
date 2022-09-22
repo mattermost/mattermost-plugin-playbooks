@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,6 +70,9 @@ type Plugin struct {
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+
+	// Local server on unix socket to serve internal requests
+	localServer *http.Server
 }
 
 type StatusRecorder struct {
@@ -84,6 +88,11 @@ func (r *StatusRecorder) WriteHeader(status int) {
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.handler.ServeHTTP(w, r)
+}
+
+func (p *Plugin) OnDeactivate() error {
+	p.stopLocalServer()
+	return nil
 }
 
 // OnActivate Called when this plugin is activated.
@@ -279,8 +288,45 @@ func (p *Plugin) OnActivate() error {
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
+	if err = p.startLocalModeServer(pluginAPIClient); err != nil {
+		logrus.WithError(err).Error("Failed to start local server")
+	}
 
 	return nil
+}
+
+func (p *Plugin) startLocalModeServer(pluginAPIClient *pluginapi.Client) error {
+	p.localServer = &http.Server{
+		Handler: api.NewLocalHandler(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.permissions), //p.localRouter,
+	}
+
+	socket := "/tmp/localserver.socket" // *s.platform.Config().ServiceSettings.LocalModeSocketLocation
+	if err := os.RemoveAll(socket); err != nil {
+		return errors.Wrapf(err, "Can not remove socket file %s", socket)
+	}
+
+	unixListener, err := net.Listen("unix", socket)
+	if err != nil {
+		return errors.Wrapf(err, "Can not listen on socket file %s", socket)
+	}
+	if err = os.Chmod(socket, 0600); err != nil {
+		return errors.Wrapf(err, "Cannot chmod socket file %s", socket)
+	}
+
+	go func() {
+		err = p.localServer.Serve(unixListener)
+		if err != nil && err != http.ErrServerClosed {
+			logrus.WithField("socket", socket).Error("Error starting unix socket server")
+		}
+		logrus.Info("Playbooks local server started")
+	}()
+	return nil
+}
+
+func (p *Plugin) stopLocalServer() {
+	if p.localServer != nil {
+		p.localServer.Close()
+	}
 }
 
 // OnConfigurationChange handles any change in the configuration.

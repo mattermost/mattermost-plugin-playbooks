@@ -999,6 +999,10 @@ type PlaybookRunFilterOptions struct {
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
 
+	// PlaybookIDs filters playbook runs that are derived from this playbook ids.
+	// Defaults to nil (no filter).
+	PlaybookIDs []string `url:"playbook_id,omitempty"`
+
 	// ActiveGTE filters playbook runs that were active after (or equal) to the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	ActiveGTE int64 `url:"active_gte,omitempty"`
