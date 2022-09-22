@@ -56,8 +56,8 @@ describe('playbooks > edit', () => {
 
             // # Add a new member
             cy.findByTestId('add-people-input').type(testUser2.username);
-            cy.wait(2000);
-            cy.findByTestId('add-people-input').get('body').tab({force: true});
+            cy.wait(500);
+            cy.findByTestId('profile-option-' + testUser2.username).click({force: true});
 
             // * Verify that user was added
             cy.findByTestId('members-list').findByText(testUser2.username).should('exist');
