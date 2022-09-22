@@ -107,7 +107,12 @@ func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{})
+	options := app.PlaybookFilterOptions{
+		Page:    0,
+		PerPage: 100,
+	}
+
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, options)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
