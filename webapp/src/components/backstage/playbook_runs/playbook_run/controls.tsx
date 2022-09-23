@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ArrowDownIcon, BullhornOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {ArrowDownIcon, BullhornOutlineIcon, ClockOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
@@ -9,11 +9,13 @@ import {useDispatch} from 'react-redux';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRun, playbookRunIsActive, playbookStatusUpdateEnabled} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
 import {useToaster} from '../../toast_banner';
 import {Role, Separator} from '../shared';
+
+import {useEnableOrDisableRunStatusUpdate} from './enable_disable_run_status_update';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
@@ -173,4 +175,45 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     }
 
     return null;
+};
+
+export const EnableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
+    return (
+        <>
+            {!playbookStatusUpdateEnabled(props.playbookRun) && props.role === Role.Participant &&
+                <>
+                    <Separator/>
+                    <StyledDropdownMenuItem
+                        onClick={() => runStatusUpdate('enable')}
+                        className='restartRun'
+                    >
+                        <ClockOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Enable status update'/>
+                    </StyledDropdownMenuItem>
+                </>
+            }
+        </>
+    );
+};
+
+export const DisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
+
+    return (
+        <>
+            {playbookStatusUpdateEnabled(props.playbookRun) && props.role === Role.Participant &&
+                <>
+                    <Separator/>
+                    <StyledDropdownMenuItem
+                        onClick={() => runStatusUpdate('disable')}
+                        className='restartRun'
+                    >
+                        <ClockOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Disable status update'/>
+                    </StyledDropdownMenuItem>
+                </>
+            }
+        </>
+    );
 };

@@ -7,22 +7,12 @@ import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-<<<<<<< HEAD
-import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, ClockOutlineIcon} from '@mattermost/compass-icons/components';
-=======
->>>>>>> master
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {showRunActionsModal} from 'src/actions';
-<<<<<<< HEAD
-import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
-import {PlaybookRun, playbookRunIsActive, playbookStatusUpdateEnabled} from 'src/types/playbook_run';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-=======
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
->>>>>>> master
 import {SemiBoldHeading} from 'src/styles/headings';
 import {useRunMembership} from 'src/graphql/hooks';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
@@ -31,13 +21,7 @@ import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-<<<<<<< HEAD
-import {useOnFinishRun} from './finish_run';
-import {useOnRestoreRun} from './restore_run';
-import {useEnableOrDisableRunStatusUpdate} from './enable_disable_run_status_update';
-=======
-import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
->>>>>>> master
+import {CopyRunLinkMenuItem, DisableRunStatusUpdateMenuItem, EnableRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -52,22 +36,6 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showModal, setShowModal] = useState(false);
 
-<<<<<<< HEAD
-    const onExportClick = () => {
-        if (!allowChannelExport) {
-            setShowModal(true);
-            return;
-        }
-
-        window.location.href = exportChannelUrl(playbookRun.channel_id);
-    };
-
-    const onFinishRun = useOnFinishRun(playbookRun);
-    const onRestoreRun = useOnRestoreRun(playbookRun);
-    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(playbookRun);
-
-=======
->>>>>>> master
     return (
         <>
             <DotMenu
@@ -84,101 +52,6 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 }
             >
 
-<<<<<<< HEAD
-                <StyledDropdownMenuItem
-                    onClick={() => {
-                        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
-                        addToast(formatMessage({defaultMessage: 'Copied!'}));
-                    }}
-                >
-                    <LinkVariantIcon size={18}/>
-                    <FormattedMessage defaultMessage='Copy link'/>
-                </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem
-                    onClick={() => dispatch(showRunActionsModal())}
-                >
-                    <LightningBoltOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Run actions'/>
-                </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem
-                    disabled={!exportAvailable}
-                    disabledAltText={formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
-                    onClick={onExportClick}
-                >
-                    <ArrowDownIcon size={18}/>
-                    <FormattedMessage defaultMessage='Export channel log'/>
-                </StyledDropdownMenuItem>
-                {
-                    !playbookStatusUpdateEnabled(playbookRun) && role === Role.Participant &&
-                        <>
-                            <Separator/>
-                            <StyledDropdownMenuItem
-                                onClick={() => runStatusUpdate('enable')}
-                                className='restartRun'
-                            >
-                                <ClockOutlineIcon size={18}/>
-                                <FormattedMessage
-                                    defaultMessage='Enable status update'
-                                />
-                            </StyledDropdownMenuItem>
-                        </>
-                }
-                {
-                    playbookStatusUpdateEnabled(playbookRun) && role === Role.Participant &&
-                        <>
-                            <Separator/>
-                            <StyledDropdownMenuItem
-                                onClick={() => runStatusUpdate('disable')}
-                                className='restartRun'
-                            >
-                                <ClockOutlineIcon size={18}/>
-                                <FormattedMessage
-                                    defaultMessage='Disable status update'
-                                />
-                            </StyledDropdownMenuItem>
-                        </>
-                }
-                {
-                    playbookRunIsActive(playbookRun) && role === Role.Participant &&
-                        <>
-                            <Separator/>
-                            <StyledDropdownMenuItem
-                                onClick={onFinishRun}
-                            >
-                                <FlagOutlineIcon size={18}/>
-                                <FormattedMessage defaultMessage='Finish run'/>
-                            </StyledDropdownMenuItem>
-                        </>
-                }
-                {
-                    !playbookRunIsActive(playbookRun) && role === Role.Participant &&
-                        <>
-                            <Separator/>
-                            <StyledDropdownMenuItem
-                                onClick={onRestoreRun}
-                                className='restartRun'
-                            >
-                                <FlagOutlineIcon size={18}/>
-                                <FormattedMessage
-                                    defaultMessage='Restart run'
-                                />
-                            </StyledDropdownMenuItem>
-                        </>
-                }
-                {
-                    role === Role.Participant &&
-                    <>
-                        <Separator/>
-                        <StyledDropdownMenuItemRed onClick={showLeaveRunConfirm}>
-                            <CloseIcon size={18}/>
-                            <FormattedMessage
-                                defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
-                                values={{isFollowing}}
-                            />
-                        </StyledDropdownMenuItemRed>
-                    </>
-                }
-=======
                 <FavoriteRunMenuItem
                     isFavoriteRun={isFavoriteRun}
                     toggleFavorite={toggleFavorite}
@@ -202,12 +75,19 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     playbookRun={playbookRun}
                     role={role}
                 />
+                <EnableRunStatusUpdateMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
+                <DisableRunStatusUpdateMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
                 <LeaveRunMenuItem
                     isFollowing={isFollowing}
                     role={role}
                     showLeaveRunConfirm={showLeaveRunConfirm}
                 />
->>>>>>> master
             </DotMenu>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
