@@ -7,11 +7,11 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
-import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon} from '@mattermost/compass-icons/components';
+import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {showRunActionsModal} from 'src/actions';
 import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRun, playbookRunIsActive, playbookStatusUpdateEnabled} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {copyToClipboard} from 'src/utils';
@@ -26,6 +26,7 @@ import {useLHSRefresh} from '../../lhs_navigation';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
+import {useEnableOrDisableRunStatusUpdate} from './enable_disable_run_status_update';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -55,6 +56,7 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
 
     const onFinishRun = useOnFinishRun(playbookRun);
     const onRestoreRun = useOnRestoreRun(playbookRun);
+    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(playbookRun);
 
     return (
         <>
@@ -103,6 +105,36 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     <ArrowDownIcon size={18}/>
                     <FormattedMessage defaultMessage='Export channel log'/>
                 </StyledDropdownMenuItem>
+                {
+                    !playbookStatusUpdateEnabled(playbookRun) && role === Role.Participant &&
+                        <>
+                            <Separator/>
+                            <StyledDropdownMenuItem
+                                onClick={() => runStatusUpdate('enable')}
+                                className='restartRun'
+                            >
+                                <ClockOutlineIcon size={18}/>
+                                <FormattedMessage
+                                    defaultMessage='Enable status update'
+                                />
+                            </StyledDropdownMenuItem>
+                        </>
+                }
+                {
+                    playbookStatusUpdateEnabled(playbookRun) && role === Role.Participant &&
+                        <>
+                            <Separator/>
+                            <StyledDropdownMenuItem
+                                onClick={() => runStatusUpdate('disable')}
+                                className='restartRun'
+                            >
+                                <ClockOutlineIcon size={18}/>
+                                <FormattedMessage
+                                    defaultMessage='Disable status update'
+                                />
+                            </StyledDropdownMenuItem>
+                        </>
+                }
                 {
                     playbookRunIsActive(playbookRun) && role === Role.Participant &&
                         <>

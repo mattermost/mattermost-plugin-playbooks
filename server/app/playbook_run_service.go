@@ -913,6 +913,27 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 	return announcementMsg
 }
 
+func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
+	telemetryString := fmt.Sprintf("?telem_run_id=%s", playbookRun.ID)
+	announcementMsg := fmt.Sprintf(
+		"### Run status update %s : [%s](%s%s)\n",
+		status,
+		playbookRun.Name,
+		GetRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
+	)
+	announcementMsg += fmt.Sprintf(
+		"@%s %s status update for [%s](%s%s). Visit the link above for more information.",
+		userName,
+		status,
+		playbookRun.Name,
+		GetRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
+	)
+
+	return announcementMsg
+}
+
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1000,6 +1021,104 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		webhookEvent := PlaybookRunWebhookEvent{
 			Type:   RunFinished,
 			At:     endAt,
+			UserID: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
+		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
+	}
+
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, userID string, enable bool) error {
+
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	updateAt := model.GetMillis()
+	if err = s.store.UpdatePlaybookStatusUpdateEnable(playbookRunID, enable); err != nil {
+		return err
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	statusUpdate := "enabled"
+	eventType := StatusUpdateEnabled
+
+	if enable == false {
+		statusUpdate = "disabled"
+		eventType = StatusUpdateDisabled
+	}
+
+	message := fmt.Sprintf("@%s %s the status update for this run", user.Username, statusUpdate)
+	postID := ""
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to post the status update to channel", "ChannelID", playbookRunToModify.ChannelID)
+	} else {
+		postID = post.Id
+	}
+
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify)
+		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
+	}
+
+	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
+	s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID)
+
+	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
+	s.RemoveReminder(playbookRunID)
+
+	err = s.resetReminderTimer(playbookRunID)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
+	}
+
+	// We are resolving the playbook run. Send the reminder to fill out the retrospective
+	// Also start the recurring reminder if enabled.
+	if s.licenseChecker.RetrospectiveAllowed() {
+		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
+			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
+				return errors.Wrap(err, "couldn't post retrospective reminder")
+			}
+			s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+			if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
+				if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
+				}
+			}
+		}
+	}
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      updateAt,
+		EventAt:       updateAt,
+		EventType:     eventType,
+		PostID:        postID,
+		SubjectUserID: userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		return err
+	}
+
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   eventType,
+			At:     updateAt,
 			UserID: userID,
 		}
 
@@ -3096,6 +3215,8 @@ const (
 	restoreMessage             messageType = "restore"
 	retroMessage               messageType = "retrospective"
 	statusUpdateMessage        messageType = "status update"
+	statusUpdateEnabled        messageType = "status update enabled"
+	statusUpdateDisabled       messageType = "status update disabled"
 )
 
 // broadcasting to channels

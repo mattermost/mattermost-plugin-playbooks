@@ -198,7 +198,8 @@ const TimelineEventItem = (props: Props) => {
             />
         </TimeBetween>
     );
-
+        // eslint-disable-next-line no-console
+    console.log(props.event.event_type);
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';
@@ -278,6 +279,16 @@ const TimelineEventItem = (props: Props) => {
         iconClass = 'icon icon-cancel';
         summaryTitle = formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.CanceledRetrospective;
+        break;
+    case TimelineEventType.StatusUpdateEnabled:
+        iconClass = 'icon icon-flag-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status update enabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdateEnabled;
+        break;
+    case TimelineEventType.StatusUpdateDisabled:
+        iconClass = 'icon icon-flag-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status update disabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdateDisabled;
         break;
     }
 

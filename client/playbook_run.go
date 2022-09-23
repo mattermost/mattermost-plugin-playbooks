@@ -101,6 +101,8 @@ const (
 	CanceledRetrospective  TimelineEventType = "canceled_retrospective"
 	RunFinished            TimelineEventType = "run_finished"
 	RunRestored            TimelineEventType = "run_restored"
+	StatusUpdateEnabled    TimelineEventType = "status_update_enabled"
+	StatusUpdateDisabled   TimelineEventType = "status_update_disabled"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.

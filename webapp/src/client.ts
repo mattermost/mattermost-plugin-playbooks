@@ -311,6 +311,14 @@ export async function restoreRun(playbookRunId: string) {
     }
 }
 
+export async function runStatusUpdate(playbookRunId: string, status:'enable' | 'disable') {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/status-update/${status}`);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {

@@ -93,6 +93,8 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", handler.updateRunActions).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/leave", handler.leave).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/status-update/enable", handler.enableStatusUpdate).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update/disable", handler.disableStatusUpdate).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -945,6 +947,34 @@ func (h *PlaybookRunHandler) finishDialog(w http.ResponseWriter, r *http.Request
 		h.HandleError(w, err)
 		return
 	}
+}
+
+func (h *PlaybookRunHandler) enableStatusUpdate(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, true); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
+
+}
+
+func (h *PlaybookRunHandler) disableStatusUpdate(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, false); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
+
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a
