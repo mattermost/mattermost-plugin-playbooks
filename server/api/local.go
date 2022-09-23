@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	boards "github.com/mattermost/focalboard/server/model"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app/transform"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
@@ -159,7 +159,7 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 
 	options := app.PlaybookRunFilterOptions{
 		PlaybookIDs: playbookIDs,
-		TeamID:      "mgxhrprsjbrx9yqsoacrqqkgro",
+		TeamID:      teamID,
 		Statuses:    []string{"InProgress", "Finished"},
 		Direction:   app.DirectionDesc,
 		Sort:        app.SortField("last_status_update_at"),
@@ -177,29 +177,9 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	blocks := make([]boards.Block, 0)
-	for _, run := range results.Items {
-		blocks = append(blocks, boards.Block{
-			ID:         fmt.Sprintf("A+%s", run.ID),
-			ParentID:   "",
-			CreatedBy:  run.OwnerUserID, // TODO: look for a better data
-			ModifiedBy: run.OwnerUserID, // TODO: look for a better data
-			Schema:     1,
-			Type:       boards.TypeCard,
-			Title:      run.Name,
-			Fields: map[string]interface{}{
-				"status":          run.CurrentStatus,
-				"playbookrun_url": fmt.Sprintf("/playbooks/runs/%s", run.ID),
-			},
-			CreateAt: run.CreateAt,
-			// UpdateAt: TODO check this data
-			BoardID: boardID,
-		})
-	}
+	blocks := transform.BoardsPlaybookRun{PlaybookRuns: results.Items}
 
-	// filter those the user don't have permission
-
-	ReturnJSON(w, blocks, http.StatusOK)
+	ReturnJSON(w, blocks.Transform(boardID), http.StatusOK)
 }
 
 func intersection(s1, s2 []string) (inter []string) {
