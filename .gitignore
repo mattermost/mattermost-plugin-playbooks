@@ -15,3 +15,4 @@ report.xml
 webapp/src/manifest.js
 server/manifest.go
 server/data/
+server/e2etest.config.json

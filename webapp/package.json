@@ -17,7 +17,8 @@
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
     "check-types": "tsc",
     "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
-    "graphql": "graphql-codegen --config graphql_gen.yml"
+    "graphql": "graphql-codegen --config graphql_gen.yml",
+    "report-unused-exports": "ts-prune"
   },
   "author": "",
   "license": "",
@@ -81,6 +82,7 @@
     "eslint-plugin-react-hooks": "4.3.0",
     "eslint-plugin-unused-imports": "2.0.0",
     "file-loader": "^6.2.0",
+    "identity-obj-proxy": "3.0.0",
     "image-webpack-loader": "^8.0.1",
     "jest": "27.4.7",
     "jest-canvas-mock": "2.3.1",
@@ -94,6 +96,7 @@
     "sass": "1.46.0",
     "sass-loader": "12.4.0",
     "style-loader": "3.3.1",
+    "ts-prune": "0.10.3",
     "webpack": "5.65.0",
     "webpack-cli": "4.9.1",
     "webpack-dev-server": "4.7.2"
@@ -102,7 +105,7 @@
     "@apollo/client": "3.5.10",
     "@floating-ui/react-dom-interactions": "0.6.3",
     "@mattermost/client": "7.1.0",
-    "@mattermost/compass-icons": "0.1.24",
+    "@mattermost/compass-icons": "0.1.26",
     "@mattermost/types": "7.1.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",

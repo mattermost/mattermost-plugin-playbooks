@@ -5,8 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/sirupsen/logrus"
 )
 
 // Service prometheus to run the server.
@@ -15,22 +14,19 @@ type Service struct {
 }
 
 type ErrorLoggerWrapper struct {
-	log *pluginapi.LogService
 }
 
 func (el *ErrorLoggerWrapper) Println(v ...interface{}) {
-	el.log.Error("metric server error", v)
+	logrus.Warn("metric server error", v)
 }
 
 // NewMetricsServer factory method to create a new prometheus server.
-func NewMetricsServer(address string, metricsService *Metrics, logger *pluginapi.LogService) *Service {
+func NewMetricsServer(address string, metricsService *Metrics) *Service {
 	return &Service{
 		&http.Server{
 			Addr: address,
 			Handler: promhttp.HandlerFor(metricsService.registry, promhttp.HandlerOpts{
-				ErrorLog: &ErrorLoggerWrapper{
-					log: logger,
-				},
+				ErrorLog: &ErrorLoggerWrapper{},
 			}),
 		},
 	}

@@ -175,6 +175,7 @@ const UserLine = (props: UserLineProps) => {
             <DotMenu
                 placement='bottom-end'
                 dotMenuButton={MemberButton}
+                portal={false}
                 icon={
                     <IconWrapper>
                         {roleDisplayText(props.member.roles)}

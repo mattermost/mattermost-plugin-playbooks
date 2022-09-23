@@ -7,9 +7,7 @@ import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/use
 
 import {Client4} from 'mattermost-redux/client';
 
-import Icon from '@mdi/react';
-import {mdiNotebookOutline, mdiAccountOutline} from '@mdi/js';
-
+import {NotebookOutlineIcon, AccountOutlineIcon} from '@mattermost/compass-icons/components';
 import {GlobalState} from '@mattermost/types/store';
 
 import {displayUsername, getFullName} from 'mattermost-redux/utils/user_utils';
@@ -90,10 +88,7 @@ const RunPlaybookModal = ({
                 <PlaybookDetail>
                     <PlaybookNameAndTitle>
                         <PlaybookNameTitle>
-                            <PlaybookIcon
-                                path={mdiNotebookOutline}
-                                size={0.95}
-                            />
+                            <NotebookOutlineIcon size={14}/>
                             <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
                         </PlaybookNameTitle>
                         <PlaybookName>
@@ -102,10 +97,7 @@ const RunPlaybookModal = ({
                     </PlaybookNameAndTitle>
                     <PlaybookOwnerAndTitle>
                         <PlaybookOwnerTitle>
-                            <PlaybookIcon
-                                path={mdiAccountOutline}
-                                size={0.95}
-                            />
+                            <AccountOutlineIcon size={14}/>
                             <div>
                                 {formatMessage({defaultMessage: 'Owner'})}
                             </div>
@@ -170,10 +162,6 @@ const Body = styled.div`
     & > div, & > input {
         margin-bottom: 12px;
     }
-`;
-
-const PlaybookIcon = styled(Icon)`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const PlaybookDetail = styled.div`

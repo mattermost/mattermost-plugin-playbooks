@@ -9,6 +9,8 @@ import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 
 import {pluginUrl} from 'src/browser_routing';
+import {LHSPlaybookDotMenu} from '../backstage/lhs_playbook_dot_menu';
+import {LHSRunDotMenu} from '../backstage/lhs_run_dot_menu';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -43,7 +45,11 @@ const useLHSData = (teamID: string) => {
             icon,
             link,
             isCollapsed: false,
-            itemMenu: null,
+            itemMenu: (
+                <LHSPlaybookDotMenu
+                    playbookId={pb.id}
+                    isFavorite={pb.isFavorite}
+                />),
             isFavorite: pb.isFavorite,
             className: '',
         };
@@ -51,9 +57,15 @@ const useLHSData = (teamID: string) => {
     const playbookFavorites = playbookItems.filter((group) => group.isFavorite);
     const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
 
+    const hasViewerAccessToPlaybook = (playbookId: string) => {
+        // if the run's playbook is visible to the user, then they have permanent access to the run
+        return data.playbooks.find((pb) => pb.id === playbookId) !== undefined;
+    };
+
     const runItems = data.runs.map((run) => {
         const icon = 'icon-play-outline';
         const link = pluginUrl(`/runs/${run.id}`);
+
         return {
             areaLabel: run.name,
             display_name: run.name,
@@ -61,7 +73,15 @@ const useLHSData = (teamID: string) => {
             icon,
             link,
             isCollapsed: false,
-            itemMenu: null,
+            itemMenu: (
+                <LHSRunDotMenu
+                    playbookRunId={run.id}
+                    isFavorite={run.isFavorite}
+                    ownerUserId={run.ownerUserID}
+                    participantIDs={run.participantIDs}
+                    followerIDs={run.metadata.followers}
+                    hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbookID)}
+                />),
             isFavorite: run.isFavorite,
             className: '',
         };

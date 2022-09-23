@@ -15,7 +15,7 @@ func TestPlaybookRunStore_CreateTimelineEvent(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		iStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 
@@ -104,7 +104,7 @@ func TestPlaybookRunStore_UpdateTimelineEvent(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		iStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 

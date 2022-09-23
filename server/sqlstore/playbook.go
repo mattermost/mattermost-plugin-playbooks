@@ -9,7 +9,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -28,7 +27,6 @@ type sqlPlaybook struct {
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type playbookStore struct {
 	pluginAPI      PluginAPIClient
-	log            bot.Logger
 	store          *SQLStore
 	queryBuilder   sq.StatementBuilderType
 	playbookSelect sq.SelectBuilder
@@ -107,7 +105,7 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 }
 
 // NewPlaybookStore creates a new store for playbook service.
-func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
+func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
 		Select(
 			"p.ID",
@@ -192,7 +190,6 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	newStore := &playbookStore{
 		pluginAPI:      pluginAPI,
-		log:            log,
 		store:          sqlStore,
 		queryBuilder:   sqlStore.builder,
 		playbookSelect: playbookSelect,
@@ -602,6 +599,13 @@ func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]s
 func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if id == "" {
 		return errors.New("id should not be empty")
+	}
+
+	// if checklists are passed and len (as string) is bigger than limit -> fails
+	if _, exists := setmap["ChecklistsJSON"]; exists {
+		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
+			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+		}
 	}
 
 	_, err := p.store.execBuilder(p.store.db, sq.
@@ -1053,6 +1057,10 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
+	}
+
+	if len(checklistsJSON) > maxJSONLength {
+		return nil, errors.Wrapf(err, "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybook{

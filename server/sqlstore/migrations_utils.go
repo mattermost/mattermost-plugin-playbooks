@@ -57,6 +57,22 @@ var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType stri
 	return err
 }
 
+var changeColumnTypeToPGTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
+	_, err := e.Exec(fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			ALTER TABLE %s ALTER COLUMN %s TYPE %s;
+		EXCEPTION
+			WHEN others THEN
+				RAISE NOTICE 'Ignoring ALTER TABLE statement. Column "%s" can not be changed to type %s in table "%s".';
+		END
+		$$;
+	`, tableName, columnName, columnType, columnName, columnType, tableName))
+
+	return err
+}
+
 var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
 	var result int
 	err := e.QueryRowx(
@@ -201,16 +217,16 @@ func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error
 	var err error
 	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		err = sqlStore.db.Select(&results, `
-			SELECT COLUMN_NAME 
-			FROM INFORMATION_SCHEMA.COLUMNS 
-			WHERE TABLE_SCHEMA = DATABASE() 
+			SELECT COLUMN_NAME
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME = ?
 			AND COLUMN_NAME = ?
 		`, tableName, columnName)
 	} else if sqlStore.db.DriverName() == model.DatabaseDriverPostgres {
 		err = sqlStore.db.Select(&results, `
-			SELECT COLUMN_NAME 
-			FROM INFORMATION_SCHEMA.COLUMNS 
+			SELECT COLUMN_NAME
+			FROM INFORMATION_SCHEMA.COLUMNS
 			WHERE TABLE_NAME = $1
 			AND COLUMN_NAME = $2
 		`, strings.ToLower(tableName), strings.ToLower(columnName))
@@ -237,9 +253,9 @@ func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
 
 	if store.db.DriverName() == model.DatabaseDriverMysql {
 		err = store.db.Select(&results, `
-			SELECT 
-				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType, 
-				IS_NULLABLE as IsNullable, COLUMN_KEY as ColumnKey, COLUMN_DEFAULT as ColumnDefault, 
+			SELECT
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType,
+				IS_NULLABLE as IsNullable, COLUMN_KEY as ColumnKey, COLUMN_DEFAULT as ColumnDefault,
 				EXTRA as Extra, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
 
 			FROM INFORMATION_SCHEMA.COLUMNS
@@ -250,8 +266,8 @@ func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
 		`)
 	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
 		err = store.db.Select(&results, `
-			SELECT 
-				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType, 
+			SELECT
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType,
 				IS_NULLABLE as IsNullable, COLUMN_DEFAULT as ColumnDefault, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
 
 			FROM INFORMATION_SCHEMA.COLUMNS
@@ -284,7 +300,7 @@ func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
 	if store.db.DriverName() == model.DatabaseDriverMysql {
 		err = store.db.Select(&results, `
 			SELECT TABLE_NAME as TableName, INDEX_NAME as IndexName, COLUMN_NAME as ColumnName
-			FROM INFORMATION_SCHEMA.STATISTICS 
+			FROM INFORMATION_SCHEMA.STATISTICS
 			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME LIKE 'ir_%'
 			AND TABLE_NAME != 'ir_db_migrations'

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import React, {useRef, useState} from 'react';
+import React, {useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -339,17 +339,4 @@ const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
 `;
-export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
-    const [isModalShown, setShowModal] = useState(initialState);
-
-    const showUpgradeModal = () => {
-        setShowModal(true);
-    };
-    const hideUpgradeModal = () => {
-        setShowModal(false);
-    };
-
-    return [isModalShown, showUpgradeModal, hideUpgradeModal];
-};
-
 export default PlaybookList;

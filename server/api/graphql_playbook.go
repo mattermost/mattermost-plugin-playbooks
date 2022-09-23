@@ -107,3 +107,21 @@ func (r *ChecklistItemResolver) CommandLastRun() float64 {
 func (r *ChecklistItemResolver) DueDate() float64 {
 	return float64(r.ChecklistItem.DueDate)
 }
+
+type UpdateChecklist struct {
+	Title string                `json:"title"`
+	Items []UpdateChecklistItem `json:"items"`
+}
+
+type UpdateChecklistItem struct {
+	Title            string  `json:"title"`
+	State            string  `json:"state"`
+	StateModified    float64 `json:"state_modified"`
+	AssigneeID       string  `json:"assignee_id"`
+	AssigneeModified float64 `json:"assignee_modified"`
+	Command          string  `json:"command"`
+	CommandLastRun   float64 `json:"command_last_run"`
+	Description      string  `json:"description"`
+	LastSkipped      float64 `json:"delete_at"`
+	DueDate          float64 `json:"due_date"`
+}

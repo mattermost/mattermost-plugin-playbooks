@@ -8,6 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // ErrNoPermissions if the error is caused by the user not having permissions
@@ -193,7 +194,10 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 
 	if playbook.DefaultOwnerID != "" {
 		if !p.pluginAPI.User.HasPermissionToTeam(playbook.DefaultOwnerID, playbook.TeamID, model.PermissionViewTeam) {
-			p.pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
+			logrus.WithFields(logrus.Fields{
+				"team_id": playbook.TeamID,
+				"user_id": playbook.DefaultOwnerID,
+			}).Warn("owner is not a member of the playbook's team, disabling default owner")
 			playbook.DefaultOwnerID = ""
 			playbook.DefaultOwnerEnabled = false
 		}
@@ -248,7 +252,10 @@ func (p *PermissionsService) FilterInvitedUserIDs(invitedUserIDs []string, teamI
 	filteredUsers := []string{}
 	for _, userID := range invitedUserIDs {
 		if !p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
-			p.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", teamID, "userID", userID)
+			logrus.WithFields(logrus.Fields{
+				"team_id": teamID,
+				"user_id": userID,
+			}).Warn("user does not have permissions to playbook's team, removing from automated invite list")
 			continue
 		}
 		filteredUsers = append(filteredUsers, userID)
@@ -262,12 +269,12 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 		var group *model.Group
 		group, err := p.pluginAPI.Group.Get(groupID)
 		if err != nil {
-			p.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			logrus.WithField("group_id", groupID).Error("failed to query group")
 			continue
 		}
 
 		if !group.AllowReference {
-			p.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			logrus.WithField("group_id", groupID).Warn("group does not allow references, removing from automated invite list")
 			continue
 		}
 

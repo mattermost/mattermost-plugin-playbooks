@@ -66,6 +66,7 @@ type TestEnvironment struct {
 	A   *sapp.App
 
 	Permissions PermissionsHelper
+	logger      mlog.LoggerIFace
 
 	ServerAdminClient        *model.Client4
 	PlaybooksAdminClient     *client.Client
@@ -126,7 +127,19 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
-	_, _, err := configStore.Set(config)
+	config.LogSettings.EnableConsole = model.NewBool(true)
+	config.LogSettings.EnableFile = model.NewBool(false)
+
+	// override config with e2etest.config.json if it exists
+	textConfig, err := os.ReadFile("./e2etest.config.json")
+	if err == nil {
+		err := json.Unmarshal(textConfig, config)
+		if err != nil {
+			require.NoError(t, err)
+		}
+	}
+
+	_, _, err = configStore.Set(config)
 	require.NoError(t, err)
 
 	// Copy ourselves into the correct directory so we are executed.
@@ -182,6 +195,7 @@ func Setup(t *testing.T) *TestEnvironment {
 				App:    ap,
 			},
 		},
+		logger: testLogger,
 	}
 }
 
@@ -189,28 +203,28 @@ func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
 	userPassword := "Password123!"
-	admin, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	admin, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksadmin@example.com",
 		Username: "playbooksadmin",
 		Password: userPassword,
 	})
 	e.AdminUser = admin
 
-	user, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	user, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksuser@example.com",
 		Username: "playbooksuser",
 		Password: userPassword,
 	})
 	e.RegularUser = user
 
-	user2, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	user2, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksuser2@example.com",
 		Username: "playbooksuser2",
 		Password: userPassword,
 	})
 	e.RegularUser2 = user2
 
-	notInTeam, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+	notInTeam, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksusernotinteam@example.com",
 		Username: "playbooksusenotinteam",
 		Password: userPassword,
@@ -452,6 +466,8 @@ func (e *TestEnvironment) SetE20Licence() {
 }
 
 func (e *TestEnvironment) CreateBasic() {
+	e.T.Helper()
+
 	e.CreateClients()
 	e.CreateBasicServer()
 	e.SetE20Licence()

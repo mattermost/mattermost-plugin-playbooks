@@ -13,11 +13,6 @@ import {Metric, MetricType} from 'src/types/playbook';
 import MetricsRow from 'src/components/backstage/playbooks/metrics/metrics_row';
 import MetricsRunListHeader from 'src/components/backstage/playbooks/metrics/metrics_run_list_header';
 
-export interface SortParams {
-    index: number; // an index of -1 means we're sorting by 'name', otherwise it's the index of the metric we're sorting by
-    direction: string;
-}
-
 export interface MetricsInfo {
     type: MetricType;
     title: string;

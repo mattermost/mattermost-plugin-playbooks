@@ -5,8 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import Icon from '@mdi/react';
-import {mdiFlagOutline} from '@mdi/js';
+import {FlagOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
@@ -65,10 +64,7 @@ const FinishRun = ({playbookRun}: Props) => {
         <Container data-testid={'run-finish-section'}>
             <Content>
                 <IconWrapper>
-                    <Icon
-                        path={mdiFlagOutline}
-                        size={'20px'}
-                    />
+                    <FlagOutlineIcon size={24}/>
                 </IconWrapper>
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
@@ -104,6 +100,7 @@ const IconWrapper = styled.div`
     display: flex;
     color: rgba(var(--center-channel-color-rgb), 0.32);
 `;
+
 const Text = styled.div`
     margin: 0 4px;
     font-size: 14px;

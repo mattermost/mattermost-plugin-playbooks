@@ -4,47 +4,55 @@
 import styled from 'styled-components';
 
 import React, {useState} from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
+<<<<<<< HEAD
 import {StarIcon, StarOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, ArrowDownIcon, FlagOutlineIcon, CloseIcon, ClockOutlineIcon} from '@mattermost/compass-icons/components';
+=======
+>>>>>>> master
 
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {showRunActionsModal} from 'src/actions';
+<<<<<<< HEAD
 import {exportChannelUrl, getSiteUrl, leaveRun} from 'src/client';
 import {PlaybookRun, playbookRunIsActive, playbookStatusUpdateEnabled} from 'src/types/playbook_run';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+=======
+import {navigateToUrl, pluginUrl} from 'src/browser_routing';
+import {PlaybookRun} from 'src/types/playbook_run';
+import DotMenu from 'src/components/dot_menu';
+>>>>>>> master
 import {SemiBoldHeading} from 'src/styles/headings';
-import {copyToClipboard} from 'src/utils';
+import {useRunMembership} from 'src/graphql/hooks';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
-import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {useLHSRefresh} from '../../lhs_navigation';
 
+<<<<<<< HEAD
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
 import {useEnableOrDisableRunStatusUpdate} from './enable_disable_run_status_update';
+=======
+import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+>>>>>>> master
 
 interface Props {
     playbookRun: PlaybookRun;
     role: Role;
     isFavoriteRun: boolean;
     isFollowing: boolean;
+    hasPermanentViewerAccess: boolean;
     toggleFavorite: () => void;
 }
 
-export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    const {add: addToast} = useToaster();
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(playbookRun, isFollowing);
-    const exportAvailable = useExportLogAvailable();
-    const allowChannelExport = useAllowChannelExport();
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showModal, setShowModal] = useState(false);
 
+<<<<<<< HEAD
     const onExportClick = () => {
         if (!allowChannelExport) {
             setShowModal(true);
@@ -58,6 +66,8 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     const onRestoreRun = useOnRestoreRun(playbookRun);
     const runStatusUpdate = useEnableOrDisableRunStatusUpdate(playbookRun);
 
+=======
+>>>>>>> master
     return (
         <>
             <DotMenu
@@ -73,15 +83,8 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                     </>
                 }
             >
-                <StyledDropdownMenuItem onClick={toggleFavorite}>
-                    {isFavoriteRun ? (
-                        <><StarOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Unfavorite'})}</>
-                    ) : (
-                        <><StarIcon size={18}/>{formatMessage({defaultMessage: 'Favorite'})}</>
-                    )}
-                </StyledDropdownMenuItem>
-                <Separator/>
 
+<<<<<<< HEAD
                 <StyledDropdownMenuItem
                     onClick={() => {
                         copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun?.id);
@@ -175,6 +178,36 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
                         </StyledDropdownMenuItemRed>
                     </>
                 }
+=======
+                <FavoriteRunMenuItem
+                    isFavoriteRun={isFavoriteRun}
+                    toggleFavorite={toggleFavorite}
+                />
+                <CopyRunLinkMenuItem
+                    playbookRunId={playbookRun.id}
+                />
+                <Separator/>
+                <RunActionsMenuItem
+                    showRunActionsModal={showRunActionsModal}
+                />
+                <ExportChannelLogsMenuItem
+                    channelId={playbookRun.channel_id}
+                    setShowModal={setShowModal}
+                />
+                <FinishRunMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
+                <RestoreRunMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
+                <LeaveRunMenuItem
+                    isFollowing={isFollowing}
+                    role={role}
+                    showLeaveRunConfirm={showLeaveRunConfirm}
+                />
+>>>>>>> master
             </DotMenu>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
@@ -186,24 +219,26 @@ export const ContextMenu = ({playbookRun, role, isFavoriteRun, isFollowing, togg
     );
 };
 
-const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
+export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
+    const {removeFromRun} = useRunMembership(playbookRunId, [currentUserId]);
     const refreshLHS = useLHSRefresh();
 
     const onLeaveRun = async () => {
-        const response = await leaveRun(playbookRun.id);
-        if (response?.error) {
-            addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure);
-        } else {
-            refreshLHS();
-            addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
-            if (!response.has_view_permission) {
-                navigateToUrl(pluginUrl(''));
-            }
-        }
+        removeFromRun()
+            .then(() => {
+                refreshLHS();
+                addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
+
+                const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
+
+                if (!hasPermanentViewerAccess && sameRunRDP) {
+                    navigateToUrl(pluginUrl(''));
+                }
+            }).catch(() => addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure));
     };
     const leaveRunConfirmModal = (
         <ConfirmModal
@@ -216,13 +251,14 @@ const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
                 setLeaveRunConfirm(false);
             }}
             onCancel={() => setLeaveRunConfirm(false)}
+            stopPropagationOnClick={true}
         />
     );
 
     return {
         leaveRunConfirmModal,
         showLeaveRunConfirm: () => {
-            if (currentUserId === playbookRun.owner_user_id) {
+            if (currentUserId === ownerUserId) {
                 addToast(formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}), ToastType.Failure);
                 return;
             }
@@ -230,32 +266,6 @@ const useLeaveRun = (playbookRun: PlaybookRun, isFollowing: boolean) => {
         },
     };
 };
-
-const StyledDropdownMenuItem = styled(DropdownMenuItem)`
-    display: flex;
-    align-items: center;
-
-    svg {
-        margin-right: 11px;
-        fill: rgb(var(--center-channel-color-rgb), 0.56);
-    }
-`;
-const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
-    && {
-        color: var(--dnd-indicator);
-
-        :hover {
-            background: var(--dnd-indicator);
-            color: var(--button-color);
-        }
-    }
-    svg{
-        fill: var(--dnd-indicator);
-        :hover {
-            fill: var(--button-color);
-        }
-    }
-`;
 
 const Title = styled.h1`
     ${SemiBoldHeading}

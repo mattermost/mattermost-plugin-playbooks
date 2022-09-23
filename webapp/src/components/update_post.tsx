@@ -3,9 +3,6 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import Icon from '@mdi/react';
-import {mdiCheckAll} from '@mdi/js';
-
 import {Post} from '@mattermost/types/posts';
 import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from '@mattermost/types/channels';
@@ -71,10 +68,7 @@ export const UpdatePost = (props: Props) => {
                     <Separator/>
                     <Badges>
                         <Badge tooltipText={formatMessage({defaultMessage: 'Tasks'})}>
-                            <Icon
-                                path={mdiCheckAll}
-                                size={1}
-                            />
+                            <BadgeIcon className={'icon-check-all icon-12'}/>
                             <span>
                                 {formatMessage({defaultMessage: '<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked'}, {b: (x) => <b>{x}</b>, numTasksChecked, numTasks})}
                             </span>

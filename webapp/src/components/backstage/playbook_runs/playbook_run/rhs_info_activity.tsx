@@ -13,7 +13,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun} from 'src/types/playbook_run';
-import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
+import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {ItemList} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
 import {TimelineEventsFilterDefault} from 'src/types/rhs';
 import {clientRemoveTimelineEvent} from 'src/client';

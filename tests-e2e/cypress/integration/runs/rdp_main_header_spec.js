@@ -76,7 +76,7 @@ describe('runs > run details page > header', () => {
 
     const getDropdownItemByText = (text) => {
         cy.findByTestId('run-header-section').find('h1').click();
-        return cy.findByTestId('run-header-section').findByTestId('dropdownmenu').findByText(text);
+        return cy.findByTestId('dropdownmenu').findByText(text);
     };
 
     const commonHeaderTests = () => {
@@ -114,7 +114,7 @@ describe('runs > run details page > header', () => {
             cy.findByTestId('run-header-section').find('h1').click();
 
             // * Assert context menu is opened
-            cy.findByTestId('run-header-section').findByTestId('dropdownmenu').should('be.visible');
+            cy.findByTestId('dropdownmenu').should('be.visible');
         });
 
         it('can copy link', () => {
@@ -552,7 +552,7 @@ describe('runs > run details page > header', () => {
                     });
                 });
 
-                it('click button to show modal and confirm', () => {
+                it('click button to show modal and confirm when private channel', () => {
                     // * Assert component is rendered
                     getHeader().findByText('Participate').should('be.visible');
 
@@ -568,17 +568,14 @@ describe('runs > run details page > header', () => {
                     // * Assert that modal is not shown
                     cy.get('#confirmModal').should('not.exist');
 
-                    // # Login as testUser
-                    cy.apiLogin(testUser).then(() => {
-                        // # Visit the channel run
-                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+                    // # Wait for ws event to be received
+                    cy.wait(500);
 
-                        // * Assert that message has been sent
-                        cy.getLastPost().contains('wants to participate in this run.');
-                    });
+                    // * Verify run has been added to LHS
+                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
                 });
 
-                it('click button and confirm to join public channel', () => {
+                it('click button and confirm to when public channel', () => {
                     // # Login as testUser
                     cy.apiLogin(testUser);
 
@@ -613,17 +610,11 @@ describe('runs > run details page > header', () => {
                         // * Assert that modal is not shown
                         cy.get('#confirmModal').should('not.exist');
 
-                        // # Wait for useChannel
+                        // # Wait for ws event to be received
                         cy.wait(500);
 
                         // * Verify run has been added to LHS
                         cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
-
-                        // # Visit the channel run (now we joined)
-                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
-
-                        // * Assert that message has not been sent
-                        cy.getLastPost().should('not.contain', 'wants to participate in this run');
                     });
                 });
             });

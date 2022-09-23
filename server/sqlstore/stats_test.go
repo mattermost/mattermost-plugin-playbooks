@@ -24,9 +24,9 @@ func setupStatsStore(t *testing.T, db *sqlx.DB) *StatsStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewStatsStore(pluginAPIClient, logger, sqlStore)
+	return NewStatsStore(pluginAPIClient, sqlStore)
 }
 
 func TestTotalInProgressPlaybookRuns(t *testing.T) {
@@ -93,7 +93,7 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -104,10 +104,6 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2}, team1id)
 		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2}, team2id)
 		createChannels(t, store, []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09})
-		addUsersToChannels(t, store, []userInfo{bob, lucy, phil, bot1, bot2}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
-		addUsersToChannels(t, store, []userInfo{bob, quincy}, []string{channel05.Id})
-		addUsersToChannels(t, store, []userInfo{john}, []string{channel01.Id})
-		addUsersToChannels(t, store, []userInfo{jane}, []string{channel01.Id, channel02.Id})
 		makeAdmin(t, store, bob)
 
 		inc01 := *NewBuilder(nil).
@@ -194,9 +190,15 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 
 		for i := range playbookRuns {
-			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			created, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
 			require.NoError(t, err)
+			playbookRuns[i] = *created
 		}
+
+		addUsersToRuns(t, store, []userInfo{bob, lucy, phil}, []string{playbookRuns[0].ID, playbookRuns[1].ID, playbookRuns[2].ID, playbookRuns[3].ID, playbookRuns[5].ID, playbookRuns[6].ID, playbookRuns[7].ID, playbookRuns[8].ID})
+		addUsersToRuns(t, store, []userInfo{bob, quincy}, []string{playbookRuns[4].ID})
+		addUsersToRuns(t, store, []userInfo{john}, []string{playbookRuns[0].ID})
+		addUsersToRuns(t, store, []userInfo{jane}, []string{playbookRuns[0].ID, playbookRuns[1].ID})
 
 		t.Run(driverName+" Active Participants - team1", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{
@@ -337,7 +339,7 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -348,9 +350,6 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		addUsersToTeam(t, store, []userInfo{lucy, bob, john, bot2}, team1id)
 		addUsersToTeam(t, store, []userInfo{lucy, bob, bot1, bot2}, team2id)
 		createChannels(t, store, []model.Channel{chanOpen01, chanOpen02, chanOpen03, chanPrivate01, chanPrivate02, chanPrivate03, chanPrivate04, chanPrivate05, chanPrivate06})
-		addUsersToChannels(t, store, []userInfo{bob, lucy, bot1, bot2}, []string{chanOpen01.Id, chanOpen02.Id, chanOpen03.Id, chanPrivate01.Id, chanPrivate03.Id, chanPrivate04.Id, chanPrivate05.Id, chanPrivate06.Id})
-		addUsersToChannels(t, store, []userInfo{bob}, []string{chanPrivate02.Id})
-		addUsersToChannels(t, store, []userInfo{john}, []string{chanOpen01.Id})
 		makeAdmin(t, store, bob)
 
 		// create run with different statuses, channels, teams and playbooks
@@ -411,9 +410,14 @@ func TestTotalPlaybookRuns(t *testing.T) {
 		playbookRuns := []app.PlaybookRun{run01, run02, run03, run04, run05, run06}
 
 		for i := range playbookRuns {
-			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			created, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			playbookRuns[i] = *created
 			require.NoError(t, err)
 		}
+
+		addUsersToRuns(t, store, []userInfo{bob, lucy, bot1, bot2}, []string{playbookRuns[0].ID, playbookRuns[1].ID, playbookRuns[2].ID, playbookRuns[3].ID, playbookRuns[5].ID})
+		addUsersToRuns(t, store, []userInfo{bob}, []string{playbookRuns[4].ID})
+		addUsersToRuns(t, store, []userInfo{john}, []string{playbookRuns[0].ID})
 
 		t.Run(driverName+" TotalPlaybookRuns", func(t *testing.T) {
 			result, err := statsStore.TotalPlaybookRuns()
@@ -455,7 +459,7 @@ func TestTotalPlaybooks(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		statsStore := setupStatsStore(t, db)
 
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -511,7 +515,7 @@ func TestMetricsStats(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		playbookStore := setupPlaybookStore(t, db)
 		statsStore := setupStatsStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)

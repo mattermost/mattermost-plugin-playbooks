@@ -14,7 +14,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -44,7 +43,6 @@ type sqlRunMetricData struct {
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {
 	pluginAPI                        PluginAPIClient
-	log                              bot.Logger
 	store                            *SQLStore
 	queryBuilder                     sq.StatementBuilderType
 	playbookRunSelect                sq.SelectBuilder
@@ -153,26 +151,28 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 }
 
 // NewPlaybookRunStore creates a new store for playbook run ServiceImpl.
-func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookRunStore {
+func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.PlaybookRunStore {
 	// construct the participants list so that the frontend doesn't have to query the server, bc if
 	// the user is not a member of the channel they won't have permissions to get the user list
 	participantsCol := `
         COALESCE(
-			(SELECT string_agg(cm.UserId, ',')
+			(SELECT string_agg(rp.UserId, ',')
 				FROM IR_Incident as i2
-					JOIN ChannelMembers as cm on cm.ChannelId = i2.ChannelId
+					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
 				WHERE i2.Id = i.Id
-				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
+				AND rp.IsParticipant = true
+				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		participantsCol = `
         COALESCE(
-			(SELECT group_concat(cm.UserId separator ',')
+			(SELECT group_concat(rp.UserId separator ',')
 				FROM IR_Incident as i2
-					JOIN ChannelMembers as cm on cm.ChannelId = i2.ChannelId
+					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
 				WHERE i2.Id = i.Id
-				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
+				AND rp.IsParticipant = true
+				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	}
@@ -238,7 +238,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 
 	return &playbookRunStore{
 		pluginAPI:                        pluginAPI,
-		log:                              log,
 		store:                            sqlStore,
 		queryBuilder:                     sqlStore.builder,
 		playbookRunSelect:                playbookRunSelect,
@@ -279,9 +278,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		membershipClause := s.queryBuilder.
 			Select("1").
 			Prefix("EXISTS(").
-			From("ChannelMembers AS cm").
-			Where("cm.ChannelId = i.ChannelID").
-			Where(sq.Eq{"cm.UserId": strings.ToLower(options.ParticipantID)}).
+			From("IR_Run_Participants AS p").
+			Where("p.IncidentID = i.ID").
+			Where("p.IsParticipant = true").
+			Where(sq.Eq{"p.UserID": strings.ToLower(options.ParticipantID)}).
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
@@ -955,26 +955,30 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		return nil
 	}
 
-	// Guests must be channel members
+	// Guests must be participants
 	if info.IsGuest {
 		return sq.Expr(`
 			  EXISTS(SELECT 1
-						 FROM ChannelMembers as cm
-						 WHERE cm.ChannelId = i.ChannelID
-						   AND cm.UserId = ?)
+						 FROM IR_Run_Participants as rp
+						 WHERE rp.IncidentID = i.ID
+						   AND rp.UserId = ?
+						   AND rp.IsParticipant = true
+					   )
 		`, info.UserID)
 	}
 
-	// 1. Is the user a channel member? If so, they have permission to view the run.
+	// 1. Is the user a participant of the run?
 	// 2. Is the playbook open to everyone on the team, or is the user a member of the playbook?
 	//    If so, they have permission to view the run.
 	return sq.Expr(`
         ((
 			EXISTS (
                     SELECT 1
-						FROM ChannelMembers as cm
-						WHERE cm.ChannelId = i.ChannelId
-						  AND cm.UserId = ?)
+						FROM IR_Run_Participants as rp
+						WHERE rp.IncidentID = i.ID
+						  AND rp.UserId = ?
+						  AND rp.IsParticipant = true
+					  )
 			) OR (
 				(SELECT Public
 					FROM IR_Playbook
@@ -1111,9 +1115,10 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 	membershipClause := s.queryBuilder.
 		Select("1").
 		Prefix("EXISTS(").
-		From("ChannelMembers AS cm").
-		Where("cm.ChannelId = i.ChannelID").
-		Where(sq.Eq{"cm.UserId": userID}).
+		From("IR_Run_Participants AS rp").
+		Where("rp.IncidentID = i.ID").
+		Where(sq.Eq{"rp.UserId": userID}).
+		Where(sq.Eq{"rp.IsParticipant": true}).
 		Suffix(")")
 
 	query := s.store.builder.
@@ -1136,14 +1141,15 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 
 // GetOverdueUpdateRuns returns runs owned by userID and that have overdue status updates.
 func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, error) {
-	// only notify if the user is a current member of the run's channel
-	// in other words: don't notify the commander of an overdue run if they have left the run's channel
+	// only notify if the user is still a participant
+	// in other words: don't notify the commander of an overdue run if they have left the run
 	membershipClause := s.queryBuilder.
 		Select("1").
 		Prefix("EXISTS(").
-		From("ChannelMembers AS cm").
-		Where("cm.ChannelId = i.ChannelID").
-		Where(sq.Eq{"cm.UserId": userID}).
+		From("IR_Run_Participants AS rp").
+		Where("rp.IncidentID = i.ID").
+		Where(sq.Eq{"rp.UserId": userID}).
+		Where(sq.Eq{"rp.IsParticipant": true}).
 		Suffix(")")
 
 	query := s.store.builder.
@@ -1174,27 +1180,27 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 }
 
 func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
-	return s.followHelper(playbookRunID, userID, true)
+	return s.updateFollowing(playbookRunID, userID, true)
 }
 
 func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
-	return s.followHelper(playbookRunID, userID, false)
+	return s.updateFollowing(playbookRunID, userID, false)
 }
 
-func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
+func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	var err error
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, value).
-			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+			Values(playbookRunID, userID, isFollowing).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", isFollowing))
 	} else {
 		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, value).
-			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", value))
+			Values(playbookRunID, userID, isFollowing).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", isFollowing))
 	}
 
 	if err != nil {
@@ -1298,17 +1304,17 @@ func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
 }
 
 // GetParticipantsActiveTotal returns number of active participants
-// (i.e. members of the playbook run channel when the run is active)
-// if a user is member of more than one channel, it will be counted multiple times
+// if a user is a participant in more than one run they will be counted multiple times
 func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	var count int64
 
 	query := s.store.builder.
 		Select("COUNT(*)").
-		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		From("IR_Run_Participants as rp").
+		Join("IR_Incident AS i ON i.ID = rp.IncidentID").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where(sq.Eq{"rp.IsParticipant": true}).
+		Where(sq.Expr("rp.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count active participants")
@@ -1399,11 +1405,52 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 	return nil
 }
 
+func (s *playbookRunStore) AddParticipants(playbookRunID string, userIDs []string) error {
+	return s.updateParticipating(playbookRunID, userIDs, true)
+}
+
+func (s *playbookRunStore) RemoveParticipants(playbookRunID string, userIDs []string) error {
+	return s.updateParticipating(playbookRunID, userIDs, false)
+}
+
+func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []string, isParticipating bool) error {
+	query := sq.
+		Insert("IR_Run_Participants").
+		Columns("IncidentID", "UserID", "IsParticipant")
+
+	for _, userID := range userIDs {
+		query = query.Values(playbookRunID, userID, isParticipating)
+	}
+
+	var err error
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating),
+		)
+	} else {
+		_, err = s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+		)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
+	}
+
+	return nil
+}
+
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	newChecklists := populateChecklistIDs(playbookRun.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id '%s'", playbookRun.ID)
+	}
+
+	if len(checklistsJSON) > maxJSONLength {
+		return nil, errors.Wrapf(err, "checklist json for playbook run id '%s' is too long (max %d)", playbookRun.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybookRun{

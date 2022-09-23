@@ -70,7 +70,7 @@ export const WebhooksInput = (props: Props) => {
             isOpen={isOpen}
             onOpenChange={setOpen}
             target={target}
-            initialFocus={props.webhooksDisabled ? -1 : undefined}
+            focusManager={{initialFocus: props.webhooksDisabled ? -1 : undefined}}
         >
             <SelectorWrapper>
                 <TextArea
