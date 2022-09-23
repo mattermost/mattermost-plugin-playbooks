@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go/errors"
-	boards "github.com/mattermost/focalboard/server/model"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app/transform"
@@ -54,47 +53,28 @@ func (h *LocalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *LocalHandler) getMembers(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookIDs := strings.Split(r.URL.Query().Get("playbook_ids"), ",")
+	userID := r.URL.Query().Get("user_id")
+	teamID := r.URL.Query().Get("team_id")
 
-	participantByPlaybook := make(map[string][]string, 0)
-	for _, playbookID := range playbookIDs {
-		playbook, err := h.playbookService.Get(playbookID)
-		if err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
-		if len(participantByPlaybook[playbookID]) == 0 {
-			participantByPlaybook[playbookID] = make([]string, 0)
-		}
-		for _, m := range playbook.Members {
-			participantByPlaybook[playbookID] = append(participantByPlaybook[playbookID], m.UserID)
-		}
+	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
 	}
 
-	finalMembers := make([]string, 0)
-	for _, sl := range participantByPlaybook {
-		if len(finalMembers) == 0 {
-			finalMembers = sl
-		} else {
-			finalMembers = intersection(finalMembers, sl)
-		}
+	options := app.PlaybookFilterOptions{
+		Page:        0,
+		PerPage:     100,
+		PlaybookIDs: playbookIDs,
 	}
-
-	members := make([]boards.BoardMember, 0)
-	for _, fm := range finalMembers {
-		members = append(members, boards.BoardMember{
-			UserID:       fm,
-			SchemeViewer: true,
-		})
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, options)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
 	}
+	members := transform.BoardsPlaybooksMembers{Playbooks: playbooks.Items}
 
-	ReturnJSON(w, members, http.StatusOK)
-
-}
-
-type PlaybookItem struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ReturnJSON(w, members.Transform(), http.StatusOK)
 }
 
 func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -117,20 +97,8 @@ func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.R
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	items := make([]PlaybookItem, 0)
-	for _, playbook := range playbooks.Items {
-		item := PlaybookItem{
-			ID:   playbook.ID,
-			Name: playbook.Title,
-			Type: "O",
-		}
-		if !playbook.Public {
-			item.Type = "P"
-		}
-		items = append(items, item)
-	}
-
-	ReturnJSON(w, items, http.StatusOK)
+	items := transform.BoardsPlaybooks{Playbooks: playbooks.Items}
+	ReturnJSON(w, items.Transform(), http.StatusOK)
 }
 
 func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -157,6 +125,22 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	pbOptions := app.PlaybookFilterOptions{
+		Page:        0,
+		PerPage:     100,
+		PlaybookIDs: playbookIDs,
+	}
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, pbOptions)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
 	options := app.PlaybookRunFilterOptions{
 		PlaybookIDs: playbookIDs,
 		TeamID:      teamID,
@@ -166,46 +150,17 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		Page:        0,
 		PerPage:     10000,
 	}
-	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
 
 	results, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, options)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	blocks := transform.BoardsPlaybookRun{PlaybookRuns: results.Items}
-
-	ReturnJSON(w, blocks.Transform(boardID), http.StatusOK)
-}
-
-func intersection(s1, s2 []string) (inter []string) {
-	hash := make(map[string]bool)
-	for _, e := range s1 {
-		hash[e] = true
+	blocks := transform.BoardsPlaybookRuns{
+		PlaybookRuns: results.Items,
+		BoardID:      boardID,
+		Playbooks:    playbooks.Items,
 	}
-	for _, e := range s2 {
-		// If elements present in the hashmap then append intersection list.
-		if hash[e] {
-			inter = append(inter, e)
-		}
-	}
-	//Remove dups from slice.
-	inter = removeDuplicates(inter)
-	return
-}
 
-//Remove duplicated values from slice.
-func removeDuplicates(elements []string) (nodups []string) {
-	encountered := make(map[string]bool)
-	for _, element := range elements {
-		if !encountered[element] {
-			nodups = append(nodups, element)
-			encountered[element] = true
-		}
-	}
-	return
+	ReturnJSON(w, blocks.Transform(), http.StatusOK)
 }

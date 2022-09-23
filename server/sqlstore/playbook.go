@@ -466,6 +466,11 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
+	if len(opts.PlaybookIDs) > 0 {
+		queryForResults.Where(sq.Eq{"i.PlaybookID": opts.PlaybookIDs})
+		queryForTotal.Where(sq.Eq{"i.PlaybookID": opts.PlaybookIDs})
+	}
+
 	if !opts.WithArchived {
 		queryForResults = queryForResults.Where(sq.Eq{"p.DeleteAt": 0})
 		queryForTotal = queryForTotal.Where(sq.Eq{"DeleteAt": 0})

@@ -9,25 +9,29 @@ import (
 
 type PlaybookRuns []app.PlaybookRun
 
-type BoardsPlaybookRun struct {
-	PlaybookRuns
+// BoardsPlaybookRun holds the logic to transform a collection of playbook runs
+// into a collection of boards blocks
+//
+// - Still missing fields
+// - Status Overdue > Select: Status
+// - Status Due Date > Date: Status Due Date
+type BoardsPlaybookRuns struct {
+	PlaybookRuns []app.PlaybookRun
+	Playbooks    []app.Playbook
+	BoardID      string
 }
 
-func (b *BoardsPlaybookRun) Transform(boardID string) []boards.Block {
+// Transform creates a boards TypeCard-block for each of the runs
+func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 	blocks := make([]boards.Block, 0)
 
-	// Still missing fields
-	// Status Overdue > Select: Status
-	// Status Due Date > Date: Status Due Date
-	// Playbook name > Select: Playbook Name
-
-	// Create a boards TypeCard - block for each of the runs
 	for _, run := range b.PlaybookRuns {
-		blocks = append(blocks, boards.Block{
+		block := boards.Block{
 			ID:         fmt.Sprintf("A+%s", run.ID),
 			ParentID:   "",
 			CreatedBy:  run.ReporterUserID,
 			ModifiedBy: run.ReporterUserID,
+			BoardID:    b.BoardID,
 			Schema:     1,
 			Type:       boards.TypeCard,
 			Title:      run.Name,
@@ -39,16 +43,24 @@ func (b *BoardsPlaybookRun) Transform(boardID string) []boards.Block {
 				"contentOrder":        []string{fmt.Sprintf("A+%s+summary", run.ID)},
 			},
 			CreateAt: run.CreateAt,
-		})
+		}
+		// extract name from playbook
+		for _, pb := range b.Playbooks {
+			if pb.ID == run.PlaybookID {
+				block.Fields["playbook_name"] = pb.Title
+			}
+		}
+		blocks = append(blocks, block)
 	}
 
-	// Create a boards Content - block for each of the runs
+	// Create a boards TypeText-block for each of the runs
 	for _, run := range b.PlaybookRuns {
 		blocks = append(blocks, boards.Block{
 			ID:         fmt.Sprintf("A+%s+summary", run.ID),
 			ParentID:   fmt.Sprintf("A+%s", run.ID),
-			CreatedBy:  run.OwnerUserID, // TODO: look for a better data
-			ModifiedBy: run.OwnerUserID, // TODO: look for a better data
+			CreatedBy:  run.ReporterUserID,
+			ModifiedBy: run.ReporterUserID,
+			BoardID:    b.BoardID,
 			Schema:     1,
 			Type:       boards.TypeText,
 			Title:      run.Summary,
@@ -59,24 +71,91 @@ func (b *BoardsPlaybookRun) Transform(boardID string) []boards.Block {
 	return blocks
 }
 
-type BoardsPlaybook struct {
-	app.Playbook
+type Playbooks []app.Playbook
+
+type BoardsPlaybooks struct {
+	Playbooks
 }
 
-type PlaybookItem struct {
+type BoardsPlaybook struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
-func (b *BoardsPlaybook) Transform() PlaybookItem {
-	item := PlaybookItem{
-		ID:   b.Playbook.ID,
-		Name: b.Playbook.Title,
-		Type: "O",
+func (b *BoardsPlaybooks) Transform() []BoardsPlaybook {
+	items := make([]BoardsPlaybook, 0)
+	for _, playbook := range b.Playbooks {
+		pbType := "O"
+		if !playbook.Public {
+			pbType = "P"
+		}
+		items = append(items, BoardsPlaybook{
+			ID:   playbook.ID,
+			Name: playbook.Title,
+			Type: pbType,
+		})
 	}
-	if !b.Playbook.Public {
-		item.Type = "P"
+	return items
+}
+
+type BoardsPlaybooksMembers struct {
+	Playbooks
+}
+
+func (b *BoardsPlaybooksMembers) Transform() []boards.BoardMember {
+	participantByPlaybook := make(map[string][]string, 0)
+	for _, playbook := range b.Playbooks {
+		if len(participantByPlaybook[playbook.ID]) == 0 {
+			participantByPlaybook[playbook.ID] = make([]string, 0)
+		}
+		for _, m := range playbook.Members {
+			participantByPlaybook[playbook.ID] = append(participantByPlaybook[playbook.ID], m.UserID)
+		}
 	}
-	return item
+
+	finalMembers := make([]string, 0)
+	for _, sl := range participantByPlaybook {
+		if len(finalMembers) == 0 {
+			finalMembers = sl
+		} else {
+			finalMembers = intersection(finalMembers, sl)
+		}
+	}
+
+	members := make([]boards.BoardMember, 0)
+	for _, fm := range finalMembers {
+		members = append(members, boards.BoardMember{
+			UserID:       fm,
+			SchemeViewer: true,
+		})
+	}
+
+	return members
+}
+
+func intersection(s1, s2 []string) (inter []string) {
+	hash := make(map[string]bool)
+	for _, e := range s1 {
+		hash[e] = true
+	}
+	for _, e := range s2 {
+		if hash[e] {
+			inter = append(inter, e)
+		}
+	}
+	inter = removeDuplicates(inter)
+	return
+}
+
+//Remove duplicated values from slice.
+func removeDuplicates(elements []string) (nodups []string) {
+	encountered := make(map[string]bool)
+	for _, element := range elements {
+		if !encountered[element] {
+			nodups = append(nodups, element)
+			encountered[element] = true
+		}
+	}
+	return
 }

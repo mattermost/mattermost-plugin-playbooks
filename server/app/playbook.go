@@ -446,6 +446,9 @@ type PlaybookFilterOptions struct {
 	WithArchived       bool
 	WithMembershipOnly bool //if true will return only playbooks you are a member of
 
+	// filter only playbooks with the following ids
+	PlaybookIDs []string
+
 	// Pagination options.
 	Page    int
 	PerPage int
