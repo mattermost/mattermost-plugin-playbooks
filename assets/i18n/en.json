@@ -95,7 +95,7 @@
   },
   {
     "id": "app.user.run.request_join_channel",
-    "translation": "@{{.Name}} is a run participant that would want to join this channel. Any member of the channel can invite them to join.\n"
+    "translation": "@{{.Name}} is a run participant and wants join this channel. Any member of the channel can invite them.\n"
   },
   {
     "id": "app.user.run.request_update",
