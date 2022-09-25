@@ -5,6 +5,16 @@ package app
 
 import "fmt"
 
+// TelemetryType is the type for the different kinds of tracking we have
+type TelemetryType string
+
+const (
+	// TelemetryTypeTrack is for tracking events (click, submit, etc..)
+	TelemetryTypeTrack TelemetryType = "track"
+	// TelemetryTypePage is for tracking page views
+	TelemetryTypePage TelemetryType = "page"
+)
+
 type TelemetryTrack string
 
 // TelemetryPage is a type alias to hold all possible
@@ -43,13 +53,3 @@ func NewTelemetryTrack(name string) (TelemetryTrack, error) {
 		return "", fmt.Errorf("unknown value '%s' for type TelemetryTrack", name)
 	}
 }
-
-// TelemetryType is the type for the different kinds of tracking we have
-type TelemetryType string
-
-const (
-	// TelemetryTypeTrack is for tracking events (click, submit, etc..)
-	TelemetryTypeTrack TelemetryType = "track"
-	// TelemetryTypePage is for tracking page views
-	TelemetryTypePage TelemetryType = "page"
-)
