@@ -118,5 +118,9 @@
     {
         "id": "app.user.run.joined_run_channel_private_participate",
         "translation": "@{{.Name}} se pridružio/la izvođenju. Nisu automatski dodani na ovaj privatni kanal, ali bilo koji član kanala ih može pozvati da se pridruže.\n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} je sudionik izvođenja i želi se pridružiti ovom kanalu. Svaki član kanala ih može pozvati.\n"
     }
 ]
