@@ -104,5 +104,9 @@
     {
         "id": "app.user.run.joined_run_channel_private_add_participant",
         "translation": "@{{.Name}}, @{{.RequesterName}} tarafından oyuna eklendi. @{{.RequesterName}} bir kanal üyesi olmadığından ve kanal özel olduğundan otomatik olarak kanala eklenmedi.\n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} bir oyun Katılımcısı ve bu kanala katılmak istiyor. Kanalın herhangi bir üyesi onu çağırabilir.\n"
     }
 ]
