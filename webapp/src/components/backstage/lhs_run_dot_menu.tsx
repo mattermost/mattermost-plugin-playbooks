@@ -18,7 +18,7 @@ import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
 import {useFollowers} from './playbook_runs/playbook_run/playbook_run';
 import {CopyRunLinkMenuItem, FavoriteRunMenuItem, FollowRunMenuItem, LeaveRunMenuItem} from './playbook_runs/playbook_run/controls';
 import {DotMenuButtonStyled} from './shared';
-import { useLHSRefresh } from './lhs_navigation';
+import {useLHSRefresh} from './lhs_navigation';
 
 interface Props {
     playbookRunId: string;
