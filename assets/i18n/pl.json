@@ -110,5 +110,9 @@
     {
         "id": "app.user.run.joined_run_channel_private_add_participant",
         "translation": "@{{.Name}} został dodany do przebiegu przez @{{.RequesterName}}. Nie zostali oni automatycznie dodani do kanału, ponieważ @{{.RequesterName}} nie jest członkiem kanału, a kanał jest prywatny.\n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} jest uczestnikiem uruchomienia i chce dołączyć do tego kanału. Każdy członek kanału może go zaprosić.\n"
     }
 ]
