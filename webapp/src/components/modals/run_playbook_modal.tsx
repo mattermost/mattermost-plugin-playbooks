@@ -20,6 +20,7 @@ import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
+import {useLHSRefresh} from '../backstage/lhs_navigation';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -45,6 +46,7 @@ const RunPlaybookModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
+    const refreshLHS = useLHSRefresh();
 
     const [runName, setRunName] = useState('');
     let userId = useSelector(getCurrentUserId);
@@ -69,6 +71,7 @@ const RunPlaybookModal = ({
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}`);
+                refreshLHS();
             }).catch(() => {
             // show error
             });
