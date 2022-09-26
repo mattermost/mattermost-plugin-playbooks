@@ -20,7 +20,8 @@ import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {useLHSRefresh} from '../backstage/lhs_navigation';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
+import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -46,7 +47,6 @@ const RunPlaybookModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
-    const refreshLHS = useLHSRefresh();
 
     const [runName, setRunName] = useState('');
     let userId = useSelector(getCurrentUserId);
@@ -71,7 +71,9 @@ const RunPlaybookModal = ({
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}`);
-                refreshLHS();
+                getPlaybooksGraphQLClient().refetchQueries({
+                    include: [PlaybookLhsDocument],
+                });
             }).catch(() => {
             // show error
             });
@@ -118,6 +120,7 @@ const RunPlaybookModal = ({
                 </PlaybookDetail>
                 <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
                 <BaseInput
+                    data-testid={'run-name-input'}
                     autoFocus={true}
                     type={'text'}
                     value={runName}
