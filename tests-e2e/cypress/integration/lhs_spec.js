@@ -112,6 +112,26 @@ describe('lhs', () => {
             });
         });
 
+        it('lhs refresh on follow/unfollow', () => {
+            cy.apiLogin(testViewerUser).then(() => {
+                // # Visit the playbook run
+                cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+                // # Follow the run
+                cy.findByTestId('rdp-rhs-follow-button').click();
+                cy.wait(3000);
+
+                // * Verify that the run was added to the lhs
+                cy.findByTestId('Runs').findByTestId(playbookRun.name).should('exist');
+
+                // # Click on unfollow menu item
+                getRunDropdownItemByText('Runs', playbookRun.name, 'Unfollow').click().then(() => {
+                    // * Verify that the run is removed lhs
+                    cy.findByTestId('Runs').findByTestId(playbookRun.name).should('not.exist');
+                });
+            });
+        });
+
         it('leave run', () => {
             // # Add viewer user to the channel
             cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);

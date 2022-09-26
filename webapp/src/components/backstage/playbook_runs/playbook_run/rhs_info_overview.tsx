@@ -72,7 +72,10 @@ export const useFollow = (runID: string, followState: FollowState) => {
         }
 
         return (
-            <FollowButton onClick={toggleFollow}>
+            <FollowButton
+                data-testid={'rdp-rhs-follow-button'}
+                onClick={toggleFollow}
+            >
                 {formatMessage({defaultMessage: 'Follow'})}
             </FollowButton>
         );
