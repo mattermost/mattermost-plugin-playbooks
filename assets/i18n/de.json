@@ -104,5 +104,9 @@
     {
         "id": "app.user.run.joined_run_channel_private_add_participant",
         "translation": "@{{.Name}} wurde zum Durchlauf von @{{.RequesterName}} hinzugefügt. @{{.Name}} wurde nicht zum Kanal hinzugefügt, da @{{.RequesterName}} kein Mitglied des privaten Kanals ist.\n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} ist ein Laufteilnehmer und möchte diesem Kanal beitreten. Jedes Mitglied des Channels kann ihn einladen.\n"
     }
 ]
