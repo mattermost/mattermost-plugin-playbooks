@@ -21,6 +21,7 @@ type TelemetryHandler struct {
 	playbookService      app.PlaybookService
 	permissions          *app.PermissionsService
 	playbookTelemetry    app.PlaybookTelemetry
+	genericTelemetry     app.GenericTelemetry
 	botTelemetry         bot.Telemetry
 	pluginAPI            *pluginapi.Client
 }
@@ -33,6 +34,7 @@ func NewTelemetryHandler(
 	playbookRunTelemetry app.PlaybookRunTelemetry,
 	playbookService app.PlaybookService,
 	playbookTelemetry app.PlaybookTelemetry,
+	genericTelemetry app.GenericTelemetry,
 	botTelemetry bot.Telemetry,
 	permissions *app.PermissionsService,
 ) *TelemetryHandler {
@@ -42,12 +44,14 @@ func NewTelemetryHandler(
 		playbookRunTelemetry: playbookRunTelemetry,
 		playbookService:      playbookService,
 		playbookTelemetry:    playbookTelemetry,
+		genericTelemetry:     genericTelemetry,
 		botTelemetry:         botTelemetry,
 		pluginAPI:            api,
 		permissions:          permissions,
 	}
 
 	telemetryRouter := router.PathPrefix("/telemetry").Subrouter()
+	telemetryRouter.HandleFunc("", withContext(handler.createEvent)).Methods(http.MethodPost)
 
 	startTrialRouter := telemetryRouter.PathPrefix("/start-trial").Subrouter()
 	startTrialRouter.HandleFunc("", withContext(handler.startTrial)).Methods(http.MethodPost)
@@ -64,6 +68,47 @@ func NewTelemetryHandler(
 	templateRouter.HandleFunc("", withContext(handler.telemetryForTemplate))
 
 	return handler
+}
+
+type EventData struct {
+	Name       string
+	Type       app.TelemetryType
+	Properties map[string]interface{}
+}
+
+func (h *TelemetryHandler) createEvent(c *Context, w http.ResponseWriter, r *http.Request) {
+	var event EventData
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode post body", err)
+		return
+	}
+
+	if event.Properties == nil {
+		event.Properties = map[string]interface{}{}
+	}
+	event.Properties["UserActualID"] = r.Header.Get("Mattermost-User-ID")
+
+	switch event.Type {
+	case app.TelemetryTypePage:
+		name, err := app.NewTelemetryPage(event.Name)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid page tracking", err)
+			return
+		}
+		h.genericTelemetry.Page(name, event.Properties)
+	case app.TelemetryTypeTrack:
+		name, err := app.NewTelemetryTrack(event.Name)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid event tracking", err)
+			return
+		}
+		h.genericTelemetry.Track(name, event.Properties)
+	default:
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid type to be tracked", nil)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *TelemetryHandler) checkPlaybookRunViewPermissions(next http.Handler) http.Handler {

@@ -25,6 +25,7 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
+import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItemState,
@@ -38,7 +39,6 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
-import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -538,6 +538,24 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     });
 }
 
+export async function telemetryEvent(name: TelemetryEventTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'track', properties}
+        ),
+    });
+}
+
+export async function telemetryView(name: TelemetryViewTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'page', properties}
+        ),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
@@ -735,6 +753,14 @@ export const updateRunActions = async (playbookRunID: string, actions: RunAction
 export const requestUpdate = async (playbookRunId: string) => {
     try {
         return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+    } catch (error) {
+        return {error};
+    }
+};
+
+export const requestJoinChannel = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-join-channel`);
     } catch (error) {
         return {error};
     }
