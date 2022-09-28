@@ -16,8 +16,6 @@ import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
     PlaybookRun,
-    isPlaybookRun,
-    isMetadata,
     Metadata,
     RunMetricData,
     StatusPostComplete,
@@ -25,6 +23,7 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
+import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItemState,
@@ -38,7 +37,6 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
-import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -83,13 +81,6 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
 
 export async function fetchPlaybookRun(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -149,26 +140,12 @@ export async function postStatusUpdate(
 
 export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isMetadata(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a Metadata in fetchPlaybookRunMetadata, received:', data);
-        }
-    }
 
     return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
     const data = await doGet(`${apiUrl}/runs/channel/${channelId}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -535,6 +512,24 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     await doFetchWithoutResponse(`${apiUrl}/telemetry/template`, {
         method: 'POST',
         body: JSON.stringify({template_name: templateName, action}),
+    });
+}
+
+export async function telemetryEvent(name: TelemetryEventTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'track', properties}
+        ),
+    });
+}
+
+export async function telemetryView(name: TelemetryViewTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'page', properties}
+        ),
     });
 }
 

@@ -70,7 +70,7 @@ const RunPlaybookModal = ({
         createPlaybookRun(playbookId, user.id, teamId, runName, description)
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                navigateToPluginUrl(`/runs/${newPlaybookRun.id}`);
+                navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
                 getPlaybooksGraphQLClient().refetchQueries({
                     include: [PlaybookLhsDocument],
                 });

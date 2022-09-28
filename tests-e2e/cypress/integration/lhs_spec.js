@@ -56,6 +56,47 @@ describe('lhs', () => {
         return cy.findByTestId('dropdownmenu').findByText(itemName);
     };
 
+    describe('navigate', () => {
+        beforeEach(() => {
+            // # Size the viewport to show the RHS without covering posts.
+            cy.viewport('macbook-13');
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPublicPlaybook.id,
+                playbookRunName: 'the run name(' + Date.now() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                playbookRun = run;
+
+                // # Visit the playbook run
+                cy.visit('/playbooks/runs');
+                cy.wait(5000);
+            });
+        });
+
+        it('click run', () => {
+            // # Intercept all calls to telemetry
+            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
+            // # Click on run at LHS
+            cy.findByTestId('Runs').findByTestId(playbookRun.name).click();
+
+            // * assert  telemetry pageview
+            cy.wait('@telemetry').then((interception) => {
+                expect(interception.request.body.name).to.eq('run_details');
+                expect(interception.request.body.type).to.eq('page');
+                expect(interception.request.body.properties.from).to.eq('playbooks_lhs');
+                expect(interception.request.body.properties.role).to.eq('participant');
+                expect(interception.request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                expect(interception.request.body.properties.playbook_id).to.eq(testPublicPlaybook.id);
+            });
+        });
+    });
+
     describe('run dot menu', () => {
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
