@@ -71,15 +71,6 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	return []string{}
 }
 
-func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
-	// For now, everyone with access to the channel is a run admin
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{RunRoleMember, RunRoleAdmin}
-	}
-
-	return []string{}
-}
-
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
 	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
@@ -88,16 +79,6 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 
 	// Cascade normally to higher level permissions
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
-}
-
-func (p *PermissionsService) hasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
-	// Check at run level
-	if p.pluginAPI.User.RolesGrantPermission(p.getRunRole(userID, run), permission.Id) {
-		return true
-	}
-
-	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
@@ -406,7 +387,17 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	if p.hasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
+	if run.OwnerUserID == userID {
+		return nil
+	}
+
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
+	}
+
+	if IsSystemAdmin(userID, p.pluginAPI) {
 		return nil
 	}
 
@@ -428,9 +419,16 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	// Has view permission if is in the channel
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+	// Has permission if is the owner of the run
+	if run.OwnerUserID == userID {
 		return nil
+	}
+
+	// Or if is a participant of the run
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
 	}
 
 	// Or has view access to the playbook that created it
