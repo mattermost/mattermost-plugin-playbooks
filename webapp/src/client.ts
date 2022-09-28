@@ -16,8 +16,6 @@ import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
     PlaybookRun,
-    isPlaybookRun,
-    isMetadata,
     Metadata,
     RunMetricData,
     StatusPostComplete,
@@ -83,13 +81,6 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
 
 export async function fetchPlaybookRun(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -149,26 +140,12 @@ export async function postStatusUpdate(
 
 export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isMetadata(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a Metadata in fetchPlaybookRunMetadata, received:', data);
-        }
-    }
 
     return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
     const data = await doGet(`${apiUrl}/runs/channel/${channelId}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
