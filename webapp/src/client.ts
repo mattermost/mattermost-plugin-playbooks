@@ -25,6 +25,7 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
+import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItemState,
@@ -38,7 +39,6 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
-import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -535,6 +535,24 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     await doFetchWithoutResponse(`${apiUrl}/telemetry/template`, {
         method: 'POST',
         body: JSON.stringify({template_name: templateName, action}),
+    });
+}
+
+export async function telemetryEvent(name: TelemetryEventTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'track', properties}
+        ),
+    });
+}
+
+export async function telemetryView(name: TelemetryViewTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'page', properties}
+        ),
     });
 }
 
