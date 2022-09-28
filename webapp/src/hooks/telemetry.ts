@@ -1,7 +1,15 @@
 import {useEffect} from 'react';
 
-import {telemetryEventForPlaybook, telemetryEventForPlaybookRun} from 'src/client';
-import {PlaybookViewTarget, PlaybookRunViewTarget} from 'src/types/telemetry';
+import {telemetryEventForPlaybook, telemetryEventForPlaybookRun, telemetryView} from 'src/client';
+import {PlaybookViewTarget, PlaybookRunViewTarget, TelemetryViewTarget} from 'src/types/telemetry';
+
+export const useViewTelemetry = (target: TelemetryViewTarget, dep?: string, data = {}) => {
+    useEffect(() => {
+        if (dep) {
+            telemetryView(target, data);
+        }
+    }, [dep]);
+};
 
 export const usePlaybookViewTelemetry = (target: PlaybookViewTarget, playbookID?: string) => {
     useEffect(() => {
