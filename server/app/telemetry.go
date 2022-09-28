@@ -5,6 +5,12 @@ package app
 
 import "fmt"
 
+// GenericTelemetry is the generic interface for telemetry.
+type GenericTelemetry interface {
+	Page(name TelemetryPage, properties map[string]interface{})
+	Track(name TelemetryTrack, properties map[string]interface{})
+}
+
 // TelemetryType is the type for the different kinds of tracking we have
 type TelemetryType string
 

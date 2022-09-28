@@ -853,11 +853,6 @@ type PlaybookRunStore interface {
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
-type GenericTelemetry interface {
-	Page(name TelemetryPage, properties map[string]interface{})
-	Track(name TelemetryTrack, properties map[string]interface{})
-}
-
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
 // Unless otherwise noted, userID is the user initiating the event.
 type PlaybookRunTelemetry interface {
