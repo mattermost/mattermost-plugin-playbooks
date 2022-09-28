@@ -91,7 +91,7 @@ const Profile = (props: Props) => {
     return (
         <PlaybookRunProfile
             className={classNames('PlaybookRunProfile', props.classNames, props.className)}
-            data-testid={'profile-option-' + user.username}
+            data-testid={'profile-option-' + user?.username}
         >
             {
                 !props.withoutProfilePic &&
