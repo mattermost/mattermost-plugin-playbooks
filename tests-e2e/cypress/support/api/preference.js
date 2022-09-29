@@ -319,6 +319,12 @@ Cypress.Commands.add('apiDisableTutorials', (userId) => {
             category: 'actions_menu',
             name: 'actions_menu_tutorial_state',
             value: '{"actions_menu_modal_viewed":true}'
+        },
+        {
+            user_id: userId,
+            category: 'insights',
+            name: 'insights_tutorial_state',
+            value: '{"insights_modal_viewed":true}'
         }
     ];
 
