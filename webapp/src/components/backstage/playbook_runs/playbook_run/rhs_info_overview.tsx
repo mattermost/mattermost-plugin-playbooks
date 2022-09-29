@@ -266,10 +266,6 @@ interface ItemProps {
     onClick?: () => void;
 }
 
-const StyledIcon = styled.div`
-    margin-right: 11px;
-`;
-
 const Item = (props: ItemProps) => {
     const Icon = props.icon;
 
@@ -279,12 +275,10 @@ const Item = (props: ItemProps) => {
             data-testid={props.id}
         >
             <OverviewItemName>
-                <StyledIcon>
-                    <Icon
-                        size={18}
-                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                    />
-                </StyledIcon>
+                <Icon
+                    size={18}
+                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                />
                 {props.name}
             </OverviewItemName>
             {props.children}
@@ -333,6 +327,7 @@ const OverviewRow = styled.div<{onClick?: () => void}>`
 const OverviewItemName = styled.div`
     display: flex;
     align-items: center;
+    gap: 11px;
 `;
 
 const Participants = styled.div`
