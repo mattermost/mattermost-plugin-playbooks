@@ -121,6 +121,10 @@ interface Props {
     onViewParticipants: () => void;
 }
 
+const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+    margin-left: 7px;
+`;
+
 const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
@@ -165,10 +169,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
             setShowAddToChannel(true);
         }
     };
-
-    const StyledArrowIcon = styled(ArrowForwardIosIcon)`
-        margin-left: 7px;
-    `;
 
     return (
         <Section>
@@ -315,9 +315,7 @@ interface ItemProps {
 }
 
 const Item = (props: ItemProps) => {
-    const StyledIcon = styled(props.icon)`
-        margin-right: 11px;
-    `;
+    const Icon = props.icon;
 
     return (
         <OverviewRow
@@ -325,7 +323,7 @@ const Item = (props: ItemProps) => {
             data-testid={props.id}
         >
             <OverviewItemName>
-                <StyledIcon
+                <Icon
                     size={18}
                     color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                 />
@@ -385,6 +383,7 @@ const OverviewRow = styled.div<{onClick?: () => void}>`
 const OverviewItemName = styled.div`
     display: flex;
     align-items: center;
+    gap: 11px;
 `;
 
 const Participants = styled.div`
