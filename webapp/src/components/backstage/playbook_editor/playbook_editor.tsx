@@ -175,6 +175,7 @@ const PlaybookEditor = () => {
                             <Controls.Members
                                 playbookId={playbook.id}
                                 numMembers={playbook.members.length}
+                                refetch={refetch}
                             />
                             <Controls.AutoFollowToggle playbook={playbook}/>
                             <Controls.RunPlaybook playbook={playbook}/>
@@ -213,7 +214,7 @@ const PlaybookEditor = () => {
                     `}
                 >
                     {(edit) => (
-                        <Heading>
+                        <Heading data-testid={'playbook-editor-header'}>
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}
