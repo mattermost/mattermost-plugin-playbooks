@@ -19,13 +19,6 @@ describe('runs > run details page > status update', () => {
             testTeam = team;
             testUser = user;
 
-            // # Set EnableTesting to true.
-            cy.apiUpdateConfig({
-                ServiceSettings: {
-                    EnableTesting: true
-                },
-            });
-
             // Create another user in the same team
             cy.apiCreateUser().then(({user: viewer}) => {
                 testViewerUser = viewer;
