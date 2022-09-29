@@ -20,15 +20,20 @@ import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 const ID = 'playbooks_run_playbook_dialog';
 
-export const makeModalDefinition = (playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) => ({
+export const makeModalDefinition = (
+    playbookId: string,
+    defaultOwnerId: string | null,
+    description: string,
+    teamId: string,
+    teamName: string,
+    refreshLHS?: () => void
+) => ({
     modalId: ID,
     dialogType: RunPlaybookModal,
-    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName},
+    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName, refreshLHS},
 });
 
 type Props = {
@@ -37,6 +42,7 @@ type Props = {
     description: string,
     teamId: string,
     teamName: string
+    refreshLHS?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookModal = ({
@@ -44,6 +50,7 @@ const RunPlaybookModal = ({
     defaultOwnerId,
     description,
     teamId,
+    refreshLHS,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -71,9 +78,7 @@ const RunPlaybookModal = ({
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
-                getPlaybooksGraphQLClient().refetchQueries({
-                    include: [PlaybookLhsDocument],
-                });
+                refreshLHS?.();
             }).catch(() => {
             // show error
             });

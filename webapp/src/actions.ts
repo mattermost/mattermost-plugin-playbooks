@@ -91,13 +91,14 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) {
+export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
     return modals.openModal(makePlaybookRunModalDefinition(
         playbookId,
         defaultOwnerId,
         description,
         teamId,
-        teamName
+        teamName,
+        refreshLHS
     ));
 }
 
