@@ -263,12 +263,6 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                                 disabled={playbookRun.current_status === PlaybookRunStatus.Finished}
                                 type={'dotmenu'}
                             />
-                            {/* <DropdownItem
-                                onClick={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm}
-                                disabled={playbookRun.current_status === PlaybookRunStatus.Finished}
-                            >
-                                {formatMessage({defaultMessage: 'Request update...'})}
-                            </DropdownItem> */}
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
