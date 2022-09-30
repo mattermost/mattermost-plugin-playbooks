@@ -52,11 +52,20 @@ func (h *LocalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.localRouter.ServeHTTP(w, r)
 }
 
-// getMembers returns the members that are the participants for all playbooks passed
+// getMembers returns the members that are the participants for ALL playbooks passed
 // as parameter
 func (h *LocalHandler) getMembers(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookIDs := strings.Split(r.URL.Query().Get("playbookIDs"), ",")
 	teamID := r.URL.Query().Get("teamID")
+
+	if teamID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "team_id is required", errors.Errorf("team_id is required when asking for blocks"))
+		return
+	}
+	if len(playbookIDs) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook_ids are required", errors.Errorf("playbook_ids are required when asking for blocks"))
+		return
+	}
 
 	// act as an admin, auth is done in boards side
 	requesterInfo := app.RequesterInfo{
@@ -78,9 +87,19 @@ func (h *LocalHandler) getMembers(c *Context, w http.ResponseWriter, r *http.Req
 	ReturnJSON(w, members.Transform(), http.StatusOK)
 }
 
+// getPlaybooks return the playbooks that are available for the passed user/team
 func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
 	teamID := r.URL.Query().Get("team_id")
+
+	if teamID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "team_id is required", errors.Errorf("team_id is required when asking for blocks"))
+		return
+	}
+	if userID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_id is required", errors.Errorf("user_id is required when asking for blocks"))
+		return
+	}
 
 	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
 	if err != nil {
@@ -102,6 +121,8 @@ func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.R
 	ReturnJSON(w, items.Transform(), http.StatusOK)
 }
 
+// getBlocks returns the all the blocks that represent a list of runs (reslult of querying
+// by playbookids)
 func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	teamID := r.URL.Query().Get("teamID")
@@ -132,15 +153,19 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	// extract playbooks
-	pbOptions := app.PlaybookFilterOptions{
-		Page:        0,
-		PerPage:     100,
-		PlaybookIDs: playbookIDs,
-	}
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, pbOptions)
+	// TODO optimize this (all + manual filtering is not a great strategy)
+	playbooks := map[string]app.Playbook{}
+	allPlaybooks, err := h.playbookService.GetPlaybooks()
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
+	}
+	for _, pb := range allPlaybooks {
+		for _, pbID := range playbookIDs {
+			if pb.ID == pbID {
+				playbooks[pbID] = pb
+			}
+		}
 	}
 
 	// extract runs
@@ -184,7 +209,7 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 	blocks := transform.BoardsPlaybookRuns{
 		PlaybookRuns: results.Items,
 		BoardID:      boardID,
-		Playbooks:    playbooks.Items,
+		Playbooks:    playbooks,
 		SiteURL:      siteURL,
 		Posts:        posts,
 	}

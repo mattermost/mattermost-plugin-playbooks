@@ -18,7 +18,7 @@ type PlaybookRuns []app.PlaybookRun
 // - Status Due Date > Date: Status Due Date
 type BoardsPlaybookRuns struct {
 	PlaybookRuns []app.PlaybookRun
-	Playbooks    []app.Playbook
+	Playbooks    map[string]app.Playbook
 	Posts        map[string]*model.Post
 	BoardID      string
 	SiteURL      string
@@ -51,14 +51,15 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			},
 			CreateAt: run.CreateAt,
 		}
+
 		// extract name from playbook
-		for _, pb := range b.Playbooks {
-			if pb.ID == run.PlaybookID {
-				fields := block.Fields["properties"].(map[string]interface{})
-				fields["playbook_name"] = pb.Title
-				block.Fields["properties"] = fields
-			}
+		if pb, ok := b.Playbooks[run.PlaybookID]; ok {
+			fields := block.Fields["properties"].(map[string]interface{})
+			fields["playbook_name"] = pb.Title
+			block.Fields["properties"] = fields
 		}
+
+		// add card block
 		blocks = append(blocks, block)
 
 		// Create a boards TypeText-block for each of the runs to hold the run summary

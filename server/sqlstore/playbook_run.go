@@ -11,7 +11,6 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -253,8 +252,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
 	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
-	logrus.WithField("requesterInfo", requesterInfo).Info("requesterInfo")
-	logrus.WithField("data", options).Info("OPTIONS")
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
@@ -365,8 +362,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	if err = s.store.selectBuilder(tx, &rawPlaybookRuns, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for playbook runs")
 	}
-
-	logrus.WithField("resuults", len(rawPlaybookRuns)).Info("rawPlaybookRuns")
 
 	var total int
 	if err = s.store.getBuilder(tx, &total, queryForTotal); err != nil {

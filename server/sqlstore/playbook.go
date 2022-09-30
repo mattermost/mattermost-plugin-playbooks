@@ -467,8 +467,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	}
 
 	if len(opts.PlaybookIDs) > 0 {
-		queryForResults.Where(sq.Eq{"i.PlaybookID": opts.PlaybookIDs})
-		queryForTotal.Where(sq.Eq{"i.PlaybookID": opts.PlaybookIDs})
+		queryForResults = queryForResults.Where(sq.Eq{"p.ID": opts.PlaybookIDs})
+		queryForTotal = queryForTotal.Where(sq.Eq{"p.ID": opts.PlaybookIDs})
 	}
 
 	if !opts.WithArchived {
