@@ -5,6 +5,7 @@ import (
 
 	boards "github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 type PlaybookRuns []app.PlaybookRun
@@ -12,17 +13,20 @@ type PlaybookRuns []app.PlaybookRun
 // BoardsPlaybookRun holds the logic to transform a collection of playbook runs
 // into a collection of boards blocks
 //
-// - Still missing fields
+// Still missing fields
 // - Status Overdue > Select: Status
 // - Status Due Date > Date: Status Due Date
 type BoardsPlaybookRuns struct {
 	PlaybookRuns []app.PlaybookRun
 	Playbooks    []app.Playbook
+	Posts        map[string]*model.Post
 	BoardID      string
 	SiteURL      string
 }
 
-// Transform creates a boards TypeCard-block for each of the runs
+// Transform creates board's blocks for each of the runs:
+// - one type card for each run
+// - one type text for each run's description
 func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 	blocks := make([]boards.Block, 0)
 
@@ -56,10 +60,8 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			}
 		}
 		blocks = append(blocks, block)
-	}
 
-	// Create a boards TypeText-block for each of the runs to hold the run summary
-	for _, run := range b.PlaybookRuns {
+		// Create a boards TypeText-block for each of the runs to hold the run summary
 		blocks = append(blocks, boards.Block{
 			ID:         fmt.Sprintf("A+%s+summary", run.ID),
 			ParentID:   fmt.Sprintf("A+%s", run.ID),
@@ -71,6 +73,24 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			Title:      run.Summary,
 			CreateAt:   run.CreateAt,
 		})
+
+		// Create a boards TypeComment-block for each of the runs to hold the run summary
+		for _, s := range run.StatusPosts {
+			post, ok := b.Posts[s.ID]
+			if ok {
+				blocks = append(blocks, boards.Block{
+					ID:         fmt.Sprintf("A+%s+status", run.ID),
+					ParentID:   fmt.Sprintf("A+%s", run.ID),
+					CreatedBy:  post.UserId,
+					ModifiedBy: post.UserId,
+					BoardID:    b.BoardID,
+					Schema:     1,
+					Type:       boards.TypeComment,
+					Title:      post.Message,
+					CreateAt:   post.CreateAt,
+				})
+			}
+		}
 	}
 
 	return blocks

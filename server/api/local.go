@@ -130,6 +130,8 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 	requesterInfo := app.RequesterInfo{
 		IsAdmin: true,
 	}
+
+	// extract playbooks
 	pbOptions := app.PlaybookFilterOptions{
 		Page:        0,
 		PerPage:     100,
@@ -141,6 +143,7 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// extract runs
 	options := app.PlaybookRunFilterOptions{
 		PlaybookIDs: playbookIDs,
 		TeamID:      teamID,
@@ -156,11 +159,34 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		h.HandleError(w, c.logger, err)
 		return
 	}
+
+	// Extract status updates
+	// Heads up that this is not performant at all, it's a huge N+1 problem
+	// We should convert posts into real playbooks data before this goes to prod
+	posts := make(map[string]*model.Post, 0)
+	for _, r := range results.Items {
+		for _, s := range r.StatusPosts {
+			post, err := h.pluginAPI.Post.GetPost(s.ID)
+			if err != nil {
+				c.logger.WithError(err).Warn("Can not get status update post")
+				continue
+			}
+			author, _ := post.GetProp("authorUsername").(string)
+			authorUser, err := h.pluginAPI.User.GetByUsername(author)
+			if err != nil {
+				c.logger.WithError(err).Warn("Can not get user from username")
+			}
+			post.UserId = authorUser.Id // otherwise is always playbooksbot
+			posts[s.ID] = post
+		}
+	}
+
 	blocks := transform.BoardsPlaybookRuns{
 		PlaybookRuns: results.Items,
 		BoardID:      boardID,
 		Playbooks:    playbooks.Items,
 		SiteURL:      siteURL,
+		Posts:        posts,
 	}
 
 	ReturnJSON(w, blocks.Transform(), http.StatusOK)
