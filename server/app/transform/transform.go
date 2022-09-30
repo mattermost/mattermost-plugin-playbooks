@@ -36,18 +36,20 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			Type:       boards.TypeCard,
 			Title:      run.Name,
 			Fields: map[string]interface{}{
-				"playbook_run_status": run.CurrentStatus,
-				"playbook_run_owner":  run.OwnerUserID,
-				"playbook_run_url":    fmt.Sprintf("/playbooks/runs/%s", run.ID),
-				"playbook_url":        fmt.Sprintf("/playbooks/%s", run.PlaybookID),
-				"contentOrder":        []string{fmt.Sprintf("A+%s+summary", run.ID)},
+				"properties": map[string]interface{}{
+					"playbook_run_status": run.CurrentStatus,
+					"playbook_run_owner":  run.OwnerUserID,
+					"playbook_run_url":    fmt.Sprintf("/playbooks/runs/%s", run.ID),
+					"playbook_url":        fmt.Sprintf("/playbooks/%s", run.PlaybookID),
+				},
+				"contentOrder": []string{fmt.Sprintf("A+%s+summary", run.ID)},
 			},
 			CreateAt: run.CreateAt,
 		}
 		// extract name from playbook
 		for _, pb := range b.Playbooks {
 			if pb.ID == run.PlaybookID {
-				block.Fields["playbook_name"] = pb.Title
+				block.Fields["properties"].(map[string]interface{})["playbook_name"] = pb.Title
 			}
 		}
 		blocks = append(blocks, block)

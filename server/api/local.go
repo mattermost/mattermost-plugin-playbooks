@@ -51,15 +51,15 @@ func (h *LocalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.localRouter.ServeHTTP(w, r)
 }
 
+// getMembers returns the members that are the participants for all playbooks passed
+// as parameter
 func (h *LocalHandler) getMembers(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookIDs := strings.Split(r.URL.Query().Get("playbook_ids"), ",")
-	userID := r.URL.Query().Get("user_id")
-	teamID := r.URL.Query().Get("team_id")
+	playbookIDs := strings.Split(r.URL.Query().Get("playbookIDs"), ",")
+	teamID := r.URL.Query().Get("teamID")
 
-	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
+	// act as an admin, auth is done in boards side
+	requesterInfo := app.RequesterInfo{
+		IsAdmin: true,
 	}
 
 	options := app.PlaybookFilterOptions{
@@ -103,9 +103,9 @@ func (h *LocalHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *http.R
 
 func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Request) {
 
-	teamID := r.URL.Query().Get("team_id")
-	boardID := r.URL.Query().Get("board_id")
-	playbookIDs := strings.Split(r.URL.Query().Get("playbook_ids"), ",")
+	teamID := r.URL.Query().Get("teamID")
+	boardID := r.URL.Query().Get("boardID")
+	playbookIDs := strings.Split(r.URL.Query().Get("playbookIDs"), ",")
 
 	if boardID == "" {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "board_id is required", errors.Errorf("board_id is required when asking for blocks"))
