@@ -2,6 +2,7 @@ package transform
 
 import (
 	"fmt"
+	"time"
 
 	boards "github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -31,6 +32,18 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 	blocks := make([]boards.Block, 0)
 
 	for _, run := range b.PlaybookRuns {
+
+		// overdue computations
+		nextStatusDueDate := time.Time{}
+		nextStatusOverdue := ""
+		if run.CurrentStatus == app.StatusInProgress && run.PreviousReminder != 0 {
+			nextStatusOverdue = "OnTrack"
+			nextStatusDueDate = time.Unix(run.LastStatusUpdateAt/1e3, 0).Add(run.PreviousReminder)
+			if nextStatusDueDate.Before(time.Now()) {
+				nextStatusOverdue = "Overdue"
+			}
+		}
+
 		block := boards.Block{
 			ID:         fmt.Sprintf("A+%s", run.ID),
 			ParentID:   "",
@@ -42,10 +55,12 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			Title:      run.Name,
 			Fields: map[string]interface{}{
 				"properties": map[string]interface{}{
-					"playbook_run_status": run.CurrentStatus,
-					"playbook_run_owner":  run.OwnerUserID,
-					"playbook_run_url":    fmt.Sprintf("%s/playbooks/runs/%s", b.SiteURL, run.ID),
-					"playbook_url":        fmt.Sprintf("%s/playbooks/playbooks/%s", b.SiteURL, run.PlaybookID),
+					"playbook_run_status":                    run.CurrentStatus,
+					"playbook_run_owner":                     run.OwnerUserID,
+					"playbook_run_url":                       fmt.Sprintf("%s/playbooks/runs/%s", b.SiteURL, run.ID),
+					"playbook_url":                           fmt.Sprintf("%s/playbooks/playbooks/%s", b.SiteURL, run.PlaybookID),
+					"playbook_run_next_statusupdate_duedate": fmt.Sprintf("{\"from\": %d}", nextStatusDueDate.Unix()*1e3),
+					"playbook_run_next_statusupdate_status":  nextStatusOverdue,
 				},
 				"contentOrder": []string{fmt.Sprintf("A+%s+summary", run.ID)},
 			},
