@@ -19,6 +19,7 @@ type BoardsPlaybookRuns struct {
 	PlaybookRuns []app.PlaybookRun
 	Playbooks    []app.Playbook
 	BoardID      string
+	SiteURL      string
 }
 
 // Transform creates a boards TypeCard-block for each of the runs
@@ -39,8 +40,8 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 				"properties": map[string]interface{}{
 					"playbook_run_status": run.CurrentStatus,
 					"playbook_run_owner":  run.OwnerUserID,
-					"playbook_run_url":    fmt.Sprintf("/playbooks/runs/%s", run.ID),
-					"playbook_url":        fmt.Sprintf("/playbooks/%s", run.PlaybookID),
+					"playbook_run_url":    fmt.Sprintf("%s/playbooks/runs/%s", b.SiteURL, run.ID),
+					"playbook_url":        fmt.Sprintf("%s/playbooks/playbooks/%s", b.SiteURL, run.PlaybookID),
 				},
 				"contentOrder": []string{fmt.Sprintf("A+%s+summary", run.ID)},
 			},
@@ -49,13 +50,15 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 		// extract name from playbook
 		for _, pb := range b.Playbooks {
 			if pb.ID == run.PlaybookID {
-				block.Fields["properties"].(map[string]interface{})["playbook_name"] = pb.Title
+				fields := block.Fields["properties"].(map[string]interface{})
+				fields["playbook_name"] = pb.Title
+				block.Fields["properties"] = fields
 			}
 		}
 		blocks = append(blocks, block)
 	}
 
-	// Create a boards TypeText-block for each of the runs
+	// Create a boards TypeText-block for each of the runs to hold the run summary
 	for _, run := range b.PlaybookRuns {
 		blocks = append(blocks, boards.Block{
 			ID:         fmt.Sprintf("A+%s+summary", run.ID),

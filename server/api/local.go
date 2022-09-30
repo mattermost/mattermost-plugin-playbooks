@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app/transform"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 type LocalHandler struct {
@@ -120,6 +121,11 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
 	// act as an admin, auth is done in boards side
 	requesterInfo := app.RequesterInfo{
 		IsAdmin: true,
@@ -154,6 +160,7 @@ func (h *LocalHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Requ
 		PlaybookRuns: results.Items,
 		BoardID:      boardID,
 		Playbooks:    playbooks.Items,
+		SiteURL:      siteURL,
 	}
 
 	ReturnJSON(w, blocks.Transform(), http.StatusOK)
