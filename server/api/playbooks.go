@@ -659,7 +659,7 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 	// get unix time for duration
 	startTime, err := model.StartOfDayForTimeRange(timeRange, timezone)
 	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", err)
 		return
 	}
 
