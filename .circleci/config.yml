@@ -415,7 +415,7 @@ jobs:
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
-      MM_DOCKER_IMAGE_TAG: prerelease
+      MM_DOCKER_IMAGE_TAG: c0ab244
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
