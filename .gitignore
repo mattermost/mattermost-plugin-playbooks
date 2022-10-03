@@ -8,9 +8,11 @@ dist
 tests-e2e/node_modules
 tests-e2e/cypress/screenshots
 tests-e2e/cypress/videos
+tests-e2e/cypress/results
 .eslintcache
 report.xml
 
 webapp/src/manifest.js
 server/manifest.go
 server/data/
+server/e2etest.config.json

@@ -100,23 +100,24 @@ describe('playbooks > edit status update', () => {
                 cy.contains('3 outgoing webhooks');
             });
 
-            // # Disable and reenable status update
+            // # Disable status update
             cy.findAllByTestId('status-update-toggle').eq(0).click();
 
             // * Verify status update message
-            cy.findAllByTestId('status-update-section').should('exist').within(() => {
-                cy.contains('Status updates are not expected.');
+            cy.get('#status-updates').within(() => {
+                cy.findByText('Status updates are not expected.').should('exist');
             });
 
+            // # Re-enable status update
             cy.findAllByTestId('status-update-toggle').eq(0).click();
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
             // * Verify that channels and webhooks persist
-            cy.findAllByTestId('status-update-section').should('exist').within(() => {
-                cy.contains('1 channel');
-                cy.contains('3 outgoing webhooks');
+            cy.get('#status-updates').within(() => {
+                cy.contains('1 channel').should('exist');
+                cy.contains('3 outgoing webhooks').should('exist');
             });
         });
     });

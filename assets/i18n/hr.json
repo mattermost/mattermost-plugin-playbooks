@@ -102,5 +102,13 @@
             "few": "Imaš **{{.Count}} dodijeljena zadatka s rokom nakon danas**.",
             "other": "Imaš **{{.Count}} dodijeljenih zadataka s rokom nakon danas**."
         }
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here – @{{.Name}} je zatražio/la aktualiziranje stanja. \n"
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here – @{{.Name}} želi sudjelovati u ovom izvođenju. Da bi postali članovi izvođenja, dodaj ih ovom kanalu.\n"
     }
 ]

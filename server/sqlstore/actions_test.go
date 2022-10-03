@@ -21,15 +21,15 @@ func setupChannelActionStore(t *testing.T, db *sqlx.DB) app.ChannelActionStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewChannelActionStore(pluginAPIClient, logger, sqlStore)
+	return NewChannelActionStore(pluginAPIClient, sqlStore)
 }
 
 func TestViewedChannel(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, _ = setupSQLStore(t, db)
+		_ = setupSQLStore(t, db)
 		channelActionStore := setupChannelActionStore(t, db)
 
 		t.Run("two new users get welcome messages, one old user doesn't", func(t *testing.T) {

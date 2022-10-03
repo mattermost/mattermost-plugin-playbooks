@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const RetrospectivePrefix = "retro_"
@@ -24,9 +25,11 @@ func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
 }
 
 func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string) {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToRemind, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID).Error())
+		logger.WithError(err).Errorf("handleReminderToFillRetro failed to get playbook run")
 		return
 	}
 
@@ -41,7 +44,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	}
 
 	if err = s.postRetrospectiveReminder(playbookRunToRemind, false); err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "couldn't post reminder").Error())
+		logger.WithError(err).Errorf("couldn't post reminder")
 		return
 	}
 
@@ -49,22 +52,24 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 	go func() {
 		time.Sleep(time.Second * 2)
 		if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-			s.logger.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
+			logger.WithError(err).Errorf("failed to reocurr retrospective reminder")
 			return
 		}
 	}()
 }
 
 func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
+		logger.WithError(err).Error("HandleReminder failed to get playbook run")
 		return
 	}
 
 	owner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", playbookRunToModify.OwnerUserID).Error())
+		logger.WithError(err).WithField("user_id", playbookRunToModify.OwnerUserID).Error("HandleReminder failed to get owner")
 		return
 	}
 
@@ -95,23 +100,24 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	model.ParseSlackAttachment(post, attachments)
 
 	if err := s.poster.PostMessageToThread("", post); err != nil {
-		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
+		logger.WithError(err).Errorf("HandleReminder error posting reminder message")
 		return
 	}
 
 	// broadcast to followers
 	message, err := s.buildOverdueStatusUpdateMessage(playbookRunToModify, owner.Username)
 	if err != nil {
-		s.pluginAPI.Log.Warn("failed to build overdue status update message", "PlaybookRunID", playbookRunToModify.ID, "error", err)
+		logger.WithError(err).Error("failed to build overdue status update message")
 	} else {
-		s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
+		err = s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
+		if err != nil {
+			logger.WithError(err).Error("failed to dm post to run followers")
+		}
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id
-
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
-	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
+	if _, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		logger.WithError(err).Error("error updating with reminder post id")
 	}
 }
 
@@ -164,6 +170,29 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
 
 	return nil
+}
+
+// ResetReminder creates a timeline event for a reminder being reset and then creates a new reminder
+func (s *PlaybookRunServiceImpl) ResetReminder(playbookRunID string, newReminder time.Duration) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	eventTime := model.GetMillis()
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunToModify.ID,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
+		EventType:     StatusUpdateSnoozed,
+		SubjectUserID: playbookRunToModify.ReporterUserID,
+	}
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrapf(err, "failed to create timeline event after resetting reminder timer")
+	}
+
+	return s.SetNewReminder(playbookRunID, newReminder)
 }
 
 // SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the

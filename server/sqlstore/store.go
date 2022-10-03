@@ -4,23 +4,27 @@ import (
 	"database/sql"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/sirupsen/logrus"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
+// maxJSONLength holds the limit we set for JSON data in postgres
+// Since JSON data type is unboounded, we need to set a limit
+// that we'll control manually.
+const maxJSONLength = 256 * 1024 // 256KB
+
 type SQLStore struct {
-	log       bot.Logger
 	db        *sqlx.DB
 	builder   sq.StatementBuilderType
 	scheduler app.JobOnceScheduler
 }
 
 // New constructs a new instance of SQLStore.
-func New(pluginAPI PluginAPIClient, log bot.Logger, scheduler app.JobOnceScheduler) (*SQLStore, error) {
+func New(pluginAPI PluginAPIClient, scheduler app.JobOnceScheduler) (*SQLStore, error) {
 	var db *sqlx.DB
 
 	origDB, err := pluginAPI.Store.GetMasterDB()
@@ -39,7 +43,6 @@ func New(pluginAPI PluginAPIClient, log bot.Logger, scheduler app.JobOnceSchedul
 	}
 
 	return &SQLStore{
-		log,
 		db,
 		builder,
 		scheduler,
@@ -123,6 +126,6 @@ func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
 func (sqlStore *SQLStore) finalizeTransaction(tx *sqlx.Tx) {
 	// Rollback returns sql.ErrTxDone if the transaction was already closed.
 	if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-		sqlStore.log.Errorf("Failed to rollback transaction; err: %v", err)
+		logrus.WithError(err).Error("Failed to rollback transaction")
 	}
 }

@@ -1,20 +1,19 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {mdiClipboardPlayMultipleOutline, mdiImport} from '@mdi/js';
-import Icon from '@mdi/react';
+import {ImportIcon, PlayBoxMultipleOutlineIcon, PlusIcon, GlobeIcon} from '@mattermost/compass-icons/components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {importFile} from 'src/client';
+import {useImportPlaybook} from 'src/components/backstage/import_playbook';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import Menu from '../widgets/menu/menu';
 import MenuItem from '../widgets/menu/menu_item';
 import MenuGroup from '../widgets/menu/menu_group';
 import MenuWrapper from '../widgets/menu/menu_wrapper';
-import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {OVERLAY_DELAY} from 'src/constants';
 import {useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
@@ -26,29 +25,16 @@ interface CreatePlaybookDropdownProps {
 const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const teams = useSelector(getMyTeams);
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
+
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(props.team_id || teams[0].id, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
             {formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
         </Tooltip>
     );
-
-    const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0]) {
-            const file = e.target.files[0];
-
-            const teamId = props.team_id || teams[0].id;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                const {id} = await importFile(ev?.target?.result, teamId);
-                navigateToPluginUrl(`/playbooks/${id}/outline`);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-    };
 
     const renderDropdownItems = () => {
         const browsePlaybooks = (
@@ -58,7 +44,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 onClick={() => {
                     navigateToPluginUrl('/playbooks');
                 }}
-                icon={<StyledIcon className='icon-globe'/>}
+                icon={<IconWrapper><GlobeIcon size={18}/></IconWrapper>}
                 text={formatMessage({defaultMessage: 'Browse Playbooks'})}
             />
         );
@@ -68,7 +54,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 id='createPlaybook'
                 show={true}
                 onClick={() => dispatch(displayPlaybookCreateModal({}))}
-                icon={<StyledIcon className='icon-plus'/>}
+                icon={<IconWrapper><PlusIcon size={18}/></IconWrapper>}
                 text={formatMessage({defaultMessage: 'Create New Playbook'})}
             />
         );
@@ -82,10 +68,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                         fileInputRef?.current?.click();
                     }}
                     icon={
-                        <StyledMDIIcon
-                            path={mdiImport}
-                            size={'18px'}
-                        />
+                        <IconWrapper><ImportIcon size={18}/></IconWrapper>
                     }
                     text={formatMessage({defaultMessage: 'Import Playbook'})}
                 />
@@ -100,10 +83,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                     navigateToPluginUrl('/runs');
                 }}
                 icon={
-                    <StyledMDIIcon
-                        path={mdiClipboardPlayMultipleOutline}
-                        size={'18px'}
-                    />
+                    <IconWrapper><PlayBoxMultipleOutlineIcon size={18}/></IconWrapper>
                 }
                 text={formatMessage({defaultMessage: 'Browse Runs'})}
             />
@@ -132,15 +112,9 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             >
                 <>
                     <Button aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}>
-                        <i className='icon-plus'/>
+                        <PlusIcon size={18}/>
                     </Button>
-                    <input
-                        type='file'
-                        accept='*.json,application/JSON'
-                        onChange={importUpload}
-                        ref={fileInputRef}
-                        style={{display: 'none'}}
-                    />
+                    {inputImportPlaybook}
                 </>
             </OverlayTrigger>
             <Menu
@@ -180,22 +154,18 @@ const Button = styled.button`
     min-width: 28px;
     height: 28px;
     font-size: 18px;
-    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
 
     &.disabled {
         background: rgba(255, 255, 255, 0.08);
     }
 `;
 
-const StyledMDIIcon = styled(Icon)`
-    width: 25px;
-    height: 22px;
+const IconWrapper = styled.div`
     margin-right: 7px;
     margin-left: 4px;
-`;
-
-const StyledIcon = styled.i`
-    width: 25px;
-    height: 22px;
-    margin-right: 3px;
+    display: flex;
+    justify-items: center;
 `;

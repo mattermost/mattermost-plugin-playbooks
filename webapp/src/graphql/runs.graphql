@@ -1,0 +1,21 @@
+query Run($id: String!) {
+    run(id: $id) {
+      id
+      name
+      ownerUserID
+      participantIDs
+      metadata { followers }
+    }
+}
+
+mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+  updateRun(id: $id, updates: $updates)
+}
+
+mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+	addRunParticipants(runID: $runID, userIDs: $userIDs)
+}
+
+mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
+	removeRunParticipants(runID: $runID, userIDs: $userIDs)
+}

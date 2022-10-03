@@ -10,22 +10,21 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type GraphQLHandler struct {
 	*ErrorHandler
-	playbookService app.PlaybookService
-	categoryService app.CategoryService
-	pluginAPI       *pluginapi.Client
-	log             bot.Logger
-	config          config.Service
-	permissions     *app.PermissionsService
-	playbookStore   app.PlaybookStore
-	licenceChecker  app.LicenseChecker
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	categoryService    app.CategoryService
+	pluginAPI          *pluginapi.Client
+	config             config.Service
+	permissions        *app.PermissionsService
+	playbookStore      app.PlaybookStore
+	licenceChecker     app.LicenseChecker
 
 	schema *graphql.Schema
 }
@@ -36,24 +35,24 @@ var SchemaFile string
 func NewGraphQLHandler(
 	router *mux.Router,
 	playbookService app.PlaybookService,
+	playbookRunService app.PlaybookRunService,
 	categoryService app.CategoryService,
 	api *pluginapi.Client,
-	log bot.Logger,
 	configService config.Service,
 	permissions *app.PermissionsService,
 	playbookStore app.PlaybookStore,
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
 	handler := &GraphQLHandler{
-		ErrorHandler:    &ErrorHandler{log: log},
-		playbookService: playbookService,
-		categoryService: categoryService,
-		pluginAPI:       api,
-		log:             log,
-		config:          configService,
-		permissions:     permissions,
-		playbookStore:   playbookStore,
-		licenceChecker:  licenceChecker,
+		ErrorHandler:       &ErrorHandler{},
+		playbookService:    playbookService,
+		playbookRunService: playbookRunService,
+		categoryService:    categoryService,
+		pluginAPI:          api,
+		config:             configService,
+		permissions:        permissions,
+		playbookStore:      playbookStore,
+		licenceChecker:     licenceChecker,
 	}
 
 	opts := []graphql.SchemaOpt{
@@ -72,34 +71,35 @@ func NewGraphQLHandler(
 	var err error
 	handler.schema, err = graphql.ParseSchema(SchemaFile, root, opts...)
 	if err != nil {
-		log.Errorf("unable to parse graphql schema: %v", err.Error())
+		logrus.WithError(err).Error("unable to parse graphql schema")
 		return nil
 	}
 
-	router.HandleFunc("/query", graphiQL).Methods("GET")
-	router.HandleFunc("/query", handler.graphQL).Methods("POST")
+	router.HandleFunc("/query", withContext(graphiQL)).Methods("GET")
+	router.HandleFunc("/query", withContext(handler.graphQL)).Methods("POST")
 
 	return handler
 }
 
 type ctxKey struct{}
 
-type Context struct {
-	r               *http.Request
-	playbookService app.PlaybookService
-	playbookStore   app.PlaybookStore
-	categoryService app.CategoryService
-	pluginAPI       *pluginapi.Client
-	log             bot.Logger
-	config          config.Service
-	permissions     *app.PermissionsService
-	licenceChecker  app.LicenseChecker
+type GraphQLContext struct {
+	r                  *http.Request
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	playbookStore      app.PlaybookStore
+	categoryService    app.CategoryService
+	pluginAPI          *pluginapi.Client
+	logger             logrus.FieldLogger
+	config             config.Service
+	permissions        *app.PermissionsService
+	licenceChecker     app.LicenseChecker
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
-func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
-	// Limit bodies to 100KiB.
-	r.Body = http.MaxBytesReader(w, r.Body, 102400)
+func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Request) {
+	// Limit bodies to 300KiB.
+	r.Body = http.MaxBytesReader(w, r.Body, 300*1024)
 
 	var params struct {
 		Query         string                 `json:"query"`
@@ -107,32 +107,33 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		Variables     map[string]interface{} `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.log.Debugf("Unable to decode graphql query: %v", err)
+		c.logger.WithError(err).Error("Unable to decode graphql query")
 		return
 	}
 
 	if !h.config.IsConfiguredForDevelopmentAndTesting() {
 		if params.OperationName == "" {
-			h.log.Debugf("Invalid blank operation name.")
+			c.logger.Warn("Invalid blank operation name")
 			return
 		}
 	}
 
-	c := &Context{
-		r:               r,
-		playbookService: h.playbookService,
-		categoryService: h.categoryService,
-		pluginAPI:       h.pluginAPI,
-		log:             h.log,
-		config:          h.config,
-		permissions:     h.permissions,
-		playbookStore:   h.playbookStore,
-		licenceChecker:  h.licenceChecker,
+	graphQLContext := &GraphQLContext{
+		r:                  r,
+		playbookService:    h.playbookService,
+		playbookRunService: h.playbookRunService,
+		categoryService:    h.categoryService,
+		pluginAPI:          h.pluginAPI,
+		logger:             c.logger,
+		config:             h.config,
+		permissions:        h.permissions,
+		playbookStore:      h.playbookStore,
+		licenceChecker:     h.licenceChecker,
 	}
 
 	// Populate the context with required info.
 	reqCtx := r.Context()
-	reqCtx = context.WithValue(reqCtx, ctxKey{}, c)
+	reqCtx = context.WithValue(reqCtx, ctxKey{}, graphQLContext)
 
 	response := h.schema.Exec(reqCtx,
 		params.Query,
@@ -140,18 +141,17 @@ func (h *GraphQLHandler) graphQL(w http.ResponseWriter, r *http.Request) {
 		params.Variables,
 	)
 
-	if len(response.Errors) > 0 {
-		mlog.Error("Error executing request", mlog.String("operation", params.OperationName),
-			mlog.Array("errors", response.Errors))
+	for _, err := range response.Errors {
+		c.logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		mlog.Warn("Error while writing response", mlog.Err(err))
+		c.logger.WithError(err).Warn("Error while writing response")
 	}
 }
 
-func getContext(ctx context.Context) (*Context, error) {
-	c, ok := ctx.Value(ctxKey{}).(*Context)
+func getContext(ctx context.Context) (*GraphQLContext, error) {
+	c, ok := ctx.Value(ctxKey{}).(*GraphQLContext)
 	if !ok {
 		return nil, errors.New("custom context not found in context")
 	}
@@ -162,7 +162,7 @@ func getContext(ctx context.Context) (*Context, error) {
 //go:embed graphqli.html
 var GraphiqlPage []byte
 
-func graphiQL(w http.ResponseWriter, r *http.Request) {
+func graphiQL(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	_, _ = w.Write(GraphiqlPage)
 }

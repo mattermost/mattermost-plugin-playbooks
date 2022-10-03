@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
@@ -17,15 +17,25 @@ import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
-import {useExperimentalFeaturesEnabled, useRunsList} from 'src/hooks';
+import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
 
 import Header from '../widgets/header';
 
 import RunList from './runs_list/runs_list';
-import {statusOptions} from './runs_list/status_filter';
 import NoContentPage from './runs_page_no_content';
+
+const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
+];
+
+interface StatusOption {
+    value: string;
+    label: string;
+}
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -38,17 +48,12 @@ const defaultPlaybookFetchParams = {
         .map((opt) => opt.value),
 };
 
-const RunListContainer = styled.div<{$newLHSEnabled: boolean;}>`
+const RunListContainer = styled.div`
     flex: 1 1 auto;
-	${({$newLHSEnabled}) => !$newLHSEnabled && css`
-        margin: 0 auto;
-        max-width: 1160px;
-    `}
 `;
 
 const RunsPage = () => {
     const {formatMessage} = useIntl();
-    const newLHSEnabled = useExperimentalFeaturesEnabled();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
@@ -80,7 +85,7 @@ const RunsPage = () => {
     }
 
     return (
-        <RunListContainer $newLHSEnabled={newLHSEnabled}>
+        <RunListContainer>
             <Header
                 data-testid='titlePlaybookRun'
                 level={2}

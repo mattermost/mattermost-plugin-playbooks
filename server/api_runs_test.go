@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -171,8 +172,6 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
-		// assert some data has been injected
-		assert.Len(t, run.ParticipantIDs, 1)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -279,6 +278,23 @@ func TestRunCreation(t *testing.T) {
 		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
 		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
 		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
+	})
+}
+
+func TestCreateInvalidRuns(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("fails if description is longer than 4096", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "test run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			Description: strings.Repeat("A", 4097),
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Nil(t, run)
 	})
 }
 
@@ -965,6 +981,30 @@ func TestChecklistManagement(t *testing.T) {
 	}
 }
 
+func TestChecklisFailTooLarge(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("checklist creation - failure: too large checklist", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "My regular title",
+			Items: []client.ChecklistItem{
+				{Title: "Item title", Description: strings.Repeat("A", (256*1024)+1)},
+			},
+		})
+		require.Error(t, err)
+	})
+}
+
 func TestRunActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1199,6 +1239,8 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := privateRun.TimelineEvents[len(privateRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
+		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
+		assert.NotZero(t, lastEvent.PostID)
 		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
 	})
 
@@ -1226,5 +1268,29 @@ func TestRequestUpdate(t *testing.T) {
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
 	})
+}
 
+func TestReminderReset(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("reminder reset - event created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 100,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		statusSnoozed := make([]client.TimelineEvent, 0)
+		for _, te := range pb.TimelineEvents {
+			if te.EventType == "status_update_snoozed" {
+				statusSnoozed = append(statusSnoozed, te)
+			}
+		}
+
+		require.Len(t, statusSnoozed, 1)
+	})
 }

@@ -50,7 +50,7 @@ const RHSTitle = () => {
                     <RHSTitleLink
                         data-testid='rhs-title'
                         role={'button'}
-                        to={pluginUrl(`/runs/${playbookRun?.id}`)}
+                        to={pluginUrl(`/runs/${playbookRun?.id}?from=channel_rhs_title`)}
                     >
                         {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>
@@ -65,6 +65,7 @@ const RHSTitle = () => {
     return (
         <RHSTitleText>
             {/* product name; don't translate */}
+            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
             {'Playbooks'}
         </RHSTitleText>
     );

@@ -86,17 +86,17 @@ const useRequestUpdate = (playbookRunId: string) => {
     const requestStatusUpdate = async () => {
         const response = await requestUpdate(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to request an update'}), ToastType.Failure);
+            addToast(formatMessage({defaultMessage: 'The update request was unsuccessful.'}), ToastType.Failure);
         } else {
-            addToast(formatMessage({defaultMessage: 'A message was sent to the run channel.'}), ToastType.Success);
+            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel. '}), ToastType.Success);
         }
     };
     const RequestUpdateConfirmModal = (
         <ConfirmModal
             show={showRequestUpdateConfirm}
-            title={formatMessage({defaultMessage: 'Confirm request update'})}
-            message={formatMessage({defaultMessage: 'A message will be sent to the run channel, requesting them to post an update.'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Request update'})}
+            title={formatMessage({defaultMessage: 'Request an update '})}
+            message={formatMessage({defaultMessage: 'A status update request will be sent to the run channel. '})}
+            confirmButtonText={formatMessage({defaultMessage: 'Send request '})}
             onConfirm={() => {
                 requestStatusUpdate();
                 setShowRequestUpdateConfirm(false);
@@ -240,7 +240,10 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                         </PostUpdateButton>
                     ) : null}
                     <Kebab>
-                        <DotMenu icon={<ThreeDotsIcon/>}>
+                        <DotMenu
+                            icon={<ThreeDotsIcon/>}
+                            placement='bottom-end'
+                        >
                             <DropdownItem
                                 onClick={onClickViewAllUpdates}
                                 disabled={playbookRun.status_posts.length === 0}
@@ -248,8 +251,8 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                                 {openRHSText}
                             </DropdownItem>
                             <DropdownItem
-                                onClick={showRequestUpdateConfirm}
-                                disabled={false}
+                                onClick={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm}
+                                disabled={playbookRun.current_status === PlaybookRunStatus.Finished}
                             >
                                 {formatMessage({defaultMessage: 'Request update...'})}
                             </DropdownItem>
@@ -422,5 +425,6 @@ const ViewAllUpdates = styled.div`
     cursor: pointer;
     color: var(--button-bg);
     font-weight: 600;
+    width: fit-content;    
 `;
 

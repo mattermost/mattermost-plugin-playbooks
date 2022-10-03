@@ -2,22 +2,26 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef} from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
+import {CheckAllIcon, SyncIcon, OpenInNewIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {startPlaybookRunById} from 'src/actions';
+import {openPlaybookRunModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 const Item = styled.div`
@@ -170,9 +174,13 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
         num_stages,
         num_actions,
         last_run_at,
+        description,
         team_id,
+        default_owner_enabled,
+        default_owner_id,
     } = playbook;
-
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, team_id || ''));
+    const {id: teamId, name: teamName} = team;
     return (
         <Item data-testid='rhs-home-item'>
             <div>
@@ -187,10 +195,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                             parentRef={linkRef}
 
                         />
-                        <Icon
-                            path={mdiOpenInNew}
-                            size={0.85}
-                        />
+                        <OpenInNewIcon size={14}/>
                     </Link>
                 </Title>
                 <Sub>
@@ -208,6 +213,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                                         ),
                                     }}
                                 />
+                                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 <span className='separator'>{'·'}</span>
                             </span>
                         </>
@@ -220,19 +226,13 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                 </Sub>
                 <Meta>
                     <MetaItem>
-                        <Icon
-                            path={mdiCheckAll}
-                            size={1}
-                        />
+                        <CheckAllIcon size={16}/>
                         {formatMessage({
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: num_stages})}
                     </MetaItem>
                     <MetaItem>
-                        <Icon
-                            path={mdiSync}
-                            size={1}
-                        />
+                        <SyncIcon size={16}/>
                         {formatMessage({
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
                         }, {num_actions})}
@@ -242,12 +242,17 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             {hasPermissionToRunPlaybook &&
             <RunButton
                 data-testid={'run-playbook'}
-                onClick={() => dispatch(startPlaybookRunById(team_id, id))}
+                onClick={() => {
+                    return dispatch(openPlaybookRunModal(
+                        id,
+                        default_owner_enabled ? default_owner_id : null,
+                        description,
+                        teamId,
+                        teamName
+                    ));
+                }}
             >
-                <Icon
-                    path={mdiClipboardPlayOutline}
-                    size={1.5}
-                />
+                <PlayOutlineIcon/>
                 <FormattedMessage defaultMessage='Run'/>
             </RunButton>
             }
@@ -286,27 +291,24 @@ export const RHSHomeTemplate = ({
                             parentRef={linkRef}
 
                         />
-                        <Icon
-                            path={mdiOpenInNew}
-                            size={0.85}
-                        />
+                        <OpenInNewIcon size={14}/>
                     </Link>
                 </Title>
                 <Sub/>
                 <Meta>
                     <MetaItem>
-                        <Icon
-                            path={mdiCheckAll}
-                            size={1}
+                        <CheckAllIcon
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
+                            size={16}
                         />
                         {formatMessage({
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: template.num_stages})}
                     </MetaItem>
                     <MetaItem>
-                        <Icon
-                            path={mdiSync}
-                            size={1}
+                        <SyncIcon
+                            size={16}
+                            color={'rgba(var(--center-channel-color-rgb), 0.72)'}
                         />
                         {formatMessage({
 
@@ -316,10 +318,7 @@ export const RHSHomeTemplate = ({
                 </Meta>
             </div>
             <RunButton onClick={() => onUse(template)}>
-                <Icon
-                    path={mdiOpenInNew}
-                    size={1.5}
-                />
+                <OpenInNewIcon color={'var(--button-bg)'}/>
                 {formatMessage({defaultMessage: 'Use'})}
             </RunButton>
         </Item>

@@ -5,19 +5,19 @@ import styled from 'styled-components';
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {AccountPlusOutlineIcon, UpdateIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {joinChannel} from 'mattermost-redux/actions/channels';
+import {Channel} from '@mattermost/types/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {
     getSiteUrl,
-    requestGetInvolved,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {useChannel, useFavoriteRun} from 'src/hooks';
+import {useFavoriteRun} from 'src/hooks';
+import {useRunMembership} from 'src/graphql/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
@@ -37,21 +37,26 @@ interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
     role: Role;
+    channel: Channel | undefined | null;
+    hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
+    isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
-    const channel = useChannel(playbookRun.channel_id);
+
     const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
-    const onGetInvolved = async () => {
+    const {addToRun} = useRunMembership(playbookRun.id, [currentUserId]);
+
+    const onParticipate = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
@@ -59,28 +64,21 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
         setShowGetInvolvedConfirm(true);
     };
 
-    const onConfirmGetInvolved = async () => {
+    const onConfirmParticipate = async () => {
         if (role === Role.Participant || !playbookRunMetadata) {
             return;
         }
 
-        // Channel null value comes from error response (and we assume that is mostly 403)
-        // If we don't have access to channel we'll send a request to be added,
-        // otherwise we directly join it
-        if (channel === null) {
-            const response = await requestGetInvolved(playbookRun.id);
-            if (response?.error) {
-                addToast(formatMessage({defaultMessage: 'Your request wasn\'t successful.'}), ToastType.Failure);
-            } else {
-                addToast(formatMessage({defaultMessage: 'Your request has been sent to the run channel.'}), ToastType.Success);
-            }
-            return;
-        }
-
-        // if channel is not null, join the channel
-        await dispatch(joinChannel(currentUserId, playbookRun.team_id, playbookRun.channel_id, playbookRunMetadata.channel_name));
+        addToRun()
+            .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
+            .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
         telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
-        addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success);
+    };
+
+    const confirmGetInvolvedMessage = () => {
+        const commonMessage = formatMessage({defaultMessage: 'As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'});
+        const introMessage = channel === null ? formatMessage({defaultMessage: 'Request to participate in this run.'}) : formatMessage({defaultMessage: 'Become a participant of the run.'});
+        return introMessage + ' ' + commonMessage;
     };
 
     // Favorite Button State
@@ -91,12 +89,16 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             <StarButton onClick={toggleFavorite}>
                 <FavoriteIcon
                     size={18}
-                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : ''}
+                    color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                 />
             </StarButton>
             <ContextMenu
                 playbookRun={playbookRun}
                 role={role}
+                isFavoriteRun={isFavoriteRun}
+                isFollowing={isFollowing}
+                toggleFavorite={toggleFavorite}
+                hasPermanentViewerAccess={hasPermanentViewerAccess}
             />
             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
             <HeaderButton
@@ -105,8 +107,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
                 aria-label={formatMessage({defaultMessage: 'Run Actions'})}
                 Icon={LightningBoltOutlineIcon}
                 onClick={() => dispatch(showRunActionsModal())}
-                size={24}
-                iconSize={14}
                 data-testid={'rhs-header-button-run-actions'}
             />
             <StyledCopyLink
@@ -118,7 +118,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
                 tooltipMessage={formatMessage({defaultMessage: 'View Timeline'})}
-                Icon={UpdateIcon}
+                Icon={TimelineTextOutlineIcon}
                 onClick={onTimelineClick}
                 isActive={rhsSection === RHSContent.RunTimeline}
                 data-testid={'rhs-header-button-timeline'}
@@ -132,9 +132,9 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
                 data-testid={'rhs-header-button-info'}
             />
             {role === Role.Viewer &&
-                <GetInvolved onClick={onGetInvolved}>
+                <GetInvolved onClick={onParticipate}>
                     <GetInvolvedIcon color={'var(--button-color)'}/>
-                    {formatMessage({defaultMessage: 'Get involved'})}
+                    {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
             }
             <RunActionsModal
@@ -143,11 +143,11 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, role, onInfoClick, 
             />
             <ConfirmModal
                 show={showGetInvolvedConfirm}
-                title={formatMessage({defaultMessage: 'Confirm get involved'})}
-                message={channel === null ? formatMessage({defaultMessage: 'Your participation request will be sent to the run channel.'}) : formatMessage({defaultMessage: 'You\'re about to join this run.'})}
+                title={formatMessage({defaultMessage: 'Participate in the run'})}
+                message={confirmGetInvolvedMessage()}
                 confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
                 onConfirm={() => {
-                    onConfirmGetInvolved();
+                    onConfirmParticipate();
                     setShowGetInvolvedConfirm(false);
                 }}
                 onCancel={() => setShowGetInvolvedConfirm(false)}
@@ -169,9 +169,9 @@ const Container = styled.div`
 
 const StyledCopyLink = styled(CopyLink)`
     border-radius: 4px;
-    font-size: 14px;
-    width: 24px;
-    height: 24px;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
     margin-left: 4px;
     display: grid;
     place-items: center;

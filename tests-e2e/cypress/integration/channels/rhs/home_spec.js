@@ -95,18 +95,18 @@ describe('channels > rhs > home', () => {
         it('without pre-populated channel name template', () => {
             cy.findByText('Team Playbook').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
 
-            cy.get('#interactiveDialogModal').within(() => {
+            cy.get('#playbooks_run_playbook_dialog').within(() => {
                 // * Verify run name prompt
-                cy.get('input').eq(1).should('be.empty');
+                cy.get('input').eq(0).should('be.empty');
             });
         });
 
         it('with pre-populated channel name template', () => {
             cy.findByText('Channel Name Template').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
 
-            cy.get('#interactiveDialogModal').within(() => {
+            cy.get('#playbooks_run_playbook_dialog').within(() => {
                 // * Verify run name prompt
-                cy.get('input').eq(1).should('have.value', 'templated name');
+                cy.get('input').eq(0).should('have.value', 'templated name');
             });
         });
     });

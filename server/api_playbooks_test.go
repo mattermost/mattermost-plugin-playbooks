@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
@@ -225,6 +226,40 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 2, playbookResults.TotalCount)
 
+	})
+}
+
+func TestCreateInvalidPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("fails if json is larger than 256K", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "test1",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "checklist",
+					Items: []client.ChecklistItem{
+						{Description: strings.Repeat("A", (256*1024)+1)},
+					},
+				},
+			},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Empty(t, id)
+	})
+
+	t.Run("fails if title is longer than 1024", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  strings.Repeat("A", 1025),
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Empty(t, id)
 	})
 }
 
@@ -797,6 +832,8 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	})
 
+	oldMembers := e.BasicPlaybook.Members
+
 	t.Run("update playbook members", func(t *testing.T) {
 		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members, client.PlaybookMember{UserID: "testuser", Roles: []string{model.PlaybookMemberRoleId}})
 
@@ -823,7 +860,24 @@ func TestPlaybooksPermissions(t *testing.T) {
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
 		})
+
+		e.BasicPlaybook.Members = []client.PlaybookMember{}
+		t.Run("with permissions removal", func(t *testing.T) {
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defer func() {
+				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			}()
+			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			assert.NoError(t, err)
+		})
 	})
+
+	e.BasicPlaybook.Members = oldMembers
+	err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+	require.NoError(t, err)
 
 	t.Run("update playbook roles", func(t *testing.T) {
 		e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles = append(e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles, model.PlaybookAdminRoleId)

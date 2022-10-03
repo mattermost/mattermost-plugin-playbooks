@@ -1,5 +1,21 @@
 type Query {
 	playbook(id: String!): Playbook
+	playbooks(
+		teamID: String = "",
+		sort: String = "title",
+		direction: String = "ASC",
+		searchTerm: String = "",
+		withArchived: Boolean = false,
+		withMembershipOnly: Boolean = false,
+	): [Playbook!]!
+
+	run(id: String!): Run
+	runs(
+		teamID: String = "",
+		sort: String = "",
+		statuses: [String!] = [],
+		participantOrFollowerID: String = "",
+	): [Run!]!
 }
 
 type Mutation {
@@ -8,6 +24,13 @@ type Mutation {
 	addMetric(playbookID: String!, title: String!, description: String!, type: String!, target: Int): String!
 	updateMetric(id: String!, title: String, description: String, target: Int): String!
 	deleteMetric(id: String!): String!
+
+	addPlaybookMember(playbookID: String!, userID: String!): String!
+	removePlaybookMember(playbookID: String!, userID: String!): String!
+
+	updateRun(id: String!, updates: RunUpdates!): String!
+	addRunParticipants(runID: String!, userIDs: [String!]!): String!
+	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 }
 
 input PlaybookUpdates {
@@ -143,4 +166,72 @@ type PlaybookMetricConfig {
 	description: String!
 	type: MetricType!
 	target: Int
+}
+
+type Run {
+	id: String!
+	playbookID: String!
+	name: String!
+	ownerUserID: String!
+	channelID: String!
+	postID: String!
+	teamID: String!
+	isFavorite: Boolean!
+	currentStatus: String!
+	createAt: Float!
+	endAt: Float!
+	participantIDs: [String!]!
+
+	summary: String!
+	summaryModifiedAt: Float!
+	checklists: [Checklist!]!
+
+	retrospective: String!
+	retrospectivePublishedAt: Float!
+	retrospectiveReminderIntervalSeconds: Float!
+	retrospectiveEnabled: Boolean!
+	retrospectiveWasCanceled: Boolean!
+
+	statusUpdateEnabled: Boolean!
+	statusUpdateBroadcastWebhooksEnabled: Boolean!
+	lastStatusUpdateAt: Float!
+	statusPosts: [StatusPost!]!
+	reminderPostId: String!
+	reminderMessageTemplate: String!
+	reminderTimerDefaultSeconds: Float!
+	previousReminder: Float!
+
+	statusUpdateBroadcastChannelsEnabled: Boolean!
+	statusUpdateBroadcastWebhooksEnabled: Boolean!
+	broadcastChannelIDs: [String!]!
+	webhookOnStatusUpdateURLs: [String!]!
+
+	timelineEvents: [TimelineEvent!]!
+	metadata: Metadata!
+}
+
+type StatusPost {
+	id: String!
+	createAt: Float!
+	deleteAt: Float!
+}
+
+type TimelineEvent {
+	id: String!
+	createAt: Float!
+	deleteAt: Float!
+	eventType: String!
+	details: String!
+	postID: String!
+	summary: String!
+	subjectUserID: String!
+	creatorUserID: String!
+}
+
+input RunUpdates {
+	isFavorite: Boolean
+}
+
+type Metadata {
+	followers: [String!]!
 }

@@ -12,25 +12,28 @@ import {useIntl} from 'react-intl';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
-import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
+import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {clientRemoveTimelineEvent} from 'src/client';
-import MultiCheckbox from 'src/components/multi_checkbox';
+import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {useTimelineEvents, useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+import {TimelineEventsFilter} from 'src/types/rhs';
 
 interface Props {
     playbookRun: PlaybookRun;
     role: Role;
+    options: CheckboxOption[];
+    selectOption: (value: string, checked: boolean) => void;
+    eventsFilter: TimelineEventsFilter;
 }
 
-const RHSTimeline = ({playbookRun, role}: Props) => {
+const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: Props) => {
     const {formatMessage} = useIntl();
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
     const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
 
-    const {options, selectOption} = useFilter(playbookRun);
-    const [filteredEvents] = useTimelineEvents(playbookRun);
+    const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 
     return (
         <Container data-testid='timeline-view'>

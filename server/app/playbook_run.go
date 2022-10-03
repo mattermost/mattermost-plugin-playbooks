@@ -277,7 +277,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.DefaultOwnerID = playbook.DefaultOwnerID
 	}
 
-	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled
+	// Do not propagate StatusUpdateBroadcastChannelsEnabled as true if there are no channels in BroadcastChannelIDs
+	r.StatusUpdateBroadcastChannelsEnabled = playbook.BroadcastEnabled && len(playbook.BroadcastChannelIDs) > 0
 	r.BroadcastChannelIDs = playbook.BroadcastChannelIDs
 
 	r.WebhookOnCreationURLs = []string{}
@@ -285,7 +286,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.WebhookOnCreationURLs = playbook.WebhookOnCreationURLs
 	}
 
-	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled
+	// Do not propagate StatusUpdateBroadcastWebhooksEnabled as true if there are no URLs
+	r.StatusUpdateBroadcastWebhooksEnabled = playbook.WebhookOnStatusUpdateEnabled && len(playbook.WebhookOnStatusUpdateURLs) > 0
 	r.WebhookOnStatusUpdateURLs = playbook.WebhookOnStatusUpdateURLs
 
 	r.RetrospectiveEnabled = playbook.RetrospectiveEnabled
@@ -380,6 +382,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 )
 
 type TimelineEvent struct {
@@ -402,7 +405,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", "canceled_retrospective" or "status_update_snoozed".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -675,6 +678,10 @@ type PlaybookRunService interface {
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
 	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
+	// ResetReminder records an event for snoozing a reminder, then calls SetNewReminder to create
+	// the next reminder
+	ResetReminder(playbookRunID string, newReminder time.Duration) error
+
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
@@ -733,8 +740,14 @@ type PlaybookRunService interface {
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
-	// RequestGetInvolved posts a join request message in the run's channel
-	RequestGetInvolved(playbookRunID, requesterID string) error
+	// RequestJoinChannel posts a channel-join request message in the run's channel
+	RequestJoinChannel(playbookRunID, requesterID string) error
+
+	// RemoveParticipants removes users from the run's participants
+	RemoveParticipants(playbookRunID string, userIDs []string) error
+
+	// AddParticipants adds users to the participants list
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -829,6 +842,18 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// AddParticipants adds particpants to the run
+	AddParticipants(playbookRunID string, userIDs []string) error
+
+	// RemoveParticipants removes participants from the run
+	RemoveParticipants(playbookRunID string, userIDs []string) error
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -963,6 +988,10 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
+	// IncludeFavorites filters playbook runs that ParticipantOrFollowerID has marked as favorite.
+	// There's no impact if ParticipantOrFollowerID is empty.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

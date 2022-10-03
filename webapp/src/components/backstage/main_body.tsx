@@ -16,9 +16,7 @@ import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/pla
 import Playbook from 'src/components/backstage/playbooks/playbook';
 
 import PlaybookList from 'src/components/backstage/playbook_list';
-import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import PlaybookEditor from 'src/components/backstage/playbook_editor/playbook_editor';
-import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl, pluginUrl} from 'src/browser_routing';
 import ErrorPage from 'src/components/error_page';
@@ -86,14 +84,6 @@ const MainBody = () => {
 
     return (
         <Switch>
-            <Route path={`${match.url}/playbooks/new`}>
-                <NewPlaybook/>
-            </Route>
-            <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
-                <PlaybookEdit
-                    isNew={false}
-                />
-            </Route>
             <Route path={`${match.url}/playbooks/:playbookId/preview`}>
                 <Playbook/>
             </Route>

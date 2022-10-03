@@ -5,8 +5,9 @@ import {
     useRef,
     useState,
     useMemo,
-    useLayoutEffect,
+    DependencyList,
 } from 'react';
+import {useIntl} from 'react-intl';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
@@ -30,7 +31,7 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
@@ -52,8 +53,6 @@ import {
     fetchPlaybookStats,
     fetchPlaybookRunMetadata,
     isFavoriteItem,
-    favoriteItem,
-    unfavoriteItem,
 } from 'src/client';
 import {CategoryItemType} from 'src/types/category';
 
@@ -61,8 +60,15 @@ import {isCloud} from '../license';
 import {
     globalSettings,
     isCurrentUserAdmin,
+    noopSelector,
 } from '../selectors';
 import {resolve} from 'src/utils';
+import {useUpdateRun} from 'src/graphql/hooks';
+
+export type FetchMetadata = {
+    isFetching: boolean;
+    error: ClientError | null;
+}
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -319,33 +325,59 @@ export function useProfilesInChannel(channelId: string) {
 /**
  * Use thing from API and/or Store
  *
- * @param fetch required thing fetcher
- * @param select thing from store if available
+ * @param id The ID of the thing to fetch
+ * @param fetchFunc required thing fetcher function
+ * @param select thing from store if available (noopSelector if no store)
+ * @param deps Additional deps that might be needed to trigger again the fetch func
  *
- * @returns undefined == loading; null == not found
+ * @returns Array with data in first parameter and metadata in the second.
  */
-function useThing<T extends NonNullable<any>>(
-    id: string,
-    fetch: (id: string) => Promise<T>,
-    select?: (state: GlobalState, id: string) => T,
+export function useThing<T extends NonNullable<any>>(
+    id: string| undefined,
+    fetchFunc: (id: string) => Promise<T>,
+    select: (state: GlobalState, id: string) => T|undefined = noopSelector,
+    deps: DependencyList = [],
 ) {
     const [thing, setThing] = useState<T | null>();
     const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
+    const [error, setError] = useState<ClientError | null>(null);
+    const [isFetching, setIsFetching] = useState<boolean>(true);
 
     useEffect(() => {
+        if (!id) {
+            setIsFetching(false);
+            setThing(null);
+            setError(null);
+            return;
+        }
+
         if (thingFromState) {
             setThing(thingFromState);
+            setIsFetching(false);
             return;
         }
 
-        if (id) {
-            fetch(id).then(setThing).catch(() => setThing(null));
-            return;
-        }
-        setThing(null);
-    }, [thingFromState, id]);
+        fetchFunc(id)
+            .then((res) => {
+                setThing(res);
+            })
+            .catch((err) => {
+                if (err instanceof ClientError) {
+                    setError(err);
+                }
+                setThing(null);
+            });
+        setIsFetching(false);
+    }, [thingFromState, id, ...deps]);
 
-    return thing;
+    const metadata = {
+        isFetching,
+        error,
+        isErrorCode: (code: number) => {
+            return error !== null && error.status_code === code;
+        },
+    };
+    return [thing, metadata] as const;
 }
 
 export function usePost(postId: string) {
@@ -356,63 +388,13 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
     return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
 }
 
-export enum FetchState {
-    idle = 'idle',
-    loading = 'loading',
-    done = 'done',
-    error = 'error',
-}
-
-export type FetchMetadata = {
-    state: FetchState;
-    error: ClientError | null;
-}
-
-/**
- *
- * @param id The id of the resource to be fetched
- * @param fetch The function used to make the fetch
- * @param deps Additional deps that might be needed to trigger again the fetch func
- * @returns array tuple with the data in the first position and the fetchState in the second
- */
-export function useFetch<T>(
-    id: string,
-    fetchFunction: (id: string) => Promise<T>,
-    deps: Array<any> = [],
-) {
-    const [error, setError] = useState<ClientError | null>(null);
-    const [fetchState, setFetchState] = useState<FetchState>(FetchState.idle);
-    const [data, setData] = useState<T | null>(null);
-
-    useEffect(() => {
-        if (!id) {
-            return;
-        }
-        setFetchState(FetchState.loading);
-        fetchFunction(id)
-            .then((res) => {
-                setFetchState(FetchState.done);
-                setData(res);
-            })
-            .catch((err) => {
-                if (err instanceof ClientError) {
-                    setError(err);
-                }
-                setFetchState(FetchState.error);
-                setData(null);
-            });
-    }, [id, ...deps]);
-
-    return [data, {state: fetchState, error}] as [T | null, FetchMetadata];
-}
-
 /**
  * Read-only logic to fetch playbook run metadata
  * @param id identifier of the run to fetch metadata
  * @returns data and fetchState in a array tuple
  */
-export function useRunMetadata(id: PlaybookRun['id']) {
-    return useFetch(id, fetchPlaybookRunMetadata);
+export function useRunMetadata(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
+    return useThing(id, fetchPlaybookRunMetadata, noopSelector, deps);
 }
 
 /**
@@ -421,8 +403,8 @@ export function useRunMetadata(id: PlaybookRun['id']) {
  * @param deps Array of additional deps whose change will invoke again fetch
  * @returns data and fetchState in a array tuple
  */
-export function useRunStatusUpdates(id: PlaybookRun['id'], deps: Array<any> = []) {
-    return useFetch(id, fetchPlaybookRunStatusUpdates, deps);
+export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
+    return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
 }
 
 export function useChannel(channelId: string) {
@@ -504,6 +486,9 @@ export function useOpenCloudModal() {
             openModal({
                 modalId: ModalIdentifiers.CLOUD_PURCHASE,
                 dialogType: PurchaseModal,
+                dialogProps: {
+                    callerCTA: 'playbooks',
+                },
             }),
         );
     };
@@ -660,22 +645,6 @@ export const usePrevious = (value: any) => {
     return ref.current;
 };
 
-export const usePortal = () => {
-    const [el] = useState(document.createElement('div'));
-    useLayoutEffect(() => {
-        const rootPortal = document.getElementById('root-portal');
-        if (rootPortal) {
-            rootPortal.appendChild(el);
-        }
-        return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el);
-            }
-        };
-    }, [el]);
-    return el;
-};
-
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {
     useEffect(() => {
         if (el === null) {
@@ -738,6 +707,7 @@ export const useExportLogAvailable = () => {
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
+    const updateRun = useUpdateRun(runID);
 
     useEffect(() => {
         isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
@@ -747,12 +717,34 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
 
     const toggleFavorite = () => {
         if (isFavoriteRun) {
-            unfavoriteItem(teamID, runID, CategoryItemType.RunItemType);
+            updateRun({isFavorite: false});
             setIsFavoriteRun(false);
             return;
         }
-        favoriteItem(teamID, runID, CategoryItemType.RunItemType);
+        updateRun({isFavorite: true});
         setIsFavoriteRun(true);
     };
     return [isFavoriteRun, toggleFavorite];
+};
+
+export enum ReservedCategory {
+    Favorite = 'Favorite',
+    Runs = 'Runs',
+    Playbooks = 'Playbooks'
+}
+
+export const useReservedCategoryTitleMapper = () => {
+    const {formatMessage} = useIntl();
+    return (categoryName: ReservedCategory | string) => {
+        switch (categoryName) {
+        case ReservedCategory.Favorite:
+            return formatMessage({defaultMessage: 'Favorites'});
+        case ReservedCategory.Runs:
+            return formatMessage({defaultMessage: 'Runs'});
+        case ReservedCategory.Playbooks:
+            return formatMessage({defaultMessage: 'Playbooks'});
+        default:
+            return categoryName;
+        }
+    };
 };

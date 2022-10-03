@@ -3,7 +3,7 @@
 
 import React, {ComponentProps, useRef} from 'react';
 import ReactDOM from 'react-dom';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import Tippy from '@tippyjs/react';
 
 import useTutorialTourTipManager from './manager';
@@ -79,6 +79,7 @@ const TutorialTourTip = ({
     preventDefault = true,
     width = 320,
 }: Props) => {
+    const {formatMessage} = useIntl();
     const triggerRef = useRef(null);
     const {
         show,
@@ -176,7 +177,7 @@ const TutorialTourTip = ({
                 <div className='pb-tutorial-tour-tip__image'>
                     <img
                         src={imageURL}
-                        alt={'tutorial tour tip product image'}
+                        alt={formatMessage({defaultMessage: 'tutorial tour tip product image'})}
                     />
                 </div>
             )}

@@ -3,9 +3,6 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import Icon from '@mdi/react';
-import {mdiCheckAll} from '@mdi/js';
-
 import {Post} from '@mattermost/types/posts';
 import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from '@mattermost/types/channels';
@@ -13,6 +10,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 
+import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
@@ -20,6 +18,7 @@ import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
 import {currentPlaybookRun} from 'src/selectors';
+import {useViewTelemetry} from 'src/hooks/telemetry';
 
 interface Props {
     post: Post;
@@ -53,6 +52,12 @@ export const UpdatePost = (props: Props) => {
     const playbookRunId = props.post.props.playbookRunId ?? '';
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
     const runName = props.post.props.runName ?? '';
+    useViewTelemetry(PlaybookRunViewTarget.StatusUpdate, props.post.id, {
+        post_id: props.post.id,
+        playbook_id: currentRun?.playbook_id, // not always available
+        channel_type: channel.type,
+        playbook_run_id: currentRun?.id, // not always available
+    });
 
     return (
         <>
@@ -71,10 +76,7 @@ export const UpdatePost = (props: Props) => {
                     <Separator/>
                     <Badges>
                         <Badge tooltipText={formatMessage({defaultMessage: 'Tasks'})}>
-                            <Icon
-                                path={mdiCheckAll}
-                                size={1}
-                            />
+                            <BadgeIcon className={'icon-check-all icon-12'}/>
                             <span>
                                 {formatMessage({defaultMessage: '<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked'}, {b: (x) => <b>{x}</b>, numTasksChecked, numTasks})}
                             </span>

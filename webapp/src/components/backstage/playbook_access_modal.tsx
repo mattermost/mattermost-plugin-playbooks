@@ -1,7 +1,7 @@
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
-import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
-import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
+import {GlobalState} from '@mattermost/types/store';
+import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
@@ -23,7 +23,7 @@ const ID = 'playbooks_access';
 
 type Props = {
     playbookId: string
-    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>
+    refetch?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makePlaybookAccessModalDefinition = (props: Props) => ({
@@ -66,12 +66,12 @@ const BlueArrow = styled.i`
 
 const PlaybookAccessModal = ({
     playbookId,
-    onPlaybookChange,
+    refetch,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const [playbook, updatePlaybook] = useEditPlaybook(playbookId);
+    const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
@@ -83,7 +83,6 @@ const PlaybookAccessModal = ({
         if (playbook) {
             const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
             updatePlaybook(updatedPlaybook);
-            onPlaybookChange?.(updatedPlaybook);
         }
     };
 

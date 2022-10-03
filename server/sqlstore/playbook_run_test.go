@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -23,7 +24,7 @@ import (
 func TestCreateAndGetPlaybookRun(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
@@ -182,7 +183,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
@@ -315,7 +316,7 @@ func TestIfDeletedMetricsAreOmitted(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
@@ -359,7 +360,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		now := model.GetMillis()
 		initialPlaybookRun := NewBuilder(t).
@@ -398,7 +399,7 @@ func TestStressTestGetPlaybookRuns(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
@@ -454,7 +455,7 @@ func TestStressTestGetPlaybookRunsStats(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
@@ -527,7 +528,7 @@ func newPost(deleted bool) *model.Post {
 func TestGetPlaybookRunIDForChannel(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		setupChannelsTable(t, db)
 
@@ -575,7 +576,7 @@ func TestNukeDB(t *testing.T) {
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupTeamMembersTable(t, db)
@@ -642,7 +643,7 @@ func TestNukeDB(t *testing.T) {
 func TestTasksAndRunsDigest(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		setupTeamsTable(t, db)
 
@@ -669,7 +670,6 @@ func TestTasksAndRunsDigest(t *testing.T) {
 		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
 		channel06 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-06"}
 		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06}
-		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id})
 
 		// three assigned tasks for inc01, and an overdue update
 		inc01 := *NewBuilder(nil).
@@ -755,9 +755,12 @@ func TestTasksAndRunsDigest(t *testing.T) {
 		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06}
 
 		for i := range playbookRuns {
-			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			created, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			playbookRuns[i] = *created
 			require.NoError(t, err)
 		}
+
+		addUsersToRuns(t, store, []userInfo{testUser}, []string{playbookRuns[0].ID, playbookRuns[1].ID, playbookRuns[2].ID, playbookRuns[3].ID, playbookRuns[5].ID})
 
 		createChannels(t, store, channels)
 
@@ -853,7 +856,7 @@ func TestGetRunsActiveTotal(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		t.Run("zero runs", func(t *testing.T) {
 			actual, err := playbookRunStore.GetRunsActiveTotal()
@@ -901,7 +904,7 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		t.Run("zero runs", func(t *testing.T) {
 			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
@@ -973,7 +976,7 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 
 		t.Run("zero runs", func(t *testing.T) {
 			actual, err := playbookRunStore.GetOverdueRetroRunsTotal()
@@ -1096,7 +1099,7 @@ func TestGetParticipantsActiveTotal(t *testing.T) {
 			returned, err := playbookRunStore.CreatePlaybookRun(run)
 			require.NoError(t, err)
 			if len(participants) > 0 {
-				addUsersToChannels(t, store, participants, []string{run.ChannelID})
+				addUsersToRuns(t, store, participants, []string{returned.ID})
 			}
 
 			createPlaybookRunChannel(t, store, returned)
@@ -1134,7 +1137,7 @@ func TestGetParticipantsActiveTotal(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		playbookStore := setupPlaybookStore(t, db)
-		_, store := setupSQLStore(t, db)
+		store := setupSQLStore(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
@@ -1186,9 +1189,65 @@ func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	sqlStore := setupSQLStore(t, db)
 
-	return NewPlaybookRunStore(pluginAPIClient, logger, sqlStore)
+	return NewPlaybookRunStore(pluginAPIClient, sqlStore)
+}
+
+func TestGetSchemeRolesForChannel(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		store := setupSQLStore(t, db)
+
+		t.Run("channel with no scheme", func(t *testing.T) {
+			_, err := store.execBuilder(store.db, sq.
+				Insert("Schemes").
+				SetMap(map[string]interface{}{
+					"ID":                      "scheme_0",
+					"DefaultChannelGuestRole": "guest0",
+					"DefaultChannelUserRole":  "user0",
+					"DefaultChannelAdminRole": "admin0",
+				}))
+			require.NoError(t, err)
+
+			_, err = store.execBuilder(store.db, sq.
+				Insert("Channels").
+				SetMap(map[string]interface{}{
+					"ID": "channel_0",
+				}))
+			require.NoError(t, err)
+
+			_, _, _, err = playbookRunStore.GetSchemeRolesForChannel("channel_0")
+			require.Error(t, err)
+		})
+
+		t.Run("channel with scheme", func(t *testing.T) {
+			_, err := store.execBuilder(store.db, sq.
+				Insert("Schemes").
+				SetMap(map[string]interface{}{
+					"ID":                      "scheme_1",
+					"DefaultChannelGuestRole": nil,
+					"DefaultChannelUserRole":  "user1",
+					"DefaultChannelAdminRole": "admin1",
+				}))
+			require.NoError(t, err)
+
+			_, err = store.execBuilder(store.db, sq.
+				Insert("Channels").
+				SetMap(map[string]interface{}{
+					"ID":       "channel_1",
+					"SchemeId": "scheme_1",
+				}))
+			require.NoError(t, err)
+
+			guest, user, admin, err := playbookRunStore.GetSchemeRolesForChannel("channel_1")
+			require.NoError(t, err)
+			require.Equal(t, guest, model.ChannelGuestRoleId)
+			require.Equal(t, user, "user1")
+			require.Equal(t, admin, "admin1")
+		})
+	}
 }
 
 // PlaybookRunBuilder is a utility to build playbook runs with a default base.

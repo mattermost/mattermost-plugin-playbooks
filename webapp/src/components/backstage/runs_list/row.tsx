@@ -1,31 +1,36 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {GlobalState} from '@mattermost/types/store';
+import {BullhornOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {useSelector} from 'react-redux';
 
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
-import {Checklist, ChecklistItemState} from 'src/types/playbook';
+import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
-import {usePlaybookName} from 'src/hooks';
-
+import {usePlaybookName, useRunMetadata} from 'src/hooks';
+import {
+    unfollowPlaybookRun,
+    followPlaybookRun,
+} from 'src/client';
 import {InfoLine} from '../styles';
-
-import ProgressBar from './progress_bar';
+import {ToastType, useToaster} from '../toast_banner';
 
 const SmallText = styled.div`
     font-weight: 400;
@@ -91,7 +96,6 @@ const Row = (props: Props) => {
     // This is not optimal. One network request for every row.
     const playbookName = usePlaybookName(props.fixedTeam ? '' : props.playbookRun.playbook_id);
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
-    const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
     let infoLine: React.ReactNode = null;
     if (!props.fixedTeam) {
@@ -99,7 +103,7 @@ const Row = (props: Props) => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToPluginUrl(`/runs/${playbookRun.id}`);
+        navigateToPluginUrl(`/runs/${playbookRun.id}?from=run_list`);
     }
 
     return (
@@ -143,31 +147,10 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
-                <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
-                <ProgressBar
-                    completed={completedTasks}
-                    total={totalTasks}
-                />
+                <FollowPlaybookRun id={props.playbookRun.id}/>
             </div>
         </PlaybookRunItem>
     );
-};
-
-const tasksCompletedTotal = (checklists: Checklist[]) => {
-    let completed = 0;
-    let total = 0;
-
-    for (const cl of checklists) {
-        for (const item of cl.items) {
-            if (item.state !== ChecklistItemState.Skip) {
-                total++;
-            }
-            if (item.state === ChecklistItemState.Closed) {
-                completed++;
-            }
-        }
-    }
-    return [completed, total];
 };
 
 const formatDate = (millis: number) => {
@@ -183,3 +166,81 @@ const formatDate = (millis: number) => {
 };
 
 export default Row;
+
+const FollowPlaybookRun = ({id}: {id: string}) => {
+    const {formatMessage} = useIntl();
+    const currentUser = useSelector(getCurrentUser);
+    const [metadata] = useRunMetadata(id);
+    const [followers, setFollowers] = useState(metadata?.followers || []);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+    const addToast = useToaster().add;
+
+    useUpdateEffect(() => {
+        const newFollowers = metadata?.followers || [];
+        setFollowers(newFollowers);
+        setIsFollowing(newFollowers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(metadata?.followers)]);
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(id)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setIsFollowing(!isFollowing);
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                setIsFollowing(isFollowing);
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
+
+    if (isFollowing) {
+        return (
+            <FollowingButton
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFollow();
+                }}
+                data-testid='unfollow-playbook'
+                css={`
+                    ${iconSplitStyling};
+                    padding: 0px, 18px;
+                `}
+            >
+                {formatMessage({defaultMessage: 'Following'})}
+            </FollowingButton>
+        );
+    }
+
+    return (
+        <FollowButton
+            onClick={(e) => {
+                e.stopPropagation();
+                toggleFollow();
+            }}
+            data-testid='follow-playbook'
+            css={`${iconSplitStyling}`}
+        >
+            <BullhornOutlineIcon size={16}/>
+            {formatMessage({defaultMessage: 'Follow'})}
+        </FollowButton>
+    );
+};
+
+const iconSplitStyling = css`
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     height: 32px;
+     padding: 0 16px;
+`;
+
+const FollowButton = styled(SecondaryButton)`
+    border: 1px solid var(--center-channel-color-08);
+    color: var(--center-channel-color-64);
+`;
+
+const FollowingButton = styled(TertiaryButton)`
+    color: var(--button-bg);
+`;

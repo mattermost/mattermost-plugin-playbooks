@@ -26,7 +26,7 @@ export const useHasChannelPermission = (teamID: string, channelID: string, permi
 };
 
 export const useHasPlaybookPermissionById = (permission: PlaybookPermissionGeneral, playbookId: string) => {
-    const playbook = usePlaybook(playbookId);
+    const [playbook] = usePlaybook(playbookId);
     return useHasPlaybookPermission(permission, playbook);
 };
 

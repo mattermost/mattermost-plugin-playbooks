@@ -13,24 +13,14 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {PlaybookRun} from 'src/types/playbook_run';
-import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
+import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {ItemList} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
+import {TimelineEventsFilterDefault} from 'src/types/rhs';
 import {clientRemoveTimelineEvent} from 'src/client';
 
 import {useTimelineEvents} from './timeline_utils';
 
 const SHOWED_EVENTS = 5;
-
-const fixedFilters = {
-    all: true,
-    owner_changed: false,
-    status_updated: false,
-    event_from_post: false,
-    task_state_modified: false,
-    assignee_changed: false,
-    ran_slash_command: false,
-    user_joined_left: false,
-};
 
 interface Props {
     run: PlaybookRun;
@@ -40,7 +30,7 @@ interface Props {
 
 const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
-    const [filteredEvents] = useTimelineEvents(run, fixedFilters);
+    const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
     const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
 

@@ -11,8 +11,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -42,11 +40,10 @@ func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
+func setupTables(t *testing.T, db *sqlx.DB) *SQLStore {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
-	logger := mock_bot.NewMockLogger(mockCtrl)
 	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
@@ -57,13 +54,10 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	}
 
 	sqlStore := &SQLStore{
-		logger,
 		db,
 		builder,
 		scheduler,
 	}
-
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	setupChannelsTable(t, db)
 	setupPostsTable(t, db)
@@ -76,10 +70,16 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupSchemesTable(t, db)
 	setupTeamMembersTable(t, db)
 
+	return sqlStore
+}
+
+func setupSQLStore(t *testing.T, db *sqlx.DB) *SQLStore {
+	sqlStore := setupTables(t, db)
+
 	err := sqlStore.RunMigrations()
 	require.NoError(t, err)
 
-	return logger, sqlStore
+	return sqlStore
 }
 
 func setupUsersTable(t *testing.T, db *sqlx.DB) {
@@ -699,6 +699,21 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 	for _, u := range users {
 		for _, c := range channelIDs {
 			insertBuilder = insertBuilder.Values(c, u.ID)
+		}
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func addUsersToRuns(t *testing.T, store *SQLStore, users []userInfo, runIDs []string) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("IR_Run_Participants").Columns("IncidentID", "UserId", "IsParticipant", "IsFollower")
+
+	for _, u := range users {
+		for _, runID := range runIDs {
+			insertBuilder = insertBuilder.Values(runID, u.ID, true, false)
 		}
 	}
 

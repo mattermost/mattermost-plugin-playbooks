@@ -11,13 +11,11 @@ import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle, Content, Role} from 'src/components/backstage/playbook_runs/shared';
-import MetricsData from '../playbook_run_backstage/metrics/metrics_data';
-import Report from '../playbook_run_backstage/retrospective/report';
+import MetricsData from 'src/components/backstage/playbook_runs/playbook_run/metrics/metrics_data';
+import Report from 'src/components/backstage/playbook_runs/playbook_run/retrospective/report';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
 
 interface Props {
     id: string;
@@ -36,8 +34,6 @@ const Retrospective = ({
     role,
     focusMetricId,
 }: Props) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Retrospective, playbookRun.id);
-
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -104,7 +100,6 @@ const Retrospective = ({
                     isPublished &&
                     <TimestampContainer>
                         <i className={'icon icon-check-all'}/>
-                        <span>{''}</span>
                         {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
                     </TimestampContainer>
                 }

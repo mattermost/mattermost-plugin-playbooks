@@ -3,7 +3,7 @@
 
 import React, {useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 

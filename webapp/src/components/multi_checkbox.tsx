@@ -72,6 +72,7 @@ const MultiCheckbox = (props: Props) => {
             placement={props.placement}
             dotMenuButton={props.dotMenuButton}
             isActive={isFilterActive}
+            closeOnClick={false}
             icon={
                 props.icon ??
                 <IconWrapper>

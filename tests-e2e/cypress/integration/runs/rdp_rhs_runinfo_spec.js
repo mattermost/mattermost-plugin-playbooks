@@ -13,6 +13,10 @@ describe('runs > run details page > run info', () => {
     let testPublicPlaybook;
     let testRun;
 
+    const getHeader = () => {
+        return cy.findByTestId('run-header-section');
+    };
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
@@ -68,7 +72,7 @@ describe('runs > run details page > run info', () => {
         const commonTests = () => {
             it('Playbook entry links to the playbook', () => {
                 // # Click on the Playbook entry
-                getOverviewEntry('playbook').click();
+                getOverviewEntry('playbook').within(() => cy.getStyledComponent('ItemLink').click());
 
                 // * Verify the we're in the right playbook page
                 cy.url().should('include', '/playbooks/playbooks');
@@ -143,11 +147,30 @@ describe('runs > run details page > run info', () => {
             });
 
             it('click channel link navigates to run\'s channel', () => {
+                // * Assert channel name
+                getOverviewEntry('channel').contains('the run name');
+
                 // # Click on channel item
-                getOverviewEntry('channel').click();
+                getOverviewEntry('channel').within(() => cy.getStyledComponent('ItemLink').click());
 
                 // * Assert we navigated correctly
                 cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+            });
+
+            it('channel is still there when the run is finished', () => {
+                cy.apiFinishRun(testRun.id).then(() => {
+                    // # Reload page
+                    cy.reload();
+
+                    // * Assert channel name
+                    getOverviewEntry('channel').contains('the run name');
+
+                    // # Click on channel item
+                    getOverviewEntry('channel').within(() => cy.getStyledComponent('ItemLink').click());
+
+                    // * Assert we navigated correctly
+                    cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
+                });
             });
         });
 
@@ -186,9 +209,35 @@ describe('runs > run details page > run info', () => {
                 });
             });
 
-            it('there is no channel link', () => {
-                // * Assert that the link is not present
-                getOverviewEntry('channel').should('not.exist');
+            it('there is no channel link but can request to join', () => {
+                // * Assert that the section exists with label Private
+                getOverviewEntry('channel').contains('Private');
+
+                // * Assert that link does not exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('a').should('not.exist');
+                });
+
+                // * Assert that request-join button does not exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('button').should('not.exist');
+                });
+
+                cy.wait(500);
+
+                // # Click Participate button
+                getHeader().findByText('Participate').click();
+
+                // # Confirm modal
+                cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                // Assert that request-join button exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('button').click();
+                });
+
+                // # Confirm modal
+                cy.get('#confirmModal').get('#confirmModalButton').click();
             });
         });
     });
@@ -212,7 +261,7 @@ describe('runs > run details page > run info', () => {
             });
         });
 
-        describe('playbook with metrics', () => {
+        describe('playbook with metrics (enabled retro)', () => {
             let playbookWithMetrics;
             let runWithMetrics;
 
@@ -330,6 +379,11 @@ describe('runs > run details page > run info', () => {
                             // # Click on the metric row
                             cy.findByText(metric.title).click();
 
+                            // # Seems there's a re-render between clicking the title and
+                            // # typing that occasionally leads to dropped keystrokes in
+                            // # .type(). Wait for it to avoid.
+                            cy.wait(1000);
+
                             // # Type a value for the metric
                             cy.focused().type(testData[metric.type].input);
                         });
@@ -362,6 +416,74 @@ describe('runs > run details page > run info', () => {
                         });
                     });
                 });
+            });
+        });
+
+        describe('playbook with metrics (disabled retro)', () => {
+            let playbookWithMetrics;
+            let runWithMetrics;
+
+            before(() => {
+                // # Login as testUser
+                cy.apiLogin(testUser);
+
+                // # Create a public playbook with metrics
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Public Playbook with metrics',
+                    memberIDs: [],
+                    metrics: [
+                        {
+                            title: 'Integer',
+                            description: 'integer',
+                            type: 'metric_integer',
+                            target: 1,
+                        },
+                    ],
+                    retrospectiveEnabled: false,
+                }).then((playbook) => {
+                    playbookWithMetrics = playbook;
+                });
+            });
+
+            beforeEach(() => {
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
+                // # Login as testUser
+                cy.apiLogin(testUser);
+
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbookWithMetrics.id,
+                    playbookRunName: 'the run name',
+                    ownerUserId: testUser.id,
+                }).then((playbookRun) => {
+                    runWithMetrics = playbookRun;
+
+                    // # Visit the playbook run
+                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                });
+            });
+
+            const commonTests = () => {
+                it('key metrics is hidden', () => {
+                    getRHSSection('Key Metrics').should('not.exist');
+                });
+            };
+
+            describe('as participant', () => {
+                commonTests();
+            });
+
+            describe('as viewer', () => {
+                beforeEach(() => {
+                    cy.apiLogin(testViewerUser).then(() => {
+                        cy.visit(`/playbooks/runs/${runWithMetrics.id}`);
+                    });
+                });
+
+                commonTests();
             });
         });
     });

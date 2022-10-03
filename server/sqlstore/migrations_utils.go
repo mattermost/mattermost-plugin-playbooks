@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -52,6 +53,22 @@ var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType stri
 		END
 		$$;
 	`, tableName, columnName, columnType, columnName, tableName))
+
+	return err
+}
+
+var changeColumnTypeToPGTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
+	_, err := e.Exec(fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			ALTER TABLE %s ALTER COLUMN %s TYPE %s;
+		EXCEPTION
+			WHEN others THEN
+				RAISE NOTICE 'Ignoring ALTER TABLE statement. Column "%s" can not be changed to type %s in table "%s".';
+		END
+		$$;
+	`, tableName, columnName, columnType, columnName, columnType, tableName))
 
 	return err
 }
@@ -193,4 +210,112 @@ func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName stri
 	}
 
 	return nil
+}
+
+func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error) {
+	results := []string{}
+	var err error
+	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+		err = sqlStore.db.Select(&results, `
+			SELECT COLUMN_NAME
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?
+		`, tableName, columnName)
+	} else if sqlStore.db.DriverName() == model.DatabaseDriverPostgres {
+		err = sqlStore.db.Select(&results, `
+			SELECT COLUMN_NAME
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_NAME = $1
+			AND COLUMN_NAME = $2
+		`, strings.ToLower(tableName), strings.ToLower(columnName))
+	}
+
+	return len(results) > 0, err
+}
+
+type TableInfo struct {
+	TableName              string
+	ColumnName             string
+	DataType               string
+	IsNullable             string
+	ColumnKey              string
+	ColumnDefault          *string
+	Extra                  string
+	CharacterMaximumLength *string
+}
+
+// getDBSchemaInfo returns info for each table created by Playbook plugin
+func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
+	var results []TableInfo
+	var err error
+
+	if store.db.DriverName() == model.DatabaseDriverMysql {
+		err = store.db.Select(&results, `
+			SELECT
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType,
+				IS_NULLABLE as IsNullable, COLUMN_KEY as ColumnKey, COLUMN_DEFAULT as ColumnDefault,
+				EXTRA as Extra, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
+
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME LIKE 'IR_%'
+			AND TABLE_NAME != 'IR_db_migrations'
+			ORDER BY TABLE_NAME ASC, ORDINAL_POSITION ASC
+		`)
+	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
+		err = store.db.Select(&results, `
+			SELECT
+				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType,
+				IS_NULLABLE as IsNullable, COLUMN_DEFAULT as ColumnDefault, CHARACTER_MAXIMUM_LENGTH as CharacterMaximumLength
+
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE table_schema = 'public'
+			AND TABLE_NAME LIKE 'ir_%'
+			AND TABLE_NAME != 'ir_db_migrations'
+			ORDER BY TABLE_NAME ASC, ORDINAL_POSITION ASC
+		`)
+	}
+
+	return results, err
+}
+
+type IndexInfo struct {
+	TableName string
+	IndexName string
+
+	// Postgres specific field
+	IndexDef string
+
+	// MySQL specific fields
+	ColumnName string
+}
+
+// getDBIndexesInfo returns index info for each table created by Playbook plugin
+func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
+	var results []IndexInfo
+	var err error
+
+	if store.db.DriverName() == model.DatabaseDriverMysql {
+		err = store.db.Select(&results, `
+			SELECT TABLE_NAME as TableName, INDEX_NAME as IndexName, COLUMN_NAME as ColumnName
+			FROM INFORMATION_SCHEMA.STATISTICS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME LIKE 'ir_%'
+			AND TABLE_NAME != 'ir_db_migrations'
+			ORDER BY TABLE_NAME ASC, COLUMN_NAME ASC, INDEX_NAME ASC;
+		`)
+	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
+		err = store.db.Select(&results, `
+			SELECT TABLENAME as TableName, INDEXNAME as IndexName, INDEXDEF as IndexDef
+			FROM pg_indexes
+			WHERE SCHEMANAME = 'public'
+			AND TABLENAME LIKE 'ir_%'
+			AND TABLENAME != 'ir_db_migrations'
+			ORDER BY TABLENAME ASC, INDEXNAME ASC;
+		`)
+	}
+
+	return results, err
 }

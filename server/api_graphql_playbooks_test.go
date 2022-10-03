@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -43,6 +45,32 @@ func TestGraphQLPlaybooks(t *testing.T) {
 
 		assert.Equal(t, e.BasicPlaybook.ID, pbResultTest.Data.Playbook.ID)
 		assert.Equal(t, e.BasicPlaybook.Title, pbResultTest.Data.Playbook.Title)
+	})
+
+	t.Run("list", func(t *testing.T) {
+		var pbResultTest struct {
+			Data struct {
+				Playbooks []struct {
+					ID    string
+					Title string
+				}
+			}
+		}
+		testPlaybookQuery := `
+		query Playbooks {
+			playbooks {
+				id
+				title
+			}
+		}
+		`
+		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testPlaybookQuery,
+			OperationName: "Playbooks",
+		}, &pbResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, pbResultTest.Data.Playbooks, 3)
 	})
 
 	t.Run("playbook mutate", func(t *testing.T) {
@@ -95,6 +123,30 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+func TestGraphQLUpdatePlaybookFails(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook fails because size constraints.", func(t *testing.T) {
+		e.BasicPlaybook.BroadcastChannelIDs = []string{e.BasicPrivateChannel.Id}
+
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": []api.UpdateChecklist{
+				{
+					Title: strings.Repeat("A", (256*1024)+1),
+					Items: []api.UpdateChecklistItem{},
+				},
+			},
+		})
+		require.Error(t, err)
+
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": strings.Repeat("A", 1025)})
+		require.Error(t, err)
+
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": strings.Repeat("A", 4097)})
+		require.Error(t, err)
+	})
+}
 
 func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
 	testPlaybookMutateQuery :=
@@ -110,8 +162,12 @@ mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
 	}, &response)
 
+	if err != nil {
+		return errors.Wrapf(err, "gqlTestPlaybookUpdate graphql failure")
+	}
+
 	if len(response.Errors) != 0 {
-		return errors.Errorf("graphql failure %+v", response.Errors)
+		return errors.Errorf("gqlTestPlaybookUpdate graphql failure %+v", response.Errors)
 	}
 
 	return err

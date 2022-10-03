@@ -45,7 +45,7 @@ export const EllipsizedText = styled.span`
 `;
 
 export const ChannelBadge = ({channelId} : { channelId: string }) => {
-    const channel = useChannel(channelId);
+    const [channel] = useChannel(channelId);
 
     return (
         <Badge key={channelId}>

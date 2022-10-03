@@ -8,8 +8,7 @@ import styled, {css} from 'styled-components';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import Icon from '@mdi/react';
-import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
+import {ArrowDownIcon, ArrowRightIcon, PlusIcon} from '@mattermost/compass-icons/components';
 
 import {FormattedMessage} from 'react-intl';
 
@@ -241,18 +240,12 @@ const RHSHome = () => {
                         <WelcomeButtonCreate
                             onClick={() => newPlaybook()}
                         >
-                            <Icon
-                                path={mdiPlus}
-                                size={1}
-                            />
+                            <PlusIcon size={16}/>
                             <FormattedMessage defaultMessage='Create playbook'/>
                         </WelcomeButtonCreate>
                         <WelcomeCreateAlt>
                             <FormattedMessage defaultMessage='…or start with a template'/>
-                            <Icon
-                                path={mdiArrowDown}
-                                size={1}
-                            />
+                            <ArrowDownIcon size={16}/>
                         </WelcomeCreateAlt>
                     </div>
                 ) : (
@@ -290,12 +283,10 @@ const RHSHome = () => {
                         <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
                                 <FormattedMessage defaultMessage='View run details'/>
+                                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                                 {' '}
                             </span>
-                            <Icon
-                                path={mdiArrowRight}
-                                size={1}
-                            />
+                            <ArrowRightIcon size={16}/>
                         </RunDetailButton>
                     )}
                 </div>

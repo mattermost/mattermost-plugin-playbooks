@@ -1,0 +1,100 @@
+[
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Önnek van **{{.Count}} Önhöz rendelt feladat aminek a határideje ma után van**.",
+            "other": "Önnek van **{{.Count}} Önhöz rendelt feladat aminek a határideje ma után van**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "Önhöz {{.Count}} feladat van hozzárendelve:",
+            "other": "Önhöz {{.Count}} feladat van hozzárendelve:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Határidő lejár {{.Count}} nap múlva",
+            "other": "Határidő lejár {{.Count}} nap múlva"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "one": "Önnek {{.Count}} Önhöz rendelt feladata van késedelemben:",
+            "other": "Önnek {{.Count}} Önhöz rendelt feladata van késedelemben:"
+        }
+    },
+    {
+        "id": "app.user.run.request_get_involved",
+        "translation": "@here — @{{.Name}} részt szeretne venni ebben a futásban. Ahhoz, hogy résztvevők lehessenek, adja hozzá őket ehhez a csatornához.\n"
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} kért egy állapot frissítést. \n"
+    },
+    {
+        "id": "app.user.digest.tasks.zero_assigned",
+        "translation": "Önhöz 0 feladat van hozzárendelve."
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Önhöz rendelt feladatok"
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Tegnap lejárt"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Határidő lejárt {{.Count}} nappal ezelőtt"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Határidő ma"
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Kérem használja a `/playbook todo` parancsot az összes feladat megtekintéséhez."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Önnek 0 futása van éppen folyamatban."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Önnek {{.Count}} futása van lejárt állapot frissítéssel:",
+            "other": "Önnek {{.Count}} futása van lejárt állapot frissítéssel:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Önnek {{.Count}} futása van folyamatban:",
+            "other": "Önnek {{.Count}} futása van folyamatban:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Önnek 0 futása van késedelemben."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Késedelmes állapot frissítések"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Nem sikerült végrehajtani a parancsot."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Futások folyamatban"
+    },
+    {
+        "id": "app.user.run.retro_publish",
+        "translation": "@{{.Name}} közzétett egy visszatekintőt\n[A teljes visszatekintő megtekintése]({{.URL}})\n"
+    }
+]

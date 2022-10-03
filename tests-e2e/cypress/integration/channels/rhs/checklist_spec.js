@@ -305,8 +305,8 @@ describe('channels > rhs > checklist', () => {
                 cy.findAllByTestId('checklistHeader').eq(0).within(() => {
                     cy.findByTitle('More').click();
                 });
-                cy.findByRole('button', {name: 'Rename checklist'}).click();
             });
+            cy.findByTestId('dropdownmenu').findByText('Rename checklist').click();
 
             // # Type the new title and click the confirm button
             cy.findByTestId('checklist-title-input').type(newTitle);

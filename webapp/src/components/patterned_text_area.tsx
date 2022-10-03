@@ -13,6 +13,7 @@ interface Props {
     pattern: string;
     delimiter?: string;
     onChange?: (updatedInput: string) => void;
+    onValidationChange?: (isValid: boolean) => void;
     onBlur?: (updatedInput: string) => void;
     maxLength?: number;
     rows?: number;
@@ -25,6 +26,8 @@ const PatternedTextArea = (props: Props) => {
     const [invalid, setInvalid] = useState<boolean>(false);
     const [errorText, setErrorText] = useState<string>(props.errorText);
     const [value, setValue] = useState(props.input);
+
+    props.onValidationChange?.(!invalid);
 
     useUpdateEffect(() => {
         setValue(props.input);
@@ -108,7 +111,7 @@ const TextArea = styled.textarea<TextAreaProps>`
     width: 100%;
 
     background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
-    color: var(--center-channel-color);
+    color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color);')};
     border-radius: 4px;
     border: none;
     box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);

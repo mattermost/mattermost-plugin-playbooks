@@ -1,23 +1,37 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, {useState} from 'react';
+import styled, {css} from 'styled-components';
+
+import {setCategoryCollapsed} from 'src/client';
 
 import {SidebarGroup} from './sidebar';
 import ItemComponent from './item';
+import {PlaybooksCategoryName, RunsCategoryName} from './playbooks_sidebar';
 
 interface GroupProps {
     group: SidebarGroup;
-    onClick: () => void;
 }
 
 const Group = (props: GroupProps) => {
+    const [collapsed, setCollapsed] = useState(props.group.collapsed);
+
     return (
-        <GroupContainer>
+        <GroupContainer data-testid={props.group.id}>
             <Header>
                 <HeaderButton
                     aria-label={props.group.display_name}
-                    onClick={props.onClick}
+                    onClick={() => {
+                        // Currently Runs category and Playbooks category are automatically generated and
+                        // not saved in the DB. So we can't yet save the collapse state for these categories.
+                        if (props.group.id !== RunsCategoryName && props.group.id !== PlaybooksCategoryName) {
+                            setCategoryCollapsed(props.group.id, !collapsed);
+                        }
+                        setCollapsed(!collapsed);
+                    }}
                 >
-                    <i className='icon icon-chevron-down'/>
+                    <Chevron
+                        className='icon icon-chevron-down'
+                        isCollapsed={collapsed}
+                    />
                     <HeaderName>
                         {props.group.display_name}
                     </HeaderName>
@@ -34,7 +48,7 @@ const Group = (props: GroupProps) => {
                             className={item.className}
                             display_name={item.display_name}
                             icon={item.icon}
-                            isCollapsed={props.group.collapsed}
+                            isCollapsed={collapsed}
                             itemMenu={item.itemMenu}
                             link={item.link}
                         />
@@ -47,6 +61,19 @@ const Group = (props: GroupProps) => {
 };
 
 export default Group;
+
+const Chevron = styled.i<{isCollapsed?: boolean}>`
+    ${(props) => props.isCollapsed && css`
+        -webkit-transform: rotate(-90deg);
+        -ms-transform: rotate(-90deg);
+        transform: rotate(-90deg);
+        transition: transform 0.15s ease-out; /* should match collapse animation speed */
+    `};
+
+    & {
+        font-size: 12px;
+    }
+`;
 
 const GroupContainer = styled.div`
     box-sizing: border-box;
@@ -77,13 +104,14 @@ const HeaderButton = styled.button`
     padding: 0;
     border: none;
     background-color: transparent;
-    box-shadow: 0 0 0 0 rgb(0 0 0 / 33%);
     color: rgba(var(--sidebar-text-rgb), 0.6);
     text-align: left;
     text-transform: uppercase;
-    transition: box-shadow 0.25s ease-in-out;
     white-space: nowrap;
     cursor: pointer;
+    padding: 6px 20p 6px 4px;
+    font-size: 12px;
+    font-weight: 600;
 
     :hover{
         color: var(--sidebar-text);

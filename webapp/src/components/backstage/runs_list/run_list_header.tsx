@@ -79,7 +79,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
                     {formatMessage({defaultMessage: 'Owner / Participants'})}
                 </div>
                 <div className='col-sm-2'>
-                    {formatMessage({defaultMessage: 'Tasks finished'})}
+                    {formatMessage({defaultMessage: 'Actions'})}
                 </div>
             </div>
         </PlaybookRunListHeader>

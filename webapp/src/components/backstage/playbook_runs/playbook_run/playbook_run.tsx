@@ -9,16 +9,17 @@ import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import qs from 'qs';
 
-import {usePlaybook, useRun, useRunMetadata, useRunStatusUpdates, FetchState} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
-
+import {useViewTelemetry} from 'src/hooks/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -35,7 +36,6 @@ import RHSTimeline from './rhs_timeline';
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 
 const useRHS = (playbookRun?: PlaybookRun|null) => {
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
@@ -62,6 +62,22 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
+export const useFollowers = (metadataFollowers: string[]) => {
+    const currentUser = useSelector(getCurrentUser);
+    const [followers, setFollowers] = useState(metadataFollowers);
+    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+
+    useUpdateEffect(() => {
+        setFollowers(metadataFollowers);
+    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
+
+    useUpdateEffect(() => {
+        setIsFollowing(followers.includes(currentUser.id));
+    }, [currentUser.id, JSON.stringify(followers)]);
+
+    return {isFollowing, followers, setFollowers};
+};
+
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -76,13 +92,31 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const playbookRun = useRun(playbookRunId);
-    const playbook = usePlaybook(playbookRun?.playbook_id);
-    const [metadata, metadataResult] = useRunMetadata(playbookRunId);
-    const [statusUpdates] = useRunStatusUpdates(playbookRunId, [playbookRun?.status_posts.length]);
+    const [playbookRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
+
+    // we must force metadata refetch when participants change (leave&unfollow)
+    const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
+    const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
+    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
+    const {options, selectOption, eventsFilter, resetFilters} = useFilter();
+    const followState = useFollowers(metadata?.followers || []);
+    const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
+
+    const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+    useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
+        from: queryParams.from ?? '',
+        playbook_id: playbookRun?.playbook_id,
+        playbookrun_id: playbookRun?.id,
+        role: playbookRun?.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer,
+    });
 
     const RHS = useRHS(playbookRun);
+
+    useUpdateEffect(() => {
+        resetFilters();
+    }, [playbookRunId]);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
@@ -97,7 +131,6 @@ const PlaybookRunDetails = () => {
         if (!teamId) {
             return;
         }
-
         dispatch(selectTeam(teamId));
     }, [dispatch, playbookRun?.team_id]);
 
@@ -120,7 +153,7 @@ const PlaybookRunDetails = () => {
     }
 
     // not found or error
-    if (playbookRun === null || metadataResult.state === FetchState.error) {
+    if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
@@ -146,6 +179,8 @@ const PlaybookRunDetails = () => {
                 playbook={playbook ?? undefined}
                 runMetadata={metadata ?? undefined}
                 role={role}
+                followState={followState}
+                channel={channel}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
@@ -164,6 +199,9 @@ const PlaybookRunDetails = () => {
             <RHSTimeline
                 playbookRun={playbookRun}
                 role={role}
+                options={options}
+                selectOption={selectOption}
+                eventsFilter={eventsFilter}
             />
         );
         break;
@@ -176,18 +214,21 @@ const PlaybookRunDetails = () => {
 
     return (
         <Container>
-            <MainWrapper isRHSOpen={RHS.isOpen}>
-                <Header isRHSOpen={RHS.isOpen}>
+            <MainWrapper>
+                <Header>
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
+                        channel={channel}
+                        hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
+                        isFollowing={followState.isFollowing}
                     />
                 </Header>
-                <Main isRHSOpen={RHS.isOpen}>
+                <Main>
                     <Body>
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
@@ -244,48 +285,39 @@ const RowContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
-const ColumnContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
 
-const Container = styled(ColumnContainer)`
-    flex: 1;
-`;
-
-const MainWrapper = styled.div<{isRHSOpen: boolean}>`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 400px)' : '100%')};
+const Container = styled.div`
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(400px, 2fr) minmax(400px, 1fr);
+    overflow-y: hidden;
 
     @media screen and (min-width: 1600px) {
-        max-width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 500px)' : '100%')};
+        grid-auto-columns: 2.5fr 500px;
     }
 `;
 
-const Main = styled.main<{isRHSOpen: boolean}>`
-    max-width: 780px;
-    width: min(780px, 100%);
-    padding: 20px;
-    flex: 1;
-    margin: 40px auto;
-    display: flex;
-    flex-direction: column;
+const MainWrapper = styled.div`
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-auto-flow: row;
+    overflow-y: hidden;
+    grid-auto-columns: minmax(0, 1fr);
+`;
+
+const Main = styled.main`
+    min-height: 0;
+    padding: 0 20px 60px;
+    display: grid;
+    overflow-y: auto;
+    place-content: start center;
+    grid-auto-columns: min(780px, 100%);
 `;
 const Body = styled(RowContainer)`
 `;
 
-const Header = styled.header<{isRHSOpen: boolean}>`
+const Header = styled.header`
     height: 56px;
     min-height: 56px;
-    width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 711px)' : 'calc(100% - 311px)')};
-    z-index: 2;
-    position: fixed;
     background-color: var(--center-channel-bg);
-    display:flex;
-
-    @media screen and (min-width: 1600px) {
-        width: ${({isRHSOpen}) => (isRHSOpen ? 'calc(100% - 811px)' : 'calc(100% - 311px)')};
-    }
 `;

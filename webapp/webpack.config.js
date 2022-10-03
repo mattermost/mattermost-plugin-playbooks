@@ -49,7 +49,6 @@ let config = {
         alias: {
             src: path.resolve(__dirname, './src/'),
             'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src/'),
-            '@mattermost/types': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/types/src/'),
             reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/index'),
         },
         modules: [
@@ -118,6 +117,7 @@ let config = {
     },
     externals: {
         react: 'React',
+        'react-dom': 'ReactDOM',
         redux: 'Redux',
         luxon: 'Luxon',
         'react-redux': 'ReactRedux',

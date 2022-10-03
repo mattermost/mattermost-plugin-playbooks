@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled, {css} from 'styled-components';
-import {Team} from 'mattermost-redux/types/teams';
+import {Team} from '@mattermost/types/teams';
 
 import Dropdown from 'src/components/dropdown';
 

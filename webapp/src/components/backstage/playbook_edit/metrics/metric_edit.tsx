@@ -3,14 +3,14 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToMetric, metricToString, isMetricValueValid} from 'src/components/backstage/playbook_edit/metrics/shared';
-import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
+import MetricInput from 'src/components/backstage/playbook_runs/playbook_run/metrics/metric_input';
 import {BaseTextArea} from 'src/components/assets/inputs';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 
@@ -72,21 +72,42 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
         }
     }
 
-    let typeTitle = <Bold><DollarSign sizePx={18}/>{' Dollars'}</Bold>;
     let inputIcon = <DollarSign sizePx={18}/>;
+    let typeTitle = (
+        <FormattedMessage
+            defaultMessage='{icon} Dollars'
+            values={{icon: inputIcon}}
+            tagName={React.Fragment}
+        />
+    );
     if (metric.type === MetricType.Integer) {
-        typeTitle = <Bold><PoundSign sizePx={18}/>{' Integer'}</Bold>;
         inputIcon = <PoundSign sizePx={18}/>;
+        typeTitle = (
+            <FormattedMessage
+                defaultMessage='{icon} Integer'
+                values={{icon: inputIcon}}
+                tagName={React.Fragment}
+            />
+        );
     } else if (metric.type === MetricType.Duration) {
-        typeTitle = <Bold><ClockOutline sizePx={18}/>{' Duration (in dd:hh:mm)'}</Bold>;
         inputIcon = <ClockOutline sizePx={18}/>;
+        typeTitle = (
+            <FormattedMessage
+                defaultMessage='{icon} Duration (in dd:hh:mm)'
+                values={{icon: inputIcon}}
+                tagName={React.Fragment}
+            />
+        );
     }
 
     return (
         <Container>
             <EditHeader>
-                {'Type: '}
-                {typeTitle}
+                <FormattedMessage
+                    defaultMessage='Type: {typeTitle}'
+                    values={{typeTitle: <Bold>{typeTitle}</Bold>}}
+                    tagName={React.Fragment}
+                />
                 <Button
                     data-testid={'delete-metric'}
                     onClick={deleteClick}

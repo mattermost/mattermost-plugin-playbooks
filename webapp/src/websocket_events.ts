@@ -5,11 +5,11 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from '@mattermost/types/posts';
-import {WebSocketMessage} from '@mattermost/types/websocket';
+import {WebSocketMessage} from 'mattermost-redux/types/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {PlaybookRun, isPlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -58,14 +58,6 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
             return;
         }
         const data = JSON.parse(msg.data.payload);
-
-        // eslint-disable-next-line no-process-env
-        if (process.env.NODE_ENV !== 'production') {
-            if (!isPlaybookRun(data)) {
-                // eslint-disable-next-line no-console
-                console.error('received a websocket data payload that was not a playbook run in handleWebsocketPlaybookRunUpdate:', data);
-            }
-        }
         const playbookRun = data as PlaybookRun;
 
         dispatch(playbookRunUpdated(playbookRun));
@@ -81,14 +73,6 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
         }
         const payload = JSON.parse(msg.data.payload);
         const data = payload.playbook_run;
-
-        // eslint-disable-next-line no-process-env
-        if (process.env.NODE_ENV !== 'production') {
-            if (!isPlaybookRun(data)) {
-                // eslint-disable-next-line no-console
-                console.error('received a websocket data payload that was not a playbook run in handleWebsocketPlaybookRunCreate:', data);
-            }
-        }
         const playbookRun = data as PlaybookRun;
 
         dispatch(playbookRunCreated(playbookRun));

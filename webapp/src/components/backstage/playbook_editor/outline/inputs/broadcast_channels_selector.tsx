@@ -135,10 +135,10 @@ const BroadcastChannels = (props: Props) => {
 const selectStyles: StylesConfig<Channel, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none', width: '340px'}),
-    option: (provided) => {
+    option: (provided, state) => {
         return {
             ...provided,
-            backgroundColor: 'var(--center-channel-bg)',
+            backgroundColor: state.isFocused ? 'rgba(var(--button-bg-rgb), 0.08)' : 'var(--center-channel-bg)',
             color: 'unset',
         };
     },

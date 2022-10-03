@@ -1,12 +1,36 @@
 package api
 
 import (
+	"context"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/pkg/errors"
 )
 
 type PlaybookResolver struct {
 	app.Playbook
-	IsFavorite bool
+}
+
+func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	isFavorite, err := c.categoryService.IsItemFavorite(
+		app.CategoryItem{
+			ItemID: r.ID,
+			Type:   app.PlaybookItemType,
+		},
+		r.TeamID,
+		userID,
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "can't determine if item is favorite or not")
+	}
+
+	return isFavorite, nil
 }
 
 func (r *PlaybookResolver) DeleteAt() float64 {
@@ -82,4 +106,22 @@ func (r *ChecklistItemResolver) CommandLastRun() float64 {
 
 func (r *ChecklistItemResolver) DueDate() float64 {
 	return float64(r.ChecklistItem.DueDate)
+}
+
+type UpdateChecklist struct {
+	Title string                `json:"title"`
+	Items []UpdateChecklistItem `json:"items"`
+}
+
+type UpdateChecklistItem struct {
+	Title            string  `json:"title"`
+	State            string  `json:"state"`
+	StateModified    float64 `json:"state_modified"`
+	AssigneeID       string  `json:"assignee_id"`
+	AssigneeModified float64 `json:"assignee_modified"`
+	Command          string  `json:"command"`
+	CommandLastRun   float64 `json:"command_last_run"`
+	Description      string  `json:"description"`
+	LastSkipped      float64 `json:"delete_at"`
+	DueDate          float64 `json:"due_date"`
 }

@@ -5,7 +5,9 @@ import styled from 'styled-components';
 
 const ConvertEnterpriseNotice = () => (
     <>
-        <Subheader>{'To unlock this feature:'}</Subheader>
+        <Subheader>
+            <FormattedMessage defaultMessage='To unlock this feature:'/>
+        </Subheader>
         <p>
             <StyledOl>
                 <li>

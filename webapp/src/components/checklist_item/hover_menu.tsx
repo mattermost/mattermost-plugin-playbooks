@@ -21,6 +21,7 @@ import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId?: string;
+    channelId?: string;
     checklistNum: number;
     itemNum: number;
     isSkipped: boolean;
@@ -56,6 +57,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
             }
             {props.playbookRunId !== undefined &&
                 <AssignTo
+                    channelId={props.channelId}
                     assignee_id={props.assignee_id}
                     editable={props.isEditing}
                     inHoverMenu={true}
@@ -86,6 +88,8 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 dropdownMenu={StyledDropdownMenu}
                 placement='bottom-end'
                 title={formatMessage({defaultMessage: 'More'})}
+                onOpenChange={props.onItemOpenChange}
+                focusManager={{returnFocus: false}}
             >
                 <StyledDropdownMenuItem
                     onClick={() => {

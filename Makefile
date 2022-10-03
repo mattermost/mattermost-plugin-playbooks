@@ -45,7 +45,7 @@ apply:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules
+check-style: apply webapp/node_modules check-golangci
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -56,15 +56,19 @@ endif
 	cd tests-e2e && npm run check
 
 ifneq ($(HAS_SERVER),)
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
-
 	@echo Running golangci-lint
-	golangci-lint --version
-	golangci-lint run ./...
+	$(GOBIN)/golangci-lint run ./...
 endif
+
+.PHONY: check-golangci
+check-golangci:
+ifneq ($(HAS_SERVER),)
+	@echo Ckecking golangci-lint
+
+	@# Keep the version in sync with the command in .circleci/config.yml
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+endif
+
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
 .PHONY: server

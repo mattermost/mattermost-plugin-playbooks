@@ -9,15 +9,13 @@ import {UserProfile} from '@mattermost/types/users';
 import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
     PlaybookRun,
-    isPlaybookRun,
-    isMetadata,
     Metadata,
     RunMetricData,
     StatusPostComplete,
@@ -25,6 +23,7 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
+import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItemState,
@@ -38,12 +37,12 @@ import {
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {RunActions} from 'src/types/run_actions';
-import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
+import {InsightsResponse} from './types/insights';
 
 let siteURL = '';
 let basePath = '';
@@ -82,13 +81,6 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
 
 export async function fetchPlaybookRun(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -148,26 +140,12 @@ export async function postStatusUpdate(
 
 export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isMetadata(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a Metadata in fetchPlaybookRunMetadata, received:', data);
-        }
-    }
 
     return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
     const data = await doGet(`${apiUrl}/runs/channel/${channelId}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -297,6 +275,14 @@ export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
 export async function finishRun(playbookRunId: string) {
     try {
         return await doPut(`${apiUrl}/runs/${playbookRunId}/finish`);
+    } catch (error) {
+        return {error};
+    }
+}
+
+export async function restoreRun(playbookRunId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/restore`);
     } catch (error) {
         return {error};
     }
@@ -529,6 +515,24 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     });
 }
 
+export async function telemetryEvent(name: TelemetryEventTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'track', properties}
+        ),
+    });
+}
+
+export async function telemetryView(name: TelemetryViewTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'page', properties}
+        ),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
@@ -591,9 +595,7 @@ export const requestTrialLicense = async (users: number, action: string) => {
     trackRequestTrialLicense(action);
 
     try {
-        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
-            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
-        });
+        const response = await Client4.requestTrialLicense({users, terms_accepted: true, receive_emails_accepted: true});
         return {data: response};
     } catch (e) {
         return {error: e.message};
@@ -733,20 +735,20 @@ export const requestUpdate = async (playbookRunId: string) => {
     }
 };
 
+export const requestJoinChannel = async (playbookRunId: string) => {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-join-channel`);
+    } catch (error) {
+        return {error};
+    }
+};
+
 export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     try {
         return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
             item_id: itemID,
             type: itemType,
         }));
-    } catch (error) {
-        return {error};
-    }
-};
-
-export const requestGetInvolved = async (playbookRunId: string) => {
-    try {
-        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-get-involved`);
     } catch (error) {
         return {error};
     }
@@ -776,6 +778,14 @@ export const fetchMyCategories = async (teamID: string): Promise<Category[]> => 
     }
 
     return data;
+};
+
+export const setCategoryCollapsed = async (categoryID: string, collapsed: boolean) => {
+    try {
+        return await doPut(`${apiUrl}/my_categories/${categoryID}/collapse`, collapsed);
+    } catch (error) {
+        return {error};
+    }
 };
 
 export const doGet = async <TData = any>(url: string) => {
@@ -885,3 +895,32 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];
 };
+
+export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+        team_id: teamId,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/user/me${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}
+
+export async function getTeamTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
+    const queryParams = qs.stringify({
+        time_range: timeRange,
+        page,
+        per_page: perPage,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/insights/teams/${teamId}${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as InsightsResponse;
+}

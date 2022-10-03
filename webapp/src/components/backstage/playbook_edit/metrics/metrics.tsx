@@ -7,11 +7,10 @@ import {useIntl} from 'react-intl';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {DraftPlaybookWithChecklist, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, MetricType, Metric, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
@@ -24,6 +23,11 @@ enum TaskType {
     add,
     edit,
     delete,
+}
+
+export interface EditingMetric {
+    index: number;
+    metric: Metric;
 }
 
 interface Task {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -30,7 +31,7 @@ func getAPIBaseURL(pluginAPI *pluginapi.Client) (string, error) {
 func makeAPIURL(pluginAPI *pluginapi.Client, apiPath string, args ...interface{}) string {
 	apiBaseURL, err := getAPIBaseURL(pluginAPI)
 	if err != nil {
-		pluginAPI.Log.Warn("failed to build api base url", "err", err)
+		logrus.WithError(err).Error("failed to build api base url")
 		apiBaseURL = defaultBaseAPIURL
 	}
 

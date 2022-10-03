@@ -4,6 +4,8 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
+import {useFloatingPortalNode} from '@floating-ui/react-dom-interactions';
+
 import {usePlaybook, usePlaybooksCrud} from 'src/hooks';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
@@ -47,7 +49,8 @@ interface OptionType {
 
 export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlaybookProps) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(playbookId);
+    const portalEl = useFloatingPortalNode();
+    const [playbook] = usePlaybook(playbookId);
     const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
 
     // Format the playbooks for use with StyledSelect.
@@ -75,6 +78,8 @@ export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlayboo
             maxMenuHeight={250}
             styles={{indicatorSeparator: () => null}}
             isDisabled={!editable}
+            captureMenuScroll={false}
+            menuPlacement={'auto'}
         />
     );
 };
@@ -99,7 +104,6 @@ export const CategorizeChannelChildren = ({categoryName, onUpdate, editable}: Ca
             captureMenuScroll={false}
             shouldRenderValue={true}
             placeholder={formatMessage({defaultMessage: 'Enter category name'})}
-            menuPlacement={'bottom'}
         />
     );
 };

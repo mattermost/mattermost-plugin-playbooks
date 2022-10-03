@@ -24,11 +24,13 @@ const editAndPublishRetro = () => {
         cy.findByRole('button', {name: 'Publish'}).click();
     });
 
-    // * Verify we're showing the publish retro confirmation modal
-    cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
+    cy.get('#confirm-modal-light').within(() => {
+        // * Verify we're showing the publish retro confirmation modal
+        cy.findByText('Are you sure you want to publish?');
 
-    // # Publish
-    cy.findByRole('button', {name: 'Publish'}).click();
+        // # Publish
+        cy.findByRole('button', {name: 'Publish'}).click();
+    });
 
     // * Verify that retro got published
     getRetro().get('.icon-check-all').should('be.visible');
@@ -172,7 +174,7 @@ describe('runs > run details page', () => {
                 editAndPublishRetro();
 
                 // # Switch to the run channel
-                cy.findByTestId('runinfo-channel').click();
+                cy.findByTestId('runinfo-channel-link').click();
 
                 // * Verify the modified retro text is posted
                 cy.getStyledComponent('CustomPostContent').should('exist').contains('Edited retrospective.');
@@ -247,22 +249,46 @@ describe('runs > run details page', () => {
             commonTests();
 
             it('inputs, null and zero values', () => {
-                // # Set targets to null and update playbook
-                testPublicPlaybookWithMetrics.metrics[0].target = null;
-                testPublicPlaybookWithMetrics.metrics[1].target = 0;
-                cy.apiUpdatePlaybook(testPublicPlaybookWithMetrics).then(() => {
-                    // # Navigate directly to the retro tab
-                    cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Public Playbook',
+                    memberIDs: [],
+                    createPublicPlaybookRun: true,
+                    metrics: [
+                        {
+                            title: 'title1',
+                            description: 'description1',
+                            type: 'metric_duration',
+                            target: null,
+                        },
+                        {
+                            title: 'title2',
+                            description: 'description2',
+                            type: 'metric_currency',
+                            target: 0,
+                        },
+                        {
+                            title: 'title3',
+                            description: 'description3',
+                            type: 'metric_integer',
+                            target: 30,
+                        },
+                    ]
+                }).then((playbook) => {
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: playbook.id,
+                        playbookRunName: 'the run name',
+                        ownerUserId: testUser.id,
+                    }).then((playbookRun) => {
+                        // # Navigate directly to the retro tab
+                        cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
-                    // * Verify changes are reflected
-                    verifyMetricInput(0, 'title1', null, 'description1', 'Add value (in dd:hh:mm)');
-                    verifyMetricInput(1, 'title2', '0', 'description2', 'Add value');
-                    verifyMetricInput(2, 'title3', '30', 'description3', 'Add value');
-
-                    // # recover the original data for playbook
-                    testPublicPlaybookWithMetrics.metrics[0].target = 720000;
-                    testPublicPlaybookWithMetrics.metrics[1].target = 40;
-                    cy.apiUpdatePlaybook(testPublicPlaybookWithMetrics);
+                        // * Verify changes are reflected
+                        verifyMetricInput(0, 'title1', null, 'description1', 'Add value (in dd:hh:mm)');
+                        verifyMetricInput(1, 'title2', '0', 'description2', 'Add value');
+                        verifyMetricInput(2, 'title3', '30', 'description3', 'Add value');
+                    });
                 });
             });
 
@@ -411,11 +437,13 @@ describe('runs > run details page', () => {
                     cy.findByRole('button', {name: 'Publish'}).click();
                 });
 
-                // * Verify we're showing the publish retro confirmation modal
-                cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
+                cy.get('#confirm-modal-light').within(() => {
+                    // * Verify we're showing the publish retro confirmation modal
+                    cy.findByText('Are you sure you want to publish?');
 
-                // # Publish
-                cy.findByRole('button', {name: 'Publish'}).click();
+                    // # Publish
+                    cy.findByRole('button', {name: 'Publish'}).click();
+                });
 
                 getRetro().within(() => {
                     // * Verify that retro got published

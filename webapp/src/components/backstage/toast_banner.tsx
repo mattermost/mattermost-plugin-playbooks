@@ -4,7 +4,7 @@ import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
 const Ctx = React.createContext({} as ToastFuncs);
 
-const DEFAULT_DURATION = 2000;
+const DEFAULT_DURATION = 3000;
 let toastCount = 0;
 
 export enum ToastType {

@@ -5,6 +5,8 @@ import React from 'react';
 import {Duration} from 'luxon';
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {formatDuration} from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -54,7 +56,7 @@ const Cell = ({type, value, target}: CellProps) => {
     if (!value) {
         return (
             <div className='col-sm-2'>
-                <NAValue>{'N/A'}</NAValue>
+                <NAValue><FormattedMessage defaultMessage='N/A'/></NAValue>
             </div>
         );
     }

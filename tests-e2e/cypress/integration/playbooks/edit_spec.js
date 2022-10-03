@@ -824,8 +824,15 @@ describe('playbooks > edit', () => {
                     });
                     cy.findByText(/off-topic/i).click();
 
-                    cy.get('#status-updates').within(() => {
-                        cy.get('input[type=checkbox]').click({force: true});
+                    // # Close the channel selector
+                    cy.findByText(/search for a channel/i).type('{esc}');
+
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
+                        // # Click on the toggle to disable the setting
+                        cy.get('label').click();
+
+                        // * Verify that the toggle off
+                        cy.get('label input').should('not.be.checked');
                     });
 
                     // * Verify disabled status updates text
@@ -834,8 +841,8 @@ describe('playbooks > edit', () => {
 
                     // # Turn the status update toggle back on
                     // * Verify there's still 1 channel selected
-                    cy.get('#status-updates').within(() => {
-                        cy.get('input[type=checkbox]').click({force: true});
+                    cy.get('#status-updates').trigger('mouseenter').within(() => {
+                        cy.get('label').click();
                         cy.findByText('1 channel').should('be.visible');
                     });
                 });
@@ -1228,7 +1235,7 @@ describe('playbooks > edit', () => {
             cy.findByText('Rename').click();
 
             // # Change the name and save
-            cy.focused().type('{selectAll}{del}renamed playbook');
+            cy.findByTestId('rendered-editable-text').type('{selectAll}{del}renamed playbook');
             cy.findByRole('button', {name: /save/i}).click();
 
             cy.reload();

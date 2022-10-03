@@ -24,6 +24,7 @@ interface Props {
     date?: number;
     mode: Mode.DateTimeValue | Mode.DurationValue;
     editable: boolean;
+    ignoreOverdue?: boolean;
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
     placement: Placement;
@@ -136,6 +137,7 @@ export const DueDateHoverMenuButton = ({
 export const DueDateButton = ({
     date,
     mode,
+    ignoreOverdue,
     ...props
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -180,8 +182,8 @@ export const DueDateButton = ({
         />
     );
 
-    const dueSoon = mode === Mode.DateTimeValue && isDueSoon(date);
-    const overdue = mode === Mode.DateTimeValue && isOverdue(date);
+    const dueSoon = !ignoreOverdue && mode === Mode.DateTimeValue && isDueSoon(date);
+    const overdue = !ignoreOverdue && mode === Mode.DateTimeValue && isOverdue(date);
     const label = mode === Mode.DateTimeValue ? buttonLabelForDateTime(date) : buttonLabelForDuration(date);
 
     const dueDateButton = (

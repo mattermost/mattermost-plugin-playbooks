@@ -7,6 +7,7 @@
 // ***************************************************************
 
 describe('playbooks > list', () => {
+    const playbookTitle = 'The Playbook Name';
     let testTeam;
     let testUser;
 
@@ -21,7 +22,7 @@ describe('playbooks > list', () => {
             // # Create a public playbook
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
-                title: 'Playbook',
+                title: playbookTitle,
                 memberIDs: [],
             });
 
@@ -50,6 +51,29 @@ describe('playbooks > list', () => {
         cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
+    it('join/leave playbook', () => {
+        // # Open the product
+        cy.visit('/playbooks');
+
+        // # Switch to Playbooks
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Click on the dot menu
+        cy.findByTestId('menuButtonActions').click();
+
+        // # Click on leave
+        cy.findByText('Leave').click();
+
+        // * Verify it has disappeared from the LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookTitle).should('not.exist');
+
+        // # Join a playbook
+        cy.findByTestId('join-playbook').click();
+
+        // * Verify it has appeared in LHS
+        cy.findByTestId('lhs-navigation').findByText(playbookTitle).should('exist');
+    });
+
     it('can duplicate playbook', () => {
         // # Open the product
         cy.visit('/playbooks');
@@ -58,13 +82,13 @@ describe('playbooks > list', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click on the dot menu
-        cy.get('.icon-dots-horizontal').click();
+        cy.findByTestId('menuButtonActions').click();
 
         // # Click on duplicate
         cy.findByText('Duplicate').click();
 
         // * Verify that playbook got duplicated
-        cy.findByText('Copy of Playbook').should('exist');
+        cy.findByText('Copy of ' + playbookTitle).should('exist');
     });
 
     context('archived playbooks', () => {

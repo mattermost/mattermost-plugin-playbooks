@@ -10,6 +10,7 @@ export enum TimelineEventType {
     RunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
     StatusUpdateRequested = 'status_update_requested',
+    StatusUpdateSnoozed = 'status_update_snoozed',
     OwnerChanged = 'owner_changed',
     AssigneeChanged = 'assignee_changed',
     TaskStateModified = 'task_state_modified',
@@ -52,11 +53,11 @@ export interface TimelineEventsFilter {
 }
 
 export const TimelineEventsFilterDefault = {
-    all: false,
+    all: true,
     owner_changed: true,
     status_updated: true,
     event_from_post: true,
-    task_state_modified: false,
+    task_state_modified: true,
     assignee_changed: false,
     ran_slash_command: false,
     user_joined_left: false,

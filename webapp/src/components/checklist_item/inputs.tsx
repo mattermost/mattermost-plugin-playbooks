@@ -3,7 +3,7 @@ import React, {useRef, useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {ClientError} from 'mattermost-redux/client/client4';
+import {ClientError} from '@mattermost/client';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';

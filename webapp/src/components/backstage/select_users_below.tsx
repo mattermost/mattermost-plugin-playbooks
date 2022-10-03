@@ -5,6 +5,8 @@ import styled from 'styled-components';
 
 import {getCurrentUserId, getUsers} from 'mattermost-redux/selectors/entities/common';
 
+import Permissions from 'mattermost-redux/constants/permissions';
+
 import {useSelector} from 'react-redux';
 
 import {getTeammateNameDisplaySetting} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/preferences';
@@ -17,7 +19,7 @@ import {Playbook, PlaybookMember} from 'src/types/playbook';
 
 import DotMenu, {DropdownMenuItem} from '../dot_menu';
 
-import {useHasPlaybookPermission} from 'src/hooks';
+import {useHasPlaybookPermission, useHasSystemPermission} from 'src/hooks';
 
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 
@@ -74,6 +76,7 @@ function roleDisplayText(roles: string[]) {
 }
 
 const SelectUsersBelow = (props: SelectUsersBelowProps) => {
+    const permissionToManageSystem = useHasSystemPermission(Permissions.MANAGE_SYSTEM);
     const permissionToEditMembers = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageMembers, props.playbook);
     const permissionToEditRoles = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageRoles, props.playbook);
     const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
@@ -89,9 +92,9 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     });
 
     return (
-        <Container>
+        <Container data-testid='members-list'>
             {permissionToEditMembers &&
-            <ProfileAutocompleteContainer>
+            <ProfileAutocompleteContainer data-testid={'add-people-input'}>
                 <ProfileAutocomplete
                     onAddUser={handleAddUser}
                     userIds={props.members.map((val: PlaybookMember) => val.user_id)}
@@ -106,6 +109,7 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
                         data-testid='user-line'
                         key={member.user_id}
                         currentUserId={currentUserId}
+                        hasPermissionToManageSystem={permissionToManageSystem}
                         hasPermissionsToEditRoles={permissionToEditRoles}
                         member={member}
                         onRemoveUser={props.onRemoveUser}
@@ -119,6 +123,7 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
 };
 
 interface UserLineProps {
+    hasPermissionToManageSystem: boolean
     hasPermissionsToEditRoles: boolean
     member: PlaybookMember
     currentUserId: string
@@ -147,7 +152,7 @@ const UserLine = (props: UserLineProps) => {
         </IconWrapper>
     );
 
-    if (props.hasPermissionsToEditRoles && props.member.user_id !== props.currentUserId) {
+    if (props.hasPermissionToManageSystem || (props.hasPermissionsToEditRoles && props.member.user_id !== props.currentUserId)) {
         let permissionsChangeOption = (
             <DropdownMenuItem
                 onClick={() => props.onMakeAdmin(props.member.user_id)}
@@ -170,6 +175,7 @@ const UserLine = (props: UserLineProps) => {
             <DotMenu
                 placement='bottom-end'
                 dotMenuButton={MemberButton}
+                portal={false}
                 icon={
                     <IconWrapper>
                         {roleDisplayText(props.member.roles)}

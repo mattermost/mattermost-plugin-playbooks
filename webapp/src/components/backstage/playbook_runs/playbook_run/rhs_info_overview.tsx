@@ -1,45 +1,138 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
+import {Channel} from '@mattermost/types/channels';
 
-import {AccountOutlineIcon, AccountMultipleOutlineIcon, BookOutlineIcon, BullhornOutlineIcon, ProductChannelsIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountOutlineIcon,
+    AccountMultipleOutlineIcon,
+    BookOutlineIcon,
+    BullhornOutlineIcon,
+    ProductChannelsIcon,
+    OpenInNewIcon,
+    LockOutlineIcon,
+    ArrowForwardIosIcon,
+} from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
 
+import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
-import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
-import AssignTo from 'src/components/checklist_item/assign_to';
+import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
+import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import {followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
-import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {usePlaybook, useFormattedUsername} from 'src/hooks';
+import {requestJoinChannel, followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
+import {pluginUrl} from 'src/browser_routing';
+import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
+
+import {useLHSRefresh} from '../../lhs_navigation';
+
+import {FollowState} from './rhs_info';
+
+export const useFollow = (runID: string, followState: FollowState) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const {isFollowing, followers, setFollowers} = followState;
+    const currentUser = useSelector(getCurrentUser);
+
+    const toggleFollow = () => {
+        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        action(runID)
+            .then(() => {
+                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
+                setFollowers(newFollowers);
+            })
+            .catch(() => {
+                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+            });
+    };
+
+    const FollowingButton = () => {
+        if (isFollowing) {
+            return (
+                <UnfollowButton onClick={toggleFollow}>
+                    {formatMessage({defaultMessage: 'Following'})}
+                </UnfollowButton>
+            );
+        }
+
+        return (
+            <FollowButton onClick={toggleFollow}>
+                {formatMessage({defaultMessage: 'Follow'})}
+            </FollowButton>
+        );
+    };
+
+    return FollowingButton;
+};
+
+const useRequestJoinChannel = (playbookRunId: string) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const [showRequestJoinConfirm, setShowRequestJoinConfirm] = useState(false);
+    const requestJoin = async () => {
+        const response = await requestJoinChannel(playbookRunId);
+        if (response?.error) {
+            addToast(formatMessage({defaultMessage: 'The join channel request was unsuccessful.'}), ToastType.Failure);
+        } else {
+            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel.'}), ToastType.Success);
+        }
+    };
+    const RequestJoinModal = (
+        <ConfirmModal
+            show={showRequestJoinConfirm}
+            title={formatMessage({defaultMessage: 'Request to join channel'})}
+            message={formatMessage({defaultMessage: 'A join request will be sent to the run channel.'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Send request '})}
+            onConfirm={() => {
+                requestJoin();
+                setShowRequestJoinConfirm(false);
+            }}
+            onCancel={() => setShowRequestJoinConfirm(false)}
+        />
+    );
+    return {
+        RequestJoinModal,
+        showRequestJoinConfirm: () => setShowRequestJoinConfirm(true),
+    };
+};
 
 interface Props {
     run: PlaybookRun;
     runMetadata?: Metadata;
     editable: boolean;
+    channel: Channel | undefined | null;
+    followState: FollowState;
+    playbook?: PlaybookWithChecklist;
+    role: Role;
     onViewParticipants: () => void;
 }
 
-const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props) => {
+const StyledArrowIcon = styled(ArrowForwardIosIcon)`
+    margin-left: 7px;
+`;
+
+const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
-    const playbook = usePlaybook(run.playbook_id);
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const [FollowingButton, followers] = useFollowing(run.id, runMetadata?.followers || []);
+    const FollowingButton = useFollow(run.id, followState);
+    const refreshLHS = useLHSRefresh();
+    const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 
     const setOwner = async (userID: string) => {
         try {
@@ -56,6 +149,8 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 }
 
                 addToast(message, ToastType.Failure);
+            } else {
+                refreshLHS();
             }
         } catch (error) {
             addToast(formatMessage({defaultMessage: 'It was not possible to change the owner'}), ToastType.Failure);
@@ -82,9 +177,8 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 id='runinfo-playbook'
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
-                onClick={() => navigateToUrl(pluginUrl(`/playbooks/${run.playbook_id}`))}
             >
-                {playbook && <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>}
+                {playbook ? <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink> : <ItemDisabledContent><LockOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Private'})}</ItemDisabledContent>}
             </Item>
             <Item
                 id='runinfo-owner'
@@ -105,12 +199,18 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 name={formatMessage({defaultMessage: 'Participants'})}
                 onClick={onViewParticipants}
             >
-                <Participants>
-                    <UserList
-                        userIds={run.participant_ids}
-                        sizeInPx={20}
+                <ParticipantsContainer>
+                    <Participants>
+                        <UserList
+                            userIds={run.participant_ids}
+                            sizeInPx={20}
+                        />
+                    </Participants>
+                    <StyledArrowIcon
+                        size={12}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                </Participants>
+                </ParticipantsContainer>
             </Item>
             <Item
                 id='runinfo-following'
@@ -120,8 +220,7 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                 <FollowersWrapper>
                     <FollowingButton/>
                     <Following
-                        userIds={followers}
-                        hideHelpText={true}
+                        userIds={followState.followers}
                         maxUsers={4}
                     />
                 </FollowersWrapper>
@@ -137,24 +236,31 @@ const RHSInfoOverview = ({run, runMetadata, editable, onViewParticipants}: Props
                     setSelectedUser(null);
                 }}
             />}
-            {runMetadata && editable && (
-                <Item
-                    id='runinfo-channel'
-                    icon={ProductChannelsIcon}
-                    name={formatMessage({defaultMessage: 'Channel'})}
-                    onClick={() => navigateToUrl(`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`)}
-                >
-                    <ItemLink to={`/${runMetadata.team_name}/channels/${runMetadata.channel_name}`}>
+            <Item
+                id='runinfo-channel'
+                icon={ProductChannelsIcon}
+                name={formatMessage({defaultMessage: 'Channel'})}
+            >
+                {channel && runMetadata ? <>
+                    <ItemLink
+                        to={`/${runMetadata.team_name}/channels/${channel.name}`}
+                        data-testid='runinfo-channel-link'
+                    >
                         <ItemContent >
-                            {runMetadata.channel_name}
-                            <OpenInNewIcon
-                                size={14}
-                                color={'var(--button-bg)'}
-                            />
+                            {channel.display_name}
                         </ItemContent>
+                        <OpenInNewIcon
+                            size={14}
+                            color={'var(--button-bg)'}
+                        />
                     </ItemLink>
-                </Item>
-            )}
+                </> : <ItemDisabledContent>
+                    {role === Role.Participant ? <RequestJoinButton onClick={showRequestJoinConfirm}>{formatMessage({defaultMessage: 'Request to Join'})}</RequestJoinButton> : null}
+                    <LockOutlineIcon size={20}/> {formatMessage({defaultMessage: 'Private'})}
+                </ItemDisabledContent>
+                }
+            </Item>
+            {RequestJoinModal}
         </Section>
     );
 };
@@ -200,51 +306,6 @@ const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChann
     );
 };
 
-const useFollowing = (runID: string, metadataFollowers: string[]) => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useEffect(() => {
-        setFollowers(metadataFollowers);
-        setIsFollowing(metadataFollowers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    const toggleFollow = () => {
-        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        action(runID)
-            .then(() => {
-                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
-                setIsFollowing(!isFollowing);
-                setFollowers(newFollowers);
-            })
-            .catch(() => {
-                setIsFollowing(isFollowing);
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
-            });
-    };
-
-    const FollowingButton = () => {
-        if (isFollowing) {
-            return (
-                <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
-                </UnfollowButton>
-            );
-        }
-
-        return (
-            <FollowButton onClick={toggleFollow}>
-                {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
-        );
-    };
-
-    return [FollowingButton, followers] as const;
-};
-
 interface ItemProps {
     id: string;
     icon: CompassIcon;
@@ -254,9 +315,7 @@ interface ItemProps {
 }
 
 const Item = (props: ItemProps) => {
-    const StyledIcon = styled(props.icon)`
-        margin-right: 11px;
-    `;
+    const Icon = props.icon;
 
     return (
         <OverviewRow
@@ -264,7 +323,7 @@ const Item = (props: ItemProps) => {
             data-testid={props.id}
         >
             <OverviewItemName>
-                <StyledIcon
+                <Icon
                     size={18}
                     color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                 />
@@ -276,14 +335,6 @@ const Item = (props: ItemProps) => {
 };
 
 const ItemLink = styled(Link)`
-    max-width: 230px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const ItemContent = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -291,6 +342,22 @@ const ItemContent = styled.div`
     svg {
         margin-left: 3px;
     }
+`;
+
+const ItemContent = styled.div`
+    max-width: 230px;
+    display: inline-flex;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    align-items: center;
+`;
+
+const ItemDisabledContent = styled(ItemContent)`
+    svg {
+        margin-right: 3px;
+    }
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const OverviewRow = styled.div<{onClick?: () => void}>`
@@ -306,11 +373,17 @@ const OverviewRow = styled.div<{onClick?: () => void}>`
     ${({onClick}) => onClick && css`
         cursor: pointer;
     `}
+
+    ${AssignToContainer} {
+        margin-left: 0;
+        max-width: none;
+    }
 `;
 
 const OverviewItemName = styled.div`
     display: flex;
     align-items: center;
+    gap: 11px;
 `;
 
 const Participants = styled.div`
@@ -334,4 +407,14 @@ const UnfollowButton = styled(SecondaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
+    `;
+
+const RequestJoinButton = styled(FollowButton)`
+    margin-right: 10px;
+`;
+
+const ParticipantsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;

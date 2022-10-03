@@ -8,6 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // ErrNoPermissions if the error is caused by the user not having permissions
@@ -70,15 +71,6 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	return []string{}
 }
 
-func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
-	// For now, everyone with access to the channel is a run admin
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{RunRoleMember, RunRoleAdmin}
-	}
-
-	return []string{}
-}
-
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
 	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
@@ -87,16 +79,6 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 
 	// Cascade normally to higher level permissions
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
-}
-
-func (p *PermissionsService) hasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
-	// Check at run level
-	if p.pluginAPI.User.RolesGrantPermission(p.getRunRole(userID, run), permission.Id) {
-		return true
-	}
-
-	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
@@ -193,7 +175,10 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 
 	if playbook.DefaultOwnerID != "" {
 		if !p.pluginAPI.User.HasPermissionToTeam(playbook.DefaultOwnerID, playbook.TeamID, model.PermissionViewTeam) {
-			p.pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
+			logrus.WithFields(logrus.Fields{
+				"team_id": playbook.TeamID,
+				"user_id": playbook.DefaultOwnerID,
+			}).Warn("owner is not a member of the playbook's team, disabling default owner")
 			playbook.DefaultOwnerID = ""
 			playbook.DefaultOwnerEnabled = false
 		}
@@ -248,7 +233,10 @@ func (p *PermissionsService) FilterInvitedUserIDs(invitedUserIDs []string, teamI
 	filteredUsers := []string{}
 	for _, userID := range invitedUserIDs {
 		if !p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
-			p.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", teamID, "userID", userID)
+			logrus.WithFields(logrus.Fields{
+				"team_id": teamID,
+				"user_id": userID,
+			}).Warn("user does not have permissions to playbook's team, removing from automated invite list")
 			continue
 		}
 		filteredUsers = append(filteredUsers, userID)
@@ -262,12 +250,12 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 		var group *model.Group
 		group, err := p.pluginAPI.Group.Get(groupID)
 		if err != nil {
-			p.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			logrus.WithField("group_id", groupID).Error("failed to query group")
 			continue
 		}
 
 		if !group.AllowReference {
-			p.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			logrus.WithField("group_id", groupID).Warn("group does not allow references, removing from automated invite list")
 			continue
 		}
 
@@ -399,7 +387,17 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	if p.hasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
+	if run.OwnerUserID == userID {
+		return nil
+	}
+
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
+	}
+
+	if IsSystemAdmin(userID, p.pluginAPI) {
 		return nil
 	}
 
@@ -421,9 +419,16 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	// Has view permission if is in the channel
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+	// Has permission if is the owner of the run
+	if run.OwnerUserID == userID {
 		return nil
+	}
+
+	// Or if is a participant of the run
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
 	}
 
 	// Or has view access to the playbook that created it

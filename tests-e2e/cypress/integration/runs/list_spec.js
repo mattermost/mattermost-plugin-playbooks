@@ -216,4 +216,53 @@ describe('runs > list', () => {
             });
         });
     });
+
+    describe('LHS run list', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            const runs = [
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 0',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 1',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 2',
+                    ownerUserId: testUser.id,
+                },
+                {
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'run-sort-check 3',
+                    ownerUserId: testUser.id,
+                }
+            ];
+
+            Promise.all(runs.map((run) => {
+                return new Promise((resolve) => cy.apiRunPlaybook(run).then(resolve));
+            })).then(() => {
+                cy.visit('/playbooks');
+            });
+        });
+
+        it('lhs run list sorted by name', () => {
+            cy.findByTestId('lhs-navigation').within(() => {
+                cy.get('li:contains(run-sort-check)').each((item, index) => {
+                    // * Verify run list order
+                    cy.wrap(item).should('have.text', 'run-sort-check ' + index);
+                });
+            });
+        });
+    });
 });

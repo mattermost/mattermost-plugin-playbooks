@@ -52,8 +52,10 @@ describe('channels > general actions', () => {
             cy.contains('sidebar category').click();
             cy.contains('Enter category name').click().type('example category{enter}');
 
-            // # Save action
-            cy.findByRole('button', {name: /save/i}).click();
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
 
             // # Switch to another user and reload
             // # This drops them into the same channel
@@ -82,8 +84,10 @@ describe('channels > general actions', () => {
             cy.findByTestId('channel-actions-modal_welcome-msg')
                 .type('test ephemeral welcome message');
 
-            // # Save action
-            cy.findByRole('button', {name: /save/i}).click();
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
 
             // # Switch to another user and reload
             // # This drops them into the same channel
@@ -131,8 +135,10 @@ describe('channels > general actions', () => {
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -189,8 +195,10 @@ describe('channels > general actions', () => {
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -265,8 +273,10 @@ describe('channels > general actions', () => {
                 cy.findByText('Public Playbook').click();
                 cy.contains('Prompt to run a playbook').click();
 
-                // # Save action
-                cy.findByRole('button', {name: /save/i}).click();
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
 
                 // # Post the trigger phrase
                 cy.uiPostMessageQuickly('error detected red alert!');
@@ -320,8 +330,13 @@ describe('channels > general actions', () => {
             cy.contains('sidebar category').click();
             cy.contains('Enter category name').click().type(categoryName + '{enter}');
 
-            // # Save action
-            cy.findByRole('button', {name: /save/i}).click();
+            cy.get('#channel-actions-modal').within(() => {
+                // # Save action
+                cy.findByRole('button', {name: /save/i}).click();
+            });
+
+            // # wait to avoid MM-45969
+            cy.wait(5000);
 
             // # Switch to the additional channel
             cy.get('#sidebarItem_' + channel.name).click();
