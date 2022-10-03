@@ -43,7 +43,7 @@ export const TriggerKeywords = ({editable, keywords, onUpdate}: TriggerKeywordsP
     return (
         <StyledKeywordsSelector
             enabled={editable}
-            placeholderText={'Add comma separated keywords or phrases'}
+            placeholderText={'Type a keyword or phrase, then press Enter on your keyboard'}
             keywords={keywords}
             onKeywordsChange={onUpdate}
         />
