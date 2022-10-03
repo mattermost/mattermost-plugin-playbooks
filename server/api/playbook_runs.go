@@ -19,6 +19,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app/transform"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
@@ -38,6 +39,7 @@ type PlaybookRunHandler struct {
 // NewPlaybookRunHandler Creates a new Plugin API handler.
 func NewPlaybookRunHandler(
 	router *mux.Router,
+	localRouter *mux.Router,
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
 	permissions *app.PermissionsService,
@@ -128,6 +130,9 @@ func NewPlaybookRunHandler(
 	followersRouter.HandleFunc("", withContext(handler.follow)).Methods(http.MethodPut)
 	followersRouter.HandleFunc("", withContext(handler.unfollow)).Methods(http.MethodDelete)
 	followersRouter.HandleFunc("", withContext(handler.getFollowers)).Methods(http.MethodGet)
+
+	// local routes
+	localRouter.HandleFunc("/boards/blocks", withContext(handler.getBlocks)).Methods("GET")
 
 	return handler
 }
@@ -1898,4 +1903,102 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
+}
+
+// getBlocks returns the all the blocks that represent a list of runs (result of querying
+// by playbookids)
+//
+// This is an endpoint that is only callable from a local socket file
+func (h *PlaybookRunHandler) getBlocks(c *Context, w http.ResponseWriter, r *http.Request) {
+
+	teamID := r.URL.Query().Get("teamID")
+	boardID := r.URL.Query().Get("boardID")
+	playbookIDs := strings.Split(r.URL.Query().Get("playbookIDs"), ",")
+
+	if boardID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "board_id is required", errors.Errorf("board_id is required when asking for blocks"))
+		return
+	}
+	if teamID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "team_id is required", errors.Errorf("team_id is required when asking for blocks"))
+		return
+	}
+	if len(playbookIDs) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook_ids are required", errors.Errorf("playbook_ids are required when asking for blocks"))
+		return
+	}
+
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
+	// act as an admin, auth is done in boards side
+	requesterInfo := app.RequesterInfo{
+		IsAdmin: true,
+	}
+
+	// extract playbooks
+	// TODO optimize this (all + manual filtering is not a great strategy)
+	playbooks := map[string]app.Playbook{}
+	allPlaybooks, err := h.playbookService.GetPlaybooks()
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	for _, pb := range allPlaybooks {
+		for _, pbID := range playbookIDs {
+			if pb.ID == pbID {
+				playbooks[pbID] = pb
+			}
+		}
+	}
+
+	// extract runs
+	options := app.PlaybookRunFilterOptions{
+		PlaybookIDs: playbookIDs,
+		TeamID:      teamID,
+		Statuses:    []string{"InProgress", "Finished"},
+		Direction:   app.DirectionDesc,
+		Sort:        app.SortField("last_status_update_at"),
+		Page:        0,
+		PerPage:     10000,
+	}
+
+	results, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, options)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Extract status updates
+	// Heads up that this is not performant at all, it's a huge N+1 problem
+	// We should convert posts into real playbooks data before this goes to prod
+	posts := make(map[string]*model.Post, 0)
+	for _, r := range results.Items {
+		for _, s := range r.StatusPosts {
+			post, err := h.pluginAPI.Post.GetPost(s.ID)
+			if err != nil {
+				c.logger.WithError(err).Warn("Can not get status update post")
+				continue
+			}
+			author, _ := post.GetProp("authorUsername").(string)
+			authorUser, err := h.pluginAPI.User.GetByUsername(author)
+			if err != nil {
+				c.logger.WithError(err).Warn("Can not get user from username")
+			}
+			post.UserId = authorUser.Id // otherwise is always playbooksbot
+			posts[s.ID] = post
+		}
+	}
+
+	blocks := transform.BoardsPlaybookRuns{
+		PlaybookRuns: results.Items,
+		BoardID:      boardID,
+		Playbooks:    playbooks,
+		SiteURL:      siteURL,
+		Posts:        posts,
+	}
+
+	ReturnJSON(w, blocks.Transform(), http.StatusOK)
 }

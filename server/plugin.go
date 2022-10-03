@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -57,7 +58,6 @@ type TelemetryClient interface {
 // server and plugin processes.
 type Plugin struct {
 	plugin.MattermostPlugin
-
 	handler              *api.Handler
 	config               *config.ServiceImpl
 	playbookRunService   app.PlaybookRunService
@@ -74,6 +74,7 @@ type Plugin struct {
 
 	// Local server on unix socket to serve internal requests
 	localServer *http.Server
+	localRouter *mux.Router
 }
 
 type StatusRecorder struct {
@@ -164,6 +165,8 @@ func (p *Plugin) OnActivate() error {
 		}
 	}
 
+	p.localRouter = mux.NewRouter()
+
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
@@ -241,6 +244,7 @@ func (p *Plugin) OnActivate() error {
 	)
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
+		p.localRouter,
 		p.playbookService,
 		pluginAPIClient,
 		p.config,
@@ -248,6 +252,7 @@ func (p *Plugin) OnActivate() error {
 	)
 	api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
+		p.localRouter,
 		p.playbookRunService,
 		p.playbookService,
 		p.permissions,
@@ -297,8 +302,9 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) startLocalModeServer(pluginAPIClient *pluginapi.Client) error {
+
 	p.localServer = &http.Server{
-		Handler: api.NewLocalHandler(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.permissions), //p.localRouter,
+		Handler: p.localRouter,
 	}
 
 	socket := "/tmp/localserver.socket" // *s.platform.Config().ServiceSettings.LocalModeSocketLocation

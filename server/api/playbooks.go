@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app/transform"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -33,7 +34,7 @@ const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, localRouter *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
@@ -67,6 +68,10 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
 	insightsRouter.HandleFunc("/user/me", withContext(handler.getTopPlaybooksForUser)).Methods(http.MethodGet)
 	insightsRouter.HandleFunc("/teams/{teamID}", withContext(handler.getTopPlaybooksForTeam)).Methods(http.MethodGet)
+
+	// local routes
+	localRouter.HandleFunc("/boards/members", withContext(handler.getPlaybooksMembers)).Methods("GET")
+	localRouter.HandleFunc("/boards/playbooks", withContext(handler.getAvailablePlaybooksForUser)).Methods("GET")
 
 	return handler
 }
@@ -722,4 +727,77 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)
+}
+
+// getMembers returns the members that are the participants for ALL playbooks passed
+// as parameter
+//
+// This is an endpoint that is only callable from a local socket file
+func (h *PlaybookHandler) getPlaybooksMembers(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookIDs := strings.Split(r.URL.Query().Get("playbookIDs"), ",")
+	teamID := r.URL.Query().Get("teamID")
+
+	if teamID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "team_id is required", errors.Errorf("team_id is required when asking for blocks"))
+		return
+	}
+	if len(playbookIDs) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook_ids are required", errors.Errorf("playbook_ids are required when asking for blocks"))
+		return
+	}
+
+	// act as an admin, auth is done in boards side
+	requesterInfo := app.RequesterInfo{
+		IsAdmin: true,
+	}
+
+	options := app.PlaybookFilterOptions{
+		Page:        0,
+		PerPage:     100,
+		PlaybookIDs: playbookIDs,
+	}
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, options)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	members := transform.BoardsPlaybooksMembers{Playbooks: playbooks.Items}
+
+	ReturnJSON(w, members.Transform(), http.StatusOK)
+}
+
+// getPlaybooks return the playbooks that are available for the passed user/team
+//
+// This is an endpoint that is only callable from a local socket file
+func (h *PlaybookHandler) getAvailablePlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	teamID := r.URL.Query().Get("team_id")
+
+	if teamID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "team_id is required", errors.Errorf("team_id is required when asking for blocks"))
+		return
+	}
+	if userID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_id is required", errors.Errorf("user_id is required when asking for blocks"))
+		return
+	}
+
+	requesterInfo, err := app.GetRequesterInfo(userID, h.pluginAPI)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	options := app.PlaybookFilterOptions{
+		Page:    0,
+		PerPage: 100,
+	}
+
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, options)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	items := transform.BoardsPlaybooks{Playbooks: playbooks.Items}
+	ReturnJSON(w, items.Transform(), http.StatusOK)
 }
