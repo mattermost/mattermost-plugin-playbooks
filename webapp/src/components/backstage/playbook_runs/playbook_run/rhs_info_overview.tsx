@@ -47,6 +47,7 @@ export const useFollow = (runID: string, followState: FollowState) => {
     const addToast = useToaster().add;
     const {isFollowing, followers, setFollowers} = followState;
     const currentUser = useSelector(getCurrentUser);
+    const refreshLHS = useLHSRefresh();
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
@@ -54,6 +55,7 @@ export const useFollow = (runID: string, followState: FollowState) => {
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setFollowers(newFollowers);
+                refreshLHS();
             })
             .catch(() => {
                 addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
@@ -70,7 +72,10 @@ export const useFollow = (runID: string, followState: FollowState) => {
         }
 
         return (
-            <FollowButton onClick={toggleFollow}>
+            <FollowButton
+                data-testid={'rdp-rhs-follow-button'}
+                onClick={toggleFollow}
+            >
                 {formatMessage({defaultMessage: 'Follow'})}
             </FollowButton>
         );
