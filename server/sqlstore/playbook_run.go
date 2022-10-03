@@ -491,12 +491,12 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 }
 
 // UpdatePlaybookRun updates a playbook run.
-func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
+func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error {
 	if playbookRun == nil {
-		return nil, errors.New("playbook run is nil")
+		return errors.New("playbook run is nil")
 	}
 	if playbookRun.ID == "" {
-		return nil, errors.New("ID should not be empty")
+		return errors.New("ID should not be empty")
 	}
 
 	playbookRun = playbookRun.Clone()
@@ -504,11 +504,11 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return nil, errors.Wrap(err, "could not begin transaction")
+		return errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
@@ -541,18 +541,18 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
+		return errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
 	}
 
 	if err = s.updateRunMetrics(tx, rawPlaybookRun.PlaybookRun); err != nil {
-		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
+		return errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "could not commit transaction")
+		return errors.Wrap(err, "could not commit transaction")
 	}
 
-	return playbookRun, nil
+	return nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {

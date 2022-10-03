@@ -272,7 +272,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 					old.MetricsData = generateMetricData(pbWithMetrics)
 
 					//first update will insert rows
-					_, err = playbookRunStore.UpdatePlaybookRun(&old)
+					err = playbookRunStore.UpdatePlaybookRun(&old)
 					require.NoError(t, err)
 
 					//second update will update values
@@ -294,7 +294,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 
 				expected := testCase.Update(*returned)
 
-				_, err = playbookRunStore.UpdatePlaybookRun(expected)
+				err = playbookRunStore.UpdatePlaybookRun(expected)
 
 				if testCase.ExpectedErr != nil {
 					require.Error(t, err)
@@ -340,7 +340,7 @@ func TestIfDeletedMetricsAreOmitted(t *testing.T) {
 
 		// store metrics values
 		playbookRun.MetricsData = generateMetricData(playbook)
-		_, err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+		err = playbookRunStore.UpdatePlaybookRun(playbookRun)
 		require.NoError(t, err)
 
 		// delete one metric config from playbook
