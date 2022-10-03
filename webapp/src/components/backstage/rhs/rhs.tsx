@@ -33,7 +33,7 @@ const BackstageRHS = () => {
 
     return (
         <Container
-            id='playbooks-sidebar-right'
+            id='playbooks-backstage-sidebar-right'
             role='complementary'
             ref={sidebarRef}
             isOpen={isOpen}

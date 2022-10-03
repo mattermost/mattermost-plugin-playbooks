@@ -1509,7 +1509,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 	itemToCheck.DueDate = duedate
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
@@ -1558,7 +1558,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	// Record the last (successful) run time.
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 
-	playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+	_, err = s.store.UpdatePlaybookRun(playbookRun)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to update playbook run recording run of slash command")
 	}

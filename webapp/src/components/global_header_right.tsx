@@ -12,6 +12,7 @@ import {openBackstageRHS, closeBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS, selectHasOverdueTasks} from 'src/selectors';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
 
 const IconButtonWrapper = styled.div<{toggled: boolean}>`
     position: relative;
@@ -43,7 +44,12 @@ const GlobalHeaderRight = () => {
     const {formatMessage} = useIntl();
     const isOpen = useSelector(backstageRHS.isOpen);
     const section = useSelector(backstageRHS.section);
+    const isExperimentationEnabled = useExperimentalFeaturesEnabled();
     const hasOverdueTasks = useSelector(selectHasOverdueTasks);
+
+    if (!isExperimentationEnabled) {
+        return null;
+    }
 
     const isTasksOpen = isOpen && section === BackstageRHSSection.TaskInbox;
 
@@ -71,6 +77,7 @@ const GlobalHeaderRight = () => {
 
         >
             <IconButtonWrapper
+                data-testid='header-task-inbox-icon'
                 onClick={onClick}
                 toggled={isTasksOpen}
             >
