@@ -71,6 +71,9 @@ describe('Task Inbox >', () => {
     const getRHS = () => cy.get('#playbooks-backstage-sidebar-right');
 
     it('icon toggles taskinbox view', () => {
+        // # Intercept all calls to telemetry
+        cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
         // * assert RHS is not shown
         getRHS().should('not.exist');
 
@@ -79,6 +82,12 @@ describe('Task Inbox >', () => {
 
         // * assert RHS is shown
         getRHS().should('be.visible');
+
+        // * assert  telemetry pageview
+        cy.wait('@telemetry').then((interception) => {
+            expect(interception.request.body.name).to.eq('task_inbox');
+            expect(interception.request.body.type).to.eq('page');
+        });
 
         // * assert zero case
         getRHS().within(() => {
@@ -102,6 +111,29 @@ describe('Task Inbox >', () => {
             cy.getStyledComponent('TaskList').within(() => {
                 cy.getStyledComponent('Container').should('have.length', 4);
             });
+        });
+    });
+
+    it('show only assigned tasks', () => {
+        // # Click on global header icon to open
+        cy.findByTestId('header-task-inbox-icon').click();
+
+        getRHS().within(() => {
+            cy.getStyledComponent('TaskList').within(() => {
+                // * assert 4 tasks are shown
+                cy.getStyledComponent('Container').should('have.length', 4);
+            });
+
+            // # Click on filters
+            cy.findByText('Filters').click();
+        });
+
+        // # Deactivate show alltasks
+        cy.findByText('Show all tasks from runs I own').click();
+
+        cy.getStyledComponent('TaskList').within(() => {
+            // * assert 1 tasks are shown
+            cy.getStyledComponent('Container').should('have.length', 1);
         });
     });
 
@@ -135,29 +167,6 @@ describe('Task Inbox >', () => {
                 // * assert 4 tasks are shown
                 cy.getStyledComponent('Container').should('have.length', 4);
             });
-        });
-    });
-
-    it('show only assigned tasks', () => {
-        // # Click on global header icon to open
-        cy.findByTestId('header-task-inbox-icon').click();
-
-        getRHS().within(() => {
-            cy.getStyledComponent('TaskList').within(() => {
-                // * assert 4 tasks are shown
-                cy.getStyledComponent('Container').should('have.length', 4);
-            });
-
-            // # Click on filters
-            cy.findByText('Filters').click();
-        });
-
-        // # Deactivate show alltasks
-        cy.findByText('Show all tasks from runs I own').click();
-
-        cy.getStyledComponent('TaskList').within(() => {
-            // * assert 1 tasks are shown
-            cy.getStyledComponent('Container').should('have.length', 1);
         });
     });
 });

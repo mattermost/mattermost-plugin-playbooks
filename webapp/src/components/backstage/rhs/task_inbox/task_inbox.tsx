@@ -14,6 +14,8 @@ import {PlaybookRunStatus, PlaybookRunChecklistItem} from 'src/types/playbook_ru
 import {ChecklistItemState} from 'src/types/playbook';
 import {selectMyTasks, isTaskOverdue} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
+import {GeneralViewTarget} from 'src/types/telemetry';
+import {useViewTelemetry} from 'src/hooks/telemetry';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import Task from './task';
@@ -60,6 +62,8 @@ const TaskInbox = () => {
     const [filters, setFilters] = useState<Filter[]>([Filter.FilterRunOwner]);
     const currentUserId = useSelector(getCurrentUserId);
     const myTasks = useSelector(selectMyTasks);
+
+    useViewTelemetry(GeneralViewTarget.TaskInbbox, currentUserId, {});
 
     useEffect(() => {
         const options = {

@@ -1,6 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+export enum GeneralViewTarget {
+    TaskInbbox = 'task_inbox',
+}
+
 export enum PlaybookViewTarget {
     Usage = 'view_playbook_usage',
     Outline = 'view_playbook_outline',
@@ -36,5 +40,5 @@ export enum PlaybookRunEventTarget {
     GetInvolvedJoin = 'playbookrun_get_involved_join',
 }
 
-export type TelemetryViewTarget = PlaybookViewTarget | PlaybookRunViewTarget;
+export type TelemetryViewTarget = GeneralViewTarget | PlaybookViewTarget | PlaybookRunViewTarget;
 export type TelemetryEventTarget = PlaybookRunEventTarget;
