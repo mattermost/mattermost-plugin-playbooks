@@ -65,6 +65,7 @@ const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     right: 0;
+    top: 40px;
     z-index: 5;
     background-color: var(--center-channel-bg);
 
@@ -73,7 +74,7 @@ const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
         width: 500px;
     }
 
-    border-radius: 12px 0px 0px 12px;
+    border-radius: 0;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
 `;
 
