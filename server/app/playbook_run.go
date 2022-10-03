@@ -759,7 +759,7 @@ type PlaybookRunStore interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// UpdatePlaybookRun updates a playbook run.
-	UpdatePlaybookRun(playbookRun *PlaybookRun) error
+	UpdatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// UpdateStatus updates the status of a playbook run.
 	UpdateStatus(statusPost *SQLStatusPost) error
