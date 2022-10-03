@@ -7,11 +7,12 @@ import styled from 'styled-components';
 
 import {FormattedMessage} from 'react-intl';
 
+import {MetricsInfo} from 'src/components/backstage/metrics/metrics_run_list';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {formatDuration} from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {MetricType} from 'src/types/playbook';
-import {MetricsInfo} from 'src/components/backstage/playbooks/metrics/metrics_run_list';
 
 interface Props {
     metricsInfo: MetricsInfo[];
