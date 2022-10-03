@@ -64,7 +64,7 @@ const useLHSData = (teamID: string) => {
 
     const runItems = data.runs.map((run) => {
         const icon = 'icon-play-outline';
-        const link = pluginUrl(`/runs/${run.id}`);
+        const link = pluginUrl(`/runs/${run.id}?from=playbooks_lhs`);
 
         return {
             areaLabel: run.name,

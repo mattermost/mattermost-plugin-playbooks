@@ -13,6 +13,10 @@ describe('runs > run details page > run info', () => {
     let testPublicPlaybook;
     let testRun;
 
+    const getHeader = () => {
+        return cy.findByTestId('run-header-section');
+    };
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
@@ -205,9 +209,35 @@ describe('runs > run details page > run info', () => {
                 });
             });
 
-            it('there is no channel link', () => {
-                // * Assert that the link is not present
-                getOverviewEntry('channel').should('not.exist');
+            it('there is no channel link but can request to join', () => {
+                // * Assert that the section exists with label Private
+                getOverviewEntry('channel').contains('Private');
+
+                // * Assert that link does not exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('a').should('not.exist');
+                });
+
+                // * Assert that request-join button does not exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('button').should('not.exist');
+                });
+
+                cy.wait(500);
+
+                // # Click Participate button
+                getHeader().findByText('Participate').click();
+
+                // # Confirm modal
+                cy.get('#confirmModal').get('#confirmModalButton').click();
+
+                // Assert that request-join button exist
+                getOverviewEntry('channel').within(() => {
+                    cy.get('button').click();
+                });
+
+                // # Confirm modal
+                cy.get('#confirmModal').get('#confirmModalButton').click();
             });
         });
     });

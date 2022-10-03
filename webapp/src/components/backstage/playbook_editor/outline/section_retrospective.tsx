@@ -6,7 +6,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
-import {Card} from 'src/components/backstage/playbooks/playbook_preview_cards';
+import {Card} from 'src/components/backstage/playbook_preview_cards';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {Metric, PlaybookWithChecklist} from 'src/types/playbook';

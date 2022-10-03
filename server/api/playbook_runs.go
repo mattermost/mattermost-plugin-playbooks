@@ -73,6 +73,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -869,7 +870,7 @@ func (h *PlaybookRunHandler) updateRunActions(c *Context, w http.ResponseWriter,
 	}
 }
 
-// RequestUpdate posts a status update request message in the run's channel
+// requestUpdate posts a status update request message in the run's channel
 func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -880,6 +881,23 @@ func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r 
 	}
 
 	if err := h.playbookRunService.RequestUpdate(playbookRunID, userID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+}
+
+// requestJoinChannel posts a channel-join request message in the run's channel
+func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// user must be a participant to be able to request to join the channel
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to request join channel", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RequestJoinChannel(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

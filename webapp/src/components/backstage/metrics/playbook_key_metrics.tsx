@@ -6,15 +6,18 @@ import styled from 'styled-components';
 
 import {PlaybookStats} from 'src/types/stats';
 import {useAllowPlaybookAndRunMetrics, useRunsList} from 'src/hooks';
-import UpgradeKeyMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/upgrade_key_metrics_placeholder';
-import MetricsStatsView from 'src/components/backstage/playbooks/metrics/metrics_stats_view';
+
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
-import MetricsRunList from 'src/components/backstage/playbooks/metrics/metrics_run_list';
-import NoMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/no_metrics_placeholder';
+
 import {Metric} from 'src/types/playbook';
 import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookViewTarget} from 'src/types/telemetry';
+
+import NoMetricsPlaceholder from './no_metrics_placeholder';
+import MetricsRunList from './metrics_run_list';
+import MetricsStatsView from './metrics_stats_view';
+import UpgradeKeyMetricsPlaceholder from './upgrade_key_metrics_placeholder';
 
 const defaultPlaybookFetchParams = {
     page: 0,
