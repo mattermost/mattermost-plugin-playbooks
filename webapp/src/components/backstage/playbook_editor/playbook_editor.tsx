@@ -25,8 +25,8 @@ import {
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
-import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
+import PlaybookUsage from 'src/components/backstage/playbook_usage';
+import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 
 import {SemiBoldHeading} from 'src/styles/headings';
 
