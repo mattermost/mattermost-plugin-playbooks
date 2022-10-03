@@ -46,7 +46,7 @@ const RHSAbout = (props: Props) => {
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
     const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`;
+    const overviewURL = `/playbooks/runs/${props.playbookRun.id}?from=channel_rhs_item`;
 
     const markdownOptions = {
         singleline: true,

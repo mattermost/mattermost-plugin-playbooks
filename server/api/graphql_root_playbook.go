@@ -148,15 +148,15 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "Description", args.Updates.Description)
 	if args.Updates.Public != nil {
 		if *args.Updates.Public {
-			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
-				return "", errors.Wrap(err, "attempted to make playbook private without permissions")
-			}
-		} else {
 			if err := c.permissions.PlaybookMakePublic(userID, currentPlaybook); err != nil {
 				return "", errors.Wrap(err, "attempted to make playbook public without permissions")
 			}
+		} else {
+			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
+				return "", errors.Wrap(err, "attempted to make playbook private without permissions")
+			}
 		}
-		if c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
+		if !c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
 			return "", errors.Wrapf(app.ErrLicensedFeature, "the playbook is not valid with the current license")
 		}
 		addToSetmap(setmap, "Public", args.Updates.Public)
