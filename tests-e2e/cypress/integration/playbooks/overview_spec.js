@@ -119,7 +119,7 @@ describe('playbooks > overview', () => {
             cy.findByTestId('run-playbook').click({force: true});
 
             // * Verify the playbook run creation dialog has opened
-            cy.get('#interactiveDialogModal').should('exist').within(() => {
+            cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
                 cy.findByText('Start run').should('exist');
             });
         };
@@ -148,7 +148,7 @@ describe('playbooks > overview', () => {
             cy.findByTestId('run-playbook').click({force: true});
 
             // * Verify the playbook run creation dialog has opened
-            cy.get('#interactiveDialogModal').should('exist').within(() => {
+            cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
                 cy.findByText('Start run').should('exist');
             });
         });

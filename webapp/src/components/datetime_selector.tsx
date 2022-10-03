@@ -150,6 +150,7 @@ export const DateTimeSelector = ({
                 options={options}
                 placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
                 styles={selectStyles}
+                noOptionsMessage={() => <InvalidLabel>{formatMessage({defaultMessage: 'Invalid time duration'})}</InvalidLabel>}
                 onChange={onSelectedChange}
                 classNamePrefix='playbook-run-user-select' // TODO debt: rename
                 className='playbook-run-user-select' // TODO debt: rename
@@ -225,4 +226,8 @@ const Right = styled.div`
     flex-grow: 1;
     display: flex;
     justify-content: flex-end;
+`;
+
+const InvalidLabel = styled.span`
+    color: var(--error-text);
 `;

@@ -425,5 +425,6 @@ const ViewAllUpdates = styled.div`
     cursor: pointer;
     color: var(--button-bg);
     font-weight: 600;
+    width: fit-content;    
 `;
 

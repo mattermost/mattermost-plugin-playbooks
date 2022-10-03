@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {cloneElement, useState} from 'react';
+import React, {cloneElement, useState, ComponentProps} from 'react';
 import styled, {css} from 'styled-components';
 
 import {
@@ -20,7 +20,7 @@ import {
 } from '@floating-ui/react-dom-interactions';
 
 const FloatingContainer = styled.div`
-    min-width: 20rem;
+    min-width: 16rem;
 	z-index: 50;
 
 	.PlaybookRunProfileButton {
@@ -53,7 +53,7 @@ type DropdownProps = {
     offset?: Parameters<typeof offset>[0];
     flip?: Parameters<typeof flip>[0];
     shift?: Parameters<typeof shift>[0];
-    initialFocus?: number;
+    focusManager?: boolean | Omit<ComponentProps<typeof FloatingFocusManager>, 'context' | 'children'>;
     portal?: boolean;
     containerStyles?: ReturnType<typeof css>;
 } & ({
@@ -88,36 +88,42 @@ const Dropdown = (props: DropdownProps) => {
         useDismiss(context),
     ]);
 
-    const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment;
+    const MaybePortal = (props.portal ?? true) ? FloatingPortal : React.Fragment; // 🤷
+
+    let content = (
+        <FloatingContainer
+            {...getFloatingProps({
+                ref: floating,
+                style: {
+                    position: strategy,
+                    top: y ?? 0,
+                    left: x ?? 0,
+                },
+            })}
+            css={`
+                ${props.containerStyles};
+            `}
+        >
+            {props.children}
+        </FloatingContainer>
+    );
+
+    if (props.focusManager ?? true) {
+        content = (
+            <FloatingFocusManager
+                {...typeof props.focusManager === 'boolean' ? false : props.focusManager}
+                context={context}
+            >
+                {content}
+            </FloatingFocusManager>
+        );
+    }
 
     return (
         <>
             {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
             <MaybePortal>
-                {open && (
-                    <>
-                        <FloatingFocusManager
-                            context={context}
-                            initialFocus={props.initialFocus}
-                        >
-                            <FloatingContainer
-                                {...getFloatingProps({
-                                    ref: floating,
-                                    style: {
-                                        position: strategy,
-                                        top: y ?? 0,
-                                        left: x ?? 0,
-                                    },
-                                })}
-                                css={`
-                                    ${props.containerStyles};
-                                `}
-                            >
-                                {props.children}
-                            </FloatingContainer>
-                        </FloatingFocusManager>
-                    </>
-                )}
+                {open && content}
             </MaybePortal>
         </>
     );

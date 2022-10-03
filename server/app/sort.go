@@ -40,6 +40,12 @@ const (
 	// SortByLastStatusUpdateAt sorts by when the playbook run was last updated.
 	SortByLastStatusUpdateAt SortField = "last_status_update_at"
 
+	// SortByLastStatusUpdateAt sorts by when the playbook was last run.
+	SortByLastRunAt SortField = "last_run_at"
+
+	// SortByActiveRuns sorts by number of active runs in the playbook.
+	SortByActiveRuns SortField = "active_runs"
+
 	// SortByMetric0 ..3 sorts by the playbook's metric index
 	SortByMetric0 SortField = "metric0"
 	SortByMetric1 SortField = "metric1"

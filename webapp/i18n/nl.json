@@ -690,5 +690,13 @@
     "P6PLpi": "Deelnemen",
     "FgydNe": "Bekijken",
     "iEtImk": "Wanneer je {isFollowing, select, true { en een uitvoering niet langer volgt} other { een uitvoering}} verlaat, wordt deze verwijderd uit de linkerzijbalk. Je kan deze terugvinden door alle uitvoeringen te bekijken.",
-    "cnfVhV": "De uitvoering verlaten {isFollowing, select, true { en niet langer volgen } other {}}"
+    "cnfVhV": "De uitvoering verlaten {isFollowing, select, true { en niet langer volgen } other {}}",
+    "vqmRBs": "Bevestig herstarten uitvoering",
+    "qGlwfc": "Uitvoering starten",
+    "k5EChD": "Weet je zeker dat je deze uitvoering wil herstarten?",
+    "j2FnDV": "Er zal een kanaal aangemaakt worden met deze naam",
+    "iQhFxR": "Laatst gebruikt",
+    "Zg0obP": "Uitvoering opnieuw starten",
+    "KjNfA8": "Ongeldige tijdsduur",
+    "03oqA2": "Actieve uitvoeringen"
 }

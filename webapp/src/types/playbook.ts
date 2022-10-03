@@ -10,6 +10,8 @@ export interface Playbook {
     delete_at: number;
     run_summary_template_enabled: boolean;
     public: boolean;
+    default_owner_id: string;
+    default_owner_enabled: boolean;
 
     /** @alias num_checklists */
     num_stages: number;
@@ -19,6 +21,7 @@ export interface Playbook {
     last_run_at: number;
     members: PlaybookMember[];
     default_playbook_member_role: string;
+    active_runs: number;
 }
 
 export interface PlaybookMember {
@@ -78,7 +81,7 @@ export interface FetchPlaybooksParams {
     team_id?: string;
     page?: number;
     per_page?: number;
-    sort?: 'title' | 'stages' | 'steps' | 'runs';
+    sort?: 'title' | 'stages' | 'steps' | 'runs' | 'last_run_at' | 'active_runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
     with_archived?: boolean;
@@ -181,6 +184,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         default_playbook_member_role: '',
         metrics: [],
         is_favorite: false,
+        active_runs: 0,
     };
 }
 
@@ -228,25 +232,6 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     others: true,
     overdueOnly: false,
 };
-
-// eslint-disable-next-line
-export function isChecklist(arg: any): arg is Checklist {
-    return arg &&
-        typeof arg.title === 'string' &&
-        arg.items && Array.isArray(arg.items) && arg.items.every(isChecklistItem);
-}
-
-// eslint-disable-next-line
-export function isChecklistItem(arg: any): arg is ChecklistItem {
-    return arg &&
-        typeof arg.title === 'string' &&
-        typeof arg.state_modified === 'number' &&
-        typeof arg.assignee_id === 'string' &&
-        typeof arg.assignee_modified === 'number' &&
-        typeof arg.state === 'string' &&
-        typeof arg.command === 'string' &&
-        typeof arg.command_last_run === 'number';
-}
 
 export const newMetric = (type: MetricType, title = '', description = '', target = null): Metric => ({
     id: '',

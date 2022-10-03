@@ -8,6 +8,8 @@ import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
+import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+
 import {
     clientEditChecklistItem,
     clientAddChecklistItem,
@@ -18,7 +20,6 @@ import {
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 
-import Portal from 'src/components/portal';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
 
@@ -341,7 +342,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     );
 
     if (props.dragging) {
-        return <Portal>{content}</Portal>;
+        return <FloatingPortal>{content}</FloatingPortal>;
     }
 
     return content;

@@ -65,7 +65,6 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             onHide={onHide}
             editable={!readOnly}
             onSave={onSave}
-            adjustTop={260}
             isValid={isValid}
         >
             <TriggersContainer>

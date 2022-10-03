@@ -1,4 +1,5 @@
-openapi: "3.0.0"
+---
+openapi: 3.0.0
 info:
   version: 0.6.0
   title: Playbooks API
@@ -78,7 +79,8 @@ paths:
           example: InProgress
           schema:
             type: array
-            default: ["InProgress"]
+            default:
+              - InProgress
             items:
               type: string
               enum:
@@ -104,7 +106,7 @@ paths:
           in: query
           description: The returned list will contain only the playbook runs whose name contains the search term.
           required: false
-          example: "server down"
+          example: server down
           schema:
             type: string
       x-codeSamples:
@@ -120,11 +122,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRunList"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     post:
       summary: Create a new playbook run
       description: Create a new playbook run in a team, using a playbook as template, with a specific name and a specific owner.
@@ -190,11 +192,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRun"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/dialog:
     post:
@@ -268,11 +270,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRun"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/owners:
     get:
@@ -306,11 +308,11 @@ paths:
                 items:
                   $ref: "#/components/schemas/OwnerInfo"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/channels:
     get:
@@ -378,7 +380,7 @@ paths:
           in: query
           description: The returned list will contain only the channels associated to a playbook run whose name contains the search term.
           required: false
-          example: "server down"
+          example: server down
           schema:
             type: string
         - name: participant_id
@@ -405,11 +407,11 @@ paths:
                   description: ID of the channel.
                   example: v8zdc1893plelmf54vb7f0ramn
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/checklist-autocomplete:
     get:
@@ -455,7 +457,7 @@ paths:
                       description: Always the value "Check/uncheck this item".
                       example: Check/uncheck this item
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/channel/{channel_id}:
     get:
@@ -486,9 +488,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRun"
         404:
-          $ref: "#/components/schemas/404"
+          $ref: "#/components/responses/404"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}:
     get:
@@ -519,9 +521,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRun"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     patch:
       summary: Update a playbook run
       operationId: updatePlaybookRun
@@ -559,9 +561,9 @@ paths:
         200:
           description: Playbook run successfully updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/metadata:
     get:
@@ -592,9 +594,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookRunMetadata"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/end:
     put:
@@ -621,7 +623,7 @@ paths:
         200:
           description: Playbook run ended
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     post:
       summary: End a playbook run from dialog
       description: This is an internal endpoint to end a playbook run via a confirmation dialog, submitted by a user in the webapp.
@@ -647,7 +649,7 @@ paths:
         200:
           description: Playbook run ended
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/restart:
     put:
@@ -674,7 +676,7 @@ paths:
         200:
           description: Playbook run restarted.
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/status:
     post:
@@ -720,11 +722,11 @@ paths:
         200:
           description: Playbook run updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/finish:
     put:
@@ -751,7 +753,7 @@ paths:
         200:
           description: Playbook run finished.
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/owner:
     post:
@@ -792,11 +794,11 @@ paths:
         200:
           description: Owner successfully changed.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/next-stage-dialog:
     post:
@@ -829,9 +831,9 @@ paths:
         200:
           description: Playbook run stage update.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/checklists/{checklist}/add:
     put:
@@ -972,9 +974,9 @@ paths:
         200:
           description: Item successfully reordered.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/checklists/{checklist}/item/{item}:
     put:
@@ -1035,9 +1037,9 @@ paths:
         200:
           description: Item updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
     delete:
       summary: Delete an item of a playbook run's checklist
@@ -1077,9 +1079,9 @@ paths:
         204:
           description: Item successfully deleted.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/checklists/{checklist}/item/{item}/state:
     put:
@@ -1139,9 +1141,9 @@ paths:
         200:
           description: Item's state successfully updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/checklists/{checklist}/item/{item}/assignee:
     put:
@@ -1196,9 +1198,9 @@ paths:
         200:
           description: Item's assignee successfully updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/checklists/{checklist}/item/{item}/run:
     put:
@@ -1243,9 +1245,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/TriggerIdReturn"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /runs/{id}/timeline/{event-id}/:
     delete:
@@ -1279,9 +1281,9 @@ paths:
         204:
           description: Item successfully deleted.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /playbooks:
     get:
@@ -1362,11 +1364,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookList"
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     post:
       summary: Create a playbook
       operationId: createPlaybook
@@ -1550,11 +1552,11 @@ paths:
                 required:
                   - id
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /playbooks/{id}:
     get:
@@ -1585,9 +1587,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Playbook"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     put:
       summary: Update a playbook
       operationId: updatePlaybook
@@ -1619,11 +1621,11 @@ paths:
         200:
           description: Playbook succesfully updated.
         400:
-          $ref: "#/components/schemas/400"
+          $ref: "#/components/responses/400"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
     delete:
       summary: Delete a playbook
       operationId: deletePlaybook
@@ -1648,9 +1650,9 @@ paths:
         204:
           description: Playbook successfully deleted.
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
   /playbooks/{id}/autofollows:
     get:
@@ -1681,16 +1683,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlaybookAutofollows"
         403:
-          $ref: "#/components/schemas/403"
+          $ref: "#/components/responses/403"
         500:
-          $ref: "#/components/schemas/500"
+          $ref: "#/components/responses/500"
 
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
-  schemas:
+  responses:
     400:
       content:
         application/json:
@@ -1715,6 +1717,7 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
       description: There was an internal error in the server.
+  schemas:
     PlaybookRun:
       type: object
       properties:
@@ -1840,6 +1843,7 @@ components:
         items:
           type: array
           description: The user IDs of who marked this playbook to auto-follow.
+          items:
             type: string
     OwnerInfo:
       type: object
@@ -2025,11 +2029,11 @@ components:
             channel_url:
               type: string
               description: Absolute URL to the playbook run's channel.
-              example: http://example.com/ad-1/channels/channel-name
+              example: https://example.com/ad-1/channels/channel-name
             details_url:
               type: string
               description: Absolute URL to the playbook run's details.
-              example: http://example.com/ad-1/playbooks/runs/playbookRunID
+              example: https://example.com/ad-1/playbooks/runs/playbookRunID
     WebhookOnStatusUpdatePayload:
       allOf:
         - $ref: "#/components/schemas/PlaybookRun"
@@ -2038,8 +2042,8 @@ components:
             channel_url:
               type: string
               description: Absolute URL to the playbook run's channel.
-              example: http://example.com/ad-1/channels/channel-name
+              example: https://example.com/ad-1/channels/channel-name
             details_url:
               type: string
               description: Absolute URL to the playbook run's details.
-              example: http://example.com/ad-1/playbooks/runs/playbookRunID
+              example: https://example.com/ad-1/playbooks/runs/playbookRunID

@@ -5,6 +5,7 @@ import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
 import Tooltip from 'src/components/widgets/tooltip';
+import {DotMenuButton} from '../dot_menu';
 
 interface ItemProps {
     icon: string;
@@ -19,25 +20,33 @@ interface ItemProps {
 
 const Item = (props: ItemProps) => {
     return (
-        <ItemContainer isCollapsed={props.isCollapsed}>
-            <Tooltip
-                id={`sidebarTooltip_${props.id}`}
-                content={props.display_name}
-            >
+        <ItemContainer
+            isCollapsed={props.isCollapsed}
+            data-testid={props.display_name}
+        >
+            {!props.isCollapsed &&
                 <StyledNavLink
                     className={props.className}
                     id={`sidebarItem_${props.id}`}
                     aria-label={props.areaLabel}
                     to={props.link}
-                    tabIndex={props.isCollapsed ? -1 : 0}
                 >
-                    <Icon className={classNames('CompassIcon', props.icon)}/>
-                    <ItemDisplayLabel>
-                        {props.display_name}
-                    </ItemDisplayLabel>
-                    {props.itemMenu}
+                    <Tooltip
+                        id={`sidebarTooltip_${props.id}`}
+                        content={props.display_name}
+                    >
+                        <NameIconContainer
+                            id={`sidebarItem_${props.id}`}
+                        >
+                            <Icon className={classNames('CompassIcon', props.icon)}/>
+                            <ItemDisplayLabel>
+                                {props.display_name}
+                            </ItemDisplayLabel>
+                        </NameIconContainer>
+                    </Tooltip>
+                    {<HoverMenu>{props.itemMenu}</HoverMenu>}
                 </StyledNavLink>
-            </Tooltip>
+            }
         </ItemContainer>
     );
 };
@@ -60,7 +69,7 @@ export const Icon = styled.i`
 
 export const ItemContainer = styled.li<{isCollapsed?: boolean}>`
     display: flex;
-    overflow: hidden;
+
     height: 32px;
     align-items: center;
     list-style-type: none;
@@ -110,7 +119,32 @@ export const StyledNavLink = styled(NavLink)`
                 content: "";
             }
         }
+
+        ${DotMenuButton} {
+            opacity: 0;
+        }
+        &:hover {
+            padding-right: 32px;
+            ${DotMenuButton} {
+                opacity: 1;
+            }
+        }        
     }
+`;
+
+const HoverMenu = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    position: absolute;
+    right: 8px;
+`;
+
+const NameIconContainer = styled.div`
+    display: flex;
+    align-items: center;
+    overflow: hidden;
 `;
 
 export default Item;

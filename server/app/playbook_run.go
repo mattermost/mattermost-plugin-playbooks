@@ -740,11 +740,14 @@ type PlaybookRunService interface {
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
-	// RequestGetInvolved posts a join request message in the run's channel
-	RequestGetInvolved(playbookRunID, requesterID string) error
+	// RequestJoinChannel posts a channel-join request message in the run's channel
+	RequestJoinChannel(playbookRunID, requesterID string) error
 
-	// Leave removes user from the run's participants&followers list
-	Leave(playbookRunID, requesterID string) error
+	// RemoveParticipants removes users from the run's participants
+	RemoveParticipants(playbookRunID string, userIDs []string) error
+
+	// AddParticipants adds users to the participants list
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -839,6 +842,18 @@ type PlaybookRunStore interface {
 	// (i.e. members of the playbook run channel when the run is active)
 	// if a user is member of more than one channel, it will be counted multiple times
 	GetParticipantsActiveTotal() (int64, error)
+
+	// AddParticipants adds particpants to the run
+	AddParticipants(playbookRunID string, userIDs []string) error
+
+	// RemoveParticipants removes participants from the run
+	RemoveParticipants(playbookRunID string, userIDs []string) error
+
+	// GetSchemeRolesForChannel scheme role ids for the channel
+	GetSchemeRolesForChannel(channelID string) (string, string, string, error)
+
+	// GetSchemeRolesForTeam scheme role ids for the team
+	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -973,6 +988,10 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
 	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
+	// IncludeFavorites filters playbook runs that ParticipantOrFollowerID has marked as favorite.
+	// There's no impact if ParticipantOrFollowerID is empty.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import React, {useRef, useState} from 'react';
+import React, {useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -115,11 +115,11 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [
         playbooks,
         {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
     ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
-    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
 
     const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
     const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => edit(id));
@@ -225,18 +225,18 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={formatMessage({defaultMessage: 'Checklists'})}
+                                name={formatMessage({defaultMessage: 'Last used'})}
                                 direction={params.direction}
-                                active={params.sort === 'stages'}
-                                onClick={() => sortBy('stages')}
+                                active={params.sort === 'last_run_at'}
+                                onClick={() => sortBy('last_run_at')}
                             />
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={'Tasks'}
+                                name={formatMessage({defaultMessage: 'Active Runs'})}
                                 direction={params.direction}
-                                active={params.sort === 'steps'}
-                                onClick={() => sortBy('steps')}
+                                active={params.sort === 'active_runs'}
+                                onClick={() => sortBy('active_runs')}
                             />
                         </div>
                         <div className='col-sm-2'>
@@ -339,17 +339,4 @@ const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
 `;
-export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
-    const [isModalShown, setShowModal] = useState(initialState);
-
-    const showUpgradeModal = () => {
-        setShowModal(true);
-    };
-    const hideUpgradeModal = () => {
-        setShowModal(false);
-    };
-
-    return [isModalShown, showUpgradeModal, hideUpgradeModal];
-};
-
 export default PlaybookList;

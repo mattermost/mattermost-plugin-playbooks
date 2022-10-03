@@ -12,7 +12,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +19,6 @@ import (
 
 func TestMigrations(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
-	logger := mock_bot.NewMockLogger(mockCtrl)
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
 	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	for _, driver := range driverNames {
@@ -33,7 +30,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("Run every migration twice", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -73,7 +69,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("Run the whole set of migrations twice", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -113,7 +108,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("force incidents to have a reminder set", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -223,7 +217,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("copy Description column into new RunSummaryTemplate", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -330,7 +323,6 @@ func TestMigrations(t *testing.T) {
 		t.Run("playbook member migration", func(t *testing.T) {
 			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
-				logger,
 				db,
 				builder,
 				scheduler,
@@ -493,6 +485,165 @@ func TestMigrations(t *testing.T) {
 				Where(sq.Eq{"PlaybookID": publicPlaybookID}).
 				Where(sq.Eq{"MemberID": user2ID}))
 			require.ErrorIs(t, err, sql.ErrNoRows)
+		})
+
+		t.Run("run participants migration", func(t *testing.T) {
+			db := setupTestDB(t, driver)
+			sqlStore := &SQLStore{
+				db,
+				builder,
+				scheduler,
+			}
+
+			// Make sure we start from scratch
+			currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+			require.NoError(t, err)
+			require.Equal(t, currentSchemaVersion, semver.Version{})
+
+			// Migration to 0.10.0 needs the Channels table to work
+			setupChannelsTable(t, db)
+			// Migration to 0.21.0 need the Posts table
+			setupPostsTable(t, db)
+			// Migration to 0.31.0 needs the PluginKeyValueStore
+			setupKVStoreTable(t, db)
+			// Migration to 0.55.0 needs the TeamMembers table
+			setupTeamMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupChannelMembersTable(t, db)
+			// Migration to 0.56.0 needs ChannelMembers table
+			setupBotsTable(t, db)
+
+			// Apply the migrations up to and including 0.57.0
+			migrateUpTo(t, sqlStore, semver.MustParse("0.57.0"))
+
+			bot1 := userInfo{
+				ID:   model.NewId(),
+				Name: "Mr. Bot",
+			}
+			bot2 := userInfo{
+				ID:   model.NewId(),
+				Name: "Mrs. Bot",
+			}
+			// Add two bots
+			addBots(t, sqlStore, []userInfo{bot1, bot2})
+
+			userIDs := []string{model.NewId(), model.NewId(), model.NewId(), model.NewId()}
+			runs := []struct {
+				ID               string
+				ChannelID        string
+				ChannelMemberIDs []string
+			}{
+				{ID: model.NewId(), ChannelID: model.NewId(), ChannelMemberIDs: []string{userIDs[0], userIDs[1], userIDs[2], bot1.ID}},
+				{ID: model.NewId(), ChannelID: model.NewId(), ChannelMemberIDs: []string{userIDs[0], userIDs[1], bot2.ID}},
+				{ID: model.NewId(), ChannelID: model.NewId(), ChannelMemberIDs: []string{userIDs[0]}},
+				{ID: model.NewId(), ChannelID: model.NewId(), ChannelMemberIDs: []string{bot1.ID, bot2.ID}},
+			}
+			for _, run := range runs {
+				// Insert runs
+				_, err := sqlStore.execBuilder(sqlStore.db, sq.
+					Insert("IR_Incident").
+					SetMap(map[string]interface{}{
+						"ID":            run.ID,
+						"CreateAt":      model.GetMillis(),
+						"CurrentStatus": app.StatusInProgress,
+						// have to be set:
+						"Name":            "test",
+						"Description":     "test",
+						"IsActive":        true,
+						"CommanderUserID": "commander",
+						"TeamID":          "testTeam",
+						"ChannelID":       run.ChannelID,
+						"ActiveStage":     0,
+						"ChecklistsJSON":  "{}",
+					}))
+				require.NoError(t, err)
+
+				// Insert channel members
+				for _, userID := range run.ChannelMemberIDs {
+					_, err = sqlStore.execBuilder(sqlStore.db, sq.
+						Insert("ChannelMembers").
+						SetMap(map[string]interface{}{
+							"UserID":    userID,
+							"ChannelID": run.ChannelID,
+						}))
+					require.NoError(t, err)
+				}
+			}
+
+			// Add users to IR_Run_Participants
+			// Channel member and follower
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Run_Participants").
+				SetMap(map[string]interface{}{
+					"UserID":     userIDs[0],
+					"IncidentID": runs[0].ID,
+					"IsFollower": true,
+				}))
+			require.NoError(t, err)
+			// Channel member, not follower
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Run_Participants").
+				SetMap(map[string]interface{}{
+					"UserID":     userIDs[0],
+					"IncidentID": runs[1].ID,
+					"IsFollower": false,
+				}))
+			require.NoError(t, err)
+			// Not channel member, follower
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Run_Participants").
+				SetMap(map[string]interface{}{
+					"UserID":     userIDs[3],
+					"IncidentID": runs[3].ID,
+					"IsFollower": false,
+				}))
+			require.NoError(t, err)
+
+			type RunParticipant struct {
+				UserID     string
+				IncidentID string
+			}
+
+			var runMembers1 []RunParticipant
+			err = sqlStore.selectBuilder(sqlStore.db, &runMembers1, sqlStore.builder.
+				Select("UserID", "IncidentID").
+				From("IR_Run_Participants").
+				OrderBy("UserID ASC"))
+			require.NoError(t, err)
+
+			// Apply the migrations from 0.57.0-on
+			migrateFrom(t, sqlStore, semver.MustParse("0.57.0"))
+
+			// Compare run members list and channel members list
+			var runMembers []RunParticipant
+			err = sqlStore.selectBuilder(sqlStore.db, &runMembers, sqlStore.builder.
+				Select("UserID", "IncidentID").
+				From("IR_Run_Participants").
+				Where(sq.Eq{"IsParticipant": true}).
+				OrderBy("UserID ASC").
+				OrderBy("IncidentID ASC"))
+			require.NoError(t, err)
+
+			var channelMembers []RunParticipant
+			err = sqlStore.selectBuilder(sqlStore.db, &channelMembers, sqlStore.builder.
+				Select("cm.UserID as UserID", "i.ID as IncidentID").
+				From("ChannelMembers as cm").
+				Join("IR_Incident AS i ON i.ChannelID = cm.ChannelID").
+				OrderBy("UserID ASC").
+				OrderBy("IncidentID ASC"))
+			require.NoError(t, err)
+			require.Len(t, runMembers, 10)
+			require.Equal(t, runMembers, channelMembers)
+
+			var count int64
+
+			// Verify followers number
+			err = sqlStore.getBuilder(sqlStore.db, &count, sqlStore.builder.
+				Select("COUNT(*)").
+				From("IR_Run_Participants").
+				Where(sq.Eq{"IsFollower": true}))
+			require.NoError(t, err)
+			require.Equal(t, int64(1), count)
 		})
 	}
 }

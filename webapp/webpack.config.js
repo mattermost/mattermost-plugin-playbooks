@@ -117,6 +117,7 @@ let config = {
     },
     externals: {
         react: 'React',
+        'react-dom': 'ReactDOM',
         redux: 'Redux',
         luxon: 'Luxon',
         'react-redux': 'ReactRedux',

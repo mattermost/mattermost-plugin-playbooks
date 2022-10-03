@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -172,8 +172,6 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
-		// assert some data has been injected
-		assert.Len(t, run.ParticipantIDs, 1)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -280,6 +278,23 @@ func TestRunCreation(t *testing.T) {
 		assert.Equal(t, (now+durations[1])/10000, run.Checklists[0].Items[1].DueDate/10000)
 		assert.Equal(t, (now+durations[2])/10000, run.Checklists[1].Items[0].DueDate/10000)
 		assert.Zero(t, run.Checklists[1].Items[1].DueDate)
+	})
+}
+
+func TestCreateInvalidRuns(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("fails if description is longer than 4096", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "test run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			Description: strings.Repeat("A", 4097),
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		assert.Nil(t, run)
 	})
 }
 
@@ -966,6 +981,30 @@ func TestChecklistManagement(t *testing.T) {
 	}
 }
 
+func TestChecklisFailTooLarge(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("checklist creation - failure: too large checklist", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "My regular title",
+			Items: []client.ChecklistItem{
+				{Title: "Item title", Description: strings.Repeat("A", (256*1024)+1)},
+			},
+		})
+		require.Error(t, err)
+	})
+}
+
 func TestRunActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1253,45 +1292,5 @@ func TestReminderReset(t *testing.T) {
 		}
 
 		require.Len(t, statusSnoozed, 1)
-	})
-}
-
-func TestLeave(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	t.Run("owner can not leave run", func(t *testing.T) {
-		err := e.PlaybooksClient.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
-		require.Error(t, err)
-	})
-
-	t.Run("join and leave run", func(t *testing.T) {
-		fmt.Println(e.BasicRun.ParticipantIDs)
-
-		// Join
-		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
-		require.NoError(t, err)
-
-		// Assert is participant and follower
-		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		assert.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
-
-		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		assert.Contains(t, meta.Followers, e.RegularUser2.Id)
-
-		// Leave
-		err = e.PlaybooksClient2.PlaybookRuns.Leave(context.Background(), e.BasicRun.ID)
-		assert.NoError(t, err)
-
-		// Assert is not participant and follower anymore
-		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		assert.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id)
-
-		meta, err = e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		assert.NotContains(t, meta.Followers, e.RegularUser2.Id)
 	})
 }

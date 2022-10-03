@@ -11,12 +11,6 @@ DLV_DEBUG_PORT := 2346
 DEFAULT_GOOS := $(shell go env GOOS)
 DEFAULT_GOARCH := $(shell go env GOARCH)
 
-GOLANGCI_CURRENT_MAJOR := $(shell golangci-lint --version | cut -f 4 -d ' ' | cut -f 1 -d '.')
-GOLANGCI_CURRENT_MINOR := $(shell golangci-lint --version | cut -f 4 -d ' ' | cut -f 2 -d '.')
-GOLANGCI_MINIMUM_MINOR := 46
-GOLANGCI_MINIMUM_MAJOR := 1
-GOLANCI_VERSION_ERRORMESSAGE := "Bad golangci-lint version: $(shell golangci-lint --version | cut -f 4 -d ' '). Please update at least to $(GOLANGCI_MINIMUM_MAJOR).$(GOLANGCI_MINIMUM_MINOR).X (https://golangci-lint.run/usage/install/)"
-
 export GO111MODULE=on
 
 # We need to export GOBIN to allow it to be set
@@ -63,7 +57,7 @@ endif
 
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
-	golangci-lint run ./...
+	$(GOBIN)/golangci-lint run ./...
 endif
 
 .PHONY: check-golangci
@@ -71,21 +65,8 @@ check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
 
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
-
-	@if [ $(GOLANGCI_CURRENT_MAJOR) -gt $(GOLANGCI_MINIMUM_MAJOR) ]; then \
-		exit 0; \
-	elif [ $(GOLANGCI_CURRENT_MAJOR) -lt $(GOLANGCI_MINIMUM_MAJOR) ]; then \
-		echo $(GOLANCI_VERSION_ERRORMESSAGE) \
-		exit 1; \
-	elif [ $(GOLANGCI_CURRENT_MINOR) -lt $(GOLANGCI_MINIMUM_MINOR) ]; then \
-		echo $(GOLANCI_VERSION_ERRORMESSAGE) \
-		exit 1; \
-	fi; \
-
+	@# Keep the version in sync with the command in .circleci/config.yml
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
 endif
 
 

@@ -5,40 +5,27 @@ import React, {Fragment, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-
-import {ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
-
-import Icon from '@mdi/react';
-
-import {mdiRestore, mdiPlayOutline} from '@mdi/js';
-
+import {PlayOutlineIcon, RestoreIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
-
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-
 import {GlobalState} from '@mattermost/types/store';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
-
 import Tooltip from 'src/components/widgets/tooltip';
-
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
-
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-
 import {navigateToUrl} from 'src/browser_routing';
+import {usePlaybookMembership} from 'src/graphql/hooks';
+import {Timestamp} from 'src/webapp_globals';
+import {openPlaybookRunModal} from 'src/actions';
 
 import {DotMenuButton} from '../dot_menu';
-
-import {usePlaybookMembership} from 'src/graphql/hooks';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -99,13 +86,22 @@ export const ArchiveIcon = styled.i`
     font-size: 11px;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 3px;
-`;
+const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
+    useTime: false,
+    style: 'narrow',
+    ranges: [
+        {within: ['minute', -1], display: ['second', 0]},
+        {within: ['hour', -1], display: ['minute']},
+        {within: ['day', -1], display: ['hour']}, // today, yesterday: N hours ago
+        {within: ['month', -1], display: ['day']}, // this month, last month: N days ago
+        {within: ['month', -11], display: ['month']},
+        {within: ['year', -1000], display: ['year']},
+    ],
+};
 
 const PlaybookListRow = (props: Props) => {
     const team = useSelector((state: GlobalState) => getTeam(state, props.playbook.team_id || ''));
+    const dispatch = useDispatch();
     const currentUser = useSelector(getCurrentUser);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
 
@@ -131,7 +127,13 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            navigateToUrl(`/${team.name || ''}/_playbooks/${props.playbook?.id || ''}/run`);
+            dispatch(openPlaybookRunModal(
+                props.playbook.id,
+                props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
+                props.playbook.description,
+                props.playbook.team_id,
+                team.name
+            ));
         }
     };
 
@@ -169,8 +171,17 @@ const PlaybookListRow = (props: Props) => {
                     </InfoLine>
                 }
             </PlaybookItemTitle>
-            <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
-            <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
+            <PlaybookItemRow>
+                {props.playbook.last_run_at ? (
+                    <Timestamp
+                        {...TIME_SPEC}
+                        value={props.playbook.last_run_at}
+                    />
+                ) : (
+                    '-'
+                )}
+            </PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.active_runs}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol
                 css={`
@@ -194,10 +205,7 @@ const PlaybookListRow = (props: Props) => {
                             padding: 0 20px;
                         `}
                     >
-                        <Icon
-                            path={mdiPlayOutline}
-                            size={1.25}
-                        />
+                        <PlayOutlineIcon size={22}/>
                         {formatMessage({defaultMessage: 'Run'})}
                     </SecondaryButton>
                 ) : (
@@ -215,10 +223,7 @@ const PlaybookListRow = (props: Props) => {
                             padding: 0 20px;
                         `}
                     >
-                        <AccountPlusOutlineIcon
-                            size={16}
-                            color='currentColor'
-                        />
+                        <AccountPlusOutlineIcon size={16}/>
                         {formatMessage({defaultMessage: 'Join'})}
                     </TertiaryButton>
                 )}
@@ -226,10 +231,7 @@ const PlaybookListRow = (props: Props) => {
                     title={'Actions'}
                     placement='bottom-end'
                     icon={(
-                        <DotsVerticalIcon
-                            size={18}
-                            color={'currentColor'}
-                        />
+                        <DotsVerticalIcon size={18}/>
                     )}
                     dotMenuButton={DotMenuButtonStyled}
                 >
@@ -237,20 +239,14 @@ const PlaybookListRow = (props: Props) => {
                         <DropdownMenuItem
                             onClick={props.onEdit}
                         >
-                            <PencilOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <PencilOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Edit'/>
                         </DropdownMenuItem>
                     ) : (
                         <DropdownMenuItem
                             onClick={props.onClick}
                         >
-                            <EyeOutlineIcon
-                                size={18}
-                                color='currentColor'
-                            />
+                            <EyeOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='View'/>
                         </DropdownMenuItem>
                     )}
@@ -262,10 +258,7 @@ const PlaybookListRow = (props: Props) => {
                         disabled={!permissionForDuplicate}
                         disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
                     >
-                        <ContentCopyIcon
-                            size={18}
-                            color='currentColor'
-                        />
+                        <ContentCopyIcon size={18}/>
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
                     <DropdownMenuItemStyled
@@ -275,10 +268,7 @@ const PlaybookListRow = (props: Props) => {
                         css={`${iconSplitStyling}`}
                         onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
-                        <ExportVariantIcon
-                            size={18}
-                            color='currentColor'
-                        />
+                        <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
                     {currentUserPlaybookMember && (
@@ -290,10 +280,7 @@ const PlaybookListRow = (props: Props) => {
                                     props.onMembershipChanged(false);
                                 }}
                             >
-                                <CloseIcon
-                                    size={18}
-                                    color='currentColor'
-                                />
+                                <CloseIcon size={18}/>
                                 <FormattedMessage defaultMessage='Leave'/>
                             </DropdownMenuItem>
                             <div className='MenuGroup menu-divider'/>
@@ -301,10 +288,7 @@ const PlaybookListRow = (props: Props) => {
                                 <DropdownMenuItem
                                     onClick={props.onRestore}
                                 >
-                                    <Icon
-                                        path={mdiRestore}
-                                        size='18px'
-                                    />
+                                    <RestoreIcon size={18}/>
                                     <FormattedMessage defaultMessage='Restore'/>
                                 </DropdownMenuItem>
                             ) : (
@@ -312,10 +296,7 @@ const PlaybookListRow = (props: Props) => {
                                     onClick={props.onArchive}
                                 >
                                     <RedText css={`${iconSplitStyling}`}>
-                                        <ArchiveOutlineIcon
-                                            size={18}
-                                            color='currentColor'
-                                        />
+                                        <ArchiveOutlineIcon size={18}/>
                                         <FormattedMessage defaultMessage='Archive'/>
                                     </RedText>
                                 </DropdownMenuItem>

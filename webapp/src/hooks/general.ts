@@ -5,7 +5,6 @@ import {
     useRef,
     useState,
     useMemo,
-    useLayoutEffect,
     DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
@@ -644,22 +643,6 @@ export const usePrevious = (value: any) => {
     });
 
     return ref.current;
-};
-
-export const usePortal = () => {
-    const [el] = useState(document.createElement('div'));
-    useLayoutEffect(() => {
-        const rootPortal = document.getElementById('root-portal');
-        if (rootPortal) {
-            rootPortal.appendChild(el);
-        }
-        return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el);
-            }
-        };
-    }, [el]);
-    return el;
 };
 
 export const useScrollListener = (el: HTMLElement | null, listener: EventListener) => {

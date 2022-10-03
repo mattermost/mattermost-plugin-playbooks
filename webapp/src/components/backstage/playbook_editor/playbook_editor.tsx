@@ -25,8 +25,8 @@ import {
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 
-import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
+import PlaybookUsage from 'src/components/backstage/playbook_usage';
+import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -175,6 +175,7 @@ const PlaybookEditor = () => {
                             <Controls.Members
                                 playbookId={playbook.id}
                                 numMembers={playbook.members.length}
+                                refetch={refetch}
                             />
                             <Controls.AutoFollowToggle playbook={playbook}/>
                             <Controls.RunPlaybook playbook={playbook}/>
@@ -213,7 +214,7 @@ const PlaybookEditor = () => {
                     `}
                 >
                     {(edit) => (
-                        <Heading>
+                        <Heading data-testid={'playbook-editor-header'}>
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}
@@ -290,7 +291,6 @@ const PlaybookEditor = () => {
 
 const titleCommon = css`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
@@ -363,7 +363,6 @@ const titleMenuOverrides = css`
 
 const Heading = styled.h1`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 32px;
     line-height: 40px;
     color: var(--center-channel-color);
@@ -381,7 +380,6 @@ const Heading = styled.h1`
 
 const Title = styled.h1`
     ${SemiBoldHeading}
-    letter-spacing: -0.01em;
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
@@ -500,7 +498,6 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         ${HorizontalBG} {
             /* sticky checklist header */
             top: var(--bar-height);
-            z-index: 1;
         }
     }
 

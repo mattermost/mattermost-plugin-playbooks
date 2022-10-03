@@ -86,8 +86,16 @@
     "translation": "You have 0 assigned tasks."
   },
   {
-    "id": "app.user.run.request_get_involved",
-    "translation": "@here — @{{.Name}} wants to participate in this run. To include them as a participant, add them to this channel.\n"
+    "id": "app.user.run.joined_run_channel_private_add_participant",
+    "translation": "@{{.Name}} has been added to the run by @{{.RequesterName}}. They haven't been automatically added to the channel because @{{.RequesterName}} isn't a channel member and the channel is private.\n"
+  },
+  {
+    "id": "app.user.run.joined_run_channel_private_participate",
+    "translation": "@{{.Name}} has joined the run. They haven't been automatically added to this private channel but any member of the channel can invite them to join.\n"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} is a run participant and wants join this channel. Any member of the channel can invite them.\n"
   },
   {
     "id": "app.user.run.request_update",

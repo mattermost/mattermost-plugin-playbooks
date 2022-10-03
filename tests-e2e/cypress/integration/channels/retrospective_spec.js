@@ -228,9 +228,11 @@ const publishRetro = () => {
     // # Publish
     cy.findByRole('button', {name: 'Publish'}).click();
 
-    // * Verify we're showing the publish retro confirmation modal
-    cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
+    cy.get('#confirm-modal-light').within(() => {
+        // * Verify we're showing the publish retro confirmation modal
+        cy.findByText('Are you sure you want to publish?');
 
-    // # Publish
-    cy.findByRole('button', {name: 'Publish'}).click();
+        // # Publish
+        cy.findByRole('button', {name: 'Publish'}).click();
+    });
 };

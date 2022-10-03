@@ -175,21 +175,6 @@ func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, u
 	return err
 }
 
-func (s *PlaybookRunService) RequestGetInvolved(ctx context.Context, playbookRunID, userID string) error {
-	requestURL := fmt.Sprintf("runs/%s/request-get-involved", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, requestURL, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := s.client.do(ctx, req, nil)
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("expected status code %d", http.StatusOK)
-	}
-
-	return err
-}
-
 func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
 	finishURL := fmt.Sprintf("runs/%s/finish", playbookRunID)
 	req, err := s.client.newRequest(http.MethodPut, finishURL, nil)
@@ -325,22 +310,6 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 
 	resp, err := s.client.do(ctx, req, nil)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("expected status code %d", http.StatusOK)
-	}
-
-	return err
-}
-
-// Leave removes the user from the participant & followers
-func (s *PlaybookRunService) Leave(ctx context.Context, playbookRunID string) error {
-	req, err := s.client.newRequest(http.MethodPost, fmt.Sprintf("runs/%s/leave", playbookRunID), nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := s.client.do(ctx, req, nil)
-	if resp.StatusCode != http.StatusOK {
-
 		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
 

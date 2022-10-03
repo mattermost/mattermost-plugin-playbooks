@@ -10,6 +10,8 @@ import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
@@ -66,7 +68,7 @@ import {
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter, PlaybookWithChecklist} from 'src/types/playbook';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
@@ -89,23 +91,14 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        // Add unique id
-        const clientId = generateId();
-        dispatch(setClientId(clientId));
-
-        const command = `/playbook run-playbook ${playbookId} ${clientId}`;
-
-        // When dispatching from the playbooks product, the switch to channels resets the websocket
-        // connection, losing the event that opens this dialog. Allow the caller to specify a
-        // timeout as a gross workaround.
-        await new Promise((resolve) => setTimeout(() => {
-            clientExecuteCommand(dispatch, getState, command, teamId);
-            // eslint-disable-next-line no-undefined
-            resolve(undefined);
-        }, timeout));
-    };
+export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) {
+    return modals.openModal(makePlaybookRunModalDefinition(
+        playbookId,
+        defaultOwnerId,
+        description,
+        teamId,
+        teamName
+    ));
 }
 
 export function promptUpdateStatus(
@@ -140,10 +133,10 @@ export function openUpdateRunStatusModal(
 
 export function displayEditPlaybookAccessModal(
     playbookId: string,
-    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>,
+    refetch?: () => void,
 ) {
     return async (dispatch: Dispatch<AnyAction>) => {
-        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId, onPlaybookChange})));
+        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId, refetch})));
     };
 }
 

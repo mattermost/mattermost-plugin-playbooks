@@ -2,6 +2,8 @@ package sqlstore
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -11,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type Migration struct {
@@ -223,7 +226,11 @@ var migrations = []Migration{
 				}
 
 				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
+					logrus.WithFields(logrus.Fields{
+						"active_stage":    playbookRun.ActiveStage,
+						"playbook_run_id": playbookRun.ID,
+						"num_checklists":  numChecklists,
+					}).Warn("index out of bounds: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 
@@ -1233,12 +1240,12 @@ var migrations = []Migration{
 			// Best effort migration so we just log the error to avoid killing the plugin.
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			} else {
 
 				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
-					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+					logrus.WithError(err).Error("failed to migrate KV store plugin id")
 				}
 			}
 
@@ -2125,7 +2132,228 @@ var migrations = []Migration{
 						b.UserId IS NULL
 			`); err != nil {
 				// Migration is optional so no failure just logging. (it will not try again)
-				sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to add existing users as playbook members"))
+				logrus.WithError(err).Warn("failed to add existing users as playbook members")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.56.0"),
+		toVersion:   semver.MustParse("0.57.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Run_Participants", "IsParticipant", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SummaryModifiedAt to table IR_Incident")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Run_Participants ALTER COLUMN IsFollower SET DEFAULT FALSE`); err != nil {
+					return errors.Wrapf(err, "failed to set new column default for IsFollower")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.57.0"),
+		toVersion:   semver.MustParse("0.58.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Find all users who are members of channels where runs have been created and are followers of the run.
+			// Update them to become members of the playbook run
+			var err error
+			if e.DriverName() == model.DatabaseDriverMysql {
+				_, err = e.Exec(`
+					UPDATE IR_Run_Participants
+					INNER JOIN IR_Incident ON IR_Run_Participants.IncidentID = IR_Incident.ID
+					INNER JOIN ChannelMembers ON ChannelMembers.ChannelID = IR_Incident.ChannelID
+					SET IR_Run_Participants.IsParticipant = true
+					WHERE
+						IR_Run_Participants.UserID = ChannelMembers.UserID
+				`)
+			} else {
+				_, err = e.Exec(`
+					UPDATE IR_Run_Participants
+					SET IsParticipant = true
+					FROM IR_Incident
+					INNER JOIN ChannelMembers ON ChannelMembers.ChannelID = IR_Incident.ChannelID
+					WHERE
+						IR_Run_Participants.UserID = ChannelMembers.UserID AND
+						IR_Run_Participants.IncidentID = IR_Incident.ID;
+				`)
+			}
+			if err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				logrus.WithError(err).Debug("failed to update existing users as playbook members")
+			}
+
+			// Find all users who are members of channels where runs have been created.
+			// Add them as members of the playbook run
+			if _, err := e.Exec(`
+				INSERT INTO IR_Run_Participants (UserID, IncidentID, IsFollower, IsParticipant)
+					SELECT DISTINCT
+						cm.UserID as UserID,
+						run.ID as IncidentID,
+						false as IsFollower,
+						true as IsParticipant
+					FROM IR_Incident as run
+					JOIN ChannelMembers as cm on cm.ChannelID = run.ChannelID
+					LEFT JOIN IR_Run_Participants as rp on rp.IncidentID = run.ID AND rp.UserID = cm.UserID
+					WHERE
+						rp.IncidentID IS NULL
+			`); err != nil {
+				// Migration is optional so no failure just logging. (it will not try again)
+				logrus.WithError(err).Debug("failed to add existing users as playbook members")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.58.0"),
+		toVersion:   semver.MustParse("0.59.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+
+			type ColTypeChange struct {
+				ColName string
+				Size    uint32
+			}
+
+			// Migrations are only for postgres
+			if e.DriverName() == model.DatabaseDriverMysql {
+				return nil
+			}
+
+			errCollected := []string{}
+			changes := map[string][]ColTypeChange{
+				"ir_incident": {
+					{"id", 26},
+					{"name", 1024},
+					{"description", 4096},
+					{"commanderuserid", 26},
+					{"teamid", 26},
+					{"channelid", 26},
+					{"postid", 26},
+					{"playbookid", 26},
+					{"activestagetitle", 1024},
+					{"reminderpostid", 26},
+					{"broadcastchannelid", 26},
+					{"remindermessagetemplate", 65535},
+					{"currentstatus", 1024},
+					{"reporteruserid", 26},
+					{"concatenatedinviteduserids", 65535},
+					{"defaultcommanderid", 26},
+					{"announcementchannelid", 26},
+					{"concatenatedwebhookoncreationurls", 65535},
+					{"concatenatedwebhookonstatusupdateurls", 65535},
+					{"concatenatedinvitedgroupids", 65535},
+					{"retrospective", 65535},
+					{"messageonjoin", 65535},
+					{"categoryname", 65535},
+					{"concatenatedbroadcastchannelids", 65535},
+					{"channelidtorootid", 65535},
+				},
+				"ir_playbook": {
+					{"id", 26},
+					{"title", 1024},
+					{"description", 4096},
+					{"teamid", 26},
+					{"broadcastchannelid", 26},
+					{"remindermessagetemplate", 65535},
+					{"concatenatedinviteduserids", 65535},
+					{"defaultcommanderid", 26},
+					{"announcementchannelid", 26},
+					{"concatenatedwebhookoncreationurls", 65535},
+					{"concatenatedinvitedgroupids", 65535},
+					{"messageonjoin", 65535},
+					{"retrospectivetemplate", 65535},
+					{"concatenatedwebhookonstatusupdateurls", 65535},
+					{"concatenatedsignalanykeywords", 65535},
+					{"categoryname", 65535},
+					{"concatenatedbroadcastchannelids", 65535},
+					{"runsummarytemplate", 65535},
+					{"channelnametemplate", 65535},
+				},
+				"ir_statusposts": {
+					{"incidentid", 26},
+					{"postid", 26},
+				},
+				"ir_category": {
+					{"id", 26},
+					{"name", 512},
+					{"teamid", 26},
+					{"userid", 26},
+				},
+				"ir_category_item": {
+					{"type", 1},
+					{"categoryid", 26},
+					{"itemid", 26},
+				},
+				"ir_channelaction": {
+					{"id", 26},
+					{"actiontype", 65535},
+					{"triggertype", 65535},
+				},
+				"ir_metric": {
+					{"incidentid", 26},
+					{"metricconfigid", 26},
+				},
+				"ir_metricconfig": {
+					{"id", 26},
+					{"playbookid", 26},
+					{"title", 512},
+					{"description", 4096},
+					{"type", 32},
+				},
+				"ir_playbookautofollow": {
+					{"playbookid", 26},
+					{"userid", 26},
+				},
+				"ir_playbookmember": {
+					{"playbookid", 26},
+					{"memberid", 26},
+					{"roles", 65535},
+				},
+				"ir_run_participants": {
+					{"userid", 26},
+					{"incidentid", 26},
+				},
+				"ir_viewedchannel": {
+					{"userid", 26},
+					{"channelid", 26},
+				},
+				"ir_timelineevent": {
+					{"id", 26},
+					{"incidentid", 26},
+					{"eventtype", 32},
+					{"summary", 256},
+					{"details", 4096},
+					{"postid", 26},
+					{"subjectuserid", 26},
+					{"creatoruserid", 26},
+				},
+				"ir_userinfo": {
+					{"id", 26},
+				},
+			}
+
+			for table, cols := range changes {
+				for _, col := range cols {
+					err := changeColumnTypeToPGTable(e, table, col.ColName, fmt.Sprintf("varchar(%d)", col.Size))
+					if err != nil {
+						errCollected = append(errCollected, err.Error())
+					}
+				}
+			}
+
+			if len(errCollected) > 0 {
+				return errors.New(strings.Join(errCollected, ",\n "))
 			}
 
 			return nil

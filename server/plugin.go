@@ -43,6 +43,7 @@ var (
 type TelemetryClient interface {
 	app.PlaybookRunTelemetry
 	app.PlaybookTelemetry
+	app.GenericTelemetry
 	bot.Telemetry
 	app.UserInfoTelemetry
 	app.ChannelActionTelemetry
@@ -102,12 +103,15 @@ func (p *Plugin) OnActivate() error {
 	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
-	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
+
+	logger := logrus.StandardLogger()
+	pluginapi.ConfigureLogrus(logger, pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
 		Description: "Playbooks bot.",
+		OwnerId:     "playbooks",
 	},
 		pluginapi.ProfileImagePath("assets/plugin_icon.png"),
 	)
@@ -124,7 +128,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
-		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
+		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
 		p.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
@@ -141,13 +145,13 @@ func (p *Plugin) OnActivate() error {
 
 		if telemetryEnabled {
 			if err = p.telemetryClient.Enable(); err != nil {
-				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
+				logrus.WithError(err).Error("Telemetry could not be enabled")
 			}
 			return
 		}
 
 		if err = p.telemetryClient.Disable(); err != nil {
-			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
+			logrus.WithError(err).Error("Telemetry could not be disabled")
 		}
 	}
 
@@ -158,24 +162,24 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
+	sqlStore, err := sqlstore.New(apiClient, scheduler)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
-	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
-	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
+	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
+	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
-	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
-	categoryStore := sqlstore.NewCategoryStore(apiClient, p.bot, sqlStore)
+	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
+	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
+	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
@@ -183,7 +187,6 @@ func (p *Plugin) OnActivate() error {
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
-		p.bot,
 		p.bot,
 		p.config,
 		scheduler,
@@ -196,10 +199,10 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not add the playbookRunService's HandleReminder", "error", err.Error())
+		logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
 	}
 	if err = scheduler.Start(); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
+		logrus.WithError(err).Error("JobOnceScheduler could not start")
 	}
 
 	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
@@ -222,7 +225,6 @@ func (p *Plugin) OnActivate() error {
 		p.playbookRunService,
 		p.categoryService,
 		pluginAPIClient,
-		p.bot,
 		p.config,
 		p.permissions,
 		playbookStore,
@@ -232,7 +234,6 @@ func (p *Plugin) OnActivate() error {
 		p.handler.APIRouter,
 		p.playbookService,
 		pluginAPIClient,
-		p.bot,
 		p.config,
 		p.permissions,
 	)
@@ -244,16 +245,15 @@ func (p *Plugin) OnActivate() error {
 		p.licenseChecker,
 		pluginAPIClient,
 		p.bot,
-		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions, p.licenseChecker)
-	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
-	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
-	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
-	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
-	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.categoryService, p.playbookService, p.playbookRunService)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.telemetryClient, p.permissions)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
+	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
+	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -295,7 +295,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot,
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
 		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {
@@ -336,14 +336,14 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 }
 
 func (p *Plugin) runMetricsServer() {
-	p.pluginAPI.Log.Info("Starting Playbooks metrics server", "port", metricsExposePort)
+	logrus.WithField("port", metricsExposePort).Info("Starting Playbooks metrics server")
 
-	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
+	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService)
 	// Run server to expose metrics
 	go func() {
 		err := metricServer.Run()
 		if err != nil {
-			p.pluginAPI.Log.Error("Metrics server could not be started", "Error", err)
+			logrus.WithError(err).Error("Metrics server could not be started")
 		}
 	}()
 }
@@ -353,37 +353,37 @@ func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbook
 		if playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal(); err == nil {
 			p.metricsService.ObservePlaybooksActiveTotal(playbooksActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, playbooks_active_total")
 		}
 
 		if runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal(); err == nil {
 			p.metricsService.ObserveRunsActiveTotal(runsActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, runs_active_total")
 		}
 
 		if remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal(); err == nil {
 			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
+			logrus.WithError(err).Error("error updating metrics, reminders_outstanding_total")
 		}
 
 		if retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal(); err == nil {
 			p.metricsService.ObserveRetrosOutstandingTotal(retrosOverdueTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
+			logrus.WithError(err).Error("error updating metrics, retros_outstanding_total")
 		}
 
 		if followersActiveTotal, err := playbookRunStore.GetFollowersActiveTotal(); err == nil {
 			p.metricsService.ObserveFollowersActiveTotal(followersActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, followers_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, followers_active_total")
 		}
 
 		if participantsActiveTotal, err := playbookRunStore.GetParticipantsActiveTotal(); err == nil {
 			p.metricsService.ObserveParticipantsActiveTotal(participantsActiveTotal)
 		} else {
-			p.pluginAPI.Log.Error("error updating metrics, participants_active_total", err)
+			logrus.WithError(err).Error("error updating metrics, participants_active_total")
 		}
 	}
 

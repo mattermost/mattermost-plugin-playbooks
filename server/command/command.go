@@ -14,6 +14,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -162,7 +163,6 @@ type Runner struct {
 	context            *plugin.Context
 	args               *model.CommandArgs
 	pluginAPI          *pluginapi.Client
-	logger             bot.Logger
 	poster             bot.Poster
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
@@ -176,7 +176,6 @@ type Runner struct {
 func NewCommandRunner(ctx *plugin.Context,
 	args *model.CommandArgs,
 	api *pluginapi.Client,
-	logger bot.Logger,
 	poster bot.Poster,
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
@@ -189,7 +188,6 @@ func NewCommandRunner(ctx *plugin.Context,
 		context:            ctx,
 		args:               args,
 		pluginAPI:          api,
-		logger:             logger,
 		poster:             poster,
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
@@ -215,7 +213,7 @@ func (r *Runner) postCommandResponse(text string) {
 }
 
 func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
-	r.logger.Errorf(format, args...)
+	logrus.Errorf(format, args...)
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{
 		Message: "Your request could not be completed. Check the system logs for more information.",
 	})

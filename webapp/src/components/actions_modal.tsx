@@ -3,13 +3,11 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {Scrollbars} from 'react-custom-scrollbars';
 import {Modal} from 'react-bootstrap';
 
 import styled from 'styled-components';
 
-import {mdiLightningBoltOutline} from '@mdi/js';
-import Icon from '@mdi/react';
+import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 
 import GenericModal, {ModalSubheading, DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 
@@ -22,7 +20,6 @@ interface Props {
     editable: boolean;
     onSave: () => void;
     children: React.ReactNode;
-    adjustTop?: number;
     isValid: boolean;
 }
 
@@ -31,10 +28,12 @@ const ActionsModal = (props: Props) => {
 
     const header = (
         <Header>
-            <ActionsIcon
-                path={mdiLightningBoltOutline}
-                size={1.6}
-            />
+            <IconWrapper>
+                <LightningBoltOutlineIcon
+                    size={24}
+                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                />
+            </IconWrapper>
             <div>
                 {props.title}
                 <ModalSubheading>
@@ -72,20 +71,12 @@ const ActionsModal = (props: Props) => {
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={false}
             enforceFocus={true}
-            adjustTop={props.adjustTop}
             components={{
                 Header: ModalHeader,
                 FooterContainer: ModalFooter,
             }}
         >
-            <Scrollbars
-                autoHeight={true}
-                autoHeightMax={500}
-                renderThumbVertical={renderThumbVertical}
-                renderTrackVertical={renderTrackVertical}
-            >
-                {props.children}
-            </Scrollbars>
+            {props.children}
         </StyledModal>
     );
 };
@@ -165,8 +156,7 @@ const Header = styled.div`
     flex-direction: row;
 `;
 
-const ActionsIcon = styled(Icon)`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
+const IconWrapper = styled.div`
     margin-right: 14px;
     margin-top: 2px;
 `;
