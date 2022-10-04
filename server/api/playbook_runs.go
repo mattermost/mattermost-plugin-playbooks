@@ -90,8 +90,8 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", withContext(handler.updateRunActions)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/status-update/enable", handler.enableStatusUpdate).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/status-update/disable", handler.disableStatusUpdate).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update/enable", withContext(handler.enableStatusUpdate)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update/disable", withContext(handler.disableStatusUpdate)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -925,31 +925,29 @@ func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *
 	}
 }
 
-func (h *PlaybookRunHandler) enableStatusUpdate(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookRunHandler) enableStatusUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, true); err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"OK"}`))
+	ReturnJSON(w, nil, http.StatusOK)
 
 }
 
-func (h *PlaybookRunHandler) disableStatusUpdate(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookRunHandler) disableStatusUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, false); err != nil {
-		h.HandleError(w, err)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"OK"}`))
+	ReturnJSON(w, nil, http.StatusOK)
 
 }
 

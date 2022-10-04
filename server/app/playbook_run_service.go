@@ -1056,6 +1056,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, userID string, enable bool) error {
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1073,7 +1074,7 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	statusUpdate := "enabled"
 	eventType := StatusUpdateEnabled
 
-	if enable == false {
+	if !enable {
 		statusUpdate = "disabled"
 		eventType = StatusUpdateDisabled
 	}
@@ -1088,7 +1089,7 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
-		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify)
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify, logger)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
@@ -1132,7 +1133,7 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
+	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
 		return err
 	}
 
@@ -3374,8 +3375,6 @@ const (
 	restoreMessage             messageType = "restore"
 	retroMessage               messageType = "retrospective"
 	statusUpdateMessage        messageType = "status update"
-	statusUpdateEnabled        messageType = "status update enabled"
-	statusUpdateDisabled       messageType = "status update disabled"
 )
 
 // broadcasting to channels

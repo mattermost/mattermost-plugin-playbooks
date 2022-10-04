@@ -280,12 +280,12 @@ const TimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.StatusUpdateEnabled:
         iconClass = 'icon icon-flag-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run status update enabled by {name}'}, {name: props.event.subject_display_name});
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.StatusUpdateEnabled;
         break;
     case TimelineEventType.StatusUpdateDisabled:
         iconClass = 'icon icon-flag-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run status update disabled by {name}'}, {name: props.event.subject_display_name});
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.StatusUpdateDisabled;
         break;
     }
