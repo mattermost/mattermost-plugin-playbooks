@@ -2869,11 +2869,11 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	if member == nil {
 		return
 	}
-	// TODO ----------
-	// // To be added to the UI as an optional action
-	// if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
-	// 	logrus.WithError(err).Errorf("failed to remove user from linked channel, userID '%s'", userID)
-	// }
+
+	// To be added to the UI as an optional action
+	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
+		logrus.WithError(err).Errorf("failed to remove user from linked channel, userID '%s'", userID)
+	}
 }
 
 func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {

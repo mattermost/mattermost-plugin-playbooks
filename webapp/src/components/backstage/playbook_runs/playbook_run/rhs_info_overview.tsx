@@ -21,7 +21,7 @@ import {
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {UserProfile} from '@mattermost/types/users';
 
-import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton} from 'src/components/assets/buttons';
 import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
@@ -358,19 +358,10 @@ const FollowersWrapper = styled.div`
     align-items: center;
 `;
 
-const FollowButton = styled(TertiaryButton)`
+const RequestJoinButton = styled(TertiaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
-`;
-
-const UnfollowButton = styled(SecondaryButton)`
-    font-size: 12px;
-    height: 24px;
-    padding: 0 10px;
-`;
-
-const RequestJoinButton = styled(FollowButton)`
     margin-right: 10px;
 `;
 

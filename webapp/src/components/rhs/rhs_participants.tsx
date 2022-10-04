@@ -5,16 +5,17 @@ import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-
+import {Link} from 'react-router-dom';
+import {OpenInNewIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {pluginUrl} from 'src/browser_routing';
 import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
-    playbookId: string;
+    playbookRunId: string;
     onParticipate?: () => void;
 }
 
@@ -45,7 +46,12 @@ const RHSParticipants = (props: Props) => {
                     <FormattedMessage defaultMessage='Nobody yet.'/>
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
-                    {props.onParticipate ? null : <a>{formatMessage({defaultMessage: 'PAdd participant'})}</a>}
+                    {props.onParticipate ? null : (
+                        <LinkAddParticipants to={pluginUrl(`/runs/${props.playbookRunId}?from=channel_rhs_participants`)}>
+                            {formatMessage({defaultMessage: 'Add participant'})}
+                            <OpenInNewIcon size={11}/>
+                        </LinkAddParticipants>
+                    )}
                 </NoParticipants>
                 {props.onParticipate ? becomeParticipant : null}
             </Container>
@@ -194,11 +200,13 @@ export default RHSParticipants;
 const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
     margin-left: 10px;
     margin-top: 6px;
-    border-radius: 50%;
+    padding: 0 ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+    border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
     border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
     color: rgba(var(--center-channel-color-rgb), 0.56);
-    width: 28px;
+    width: ${(props) => (props.format === 'icontext' ? 'auto' : '28px')};
     height: 28px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,5 +216,16 @@ const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
         border: 1px dashed rgba(var(--center-channel-color-rgb), 0.72);
         background: rgba(var(--center-channel-color-rgb), 0.04);
 
+    }
+    svg {
+        margin-right: ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+    }
+`;
+
+const LinkAddParticipants = styled(Link)`
+    display: inline-flex;
+    align-items: center;
+    svg {
+        margin-left: 2px;
     }
 `;

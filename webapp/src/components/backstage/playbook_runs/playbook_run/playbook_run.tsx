@@ -34,7 +34,7 @@ import {Participants} from './rhs_participants';
 import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
-
+const RHSParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
@@ -105,7 +105,9 @@ const PlaybookRunDetails = () => {
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
         const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
-        if (RHSUpdatesOpened && emptyUpdates) {
+        if (queryParams.from === 'channel_rhs_participants') {
+            RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun?.name);
+        } else if (RHSUpdatesOpened && emptyUpdates) {
             RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
     }, [playbookRun, RHS.section, RHS.isOpen]);
@@ -165,7 +167,7 @@ const PlaybookRunDetails = () => {
                 role={role}
                 followState={followState}
                 channel={channel}
-                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
