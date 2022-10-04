@@ -9,7 +9,8 @@
 describe('Task Inbox >', () => {
     let testTeam;
     let testUser;
-    let testAdmin;
+
+    // let testAdmin;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
@@ -20,10 +21,10 @@ describe('Task Inbox >', () => {
             testTeam = team;
             testUser = user;
 
-            cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
-                testAdmin = adminUser;
-                cy.apiAddUserToTeam(testTeam.id, adminUser.id);
-            });
+            // cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
+            //      testAdmin = adminUser;
+            //     cy.apiAddUserToTeam(testTeam.id, adminUser.id);
+            // });
 
             cy.apiGetConfig().then(({config}) => {
                 expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
@@ -80,21 +81,21 @@ describe('Task Inbox >', () => {
         });
     });
 
-    after(() => {
-        if (!expFeaturesFlag) {
-            cy.apiLogin(testAdmin).then(() => {
-                cy.apiUpdateConfig({
-                    PluginSettings: {
-                        Plugins: {
-                            playbooks: {
-                                enableexperimentalfeatures: expFeaturesFlag,
-                            }
-                        }
-                    },
-                });
-            });
-        }
-    });
+    // after(() => {
+    //     if (!expFeaturesFlag) {
+    //         cy.apiLogin(testAdmin).then(() => {
+    //             cy.apiUpdateConfig({
+    //                 PluginSettings: {
+    //                     Plugins: {
+    //                         playbooks: {
+    //                             enableexperimentalfeatures: expFeaturesFlag,
+    //                         }
+    //                     }
+    //                 },
+    //             });
+    //         });
+    //     }
+    // });
 
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
