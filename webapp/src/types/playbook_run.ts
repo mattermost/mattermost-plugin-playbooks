@@ -92,10 +92,6 @@ export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
     return playbookRun.current_status === PlaybookRunStatus.InProgress;
 }
 
-export function playbookStatusUpdateEnabled(playbookRun: PlaybookRun): boolean {
-    return playbookRun.status_update_enabled;
-}
-
 export interface FetchPlaybookRunsParams {
     page: number;
     per_page: number;

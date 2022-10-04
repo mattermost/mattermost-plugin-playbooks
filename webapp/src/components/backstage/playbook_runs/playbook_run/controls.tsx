@@ -9,7 +9,7 @@ import {useDispatch} from 'react-redux';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
-import {PlaybookRun, playbookRunIsActive, playbookStatusUpdateEnabled} from 'src/types/playbook_run';
+import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
 import {useToaster} from '../../toast_banner';
@@ -181,7 +181,7 @@ export const EnableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
     const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
     return (
         <>
-            {!playbookStatusUpdateEnabled(props.playbookRun) && props.role === Role.Participant &&
+            {!props.playbookRun.status_update_enabled && props.role === Role.Participant &&
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
@@ -202,7 +202,7 @@ export const DisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun,
 
     return (
         <>
-            {playbookStatusUpdateEnabled(props.playbookRun) && props.role === Role.Participant &&
+            {props.playbookRun.status_update_enabled && props.role === Role.Participant &&
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
