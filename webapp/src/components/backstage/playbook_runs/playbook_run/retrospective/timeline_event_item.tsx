@@ -196,8 +196,7 @@ const TimelineEventItem = (props: Props) => {
             />
         </TimeBetween>
     );
-        // eslint-disable-next-line no-console
-    console.log(props.event.event_type);
+
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';

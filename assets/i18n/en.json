@@ -100,5 +100,9 @@
   {
     "id": "app.user.run.request_update",
     "translation": "@here — @{{.Name}} requested a status update. \n"
+  },
+  {
+    "id":"app.user.run.status_update",
+    "translation": "@{{.Username}} %{{.statusUpdate}} the status update for this run"
   }
 ]

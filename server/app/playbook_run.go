@@ -574,7 +574,7 @@ type PlaybookRunService interface {
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
 
-	// Status Update enable or disable for playbook
+	// UpdatePlaybookRunStatusUpdate  enables or disables status update for the run
 	UpdatePlaybookRunStatusUpdate(playbookRunID, userID string, enable bool) error
 
 	// GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
@@ -860,7 +860,7 @@ type PlaybookRunStore interface {
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
 
-	// updates StatusUpdateEnabled
+	// UpdatePlaybookStatusUpdateEnable updates StatusUpdateEnabled
 	UpdatePlaybookStatusUpdateEnable(playbookRunID string, enable bool) error
 }
 

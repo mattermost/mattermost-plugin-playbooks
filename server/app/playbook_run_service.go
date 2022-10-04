@@ -1002,22 +1002,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		logger.WithError(err).Error("failed to reset the reminder timer when updating status to Archived")
 	}
 
-	// We are resolving the playbook run. Send the reminder to fill out the retrospective
-	// Also start the recurring reminder if enabled.
-	if s.licenseChecker.RetrospectiveAllowed() {
-		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
-			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
-				return errors.Wrap(err, "couldn't post retrospective reminder")
-			}
-			s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
-			if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
-				if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
-				}
-			}
-		}
-	}
-
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      endAt,
@@ -1067,6 +1051,7 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
+	T := i18n.GetUserTranslations(user.Locale)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
@@ -1079,7 +1064,12 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 		eventType = StatusUpdateDisabled
 	}
 
-	message := fmt.Sprintf("@%s %s the status update for this run", user.Username, statusUpdate)
+	data := map[string]interface{}{
+		"Username":     user.Username,
+		"statusUpdate": statusUpdate,
+	}
+
+	message := fmt.Sprintf(T("app.user.run.status_update", data))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
