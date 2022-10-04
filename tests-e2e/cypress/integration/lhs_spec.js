@@ -157,6 +157,7 @@ describe('lhs', () => {
             cy.apiLogin(testViewerUser).then(() => {
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                cy.wait(3000);
 
                 // # Follow the run
                 cy.findByTestId('rdp-rhs-follow-button').click();
