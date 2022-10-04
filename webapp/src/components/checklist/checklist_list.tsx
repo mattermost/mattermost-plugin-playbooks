@@ -181,7 +181,7 @@ const ChecklistList = ({
 
     const onBeforeCapture = (beforeCapture: BeforeCapture) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            var selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId == `${item.title}${index}`);
+            const selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId === `${item.title}${index}`);
             if (selectedIndex >= 0) {
                 setIsCollapsedBefore(Boolean(checklistsCollapseState[selectedIndex]));
                 dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
