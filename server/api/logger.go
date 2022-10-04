@@ -46,6 +46,7 @@ func LogRequest(next http.Handler) http.Handler {
 		next.ServeHTTP(&recorder, r)
 
 		gqlOp := recorder.Header().Get("X-GQL-Operation")
+		recorder.Header().Del("X-GQL-Operation")
 		if gqlOp != "" {
 			logger = logger.WithField("gql_operation", gqlOp)
 		}
