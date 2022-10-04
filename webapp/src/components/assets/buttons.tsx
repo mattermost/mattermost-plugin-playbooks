@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
 export const Button = styled.button`
     display: inline-flex;
@@ -175,7 +175,7 @@ export const UpgradeButton = (props: UpgradeButtonProps) => {
     return (
         <PrimaryButton {...rest}>
             {children}
-            <PositionedUpgradeBadge/>
+            <PositionedKeyVariantCircleIcon/>
         </PrimaryButton>
     );
 };
@@ -185,15 +185,16 @@ export const UpgradeTertiaryButton = (props: UpgradeButtonProps & {className?: s
     return (
         <TertiaryButton {...rest}>
             {children}
-            <PositionedUpgradeBadge/>
+            <PositionedKeyVariantCircleIcon/>
         </TertiaryButton>
     );
 };
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
+const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     position: absolute;
     top: -4px;
     right: -6px;
+    color: var(--online-indicator);
 `;
 
 export const ButtonIcon = styled.button`
