@@ -466,6 +466,6 @@ const ViewAllUpdates = styled.div`
 const DotMenuItem = styled(DropdownItem)`
     display: flex;
     svg {
-        margin-left: 5px;
+        margin-left: 16px;
     }
 `;
