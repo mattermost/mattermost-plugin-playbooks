@@ -148,15 +148,15 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "Description", args.Updates.Description)
 	if args.Updates.Public != nil {
 		if *args.Updates.Public {
-			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
-				return "", errors.Wrap(err, "attempted to make playbook private without permissions")
-			}
-		} else {
 			if err := c.permissions.PlaybookMakePublic(userID, currentPlaybook); err != nil {
 				return "", errors.Wrap(err, "attempted to make playbook public without permissions")
 			}
+		} else {
+			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
+				return "", errors.Wrap(err, "attempted to make playbook private without permissions")
+			}
 		}
-		if c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
+		if !c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
 			return "", errors.Wrapf(app.ErrLicensedFeature, "the playbook is not valid with the current license")
 		}
 		addToSetmap(setmap, "Public", args.Updates.Public)
@@ -230,6 +230,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	if args.Updates.Checklists != nil {
+		cleanUpUpdateChecklist(*args.Updates.Checklists)
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
@@ -453,4 +454,18 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	}
 
 	return args.ID, nil
+}
+
+// cleanUpUpdateChecklist sets empty values for playbooks checklist fields that are not editable
+// NOTE: Any changes to this function must be made to function 'cleanUpChecklist' for the REST endpoint.
+func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
+	for listIndex := range checklists {
+		for itemIndex := range checklists[listIndex].Items {
+			checklists[listIndex].Items[itemIndex].AssigneeID = ""
+			checklists[listIndex].Items[itemIndex].AssigneeModified = 0
+			checklists[listIndex].Items[itemIndex].State = ""
+			checklists[listIndex].Items[itemIndex].StateModified = 0
+			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
+		}
+	}
 }
