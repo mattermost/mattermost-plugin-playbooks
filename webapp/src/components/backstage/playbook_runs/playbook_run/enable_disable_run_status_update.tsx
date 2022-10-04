@@ -14,7 +14,8 @@ export const useEnableOrDisableRunStatusUpdate = (playbookRun: PlaybookRun) => {
     const {formatMessage} = useIntl();
 
     return (status:'enable' | 'disable') => {
-        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to {status} status update for this run?'}, {status});
+        const confirmTitle = status === 'enable' ? formatMessage({defaultMessage: 'Confirm enable status update'}) : formatMessage({defaultMessage: 'Confirm disable status update'});
+        const confirmationMessage = status === 'enable' ? formatMessage({defaultMessage: 'Are you sure you want to enable status update for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status update for this run?'});
 
         const onConfirm = async () => {
             await runStatusUpdate(playbookRun.id, status);
@@ -22,7 +23,7 @@ export const useEnableOrDisableRunStatusUpdate = (playbookRun: PlaybookRun) => {
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
             show: true,
-            title: formatMessage({defaultMessage: 'Confirm {status} status update'}, {status}),
+            title: confirmTitle,
             message: confirmationMessage,
             confirmButtonText: formatMessage({defaultMessage: 'Ok'}),
             onConfirm,
