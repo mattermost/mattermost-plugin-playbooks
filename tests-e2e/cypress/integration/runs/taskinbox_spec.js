@@ -9,14 +9,36 @@
 describe('Task Inbox >', () => {
     let testTeam;
     let testUser;
+    let testAdmin;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
+    let expFeaturesFlag;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
+                testAdmin = adminUser;
+                cy.apiAddUserToTeam(testTeam.id, adminUser.id);
+            });
+
+            cy.apiGetConfig().then(({config}) => {
+                expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
+                if (!expFeaturesFlag) {
+                    cy.apiUpdateConfig({
+                        PluginSettings: {
+                            Plugins: {
+                                playbooks: {
+                                    enableexperimentalfeatures: true,
+                                }
+                            }
+                        },
+                    });
+                }
+            });
 
             // Create another user in the same team
             cy.apiCreateUser().then(({user: viewer}) => {
@@ -56,6 +78,22 @@ describe('Task Inbox >', () => {
                 });
             });
         });
+    });
+
+    after(() => {
+        if (!expFeaturesFlag) {
+            cy.apiLogin(testAdmin).then(() => {
+                cy.apiUpdateConfig({
+                    PluginSettings: {
+                        Plugins: {
+                            playbooks: {
+                                enableexperimentalfeatures: expFeaturesFlag,
+                            }
+                        }
+                    },
+                });
+            });
+        }
     });
 
     beforeEach(() => {
