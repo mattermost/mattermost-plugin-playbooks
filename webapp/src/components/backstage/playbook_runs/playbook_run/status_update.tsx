@@ -431,16 +431,16 @@ const useRequestUpdateUpgrade = () => {
                 )}
             >
                 {type === 'dotmenu' ? (
-                    <DropdownItem
+                    <DotMenuItem
                         disabled={disabled}
                         onClick={() => setShowUpgradeModal(true)}
                     >
                         {formatMessage({defaultMessage: 'Request update...'})}
                         <KeyVariantCircleIcon
                             color={'var(--online-indicator)'}
-                            size={16}
+                            size={20}
                         />
-                    </DropdownItem>
+                    </DotMenuItem>
                 ) : (
                     <UpgradeTertiaryButton
                         css={commonCss}
@@ -463,3 +463,9 @@ const ViewAllUpdates = styled.div`
     width: fit-content;
 `;
 
+const DotMenuItem = styled(DropdownItem)`
+    display: flex;
+    svg {
+        margin-left: 5px;
+    }
+`;
