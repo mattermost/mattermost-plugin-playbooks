@@ -10,7 +10,7 @@ describe('Task Inbox >', () => {
     let testTeam;
     let testUser;
 
-    // let testAdmin;
+    let testAdmin;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
@@ -21,10 +21,10 @@ describe('Task Inbox >', () => {
             testTeam = team;
             testUser = user;
 
-            // cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
-            //      testAdmin = adminUser;
-            //     cy.apiAddUserToTeam(testTeam.id, adminUser.id);
-            // });
+            cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
+                testAdmin = adminUser;
+                cy.apiAddUserToTeam(testTeam.id, adminUser.id);
+            });
 
             cy.apiGetConfig().then(({config}) => {
                 expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
@@ -58,7 +58,7 @@ describe('Task Inbox >', () => {
                     {
                         title: 'Stage 1',
                         items: [
-                            {title: 'Step 1', assignee_id: testUser.id},
+                            {title: 'Step 1'},
                             {title: 'Step 2'},
                             {title: 'Step 3'},
                             {title: 'Step 4'},
@@ -76,26 +76,27 @@ describe('Task Inbox >', () => {
                     ownerUserId: testUser.id,
                 }).then((playbookRun) => {
                     testRun = playbookRun;
+                    cy.apiChangeChecklistItemAssignee(testRun.id, 0, 0, testUser.id);
                 });
             });
         });
     });
 
-    // after(() => {
-    //     if (!expFeaturesFlag) {
-    //         cy.apiLogin(testAdmin).then(() => {
-    //             cy.apiUpdateConfig({
-    //                 PluginSettings: {
-    //                     Plugins: {
-    //                         playbooks: {
-    //                             enableexperimentalfeatures: expFeaturesFlag,
-    //                         }
-    //                     }
-    //                 },
-    //             });
-    //         });
-    //     }
-    // });
+    after(() => {
+        if (!expFeaturesFlag) {
+            cy.apiLogin(testAdmin).then(() => {
+                cy.apiUpdateConfig({
+                    PluginSettings: {
+                        Plugins: {
+                            playbooks: {
+                                enableexperimentalfeatures: expFeaturesFlag,
+                            }
+                        }
+                    },
+                });
+            });
+        }
+    });
 
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
