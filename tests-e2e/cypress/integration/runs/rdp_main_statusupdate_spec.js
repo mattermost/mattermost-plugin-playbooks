@@ -138,10 +138,10 @@ describe('runs > run details page > status update', () => {
                     // # Click on kebab menu
                     cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
 
-                    // # Click on request update
-                    cy.findByText('Request update...').click();
+                    // # click on request update option (force because is disabled)
+                    cy.findByText('Request update...').click({force: true});
 
-                    // * Assert modal is not opened
+                    // * assert modal is not opened
                     cy.get('#confirmModalButton').should('not.exist');
                 });
             });
