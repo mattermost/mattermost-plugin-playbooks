@@ -6,9 +6,6 @@ import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiRestore} from '@mdi/js';
-
 import {
     PlusIcon,
     CloseIcon,
@@ -20,6 +17,8 @@ import {
     StarOutlineIcon,
     StarIcon,
     LinkVariantIcon,
+    RestoreIcon,
+    PlayOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -125,10 +124,13 @@ export const Back = styled((props: StyledProps) => {
 
 `;
 
-export const Members = (props: {playbookId: string, numMembers: number}) => {
+export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
     const dispatch = useDispatch();
     return (
-        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId))}>
+        <ButtonIconStyled
+            data-testid={'playbook-members'}
+            onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId, props.refetch))}
+        >
             <i className={'icon icon-account-multiple-outline'}/>
             <FormattedNumber value={props.numMembers}/>
         </ButtonIconStyled>
@@ -263,10 +265,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
         >
-            <Icon
-                path={mdiClipboardPlayOutline}
-                size={1.25}
-            />
+            <PlayOutlineIcon size={20}/>
             {isTutorialPlaybook ? (
                 <FormattedMessage defaultMessage='Start a test run'/>
             ) : (
@@ -400,7 +399,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 {currentUserMember && (
                     <>
                         <DropdownMenuItem
-                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id, refetch))}
                         >
                             <AccountMultipleOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Manage access'/>
@@ -456,10 +455,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             <DropdownMenuItem
                                 onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
                             >
-                                <Icon
-                                    path={mdiRestore}
-                                    size={'18px'}
-                                />
+                                <RestoreIcon size={18}/>
                                 <FormattedMessage defaultMessage='Restore'/>
                             </DropdownMenuItem>
                         ) : (

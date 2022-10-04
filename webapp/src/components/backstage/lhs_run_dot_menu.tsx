@@ -18,6 +18,7 @@ import {useRunFollowers} from 'src/hooks';
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
 import {CopyRunLinkMenuItem, FavoriteRunMenuItem, FollowRunMenuItem, LeaveRunMenuItem} from './playbook_runs/playbook_run/controls';
 import {DotMenuButtonStyled} from './shared';
+import {useLHSRefresh} from './lhs_navigation';
 
 interface Props {
     playbookRunId: string;
@@ -33,6 +34,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const {add: addToast} = useToaster();
     const updateRun = useUpdateRun(playbookRunId);
     const currentUser = useSelector(getCurrentUser);
+    const refreshLHS = useLHSRefresh();
 
     const followState = useRunFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
@@ -50,6 +52,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setFollowers(newFollowers);
+                refreshLHS();
             })
             .catch(() => {
                 addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);

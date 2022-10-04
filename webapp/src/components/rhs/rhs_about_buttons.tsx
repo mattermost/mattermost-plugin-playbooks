@@ -5,10 +5,7 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline} from '@mdi/js';
-
-import {NotebookOutlineIcon, PencilOutlineIcon} from '@mattermost/compass-icons/components';
+import {PlayOutlineIcon, NotebookOutlineIcon, PencilOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -28,7 +25,7 @@ const RHSAboutButtons = (props: Props) => {
     const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
-    const overviewURL = `/runs/${props.playbookRun.id}`;
+    const overviewURL = `/runs/${props.playbookRun.id}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
 
     return (
@@ -67,10 +64,9 @@ const RHSAboutButtons = (props: Props) => {
                 </StyledDropdownMenuItem>
                 <Separator/>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
-                    <DropdownIcon
-                        path={mdiClipboardPlayOutline}
-                        size={1.25}
-                    />
+                    <IconWrapper>
+                        <PlayOutlineIcon size={22}/>
+                    </IconWrapper>
                     <FormattedMessage defaultMessage='Go to run overview'/>
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
@@ -99,11 +95,6 @@ const ExpandCollapseButton = styled(HoverMenuButton)`
 const ThreeDotsIcon = styled(HamburgerButton)`
     font-size: 18px;
     margin-left: 1px;
-`;
-
-const DropdownIcon = styled(Icon)`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    margin-right: 11px;
 `;
 
 const IconWrapper = styled.div`

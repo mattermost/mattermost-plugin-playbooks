@@ -9,9 +9,7 @@ import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
-import Icon from '@mdi/react';
-
-import {mdiClockOutline} from '@mdi/js';
+import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
@@ -309,10 +307,7 @@ const TimelineEventItem = (props: Props) => {
                             </>
                         )}
                     >
-                        <Icon
-                            path={mdiClockOutline}
-                            size={0.85}
-                        />
+                        <ClockOutlineIcon size={12}/>
                     </Tooltip>
                 </TimeStamp>
                 <SummaryTitle
