@@ -177,40 +177,22 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     return null;
 };
 
-export const EnableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role, status: 'enable' | 'disable'}) => {
     const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
+
+    const statusUpdateEnabled = props.status === 'enable' ? props.playbookRun.status_update_enabled : !props.playbookRun.status_update_enabled;
+    const message = statusUpdateEnabled ? 'Enable status update' : 'Disable status update';
     return (
         <>
-            {!props.playbookRun.status_update_enabled && props.role === Role.Participant &&
+            {statusUpdateEnabled && props.role === Role.Participant &&
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
-                        onClick={() => runStatusUpdate('enable')}
+                        onClick={() => runStatusUpdate(props.status)}
                         className='restartRun'
                     >
                         <ClockOutlineIcon size={18}/>
-                        <FormattedMessage defaultMessage='Enable status update'/>
-                    </StyledDropdownMenuItem>
-                </>
-            }
-        </>
-    );
-};
-
-export const DisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
-
-    return (
-        <>
-            {props.playbookRun.status_update_enabled && props.role === Role.Participant &&
-                <>
-                    <Separator/>
-                    <StyledDropdownMenuItem
-                        onClick={() => runStatusUpdate('disable')}
-                        className='restartRun'
-                    >
-                        <ClockOutlineIcon size={18}/>
-                        <FormattedMessage defaultMessage='Disable status update'/>
+                        <FormattedMessage defaultMessage={message}/>
                     </StyledDropdownMenuItem>
                 </>
             }

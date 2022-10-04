@@ -21,7 +21,7 @@ import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import {CopyRunLinkMenuItem, DisableRunStatusUpdateMenuItem, EnableRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+import {CopyRunLinkMenuItem, EnableDisableRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -75,13 +75,15 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     playbookRun={playbookRun}
                     role={role}
                 />
-                <EnableRunStatusUpdateMenuItem
+                <EnableDisableRunStatusUpdateMenuItem
                     playbookRun={playbookRun}
                     role={role}
+                    status='enable'
                 />
-                <DisableRunStatusUpdateMenuItem
+                <EnableDisableRunStatusUpdateMenuItem
                     playbookRun={playbookRun}
                     role={role}
+                    status='disable'
                 />
                 <LeaveRunMenuItem
                     isFollowing={isFollowing}
