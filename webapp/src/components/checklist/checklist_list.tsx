@@ -13,6 +13,7 @@ import {
     DropResult,
     Droppable,
     DroppableProvided,
+    BeforeCapture,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -84,6 +85,7 @@ const ChecklistList = ({
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [isCollapsedBefore, setIsCollapsedBefore] = useState(false);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
@@ -177,14 +179,22 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    const onBeforeCapture = () => {
+    const onBeforeCapture = (beforeCapture: BeforeCapture) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
+            var selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId == `${item.title}${index}`);
+            if (selectedIndex >= 0) {
+                setIsCollapsedBefore(Boolean(checklistsCollapseState[selectedIndex]));
+                dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
+            }
         }
     };
 
     const onDragStart = () => {
         setIsDragging(true);
+    };
+
+    const restoreCollapseState = (dstIdx: number) => {
+        onChecklistCollapsedStateChange(dstIdx, isCollapsedBefore);
     };
 
     const onDragEnd = (result: DropResult) => {
@@ -199,6 +209,7 @@ const ChecklistList = ({
 
         // If the source and desination are the same, do nothing
         if (result.destination.droppableId === result.source.droppableId && srcIdx === dstIdx) {
+            restoreCollapseState(dstIdx);
             return;
         }
 
@@ -276,6 +287,8 @@ const ChecklistList = ({
                 // Persist the new data in the server
                 clientMoveChecklist(playbookRun.id, srcIdx, dstIdx);
             }
+
+            restoreCollapseState(dstIdx);
         }
 
         // Update the store with the new checklists
