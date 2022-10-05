@@ -1091,11 +1091,6 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 		s.RemoveReminder(playbookRunID)
 	}
 
-	err = s.resetReminderTimer(playbookRunID)
-	if err != nil {
-		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
-	}
-
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.
 	if s.licenseChecker.RetrospectiveAllowed() {
