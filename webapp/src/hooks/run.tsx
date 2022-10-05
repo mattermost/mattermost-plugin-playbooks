@@ -13,7 +13,7 @@ import {
     followPlaybookRun,
     unfollowPlaybookRun,
     isFavoriteItem,
-    telemetryEventForPlaybookRun,
+    telemetryEvent,
 } from 'src/client';
 import {useRunMembership, useUpdateRun} from 'src/graphql/hooks';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -21,6 +21,7 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {CategoryItemType} from 'src/types/category';
 import Tooltip from 'src/components/widgets/tooltip';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
@@ -44,7 +45,7 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRunId: string) => {
+export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs'|'run_details') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const {addToRun} = useRunMembership(playbookRunId, [currentUserId]);
@@ -54,7 +55,7 @@ export const useParticipateInRun = (playbookRunId: string) => {
         addToRun()
             .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
             .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
-        telemetryEventForPlaybookRun(playbookRunId, PlaybookRunEventTarget.GetInvolvedJoin);
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId});
     };
     const ParticipateConfirmModal = (
         <ConfirmModal
@@ -73,7 +74,10 @@ export const useParticipateInRun = (playbookRunId: string) => {
         ParticipateConfirmModal,
         showParticipateConfirm: () => {
             setShowParticipateConfirm(true);
-            telemetryEventForPlaybookRun(playbookRunId, PlaybookRunEventTarget.RequestUpdateClick);
+            telemetryEvent(PlaybookRunEventTarget.RequestUpdateClick, {
+                playbookrun_id: playbookRunId,
+                from: trigger,
+            });
         },
     };
 };
@@ -84,10 +88,11 @@ interface FollowState {
     setFollowers: (followers: string[]) => void;
 }
 
-export const useFollowRun = (runID: string, followState: FollowState | undefined) => {
+export const useFollowRun = (runID: string, followState: FollowState | undefined, trigger: 'run_details'|'lhs'|'channel_rhs') => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const currentUserId = useSelector(getCurrentUserId);
+    const refreshLHS = useLHSRefresh();
 
     if (followState === undefined) {
         return null;
@@ -108,10 +113,16 @@ export const useFollowRun = (runID: string, followState: FollowState | undefined
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
         action(runID)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId: string) => userId !== currentUserId) : [...followers, currentUserId];
                 setFollowers(newFollowers);
+                refreshLHS();
+                telemetryEvent(eventTarget, {
+                    playbookrun_id: runID,
+                    from: trigger,
+                });
             })
             .catch(() => {
                 addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);

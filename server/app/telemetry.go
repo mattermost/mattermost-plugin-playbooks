@@ -21,7 +21,17 @@ const (
 	TelemetryTypePage TelemetryType = "page"
 )
 
+// TelemetryTrack is a type alias to hold all possible
+// event tracking names in an enum-like
+//
+// Contained names should match the ones that are at webapp/src/types/telemetry.ts
+// when they use generic tracking
 type TelemetryTrack string
+
+const (
+	telemetryRunFollow   TelemetryTrack = "playbookrun_follow"
+	telemetryRunUnfollow TelemetryTrack = "playbookrun_unfollow"
+)
 
 // TelemetryPage is a type alias to hold all possible
 // page tracking names in an enum-like
@@ -54,7 +64,11 @@ func NewTelemetryPage(name string) (TelemetryPage, error) {
 // for what events we want to track (and avoid typos).
 func NewTelemetryTrack(name string) (TelemetryTrack, error) {
 	switch name {
-	// New events should be added here
+
+	case string(telemetryRunFollow):
+		return telemetryRunFollow, nil
+	case string(telemetryRunUnfollow):
+		return telemetryRunUnfollow, nil
 	default:
 		return "", fmt.Errorf("unknown value '%s' for type TelemetryTrack", name)
 	}

@@ -42,7 +42,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
     const {formatMessage} = useIntl();
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun.id);
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun.id, 'run_details');
 
     // Favorite Button State
     const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;

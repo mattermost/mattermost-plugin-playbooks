@@ -91,7 +91,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const FollowingButton = useFollowRun(run.id, followState);
+    const FollowingButton = useFollowRun(run.id, followState, 'run_details');
     const refreshLHS = useLHSRefresh();
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 

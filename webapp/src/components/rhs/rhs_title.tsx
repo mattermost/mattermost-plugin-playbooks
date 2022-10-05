@@ -28,7 +28,7 @@ const RHSTitle = () => {
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
     const followState = useRunFollowers(metadata?.followers || []);
-    const FollowingButton = useFollowRun(playbookRun?.id || '', metadata ? followState : undefined);
+    const FollowingButton = useFollowRun(playbookRun?.id || '', metadata ? followState : undefined, 'channel_rhs');
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
