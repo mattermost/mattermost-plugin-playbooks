@@ -154,6 +154,7 @@ export default class Plugin {
             }
         });
 
+        // eslint-disable-next-line react/require-optimization
         const BackstageWrapped = () => (
             <ApolloWrapped
                 component={<Backstage/>}
@@ -161,9 +162,17 @@ export default class Plugin {
             />
         );
 
+        // eslint-disable-next-line react/require-optimization
         const RHSWrapped = () => (
             <ApolloWrapped
                 component={<RightHandSidebar/>}
+                client={graphqlClient}
+            />
+        );
+        // eslint-disable-next-line react/require-optimization
+        const RHSTitleWrapped = () => (
+            <ApolloWrapped
+                component={<RHSTitle/>}
                 client={graphqlClient}
             />
         );
@@ -182,7 +191,7 @@ export default class Plugin {
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitleWrapped/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
