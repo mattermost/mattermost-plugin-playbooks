@@ -1069,7 +1069,7 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 		"statusUpdate": statusUpdate,
 	}
 
-	message := fmt.Sprintf(T("app.user.run.status_update", data))
+	message := T("app.user.run.status_update", data)
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
