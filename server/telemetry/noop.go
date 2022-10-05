@@ -1,9 +1,12 @@
 package telemetry
 
-import "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+import (
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+)
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
-type NoopTelemetry struct{}
+type NoopTelemetry struct {
+}
 
 // Enable does nothing, returning always nil.
 func (t *NoopTelemetry) Enable() error {
@@ -13,6 +16,14 @@ func (t *NoopTelemetry) Enable() error {
 // Disable does nothing, returning always nil.
 func (t *NoopTelemetry) Disable() error {
 	return nil
+}
+
+// Page does nothing
+func (t *NoopTelemetry) Page(name app.TelemetryPage, properties map[string]interface{}) {
+}
+
+// Track does nothing
+func (t *NoopTelemetry) Track(name app.TelemetryTrack, properties map[string]interface{}) {
 }
 
 // CreatePlaybookRun does nothing

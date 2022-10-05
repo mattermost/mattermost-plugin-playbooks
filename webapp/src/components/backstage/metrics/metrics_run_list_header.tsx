@@ -5,9 +5,10 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
+import {MetricsInfo} from 'src/components/backstage/metrics/metrics_run_list';
+
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {MetricType} from 'src/types/playbook';
-import {MetricsInfo} from 'src/components/backstage/playbooks/metrics/metrics_run_list';
 import {FetchPlaybookRunsParams} from 'src/types/playbook_run';
 
 interface Props {

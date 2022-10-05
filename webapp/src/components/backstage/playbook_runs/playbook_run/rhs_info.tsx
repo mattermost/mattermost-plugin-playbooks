@@ -36,6 +36,7 @@ const RHSInfo = (props: Props) => {
     return (
         <Container>
             <RHSInfoOverview
+                role={props.role}
                 run={props.run}
                 runMetadata={props.runMetadata}
                 onViewParticipants={props.onViewParticipants}
