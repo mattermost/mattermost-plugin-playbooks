@@ -180,8 +180,8 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
 export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role, status: 'enable' | 'disable'}) => {
     const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
 
-    const statusUpdateEnabled = props.status === 'enable' ? props.playbookRun.status_update_enabled : !props.playbookRun.status_update_enabled;
-    const message = statusUpdateEnabled ? 'Enable status update' : 'Disable status update';
+    const statusUpdateEnabled = props.status === 'enable' ? !props.playbookRun.status_update_enabled : props.playbookRun.status_update_enabled;
+
     return (
         <>
             {statusUpdateEnabled && props.role === Role.Participant &&
@@ -192,7 +192,9 @@ export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: Playbo
                         className='restartRun'
                     >
                         <ClockOutlineIcon size={18}/>
-                        <FormattedMessage defaultMessage={message}/>
+                        {
+                            props.status === 'enable' ? <FormattedMessage defaultMessage={'Enable status update'}/> : <FormattedMessage defaultMessage={'Disable status update'}/>
+                        }
                     </StyledDropdownMenuItem>
                 </>
             }
