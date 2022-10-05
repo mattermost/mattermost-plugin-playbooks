@@ -1087,7 +1087,9 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
-	s.RemoveReminder(playbookRunID)
+	if !enable {
+		s.RemoveReminder(playbookRunID)
+	}
 
 	err = s.resetReminderTimer(playbookRunID)
 	if err != nil {
