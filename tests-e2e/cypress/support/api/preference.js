@@ -298,6 +298,12 @@ Cypress.Commands.add('apiDisableTutorials', (userId) => {
         },
         {
             user_id: userId,
+            category: 'crt_thread_pane_step',
+            name: userId,
+            value: '999',
+        },
+        {
+            user_id: userId,
             category: 'playbook_preview',
             name: userId,
             value: '999',
@@ -319,6 +325,12 @@ Cypress.Commands.add('apiDisableTutorials', (userId) => {
             category: 'actions_menu',
             name: 'actions_menu_tutorial_state',
             value: '{"actions_menu_modal_viewed":true}'
+        },
+        {
+            user_id: userId,
+            category: 'insights',
+            name: 'insights_tutorial_state',
+            value: '{"insights_modal_viewed":true}'
         }
     ];
 
