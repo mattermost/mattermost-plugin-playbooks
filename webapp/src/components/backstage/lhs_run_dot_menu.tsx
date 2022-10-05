@@ -39,7 +39,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const followState = useRunFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
 
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing, 'playbooks_lhs');
     const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
 
     const toggleFavorite = () => {

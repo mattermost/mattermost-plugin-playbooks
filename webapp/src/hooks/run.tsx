@@ -55,7 +55,7 @@ export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs
         addToRun()
             .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
             .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
     };
     const ParticipateConfirmModal = (
         <ConfirmModal
@@ -74,10 +74,6 @@ export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs
         ParticipateConfirmModal,
         showParticipateConfirm: () => {
             setShowParticipateConfirm(true);
-            telemetryEvent(PlaybookRunEventTarget.RequestUpdateClick, {
-                playbookrun_id: playbookRunId,
-                from: trigger,
-            });
         },
     };
 };
@@ -88,7 +84,7 @@ interface FollowState {
     setFollowers: (followers: string[]) => void;
 }
 
-export const useFollowRun = (runID: string, followState: FollowState | undefined, trigger: 'run_details'|'lhs'|'channel_rhs') => {
+export const useFollowRun = (runID: string, followState: FollowState | undefined, trigger: 'run_details'|'playbooks_lhs'|'channel_rhs') => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const currentUserId = useSelector(getCurrentUserId);

@@ -17,14 +17,11 @@ import {useParticipateInRun, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
-
-import {BadgeType} from '../../status_badge';
+import {BadgeType} from 'src/components/backstage/status_badge';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
-
-import {StarButton} from '../../playbook_editor/playbook_editor';
-
-import {ContextMenu} from './context_menu';
-import HeaderButton from './header_button';
+import {StarButton} from 'src/components/backstage/playbook_editor/playbook_editor';
+import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
+import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//header_button';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;

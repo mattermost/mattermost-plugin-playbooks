@@ -29,8 +29,10 @@ const (
 type TelemetryTrack string
 
 const (
-	telemetryRunFollow   TelemetryTrack = "playbookrun_follow"
-	telemetryRunUnfollow TelemetryTrack = "playbookrun_unfollow"
+	telemetryRunFollow      TelemetryTrack = "playbookrun_follow"
+	telemetryRunUnfollow    TelemetryTrack = "playbookrun_unfollow"
+	telemetryRunParticipate TelemetryTrack = "playbookrun_participate"
+	telemetryRunLeave       TelemetryTrack = "playbookrun_leave"
 )
 
 // TelemetryPage is a type alias to hold all possible
@@ -69,6 +71,10 @@ func NewTelemetryTrack(name string) (TelemetryTrack, error) {
 		return telemetryRunFollow, nil
 	case string(telemetryRunUnfollow):
 		return telemetryRunUnfollow, nil
+	case string(telemetryRunParticipate):
+		return telemetryRunParticipate, nil
+	case string(telemetryRunLeave):
+		return telemetryRunLeave, nil
 	default:
 		return "", fmt.Errorf("unknown value '%s' for type TelemetryTrack", name)
 	}

@@ -25,8 +25,9 @@ export enum PlaybookRunViewTarget {
 }
 
 export enum PlaybookRunEventTarget {
-    RequestUpdateClick = 'playbookrun_request_update_click',
-    Participate = 'playbookrun_get_involved_join',
+    RequestUpdateClick = 'playbookrun_request_update',
+    Participate = 'playbookrun_participate',
+    Leave = 'playbookrun_leave',
     Follow = 'playbookrun_follow',
     Unfollow = 'playbookrun_unfollow',
 }

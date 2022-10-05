@@ -201,11 +201,14 @@ describe('lhs', () => {
         });
 
         it('leave run', () => {
+            // # Intercept all calls to telemetry
+            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
             // # Add viewer user to the channel
             cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
 
             // # Visit the playbook run
-            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.visit(`/playbooks/runs/${playbookRun.id}`).wait('@telemetry');
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -217,13 +220,27 @@ describe('lhs', () => {
             // # Change the owner to testViewerUser
             cy.findByTestId('runinfo-owner').findByTestId('assignee-profile-selector').click();
             cy.get('.playbook-run-user-select').findByText('@' + testViewerUser.username).click();
-            cy.wait(500);
+            cy.wait(200);
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
 
-            // * Verify that confirm leave modal is visible.
-            cy.get('#confirmModal').should('exist');
+            // * Click leave confirmation
+            cy.get('#confirmModalButton').click();
+
+            cy.wait('@telemetry');
+
+            // # assert telemetry data
+            cy.get('@telemetry.all').then((xhrs) => {
+                expect(xhrs.length).to.eq(2);
+                expect(xhrs[0].request.body.name).to.eq('run_details');
+                expect(xhrs[0].request.body.type).to.eq('page');
+
+                expect(xhrs[1].request.body.name).to.eq('playbookrun_leave');
+                expect(xhrs[1].request.body.type).to.eq('track');
+                expect(xhrs[1].request.body.properties.from).to.eq('playbooks_lhs');
+                expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+            });
         });
     });
 
