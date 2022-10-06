@@ -130,7 +130,7 @@ describe('channels > general actions', () => {
 
                 // # Set a keyword, enable the playbook trigger,
                 // # and select the Playbook to run
-                cy.contains('Add keywords').click().type('red alert{enter}');
+                cy.contains('Type a keyword or phrase, then press Enter on your keyboard').click().type('red alert{enter}');
                 cy.contains('Prompt to run a playbook').click();
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
@@ -190,7 +190,7 @@ describe('channels > general actions', () => {
 
                 // # Set a keyword, enable the playbook trigger,
                 // # and select the Playbook to run
-                cy.contains('Add keywords').click().type('red alert{enter}');
+                cy.contains('Type a keyword or phrase, then press Enter on your keyboard').click().type('red alert{enter}');
                 cy.contains('Prompt to run a playbook').click();
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
@@ -267,7 +267,7 @@ describe('channels > general actions', () => {
                 // # Set a keyword, enable the playbook trigger,
                 // # and select the playbook to run. Turn the
                 // # trigger back off but leave the keyword set.
-                cy.contains('Add keywords').click().type('red alert{enter}');
+                cy.contains('Type a keyword or phrase, then press Enter on your keyboard').click().type('red alert{enter}');
                 cy.contains('Prompt to run a playbook').click();
                 cy.contains('Select a playbook').click();
                 cy.findByText('Public Playbook').click();
