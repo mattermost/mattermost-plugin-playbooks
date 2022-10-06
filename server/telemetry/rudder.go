@@ -123,11 +123,12 @@ func NewRudder(dataPlaneURL, writeKey, diagnosticID, pluginVersion, serverVersio
 	}, nil
 }
 
-// Track is the generic tracker for events to rudderstack that is backwards compatible with
+// trackOld is the generic tracker for events to rudderstack that is backwards compatible with
 // old events (string based instead of enum).
-// All new and migrated events should use Track/Page
-// This should be removed after event migration is complete
-func (t *RudderTelemetry) TrackOld(name string, properties map[string]interface{}) {
+//
+// All new and migrated events should use Track/Page instead. This should be removed after
+// event migration is complete
+func (t *RudderTelemetry) trackOld(name string, properties map[string]interface{}) {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 
@@ -240,76 +241,76 @@ func (t *RudderTelemetry) CreatePlaybookRun(playbookRun *app.PlaybookRun, userID
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionCreate
 	properties["Public"] = public
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // FinishPlaybookRun tracks the end of the playbook run passed.
 func (t *RudderTelemetry) FinishPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionEnd
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // RestorePlaybookRun tracks the restoration of the playbook run.
 func (t *RudderTelemetry) RestorePlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRestore
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // RestartPlaybookRun tracks the restart of the playbook run.
 func (t *RudderTelemetry) RestartPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRestart
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // ChangeOwner tracks changes in owner
 func (t *RudderTelemetry) ChangeOwner(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionChangeOwner
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 func (t *RudderTelemetry) UpdateStatus(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionUpdateStatus
 	properties["ReminderTimerSeconds"] = int(playbookRun.PreviousReminder)
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 func (t *RudderTelemetry) FrontendTelemetryForPlaybookRun(playbookRun *app.PlaybookRun, userID, action string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = action
-	t.TrackOld(eventFrontend, properties)
+	t.trackOld(eventFrontend, properties)
 }
 
 // AddPostToTimeline tracks userID creating a timeline event from a post.
 func (t *RudderTelemetry) AddPostToTimeline(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionAddTimelineEventFromPost
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // RemoveTimelineEvent tracks userID removing a timeline event.
 func (t *RudderTelemetry) RemoveTimelineEvent(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRemoveTimelineEvent
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // Follow tracks userID following a playbook run.
 func (t *RudderTelemetry) Follow(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionFollow
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 // Unfollow tracks userID following a playbook run.
 func (t *RudderTelemetry) Unfollow(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionUnfollow
-	t.TrackOld(eventPlaybookRun, properties)
+	t.trackOld(eventPlaybookRun, properties)
 }
 
 func taskProperties(playbookRunID, userID string, task app.ChecklistItem) map[string]interface{} {
@@ -331,7 +332,7 @@ func taskProperties(playbookRunID, userID string, task app.ChecklistItem) map[st
 func (t *RudderTelemetry) AddTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionAddTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // RemoveTask tracks the removal of a checklist item by the user
@@ -339,7 +340,7 @@ func (t *RudderTelemetry) AddTask(playbookRunID, userID string, task app.Checkli
 func (t *RudderTelemetry) RemoveTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRemoveTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // RenameTask tracks the update of a checklist item by the user
@@ -347,7 +348,7 @@ func (t *RudderTelemetry) RemoveTask(playbookRunID, userID string, task app.Chec
 func (t *RudderTelemetry) RenameTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRenameTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // SkipChecklist tracks the skipping of a checklist by the user
@@ -355,7 +356,7 @@ func (t *RudderTelemetry) RenameTask(playbookRunID, userID string, task app.Chec
 func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionSkipChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 // RestoreChecklist tracks the restoring of a checklist by the user
@@ -363,7 +364,7 @@ func (t *RudderTelemetry) SkipChecklist(playbookRunID, userID string, checklist 
 func (t *RudderTelemetry) RestoreChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionRestoreChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 // SkipTask tracks the skipping of a checklist item by the user
@@ -371,7 +372,7 @@ func (t *RudderTelemetry) RestoreChecklist(playbookRunID, userID string, checkli
 func (t *RudderTelemetry) SkipTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionSkipTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // RestoreTask tracks the restoring of a checklist item by the user
@@ -379,7 +380,7 @@ func (t *RudderTelemetry) SkipTask(playbookRunID, userID string, task app.Checkl
 func (t *RudderTelemetry) RestoreTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRestoreTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
@@ -390,7 +391,7 @@ func (t *RudderTelemetry) ModifyCheckedState(playbookRunID, userID string, task 
 	properties["NewState"] = task.State
 	properties["WasCommander"] = wasOwner
 	properties["WasAssignee"] = task.AssigneeID == userID
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // SetAssignee tracks the changing of an assignee on an item by the user
@@ -398,7 +399,7 @@ func (t *RudderTelemetry) ModifyCheckedState(playbookRunID, userID string, task 
 func (t *RudderTelemetry) SetAssignee(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionSetAssigneeForTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // MoveTask tracks the movement of checklist items by the user
@@ -406,14 +407,14 @@ func (t *RudderTelemetry) SetAssignee(playbookRunID, userID string, task app.Che
 func (t *RudderTelemetry) MoveTask(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionMoveTask
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 // RunTaskSlashCommand tracks the execution of a slash command on a checklist item.
 func (t *RudderTelemetry) RunTaskSlashCommand(playbookRunID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 func checklistProperties(playbookRunID, userID string, checklist app.Checklist) map[string]interface{} {
@@ -429,41 +430,41 @@ func checklistProperties(playbookRunID, userID string, checklist app.Checklist) 
 func (t *RudderTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionAddChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 // RemoveChecklist tracks the removal of a checklist.
 func (t *RudderTelemetry) RemoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionRemoveChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 // RenameChecklist tracks the renaming of a checklist
 func (t *RudderTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionRenameChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 // MoveChecklist tracks the movement of a checklist
 func (t *RudderTelemetry) MoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionMoveChecklist
-	t.TrackOld(eventChecklists, properties)
+	t.trackOld(eventChecklists, properties)
 }
 
 func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionUpdateRetrospective
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 func (t *RudderTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionPublishRetrospective
 	properties["NumMetrics"] = len(playbookRun.MetricsData)
-	t.TrackOld(eventTasks, properties)
+	t.trackOld(eventTasks, properties)
 }
 
 func playbookProperties(playbook app.Playbook, userID string) map[string]interface{} {
@@ -519,63 +520,63 @@ func playbookTemplateProperties(templateName string, userID string) map[string]i
 func (t *RudderTelemetry) CreatePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionCreate
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // ImportPlaybook tracks the import of a playbook.
 func (t *RudderTelemetry) ImportPlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionImport
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // UpdatePlaybook tracks the update of a playbook.
 func (t *RudderTelemetry) UpdatePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionUpdate
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // DeletePlaybook tracks the deletion of a playbook.
 func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionDelete
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // RestorePlaybook tracks the deletion of a playbook.
 func (t *RudderTelemetry) RestorePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionRestore
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // AutoFollowPlaybook tracks the auto-follow of a playbook.
 func (t *RudderTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionAutoFollow
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
 func (t *RudderTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionAutoUnfollow
-	t.TrackOld(eventPlaybook, properties)
+	t.trackOld(eventPlaybook, properties)
 }
 
 // FrontendTelemetryForPlaybook tracks an event originating from the frontend
 func (t *RudderTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = action
-	t.TrackOld(eventFrontend, properties)
+	t.trackOld(eventFrontend, properties)
 }
 
 // FrontendTelemetryForPlaybookTemplate tracks a playbook template event originating from the frontend
 func (t *RudderTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
 	properties := playbookTemplateProperties(templateName, userID)
 	properties["Action"] = action
-	t.TrackOld(eventFrontend, properties)
+	t.trackOld(eventFrontend, properties)
 }
 
 func commonProperties(userID string) map[string]interface{} {
@@ -587,13 +588,13 @@ func commonProperties(userID string) map[string]interface{} {
 func (t *RudderTelemetry) StartTrial(userID string, action string) {
 	properties := commonProperties(userID)
 	properties["Action"] = action
-	t.TrackOld(eventStartTrial, properties)
+	t.trackOld(eventStartTrial, properties)
 }
 
 func (t *RudderTelemetry) NotifyAdmins(userID string, action string) {
 	properties := commonProperties(userID)
 	properties["Action"] = action
-	t.TrackOld(eventNotifyAdmins, properties)
+	t.trackOld(eventNotifyAdmins, properties)
 }
 
 // Enable creates a new client to track all future events. It does nothing if
@@ -646,7 +647,7 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 	properties["Action"] = actionDigest
 	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
 	properties["NewDisableDailyDigest"] = new.DisableDailyDigest
-	t.TrackOld(eventSettings, properties)
+	t.trackOld(eventSettings, properties)
 }
 
 func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
@@ -661,14 +662,14 @@ func channelActionProperties(action app.GenericChannelAction, userID string) map
 func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionRunChannelAction
-	t.TrackOld(eventChannelAction, properties)
+	t.trackOld(eventChannelAction, properties)
 }
 
 // UpdateRunActions tracks actions settings update
 func (t *RudderTelemetry) UpdateChannelAction(action app.GenericChannelAction, userID string) {
 	properties := channelActionProperties(action, userID)
 	properties["Action"] = actionChannelActionUpdate
-	t.TrackOld(eventChannelAction, properties)
+	t.trackOld(eventChannelAction, properties)
 }
 
 func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) map[string]interface{} {
@@ -686,14 +687,14 @@ func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, acti
 func (t *RudderTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
 	properties := runActionProperties(playbookRun, userID, triggerType, actionType, numBroadcasts)
 	properties["Action"] = actionRunAction
-	t.TrackOld(eventRunAction, properties)
+	t.trackOld(eventRunAction, properties)
 }
 
 // UpdateRunActions tracks actions settings update
 func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRunActionsUpdate
-	t.TrackOld(eventRunAction, properties)
+	t.trackOld(eventRunAction, properties)
 }
 
 // FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
@@ -708,7 +709,7 @@ func (t *RudderTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
 		properties["PlaybookRunID"] = item.ItemID
 		properties["Action"] = actionFavoriteRun
 	}
-	t.TrackOld(eventSidebarCategory, properties)
+	t.trackOld(eventSidebarCategory, properties)
 }
 
 // UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
@@ -723,5 +724,5 @@ func (t *RudderTelemetry) UnfavoriteItem(item app.CategoryItem, userID string) {
 		properties["PlaybookRunID"] = item.ItemID
 		properties["Action"] = actionUnfavoriteRun
 	}
-	t.TrackOld(eventSidebarCategory, properties)
+	t.trackOld(eventSidebarCategory, properties)
 }
