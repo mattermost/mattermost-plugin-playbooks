@@ -2864,6 +2864,11 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 }
 
 func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
+
+	if !playbookRun.RemoveChannelMemberOnRemovedParticipant {
+		return
+	}
+
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
@@ -2918,6 +2923,11 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 }
 
 func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User) {
+
+	if !playbookRun.CreateChannelMemberOnNewParticipant {
+		return
+	}
+
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {

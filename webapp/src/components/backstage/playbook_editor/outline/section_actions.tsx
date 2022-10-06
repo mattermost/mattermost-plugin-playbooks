@@ -9,7 +9,7 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {PlayIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+import {PlayIcon, AccountPlusOutlineIcon, AccountMinusOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -207,6 +207,48 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         categoryName={playbook.category_name}
                         onCategorySelected={handleCategoryNameChange}
                     />
+                </Setting>
+            </StyledSection>
+
+            <StyledSection>
+                <StyledSectionTitle>
+                    <AccountPlusOutlineIcon size={22}/>
+                    <FormattedMessage defaultMessage='When a participant joins the run'/>
+                </StyledSectionTitle>
+                <Setting id={'participant-joins-run'}>
+                    <AutomationTitle>
+                        <Toggle
+                            disabled={archived}
+                            isChecked={playbook.create_channel_member_on_new_participant}
+                            onChange={() => {
+                                updatePlaybook({
+                                    createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
+                                });
+                            }}
+                        />
+                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
+                    </AutomationTitle>
+                </Setting>
+            </StyledSection>
+
+            <StyledSection>
+                <StyledSectionTitle>
+                    <AccountMinusOutlineIcon size={22}/>
+                    <FormattedMessage defaultMessage='When a participant leaves the run'/>
+                </StyledSectionTitle>
+                <Setting id={'participant-leaves-run'}>
+                    <AutomationTitle>
+                        <Toggle
+                            disabled={archived}
+                            isChecked={playbook.remove_channel_member_on_removed_participant}
+                            onChange={() => {
+                                updatePlaybook({
+                                    removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
+                                });
+                            }}
+                        />
+                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                    </AutomationTitle>
                 </Setting>
             </StyledSection>
         </>

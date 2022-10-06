@@ -173,6 +173,14 @@ type PlaybookRun struct {
 
 	// Playbook run metric values
 	MetricsData []RunMetricData `json:"metrics_data"`
+
+	// CreateChannelMemberOnNewParticipant is the Run action flag that defines if a new channel member will be added
+	// to the run's channel when a new participant is added to the run (by themselve or by other members).
+	CreateChannelMemberOnNewParticipant bool `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
+
+	// RemoveChannelMemberOnRemovedParticipant is the Run action flag that defines if an existent channel member will be removed
+	// from the run's channel when a new participant is added to the run (by themselve or by other members).
+	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
 }
 
 func (r *PlaybookRun) Clone() *PlaybookRun {
@@ -295,6 +303,9 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
 		r.Retrospective = playbook.RetrospectiveTemplate
 	}
+
+	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
+	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
 }
 
 type StatusPost struct {

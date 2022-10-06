@@ -2359,4 +2359,40 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.59.0"),
+		toVersion:   semver.MustParse("0.60.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
+				}
+
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
 }

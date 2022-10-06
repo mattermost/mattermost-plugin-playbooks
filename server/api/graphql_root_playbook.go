@@ -90,38 +90,40 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	ID      string
 	Updates struct {
-		Title                                *string
-		Description                          *string
-		Public                               *bool
-		CreatePublicPlaybookRun              *bool
-		ReminderMessageTemplate              *string
-		ReminderTimerDefaultSeconds          *float64
-		StatusUpdateEnabled                  *bool
-		InvitedUserIDs                       *[]string
-		InvitedGroupIDs                      *[]string
-		InviteUsersEnabled                   *bool
-		DefaultOwnerID                       *string
-		DefaultOwnerEnabled                  *bool
-		BroadcastChannelIDs                  *[]string
-		BroadcastEnabled                     *bool
-		WebhookOnCreationURLs                *[]string
-		WebhookOnCreationEnabled             *bool
-		MessageOnJoin                        *string
-		MessageOnJoinEnabled                 *bool
-		RetrospectiveReminderIntervalSeconds *float64
-		RetrospectiveTemplate                *string
-		RetrospectiveEnabled                 *bool
-		WebhookOnStatusUpdateURLs            *[]string
-		WebhookOnStatusUpdateEnabled         *bool
-		SignalAnyKeywords                    *[]string
-		SignalAnyKeywordsEnabled             *bool
-		CategorizeChannelEnabled             *bool
-		CategoryName                         *string
-		RunSummaryTemplateEnabled            *bool
-		RunSummaryTemplate                   *string
-		ChannelNameTemplate                  *string
-		Checklists                           *[]UpdateChecklist
-		IsFavorite                           *bool
+		Title                                   *string
+		Description                             *string
+		Public                                  *bool
+		CreatePublicPlaybookRun                 *bool
+		ReminderMessageTemplate                 *string
+		ReminderTimerDefaultSeconds             *float64
+		StatusUpdateEnabled                     *bool
+		InvitedUserIDs                          *[]string
+		InvitedGroupIDs                         *[]string
+		InviteUsersEnabled                      *bool
+		DefaultOwnerID                          *string
+		DefaultOwnerEnabled                     *bool
+		BroadcastChannelIDs                     *[]string
+		BroadcastEnabled                        *bool
+		WebhookOnCreationURLs                   *[]string
+		WebhookOnCreationEnabled                *bool
+		MessageOnJoin                           *string
+		MessageOnJoinEnabled                    *bool
+		RetrospectiveReminderIntervalSeconds    *float64
+		RetrospectiveTemplate                   *string
+		RetrospectiveEnabled                    *bool
+		WebhookOnStatusUpdateURLs               *[]string
+		WebhookOnStatusUpdateEnabled            *bool
+		SignalAnyKeywords                       *[]string
+		SignalAnyKeywordsEnabled                *bool
+		CategorizeChannelEnabled                *bool
+		CategoryName                            *string
+		RunSummaryTemplateEnabled               *bool
+		RunSummaryTemplate                      *string
+		ChannelNameTemplate                     *string
+		Checklists                              *[]UpdateChecklist
+		IsFavorite                              *bool
+		CreateChannelMemberOnNewParticipant     *bool
+		RemoveChannelMemberOnRemovedParticipant *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -165,6 +167,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ReminderMessageTemplate", args.Updates.ReminderMessageTemplate)
 	addToSetmap(setmap, "ReminderTimerDefaultSeconds", args.Updates.ReminderTimerDefaultSeconds)
 	addToSetmap(setmap, "StatusUpdateEnabled", args.Updates.StatusUpdateEnabled)
+	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
+	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
 
 	if args.Updates.InvitedUserIDs != nil {
 		filteredInvitedUserIDs := c.permissions.FilterInvitedUserIDs(*args.Updates.InvitedUserIDs, currentPlaybook.TeamID)

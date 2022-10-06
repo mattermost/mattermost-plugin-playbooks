@@ -66,6 +66,8 @@ input PlaybookUpdates {
 	channelNameTemplate: String
 	checklists: [ChecklistUpdates!]
 	isFavorite: Boolean
+	createChannelMemberOnNewParticipant: Boolean
+	removeChannelMemberOnRemovedParticipant: Boolean
 }
 
 input ChecklistUpdates {
@@ -129,6 +131,8 @@ type Playbook {
 	defaultRunMemberRole: String!
 	metrics: [PlaybookMetricConfig!]!
 	isFavorite: Boolean!
+	createChannelMemberOnNewParticipant: Boolean!
+	removeChannelMemberOnRemovedParticipant: Boolean!
 }
 
 type Checklist {
@@ -205,6 +209,8 @@ type Run {
 	statusUpdateBroadcastWebhooksEnabled: Boolean!
 	broadcastChannelIDs: [String!]!
 	webhookOnStatusUpdateURLs: [String!]!
+	createChannelMemberOnNewParticipant: Boolean!
+	removeChannelMemberOnRemovedParticipant: Boolean!
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!
