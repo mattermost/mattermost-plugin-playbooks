@@ -4,6 +4,10 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
+import {useIntl} from 'react-intl';
+
+import Tooltip from 'src/components/widgets/tooltip';
+
 interface Props {
     testId: string;
     default: string | undefined;
@@ -13,12 +17,15 @@ interface Props {
 }
 
 export default function SearchInput(props: Props) {
+    const {formatMessage} = useIntl();
+
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTerm(event.target.value);
         props.onSearch(event.target.value);
     };
 
     const [term, setTerm] = useState(props.default ? props.default : '');
+    const shouldShowClearIcon = term !== '';
 
     return (
         <Search
@@ -31,6 +38,21 @@ export default function SearchInput(props: Props) {
                 onChange={onChange}
                 value={term}
             />
+            {shouldShowClearIcon && (
+                <Tooltip
+                    id={'clear'}
+                    placement={'bottom'}
+                    content={formatMessage({defaultMessage: 'Clear'})}
+                >
+                    <ClearButtonContainer>
+                        <ClearButton
+                            className='icon-close-circle'
+                            onClick={() => setTerm('')}
+                        />
+                    </ClearButtonContainer>
+                </Tooltip>
+
+            )}
         </Search>
     );
 }
@@ -70,4 +92,18 @@ export const Search = styled.div<{width?: string}>`
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+`;
+
+const ClearButton = styled.i`
+    font-size: 18px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const ClearButtonContainer = styled.div`
+    display: flex;
+    position: absolute;
+    right: 10px;
+    top: 0px;
+    height: 100%;
+    align-items: center;
 `;
