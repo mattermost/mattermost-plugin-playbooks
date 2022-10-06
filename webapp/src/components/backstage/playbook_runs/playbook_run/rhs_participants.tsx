@@ -7,13 +7,15 @@ import styled from 'styled-components';
 
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {getProfilesByIds} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 
 import {sortByUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
+
+import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -27,21 +29,25 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 
 import {useManageRunMembership} from 'src/graphql/hooks';
 
+import {Role} from '../shared';
+
 import {SendMessageButton} from './send_message_button';
 
 interface Props {
     playbookRunId: string;
     participantsIds: string[];
     runOwnerUserId: string;
+    role: Role;
     teamName?: string;
 }
 
-export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, teamName}: Props) => {
+export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, role, teamName}: Props) => {
     const dispatch = useDispatch();
 
     const {formatMessage} = useIntl();
     const [manageMode, setManageMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const myUser = useSelector(getCurrentUser);
     const [participantsProfiles, setParticipantsProfiles] = useState<UserProfile[]>([]);
 
     const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRunId);
@@ -51,10 +57,14 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, te
 
         //@ts-ignore
         profiles.then(({data}: { data: UserProfile[] }) => {
+            // getProfilesByIds doesn't return current user profile, so add it when a user is participant
+            if (role === Role.Participant) {
+                data.push(myUser);
+            }
             data.sort(sortByUsername);
             setParticipantsProfiles(data || []);
         });
-    }, [dispatch, participantsIds]);
+    }, [dispatch, myUser, participantsIds, role]);
 
     const includesTerm = (user: UserProfile) => {
         const userInfo = user.first_name + ';' + user.last_name + ';' + user.nickname + ';' + user.username;
@@ -62,6 +72,29 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, te
             return false;
         }
         return true;
+    };
+
+    const manageParticipantsSection = () => {
+        if (manageMode) {
+            return (
+                <StyledPrimaryButton onClick={() => setManageMode(false)}>
+                    {formatMessage({defaultMessage: 'Done'})}
+                </StyledPrimaryButton>
+            );
+        }
+
+        return (
+            <>
+                <StyledSecondaryButton onClick={() => setManageMode(true)}>
+                    {formatMessage({defaultMessage: 'Manage'})}
+                </StyledSecondaryButton>
+
+                <StyledPrimaryButton onClick={() => null}>
+                    <AddParticipantIcon color={'var(--button-color)'}/>
+                    {formatMessage({defaultMessage: 'Add'})}
+                </StyledPrimaryButton>
+            </>
+        );
     };
 
     return (
@@ -74,22 +107,8 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, te
                     )}
                 </ParticipantsNumber>
 
-                {manageMode ? (
-                    <StyledPrimaryButton onClick={() => setManageMode(false)}>
-                        {formatMessage({defaultMessage: 'Done'})}
-                    </StyledPrimaryButton>
-                ) : (
-                    <>
-                        <StyledSecondaryButton onClick={() => setManageMode(true)}>
-                            {formatMessage({defaultMessage: 'Manage'})}
-                        </StyledSecondaryButton>
+                {role === Role.Participant && manageParticipantsSection()}
 
-                        <StyledPrimaryButton onClick={() => null}>
-                            <AddParticipantIcon color={'var(--button-color)'}/>
-                            {formatMessage({defaultMessage: 'Add'})}
-                        </StyledPrimaryButton>
-                    </>
-                )}
             </HeaderSection>
 
             <SearchSection>

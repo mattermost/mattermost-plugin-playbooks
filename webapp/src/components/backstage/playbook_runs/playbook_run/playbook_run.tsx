@@ -185,6 +185,7 @@ const PlaybookRunDetails = () => {
                 playbookRunId={playbookRun.id}
                 participantsIds={playbookRun.participant_ids}
                 runOwnerUserId={playbookRun.owner_user_id}
+                role={role}
                 teamName={metadata?.team_name}
             />
         );
