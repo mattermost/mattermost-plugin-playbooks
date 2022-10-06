@@ -4,14 +4,17 @@
 import styled from 'styled-components';
 import React, {useEffect, useState, ReactNode, HTMLAttributes} from 'react';
 
+import StatsView from 'src/components/backstage/stats_view';
+
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookStats} from 'src/types/stats';
-import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {useRunsList} from 'src/hooks';
-import RunList from '../runs_list/runs_list';
+
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookViewTarget} from 'src/types/telemetry';
+
+import RunList from './runs_list/runs_list';
 
 const defaultPlaybookFetchParams = {
     page: 0,

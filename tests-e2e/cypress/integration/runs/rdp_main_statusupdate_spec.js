@@ -110,6 +110,22 @@ describe('runs > run details page > status update', () => {
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');
                 cy.findByTestId('update-due-date-time').contains('in 15 minutes');
+
+                // # Intercept all calls to telemetry
+                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
+                // # go to channel
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                // * check that post has been added
+                cy.getLastPost().contains('my nice update');
+
+                // * assert  telemetry pageview
+                cy.wait('@telemetry').then((interception) => {
+                    expect(interception.request.body.name).to.eq('run_status_update');
+                    expect(interception.request.body.type).to.eq('page');
+                    expect(interception.request.body.properties.channel_type).to.eq('P');
+                });
             });
         });
 
@@ -122,10 +138,10 @@ describe('runs > run details page > status update', () => {
                     // # Click on kebab menu
                     cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
 
-                    // # Click on request update
-                    cy.findByText('Request update...').click();
+                    // # click on request update option (force because is disabled)
+                    cy.findByText('Request update...').click({force: true});
 
-                    // * Assert modal is not opened
+                    // * assert modal is not opened
                     cy.get('#confirmModalButton').should('not.exist');
                 });
             });

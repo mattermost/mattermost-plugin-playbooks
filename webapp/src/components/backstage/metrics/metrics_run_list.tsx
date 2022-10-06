@@ -10,8 +10,9 @@ import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import Spinner from 'src/components/assets/icons/spinner';
 import Filters from 'src/components/backstage/runs_list/filters';
 import {Metric, MetricType} from 'src/types/playbook';
-import MetricsRow from 'src/components/backstage/playbooks/metrics/metrics_row';
-import MetricsRunListHeader from 'src/components/backstage/playbooks/metrics/metrics_run_list_header';
+
+import MetricsRunListHeader from './metrics_run_list_header';
+import MetricsRow from './metrics_row';
 
 export interface MetricsInfo {
     type: MetricType;

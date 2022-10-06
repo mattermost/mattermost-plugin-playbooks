@@ -740,6 +740,9 @@ type PlaybookRunService interface {
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
+	// RequestJoinChannel posts a channel-join request message in the run's channel
+	RequestJoinChannel(playbookRunID, requesterID string) error
+
 	// RemoveParticipants removes users from the run's participants
 	RemoveParticipants(playbookRunID string, userIDs []string) error
 
