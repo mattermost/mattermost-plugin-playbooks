@@ -110,16 +110,5 @@ describe('channels > rhs > header', () => {
             // * assert icon is not visible if I'm participant
             cy.get('#rhsContainer').findByTestId('rhs-participate-icon').should('not.exist');
         });
-
-        // skipped test until joining channel is separated from joinig run
-        it.skip('icon not visible if I am not a participant', () => {
-            // # click participate icon
-            cy.get('#rhsContainer').findByTestId('rhs-participate-icon').click();
-
-            // confirm modal
-
-            // * assert icon is not there anymore
-            cy.get('#rhsContainer').findByTestId('rhs-participate-icon').should('not.exist');
-        });
     });
 });

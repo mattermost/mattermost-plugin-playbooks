@@ -706,9 +706,13 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Check if the target user (params.OwnerID) has permissions
-	// TODO JOSE: check why this was done through target permissions
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(params.OwnerID, playbookRun.ID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "target user is not a member of the run", err)
+		return
+	}
+
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "user has no permissions to change owner", err)
 		return
 	}
 
