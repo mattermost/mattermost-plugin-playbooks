@@ -60,6 +60,9 @@ describe('runs > run details page > status update', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.findByTestId('lhs-navigation').within((() => {
+                cy.contains(playbookRun.name).should('be.visible');
+            }));
         });
     });
 
@@ -150,8 +153,12 @@ describe('runs > run details page > status update', () => {
                 // # Click on kebab menu
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
 
-                // # Click on request update
-                cy.findByText('Request update...').click();
+                cy.findByTestId('dropdownmenu').within(($dropdown) => {
+                    cy.wrap($dropdown).children().should('have.length', 2);
+
+                    // # Click on request update
+                    cy.findByText('Request update...').click();
+                });
 
                 // # Click on modal confirmation
                 cy.get('#confirmModalButton').click();
@@ -166,9 +173,12 @@ describe('runs > run details page > status update', () => {
             it('requests and cancel', () => {
                 // # Click on kebab menu
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('dropdownmenu').within(($dropdown) => {
+                    cy.wrap($dropdown).children().should('have.length', 2);
 
-                // # Click on request update
-                cy.findByTestId('dropdownmenu').findByText('Request update...').click();
+                    // # Click on request update
+                    cy.findByText('Request update...').click();
+                });
 
                 // # Click on modal confirmation
                 cy.get('#cancelModalButton').click();
@@ -217,7 +227,9 @@ describe('runs > run details page > status update', () => {
             });
 
             // # Click post update
-            cy.findByTestId('run-statusupdate-section').findByTestId('post-update-button').click();
+            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
+                cy.findByTestId('post-update-button').click();
+            });
 
             // * Assert modal is opened
             cy.getStatusUpdateDialog().should('be.visible');
@@ -245,7 +257,9 @@ describe('runs > run details page > status update', () => {
 
         it('requests an update and confirm', () => {
             // # Click on request update
-            cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
+            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
+                cy.findByText('Request update...').click();
+            });
 
             // # Click on modal confirmation
             cy.get('#confirmModalButton').click();
@@ -260,8 +274,10 @@ describe('runs > run details page > status update', () => {
         });
 
         it('requests an update and cancel', () => {
-            // # Click on request update
-            cy.findByTestId('run-statusupdate-section').findByText('Request update...').click();
+            // # Click post update
+            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
+                cy.findByText('Request update...').click();
+            });
 
             // # Click on modal confirmation
             cy.get('#cancelModalButton').click();

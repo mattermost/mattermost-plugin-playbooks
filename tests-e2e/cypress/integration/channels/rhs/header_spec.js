@@ -133,7 +133,10 @@ describe('channels > rhs > header', () => {
                 });
             });
 
-            cy.findByText('Edit run summary').click({force: true});
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.get('span').should('have.length', 3);
+                cy.findByText('Edit run summary').click();
+            });
 
             // # type text in textarea
             cy.focused().should('be.visible').type('new summary{ctrl+enter}');

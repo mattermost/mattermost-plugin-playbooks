@@ -12,11 +12,13 @@ Mattermost Playbooks allows your team to create and run playbooks from within Ma
 In your `mattermost-server` configuration (`config/config.json`), set the following values:
 
 `ServiceSettings.EnableLocalMode: true`
+
 `PluginSettings.EnableUploads: true`
 
 and restart the server. Once done, the relevant `make` commands should be able to install builds. Those commands are:
 
 `make deploy` - builds and installs the plugin a single time
+
 `make watch` - continuously builds and installs when files change
 
 which are run from the repo root.
