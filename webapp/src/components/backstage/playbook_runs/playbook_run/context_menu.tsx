@@ -78,12 +78,6 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 <EnableDisableRunStatusUpdateMenuItem
                     playbookRun={playbookRun}
                     role={role}
-                    status='enable'
-                />
-                <EnableDisableRunStatusUpdateMenuItem
-                    playbookRun={playbookRun}
-                    role={role}
-                    status='disable'
                 />
                 <LeaveRunMenuItem
                     isFollowing={isFollowing}

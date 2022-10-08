@@ -13,9 +13,9 @@ export const useEnableOrDisableRunStatusUpdate = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
-    return (status:'enable' | 'disable') => {
-        const confirmTitle = status === 'enable' ? formatMessage({defaultMessage: 'Confirm enable status update'}) : formatMessage({defaultMessage: 'Confirm disable status update'});
-        const confirmationMessage = status === 'enable' ? formatMessage({defaultMessage: 'Are you sure you want to enable status update for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status update for this run?'});
+    return (status: boolean) => {
+        const confirmTitle = status ? formatMessage({defaultMessage: 'Confirm enable status update'}) : formatMessage({defaultMessage: 'Confirm disable status update'});
+        const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status update for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status update for this run?'});
 
         const onConfirm = async () => {
             await runStatusUpdate(playbookRun.id, status);

@@ -177,23 +177,23 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     return null;
 };
 
-export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role, status: 'enable' | 'disable'}) => {
+export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
     const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
 
-    const statusUpdateEnabled = props.status === 'enable' ? !props.playbookRun.status_update_enabled : props.playbookRun.status_update_enabled;
+    const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 
     return (
         <>
-            {statusUpdateEnabled && props.role === Role.Participant &&
+            { props.role === Role.Participant &&
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
-                        onClick={() => runStatusUpdate(props.status)}
+                        onClick={() => runStatusUpdate(!statusUpdateEnabled)}
                         className='restartRun'
                     >
                         <ClockOutlineIcon size={18}/>
                         {
-                            props.status === 'enable' ? <FormattedMessage defaultMessage={'Enable status update'}/> : <FormattedMessage defaultMessage={'Disable status update'}/>
+                            statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status update'}/> : <FormattedMessage defaultMessage={'Enable status update'}/>
                         }
                     </StyledDropdownMenuItem>
                 </>

@@ -90,8 +90,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/actions", withContext(handler.updateRunActions)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/status-update/enable", withContext(handler.enableStatusUpdate)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/status-update/disable", withContext(handler.disableStatusUpdate)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update", withContext(handler.StatusUpdate)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -925,29 +924,25 @@ func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *
 	}
 }
 
-func (h *PlaybookRunHandler) enableStatusUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookRunHandler) StatusUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, true); err != nil {
+	var payload struct {
+		StatusEnabled bool `json:"status_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	ReturnJSON(w, nil, http.StatusOK)
-
-}
-
-func (h *PlaybookRunHandler) disableStatusUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, false); err != nil {
+	if err := h.playbookRunService.UpdatePlaybookRunStatusUpdate(playbookRunID, userID, payload.StatusEnabled); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	ReturnJSON(w, nil, http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 
 }
 

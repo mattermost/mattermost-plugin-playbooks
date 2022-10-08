@@ -288,9 +288,9 @@ export async function restoreRun(playbookRunId: string) {
     }
 }
 
-export async function runStatusUpdate(playbookRunId: string, status:'enable' | 'disable') {
+export async function runStatusUpdate(playbookRunId: string, status_enabled: boolean) {
     try {
-        return await doPut(`${apiUrl}/runs/${playbookRunId}/status-update/${status}`);
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/status-update`, JSON.stringify({status_enabled}));
     } catch (error) {
         return {error};
     }
