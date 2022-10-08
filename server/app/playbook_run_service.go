@@ -1065,11 +1065,14 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	}
 
 	data := map[string]interface{}{
-		"Username":     user.Username,
-		"statusUpdate": statusUpdate,
+		"Username": user.Username,
 	}
 
-	message := T("app.user.run.status_update", data)
+	message := T("app.user.run.status_disable", data)
+
+	if enable {
+		message = T("app.user.run.status_enable", data)
+	}
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {

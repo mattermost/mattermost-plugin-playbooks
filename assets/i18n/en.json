@@ -102,7 +102,11 @@
     "translation": "@here — @{{.Name}} requested a status update. \n"
   },
   {
-    "id": "app.user.run.status_update",
-    "translation": "@{{.Username}} %{{.statusUpdate}} the status update for this run"
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} disabled the status update for this run"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} enabled the status update for this run"
   }
 ]
