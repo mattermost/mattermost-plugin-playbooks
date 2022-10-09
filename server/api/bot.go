@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -180,6 +181,10 @@ func (h *BotHandler) promptForFeedback(c *Context, w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+type DigestSenderParams struct {
+	isWeekly bool
+}
+
 // connect handles the GET /bot/connect endpoint (a notification sent when the client wakes up or reconnects)
 func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -202,25 +207,39 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 	offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
 	timezone = time.FixedZone("local", offset*60*60)
 
-	// DM message if it's the next day and been more than an hour since the last post
-	// Hat tip to Github plugin for the logic.
-	now := model.GetMillis()
-	nt := time.Unix(now/1000, 0).In(timezone)
-	lt := time.Unix(info.LastDailyTodoDMAt/1000, 0).In(timezone)
-	if nt.Sub(lt).Hours() >= 1 && (nt.Day() != lt.Day() || nt.Month() != lt.Month() || nt.Year() != lt.Year()) {
+	sendRegularDigest := h.createDigestSender(c, w, userID, &info)
+
+	// we want to first try a weekly digest
+	// if we have already sent it this week, try with a daily one
+	currentTime := timeutils.GetCurrentUnixTime(timezone)
+	if app.ShouldSendWeeklyDigestMessage(info, timezone, currentTime) {
+		sendRegularDigest(DigestSenderParams{isWeekly: true})
+	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
+		sendRegularDigest(DigestSenderParams{isWeekly: false})
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *BotHandler) createDigestSender(c *Context, w http.ResponseWriter, userID string, userInfo *app.UserInfo) func(DigestSenderParams) {
+	return func(params DigestSenderParams) {
+		now := model.GetMillis()
 		// record that we're sending a DM now (this will prevent us trying over and over on every
 		// response if there's a failure later)
-		info.LastDailyTodoDMAt = now
-		if err = h.userInfoStore.Upsert(info); err != nil {
+		userInfo.LastDailyTodoDMAt = now
+		if err := h.userInfoStore.Upsert(*userInfo); err != nil {
 			h.HandleError(w, c.logger, err)
 			return
 		}
 
-		if err = h.playbookRunService.DMTodoDigestToUser(userID, false); err != nil {
-			h.HandleError(w, c.logger, errors.Wrapf(err, "failed to DMTodoDigest to userID '%s'", userID))
+		regulartity := "daily"
+		if params.isWeekly {
+			regulartity = "weekly"
+		}
+
+		if err := h.playbookRunService.DMTodoDigestToUser(userID, params.isWeekly); err != nil {
+			h.HandleError(w, c.logger, errors.Wrapf(err, "failed to send '%s' DMTodoDigest to userID '%s'", regulartity, userID))
 			return
 		}
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
