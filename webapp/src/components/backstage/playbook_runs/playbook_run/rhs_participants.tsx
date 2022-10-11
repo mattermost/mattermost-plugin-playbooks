@@ -4,31 +4,20 @@
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
-
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
-
 import {useDispatch, useSelector} from 'react-redux';
-
 import {getProfilesByIds} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
-
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
-
 import {sortByUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
-
 import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
-
 import SearchInput from '../../search_input';
-
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-
 import {useManageRunMembership} from 'src/graphql/hooks';
-
 import {Role} from '../shared';
 
 import {SendMessageButton} from './send_message_button';
@@ -124,7 +113,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
                 {formatMessage({defaultMessage: 'Owner'})}
             </SectionTitle>
 
-            <ParticipantLine
+            <ParticipantRow
                 id={runOwnerUserId}
                 teamName={teamName}
                 isRunOwner={true}
@@ -144,7 +133,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
                             return null;
                         }
                         return (
-                            <ParticipantLine
+                            <ParticipantRow
                                 key={user.id}
                                 id={user.id}
                                 teamName={teamName}
@@ -161,7 +150,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
     );
 };
 
-interface ParticipantLineProps {
+interface ParticipantRowProps {
     id: string;
     teamName: string | undefined;
     isRunOwner: boolean;
@@ -170,7 +159,7 @@ interface ParticipantLineProps {
     changeRunOwner: (ownerID?: string | undefined) => Promise<void>;
 }
 
-const ParticipantLine = ({id, teamName, isRunOwner, manageMode, removeFromRun, changeRunOwner}: ParticipantLineProps) => {
+const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, changeRunOwner}: ParticipantRowProps) => {
     const {formatMessage} = useIntl();
 
     const renderRightButton = () => {
@@ -348,7 +337,7 @@ const ParticipantButton = styled.div`
     }
 
     position: absolute;
-    right: 20px;      
+    right: 20px; 
 `;
 
 const IconWrapper = styled.div`
