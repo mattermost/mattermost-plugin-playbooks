@@ -574,8 +574,8 @@ type PlaybookRunService interface {
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
 
-	// UpdatePlaybookRunStatusUpdate  enables or disables status update for the run
-	UpdatePlaybookRunStatusUpdate(playbookRunID, userID string, enable bool) error
+	// ToggleStatusUpdates  enables or disables status update for the run
+	ToggleStatusUpdates(playbookRunID, userID string, enable bool) error
 
 	// GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
@@ -859,9 +859,6 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
-
-	// UpdatePlaybookStatusUpdateEnable updates StatusUpdateEnabled
-	UpdatePlaybookStatusUpdateEnable(playbookRunID string, enable bool) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

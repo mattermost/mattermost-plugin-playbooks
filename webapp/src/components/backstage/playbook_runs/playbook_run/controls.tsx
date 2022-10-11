@@ -178,7 +178,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
 };
 
 export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const runStatusUpdate = useEnableOrDisableRunStatusUpdate(props.playbookRun);
+    const toggleRunStatusUpdates = useEnableOrDisableRunStatusUpdate(props.playbookRun);
 
     const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 
@@ -188,7 +188,7 @@ export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: Playbo
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
-                        onClick={() => runStatusUpdate(!statusUpdateEnabled)}
+                        onClick={() => toggleRunStatusUpdates(!statusUpdateEnabled)}
                         className='restartRun'
                     >
                         <ClockOutlineIcon size={18}/>

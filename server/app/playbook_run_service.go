@@ -1037,7 +1037,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, userID string, enable bool) error {
+func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
@@ -1046,7 +1046,9 @@ func (s *PlaybookRunServiceImpl) UpdatePlaybookRunStatusUpdate(playbookRunID, us
 	}
 
 	updateAt := model.GetMillis()
-	if err = s.store.UpdatePlaybookStatusUpdateEnable(playbookRunID, enable); err != nil {
+	playbookRunToModify.StatusUpdateEnabled = enable
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return err
 	}
 

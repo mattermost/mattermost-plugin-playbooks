@@ -103,10 +103,10 @@
   },
   {
     "id": "app.user.run.status_disable",
-    "translation": "@{{.Username}} disabled the status update for this run"
+    "translation": "@{{.Username}} disabled the status updates for this run"
   },
   {
     "id": "app.user.run.status_enable",
-    "translation": "@{{.Username}} enabled the status update for this run"
+    "translation": "@{{.Username}} enabled the status updates for this run"
   }
 ]

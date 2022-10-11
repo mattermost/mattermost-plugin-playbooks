@@ -5,7 +5,7 @@ import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {runStatusUpdate} from 'src/client';
+import {toggleRunStatusUpdates} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
@@ -14,11 +14,11 @@ export const useEnableOrDisableRunStatusUpdate = (playbookRun: PlaybookRun) => {
     const {formatMessage} = useIntl();
 
     return (status: boolean) => {
-        const confirmTitle = status ? formatMessage({defaultMessage: 'Confirm enable status update'}) : formatMessage({defaultMessage: 'Confirm disable status update'});
-        const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status update for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status update for this run?'});
+        const confirmTitle = status ? formatMessage({defaultMessage: 'Confirm enable status updates'}) : formatMessage({defaultMessage: 'Confirm disable status updates'});
+        const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status updates for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status updates for this run?'});
 
         const onConfirm = async () => {
-            await runStatusUpdate(playbookRun.id, status);
+            await toggleRunStatusUpdates(playbookRun.id, status);
         };
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({

@@ -531,6 +531,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
 			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
 			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"StatusUpdateEnabled":                   rawPlaybookRun.StatusUpdateEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -582,21 +583,6 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
 		return errors.Wrapf(err, "failed to finish run for id '%s'", playbookRunID)
-	}
-
-	return nil
-}
-
-func (s *playbookRunStore) UpdatePlaybookStatusUpdateEnable(playbookRunID string, enable bool) error {
-
-	if _, err := s.store.execBuilder(s.store.db, sq.
-		Update("IR_Incident").
-		SetMap(map[string]interface{}{
-			"StatusUpdateEnabled": enable,
-		}).
-		Where(sq.Eq{"ID": playbookRunID}),
-	); err != nil {
-		return errors.Wrapf(err, "failed to update statusupdate for id '%s'", playbookRunID)
 	}
 
 	return nil
