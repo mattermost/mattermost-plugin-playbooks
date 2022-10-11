@@ -154,11 +154,11 @@ func (b *BoardsPlaybooks) Transform() []BoardsPlaybook {
 type BoardsPlaybooksMembers struct {
 	Playbooks
 }
-type member struct {
+type Member struct {
 	UserID string `json:"userId"`
 }
 
-func (b *BoardsPlaybooksMembers) Transform() []member {
+func (b *BoardsPlaybooksMembers) Transform() []Member {
 	participantByPlaybook := make(map[string][]string, 0)
 	for _, playbook := range b.Playbooks {
 		if len(participantByPlaybook[playbook.ID]) == 0 {
@@ -178,9 +178,9 @@ func (b *BoardsPlaybooksMembers) Transform() []member {
 		}
 	}
 
-	members := make([]member, 0)
+	members := make([]Member, 0)
 	for _, fm := range finalMembers {
-		members = append(members, member{
+		members = append(members, Member{
 			UserID: fm,
 		})
 	}
