@@ -74,7 +74,10 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
 
         return (
             <>
-                <StyledSecondaryButton onClick={() => setManageMode(true)}>
+                <StyledSecondaryButton
+                    onClick={() => setManageMode(true)}
+                    data-testid='participants-manage-btn'
+                >
                     {formatMessage({defaultMessage: 'Manage'})}
                 </StyledSecondaryButton>
 
@@ -114,6 +117,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
             </SectionTitle>
 
             <ParticipantRow
+                testId={'run-owner'}
                 id={runOwnerUserId}
                 teamName={teamName}
                 isRunOwner={true}
@@ -134,6 +138,7 @@ export const Participants = ({playbookRunId, participantsIds, runOwnerUserId, ro
                         }
                         return (
                             <ParticipantRow
+                                testId={user.id}
                                 key={user.id}
                                 id={user.id}
                                 teamName={teamName}
@@ -157,9 +162,10 @@ interface ParticipantRowProps {
     manageMode: boolean;
     removeFromRun: (userIDs?: string[] | undefined) => Promise<void>;
     changeRunOwner: (ownerID?: string | undefined) => Promise<void>;
+    testId?: string;
 }
 
-const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, changeRunOwner}: ParticipantRowProps) => {
+const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, changeRunOwner, testId}: ParticipantRowProps) => {
     const {formatMessage} = useIntl();
 
     const renderRightButton = () => {
@@ -211,6 +217,7 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
 
     return (
         <ProfileWrapper
+            data-testid={testId}
             key={id}
             manageMode={manageMode}
         >
