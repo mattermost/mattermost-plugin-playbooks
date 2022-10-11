@@ -158,6 +158,9 @@ describe('lhs', () => {
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
+                // # Wait for load
+                cy.wait(1000);
+
                 // # Follow the run
                 cy.findByTestId('rdp-rhs-follow-button').click();
 
