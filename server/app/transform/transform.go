@@ -44,6 +44,12 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			}
 		}
 
+		// status computations
+		status := run.CurrentStatus
+		if run.CurrentStatus == app.StatusFinished && run.RetrospectivePublishedAt != 0 {
+			status = "RetroPublished"
+		}
+
 		block := boards.Block{
 			ID:         fmt.Sprintf("A+%s", run.ID),
 			ParentID:   "",
@@ -55,7 +61,7 @@ func (b *BoardsPlaybookRuns) Transform() []boards.Block {
 			Title:      run.Name,
 			Fields: map[string]interface{}{
 				"properties": map[string]interface{}{
-					"playbook_run_status":                    run.CurrentStatus,
+					"playbook_run_status":                    status,
 					"playbook_run_owner":                     run.OwnerUserID,
 					"playbook_run_url":                       fmt.Sprintf("%s/playbooks/runs/%s", b.SiteURL, run.ID),
 					"playbook_url":                           fmt.Sprintf("%s/playbooks/playbooks/%s", b.SiteURL, run.PlaybookID),
