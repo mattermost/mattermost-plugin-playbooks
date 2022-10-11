@@ -119,9 +119,11 @@ type BoardsPlaybooks struct {
 }
 
 type BoardsPlaybook struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	LastRunAt   int64  `json:"last_run_at"`
 }
 
 func (b *BoardsPlaybooks) Transform() []BoardsPlaybook {
@@ -131,10 +133,13 @@ func (b *BoardsPlaybooks) Transform() []BoardsPlaybook {
 		if !playbook.Public {
 			pbType = "P"
 		}
+
 		items = append(items, BoardsPlaybook{
-			ID:   playbook.ID,
-			Name: playbook.Title,
-			Type: pbType,
+			ID:          playbook.ID,
+			Name:        playbook.Title,
+			Description: playbook.Description,
+			LastRunAt:   playbook.LastRunAt,
+			Type:        pbType,
 		})
 	}
 	return items
@@ -143,8 +148,11 @@ func (b *BoardsPlaybooks) Transform() []BoardsPlaybook {
 type BoardsPlaybooksMembers struct {
 	Playbooks
 }
+type member struct {
+	UserID string `json:"userId"`
+}
 
-func (b *BoardsPlaybooksMembers) Transform() []boards.BoardMember {
+func (b *BoardsPlaybooksMembers) Transform() []member {
 	participantByPlaybook := make(map[string][]string, 0)
 	for _, playbook := range b.Playbooks {
 		if len(participantByPlaybook[playbook.ID]) == 0 {
@@ -164,11 +172,10 @@ func (b *BoardsPlaybooksMembers) Transform() []boards.BoardMember {
 		}
 	}
 
-	members := make([]boards.BoardMember, 0)
+	members := make([]member, 0)
 	for _, fm := range finalMembers {
-		members = append(members, boards.BoardMember{
-			UserID:       fm,
-			SchemeViewer: true,
+		members = append(members, member{
+			UserID: fm,
 		})
 	}
 
