@@ -32,6 +32,8 @@ import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 interface Props {
     playbookRun: PlaybookRun;
+    readOnly?: boolean;
+    onReadOnlyInteract?: () => void
 }
 
 const RHSAbout = (props: Props) => {
@@ -138,6 +140,8 @@ const RHSAbout = (props: Props) => {
                             onEdit={onDescriptionEdit}
                             editing={editingSummary}
                             setEditing={setEditingSummary}
+                            readOnly={props.readOnly}
+                            onReadOnlyInteract={props.onReadOnlyInteract}
                         />
                         <Row>
                             <OwnerSection>
