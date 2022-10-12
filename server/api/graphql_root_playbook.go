@@ -25,8 +25,7 @@ func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
-		c.logger.WithError(err).Warn("Not authorized")
-		return nil, errors.New("Not authorized")
+		return nil, err
 	}
 
 	playbook, err := c.playbookService.Get(playbookID)
@@ -53,8 +52,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 
 	if args.TeamID != "" {
 		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
-			c.logger.WithError(err).Warn("Not authorized")
-			return nil, errors.New("Not authorized")
+			return nil, err
 		}
 	}
 

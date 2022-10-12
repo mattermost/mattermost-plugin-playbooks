@@ -330,19 +330,20 @@ func (p *PermissionsService) PlaybookList(userID, teamID string) error {
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "userID `%s` is not on team `%s`", userID, teamID)
 }
 
 func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Playbook) error {
 	noAccessErr := errors.Wrapf(
 		ErrNoPermissions,
-		"userID %s to access playbook",
+		"userID `%s` to access playbook `%s`",
 		userID,
+		playbook.ID,
 	)
 
 	// Playbooks are tied to teams. You must have permission to the team to have permission to the playbook.
 	if !p.canViewTeam(userID, playbook.TeamID) {
-		return errors.Wrap(noAccessErr, "no playbook access; no team view permission")
+		return errors.Wrapf(noAccessErr, "no playbook access; no team view permission for team `%s`", playbook.TeamID)
 	}
 
 	// If the playbook is public team access is enough to view
