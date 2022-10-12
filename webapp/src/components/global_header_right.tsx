@@ -9,6 +9,7 @@ import GiveFeedbackButton from 'src/components/give_feedback_button';
 const GlobalHeaderGiveFeedbackButton = styled(GiveFeedbackButton)`
     padding: 0 5px;
     font-size: 11px;
+    height: 24px;
 `;
 
 const GlobalHeaderRight = () => {
