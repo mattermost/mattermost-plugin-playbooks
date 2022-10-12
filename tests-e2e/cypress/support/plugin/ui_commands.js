@@ -300,7 +300,7 @@ Cypress.Commands.add('getFirstPostId', () => {
         .invoke('replace', 'post_', '');
 });
 
-Cypress.Commands.add('assertBackstageRenderComplete', (expectedRunOwner, expectedTimelineItems = 3) => {
+Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
     cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
-    cy.findByTestId('rhs-timeline').children().should('have.length', expectedTimelineItems);
+    cy.findByTestId('rhs-timeline').children().should('not.be.empty');
 });

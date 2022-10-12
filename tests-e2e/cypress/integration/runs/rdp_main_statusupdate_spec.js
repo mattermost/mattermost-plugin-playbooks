@@ -65,7 +65,7 @@ describe('runs > run details page > status update', () => {
             // # that help ensure rendering has finished.
             cy.gqlInterceptQuery('PlaybookLHS');
             cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-            cy.assertBackstageRenderComplete(testUser.username);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
         });
     });
 
@@ -141,7 +141,7 @@ describe('runs > run details page > status update', () => {
                     // # reload url
                     cy.visit(`/playbooks/runs/${testRun.id}`);
                     cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                    cy.assertBackstageRenderComplete(testUser.username, 4);
+                    cy.assertRunDetailsPageRenderComplete(testUser.username);
 
                     // # Click on kebab menu
                     cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
@@ -202,7 +202,7 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertBackstageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete(testUser.username);
             });
         });
 
@@ -232,13 +232,13 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertBackstageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete(testUser.username);
             });
 
             // # Click post update
-            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
-                cy.findByTestId('post-update-button').click();
-            });
+            cy.findByTestId('run-statusupdate-section')
+                .should('be.visible')
+                .findByTestId('post-update-button').click();
 
             // * Assert modal is opened
             cy.getStatusUpdateDialog().should('be.visible');
@@ -255,7 +255,7 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertBackstageRenderComplete(testUser.username, 4);
+                cy.assertRunDetailsPageRenderComplete(testUser.username);
 
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');
@@ -268,9 +268,9 @@ describe('runs > run details page > status update', () => {
 
         it('requests an update and confirm', () => {
             // # Click on request update
-            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
-                cy.findByText('Request update...').click();
-            });
+            cy.findByTestId('run-statusupdate-section')
+                .should('be.visible')
+                .findByText('Request update...').click();
 
             // # Click on modal confirmation
             cy.get('#confirmModalButton').click();
@@ -286,9 +286,9 @@ describe('runs > run details page > status update', () => {
 
         it('requests an update and cancel', () => {
             // # Click post update
-            cy.findByTestId('run-statusupdate-section').should('be.visible').within(() => {
-                cy.findByText('Request update...').click();
-            });
+            cy.findByTestId('run-statusupdate-section')
+                .should('be.visible')
+                .findByText('Request update...').click();
 
             // # Click on modal confirmation
             cy.get('#cancelModalButton').click();

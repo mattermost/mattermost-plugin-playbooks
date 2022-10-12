@@ -181,7 +181,7 @@ describe('lhs', () => {
 
             // # The assertions here guard against the click() on 194
             // # happening on a detached element.
-            cy.assertBackstageRenderComplete(testUser.username);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
             cy.findByTestId('runinfo-following').should('be.visible').within(() => {
                 // # Verify follower icon
                 cy.findAllByTestId('profile-option', {exact: false}).should('have.length', 1);
