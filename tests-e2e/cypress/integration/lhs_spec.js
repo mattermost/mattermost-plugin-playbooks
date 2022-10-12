@@ -80,9 +80,7 @@ describe('lhs', () => {
 
                 // # Visit the playbook run
                 cy.visit('/playbooks/runs');
-                cy.findByTestId('lhs-navigation').within((() => {
-                    cy.contains(playbookRun.name).should('be.visible');
-                }));
+                cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('be.visible');
             });
         });
 
@@ -195,9 +193,7 @@ describe('lhs', () => {
             });
 
             // * Verify that the run was added to the lhs
-            cy.findByTestId('lhs-navigation').within((() => {
-                cy.findByTestId(playbookRun.name).should('be.visible');
-            }));
+            cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('exist');
 
             // # Click on unfollow menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Unfollow').click().then(() => {
