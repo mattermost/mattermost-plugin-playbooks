@@ -299,3 +299,8 @@ Cypress.Commands.add('getFirstPostId', () => {
     cy.findAllByTestId('postView').first().should('have.attr', 'id').and('not.include', ':')
         .invoke('replace', 'post_', '');
 });
+
+Cypress.Commands.add('assertBackstageRenderComplete', (expectedRunOwner, expectedTimelineItems = 3) => {
+    cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
+    cy.findByTestId('rhs-timeline').children().should('have.length', expectedTimelineItems);
+});

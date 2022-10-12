@@ -126,16 +126,12 @@ describe('lhs', () => {
 
                 // # Intercept these graphQL requests for wait()'s
                 // # that help ensure rendering has finished.
-                cy.intercept('/plugins/playbooks/api/v0/query', (req) => {
-                    if (req.body?.operationName === 'PlaybookLHS') {
-                        req.alias = 'gqlUpdateLHS';
-                    }
-                });
+                cy.gqlInterceptQuery('PlaybookLHS');
             });
         });
 
         it('shows on click', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click dot menu
             cy.findByTestId('Runs')
@@ -148,7 +144,7 @@ describe('lhs', () => {
         });
 
         it('can copy link', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
             stubClipboard().as('clipboard');
 
             // # Click on Copy link menu item
@@ -159,18 +155,18 @@ describe('lhs', () => {
         });
 
         it('can favorite / unfavorite', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click on favorite menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Favorite').click().then(() => {
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
 
                 // * Verify the run is added to favorites
                 cy.findByTestId('Favorite').findByTestId(playbookRun.name).should('exist');
 
                 // # Click on unfavorite menu item
                 getRunDropdownItemByText('Favorite', playbookRun.name, 'Unfavorite').click().then(() => {
-                    cy.wait('@gqlUpdateLHS');
+                    cy.wait('@gqlPlaybookLHS');
 
                     // * Verify the run is removed from favorites
                     cy.findByTestId('Favorite').should('not.exist');
@@ -183,19 +179,18 @@ describe('lhs', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # The assertions here guard against the click() on 194
             // # happening on a detached element.
-            cy.findByTestId('assignee-profile-selector').should('contain', testUser.username);
-            cy.findByTestId('rhs-timeline').children().should('have.length', 3);
+            cy.assertBackstageRenderComplete(testUser.username);
             cy.findByTestId('runinfo-following').should('be.visible').within(() => {
-                // # Checking follower icons
+                // # Verify follower icon
                 cy.findAllByTestId('profile-option', {exact: false}).should('have.length', 1);
                 cy.findByTestId('rdp-rhs-follow-button').should('be.visible').click();
 
                 // # Verify icons update
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
                 cy.findAllByTestId('profile-option', {exact: false}).should('have.length', 2);
             });
 
@@ -206,7 +201,7 @@ describe('lhs', () => {
 
             // # Click on unfollow menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Unfollow').click().then(() => {
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
 
                 // * Verify that the run is removed lhs
                 cy.findByTestId('Runs').findByTestId(playbookRun.name).should('not.exist');
@@ -219,7 +214,7 @@ describe('lhs', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -230,7 +225,7 @@ describe('lhs', () => {
             // # Change the owner to testViewerUser
             cy.findByTestId('runinfo-owner').findByTestId('assignee-profile-selector').click();
             cy.get('.playbook-run-user-select').findByText('@' + testViewerUser.username).click();
-            cy.wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -265,17 +260,13 @@ describe('lhs', () => {
 
                     // # Intercept these graphQL requests for wait()'s
                     // # that help ensure rendering has finished.
-                    cy.intercept('/plugins/playbooks/api/v0/query', (req) => {
-                        if (req.body?.operationName === 'PlaybookLHS') {
-                            req.alias = 'gqlUpdateLHS';
-                        }
-                    });
+                    cy.gqlInterceptQuery('PlaybookLHS');
                 });
             });
         });
 
         it('leave run, when on rdp of the same run', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -283,7 +274,7 @@ describe('lhs', () => {
             // # confirm modal
             cy.get('#confirmModal').should('be.visible').within(() => {
                 cy.get('#confirmModalButton').click();
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
             });
 
             // * Verify that user was redirected to the run list page
@@ -293,7 +284,7 @@ describe('lhs', () => {
         it('leave run, when not on rdp of the same run', () => {
             // # Visit playbooks list page
             cy.visit('/playbooks/playbooks');
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -301,7 +292,7 @@ describe('lhs', () => {
             // # confirm modal
             cy.get('#confirmModal').should('be.visible').within(() => {
                 cy.get('#confirmModalButton').click();
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
             });
 
             // * Verify that user was not redirected to the run list page
@@ -330,16 +321,12 @@ describe('lhs', () => {
 
                 // # Intercept these graphQL requests for wait()'s
                 // # that help ensure rendering has finished.
-                cy.intercept('/plugins/playbooks/api/v0/query', (req) => {
-                    if (req.body?.operationName === 'PlaybookLHS') {
-                        req.alias = 'gqlUpdateLHS';
-                    }
-                });
+                cy.gqlInterceptQuery('PlaybookLHS');
             });
         });
 
         it('shows on click', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click dot menu
             cy.findByTestId('Playbooks')
@@ -352,7 +339,7 @@ describe('lhs', () => {
         });
 
         it('can copy link', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
             stubClipboard().as('clipboard');
 
             // # Click on Copy link menu item
@@ -365,18 +352,18 @@ describe('lhs', () => {
         });
 
         it('can favorite / unfavorite', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             // # Click on favorite menu item
             getRunDropdownItemByText('Playbooks', testPublicPlaybook.title, 'Favorite').click().then(() => {
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
 
                 // * Verify the playbook is added to favorites
                 cy.findByTestId('Favorite').findByTestId(testPublicPlaybook.title).should('exist');
 
                 // # Click on unfavorite menu item
                 getRunDropdownItemByText('Favorite', testPublicPlaybook.title, 'Unfavorite').click().then(() => {
-                    cy.wait('@gqlUpdateLHS');
+                    cy.wait('@gqlPlaybookLHS');
 
                     // * Verify the playbook is removed from favorites
                     cy.findByTestId('Playbooks').findByTestId(testPublicPlaybook.title).should('exist');
@@ -385,13 +372,13 @@ describe('lhs', () => {
         });
 
         it('can leave', () => {
-            cy.wait('@gqlUpdateLHS').wait('@gqlUpdateLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
 
             stubClipboard().as('clipboard');
 
             // # Click on Leave menu item
             getRunDropdownItemByText('Playbooks', testPublicPlaybook.title, 'Leave').click().then(() => {
-                cy.wait('@gqlUpdateLHS');
+                cy.wait('@gqlPlaybookLHS');
 
                 // * Verify the playbook is removed from the list
                 cy.findByTestId('Playbooks').findByTestId(testPublicPlaybook.title).should('not.exist');
