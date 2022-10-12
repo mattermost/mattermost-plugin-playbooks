@@ -60,9 +60,12 @@ describe('runs > run details page > status update', () => {
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
-            cy.findByTestId('lhs-navigation').within((() => {
-                cy.contains(playbookRun.name).should('be.visible');
-            }));
+
+            // # Intercept these graphQL requests for wait()'s
+            // # that help ensure rendering has finished.
+            cy.gqlInterceptQuery('PlaybookLHS');
+            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+            cy.assertBackstageRenderComplete(testUser.username);
         });
     });
 
@@ -137,6 +140,8 @@ describe('runs > run details page > status update', () => {
                 cy.apiFinishRun(testRun.id).then(() => {
                     // # reload url
                     cy.visit(`/playbooks/runs/${testRun.id}`);
+                    cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                    cy.assertBackstageRenderComplete(testUser.username, 4);
 
                     // # Click on kebab menu
                     cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
@@ -196,6 +201,8 @@ describe('runs > run details page > status update', () => {
         beforeEach(() => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                cy.assertBackstageRenderComplete(testUser.username);
             });
         });
 
@@ -224,6 +231,8 @@ describe('runs > run details page > status update', () => {
             // # Login as participant
             cy.apiLogin(testUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                cy.assertBackstageRenderComplete(testUser.username);
             });
 
             // # Click post update
@@ -245,6 +254,8 @@ describe('runs > run details page > status update', () => {
 
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                cy.assertBackstageRenderComplete(testUser.username, 4);
 
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');
