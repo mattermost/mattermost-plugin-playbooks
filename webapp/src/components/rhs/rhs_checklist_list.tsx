@@ -88,6 +88,11 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
             return false;
         }
 
+        // "Show skipped tasks" is not checked, so if item is skipped, don't show it.
+        if (!checklistItemsFilter.skipped && checklistItem.state === ChecklistItemState.Skip) {
+            return false;
+        }
+
         // "Me" is not checked, so if assignee_id is me, don't show it.
         if (!checklistItemsFilter.me && checklistItem.assignee_id === myId) {
             return false;
@@ -327,6 +332,12 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): Checkbox
             display: 'Show checked tasks',
             value: 'checked',
             selected: filter.checked,
+            disabled: filter.all,
+        },
+        {
+            display: 'Show skipped tasks',
+            value: 'checked',
+            selected: filter.skipped,
             disabled: filter.all,
         },
         {
