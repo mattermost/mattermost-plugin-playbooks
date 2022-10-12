@@ -9,7 +9,7 @@ import {toggleRunStatusUpdates} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
-export const useEnableOrDisableRunStatusUpdate = (playbookRun: PlaybookRun) => {
+export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 

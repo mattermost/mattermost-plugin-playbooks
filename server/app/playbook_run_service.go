@@ -1002,6 +1002,22 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		logger.WithError(err).Error("failed to reset the reminder timer when updating status to Archived")
 	}
 
+	// We are resolving the playbook run. Send the reminder to fill out the retrospective
+	// Also start the recurring reminder if enabled.
+	if s.licenseChecker.RetrospectiveAllowed() {
+		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
+			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
+				return errors.Wrap(err, "couldn't post retrospective reminder")
+			}
+			s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+			if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
+				if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
+				}
+			}
+		}
+	}
+
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      endAt,
@@ -1094,22 +1110,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	if !enable {
 		s.RemoveReminder(playbookRunID)
-	}
-
-	// We are resolving the playbook run. Send the reminder to fill out the retrospective
-	// Also start the recurring reminder if enabled.
-	if s.licenseChecker.RetrospectiveAllowed() {
-		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
-			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
-				return errors.Wrap(err, "couldn't post retrospective reminder")
-			}
-			s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
-			if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
-				if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
-				}
-			}
-		}
 	}
 
 	event := &TimelineEvent{

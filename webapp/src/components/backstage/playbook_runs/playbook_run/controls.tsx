@@ -15,7 +15,7 @@ import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
 import {useToaster} from '../../toast_banner';
 import {Role, Separator} from '../shared';
 
-import {useEnableOrDisableRunStatusUpdate} from './enable_disable_run_status_update';
+import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
@@ -177,8 +177,8 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     return null;
 };
 
-export const EnableDisableRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const toggleRunStatusUpdates = useEnableOrDisableRunStatusUpdate(props.playbookRun);
+export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
 
     const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 
