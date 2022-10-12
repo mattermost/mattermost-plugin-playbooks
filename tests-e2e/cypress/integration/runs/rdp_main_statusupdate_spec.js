@@ -168,7 +168,7 @@ describe('runs > run details page > status update', () => {
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
 
                 // # Click on request update
-                cy.findByText('Request update...').click();
+                cy.findByTestId('dropdownmenu').findByText('Request update...').click();
 
                 // # Click on modal confirmation
                 cy.get('#cancelModalButton').click();
