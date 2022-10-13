@@ -19,6 +19,7 @@ interface Props {
     collapsed: boolean;
     toggleCollapsed: () => void;
     editSummary: () => void;
+    readOnly?: boolean;
 }
 
 const RHSAboutButtons = (props: Props) => {
@@ -52,17 +53,21 @@ const RHSAboutButtons = (props: Props) => {
                 portal={false}
                 focusManager={{returnFocus: false}}
             >
-                <StyledDropdownMenuItem
-                    onClick={() => {
-                        props.editSummary();
-                    }}
-                >
-                    <IconWrapper>
-                        <PencilOutlineIcon size={20}/>
-                    </IconWrapper>
-                    <FormattedMessage defaultMessage='Edit run summary'/>
-                </StyledDropdownMenuItem>
-                <Separator/>
+                {!props.readOnly &&
+                <>
+                    <StyledDropdownMenuItem
+                        onClick={() => {
+                            props.editSummary();
+                        }}
+                    >
+                        <IconWrapper>
+                            <PencilOutlineIcon size={20}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Edit run summary'/>
+                    </StyledDropdownMenuItem>
+                    <Separator/>
+                </>
+                }
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                     <IconWrapper>
                         <PlayOutlineIcon size={22}/>

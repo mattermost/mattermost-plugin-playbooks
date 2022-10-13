@@ -104,6 +104,7 @@ const RHSRunDetails = () => {
                         playbookRun={playbookRun}
                         parentContainer={ChecklistParent.RHS}
                         viewerMode={!isParticipant}
+                        onViewerModeInteract={displayReadOnlyToast}
                     />
                 </Scrollbars>
             </RHSContent>

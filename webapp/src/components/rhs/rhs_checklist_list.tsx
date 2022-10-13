@@ -52,6 +52,7 @@ interface Props {
     parentContainer: ChecklistParent;
     id?: string;
     viewerMode: boolean;
+    onViewerModeInteract?: () => void
 }
 
 export enum ChecklistParent {
@@ -96,7 +97,7 @@ const notFinishedTasks = (checklists: Checklist[]) => {
     return count;
 };
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewerModeInteract}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -271,7 +272,15 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <FinishButton onClick={() => dispatch(finishRun(playbookRun?.team_id || ''))}>
+                <FinishButton
+                    onClick={() => {
+                        if (viewerMode && onViewerModeInteract) {
+                            onViewerModeInteract();
+                        } else {
+                            dispatch(finishRun(playbookRun?.team_id || ''));
+                        }
+                    }}
+                >
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
