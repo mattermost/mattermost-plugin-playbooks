@@ -17,10 +17,8 @@ import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styl
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
-import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import MarkdownEdit from 'src/components/markdown_edit';
 import {Toggle} from '../../playbook_edit/automation/toggle';
 import {AutomationTitle} from '../../playbook_edit/automation/styles';
 import {useProxyState} from 'src/hooks';
@@ -169,7 +167,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
             </StyledSection>
-            <StyledSection>
+
+            {/* <StyledSection>
                 <StyledSectionTitle>
                     <AccountPlusOutlineIcon size={22}/>
                     <FormattedMessage defaultMessage='When a new member joins the channel'/>
@@ -208,7 +207,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         onCategorySelected={handleCategoryNameChange}
                     />
                 </Setting>
-            </StyledSection>
+            </StyledSection> */}
 
             <StyledSection>
                 <StyledSectionTitle>

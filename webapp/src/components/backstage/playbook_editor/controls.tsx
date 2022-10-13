@@ -48,7 +48,7 @@ import {
     restorePlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
-import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -501,11 +501,7 @@ const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;
 
-const SecondaryButtonLarger = styled(SecondaryButton)`
-    ${buttonCommon};
-`;
-
-const TertiaryButtonLarger = styled(TertiaryButton)`
+export const SecondaryButtonLarger = styled(SecondaryButton)`
     ${buttonCommon};
 `;
 
