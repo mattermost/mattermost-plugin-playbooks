@@ -5,7 +5,6 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
-import * as TIMEOUTS from '../../fixtures/timeouts';
 
 describe('channels > post type components', () => {
     let testTeam;
@@ -14,7 +13,7 @@ describe('channels > post type components', () => {
     let testPlaybookRun;
 
     beforeEach(() => {
-        cy.apiInitSetup({promoteNewUserAsAdmin: true}).then(({team, user}) => {
+        cy.apiInitSetup({loginAfter: true, promoteNewUserAsAdmin: true}).then(({team, user}) => {
             testTeam = team;
             testUser = user;
 
@@ -69,7 +68,7 @@ describe('channels > post type components', () => {
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text
                     cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                    cy.get(element).contains(`status update`);
+                    cy.get(element).contains('status update');
                 });
             });
         });
@@ -98,7 +97,7 @@ describe('channels > post type components', () => {
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text
                     cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                    cy.get(element).contains(`status update`);
+                    cy.get(element).contains('status update');
                 });
             });
         });
