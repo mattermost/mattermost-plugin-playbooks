@@ -422,3 +422,11 @@ Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
         cy.wrap(response.body);
     });
 });
+
+Cypress.Commands.add('gqlInterceptQuery', (operationName) => {
+    cy.intercept('/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body?.operationName === operationName) {
+            req.alias = `gql${operationName}`;
+        }
+    });
+});
