@@ -134,7 +134,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 
 	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", errors.Wrapf(err, "permissions check failed for playbook `%s`", args.ID)
+		return "", err
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
