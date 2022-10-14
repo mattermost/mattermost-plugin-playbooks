@@ -383,8 +383,8 @@ const (
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
-	StatusUpdateEnabled    timelineEventType = "status_update_enabled"
-	StatusUpdateDisabled   timelineEventType = "status_update_disabled"
+	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
+	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
 )
 
 type TimelineEvent struct {

@@ -1075,11 +1075,11 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	}
 
 	statusUpdate := "enabled"
-	eventType := StatusUpdateEnabled
+	eventType := StatusUpdatesEnabled
 
 	if !enable {
 		statusUpdate = "disabled"
-		eventType = StatusUpdateDisabled
+		eventType = StatusUpdatesDisabled
 	}
 
 	data := map[string]interface{}{
