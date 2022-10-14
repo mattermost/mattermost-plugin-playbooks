@@ -133,12 +133,12 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		return "", errors.Wrapf(err, "permissions check failed for playbook `%s`", args.ID)
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
 	}
 
 	setmap := map[string]interface{}{}
@@ -147,11 +147,11 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	if args.Updates.Public != nil {
 		if *args.Updates.Public {
 			if err := c.permissions.PlaybookMakePublic(userID, currentPlaybook); err != nil {
-				return "", errors.Wrap(err, "attempted to make playbook public without permissions")
+				return "", err
 			}
 		} else {
 			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
-				return "", errors.Wrap(err, "attempted to make playbook private without permissions")
+				return "", err
 			}
 		}
 		if !c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
@@ -286,12 +286,12 @@ func (r *PlaybookRootResolver) AddPlaybookMember(ctx context.Context, args struc
 		return "", err
 	}
 
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
+		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
-		return "", errors.Wrap(err, "attempted to modify members without permissions")
+	if currentPlaybook.DeleteAt != 0 {
+		return "", errors.New("archived playbooks can not be modified")
 	}
 
 	if err := c.playbookStore.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
@@ -323,7 +323,7 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 	// do not require manageMembers permission if the user want to leave playbook
 	if userID != args.UserID {
 		if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
-			return "", errors.Wrap(err, "attempted to modify members without permissions")
+			return "", err
 		}
 	}
 
