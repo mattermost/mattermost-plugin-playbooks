@@ -261,6 +261,23 @@ describe('playbooks > overview', () => {
         });
     });
 
+    it('start a run', () => {
+        // # Visit playbook page
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+
+        // # Click Run Playbook
+        cy.findByTestId('run-playbook').click({force: true});
+
+        // # Enter the run name
+        cy.findByTestId('run-name-input').clear().type('run1234567');
+
+        // # Click start run button
+        cy.get('button[data-testid=modal-confirm-button]').click();
+
+        // * Verify the run is added to lhs
+        cy.findByTestId('Runs').findByTestId('run1234567').should('exist');
+    });
+
     describe('archiving', () => {
         const playbookTitle = 'Playbook (' + Date.now() + ')';
         let testPlaybook;

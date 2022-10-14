@@ -8,9 +8,11 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RunDocument,
     RunUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
+    useChangeRunOwnerMutation,
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
@@ -136,3 +138,45 @@ export const useRunMembership = (runID?: string, userIDs?: string[]) => {
     return {addToRun, removeFromRun};
 };
 
+export const useManageRunMembership = (runID?: string) => {
+    const [add] = useAddRunParticipantsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const [remove] = useRemoveRunParticipantsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const [changeOwner] = useChangeRunOwnerMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const addToRun = useCallback(async (userIDs?: string[]) => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await add({variables: {runID: runID || '', userIDs: userIDs || []}});
+    }, [runID, add]);
+
+    const removeFromRun = useCallback(async (userIDs?: string[]) => {
+        if (!runID || !userIDs || userIDs?.length === 0) {
+            return;
+        }
+        await remove({variables: {runID: runID || '', userIDs: userIDs || []}});
+    }, [runID, remove]);
+
+    const changeRunOwner = useCallback(async (ownerID?: string) => {
+        if (!runID || !ownerID) {
+            return;
+        }
+        await changeOwner({variables: {runID: runID || '', ownerID: ownerID || ''}});
+    }, [runID, changeOwner]);
+
+    return {addToRun, removeFromRun, changeRunOwner};
+};

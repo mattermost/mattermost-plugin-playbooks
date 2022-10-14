@@ -73,6 +73,7 @@ export type Mutation = {
     addMetric: Scalars['String'];
     addPlaybookMember: Scalars['String'];
     addRunParticipants: Scalars['String'];
+    changeRunOwner: Scalars['String'];
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
     removeRunParticipants: Scalars['String'];
@@ -97,6 +98,11 @@ export type MutationAddPlaybookMemberArgs = {
 export type MutationAddRunParticipantsArgs = {
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']>;
+};
+
+export type MutationChangeRunOwnerArgs = {
+    ownerID: Scalars['String'];
+    runID: Scalars['String'];
 };
 
 export type MutationDeleteMetricArgs = {
@@ -378,6 +384,13 @@ export type RemoveRunParticipantsMutationVariables = Exact<{
 }>;
 
 export type RemoveRunParticipantsMutation = { __typename?: 'Mutation', removeRunParticipants: string };
+
+export type ChangeRunOwnerMutationVariables = Exact<{
+    runID: Scalars['String'];
+    ownerID: Scalars['String'];
+}>;
+
+export type ChangeRunOwnerMutation = { __typename?: 'Mutation', changeRunOwner: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -761,6 +774,38 @@ export function useRemoveRunParticipantsMutation(baseOptions?: Apollo.MutationHo
 export type RemoveRunParticipantsMutationHookResult = ReturnType<typeof useRemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationResult = Apollo.MutationResult<RemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
+export const ChangeRunOwnerDocument = gql`
+    mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
+  changeRunOwner(runID: $runID, ownerID: $ownerID)
+}
+    `;
+export type ChangeRunOwnerMutationFn = Apollo.MutationFunction<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
+
+/**
+ * __useChangeRunOwnerMutation__
+ *
+ * To run a mutation, you first call `useChangeRunOwnerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useChangeRunOwnerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [changeRunOwnerMutation, { data, loading, error }] = useChangeRunOwnerMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      ownerID: // value for 'ownerID'
+ *   },
+ * });
+ */
+export function useChangeRunOwnerMutation(baseOptions?: Apollo.MutationHookOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>(ChangeRunOwnerDocument, options);
+}
+export type ChangeRunOwnerMutationHookResult = ReturnType<typeof useChangeRunOwnerMutation>;
+export type ChangeRunOwnerMutationResult = Apollo.MutationResult<ChangeRunOwnerMutation>;
+export type ChangeRunOwnerMutationOptions = Apollo.BaseMutationOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

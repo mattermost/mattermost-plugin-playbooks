@@ -189,8 +189,11 @@ const PlaybookRunDetails = () => {
     case RHSContent.RunParticipants:
         rhsComponent = (
             <Participants
+                playbookRunId={playbookRun.id}
                 participantsIds={playbookRun.participant_ids}
-                playbookRunMetadata={metadata ?? null}
+                runOwnerUserId={playbookRun.owner_user_id}
+                role={role}
+                teamName={metadata?.team_name}
             />
         );
         break;
