@@ -11,7 +11,7 @@ import {OptionsType, ControlProps} from 'react-select';
 
 import Profile from 'src/components/profile/profile';
 
-const StyledAsyncSelect = styled(AsyncSelect)`
+export const StyledAsyncSelect = styled(AsyncSelect)`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
 
@@ -125,6 +125,7 @@ const ProfileAutocomplete = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            autoFocus={true}
             isDisabled={props.isDisabled}
             isMulti={false}
             controlShouldRenderValue={false}
