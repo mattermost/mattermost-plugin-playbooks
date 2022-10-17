@@ -5,6 +5,8 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
+import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
+
 import {TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {DraftPlaybookWithChecklist, MetricType, Metric, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
@@ -14,7 +16,6 @@ import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/play
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import {useAllowPlaybookAndRunMetrics} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
@@ -179,7 +180,7 @@ const Metrics = ({
                 <i className='icon-plus'/>
                 {addMetricMsg}
             </TertiaryButton>
-            <PositionedUpgradeBadge/>
+            <PositionedKeyVariantCircleIcon/>
         </UpgradeButton>
     );
     if (metricsAvailable) {
@@ -343,10 +344,11 @@ const UpgradeButton = styled.div`
     position: relative;
 `;
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
+const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     position: absolute;
     margin-left: -12px;
     top: -4px;
+    color: var(--online-indicator);
 `;
 
 export default Metrics;

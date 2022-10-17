@@ -15,13 +15,13 @@ import {Channel} from '@mattermost/types/channels';
 
 import {FormattedMessage} from 'react-intl';
 
+import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
+
 import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
 import {addToTimeline, startPlaybookRun, showPostMenuModal} from 'src/actions';
 
 import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
-
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 interface Props {
     postId: string;
@@ -95,14 +95,15 @@ export const AttachToPlaybookRunPostMenu = (props: Props) => {
                 >
                     <PlaybookRunPostMenuIcon/>
                     <FormattedMessage defaultMessage='Add to run timeline'/>
-                    {!allowMessage && <PositionedUpgradeBadge/>}
+                    {!allowMessage && <PositionedKeyVariantCircleIcon/>}
                 </button>
             </li>
         </React.Fragment>
     );
 };
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
+const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     margin-left: 16px;
     margin-bottom: -3px;
+    color: var(--online-indicator);
 `;

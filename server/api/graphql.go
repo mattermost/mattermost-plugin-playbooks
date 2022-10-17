@@ -140,6 +140,7 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		params.OperationName,
 		params.Variables,
 	)
+	r.Header.Set("X-GQL-Operation", params.OperationName)
 
 	for _, err := range response.Errors {
 		c.logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")

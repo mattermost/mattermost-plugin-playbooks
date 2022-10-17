@@ -169,7 +169,7 @@ describe('channels > slash command > test', () => {
                 // # Login as sysadmin.
                 cy.apiAdminLogin();
 
-                // # Set EnableTesting to false.
+                // # Set EnableTesting to true.
                 cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: true

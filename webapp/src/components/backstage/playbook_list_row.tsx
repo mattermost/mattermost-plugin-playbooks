@@ -29,6 +29,7 @@ import {DotMenuButton} from '../dot_menu';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
+import {useLHSRefresh} from './lhs_navigation';
 
 interface Props {
     playbook: Playbook
@@ -104,6 +105,7 @@ const PlaybookListRow = (props: Props) => {
     const dispatch = useDispatch();
     const currentUser = useSelector(getCurrentUser);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
+    const refreshLHS = useLHSRefresh();
 
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
@@ -132,7 +134,8 @@ const PlaybookListRow = (props: Props) => {
                 props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
                 props.playbook.description,
                 props.playbook.team_id,
-                team.name
+                team.name,
+                refreshLHS
             ));
         }
     };

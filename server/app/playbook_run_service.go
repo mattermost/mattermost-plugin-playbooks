@@ -1643,19 +1643,34 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.New("no slash command associated with this checklist item")
 	}
 
+	// parse playbook summary for variables and values
+	varsAndVals := parseVariablesAndValues(playbookRun.Summary)
+
+	// parse slash command for variables
+	varsInCmd := parseVariables(itemToRun.Command)
+
+	command := itemToRun.Command
+	for _, v := range varsInCmd {
+		if val, ok := varsAndVals[v]; !ok || val == "" {
+			s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Found undefined or empty variable in slash command: %s", v)})
+			return "", errors.Errorf("Found undefined or empty variable in slash command: %s", v)
+		}
+		command = strings.ReplaceAll(command, v, varsAndVals[v])
+	}
+
 	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
-		Command:   itemToRun.Command,
+		Command:   command,
 		UserId:    userID,
 		TeamId:    playbookRun.TeamID,
 		ChannelId: playbookRun.ChannelID,
 	})
 	if err == pluginapi.ErrNotFound {
-		trigger := strings.Fields(itemToRun.Command)[0]
+		trigger := strings.Fields(command)[0]
 		s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
 
 		return "", errors.Wrap(err, "failed to find slash command")
 	} else if err != nil {
-		s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", itemToRun.Command)})
+		s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", command)})
 
 		return "", errors.Wrap(err, "failed to run slash command")
 	}
@@ -1674,7 +1689,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		CreateAt:      eventTime,
 		EventAt:       eventTime,
 		EventType:     RanSlashCommand,
-		Summary:       fmt.Sprintf("ran the slash command: `%s`", itemToRun.Command),
+		Summary:       fmt.Sprintf("ran the slash command: `%s`", command),
 		SubjectUserID: userID,
 	}
 

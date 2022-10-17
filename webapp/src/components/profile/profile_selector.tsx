@@ -14,6 +14,8 @@ import {Placement} from '@floating-ui/react-dom-interactions';
 
 import {useUpdateEffect} from 'react-use';
 
+import styled from 'styled-components';
+
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {PlaybookRunFilterButton} from '../backstage/styles';
@@ -309,8 +311,14 @@ export const formatProfileName = (descriptionSuffix: string) => {
         return (
             <>
                 <span>{name}</span>
-                {description && <span className={'description'}>{description}</span>}
+                {description && <Description className={'description'}>{description}</Description>}
             </>
         );
     };
 };
+
+const Description = styled.span`
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
