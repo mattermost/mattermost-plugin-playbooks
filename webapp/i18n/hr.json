@@ -55,7 +55,7 @@
     "dcV/DJ": "{timestamp}",
     "d9epHh": "Izvezi dnevnik kanala",
     "c8hxKk": "Tjedan datuma {date}",
-    "bPLen5": "Izvođenja završena u zadnjih 30 dana",
+    "bPLen5": "Završena izvođenja u zadnjih 30 dana",
     "bLK+Kr": "Podsjeća kanal u određenom intervalu da ispuni retrospektivu.",
     "bGhCLX": "Kad se objavi aktualiziranje",
     "b5FaCc": "Dodaj kanal u kategoriju u bočnoj traci",
@@ -70,7 +70,7 @@
     "W9j0FJ": "{date}",
     "VmpFFw": "Nema opisa.",
     "Ui6GK/": "Kad se novi član pridruži kanalu",
-    "UbTsGY": "Izvođenja započeta između {start} i {end}",
+    "UbTsGY": "Započeta izvođenja između {start} i {end}",
     "TyrY2b": "Izrada priručnika",
     "TvihSy": "Objavi ponovo",
     "TZYiF/": "precrtano",
@@ -697,5 +697,12 @@
     "unwVil": "Zahtjev za pridruživanje kanalu nije uspio.",
     "ZRv7Dm": "Zahtjev za pridruživanje",
     "M9tXoZ": "Zahtjev za pridruživanje će se poslati kanalu izvođenja.",
-    "0QD99o": "Zatraži pridruživanje kanalu"
+    "0QD99o": "Zatraži pridruživanje kanalu",
+    "FLG4Iu": "Odredi vlasnika izvođenja",
+    "fVMECF": "Sudionik",
+    "q48ca7": "Pošalji povratne informacije za Playbooks.",
+    "bCmvTY": "Pošalji povratne informacije",
+    "6rygzu": "Ukloni iz izvođenja",
+    "0Azlrb": "Upravljaj",
+    "/GCoTA": "Isprazni"
 }
