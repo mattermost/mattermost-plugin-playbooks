@@ -42,6 +42,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
 
     const footer = (
         <StyledPrimaryButton
+            disabled={!profiles || profiles.length === 0}
             onClick={() => {
                 const ids = profiles.map((e) => e.id);
                 addToRun(ids);
@@ -102,8 +103,6 @@ export const useAddParticipants = (playbookRun: PlaybookRun) => {
 };
 
 const StyledPrimaryButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
     height: 40px;
     font-weight: 600;
     font-size: 14px;
@@ -112,7 +111,7 @@ const StyledPrimaryButton = styled(PrimaryButton)`
 
 const ModalHeader = styled(Modal.Header)`
     &&&& {
-        margin-bottom: 16;
+        margin-bottom: 16px;
     }
 `;
 

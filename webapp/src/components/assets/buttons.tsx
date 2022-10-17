@@ -76,6 +76,11 @@ export const PrimaryButton = styled(Button)`
             opacity: 1;
         }
     }
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }    
 `;
 
 export const SubtlePrimaryButton = styled(Button)`
