@@ -11,19 +11,15 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookViewTarget} from 'src/types/telemetry';
-
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-
+import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
-
 import ScrollNavBase from './scroll_nav';
-
 import Section from './section';
 
 interface Props {
@@ -141,6 +137,10 @@ const Outline = ({playbook, refetch}: Props) => {
                     playbook={playbook}
                 />
             </Section>
+            <PlaybookActionsModal
+                playbook={playbook}
+                readOnly={false}
+            />
         </Sections>
     );
 };
