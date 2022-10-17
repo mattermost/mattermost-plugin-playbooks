@@ -228,6 +228,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		p.permissions,
 		playbookStore,
+		playbookRunStore,
 		p.licenseChecker,
 	)
 	api.NewPlaybookHandler(

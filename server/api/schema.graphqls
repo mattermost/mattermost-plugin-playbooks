@@ -237,6 +237,12 @@ type TimelineEvent {
 
 input RunUpdates {
 	isFavorite: Boolean
+	createChannelMemberOnNewParticipant: Boolean
+	removeChannelMemberOnRemovedParticipant: Boolean
+	statusUpdateBroadcastChannelsEnabled: Boolean
+	statusUpdateBroadcastWebhooksEnabled: Boolean
+	broadcastChannelIDs: [String!]
+	webhookOnStatusUpdateURLs: [String!]
 }
 
 type Metadata {

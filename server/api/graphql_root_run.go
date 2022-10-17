@@ -82,7 +82,13 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	ID      string
 	Updates struct {
-		IsFavorite *bool
+		IsFavorite                              *bool
+		CreateChannelMemberOnNewParticipant     *bool
+		RemoveChannelMemberOnRemovedParticipant *bool
+		StatusUpdateBroadcastChannelsEnabled    *bool
+		StatusUpdateBroadcastWebhooksEnabled    *bool
+		BroadcastChannelIDs                     *[]string
+		WebhookOnStatusUpdateURLs               *[]string
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -91,16 +97,43 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
+		return "", err
+	}
+
 	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
 		return "", err
 	}
 
-	// Enough permissions to do a fav/unfav, check if future ops need RunManageProperties
-	if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
-		return "", err
+	// scalar updates
+	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
+	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
+	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
+	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
+
+	if args.Updates.BroadcastChannelIDs != nil {
+		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
+			return "", err
+		}
+		addConcatToSetmap(setmap, "ConcatenatedBroadcastChannelIDs", args.Updates.BroadcastChannelIDs)
 	}
 
+	if args.Updates.WebhookOnStatusUpdateURLs != nil {
+		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnStatusUpdateURLs); err != nil {
+			return "", err
+		}
+		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
+	}
+
+	if len(setmap) > 0 {
+		if err := c.playbookRunStore.GraphqlUpdate(args.ID, setmap); err != nil {
+			return "", err
+		}
+	}
+
+	// fav / unfav
 	if args.Updates.IsFavorite != nil {
 		if *args.Updates.IsFavorite {
 			if err := c.categoryService.AddFavorite(

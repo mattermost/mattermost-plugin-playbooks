@@ -1432,6 +1432,23 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	return nil
 }
 
+func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run with id '%s'", id)
+	}
+
+	return nil
+}
+
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	newChecklists := populateChecklistIDs(playbookRun.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
