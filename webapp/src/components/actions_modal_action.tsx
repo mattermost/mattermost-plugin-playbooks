@@ -11,7 +11,7 @@ interface Props {
     title: string;
     onToggle: () => void;
     editable: boolean;
-    children: React.ReactNode;
+    children?: React.ReactNode;
 }
 
 const Action = (props: Props) => {
@@ -28,14 +28,14 @@ const Action = (props: Props) => {
             >
                 <Title clickable={props.editable}>{props.title}</Title>
                 <Toggle
+                    disabled={!props.editable}
                     isChecked={props.enabled}
                     onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
-                    disabled={!props.editable}
                 />
             </Container>
             {props.enabled &&
             <ChildrenContainer>
-                {props.children}
+                {props.children ?? null}
             </ChildrenContainer>
             }
         </Wrapper>

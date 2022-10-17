@@ -28,6 +28,7 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
     const [categorizeChannelEnabled, setCategorizeChannelEnabled] = useState(playbook.categorize_channel_enabled);
     const [welcomeMessage, setWelcomeMessage] = useState(playbook.message_on_join);
     const [categoryName, setCategoryName] = useState(playbook.category_name);
+    const archived = playbook.delete_at !== 0;
 
     const onHide = () => {
         setWelcomeMessageEnabled(playbook.message_on_join_enabled);
@@ -36,11 +37,17 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
     };
 
     const onSave = () => {
+        if (welcomeMessage === '' && welcomeMessageEnabled) {
+            setWelcomeMessageEnabled(false);
+        }
+        if (categoryName === '' && categorizeChannelEnabled) {
+            setCategorizeChannelEnabled(false);
+        }
         updatePlaybook({
-            categoryName,
+            categoryName: categoryName ?? '',
             categorizeChannelEnabled,
             messageOnJoin: welcomeMessage,
-            messageOnJoinEnabled: Boolean(welcomeMessage.trim()),
+            messageOnJoinEnabled: welcomeMessageEnabled,
         });
         dispatch(hidePlaybookActionsModal());
     };
@@ -49,7 +56,7 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
         <ActionsModal
             id={'channel-actions-modal'}
             title={formatMessage({defaultMessage: 'Channel Actions'})}
-            subtitle={formatMessage({defaultMessage: 'Channel actions allow you to automate activities for this channel'})}
+            subtitle={formatMessage({defaultMessage: 'Channel actions allow you to automate activities for the channel'})}
             show={show}
             onHide={onHide}
             editable={!readOnly}
@@ -64,24 +71,24 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
                         <Action
                             enabled={welcomeMessageEnabled}
                             title={formatMessage({defaultMessage: 'Send a temporary welcome message to the user'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !archived}
                             onToggle={() => setWelcomeMessageEnabled(!welcomeMessageEnabled)}
                         >
                             <WelcomeActionChildren
                                 message={welcomeMessage}
-                                onUpdate={(msg) => setWelcomeMessage(msg)}
+                                onUpdate={(msg) => setWelcomeMessage(msg.trim())}
                                 editable={!readOnly}
                             />
                         </Action>
                         <Action
                             enabled={categorizeChannelEnabled}
                             title={formatMessage({defaultMessage: 'Add the channel to a sidebar category for the user'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !archived}
                             onToggle={() => setCategorizeChannelEnabled(!categorizeChannelEnabled)}
                         >
                             <CategorizeChannelChildren
                                 categoryName={categoryName}
-                                onUpdate={(name: string) => setCategoryName(name)}
+                                onUpdate={(name: string) => setCategoryName(name.trim())}
                                 editable={!readOnly}
                             />
                         </Action>

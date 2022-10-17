@@ -31,6 +31,9 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
     const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
 
+    const [createChannelMemberEnabled, setCreateChannelMemberEnabled] = useState(playbookRun.create_channel_member_on_new_participant);
+    const [removeChannelMemberEnabled, setRemoveChannelMemberEnabled] = useState(playbookRun.remove_channel_member_on_removed_participant);
+
     const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
     const [isValid, setIsValid] = useState<boolean>(true);
@@ -53,6 +56,8 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
             broadcast_channel_ids: channelIds,
             status_update_broadcast_webhooks_enabled: sendOutgoingWebhookEnabled,
             webhook_on_status_update_urls: webhooks,
+            create_channel_member_on_new_participant: createChannelMemberEnabled,
+            remove_channel_member_on_removed_participant: removeChannelMemberEnabled,
         });
     };
 
@@ -110,6 +115,32 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                                 {formatMessage({defaultMessage: 'Please enter one webhook per line'})}
                             </HelpText>
                         </Action>
+                    </ActionsContainer>
+                </Trigger>
+
+                <Trigger
+                    title={formatMessage({defaultMessage: 'When a participant joins the run'})}
+                >
+                    <ActionsContainer>
+                        <Action
+                            enabled={createChannelMemberEnabled}
+                            title={formatMessage({defaultMessage: 'Add them to the run channel'})}
+                            editable={!readOnly}
+                            onToggle={() => setCreateChannelMemberEnabled(!createChannelMemberEnabled)}
+                        />
+                    </ActionsContainer>
+                </Trigger>
+
+                <Trigger
+                    title={formatMessage({defaultMessage: 'When a participant leaves the run'})}
+                >
+                    <ActionsContainer>
+                        <Action
+                            enabled={removeChannelMemberEnabled}
+                            title={formatMessage({defaultMessage: 'Remove them from the run channel'})}
+                            editable={!readOnly}
+                            onToggle={() => setRemoveChannelMemberEnabled(!removeChannelMemberEnabled)}
+                        />
                     </ActionsContainer>
                 </Trigger>
             </TriggersContainer>

@@ -168,47 +168,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
             </StyledSection>
 
-            {/* <StyledSection>
-                <StyledSectionTitle>
-                    <AccountPlusOutlineIcon size={22}/>
-                    <FormattedMessage defaultMessage='When a new member joins the channel'/>
-                </StyledSectionTitle>
-                <Setting id={'user-joins-message'}>
-                    <AutomationTitle>
-                        <Toggle
-                            disabled={archived}
-                            isChecked={playbook.message_on_join_enabled}
-                            onChange={() => {
-                                updatePlaybook({
-                                    messageOnJoinEnabled: !playbook.message_on_join_enabled,
-                                });
-                            }}
-                        />
-                        <div><FormattedMessage defaultMessage='Send a welcome message'/></div>
-                    </AutomationTitle>
-                    <MarkdownEdit
-                        placeholder={formatMessage({defaultMessage: 'Send a welcome message…'})}
-                        value={playbook.message_on_join}
-                        disabled={!playbook.message_on_join_enabled || archived}
-                        onSave={(messageOnJoin) => {
-                            updatePlaybook({
-                                messageOnJoin,
-                                messageOnJoinEnabled: Boolean(messageOnJoin.trim()),
-                            });
-                        }}
-                    />
-                </Setting>
-                <Setting id={'user-joins-channel-categorize'}>
-                    <CategorizePlaybookRun
-                        disabled={archived}
-                        enabled={playbook.categorize_channel_enabled}
-                        onToggle={handleToggleCategorizePlaybookRun}
-                        categoryName={playbook.category_name}
-                        onCategorySelected={handleCategoryNameChange}
-                    />
-                </Setting>
-            </StyledSection> */}
-
             <StyledSection>
                 <StyledSectionTitle>
                     <AccountPlusOutlineIcon size={22}/>

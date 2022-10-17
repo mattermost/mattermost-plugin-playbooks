@@ -1114,6 +1114,8 @@ func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID, userID string, 
 	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
 	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
 	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
+	playbookRunToModify.CreateChannelMemberOnNewParticipant = settings.CreateChannelMemberOnNewParticipant
+	playbookRunToModify.RemoveChannelMemberOnRemovedParticipant = settings.RemoveChannelMemberOnRemovedParticipant
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")

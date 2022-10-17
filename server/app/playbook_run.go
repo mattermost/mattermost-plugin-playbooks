@@ -539,6 +539,9 @@ type RunAction struct {
 
 	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+
+	CreateChannelMemberOnNewParticipant     bool `json:"create_channel_member_on_new_participant"`
+	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant"`
 }
 
 const (
