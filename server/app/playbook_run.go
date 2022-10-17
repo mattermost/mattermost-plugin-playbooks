@@ -748,9 +748,6 @@ type PlaybookRunService interface {
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
 
-	// UpdateRunActions updates status update broadcast settings
-	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
-
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
@@ -762,6 +759,9 @@ type PlaybookRunService interface {
 
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -963,9 +963,6 @@ type PlaybookRunTelemetry interface {
 
 	// RunAction tracks the run actions, i.e., status broadcast action
 	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numBroadcasts int)
-
-	// UpdateRunActions tracks actions settings update
-	UpdateRunActions(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {

@@ -79,17 +79,19 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	return ret, nil
 }
 
+type RunUpdates struct {
+	IsFavorite                              *bool
+	CreateChannelMemberOnNewParticipant     *bool
+	RemoveChannelMemberOnRemovedParticipant *bool
+	StatusUpdateBroadcastChannelsEnabled    *bool
+	StatusUpdateBroadcastWebhooksEnabled    *bool
+	BroadcastChannelIDs                     *[]string
+	WebhookOnStatusUpdateURLs               *[]string
+}
+
 func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	ID      string
-	Updates struct {
-		IsFavorite                              *bool
-		CreateChannelMemberOnNewParticipant     *bool
-		RemoveChannelMemberOnRemovedParticipant *bool
-		StatusUpdateBroadcastChannelsEnabled    *bool
-		StatusUpdateBroadcastWebhooksEnabled    *bool
-		BroadcastChannelIDs                     *[]string
-		WebhookOnStatusUpdateURLs               *[]string
-	}
+	Updates RunUpdates
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -127,13 +129,18 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
 
+	// Auth level required: runManageProperties if non empty
 	if len(setmap) > 0 {
-		if err := c.playbookRunStore.GraphqlUpdate(args.ID, setmap); err != nil {
+		if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
+			return "", err
+		}
+
+		if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
 			return "", err
 		}
 	}
 
-	// fav / unfav
+	// fav / unfav (auth level required: runView)
 	if args.Updates.IsFavorite != nil {
 		if *args.Updates.IsFavorite {
 			if err := c.categoryService.AddFavorite(

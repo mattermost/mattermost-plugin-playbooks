@@ -24,7 +24,6 @@ type GraphQLHandler struct {
 	config             config.Service
 	permissions        *app.PermissionsService
 	playbookStore      app.PlaybookStore
-	playbookRunStore   app.PlaybookRunStore
 	licenceChecker     app.LicenseChecker
 
 	schema *graphql.Schema
@@ -42,7 +41,6 @@ func NewGraphQLHandler(
 	configService config.Service,
 	permissions *app.PermissionsService,
 	playbookStore app.PlaybookStore,
-	playbookRunStore app.PlaybookRunStore,
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
 	handler := &GraphQLHandler{
@@ -54,7 +52,6 @@ func NewGraphQLHandler(
 		config:             configService,
 		permissions:        permissions,
 		playbookStore:      playbookStore,
-		playbookRunStore:   playbookRunStore,
 		licenceChecker:     licenceChecker,
 	}
 
@@ -91,7 +88,6 @@ type GraphQLContext struct {
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
 	playbookStore      app.PlaybookStore
-	playbookRunStore   app.PlaybookRunStore
 	categoryService    app.CategoryService
 	pluginAPI          *pluginapi.Client
 	logger             logrus.FieldLogger
@@ -132,7 +128,6 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		config:             h.config,
 		permissions:        h.permissions,
 		playbookStore:      h.playbookStore,
-		playbookRunStore:   h.playbookRunStore,
 		licenceChecker:     h.licenceChecker,
 	}
 

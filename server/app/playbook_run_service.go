@@ -1103,26 +1103,18 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
-// UpdateRunActions updates status update broadcast settings
-func (s *PlaybookRunServiceImpl) UpdateRunActions(playbookRunID, userID string, settings RunAction) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+// GraphqlUpdate updates fields based on a setmap
+func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
+		return err
+	}
+
+	run, err := s.store.GetPlaybookRun(id)
 	if err != nil {
 		return err
 	}
 
-	playbookRunToModify.BroadcastChannelIDs = settings.BroadcastChannelIDs
-	playbookRunToModify.StatusUpdateBroadcastChannelsEnabled = settings.StatusUpdateBroadcastChannelsEnabled
-	playbookRunToModify.WebhookOnStatusUpdateURLs = settings.WebhookOnStatusUpdateURLs
-	playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled = settings.StatusUpdateBroadcastWebhooksEnabled
-	playbookRunToModify.CreateChannelMemberOnNewParticipant = settings.CreateChannelMemberOnNewParticipant
-	playbookRunToModify.RemoveChannelMemberOnRemovedParticipant = settings.RemoveChannelMemberOnRemovedParticipant
-
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
-	}
-
-	s.telemetry.UpdateRunActions(playbookRunToModify, userID)
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, run, run.ChannelID)
 
 	return nil
 }

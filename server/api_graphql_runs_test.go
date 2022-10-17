@@ -383,6 +383,88 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 	})
 }
 
+func TestRunActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update run actions", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(e.T, err)
+
+		// data previous to update
+		prevRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, prevRun.StatusUpdateBroadcastChannelsEnabled)
+		assert.False(t, prevRun.StatusUpdateBroadcastWebhooksEnabled)
+		assert.Empty(t, prevRun.WebhookOnStatusUpdateURLs)
+		assert.Empty(t, prevRun.BroadcastChannelIDs)
+		assert.False(t, prevRun.CreateChannelMemberOnNewParticipant)
+		assert.False(t, prevRun.RemoveChannelMemberOnRemovedParticipant)
+
+		//update
+		updates := map[string]interface{}{
+			"statusUpdateBroadcastChannelsEnabled":    true,
+			"statusUpdateBroadcastWebhooksEnabled":    true,
+			"broadcastChannelIDs":                     []string{e.BasicPublicChannel.Id},
+			"webhookOnStatusUpdateURLs":               []string{"https://url1", "https://url2"},
+			"createChannelMemberOnNewParticipant":     true,
+			"removeChannelMemberOnRemovedParticipant": true,
+		}
+		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.True(t, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.True(t, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		require.Equal(t, updates["broadcastChannelIDs"], editedRun.BroadcastChannelIDs)
+		require.Equal(t, updates["webhookOnStatusUpdateURLs"], editedRun.WebhookOnStatusUpdateURLs)
+		require.True(t, editedRun.CreateChannelMemberOnNewParticipant)
+		require.True(t, editedRun.RemoveChannelMemberOnRemovedParticipant)
+	})
+
+	t.Run("update fails due to lack of permissions", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(e.T, err)
+
+		//update
+		updates := map[string]interface{}{
+			"statusUpdateBroadcastChannelsEnabled":    true,
+			"statusUpdateBroadcastWebhooksEnabled":    true,
+			"broadcastChannelIDs":                     []string{e.BasicPublicChannel.Id},
+			"webhookOnStatusUpdateURLs":               []string{"https://url1", "https://url2"},
+			"createChannelMemberOnNewParticipant":     true,
+			"removeChannelMemberOnRemovedParticipant": true,
+		}
+		response, err := updateRun(e.PlaybooksClient2, run.ID, updates)
+		require.NotEmpty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the action settings are updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.False(t, editedRun.StatusUpdateBroadcastChannelsEnabled)
+		require.False(t, editedRun.StatusUpdateBroadcastWebhooksEnabled)
+		assert.Empty(t, editedRun.WebhookOnStatusUpdateURLs)
+		assert.Empty(t, editedRun.BroadcastChannelIDs)
+		require.False(t, editedRun.CreateChannelMemberOnNewParticipant)
+		require.False(t, editedRun.RemoveChannelMemberOnRemovedParticipant)
+
+	})
+}
+
 // AddParticipants adds participants to the run
 func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
 	mutation := `
@@ -437,6 +519,26 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 		Variables: map[string]interface{}{
 			"runID":   playbookRunID,
 			"ownerID": newOwnerID,
+		},
+	}, &response)
+
+	return response, err
+}
+
+// UpdateRun updates the run
+func updateRun(c *client.Client, playbookRunID string, updates map[string]interface{}) (graphql.Response, error) {
+	mutation := `
+	mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+		updateRun(id: $id, updates: $updates)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdateRun",
+		Variables: map[string]interface{}{
+			"id":      playbookRunID,
+			"updates": updates,
 		},
 	}, &response)
 
