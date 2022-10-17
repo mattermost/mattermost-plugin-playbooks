@@ -373,7 +373,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         }
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
-    const [confirmConvertPrivateModal, showConfirmConvertPrivateModal] = useConfirmPlaybookConvertPrivateModal(playbook.id, refetch);
+    const [confirmConvertPrivateModal] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
     const {add: addToast} = useToaster();
 
@@ -385,7 +385,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
-    const isEligibleToMakePrivate = currentUserMember && permissionToMakePrivate && licenseToMakePrivate;
+    const isEligibleToMakePrivate = currentUserMember && playbook.public && permissionToMakePrivate && licenseToMakePrivate;
 
     const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 

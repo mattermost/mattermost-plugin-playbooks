@@ -4,7 +4,13 @@ import {useIntl} from 'react-intl';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {useEditPlaybook} from 'src/hooks';
 
-const useConfirmPlaybookConvertPrivateModal = (playbookId: string, refetch: () => void) => {
+type ConfirmPlaybookConvertPrivateReturn = [React.ReactNode, (show: boolean) => void];
+type Props = {
+    playbookId: string,
+    refetch?: () => void | undefined,
+}
+
+const useConfirmPlaybookConvertPrivateModal = ({playbookId, refetch}: Props): ConfirmPlaybookConvertPrivateReturn => {
     const {formatMessage} = useIntl();
     const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
