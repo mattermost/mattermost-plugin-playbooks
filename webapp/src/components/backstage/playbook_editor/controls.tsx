@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {PropsWithChildren, useEffect, useMemo, useState} from 'react';
+import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
@@ -33,7 +33,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useEditPlaybook, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -61,7 +61,7 @@ import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
 import {StyledDropdownMenuItem} from '../shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from '../lhs_navigation';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import useConfirmPlaybookConvertPrivateModal from '../convert_private_playbook_modal';
 
 type ControlProps = {
     playbook: {
@@ -373,6 +373,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         }
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
+    const [confirmConvertPrivateModal, showConfirmConvertPrivateModal] = useConfirmPlaybookConvertPrivateModal(playbook.id, refetch);
 
     const {add: addToast} = useToaster();
 
@@ -385,8 +386,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
     const isEligibleToMakePrivate = currentUserMember && permissionToMakePrivate && licenseToMakePrivate;
-    const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
-    const [_, updatePlaybook] = useEditPlaybook(playbook.id, refetch);
 
     const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 
@@ -452,7 +451,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         css={`${iconSplitStyling}`}
                         onClick={() => {
                             telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
-                            setShowMakePrivateConfirm(true);
                         }}
                     >
                         <FormattedMessage defaultMessage='Convert to private playbook'/>
@@ -494,19 +492,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             </DotMenu>
             {confirmArchiveModal}
             {confirmRestoreModal}
-            <ConfirmModal
-                show={showMakePrivateConfirm}
-                title={formatMessage({defaultMessage: 'Convert to Private playbook'})}
-                message={formatMessage({defaultMessage: 'When you convert to a private playbook, membership and run history is preserved. This change is permanent and cannot be undone. Are you sure you want to convert {playbookTitle} to a private playbook?'}, {playbookTitle: playbook?.title})}
-                confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
-                onConfirm={() => {
-                    if (playbook) {
-                        updatePlaybook({public: false});
-                    }
-                    setShowMakePrivateConfirm(false);
-                }}
-                onCancel={() => setShowMakePrivateConfirm(false)}
-            />
+            {confirmConvertPrivateModal}
         </>
     );
 };
