@@ -9,6 +9,7 @@ import {useDispatch} from 'react-redux';
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+import {useUpdateEffect} from 'react-use';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -31,6 +32,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [addToChannel, setAddToChannel] = useState(false);
+
+    useUpdateEffect(() => {
+        setProfiles([]);
+    }, [show]);
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
