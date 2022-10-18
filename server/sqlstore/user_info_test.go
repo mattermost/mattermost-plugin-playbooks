@@ -54,7 +54,7 @@ func Test_userInfoStore_Get(t *testing.T) {
 			expected := app.UserInfo{
 				ID:                         model.NewId(),
 				LastDailyTodoDMAt:          12345678,
-				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false},
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: false},
 			}
 
 			statement, args, err := sq.Insert("IR_UserInfo").
