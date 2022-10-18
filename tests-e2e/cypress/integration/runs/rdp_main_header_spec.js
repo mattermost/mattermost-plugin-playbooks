@@ -145,6 +145,12 @@ describe('runs > run details page > header', () => {
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+                // # Intercept these graphQL requests for wait()'s
+                // # that help ensure rendering has finished.
+                cy.gqlInterceptQuery('PlaybookLHS');
+                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                cy.assertRunDetailsPageRenderComplete(testUser.username);
             });
         });
 
@@ -426,14 +432,12 @@ describe('runs > run details page > header', () => {
                     // # Intercept all calls to telemetry
                     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
-                    cy.wait('@telemetry');
-
                     // # Add viewer user to the channel
                     cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
 
                     // # Change the owner to testViewerUser
                     cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
-                    cy.wait(500);
+                    cy.findByTestId('assignee-profile-selector').should('contain', testViewerUser.username);
 
                     // # Click on leave run
                     getDropdownItemByText('Leave and unfollow run').click();
@@ -450,14 +454,11 @@ describe('runs > run details page > header', () => {
 
                     // # assert telemetry data
                     cy.get('@telemetry.all').then((xhrs) => {
-                        expect(xhrs.length).to.eq(2);
-                        expect(xhrs[0].request.body.name).to.eq('run_details');
-                        expect(xhrs[0].request.body.type).to.eq('page');
-
-                        expect(xhrs[1].request.body.name).to.eq('playbookrun_leave');
-                        expect(xhrs[1].request.body.type).to.eq('track');
-                        expect(xhrs[1].request.body.properties.from).to.eq('run_details');
-                        expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                        expect(xhrs.length).to.eq(1);
+                        expect(xhrs[0].request.body.name).to.eq('playbookrun_leave');
+                        expect(xhrs[0].request.body.type).to.eq('track');
+                        expect(xhrs[0].request.body.properties.from).to.eq('run_details');
+                        expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
                     });
                 });
             });
@@ -490,6 +491,12 @@ describe('runs > run details page > header', () => {
                     // # Visit the playbook run
                     cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
+
+                // # Intercept these graphQL requests for wait()'s
+                // # that help ensure rendering has finished.
+                cy.gqlInterceptQuery('PlaybookLHS');
+                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                cy.assertRunDetailsPageRenderComplete(testUser.username);
             });
         });
 
@@ -497,31 +504,6 @@ describe('runs > run details page > header', () => {
             commonHeaderTests();
 
             describe('Favorite', () => {
-                beforeEach(() => {
-                    // # Login as testUser
-                    cy.apiLogin(testUser);
-
-                    const now = Date.now();
-                    playbookRunName = 'Playbook Run (' + now + ')';
-                    playbookRunChannelName = 'playbook-run-' + now;
-                    cy.apiRunPlaybook({
-                        teamId: testTeam.id,
-                        playbookId: testPublicPlaybookAndChannel.id,
-                        playbookRunName,
-                        ownerUserId: testUser.id,
-                    }).then((run) => {
-                        playbookRun = run;
-
-                        cy.apiLogin(testViewerUser).then(() => {
-                            // # Visit the playbook run
-                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
-
-                            // # let the page render completely
-                            cy.wait(3000);
-                        });
-                    });
-                });
-
                 it('add and remove from LHS', () => {
                     // # Click fav icon
                     getHeader().getStyledComponent('StarButton').click();
@@ -546,9 +528,6 @@ describe('runs > run details page > header', () => {
                 it('click button to show modal and cancel', () => {
                     // * Assert that component is rendered
                     getHeader().findByText('Participate').should('be.visible');
-
-                    // # Wait for useChannel
-                    cy.wait(500);
 
                     // * Click Participate button
                     getHeader().findByText('Participate').click();
@@ -576,9 +555,6 @@ describe('runs > run details page > header', () => {
                     // * Assert component is rendered
                     getHeader().findByText('Participate').should('be.visible');
 
-                    // # Wait for useChannel
-                    cy.wait(500).wait('@telemetry');
-
                     // * Click start-participating button
                     getHeader().findByText('Participate').click();
 
@@ -588,22 +564,19 @@ describe('runs > run details page > header', () => {
                     // * Assert that modal is not shown
                     cy.get('#confirmModal').should('not.exist');
 
-                    // # Wait for ws event to be received
-                    cy.wait(500);
-
                     // * Verify run has been added to LHS
-                    cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+                    cy.findByTestId('lhs-navigation')
+                        .should('be.visible')
+                        .findByText(playbookRunName)
+                        .should('be.visible');
 
                     // # assert telemetry data
                     cy.get('@telemetry.all').then((xhrs) => {
-                        expect(xhrs.length).to.eq(2);
-                        expect(xhrs[0].request.body.name).to.eq('run_details');
-                        expect(xhrs[0].request.body.type).to.eq('page');
-
-                        expect(xhrs[1].request.body.name).to.eq('playbookrun_participate');
-                        expect(xhrs[1].request.body.type).to.eq('track');
-                        expect(xhrs[1].request.body.properties.from).to.eq('run_details');
-                        expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                        expect(xhrs.length).to.eq(1);
+                        expect(xhrs[0].request.body.name).to.eq('playbookrun_participate');
+                        expect(xhrs[0].request.body.type).to.eq('track');
+                        expect(xhrs[0].request.body.properties.from).to.eq('run_details');
+                        expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
                     });
                 });
 
@@ -626,12 +599,11 @@ describe('runs > run details page > header', () => {
 
                         // # Visit the playbook run
                         cy.visit(`/playbooks/runs/${run.id}`);
+                        cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                        cy.assertRunDetailsPageRenderComplete(testUser.username);
 
                         // * Assert that component is rendered
                         getHeader().findByText('Participate').should('be.visible');
-
-                        // # Wait for useChannel
-                        cy.wait(500);
 
                         // # Click start-participating button
                         getHeader().findByText('Participate').click();
@@ -641,9 +613,6 @@ describe('runs > run details page > header', () => {
 
                         // * Assert that modal is not shown
                         cy.get('#confirmModal').should('not.exist');
-
-                        // # Wait for ws event to be received
-                        cy.wait(500);
 
                         // * Verify run has been added to LHS
                         cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');

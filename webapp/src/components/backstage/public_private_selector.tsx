@@ -3,8 +3,9 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
+import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
+
 import {useAllowPrivatePlaybooks} from 'src/hooks';
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import Tooltip from 'src/components/widgets/tooltip';
 
 type Props = {
@@ -68,9 +69,10 @@ const SmallText = styled.div`
 	color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
+const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     margin-left: 8px;
     vertical-align: sub;
+    color: var(--online-indicator);
 `;
 
 const PublicPrivateSelector = (props: Props) => {
@@ -136,7 +138,7 @@ const PrivateButton = (props: {public: boolean, publicButtonDisabled: boolean, p
                 <BigText>
                     {formatMessage({defaultMessage: 'Private playbook'})}
                     {!privatePlaybooksAllowed &&
-                    <PositionedUpgradeBadge/>
+                    <PositionedKeyVariantCircleIcon/>
                     }
                 </BigText>
                 <SmallText>{formatMessage({defaultMessage: 'Only invited members'})}</SmallText>
