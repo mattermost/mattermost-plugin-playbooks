@@ -6,8 +6,8 @@ package app
 // DigestNotificationSettings is a separate type to make it easy to marshal/unmarshal it into JSON
 // in the sqlstore. It is set by the user with the `/playbook settings digest [on/off]` slash command.
 type DigestNotificationSettings struct {
-	DisableDailyDigest  bool `json:"disable_daily_digest"`
-	DisableWeeklyDigest bool `json:"disable_weekly_digest"`
+	DisableDailyDigest  bool  `json:"disable_daily_digest"`
+	DisableWeeklyDigest *bool `json:"disable_weekly_digest,omitempty"`
 }
 
 type UserInfo struct {

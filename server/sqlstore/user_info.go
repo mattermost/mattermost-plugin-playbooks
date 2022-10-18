@@ -97,6 +97,11 @@ func toUserInfo(rawUserInfo sqlUserInfo) (app.UserInfo, error) {
 		return userInfo, errors.Wrapf(err, "failed to unmarshal DigestNotificationSettings for userid: %s", userInfo.ID)
 	}
 
+	// if weekly digest is not yet configured, we use the daily digest setting as a default
+	if userInfo.DigestNotificationSettings.DisableWeeklyDigest == nil {
+		userInfo.DigestNotificationSettings.DisableWeeklyDigest = &userInfo.DigestNotificationSettings.DisableDailyDigest
+	}
+
 	return userInfo, nil
 }
 

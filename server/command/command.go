@@ -885,9 +885,9 @@ func (r *Runner) actionSettings(args []string) {
 	oldInfo := info
 
 	if args[0] == "weekly-digest" && args[1] == "off" {
-		info.DisableWeeklyDigest = true
+		*info.DisableWeeklyDigest = true
 	} else if args[0] == "weekly-digest" {
-		info.DisableWeeklyDigest = false
+		*info.DisableWeeklyDigest = false
 	} else if args[0] == "digest" && args[1] == "off" {
 		info.DisableDailyDigest = true
 	} else {
@@ -918,7 +918,7 @@ func (r *Runner) displayCurrentSettings() {
 		dailyDigestSetting = "Daily digest: off"
 	}
 	weeklyDigestSetting := "Weekly digest: on"
-	if info.DisableWeeklyDigest {
+	if *info.DisableWeeklyDigest {
 		weeklyDigestSetting = "Weekly digest: off"
 	}
 	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s, %s", dailyDigestSetting, weeklyDigestSetting))
