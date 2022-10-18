@@ -27,7 +27,8 @@ import {useTutorialStepper} from '../tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
-import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
@@ -68,7 +69,13 @@ const RHSRunDetails = () => {
 
     const addToast = useToaster().add;
     const displayReadOnlyToast = () => {
-        addToast(formatMessage({defaultMessage: 'Become a participant to interact with this run'}), ToastType.Failure);
+        addToast({
+            content: formatMessage({defaultMessage: 'Become a participant to interact with this run'}),
+            toastStyle: ToastStyle.Informational,
+            buttonName: formatMessage({defaultMessage: 'Participate'}),
+            buttonCallback: () => console.log('I did it!'),
+            iconName: 'account-plus-outline',
+        });
     };
 
     const rhsContainerPunchout = useMeasurePunchouts(

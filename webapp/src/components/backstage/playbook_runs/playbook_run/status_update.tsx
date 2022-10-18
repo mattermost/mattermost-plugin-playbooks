@@ -26,7 +26,9 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Tooltip from 'src/components/widgets/tooltip';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
-import {ToastType, useToaster} from '../../toast_banner';
+import {useToaster} from '../../toast_banner';
+
+import {ToastStyle} from '../../toast';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -87,9 +89,15 @@ const useRequestUpdate = (playbookRunId: string) => {
     const requestStatusUpdate = async () => {
         const response = await requestUpdate(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'The update request was unsuccessful.'}), ToastType.Failure);
+            addToast({
+                content: formatMessage({defaultMessage: 'The update request was unsuccessful.'}),
+                toastStyle: ToastStyle.Failure,
+            });
         } else {
-            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel. '}), ToastType.Success);
+            addToast({
+                content: formatMessage({defaultMessage: 'Your request was sent to the run channel. '}),
+                toastStyle: ToastStyle.Success,
+            });
         }
     };
     const RequestUpdateConfirmModal = (

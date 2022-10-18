@@ -44,7 +44,7 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
         <StyledDropdownMenuItem
             onClick={() => {
                 copyToClipboard(getSiteUrl() + '/playbooks/runs/' + props.playbookRunId);
-                addToast(formatMessage({defaultMessage: 'Copied!'}));
+                addToast({content: formatMessage({defaultMessage: 'Copied!'})});
             }}
         >
             <LinkVariantIcon size={18}/>

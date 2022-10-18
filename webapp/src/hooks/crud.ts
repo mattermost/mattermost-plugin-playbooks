@@ -141,7 +141,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
-        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+        addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
