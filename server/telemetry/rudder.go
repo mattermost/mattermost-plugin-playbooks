@@ -624,6 +624,8 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 	properties["Action"] = actionDigest
 	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
 	properties["NewDisableDailyDigest"] = new.DisableDailyDigest
+	properties["OldDisableWeeklyDigest"] = old.DisableWeeklyDigest
+	properties["NewDisableWeeklyDigest"] = new.DisableWeeklyDigest
 	t.Track(eventSettings, properties)
 }
 
