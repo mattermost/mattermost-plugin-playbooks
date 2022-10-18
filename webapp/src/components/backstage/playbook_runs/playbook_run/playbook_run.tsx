@@ -89,11 +89,12 @@ const PlaybookRunDetails = () => {
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+    const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
     useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
         from: queryParams.from ?? '',
         playbook_id: playbookRun?.playbook_id,
         playbookrun_id: playbookRun?.id,
-        role: playbookRun?.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer,
+        role,
     });
 
     const RHS = useRHS(playbookRun);
@@ -134,7 +135,7 @@ const PlaybookRunDetails = () => {
     }, [urlHash]);
 
     // loading state
-    if (playbookRun === undefined) {
+    if (!playbookRun) {
         return null;
     }
 
@@ -142,8 +143,6 @@ const PlaybookRunDetails = () => {
     if (playbookRun === null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
-
-    const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
     const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
