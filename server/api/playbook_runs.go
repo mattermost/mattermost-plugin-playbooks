@@ -700,14 +700,8 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	// Check if the target user (params.OwnerID) has permissions
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(params.OwnerID, playbookRun.ID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(params.OwnerID, vars["id"])) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "target user is not a member of the run", nil)
 		return
 	}
 

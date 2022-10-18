@@ -1,6 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Telemetry migration is in-progress
+// If you need to check the old
+// Event/Telemetry inventory available at https://docs.google.com/spreadsheets/d/15VBD2i-v7JX11H80beJj64wU8lqyMAm1UrDIjKjx63o/edit#gid=374475626
+
 export enum PlaybookViewTarget {
     Usage = 'view_playbook_usage',
     Outline = 'view_playbook_outline',
@@ -9,18 +13,8 @@ export enum PlaybookViewTarget {
 
 export enum PlaybookRunViewTarget {
 
-    // Old tracking approach
-
-    // @deprecated triggered at old run details page
-    Overview = 'view_run_overview',
-
-    // @deprecated triggered at old run details
-    Retrospective = 'view_run_retrospective',
-
+    // Pending to be migrated to page/channel_run_rhs
     ChannelsRHSDetails = 'view_run_channels_rhs_details',
-
-    // New tracking approach
-    // They're tracked as "page tracking", that's why they're not prefixed with "view_"
 
     // StatusUpdate is triggered any time a StatusUpdatePost is shown in a
     // channel, so we track impressions
@@ -31,9 +25,11 @@ export enum PlaybookRunViewTarget {
 }
 
 export enum PlaybookRunEventTarget {
-    RequestUpdateClick = 'playbookrun_request_update_click',
-    GetInvolvedClick = 'playbookrun_get_involved_click',
-    GetInvolvedJoin = 'playbookrun_get_involved_join',
+    RequestUpdateClick = 'playbookrun_request_update',
+    Participate = 'playbookrun_participate',
+    Leave = 'playbookrun_leave',
+    Follow = 'playbookrun_follow',
+    Unfollow = 'playbookrun_unfollow',
 }
 
 export type TelemetryViewTarget = PlaybookViewTarget | PlaybookRunViewTarget;
