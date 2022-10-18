@@ -70,8 +70,9 @@ func GetDaysDiff(start, end time.Time) int {
 	return days
 }
 
-func GetUnixTimeForTimezone(currentTime int64, timezone *time.Location) time.Time {
-	return time.Unix(currentTime/1000, 0).In(timezone)
+// GetUnixTimeForTimezone returns the unix time for a given timezone and a time in milliseconds
+func GetUnixTimeForTimezone(currentTimeMillis int64, timezone *time.Location) time.Time {
+	return time.Unix(currentTimeMillis/1000, 0).In(timezone)
 }
 
 func GetCurrentUnixTime(timezone *time.Location) time.Time {
