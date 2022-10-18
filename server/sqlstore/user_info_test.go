@@ -94,8 +94,9 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// insert:
 			expected = app.UserInfo{
-				ID:                userID,
-				LastDailyTodoDMAt: 12345678,
+				ID:                         userID,
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: &[]bool{false}[0]},
 			}
 
 			err = userInfoStore.Upsert(expected)
@@ -111,8 +112,9 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 		t.Run("upserts userInfo correctly", func(t *testing.T) {
 			expected := app.UserInfo{
-				ID:                model.NewId(),
-				LastDailyTodoDMAt: 12345678,
+				ID:                         model.NewId(),
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: &[]bool{false}[0]},
 			}
 
 			// insert:
