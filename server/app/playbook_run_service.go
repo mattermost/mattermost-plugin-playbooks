@@ -344,6 +344,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrap(err, "failed to add users to playbook run channel")
 	}
 
+	// add owner as user
+	err = s.AddParticipants(playbookRun.ID, []string{playbookRun.OwnerUserID}, playbookRun.OwnerUserID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add owner as a participant")
+	}
+	err = s.Follow(playbookRun.ID, playbookRun.OwnerUserID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make owner follow run")
+	}
+
 	invitedUserIDs := playbookRun.InvitedUserIDs
 
 	for _, groupID := range playbookRun.InvitedGroupIDs {
