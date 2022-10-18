@@ -96,5 +96,13 @@
     {
         "id": "app.user.run.retro_publish",
         "translation": "@{{.Name}} hat eine Retrospektive veröffentlicht\n[Ganze Retrospektive ansehen]({{.URL}})\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_participate",
+        "translation": "@{{.Name}} nimmt am Durchlauf teil. @{{.Name}} wurde nicht automatisch zu diesem privaten Kanal hinzugefügt, aber jedes Mitglied kann @{{.Name}} hinzufügen.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_add_participant",
+        "translation": "@{{.Name}} wurde zum Durchlauf von @{{.RequesterName}} hinzugefügt. @{{.Name}} wurde nicht zum Kanal hinzugefügt, da @{{.RequesterName}} kein Mitglied des privaten Kanals ist.\n"
     }
 ]

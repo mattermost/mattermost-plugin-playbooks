@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
@@ -19,19 +19,18 @@ import {
     ArrowForwardIosIcon,
 } from '@mattermost/compass-icons/components';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
-import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from '@mattermost/types/users';
 
-import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton} from 'src/components/assets/buttons';
 import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
+import FollowButton from 'src/components/backstage/follow_button';
 import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-
-import {requestJoinChannel, followPlaybookRun, unfollowPlaybookRun, setOwner as clientSetOwner} from 'src/client';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {requestJoinChannel, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
 import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
@@ -41,48 +40,6 @@ import {CompassIcon} from 'src/types/compass';
 import {useLHSRefresh} from '../../lhs_navigation';
 
 import {FollowState} from './rhs_info';
-
-export const useFollow = (runID: string, followState: FollowState) => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-    const {isFollowing, followers, setFollowers} = followState;
-    const currentUser = useSelector(getCurrentUser);
-    const refreshLHS = useLHSRefresh();
-
-    const toggleFollow = () => {
-        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        action(runID)
-            .then(() => {
-                const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
-                setFollowers(newFollowers);
-                refreshLHS();
-            })
-            .catch(() => {
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
-            });
-    };
-
-    const FollowingButton = () => {
-        if (isFollowing) {
-            return (
-                <UnfollowButton onClick={toggleFollow}>
-                    {formatMessage({defaultMessage: 'Following'})}
-                </UnfollowButton>
-            );
-        }
-
-        return (
-            <FollowButton
-                data-testid={'rdp-rhs-follow-button'}
-                onClick={toggleFollow}
-            >
-                {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
-        );
-    };
-
-    return FollowingButton;
-};
 
 const useRequestJoinChannel = (playbookRunId: string) => {
     const {formatMessage} = useIntl();
@@ -135,7 +92,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
     const addToast = useToaster().add;
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const FollowingButton = useFollow(run.id, followState);
     const refreshLHS = useLHSRefresh();
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 
@@ -223,7 +179,11 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 name={formatMessage({defaultMessage: 'Followers'})}
             >
                 <FollowersWrapper>
-                    <FollowingButton/>
+                    <FollowButton
+                        runID={run.id}
+                        followState={followState}
+                        trigger={'run_details'}
+                    />
                     <Following
                         userIds={followState.followers}
                         maxUsers={4}
@@ -402,19 +362,10 @@ const FollowersWrapper = styled.div`
     align-items: center;
 `;
 
-const FollowButton = styled(TertiaryButton)`
+const RequestJoinButton = styled(TertiaryButton)`
     font-size: 12px;
     height: 24px;
     padding: 0 10px;
-`;
-
-const UnfollowButton = styled(SecondaryButton)`
-    font-size: 12px;
-    height: 24px;
-    padding: 0 10px;
-    `;
-
-const RequestJoinButton = styled(FollowButton)`
     margin-right: 10px;
 `;
 

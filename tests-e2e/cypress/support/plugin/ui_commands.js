@@ -299,3 +299,9 @@ Cypress.Commands.add('getFirstPostId', () => {
     cy.findAllByTestId('postView').first().should('have.attr', 'id').and('not.include', ':')
         .invoke('replace', 'post_', '');
 });
+
+Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
+    cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
+    cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
+    cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
+});

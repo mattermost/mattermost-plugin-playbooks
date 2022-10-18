@@ -22,6 +22,7 @@ import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, Http
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
+import GlobalHeaderRight from 'src/components/global_header_right';
 
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
@@ -154,6 +155,7 @@ export default class Plugin {
             }
         });
 
+        // eslint-disable-next-line react/require-optimization
         const BackstageWrapped = () => (
             <ApolloWrapped
                 component={<Backstage/>}
@@ -161,9 +163,17 @@ export default class Plugin {
             />
         );
 
+        // eslint-disable-next-line react/require-optimization
         const RHSWrapped = () => (
             <ApolloWrapped
                 component={<RightHandSidebar/>}
+                client={graphqlClient}
+            />
+        );
+        // eslint-disable-next-line react/require-optimization
+        const RHSTitleWrapped = () => (
+            <ApolloWrapped
+                component={<RHSTitle/>}
                 client={graphqlClient}
             />
         );
@@ -177,12 +187,12 @@ export default class Plugin {
             '/playbooks',
             BackstageWrapped,
             GlobalHeaderCenter,
-            () => null,
+            GlobalHeaderRight,
             enableTeamSidebar
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitleWrapped/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later

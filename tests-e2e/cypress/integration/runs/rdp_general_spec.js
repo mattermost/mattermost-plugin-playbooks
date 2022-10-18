@@ -66,7 +66,7 @@ describe('runs > run details page', () => {
         // # Visit the URL of a non-existing playbook run
         cy.visit(`/playbooks/runs/${testPlaybookRun.id}`);
 
-        // * assert  telemetry pageview
+        // * assert telemetry pageview
         cy.wait('@telemetry').then((interception) => {
             expect(interception.request.body.name).to.eq('run_details');
             expect(interception.request.body.type).to.eq('page');

@@ -51,13 +51,7 @@ export function useEditPlaybook(id: Playbook['id'], callback?: () => void): Edit
         if (playbook) {
             const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
             setPlaybook(updatedPlaybook);
-            const save = async () => {
-                savePlaybook(updatedPlaybook).then(() => {
-                    callback?.();
-                });
-            };
-
-            save();
+            savePlaybook(updatedPlaybook).then(callback);
         }
     };
 

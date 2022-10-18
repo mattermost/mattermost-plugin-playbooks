@@ -23,10 +23,17 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 
 const ID = 'playbooks_run_playbook_dialog';
 
-export const makeModalDefinition = (playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string) => ({
+export const makeModalDefinition = (
+    playbookId: string,
+    defaultOwnerId: string | null,
+    description: string,
+    teamId: string,
+    teamName: string,
+    refreshLHS?: () => void
+) => ({
     modalId: ID,
     dialogType: RunPlaybookModal,
-    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName},
+    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName, refreshLHS},
 });
 
 type Props = {
@@ -35,6 +42,7 @@ type Props = {
     description: string,
     teamId: string,
     teamName: string
+    refreshLHS?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookModal = ({
@@ -42,6 +50,7 @@ const RunPlaybookModal = ({
     defaultOwnerId,
     description,
     teamId,
+    refreshLHS,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -69,6 +78,7 @@ const RunPlaybookModal = ({
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
+                refreshLHS?.();
             }).catch(() => {
             // show error
             });
@@ -115,6 +125,7 @@ const RunPlaybookModal = ({
                 </PlaybookDetail>
                 <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
                 <BaseInput
+                    data-testid={'run-name-input'}
                     autoFocus={true}
                     type={'text'}
                     value={runName}
