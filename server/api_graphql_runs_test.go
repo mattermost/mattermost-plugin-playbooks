@@ -481,17 +481,18 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 		require.Equal(t, user3.Id, run.OwnerUserID)
 	})
 
-	t.Run("set not participant as owner", func(t *testing.T) {
-		response, err := changeRunOwner(e.PlaybooksClient, e.BasicRun.ID, e.RegularUser2.Id)
-		require.NotEmpty(t, response.Errors)
-		require.NoError(t, err)
-	})
-
 	t.Run("not participant tries to change an owner", func(t *testing.T) {
 		response, err := changeRunOwner(e.PlaybooksClient2, e.BasicRun.ID, e.RegularUser.Id)
 		require.NotEmpty(t, response.Errors)
 		require.NoError(t, err)
 	})
+
+	t.Run("set not participant as owner", func(t *testing.T) {
+		response, err := changeRunOwner(e.PlaybooksClient, e.BasicRun.ID, e.RegularUser2.Id)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+	})
+
 }
 
 func TestUpdateRunActions(t *testing.T) {
