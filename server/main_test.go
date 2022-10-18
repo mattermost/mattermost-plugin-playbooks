@@ -129,6 +129,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
 	config.LogSettings.EnableConsole = model.NewBool(true)
 	config.LogSettings.EnableFile = model.NewBool(false)
+	config.LogSettings.ConsoleLevel = model.NewString("INFO")
 
 	// override config with e2etest.config.json if it exists
 	textConfig, err := os.ReadFile("./e2etest.config.json")
@@ -169,7 +170,6 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
-		sapp.SetLogger(testLogger),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
@@ -363,6 +363,8 @@ func (e *TestEnvironment) CreateBasicPrivatePlaybook() {
 			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
 			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
 		},
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
 	})
 	require.NoError(e.T, err)
 
@@ -386,6 +388,8 @@ func (e *TestEnvironment) CreateBasicPublicPlaybook() {
 		Metrics: []client.PlaybookMetricConfig{
 			{Title: "testmetric", Type: app.MetricTypeDuration, Target: null.IntFrom(0)},
 		},
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
 	})
 	require.NoError(e.T, err)
 
