@@ -8,11 +8,12 @@ import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
+import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 
-import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
+import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {PrimaryButton} from 'src/components/assets/buttons';
 import {useManageRunMembership} from 'src/graphql/hooks';
+import CheckboxInput from '../../runs_list/checkbox_input';
 
 import ParticipantsSelector from './participants_selector';
 
@@ -29,6 +30,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const dispatch = useDispatch();
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
+    const [addToChannel, setAddToChannel] = useState(false);
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
@@ -40,18 +42,31 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         </Header>
     );
 
-    const footer = (
-        <StyledPrimaryButton
-            disabled={!profiles || profiles.length === 0}
-            onClick={() => {
-                const ids = profiles.map((e) => e.id);
-                addToRun(ids);
-                hideModal();
-            }}
-        >
-            {formatMessage({defaultMessage: 'Add'})}
-        </StyledPrimaryButton>
+    let footer = (
+        <FooterExtraInfoContainer>
+            <LightningBoltOutlineIcon
+                size={18}
+                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+            />
+            {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
+        </FooterExtraInfoContainer>
     );
+    if (!playbookRun.create_channel_member_on_new_participant) {
+        footer = (
+            <StyledCheckboxInput
+                testId={'also-add-to-channel'}
+                text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
+                checked={addToChannel}
+                onChange={(checked) => setAddToChannel(checked)}
+            />
+        );
+    }
+
+    const onConfirm = () => {
+        const ids = profiles.map((e) => e.id);
+        addToRun(ids);
+        hideModal();
+    };
 
     return (
         <GenericModal
@@ -59,6 +74,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             modalHeaderText={header}
             show={show}
             onHide={hideModal}
+
+            confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+            handleConfirm={onConfirm}
+            isConfirmDisabled={!profiles || profiles.length === 0}
 
             onExited={() => {/* do nothing else after the modal has exited */}}
 
@@ -69,7 +88,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             footer={footer}
             components={{
                 Header: ModalHeader,
-                FooterContainer: DefaultFooterContainer,
+                FooterContainer: StyledFooterContainer,
             }}
         >
             <ParticipantsSelector
@@ -102,13 +121,6 @@ export const useAddParticipants = (playbookRun: PlaybookRun) => {
     };
 };
 
-const StyledPrimaryButton = styled(PrimaryButton)`
-    height: 40px;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 14px;
-`;
-
 const ModalHeader = styled(Modal.Header)`
     &&&& {
         margin-bottom: 16px;
@@ -118,6 +130,24 @@ const ModalHeader = styled(Modal.Header)`
 const Header = styled.div`
     display: flex;
     flex-direction: row;
+`;
+
+const StyledFooterContainer = styled.div`
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+`;
+
+const FooterExtraInfoContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    align-items: center;
+    margin-right: auto;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const TriggersContainer = styled.div`
@@ -130,6 +160,16 @@ export const ActionsContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 20px;
+`;
+
+const StyledCheckboxInput = styled(CheckboxInput)`
+    padding: 10px 16px 10px 0;
+    margin-right: auto;
+    white-space: normal;
+
+    &:hover {
+        background-color: transparent;
+    }
 `;
 
 export default AddParticipantsModal;
