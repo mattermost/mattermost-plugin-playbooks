@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/sirupsen/logrus"
@@ -29,6 +30,8 @@ func LogRequest(next http.Handler) http.Handler {
 		recorder := statusRecorder{w, 200}
 		requestID := model.NewId()
 
+		startMilis := time.Now().UnixNano() / int64(time.Millisecond)
+
 		logger := logrus.WithFields(logrus.Fields{
 			"method":     r.Method,
 			"url":        r.URL.String(),
@@ -42,6 +45,15 @@ func LogRequest(next http.Handler) http.Handler {
 
 		next.ServeHTTP(&recorder, r)
 
-		logger.WithField("status", recorder.statusCode).Debug("Handled HTTP request")
+		gqlOp := r.Header.Get("X-GQL-Operation")
+		if gqlOp != "" {
+			logger = logger.WithField("gql_operation", gqlOp)
+		}
+
+		endMilis := time.Now().UnixNano() / int64(time.Millisecond)
+		logger.WithFields(logrus.Fields{
+			"time":   endMilis - startMilis,
+			"status": recorder.statusCode,
+		}).Debug("Handled HTTP request")
 	})
 }
