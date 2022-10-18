@@ -200,7 +200,7 @@ export default RHSParticipants;
 const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
     margin-left: 10px;
     margin-top: 6px;
-    padding: 0 ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+    padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
     border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
     border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
     color: rgba(var(--center-channel-color-rgb), 0.56);
