@@ -442,9 +442,11 @@ describe('runs > run details page > header', () => {
                 it('can leave run', () => {
                     // # Intercept all calls to telemetry
                     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+                    cy.intercept(`/api/v4/channels/${playbookRun.channel_id}/members`).as('addUserToChannel');
 
                     // # Add viewer user to the channel
                     cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
+                    cy.findAllByTestId('timeline-item', {exact: false}).should('have.length', 4);
 
                     // # Change the owner to testViewerUser
                     cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
