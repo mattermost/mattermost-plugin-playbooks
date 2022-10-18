@@ -23,6 +23,7 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
+import FollowButton from 'src/components/backstage/follow_button';
 import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
@@ -31,7 +32,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {requestJoinChannel, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {useFormattedUsername, useFollowRun} from 'src/hooks';
+import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
@@ -92,7 +93,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
     const [showAddToChannel, setShowAddToChannel] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const refreshLHS = useLHSRefresh();
-    const FollowingButton = useFollowRun(run.id, followState, 'run_details');
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 
     const setOwner = async (userID: string) => {
@@ -179,7 +179,11 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 name={formatMessage({defaultMessage: 'Followers'})}
             >
                 <FollowersWrapper>
-                    {FollowingButton ? <FollowingButton/> : null}
+                    <FollowButton
+                        runID={run.id}
+                        followState={followState}
+                        trigger={'run_details'}
+                    />
                     <Following
                         userIds={followState.followers}
                         maxUsers={4}

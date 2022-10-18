@@ -5,13 +5,9 @@ import React, {useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {
-    followPlaybookRun,
-    unfollowPlaybookRun,
     isFavoriteItem,
     telemetryEvent,
 } from 'src/client';
@@ -20,8 +16,6 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
 import {CategoryItemType} from 'src/types/category';
-import Tooltip from 'src/components/widgets/tooltip';
-import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
@@ -76,84 +70,6 @@ export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs
             setShowParticipateConfirm(true);
         },
     };
-};
-
-interface FollowState {
-    isFollowing: boolean;
-    followers: string[];
-    setFollowers: (followers: string[]) => void;
-}
-
-export const useFollowRun = (runID: string, followState: FollowState | undefined, trigger: 'run_details'|'playbooks_lhs'|'channel_rhs') => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-    const currentUserId = useSelector(getCurrentUserId);
-    const refreshLHS = useLHSRefresh();
-
-    if (followState === undefined) {
-        return null;
-    }
-    const {isFollowing, followers, setFollowers} = followState;
-
-    const FollowButton = styled(TertiaryButton)`
-        font-size: 12px;
-        height: 24px;
-        padding: 0 10px;
-    `;
-
-    const UnfollowButton = styled(SecondaryButton)`
-        font-size: 12px;
-        height: 24px;
-        padding: 0 10px;
-    `;
-
-    const toggleFollow = () => {
-        const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
-        action(runID)
-            .then(() => {
-                const newFollowers = isFollowing ? followers.filter((userId: string) => userId !== currentUserId) : [...followers, currentUserId];
-                setFollowers(newFollowers);
-                refreshLHS();
-                telemetryEvent(eventTarget, {
-                    playbookrun_id: runID,
-                    from: trigger,
-                });
-            })
-            .catch(() => {
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
-            });
-    };
-
-    const FollowingButton = () => {
-        if (isFollowing) {
-            return (
-                <UnfollowButton
-                    className={'unfollowButton'}
-                    onClick={toggleFollow}
-                >
-                    {formatMessage({defaultMessage: 'Following'})}
-                </UnfollowButton>
-            );
-        }
-
-        return (
-            <Tooltip
-                id={'follow-tooltip'}
-                placement='bottom'
-                content={formatMessage({defaultMessage: 'Get run status update notifications'})}
-            >
-                <FollowButton
-                    className={'followButton'}
-                    onClick={toggleFollow}
-                >
-                    {formatMessage({defaultMessage: 'Follow'})}
-                </FollowButton>
-            </Tooltip>
-        );
-    };
-
-    return FollowingButton;
 };
 
 export const useRunFollowers = (metadataFollowers: string[]) => {

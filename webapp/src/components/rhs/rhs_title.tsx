@@ -11,8 +11,9 @@ import {useIntl} from 'react-intl';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {useFollowRun, useRunFollowers, useRunMetadata} from 'src/hooks';
+import {useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
+import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
@@ -28,7 +29,6 @@ const RHSTitle = () => {
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
     const followState = useRunFollowers(metadata?.followers || []);
-    const FollowingButton = useFollowRun(playbookRun?.id || '', metadata ? followState : undefined, 'channel_rhs');
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -63,7 +63,11 @@ const RHSTitle = () => {
                     </RHSTitleLink>
                 </OverlayTrigger>
                 <FollowingWrapper>
-                    {FollowingButton ? <FollowingButton/> : null}
+                    <FollowButton
+                        runID={playbookRun?.id || ''}
+                        followState={metadata ? followState : undefined}
+                        trigger={'channel_rhs'}
+                    />
                 </FollowingWrapper>
             </RHSTitleContainer>
         );
