@@ -15,26 +15,6 @@ CREATE TABLE IF NOT EXISTS IR_Incident (
 	ChecklistsJSON JSON NOT NULL
 );
 
-DO $$
-BEGIN
-	IF to_regclass ('IR_Incident_TeamID') IS NULL THEN
-		CREATE INDEX IR_Incident_TeamID ON IR_Incident (TeamID);
-	END IF;
-END
-$$;
-
-DO $$
-BEGIN
-	IF to_regclass ('IR_Incident_TeamID_CommanderUserID') IS NULL THEN
-		CREATE INDEX IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
-	END IF;
-END
-$$;
-
-DO $$
-BEGIN
-	IF to_regclass ('IR_Incident_ChannelID') IS NULL THEN
-		CREATE INDEX IR_Incident_ChannelID ON IR_Incident (ChannelID);
-	END IF;
-END
-$$;
+CREATE INDEX IF NOT EXISTS IR_Incident_TeamID ON IR_Incident (TeamID);
+CREATE INDEX IF NOT EXISTS IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
+CREATE INDEX IF NOT EXISTS IR_Incident_ChannelID ON IR_Incident (ChannelID);
