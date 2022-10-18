@@ -11,7 +11,7 @@ import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/action
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -34,7 +34,7 @@ import {Participants} from './rhs_participants';
 import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
-
+const RHSParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
@@ -62,22 +62,6 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
-export const useFollowers = (metadataFollowers: string[]) => {
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useUpdateEffect(() => {
-        setFollowers(metadataFollowers);
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    useUpdateEffect(() => {
-        setIsFollowing(followers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(followers)]);
-
-    return {isFollowing, followers, setFollowers};
-};
-
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -98,10 +82,10 @@ const PlaybookRunDetails = () => {
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
-    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
+    const [channel] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
-    const followState = useFollowers(metadata?.followers || []);
+    const followState = useRunFollowers(metadata?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
@@ -121,7 +105,9 @@ const PlaybookRunDetails = () => {
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
         const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
-        if (RHSUpdatesOpened && emptyUpdates) {
+        if (queryParams.from === 'channel_rhs_participants') {
+            RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun?.name);
+        } else if (RHSUpdatesOpened && emptyUpdates) {
             RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
     }, [playbookRun, RHS.section, RHS.isOpen]);
@@ -181,7 +167,7 @@ const PlaybookRunDetails = () => {
                 role={role}
                 followState={followState}
                 channel={channel}
-                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
@@ -225,7 +211,6 @@ const PlaybookRunDetails = () => {
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
-                        channel={channel}
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}

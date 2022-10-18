@@ -46,6 +46,34 @@ describe('channels > post type components', () => {
     });
 
     describe('update post (custom_run_update)', () => {
+        it('displays in run channel', () => {
+            // # Go to the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/test-run`);
+
+            // # Intercept all calls to telemetry
+            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
+            // # Post a status update
+            cy.apiUpdateStatus({
+                playbookRunId: testPlaybookRun.id,
+                message: 'status update',
+                reminder: 60,
+            });
+
+            // Grab the post id
+            cy.getLastPostId().then((postId) => {
+                // * assert telemetry pageview
+                // * Some params will be empty since some data is not available in the permalink context
+                cy.wait('@telemetry').then((interception) => {
+                    expect(interception.request.body.name).to.eq('run_status_update');
+                    expect(interception.request.body.type).to.eq('page');
+                    expect(interception.request.body.properties.post_id).to.eq(postId);
+                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
+                    expect(interception.request.body.properties.channel_type).to.eq('O');
+                });
+            });
+        });
+
         it('displays when permalinked in a different channel', () => {
             // # Go to the playbook run channel
             cy.visit(`/${testTeam.name}/channels/test-run`);
@@ -59,11 +87,24 @@ describe('channels > post type components', () => {
 
             // Grab the post id
             cy.getLastPostId().then((postId) => {
+                // # Intercept all calls to telemetry
+                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
                 // # Go to the other channel
                 cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
+
+                // * assert telemetry pageview
+                // * Some params will be empty since some data is not available in the permalink context
+                cy.wait('@telemetry').then((interception) => {
+                    expect(interception.request.body.name).to.eq('run_status_update');
+                    expect(interception.request.body.type).to.eq('page');
+                    expect(interception.request.body.properties.post_id).to.eq(postId);
+                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
+                    expect(interception.request.body.properties.channel_type).to.eq('O');
+                });
 
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text
@@ -85,6 +126,9 @@ describe('channels > post type components', () => {
             });
 
             cy.getLastPostId().then((postId) => {
+                // # Intercept all calls to telemetry
+                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
                 // # Leave the playbook run channel
                 cy.uiLeaveChannel();
 
@@ -93,6 +137,16 @@ describe('channels > post type components', () => {
 
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
+
+                // * assert telemetry pageview
+                // * Some params will be empty since some data is not available in the permalink context
+                cy.wait('@telemetry').then((interception) => {
+                    expect(interception.request.body.name).to.eq('run_status_update');
+                    expect(interception.request.body.type).to.eq('page');
+                    expect(interception.request.body.properties.post_id).to.eq(postId);
+                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
+                    expect(interception.request.body.properties.channel_type).to.eq('');
+                });
 
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text

@@ -22,8 +22,7 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.RunView(userID, args.ID); err != nil {
-		c.logger.WithError(err).Warn("Not authorized")
-		return nil, errors.New("Not authorized")
+		return nil, err
 	}
 
 	run, err := c.playbookRunService.GetPlaybookRun(args.ID)

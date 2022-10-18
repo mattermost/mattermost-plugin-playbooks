@@ -5,15 +5,11 @@ import React, {useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled, {css} from 'styled-components';
-
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-
 import {GlobalState} from '@mattermost/types/store';
 import {BullhornOutlineIcon} from '@mattermost/compass-icons/components';
-
 import {useSelector} from 'react-redux';
-
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -22,10 +18,11 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName, useRunMetadata} from 'src/hooks';
 import {
+    telemetryEvent,
     unfollowPlaybookRun,
     followPlaybookRun,
 } from 'src/client';
@@ -167,6 +164,7 @@ const formatDate = (millis: number) => {
 
 export default Row;
 
+// TODO: this should converge with src/hooks/run : useFollowRun
 const FollowPlaybookRun = ({id}: {id: string}) => {
     const {formatMessage} = useIntl();
     const currentUser = useSelector(getCurrentUser);
@@ -183,11 +181,16 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
+        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
         action(id)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
+                telemetryEvent(eventTarget, {
+                    playbookrun_id: id,
+                    from: 'run_list',
+                });
             })
             .catch(() => {
                 setIsFollowing(isFollowing);

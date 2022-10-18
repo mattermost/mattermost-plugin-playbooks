@@ -143,7 +143,13 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 	r.Header.Set("X-GQL-Operation", params.OperationName)
 
 	for _, err := range response.Errors {
-		c.logger.WithError(err).WithField("operation", params.OperationName).Error("Error executing request")
+		errLogger := c.logger.WithError(err).WithField("operation", params.OperationName)
+
+		if errors.Is(err, app.ErrNoPermissions) {
+			errLogger.Warn("Warning executing request")
+		} else {
+			errLogger.Error("Error executing request")
+		}
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
