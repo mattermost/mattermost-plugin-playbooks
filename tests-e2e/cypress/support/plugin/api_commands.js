@@ -423,6 +423,33 @@ Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
     });
 });
 
+//addUsersToRun
+Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
+    const query = `
+        mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
+            addRunParticipants(runID: $runID, userIDs: $userIDs)
+        }
+    `;
+    const vars = {
+        runID: playbookRunId,
+        userIDs: usersIds,
+    };
+    return doGraphqlQuery(query, 'AddRunParticipants', vars).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+const doGraphqlQuery = (query, operationName, variables) => {
+    const payload = {query, operationName, variables};
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/playbooks/api/v0/query',
+        body: JSON.stringify(payload),
+        method: 'POST',
+    });
+};
+
 Cypress.Commands.add('gqlInterceptQuery', (operationName) => {
     cy.intercept('/plugins/playbooks/api/v0/query', (req) => {
         if (req.body?.operationName === operationName) {

@@ -156,7 +156,8 @@ describe('channels > slash command > todo', () => {
                         run4 = run;
 
                         // # Invite testUser to the channel
-                        cy.apiAddUserToChannel(run.channel_id, testUser.id);
+                        // cy.apiAddUserToChannel(run.channel_id, testUser.id);
+                        cy.apiAddUsersToRun(run.id, [testUser.id]);
 
                         // # Force this run to be overdue
                         cy.apiUpdateStatus({
