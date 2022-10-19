@@ -338,8 +338,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
 	s.metricsService.IncrementRunsCreatedCount(1)
 
-	// Add users to channel after creating playbook run so that all automations trigger.
-	err = s.addPlaybookRunUsers(playbookRun, channel)
+	// Add owner and reporter to channel after creating playbook run so that all automations trigger.
+	err = s.addPlaybookRunOwnerReporterToChannel(playbookRun, channel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add users to playbook run channel")
 	}
@@ -2328,7 +2328,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 	return channel, nil
 }
 
-func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, channel *model.Channel) error {
+func (s *PlaybookRunServiceImpl) addPlaybookRunOwnerReporterToChannel(playbookRun *PlaybookRun, channel *model.Channel) error {
 	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the team")
 	}
