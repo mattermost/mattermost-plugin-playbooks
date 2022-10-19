@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
@@ -15,6 +15,7 @@ import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useManageRunMembership} from 'src/graphql/hooks';
 import CheckboxInput from '../../runs_list/checkbox_input';
+import {isCurrentUserChannelMember} from 'src/selectors';
 
 import ParticipantsSelector from './participants_selector';
 
@@ -32,6 +33,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [addToChannel, setAddToChannel] = useState(false);
+    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
 
     useUpdateEffect(() => {
         setProfiles([]);
@@ -47,25 +49,30 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         </Header>
     );
 
-    let footer = (
-        <FooterExtraInfoContainer>
-            <LightningBoltOutlineIcon
-                size={18}
-                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-            />
-            {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
-        </FooterExtraInfoContainer>
-    );
-    if (!playbookRun.create_channel_member_on_new_participant) {
-        footer = (
-            <StyledCheckboxInput
-                testId={'also-add-to-channel'}
-                text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
-                checked={addToChannel}
-                onChange={(checked) => setAddToChannel(checked)}
-            />
-        );
-    }
+    const renderFooter = () => {
+        if (playbookRun.create_channel_member_on_new_participant) {
+            return (
+                <FooterExtraInfoContainer>
+                    <LightningBoltOutlineIcon
+                        size={18}
+                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                    />
+                    {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
+                </FooterExtraInfoContainer>
+            );
+        }
+        if (isChannelMember) {
+            return (
+                <StyledCheckboxInput
+                    testId={'also-add-to-channel'}
+                    text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
+                    checked={addToChannel}
+                    onChange={(checked) => setAddToChannel(checked)}
+                />
+            );
+        }
+        return null;
+    };
 
     const onConfirm = () => {
         const ids = profiles.map((e) => e.id);
@@ -90,7 +97,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={false}
             enforceFocus={true}
-            footer={footer}
+            footer={renderFooter()}
             components={{
                 Header: ModalHeader,
                 FooterContainer: StyledFooterContainer,
