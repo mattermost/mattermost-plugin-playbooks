@@ -29,6 +29,7 @@ import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
+import {useParticipateInRun} from 'src/hooks';
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
@@ -67,13 +68,14 @@ const RHSRunDetails = () => {
         }
     }, [runDetailsStep]);
 
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun?.id || '', 'channel_rhs');
     const addToast = useToaster().add;
     const displayReadOnlyToast = () => {
         addToast({
             content: formatMessage({defaultMessage: 'Become a participant to interact with this run'}),
             toastStyle: ToastStyle.Informational,
             buttonName: formatMessage({defaultMessage: 'Participate'}),
-            buttonCallback: () => console.log('I did it!'),
+            buttonCallback: showParticipateConfirm,
             iconName: 'account-plus-outline',
         });
     };
@@ -115,7 +117,7 @@ const RHSRunDetails = () => {
                     />
                 </Scrollbars>
             </RHSContent>
-
+            {ParticipateConfirmModal}
             {showRunDetailsSidePanelStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='View run details in a side panel'/>}
