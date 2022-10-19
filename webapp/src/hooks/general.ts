@@ -52,9 +52,7 @@ import {
     fetchPlaybookRun,
     fetchPlaybookStats,
     fetchPlaybookRunMetadata,
-    isFavoriteItem,
 } from 'src/client';
-import {CategoryItemType} from 'src/types/category';
 
 import {isCloud} from '../license';
 import {
@@ -63,7 +61,6 @@ import {
     noopSelector,
 } from '../selectors';
 import {resolve} from 'src/utils';
-import {useUpdateRun} from 'src/graphql/hooks';
 
 export type FetchMetadata = {
     isFetching: boolean;
@@ -703,28 +700,6 @@ export const useProxyState = <T>(
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
     return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
-};
-
-export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
-    const [isFavoriteRun, setIsFavoriteRun] = useState(false);
-    const updateRun = useUpdateRun(runID);
-
-    useEffect(() => {
-        isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
-            .then(setIsFavoriteRun)
-            .catch(() => setIsFavoriteRun(false));
-    }, [teamID, runID]);
-
-    const toggleFavorite = () => {
-        if (isFavoriteRun) {
-            updateRun({isFavorite: false});
-            setIsFavoriteRun(false);
-            return;
-        }
-        updateRun({isFavorite: true});
-        setIsFavoriteRun(true);
-    };
-    return [isFavoriteRun, toggleFavorite];
 };
 
 export enum ReservedCategory {
