@@ -429,6 +429,9 @@ describe('runs > run details page > header', () => {
 
             describe('leave run', () => {
                 it('can leave run', () => {
+                    // # Intercept all calls to telemetry
+                    cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
                     // # Add viewer user to the channel
                     cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
 
@@ -440,14 +443,23 @@ describe('runs > run details page > header', () => {
                     getDropdownItemByText('Leave and unfollow run').click();
 
                     // # confirm modal
-                    cy.get('#confirmModal').get('#confirmModalButton').click();
+                    cy.get('#confirmModal').get('#confirmModalButton').click().wait('@telemetry');
 
                     // NOTE: this check fails because the front doesn't receive updated run object. Will deal in separate PR.
                     // * Assert that the Participate button is shown
-                    // getHeader().findByText('Participate').should('be.visible');
+                    getHeader().findByText('Participate').should('be.visible');
 
                     // * Verify run has been removed from LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
+
+                    // # assert telemetry data
+                    cy.get('@telemetry.all').then((xhrs) => {
+                        expect(xhrs.length).to.eq(1);
+                        expect(xhrs[0].request.body.name).to.eq('playbookrun_leave');
+                        expect(xhrs[0].request.body.type).to.eq('track');
+                        expect(xhrs[0].request.body.properties.from).to.eq('run_details');
+                        expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                    });
                 });
             });
         });
@@ -537,6 +549,9 @@ describe('runs > run details page > header', () => {
                 });
 
                 it('click button to show modal and confirm when private channel', () => {
+                    // # Intercept all calls to telemetry
+                    cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
                     // * Assert component is rendered
                     getHeader().findByText('Participate').should('be.visible');
 
@@ -544,7 +559,7 @@ describe('runs > run details page > header', () => {
                     getHeader().findByText('Participate').click();
 
                     // # confirm modal
-                    cy.get('#confirmModal').get('#confirmModalButton').click();
+                    cy.get('#confirmModal').get('#confirmModalButton').click().wait('@telemetry');
 
                     // * Assert that modal is not shown
                     cy.get('#confirmModal').should('not.exist');
@@ -554,6 +569,15 @@ describe('runs > run details page > header', () => {
                         .should('be.visible')
                         .findByText(playbookRunName)
                         .should('be.visible');
+
+                    // # assert telemetry data
+                    cy.get('@telemetry.all').then((xhrs) => {
+                        expect(xhrs.length).to.eq(1);
+                        expect(xhrs[0].request.body.name).to.eq('playbookrun_participate');
+                        expect(xhrs[0].request.body.type).to.eq('track');
+                        expect(xhrs[0].request.body.properties.from).to.eq('run_details');
+                        expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                    });
                 });
 
                 it('click button and confirm to when public channel', () => {

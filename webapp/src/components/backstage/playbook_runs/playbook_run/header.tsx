@@ -2,42 +2,31 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useState} from 'react';
+import React from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {Channel} from '@mattermost/types/channels';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import CopyLink from 'src/components/widgets/copy_link';
 import {showRunActionsModal} from 'src/actions';
 import {
     getSiteUrl,
-    telemetryEventForPlaybookRun,
 } from 'src/client';
-import {useFavoriteRun} from 'src/hooks';
-import {useRunMembership} from 'src/graphql/hooks';
+import {useParticipateInRun, useFavoriteRun} from 'src/hooks';
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import RunActionsModal from 'src/components/run_actions_modal';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
-
-import {BadgeType} from '../../status_badge';
-import {ToastType, useToaster} from '../../toast_banner';
+import {BadgeType} from 'src/components/backstage/status_badge';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
-
-import {StarButton} from '../../playbook_editor/playbook_editor';
-
-import {ContextMenu} from './context_menu';
-import HeaderButton from './header_button';
+import {StarButton} from 'src/components/backstage/playbook_editor/playbook_editor';
+import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
+import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//header_button';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
     role: Role;
-    channel: Channel | undefined | null;
     hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
     onTimelineClick: () => void;
@@ -45,41 +34,12 @@ interface Props {
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, channel, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const [showGetInvolvedConfirm, setShowGetInvolvedConfirm] = useState(false);
-    const currentUserId = useSelector(getCurrentUserId);
-
-    const addToast = useToaster().add;
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
-    const {addToRun} = useRunMembership(playbookRun.id, [currentUserId]);
-
-    const onParticipate = async () => {
-        if (role === Role.Participant || !playbookRunMetadata) {
-            return;
-        }
-        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedClick);
-        setShowGetInvolvedConfirm(true);
-    };
-
-    const onConfirmParticipate = async () => {
-        if (role === Role.Participant || !playbookRunMetadata) {
-            return;
-        }
-
-        addToRun()
-            .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
-            .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
-        telemetryEventForPlaybookRun(playbookRun.id, PlaybookRunEventTarget.GetInvolvedJoin);
-    };
-
-    const confirmGetInvolvedMessage = () => {
-        const commonMessage = formatMessage({defaultMessage: 'As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'});
-        const introMessage = channel === null ? formatMessage({defaultMessage: 'Request to participate in this run.'}) : formatMessage({defaultMessage: 'Become a participant of the run.'});
-        return introMessage + ' ' + commonMessage;
-    };
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun.id, 'run_details');
 
     // Favorite Button State
     const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
@@ -132,7 +92,14 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                 data-testid={'rhs-header-button-info'}
             />
             {role === Role.Viewer &&
-                <GetInvolved onClick={onParticipate}>
+                <GetInvolved
+                    onClick={() => {
+                        if (!playbookRunMetadata) {
+                            return;
+                        }
+                        showParticipateConfirm();
+                    }}
+                >
                     <GetInvolvedIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
@@ -141,17 +108,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                 playbookRun={playbookRun}
                 readOnly={role === Role.Viewer}
             />
-            <ConfirmModal
-                show={showGetInvolvedConfirm}
-                title={formatMessage({defaultMessage: 'Participate in the run'})}
-                message={confirmGetInvolvedMessage()}
-                confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
-                onConfirm={() => {
-                    onConfirmParticipate();
-                    setShowGetInvolvedConfirm(false);
-                }}
-                onCancel={() => setShowGetInvolvedConfirm(false)}
-            />
+            {ParticipateConfirmModal}
         </Container>
     );
 };

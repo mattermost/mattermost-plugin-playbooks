@@ -4,49 +4,82 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
-import {FormattedMessage} from 'react-intl';
-
+import {FormattedMessage, useIntl} from 'react-intl';
+import {Link} from 'react-router-dom';
+import {OpenInNewIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {pluginUrl} from 'src/browser_routing';
+import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
+    playbookRunId: string;
+    onParticipate?: () => void;
 }
 
 const RHSParticipants = (props: Props) => {
+    const {formatMessage} = useIntl();
     const openMembersModal = useOpenMembersModalIfPresent();
+
+    const becomeParticipant = (
+        <Tooltip
+            id={'rhs-participate'}
+            content={formatMessage({defaultMessage: 'Become a participant'})}
+        >
+            <IconWrapper
+                onClick={props.onParticipate}
+                data-testid={'rhs-participate-icon'}
+                format={props.userIds.length === 0 ? 'icontext' : 'icon'}
+            >
+                <AccountPlusOutlineIcon size={16}/>
+                {props.userIds.length === 0 ? formatMessage({defaultMessage: 'Participate'}) : null}
+            </IconWrapper>
+        </Tooltip>
+    );
 
     if (props.userIds.length === 0) {
         return (
-            <NoParticipants>
-                <FormattedMessage defaultMessage='Nobody yet.'/>
-                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                {' '}
-                <AddParticipants/>
-            </NoParticipants>
+            <Container>
+                <NoParticipants>
+                    <FormattedMessage defaultMessage='Nobody yet.'/>
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {' '}
+                    {props.onParticipate ? null : (
+                        <LinkAddParticipants to={pluginUrl(`/runs/${props.playbookRunId}?from=channel_rhs_participants`)}>
+                            {formatMessage({defaultMessage: 'Add participant'})}
+                            <OpenInNewIcon size={11}/>
+                        </LinkAddParticipants>
+                    )}
+                </NoParticipants>
+                {props.onParticipate ? becomeParticipant : null}
+            </Container>
         );
     }
 
     const height = 28;
 
     return (
-        <UserRow
-            tabIndex={0}
-            role={'button'}
-            onClick={openMembersModal}
-            onKeyDown={(e) => {
-                // Handle Enter and Space as clicking on the button
-                if (e.keyCode === 13 || e.keyCode === 32) {
-                    openMembersModal();
-                }
-            }}
-        >
-            <UserList
-                userIds={props.userIds}
-                sizeInPx={height}
-            />
-        </UserRow>
+        <Container>
+            <UserRow
+                tabIndex={0}
+                role={'button'}
+                onClick={openMembersModal}
+                onKeyDown={(e) => {
+                    // Handle Enter and Space as clicking on the button
+                    if (e.keyCode === 13 || e.keyCode === 32) {
+                        openMembersModal();
+                    }
+                }}
+            >
+                <UserList
+                    userIds={props.userIds}
+                    sizeInPx={height}
+                />
+            </UserRow>
+            {props.onParticipate ? becomeParticipant : null}
+        </Container>
     );
 };
 
@@ -134,6 +167,12 @@ const NoParticipants = styled.div`
     margin-top: 12px;
 `;
 
+const Container = styled.div`
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+`;
+
 const UserRow = styled.div`
     width: max-content;
     padding: 0;
@@ -157,3 +196,36 @@ const UserRow = styled.div`
 `;
 
 export default RHSParticipants;
+
+const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
+    margin-left: 10px;
+    margin-top: 6px;
+    padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
+    border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
+    border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    width: ${(props) => (props.format === 'icontext' ? 'auto' : '28px')};
+    height: 28px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    &:hover {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        border: 1px dashed rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+
+    }
+    svg {
+        margin-right: ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+    }
+`;
+
+const LinkAddParticipants = styled(Link)`
+    display: inline-flex;
+    align-items: center;
+    svg {
+        margin-left: 2px;
+    }
+`;
