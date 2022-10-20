@@ -76,7 +76,7 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const [playbookRun] = useRun(playbookRunId);
+    const [playbookRun, playbookRunResult] = useRun(playbookRunId);
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
@@ -134,14 +134,14 @@ const PlaybookRunDetails = () => {
         }
     }, [urlHash]);
 
+    // not found or error
+    if (playbookRunResult.error !== null || metadataResult.error !== null) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
+    }
+
     // loading state
     if (!playbookRun) {
         return null;
-    }
-
-    // not found or error
-    if (playbookRun === null || metadataResult.error !== null) {
-        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);

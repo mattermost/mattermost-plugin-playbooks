@@ -297,9 +297,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 			AND rp.UserID = ?
 			AND rp.IsFollower = TRUE)`, userIDFilter)
 		participantFilterExpr := sq.Expr(`EXISTS(SELECT 1
-			FROM ChannelMembers AS cm
-			WHERE cm.ChannelId = i.ChannelID
-			AND cm.UserId = ?)`, userIDFilter)
+			FROM IR_Run_Participants as rp
+			WHERE rp.IncidentID = i.ID
+			AND rp.UserID = ?
+			AND rp.IsParticipant = TRUE)`, userIDFilter)
 		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
 		if options.IncludeFavorites {

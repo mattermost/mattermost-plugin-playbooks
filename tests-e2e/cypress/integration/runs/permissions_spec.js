@@ -145,7 +145,7 @@ describe('runs > permissions', () => {
                     run = createdRun;
 
                     // Have the dedicated participant join the run
-                    cy.apiAddUserToChannel(run.channel_id, runParticipant.id);
+                    cy.apiAddUsersToRun(run.id, [runParticipant.id]);
 
                     // # Have the dedicated follower follow this playbook run
                     cy.apiLogin(runFollower);
@@ -227,7 +227,7 @@ describe('runs > permissions', () => {
                     run = createdRun;
 
                     // Have the dedicated participant join the run
-                    cy.apiAddUserToChannel(run.channel_id, runParticipant.id);
+                    cy.apiAddUsersToRun(run.id, [runParticipant.id]);
 
                     // # Have the dedicated follower follow this playbook run
                     cy.apiLogin(runFollower);
@@ -313,7 +313,7 @@ describe('runs > permissions', () => {
                     run = createdRun;
 
                     // Have the dedicated participant join the run
-                    cy.apiAddUserToChannel(run.channel_id, runParticipant.id);
+                    cy.apiAddUsersToRun(run.id, [runParticipant.id]);
                 });
             });
         });
@@ -338,9 +338,9 @@ describe('runs > permissions', () => {
             });
 
             // XXX: The following asserts that while sysadmins don't see runs from other teams in
-            // the list, they still have access to view the overview directly. Once we support
+            // the list, they still have access to view the run directly. Once we support
             // sudo-admins, we should change this behaviour to be consistent with normal users.
-            it('to admins not in the team (overview only)', () => {
+            it('to admins not in the team (run directly)', () => {
                 cy.apiLogin(sysadminNotInTeam);
 
                 assertRunOverviewIsVisible(run);
@@ -420,9 +420,9 @@ describe('runs > permissions', () => {
             });
 
             // XXX: The following asserts that while sysadmins don't see runs from other teams in
-            // the list, they still have access to view the overview directly. Once we support
+            // the list, they still have access to view the run directly. Once we support
             // sudo-admins, we should change this behaviour to be consistent with normal users.
-            it('to admins not in the team (overview only)', () => {
+            it('to admins not in the team (run directly)', () => {
                 cy.apiLogin(sysadminNotInTeam);
 
                 assertRunOverviewIsVisible(run);
@@ -497,7 +497,7 @@ const assertRunIsNotVisibleInList = (run) => {
 
 const assertRunOverviewIsNotVisible = (run) => {
     // # Opening the playbook run directly
-    cy.visit(`/playbooks/runs/${run.id}/overview`);
+    cy.visit(`/playbooks/runs/${run.id}`);
 
     // * Verify the not found error screen
     cy.get('.error__container').within(() => {
