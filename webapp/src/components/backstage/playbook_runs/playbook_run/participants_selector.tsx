@@ -73,6 +73,8 @@ const ParticipantsSelector = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            id={'participants-multiselect'}
+
             autoFocus={true}
             components={noDropdown}
 
