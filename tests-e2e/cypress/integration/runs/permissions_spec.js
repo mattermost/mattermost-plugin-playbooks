@@ -395,7 +395,7 @@ describe('runs > permissions', () => {
                     run = createdRun;
 
                     // Have the dedicated participant join the run
-                    cy.apiAddUserToChannel(run.channel_id, runParticipant.id);
+                    cy.apiAddUsersToRun(run.id, [runParticipant.id]);
                 });
             });
         });

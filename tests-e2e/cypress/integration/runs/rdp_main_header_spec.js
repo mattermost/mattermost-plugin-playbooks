@@ -433,7 +433,7 @@ describe('runs > run details page > header', () => {
                     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
                     // # Add viewer user to the channel
-                    cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+                    cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
 
                     // # Change the owner to testViewerUser
                     cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);

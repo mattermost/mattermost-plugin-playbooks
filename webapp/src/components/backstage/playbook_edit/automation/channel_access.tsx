@@ -93,7 +93,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     type={'text'}
                     errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
                 />
-                <ChannelActionButton onClick={() => dispatch(showPlaybookActionsModal())}>
+                <ChannelActionButton
+                    data-testid='playbook-channel-actions-button'
+                    onClick={() => dispatch(showPlaybookActionsModal())}
+                >
                     <LightningBoltOutlineIcon/>
                     {formatMessage({defaultMessage: 'Setup channel actions'})}
                 </ChannelActionButton>

@@ -54,7 +54,7 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
 
     return (
         <ActionsModal
-            id={'channel-actions-modal'}
+            id={'playbooks-actions-modal'}
             title={formatMessage({defaultMessage: 'Channel Actions'})}
             subtitle={formatMessage({defaultMessage: 'Channel actions allow you to automate activities for the channel'})}
             show={show}
@@ -81,6 +81,7 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
                             />
                         </Action>
                         <Action
+                            id='user-joins-channel-categorize'
                             enabled={categorizeChannelEnabled}
                             title={formatMessage({defaultMessage: 'Add the channel to a sidebar category for the user'})}
                             editable={!readOnly && !archived}

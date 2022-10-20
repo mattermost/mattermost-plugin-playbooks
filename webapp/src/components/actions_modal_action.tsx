@@ -12,13 +12,14 @@ interface Props {
     onToggle: () => void;
     editable: boolean;
     children?: React.ReactNode;
+    id?: string;
 }
 
 const Action = (props: Props) => {
     const onChange = props.editable ? props.onToggle : () => {/* do nothing */};
 
     return (
-        <Wrapper>
+        <Wrapper data-testid={props.id}>
             <Container
                 onClick={(e: React.MouseEvent) => {
                     e.preventDefault();
