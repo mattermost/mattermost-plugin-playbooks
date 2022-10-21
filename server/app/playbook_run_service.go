@@ -2123,37 +2123,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 	return s.store.ChangeCreationDate(playbookRunID, creationTimestamp)
 }
 
-func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
-	title := fmt.Sprintf("@%s joined the channel", user.Username)
-
-	summary := fmt.Sprintf("@%s joined ~%s", user.Username, channel.Name)
-	if actorID != "" {
-		actor, err := s.pluginAPI.User.Get(actorID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user for userID '%s'", actorID)
-		}
-
-		summary = fmt.Sprintf("@%s added @%s to ~%s", actor.Username, user.Username, channel.Name)
-	}
-	now := model.GetMillis()
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      now,
-		EventAt:       now,
-		EventType:     UserJoinedLeft,
-		Summary:       summary,
-		Details:       fmt.Sprintf(`{"action": "joined", "title": "%s"}`, title),
-		SubjectUserID: userID,
-		CreatorUserID: actorID,
-	}
-
-	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
-
-	return nil
-}
-
 func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -2168,36 +2137,6 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
-	return nil
-}
-
-func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
-	title := fmt.Sprintf("@%s left the channel", user.Username)
-
-	summary := fmt.Sprintf("@%s left ~%s", user.Username, channel.Name)
-	if actorID != "" {
-		actor, err := s.pluginAPI.User.Get(actorID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user for userID '%s'", actorID)
-		}
-
-		summary = fmt.Sprintf("@%s removed @%s from ~%s", actor.Username, user.Username, channel.Name)
-	}
-	now := model.GetMillis()
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      now,
-		EventAt:       now,
-		EventType:     UserJoinedLeft,
-		Summary:       summary,
-		Details:       fmt.Sprintf(`{"action": "left", "title": "%s"}`, title),
-		SubjectUserID: userID,
-		CreatorUserID: actorID,
-	}
-
-	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
 	return nil
 }
 
