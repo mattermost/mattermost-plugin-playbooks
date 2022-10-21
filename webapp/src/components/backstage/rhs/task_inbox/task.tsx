@@ -1,8 +1,10 @@
 import React, {useState} from 'react';
 import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
+import {PlayOutlineIcon, CheckAllIcon} from '@mattermost/compass-icons/components';
+
 import Icon from '@mdi/react';
-import {mdiCheckAll, mdiPlayOutline, mdiCircleSmall} from '@mdi/js';
+import {mdiCircleSmall} from '@mdi/js';
 
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItemState} from 'src/types/playbook';
@@ -36,20 +38,21 @@ const Task = (props: Props) => {
     return (
         <Container className={removed ? 'removed' : ''}>
             <Header>
-                <Icon
-                    path={mdiPlayOutline}
-                    size={1}
+                <PlayOutlineIcon
+                    color={'rgba(63, 67, 80, 0.56)'}
+                    size={18}
                 />
                 <HeaderText>
                     <NavLink to={`/playbooks/runs/${props.item.playbook_run_id}`}>{props.item.playbook_run_name}</NavLink>
                 </HeaderText>
                 <Icon
+                    color={'rgba(63, 67, 80, 0.56)'}
                     path={mdiCircleSmall}
                     size={1}
                 />
-                <Icon
-                    path={mdiCheckAll}
-                    size={1}
+                <CheckAllIcon
+                    color={'rgba(63, 67, 80, 0.56)'}
+                    size={18}
                 />
                 <HeaderText>{props.item.checklist_title}</HeaderText>
             </Header>
@@ -74,7 +77,7 @@ const Task = (props: Props) => {
 export default Task;
 
 const Container = styled.div`
-    padding: 15px 10px 5px 0;
+    padding: 16px 5px 12px 0;
     display: flex;
     flex-direction: column;
 
@@ -133,6 +136,10 @@ const HeaderText = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-weight: 400;
     margin: 0 4px;
+    padding: 4px 0;
+    a {
+        font-weight: 600;
+    }
 `;
 
 // Necessary hack to use Checklist without DraggableProvider and use HoverMenu

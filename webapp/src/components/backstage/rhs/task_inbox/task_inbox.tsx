@@ -230,6 +230,7 @@ const FilterButton = styled(DotMenuButton)`
     }
 
     :hover {
+        color: var(--button-bg);
         background-color: rgba(var(--button-bg-rgb),0.08);
     }
 `;
