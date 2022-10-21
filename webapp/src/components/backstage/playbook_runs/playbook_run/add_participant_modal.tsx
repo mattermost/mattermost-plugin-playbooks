@@ -9,7 +9,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
-import {useUpdateEffect} from 'react-use';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -35,10 +34,6 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [addToChannel, setAddToChannel] = useState(false);
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
 
-    useUpdateEffect(() => {
-        setProfiles([]);
-    }, [show]);
-
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
     };
@@ -50,6 +45,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 
     const renderFooter = () => {
+        // disable footer until we participants actions PR(#1518) is merged to keep the master branch clean
+        return null;
+
         if (playbookRun.create_channel_member_on_new_participant) {
             return (
                 <FooterExtraInfoContainer>
@@ -91,7 +89,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             handleConfirm={onConfirm}
             isConfirmDisabled={!profiles || profiles.length === 0}
 
-            onExited={() => {/* do nothing else after the modal has exited */}}
+            onExited={() => setProfiles([])}
 
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
