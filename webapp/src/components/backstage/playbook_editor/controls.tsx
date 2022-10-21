@@ -373,7 +373,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         }
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
-    const [confirmConvertPrivateModal] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
+    const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
     const {add: addToast} = useToaster();
 
@@ -451,6 +451,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         css={`${iconSplitStyling}`}
                         onClick={() => {
                             telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
+                            setShowMakePrivateConfirm(true);
                         }}
                     >
                         <FormattedMessage defaultMessage='Convert to private playbook'/>
