@@ -699,14 +699,6 @@ type PlaybookRunService interface {
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
-	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
-	// was invited by actorID.
-	UserHasJoinedChannel(userID, channelID, actorID string)
-
-	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
-	// was removed from the channel by actorID.
-	UserHasLeftChannel(userID, channelID, actorID string)
-
 	// UpdateRetrospective updates the retrospective for the given playbook run.
 	UpdateRetrospective(playbookRunID, userID string, retrospective RetrospectiveUpdate) error
 

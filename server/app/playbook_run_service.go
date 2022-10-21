@@ -2123,48 +2123,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 	return s.store.ChangeCreationDate(playbookRunID, creationTimestamp)
 }
 
-// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
-// was invited by actorID.
-func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
-	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		// This is not a playbook run channel
-		return
-	}
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		logrus.WithError(err).WithField("user_id", userID).Error("failed to resolve user")
-		return
-	}
-
-	channel, err := s.pluginAPI.Channel.Get(channelID)
-	if err != nil {
-		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to resolve channel")
-		return
-	}
-
-	if err := s.addChannelJoinTimelineEvent(user, channel, actorID, playbookRunID, userID); err != nil {
-		logrus.WithError(err).Error("failed to add channel join timeline event")
-	}
-
-	if !user.IsBot {
-		if err := s.Follow(playbookRunID, user.Id); err != nil {
-			logrus.WithError(err).Errorf("user `%s` was not able to follow the run `%s`", user.Id, playbookRunID)
-		}
-	}
-
-	// Automatically participate if you join the channel
-	// To be removed when separating members and participants is complete.
-	if err := s.AddParticipants(playbookRunID, []string{user.Id}, user.Id); err != nil {
-		logrus.WithError(err).Errorf("failed to add participant that joined channel for run '%s', user '%s'", playbookRunID, user.Id)
-	}
-
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		logrus.WithError(err).Errorf("failed to to send run '%s' through ws, user '%s'", playbookRunID, user.Id)
-	}
-}
-
 func (s *PlaybookRunServiceImpl) addChannelJoinTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {
 	title := fmt.Sprintf("@%s joined the channel", user.Username)
 
@@ -2211,46 +2169,6 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	return nil
-}
-
-// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
-// was removed from the channel by actorID.
-func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
-	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		// This is not a playbook run channel
-		return
-	}
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		logrus.WithError(err).WithField("user_id", userID).Error("failed to resolve user")
-		return
-	}
-
-	channel, err := s.pluginAPI.Channel.Get(channelID)
-	if err != nil {
-		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to resolve channel")
-		return
-	}
-
-	if err := s.addChannelLeaveTimelineEvent(user, channel, actorID, playbookRunID, userID); err != nil {
-		logrus.WithError(err).Error("failed to add channel leave timeline event")
-	}
-
-	// Automatically leave run if you leave the channel
-	// To be removed when separating members and participants is complete.
-	if err := s.RemoveParticipants(playbookRunID, []string{user.Id}); err != nil {
-		logrus.WithError(err).Errorf("faied to remove participant that left channel for run '%s', user '%s'", playbookRunID, user.Id)
-	}
-
-	if err := s.Unfollow(playbookRunID, user.Id); err != nil {
-		logrus.WithError(err).Errorf("failed to make participant to unfollow the run '%s', user '%s'", playbookRunID, user.Id)
-	}
-
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		logrus.WithError(err).Errorf("failed to send the run '%s' through ws, user '%s'", playbookRunID, user.Id)
-	}
 }
 
 func (s *PlaybookRunServiceImpl) addChannelLeaveTimelineEvent(user *model.User, channel *model.Channel, actorID string, playbookRunID string, userID string) error {

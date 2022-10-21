@@ -35,9 +35,7 @@ const Action = (props: Props) => {
                 />
             </Container>
             {props.enabled &&
-            <ChildrenContainer>
-                {props.children ?? null}
-            </ChildrenContainer>
+                <ChildrenContainer>{props.children}</ChildrenContainer>
             }
         </Wrapper>
     );

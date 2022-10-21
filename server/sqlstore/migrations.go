@@ -2376,7 +2376,6 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
 					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
 				}
-
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
 					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Playbook")
@@ -2390,6 +2389,19 @@ var migrations = []Migration{
 				if err := addColumnToPGTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
 					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
 				}
+			}
+
+			// update data
+			updateRuns := sqlStore.builder.
+				Update("IR_Incident").Set("CreateChannelMemberOnNewParticipant", true).Set("RemoveChannelMemberOnRemovedParticipant", true)
+			if _, err := sqlStore.execBuilder(e, updateRuns); err != nil {
+				logrus.WithError(err).Debug("failed updating the runs channel actions flags")
+			}
+
+			updatePlaybooks := sqlStore.builder.
+				Update("IR_Playbook").Set("CreateChannelMemberOnNewParticipant", true).Set("RemoveChannelMemberOnRemovedParticipant", true)
+			if _, err := sqlStore.execBuilder(e, updatePlaybooks); err != nil {
+				logrus.WithError(err).Debug("failed updating the playbooks channel actions flags")
 			}
 
 			return nil

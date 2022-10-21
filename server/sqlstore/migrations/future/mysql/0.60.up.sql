@@ -60,3 +60,7 @@ SET @preparedStatement = (SELECT IF(
 PREPARE addColumnIfNotExists FROM @preparedStatement;
 EXECUTE addColumnIfNotExists;
 DEALLOCATE PREPARE addColumnIfNotExists;
+
+
+UPDATE IR_Playbook SET CreateChannelMemberOnNewParticipant = true, RemoveChannelMemberOnRemovedParticipant = true;
+UPDATE IR_Incident SET CreateChannelMemberOnNewParticipant = true, RemoveChannelMemberOnRemovedParticipant = true;
