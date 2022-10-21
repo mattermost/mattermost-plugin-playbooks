@@ -8,6 +8,7 @@ import {useSelector, useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
 
+import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {openBackstageRHS, closeBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
@@ -39,6 +40,12 @@ const UnreadBadge = styled.div<{toggled: boolean}>`
     `}
 `;
 
+const GlobalHeaderGiveFeedbackButton = styled(GiveFeedbackButton)`
+    padding: 0 5px;
+    font-size: 11px;
+    height: 24px;
+`;
+
 const GlobalHeaderRight = () => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -68,28 +75,30 @@ const GlobalHeaderRight = () => {
     );
 
     return (
-        <OverlayTrigger
-            trigger={['hover', 'focus']}
-            delay={OVERLAY_DELAY}
-            placement='bottom'
-            overlay={tooltip}
-            aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
+        <>
+            <GlobalHeaderGiveFeedbackButton/>
+            <OverlayTrigger
+                trigger={['hover', 'focus']}
+                delay={OVERLAY_DELAY}
+                placement='bottom'
+                overlay={tooltip}
+                aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
 
-        >
-            <IconButtonWrapper
-                data-testid='header-task-inbox-icon'
-                onClick={onClick}
-                toggled={isTasksOpen}
             >
-                {hasOverdueTasks ? <UnreadBadge toggled={isTasksOpen}/> : null}
-                <CheckboxMultipleMarkedOutlineIcon
-                    size={18}
-                    color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
-                />
-            </IconButtonWrapper>
+                <IconButtonWrapper
+                    data-testid='header-task-inbox-icon'
+                    onClick={onClick}
+                    toggled={isTasksOpen}
+                >
+                    {hasOverdueTasks ? <UnreadBadge toggled={isTasksOpen}/> : null}
+                    <CheckboxMultipleMarkedOutlineIcon
+                        size={18}
+                        color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
+                    />
+                </IconButtonWrapper>
 
-        </OverlayTrigger>
-
+            </OverlayTrigger>
+        </>
     );
 };
 

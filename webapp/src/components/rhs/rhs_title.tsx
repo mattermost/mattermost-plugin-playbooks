@@ -11,7 +11,9 @@ import {useIntl} from 'react-intl';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
+import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
@@ -25,6 +27,8 @@ const RHSTitle = () => {
 
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
+    const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
+    const followState = useRunFollowers(metadata?.followers || []);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -58,6 +62,13 @@ const RHSTitle = () => {
                         </StyledButtonIcon>
                     </RHSTitleLink>
                 </OverlayTrigger>
+                <FollowingWrapper>
+                    <FollowButton
+                        runID={playbookRun?.id || ''}
+                        followState={metadata ? followState : undefined}
+                        trigger={'channel_rhs'}
+                    />
+                </FollowingWrapper>
             </RHSTitleContainer>
         );
     }
@@ -76,6 +87,32 @@ const RHSTitleContainer = styled.div`
     justify-content: space-between;
     align-items: center;
     overflow: visible;
+    flex: 1;
+    justify-content: flex-start;
+`;
+
+const FollowingWrapper = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+
+    // override default styles
+    .unfollowButton {
+        border: 0;
+        color: var(--button-bg);
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+
+    .followButton {
+        border: 0;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        background: transparent;
+
+        &:hover {
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+    }
 `;
 
 const RHSTitleText = styled.div<{ clickable?: boolean }>`
