@@ -9,6 +9,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+import {OptionTypeBase, StylesConfig} from 'react-select';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -16,7 +17,7 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 import CheckboxInput from '../../runs_list/checkbox_input';
 import {isCurrentUserChannelMember} from 'src/selectors';
 
-import ParticipantsSelector from './participants_selector';
+import ProfileAutocomplete from '../../profile_autocomplete';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -101,8 +102,12 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 FooterContainer: StyledFooterContainer,
             }}
         >
-            <ParticipantsSelector
+            <ProfileAutocomplete
                 searchProfiles={searchUsers}
+                userIds={[]}
+                isDisabled={false}
+                isMultiMode={true}
+                customSelectStyles={selectStyles}
                 setValues={setProfiles}
             />
         </GenericModal>
@@ -181,5 +186,61 @@ const StyledCheckboxInput = styled(CheckboxInput)`
         background-color: transparent;
     }
 `;
+
+const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
+    control: (provided, {isDisabled}) => ({
+        ...provided,
+        backgroundColor: isDisabled ? 'rgba(var(--center-channel-bg-rgb),0.16)' : 'var(--center-channel-bg)',
+        border: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
+        minHeight: '48px',
+        fontSize: '16px',
+    }),
+    placeholder: (provided) => ({
+        ...provided,
+        marginLeft: '8px',
+    }),
+    input: (provided) => ({
+        ...provided,
+        marginLeft: '8px',
+        color: 'var(--center-channel-color)',
+    }),
+    multiValue: (provided) => ({
+        ...provided,
+        backgroundColor: 'rgba(var(--center-channel-color-rgb), 0.08)',
+        borderRadius: '16px',
+        paddingLeft: '8px',
+        overflow: 'hidden',
+        height: '32px',
+        alignItems: 'center',
+    }),
+    multiValueLabel: (provided) => ({
+        ...provided,
+        padding: 0,
+        paddingLeft: 0,
+        lineHeight: '18px',
+        color: 'var(--center-channel-color)',
+    }),
+    multiValueRemove: (provided) => ({
+        ...provided,
+        color: 'rgba(var(--center-channel-bg-rgb), 0.80)',
+        backgroundColor: 'rgba(var(--center-channel-color-rgb),0.32)',
+        borderRadius: '50%',
+        margin: '4px',
+        padding: 0,
+        cursor: 'pointer',
+        width: '16px',
+        height: '16px',
+        ':hover': {
+            backgroundColor: 'rgba(var(--center-channel-color-rgb),0.56)',
+        },
+        ':active': {
+            backgroundColor: 'rgba(var(--center-channel-color-rgb),0.56)',
+        },
+        '> svg': {
+            height: '16px',
+            width: '16px',
+        },
+    }),
+};
 
 export default AddParticipantsModal;

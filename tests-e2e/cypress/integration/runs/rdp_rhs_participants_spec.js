@@ -132,8 +132,8 @@ describe('runs > run details page > rhs > participants', () => {
             cy.findByRole('button', {name: 'Add'}).click();
 
             // # Select two new participants
-            cy.get('#participants-multiselect').click().type(testUser2.username + '{enter}', {delay: 300});
-            cy.get('#participants-multiselect').click().type(testViewerUser.username + '{enter}', {delay: 300});
+            cy.get('#profile-autocomplete').click().type(testUser2.username + '{enter}', {delay: 300});
+            cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 300});
 
             // # Add selected participant
             cy.findByTestId('modal-confirm-button').click();
