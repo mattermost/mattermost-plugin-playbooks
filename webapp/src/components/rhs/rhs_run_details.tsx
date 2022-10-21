@@ -1,13 +1,15 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useMemo} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {debounce} from 'lodash';
 
 import {
     renderThumbHorizontal,
@@ -30,6 +32,8 @@ import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useParticipateInRun} from 'src/hooks';
+
+const toastDebounce = 2000;
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
@@ -70,7 +74,7 @@ const RHSRunDetails = () => {
 
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun?.id || '', 'channel_rhs');
     const addToast = useToaster().add;
-    const displayReadOnlyToast = () => {
+    const displayReadOnlyToast = useMemo(() => debounce(() => {
         addToast({
             content: formatMessage({defaultMessage: 'Become a participant to interact with this run'}),
             toastStyle: ToastStyle.Informational,
@@ -78,7 +82,7 @@ const RHSRunDetails = () => {
             buttonCallback: showParticipateConfirm,
             iconName: 'account-plus-outline',
         });
-    };
+    }, toastDebounce, {leading: true, trailing: false}), []);
 
     const rhsContainerPunchout = useMeasurePunchouts(
         ['rhsContainer'],
