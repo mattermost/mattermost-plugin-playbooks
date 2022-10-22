@@ -2,8 +2,6 @@ package app
 
 import (
 	"time"
-
-	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 )
 
 func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, currentTime time.Time) bool {
@@ -11,7 +9,7 @@ func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, c
 		return false
 	}
 
-	lastSentTime := timeutils.GetUnixTimeForTimezone(userInfo.LastDailyTodoDMAt, timezone)
+	lastSentTime := time.UnixMilli(userInfo.LastDailyTodoDMAt).In(timezone)
 
 	currentYear, currentWeek := currentTime.ISOWeek()
 	lastSentYear, lastSentWeek := lastSentTime.ISOWeek()
@@ -26,7 +24,7 @@ func ShouldSendDailyDigestMessage(userInfo UserInfo, timezone *time.Location, cu
 	}
 	// DM message if it's the next day and been more than an hour since the last post
 	// Hat tip to Github plugin for the logic.
-	lastSentTime := timeutils.GetUnixTimeForTimezone(userInfo.LastDailyTodoDMAt, timezone)
+	lastSentTime := time.UnixMilli(userInfo.LastDailyTodoDMAt).In(timezone)
 
 	isMoreThanOneHourPassed := currentTime.Sub(lastSentTime).Hours() >= 1
 

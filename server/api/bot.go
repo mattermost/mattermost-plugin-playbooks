@@ -13,7 +13,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -207,7 +206,7 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 
 	// we want to first try a weekly digest
 	// if we have already sent it this week, try with a daily one
-	currentTime := timeutils.GetCurrentUnixTime(timezone)
+	currentTime := time.UnixMilli(model.GetMillis()).In(timezone)
 	if app.ShouldSendWeeklyDigestMessage(info, timezone, currentTime) {
 		sendRegularDigest(DigestSenderParams{isWeekly: true})
 	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
@@ -233,7 +232,7 @@ func (h *BotHandler) createDigestSender(c *Context, w http.ResponseWriter, userI
 			regulartity = "weekly"
 		}
 
-		if err := h.playbookRunService.DMTodoDigestToUser(userID, params.isWeekly); err != nil {
+		if err := h.playbookRunService.DMTodoDigestToUser(userID, false, params.isWeekly); err != nil {
 			h.HandleError(w, c.logger, errors.Wrapf(err, "failed to send '%s' DMTodoDigest to userID '%s'", regulartity, userID))
 			return
 		}

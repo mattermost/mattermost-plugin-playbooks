@@ -845,7 +845,7 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 }
 
 func (r *Runner) actionTodo() {
-	if err := r.playbookRunService.EphemeralPostTodoDigestToUser(r.args.UserId, r.args.ChannelId, true); err != nil {
+	if err := r.playbookRunService.EphemeralPostTodoDigestToUser(r.args.UserId, r.args.ChannelId, true, true); err != nil {
 		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
 	}
 }

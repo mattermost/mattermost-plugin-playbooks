@@ -1983,7 +1983,7 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 
 // buildTodoDigestMessage
 // gathers the list of assigned tasks, participating runs, and overdue updates and builds a combined message with them
-func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool) (*model.Post, error) {
+func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool, includeRunsInProgress bool) (*model.Post, error) {
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
 		return nil, err
@@ -2008,13 +2008,17 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 
 	part2 := buildAssignedTaskMessageSummary(runsAssigned, user.Locale, timezone, !force)
 
-	if force {
+	part3 := ""
+
+	if includeRunsInProgress {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
 			return nil, err
 		}
-		part3 := buildRunsInProgressMessage(runsInProgress, user.Locale)
+		part3 = buildRunsInProgressMessage(runsInProgress, user.Locale)
+	}
 
+	if force {
 		return &model.Post{Message: part1 + part2 + part3}, nil
 	}
 
@@ -2035,8 +2039,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 
 // EphemeralPostTodoDigestToUser
 // builds todo digest message and sends an ephemeral post to userID, channelID. Use force = true to send post even if there are no items.
-func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error {
-	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, channelID string, force bool, includeRunsInProgress bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force, includeRunsInProgress)
 	if err != nil {
 		return err
 	}
@@ -2051,8 +2055,8 @@ func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, ch
 
 // DMTodoDigestToUser
 // DMs the message to userID. Use force = true to DM even if there are no items.
-func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
-	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool, includeRunsInProgress bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force, includeRunsInProgress)
 	if err != nil {
 		return err
 	}
