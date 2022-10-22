@@ -114,8 +114,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
 	command.AddCommand(todo)
 
-	settings := model.NewAutocompleteData("settings", "digest [on/off]", "Change personal playbook settings")
-	weeklyDigestSettings := model.NewAutocompleteData("weekly-digest-settings", "weekly-digest [on/off]", "Change weekly digest settings")
+	settings := model.NewAutocompleteData("settings", "", "Change personal playbook settings")
 	display := model.NewAutocompleteData(" ", "Display current settings", "")
 	settings.AddCommand(display)
 
@@ -128,8 +127,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		Item:     "off",
 	}}
 	weeklyDigest.AddStaticListArgument("", true, weeklyDigestValues)
-	weeklyDigestSettings.AddCommand((weeklyDigest))
-	command.AddCommand(weeklyDigestSettings)
+	settings.AddCommand((weeklyDigest))
 
 	digest := model.NewAutocompleteData("digest", "[on/off]", "Turn digest on/off")
 	digestValue := []model.AutocompleteListItem{{

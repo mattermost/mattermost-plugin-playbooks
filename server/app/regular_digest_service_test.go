@@ -51,6 +51,22 @@ func TestShouldSendWeeklyDigestMessage(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "Should send a weekly digest if we have not sent a digest ever",
+			args: args{
+				userInfo: UserInfo{
+					ID:                "testUser",
+					LastDailyTodoDMAt: 0,
+					DigestNotificationSettings: DigestNotificationSettings{
+						DisableDailyDigest:  false,
+						DisableWeeklyDigest: &[]bool{false}[0],
+					},
+				},
+				timezone:    time.FixedZone("local", 0),
+				currentTime: now,
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

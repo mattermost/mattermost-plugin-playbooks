@@ -199,7 +199,7 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if info.DisableDailyDigest {
+	if info.DisableDailyDigest && *info.DisableWeeklyDigest {
 		return
 	}
 
@@ -212,9 +212,9 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 	// we want to first try a weekly digest
 	// if we have already sent it this week, try with a daily one
 	currentTime := timeutils.GetCurrentUnixTime(timezone)
-	if app.ShouldSendWeeklyDigestMessage(info, timezone, currentTime) {
+	if app.ShouldSendWeeklyDigestMessage(info, timezone, currentTime) && !*info.DisableWeeklyDigest {
 		sendRegularDigest(DigestSenderParams{isWeekly: true})
-	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
+	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) && !info.DisableDailyDigest {
 		sendRegularDigest(DigestSenderParams{isWeekly: false})
 	}
 
