@@ -22,6 +22,21 @@ func TestShouldSendWeeklyDigestMessage(t *testing.T) {
 		want bool
 	}{
 		{
+			name: "Should not send a weekly digest if the user has configured it so",
+			args: args{
+				userInfo: UserInfo{
+					ID:                "testUser",
+					LastDailyTodoDMAt: now.AddDate(0, 0, -6).UnixMilli(),
+					DigestNotificationSettings: DigestNotificationSettings{
+						DisableWeeklyDigest: true,
+					},
+				},
+				timezone:    time.FixedZone("local", 0),
+				currentTime: now,
+			},
+			want: false,
+		},
+		{
 			name: "Should not send a weekly digest if we have already sent a digest this week",
 			args: args{
 				userInfo: UserInfo{
@@ -59,7 +74,7 @@ func TestShouldSendWeeklyDigestMessage(t *testing.T) {
 					LastDailyTodoDMAt: 0,
 					DigestNotificationSettings: DigestNotificationSettings{
 						DisableDailyDigest:  false,
-						DisableWeeklyDigest: &[]bool{false}[0],
+						DisableWeeklyDigest: false,
 					},
 				},
 				timezone:    time.FixedZone("local", 0),
@@ -94,6 +109,21 @@ func TestShouldSendDailyDigestMessage(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "Should not send a daily digest if the user has configued it so",
+			args: args{
+				userInfo: UserInfo{
+					ID:                "testUser",
+					LastDailyTodoDMAt: now.Add(-(time.Hour * 25)).UnixMilli(),
+					DigestNotificationSettings: DigestNotificationSettings{
+						DisableDailyDigest: true,
+					},
+				},
+				timezone:    time.FixedZone("local", 0),
+				currentTime: now,
+			},
+			want: false,
+		},
 		{
 			name: "Should not send a daily digest if we have already sent a digest today",
 			args: args{

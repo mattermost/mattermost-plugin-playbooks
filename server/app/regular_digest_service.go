@@ -7,6 +7,10 @@ import (
 )
 
 func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, currentTime time.Time) bool {
+	if userInfo.DigestNotificationSettings.DisableWeeklyDigest {
+		return false
+	}
+
 	lastSentTime := timeutils.GetUnixTimeForTimezone(userInfo.LastDailyTodoDMAt, timezone)
 
 	currentYear, currentWeek := currentTime.ISOWeek()
@@ -17,6 +21,9 @@ func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, c
 }
 
 func ShouldSendDailyDigestMessage(userInfo UserInfo, timezone *time.Location, currentTime time.Time) bool {
+	if userInfo.DigestNotificationSettings.DisableDailyDigest {
+		return false
+	}
 	// DM message if it's the next day and been more than an hour since the last post
 	// Hat tip to Github plugin for the logic.
 	lastSentTime := timeutils.GetUnixTimeForTimezone(userInfo.LastDailyTodoDMAt, timezone)
