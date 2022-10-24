@@ -22,7 +22,7 @@ import {Role} from '../shared';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {SendMessageButton} from './send_message_button';
-import {useAddParticipants} from './add_participant_modal';
+import AddParticipantsModal from './add_participant_modal';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -38,7 +38,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const [searchTerm, setSearchTerm] = useState('');
     const myUser = useSelector(getCurrentUser);
     const [participantsProfiles, setParticipantsProfiles] = useState<UserProfile[]>([]);
-    const {addParticipantsModal, showAddParticipantsModal} = useAddParticipants(playbookRun);
+    const [showAddParticipantsModal, setShowAddParticipantsModal] = useState(false);
 
     const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRun.id);
 
@@ -82,12 +82,18 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                     {formatMessage({defaultMessage: 'Manage'})}
                 </StyledSecondaryButton>
 
-                <StyledPrimaryButton onClick={() => showAddParticipantsModal()}>
+                <StyledPrimaryButton onClick={() => setShowAddParticipantsModal(true)}>
                     <AddParticipantIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Add'})}
                 </StyledPrimaryButton>
 
-                {addParticipantsModal}
+                <AddParticipantsModal
+                    playbookRun={playbookRun}
+                    id={'add-participants-rdp'}
+                    show={showAddParticipantsModal}
+                    title={formatMessage({defaultMessage: 'Add people to {runName}'}, {runName: playbookRun.name})}
+                    hideModal={() => setShowAddParticipantsModal(false)}
+                />
             </>
         );
     };

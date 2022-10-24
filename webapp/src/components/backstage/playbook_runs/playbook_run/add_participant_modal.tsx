@@ -114,28 +114,6 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 };
 
-export const useAddParticipants = (playbookRun: PlaybookRun) => {
-    const {formatMessage} = useIntl();
-    const [showModal, setShowModal] = useState(false);
-
-    const addParticipantsModal = (
-        <AddParticipantsModal
-            playbookRun={playbookRun}
-            id={'add-participants-rdp'}
-            show={showModal}
-            title={formatMessage({defaultMessage: 'Add people to {runName}'}, {runName: playbookRun.name})}
-            hideModal={() => setShowModal(false)}
-        />
-    );
-
-    return {
-        addParticipantsModal,
-        showAddParticipantsModal: () => {
-            setShowModal(true);
-        },
-    };
-};
-
 const ModalHeader = styled(Modal.Header)`
     &&&& {
         margin-bottom: 16px;
