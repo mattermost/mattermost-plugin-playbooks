@@ -18,7 +18,6 @@ describe('channels > rhs > checklist', () => {
             testTeam = team;
             testUser = user;
 
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
