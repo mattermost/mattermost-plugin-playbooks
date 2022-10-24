@@ -15,6 +15,8 @@ import Trigger from 'src/components/actions_modal_trigger';
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
 import BroadcastChannelSelector from 'src/components/broadcast_channel_selector';
 import PatternedTextArea from 'src/components/patterned_text_area';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {telemetryEvent} from 'src/client';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -53,6 +55,10 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
 
     const onSave = () => {
         dispatch(hideRunActionsModal());
+        telemetryEvent(PlaybookRunEventTarget.UpdateActions, {
+            playbookrun_id: playbookRun.id,
+            playbook_id: playbookRun.playbook_id,
+        });
         updateRun({
             statusUpdateBroadcastChannelsEnabled: broadcastToChannelsEnabled,
             broadcastChannelIDs: channelIds,
