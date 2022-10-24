@@ -192,16 +192,6 @@ export const DestructiveButton = styled.button`
 
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
-export const UpgradeButton = (props: UpgradeButtonProps) => {
-    const {children, ...rest} = props;
-    return (
-        <PrimaryButton {...rest}>
-            {children}
-            <PositionedKeyVariantCircleIcon/>
-        </PrimaryButton>
-    );
-};
-
 export const UpgradeTertiaryButton = (props: UpgradeButtonProps & {className?: string}) => {
     const {children, ...rest} = props;
     return (
