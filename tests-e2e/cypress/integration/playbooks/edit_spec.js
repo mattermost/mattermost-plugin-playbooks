@@ -1056,7 +1056,7 @@ describe('playbooks > edit', () => {
                         });
 
                         // # Select a new channel
-                        cy.selectCategory('Channels');
+                        selectCategory('Channels');
 
                         // * Verify that the control shows the selected channel
                         cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(

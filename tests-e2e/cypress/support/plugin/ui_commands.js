@@ -291,6 +291,10 @@ Cypress.Commands.add('getFirstPostId', () => {
 });
 
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
+    cy.findByTestId('lhs-navigation').within(() => {
+        cy.contains('Playbooks').should('be.visible');
+        cy.contains('Runs').should('be.visible');
+    });
     cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
     cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
     cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);

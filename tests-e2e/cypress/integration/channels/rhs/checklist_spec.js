@@ -11,7 +11,6 @@ import {HALF_SEC} from '../../../fixtures/timeouts';
 describe('channels > rhs > checklist', () => {
     let testTeam;
     let testUser;
-    const testUsers = [];
     let testPlaybook;
 
     before(() => {
@@ -19,36 +18,6 @@ describe('channels > rhs > checklist', () => {
             testTeam = team;
             testUser = user;
 
-            // # Create extra test users in this team
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
-
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
-
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
-
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
-
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
-
-            cy.apiCreateUser().then((payload) => {
-                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
-                testUsers.push(payload.user);
-            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -161,14 +130,6 @@ describe('channels > rhs > checklist', () => {
                 playbookId: testPlaybook.id,
                 playbookRunName,
                 ownerUserId: testUser.id,
-            }).then((playbookRun) => {
-                // # Add test users to channel
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[0].id);
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[1].id);
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[2].id);
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[3].id);
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[4].id);
-                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[5].id);
             });
 
             // # Navigate directly to the application and the playbook run channel
