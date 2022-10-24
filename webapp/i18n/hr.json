@@ -104,7 +104,7 @@
     "I2zEie": "Proslavi uspjeh i uči iz grešaka s izvještajima o retrospektivi. Filtriraj događaje kronologije za pregled procesa, angažman sudionika i svrhe revizije.",
     "Hzwzgs": "Šalji aktualiziranja u {oneChannel, plural, one {kanal} other {kanale}}",
     "HhLp57": "citat",
-    "FEGywG": "Navedi budući datum/vrijeme za podsjetnik aktualiziranja.",
+    "FEGywG": "Odredi budući datum/vrijeme za podsjetnik aktualiziranja.",
     "EC5MJD": "Nema novih aktualiziranja.",
     "DnBhRg": "Dodaj ljude",
     "DXACD6": "Objavi izvještaj o retrospektivi i pristupi kronologiji",
@@ -128,7 +128,7 @@
     "3rCdDw": "Aktualiziranja stanja",
     "1MQ3XZ": "{numActiveRuns, plural, =0 {nema aktivnih izvođenja} =1 {# aktivno izvođenje} few {# aktivna izvođenja} other {# aktivnih izvođenja}}",
     "1I48bs": "Predložak za retrospektivu",
-    "/HtNUp": "Odaberi ili navedi {mode, select, DurationValue {trajanje („4 sata”, „7 dana” …)} DateTimeValue {vrijeme („za 4 sata”, „1. svibnja”, „Sutra u 13 sati” …)} other {vrijeme ili trajanje}}",
+    "/HtNUp": "Odaberi ili odredi {mode, select, DurationValue {trajanje („4 sata”, „7 dana” …)} DateTimeValue {vrijeme („za 4 sata”, „1. svibnja”, „Sutra u 13 sati” …)} other {vrijeme ili trajanje}}",
     "/1FEJW": "Dnevni AKTIVNI SUDIONICI u zadnjih 14 dana",
     "+ZIXOR": "Pristup kanalu",
     "+QgvjN": "Dodijeli vlasničku ulogu korisiniku",
@@ -704,5 +704,9 @@
     "bCmvTY": "Pošalji povratne informacije",
     "6rygzu": "Ukloni iz izvođenja",
     "0Azlrb": "Upravljaj",
-    "/GCoTA": "Isprazni"
+    "/GCoTA": "Isprazni",
+    "w4Nhhb": "Dodaj sudionika",
+    "jrOlPO": "Primaj obavijesti o aktualiziranju stanja izvođenja",
+    "cUCiWw": "Postani sudionik",
+    "1OVPiC": "Postani sudionik izvođenja. Kao sudionik, možeš objavljivati aktualiziranja stanja, dodjeljivati i završavati zadatke i izvoditi retrospektive."
 }
