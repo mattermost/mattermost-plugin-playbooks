@@ -564,7 +564,7 @@ func TestUpdateRunActions(t *testing.T) {
 		require.NotEmpty(t, response.Errors)
 		require.NoError(t, err)
 
-		// Make sure the action settings are updated
+		// Make sure the action settings are not updated
 		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.False(t, editedRun.StatusUpdateBroadcastChannelsEnabled)

@@ -33,6 +33,8 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
     const onHide = () => {
         setWelcomeMessageEnabled(playbook.message_on_join_enabled);
         setWelcomeMessage(playbook.message_on_join);
+        setCategoryName(playbook.category_name);
+        setCategorizeChannelEnabled(playbook.categorize_channel_enabled);
         dispatch(hidePlaybookActionsModal());
     };
 
@@ -45,9 +47,9 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
         }
         updatePlaybook({
             categoryName: categoryName ?? '',
-            categorizeChannelEnabled,
+            categorizeChannelEnabled: categorizeChannelEnabled && categoryName !== '',
             messageOnJoin: welcomeMessage,
-            messageOnJoinEnabled: welcomeMessageEnabled,
+            messageOnJoinEnabled: welcomeMessageEnabled && welcomeMessage !== '',
         });
         dispatch(hidePlaybookActionsModal());
     };

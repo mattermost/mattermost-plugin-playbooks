@@ -341,7 +341,6 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	defer p.store.finalizeTransaction(tx)
 
 	var playbooks []app.Playbook
-	// TOOD add new actions to numactions
 	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
 		Select(
 			"p.ID",

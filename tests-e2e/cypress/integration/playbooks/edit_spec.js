@@ -1065,13 +1065,13 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it.skip('persists the category even if the toggle is off', () => {
+                it('persists the category even if the toggle is off', () => {
                     cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
@@ -1086,12 +1086,12 @@ describe('playbooks > edit', () => {
                         cy.get('.channel-selector__control').contains('Favorites');
 
                         // # Click on the toggle to disable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
                     });
-
+                    cy.findByTestId('modal-confirm-button').click();
                     cy.reload();
 
                     cy.findByTestId('playbook-channel-actions-button').click();
@@ -1101,7 +1101,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');

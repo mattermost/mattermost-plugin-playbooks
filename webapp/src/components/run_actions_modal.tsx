@@ -46,6 +46,9 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
 
         setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
         setWebhooks(playbookRun.webhook_on_status_update_urls);
+
+        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
+        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
     };
 
     const onSave = () => {
