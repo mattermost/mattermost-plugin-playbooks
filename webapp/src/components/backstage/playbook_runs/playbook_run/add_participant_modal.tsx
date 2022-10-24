@@ -109,6 +109,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 isMultiMode={true}
                 customSelectStyles={selectStyles}
                 setValues={setProfiles}
+                placeholder={formatMessage({defaultMessage: 'Search for people'})}
             />
         </GenericModal>
     );
@@ -172,6 +173,7 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
         border: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
         minHeight: '48px',
         fontSize: '16px',
+        '&&:before': {content: 'none'},
     }),
     placeholder: (provided) => ({
         ...provided,

@@ -39,9 +39,6 @@ export const StyledAsyncSelect = styled(AsyncSelect)`
         border: none;
         box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
-        
-        font-size: 14px;
-        padding-left: 3.2rem;
 
         &--is-focused {
             box-shadow: inset 0 0 0px 2px var(--button-bg);
@@ -76,6 +73,7 @@ interface Props {
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
+    placeholder?: string;
 }
 
 const ProfileAutocomplete = (props: Props) => {
@@ -159,7 +157,7 @@ const ProfileAutocomplete = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={false}
-            placeholder={formatMessage({defaultMessage: 'Add People'})}
+            placeholder={props.placeholder ?? formatMessage({defaultMessage: 'Add People'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
             styles={props.customSelectStyles ?? customStyles}
             classNamePrefix='profile-autocomplete'
@@ -174,6 +172,8 @@ const customStyles = {
     control: (provided: ControlProps<UserProfile, boolean>) => ({
         ...provided,
         minHeight: '4rem',
+        paddingLeft: '3.2rem',
+        fontSize: '14px',
     }),
 };
 
