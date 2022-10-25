@@ -19,6 +19,7 @@ import {
     LinkVariantIcon,
     RestoreIcon,
     PlayOutlineIcon,
+    LockOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -454,6 +455,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             setShowMakePrivateConfirm(true);
                         }}
                     >
+                        <LockOutlineIcon size={18}/>
                         <FormattedMessage defaultMessage='Convert to private playbook'/>
                     </DropdownMenuItemStyled>
                 )
