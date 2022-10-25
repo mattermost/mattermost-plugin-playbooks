@@ -42,6 +42,7 @@ export interface PlaybookRun {
     retrospective_enabled: boolean;
     participant_ids: string[];
     metrics_data: RunMetricData[];
+    create_channel_member_on_new_participant: boolean;
 }
 
 export interface StatusPost {
