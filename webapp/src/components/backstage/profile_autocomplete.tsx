@@ -1,17 +1,16 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
-
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
-import {OptionsType, ControlProps} from 'react-select';
+import {OptionsType, ControlProps, OptionTypeBase, StylesConfig} from 'react-select';
 
-import Profile from 'src/components/profile/profile';
+import Profile, {ProfileImage, ProfileName} from 'src/components/profile/profile';
 
-const StyledAsyncSelect = styled(AsyncSelect)`
+export const StyledAsyncSelect = styled(AsyncSelect)`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
 
@@ -40,9 +39,6 @@ const StyledAsyncSelect = styled(AsyncSelect)`
         border: none;
         box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
-        height: 4rem;
-        font-size: 14px;
-        padding-left: 3.2rem;
 
         &--is-focused {
             box-shadow: inset 0 0 0px 2px var(--button-bg);
@@ -70,24 +66,45 @@ const StyledAsyncSelect = styled(AsyncSelect)`
 
 interface Props {
     userIds: string[];
-    onAddUser: (userid: string) => void;
+    onAddUser?: (userid: string) => void; // for single select
+    setValues?: (values: UserProfile[]) => void; // for multi select
     searchProfiles: (term: string) => ActionFunc;
-    getProfiles: () => ActionFunc;
+    getProfiles?: () => ActionFunc;
     isDisabled?: boolean;
+    isMultiMode?: boolean;
+    customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
+    placeholder?: string;
 }
 
 const ProfileAutocomplete = (props: Props) => {
     const {formatMessage} = useIntl();
 
-    const onChange = (userAdded: UserProfile) => {
-        props.onAddUser(userAdded.id);
-    };
+    let onChange;
+
+    if (props.isMultiMode) {
+        // in case of multiselect we need to set full list of values
+        onChange = (value: UserProfile[]) => {
+            props.setValues?.(value);
+        };
+    } else {
+        onChange = (userAdded: UserProfile) => {
+            props.onAddUser?.(userAdded.id);
+        };
+    }
 
     const getOptionValue = (user: UserProfile) => {
         return user.id;
     };
 
-    const formatOptionLabel = (option: UserProfile) => {
+    const formatOptionLabel = (option: UserProfile, context: {context: string}) => {
+        // different view for selected values
+        if (context.context === 'value') {
+            return (
+                <React.Fragment>
+                    <StyledProfile userId={option.id}/>
+                </React.Fragment>
+            );
+        }
         return (
             <React.Fragment>
                 <Profile userId={option.id}/>
@@ -98,7 +115,7 @@ const ProfileAutocomplete = (props: Props) => {
     const debouncedSearchProfiles = debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
         let profiles;
         if (term.trim().length === 0) {
-            profiles = props.getProfiles();
+            profiles = props.getProfiles?.();
         } else {
             profiles = props.searchProfiles(term);
         }
@@ -125,11 +142,13 @@ const ProfileAutocomplete = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            id={'profile-autocomplete'}
+            autoFocus={true}
             isDisabled={props.isDisabled}
-            isMulti={false}
-            controlShouldRenderValue={false}
+            isMulti={props.isMultiMode}
+            controlShouldRenderValue={props.isMultiMode}
             cacheOptions={false}
-            defaultOptions={true}
+            defaultOptions={!props.isMultiMode}
             loadOptions={usersLoader}
             filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
             onChange={onChange}
@@ -138,11 +157,11 @@ const ProfileAutocomplete = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={false}
-            value={null}
-            placeholder={formatMessage({defaultMessage: 'Add People'})}
+            placeholder={props.placeholder ?? formatMessage({defaultMessage: 'Add People'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
-            styles={customStyles}
+            styles={props.customSelectStyles ?? customStyles}
             classNamePrefix='profile-autocomplete'
+            {...props.isMultiMode ? {} : {value: null}}
         />
     );
 };
@@ -152,6 +171,24 @@ export default ProfileAutocomplete;
 const customStyles = {
     control: (provided: ControlProps<UserProfile, boolean>) => ({
         ...provided,
-        minHeight: 34,
+        minHeight: '4rem',
+        paddingLeft: '3.2rem',
+        fontSize: '14px',
     }),
 };
+
+const StyledProfile = styled(Profile)`
+    height: 24px;
+
+    ${ProfileImage} {
+        width: 24px;
+        height: 24px;
+    }
+
+    ${ProfileName} {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 16px;
+    }
+    
+`;
