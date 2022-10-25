@@ -96,5 +96,17 @@
     {
         "id": "app.user.run.retro_publish",
         "translation": "@{{.Name}} közzétett egy visszatekintőt\n[A teljes visszatekintő megtekintése]({{.URL}})\n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} egy futás résztvevője és csatlakozni szeretne ehhez a csatornához. A csatorna bármelyik tagja meghívhatja.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_add_participant",
+        "translation": "@{{.Name}} a @{{.RequesterName}} által hozzá lett adva a futáshoz. Nem kerültek automatikusan hozzá a csatornához, mivel @{{.RequesterName}} nem tagja a csatornának, és a csatorna privát.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_participate",
+        "translation": "@{{.Name}} csatlakozott a futáshoz. Nem kerültek automatikusan hozzádásra a privát csatornához, de a csatorna bármelyik tagja meghívhatja őket, hogy csatlakozzanak.\n"
     }
 ]

@@ -249,6 +249,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+    const refreshLHS = useLHSRefresh();
 
     return (
         <PrimaryButtonLarger
@@ -258,7 +259,8 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
                     playbook.default_owner_enabled ? playbook.default_owner_id : null,
                     playbook.description,
                     team.id,
-                    team.name
+                    team.name,
+                    refreshLHS
                 ));
             }}
             disabled={!enableRunPlaybook}

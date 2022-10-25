@@ -31,6 +31,7 @@ type Mutation {
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
+	changeRunOwner(runID: String!, ownerID: String!): String!
 }
 
 input PlaybookUpdates {

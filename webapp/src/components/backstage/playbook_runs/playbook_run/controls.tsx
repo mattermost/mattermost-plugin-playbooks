@@ -193,7 +193,7 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                     >
                         <UpdateIcon size={18}/>
                         {
-                            statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status update'}/> : <FormattedMessage defaultMessage={'Enable status update'}/>
+                            statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status updates'}/> : <FormattedMessage defaultMessage={'Enable status updates'}/>
                         }
                     </StyledDropdownMenuItem>
                 </>

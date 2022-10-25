@@ -15,6 +15,16 @@ export function transformEvent(event, metadata) {
     }
 
     switch (event.event) {
+    // eslint-disable-next-line lines-around-comment
+    // Rename events
+    case 'playbookrun_get_involved_join':
+        event.event = 'playbookrun_participate';
+        break;
+    case 'playbookrun_request_update_click':
+        event.event = 'playbookrun_request_update';
+        break;
+
+    // Convert old frontend events
     case 'frontend':
         switch (action) {
         case 'view_run_details':
