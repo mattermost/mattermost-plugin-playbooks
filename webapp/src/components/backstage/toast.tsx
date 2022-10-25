@@ -105,6 +105,7 @@ const StyledIcon = styled.i`
 `;
 
 const StyledClose = styled.i`
+    cursor: pointer;
     color: var(--center-channel-bg-56);
 `;
 
@@ -117,4 +118,5 @@ const StyledButton = styled.button`
     border: none;
     font-size: 12px;
     line-height: 16px;
+    font-weight: 600;
 `;

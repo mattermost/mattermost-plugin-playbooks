@@ -63,8 +63,6 @@ export const ToastProvider = (props: Props) => {
         setToasts((ts) => ts.filter((t: ToastOptionsWithID) => t.id !== id));
     };
 
-    const onDismiss = (id: number) => () => remove(id);
-
     return (
         <Ctx.Provider value={{add, remove}}>
             {props.children}
@@ -80,7 +78,7 @@ export const ToastProvider = (props: Props) => {
                                 <Toast
                                     {...options}
                                     closeCallback={() => {
-                                        onDismiss(options.id);
+                                        remove(options.id);
                                         options.closeCallback?.();
                                     }}
                                 />
