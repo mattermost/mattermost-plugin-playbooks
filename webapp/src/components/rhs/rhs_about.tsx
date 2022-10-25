@@ -32,6 +32,8 @@ import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 interface Props {
     playbookRun: PlaybookRun;
+    readOnly?: boolean;
+    onReadOnlyInteract?: () => void
 }
 
 const RHSAbout = (props: Props) => {
@@ -123,6 +125,7 @@ const RHSAbout = (props: Props) => {
                         collapsed={collapsed}
                         toggleCollapsed={toggleCollapsed}
                         editSummary={editSummary}
+                        readOnly={props.readOnly}
                     />
                 </ButtonsRow>
                 <RHSAboutTitle
@@ -138,6 +141,8 @@ const RHSAbout = (props: Props) => {
                             onEdit={onDescriptionEdit}
                             editing={editingSummary}
                             setEditing={setEditingSummary}
+                            readOnly={props.readOnly}
+                            onReadOnlyInteract={props.onReadOnlyInteract}
                         />
                         <Row>
                             <OwnerSection>
@@ -148,7 +153,8 @@ const RHSAbout = (props: Props) => {
                                     placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished}
+                                    enableEdit={!isFinished && !props.readOnly}
+                                    onEditDisabledClick={props.onReadOnlyInteract}
                                     getUsers={fetchUsers}
                                     getUsersInTeam={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
@@ -168,6 +174,8 @@ const RHSAbout = (props: Props) => {
                 }
                 {props.playbookRun.status_update_enabled && (
                     <RHSPostUpdate
+                        readOnly={props.readOnly}
+                        onReadOnlyInteract={props.onReadOnlyInteract}
                         collapsed={collapsed}
                         playbookRun={props.playbookRun}
                         updatesExist={props.playbookRun.status_posts.length !== 0}

@@ -27,7 +27,8 @@ import {
     followPlaybookRun,
 } from 'src/client';
 import {InfoLine} from '../styles';
-import {ToastType, useToaster} from '../toast_banner';
+import {useToaster} from '../toast_banner';
+import {ToastStyle} from '../toast';
 
 const SmallText = styled.div`
     font-weight: 400;
@@ -194,7 +195,10 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
             })
             .catch(() => {
                 setIsFollowing(isFollowing);
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+                addToast({
+                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
+                    toastStyle: ToastStyle.Failure,
+                });
             });
     };
 
