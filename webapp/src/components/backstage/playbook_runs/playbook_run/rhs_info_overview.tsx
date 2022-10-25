@@ -127,7 +127,11 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
             setOwner(user.id);
         } else {
             setSelectedUser(user);
-            setShowAddToChannel(true);
+            if (run.create_channel_member_on_new_participant) {
+                setShowAddToChannel(true);
+            } else {
+                setOwner(user.id);
+            }
         }
     };
 
