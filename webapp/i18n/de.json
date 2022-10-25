@@ -731,5 +731,8 @@
     "WFA0Cg": "Bist du sicher, dass du die Statusaktualisierung für diesen Lauf aktivieren möchtest?",
     "H7IzRB": "Statusaktualisierungen deaktivieren",
     "1OluNs": "Bestätige die Aktivierung von Statusaktualisierungen",
-    "//o1Nu": "Updates deaktivieren"
+    "//o1Nu": "Updates deaktivieren",
+    "jAo8dd": "Statusaktualisierungen ausführen, die durch {name} deaktiviert wurden",
+    "b8Gps8": "Statusaktualisierungen ausführen, die durch {name} aktiviert wurden",
+    "9qqGGd": "Teilnehmer einladen"
 }
