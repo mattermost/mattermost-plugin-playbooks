@@ -1255,6 +1255,16 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
+	// add owner as user
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID)
+	if err != nil {
+		return errors.Wrap(err, "failed to add owner as a participant")
+	}
+	err = s.Follow(playbookRunID, ownerID)
+	if err != nil {
+		return errors.Wrap(err, "failed to make owner follow run")
+	}
+
 	playbookRunToModify.OwnerUserID = ownerID
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")

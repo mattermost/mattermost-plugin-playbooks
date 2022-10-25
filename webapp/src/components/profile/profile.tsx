@@ -30,7 +30,7 @@ const PlaybookRunProfile = styled.div`
     align-items: center;
 `;
 
-const ProfileImage = styled.img`
+export const ProfileImage = styled.img`
     margin: 0 8px 0 0;
     width: 32px;
     height: 32px;
@@ -50,7 +50,7 @@ const ProfileImage = styled.img`
     }
 `;
 
-const ProfileName = styled.div<{hasExtra: boolean}>`
+export const ProfileName = styled.div<{hasExtra: boolean}>`
     padding: 0;
     white-space: nowrap;
     overflow: hidden;

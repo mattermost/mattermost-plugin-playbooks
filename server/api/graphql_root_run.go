@@ -256,7 +256,7 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	}
 
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
-		return "", errors.Wrap(err, "failed to remove participant from run")
+		return "", errors.Wrap(err, "failed to change the run owner")
 	}
 
 	return "", nil
