@@ -267,6 +267,12 @@ const TimelineEventItem = (props: Props) => {
         summary = props.event.summary;
         testid = TimelineEventType.UserJoinedLeft;
         break;
+    case TimelineEventType.ParticipantsChanged:
+        iconClass = 'icon icon-account-outline';
+        summaryTitle = JSON.parse(props.event.details).title;
+        summary = props.event.summary;
+        testid = TimelineEventType.UserJoinedLeft;
+        break;
     case TimelineEventType.PublishedRetrospective:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = formatMessage({defaultMessage: 'Retrospective published by {name}'}, {name: props.event.subject_display_name});

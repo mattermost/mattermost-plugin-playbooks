@@ -224,7 +224,7 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 		}
 	}
 
-	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs); err != nil {
+	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs, userID); err != nil {
 		return "", errors.Wrap(err, "failed to remove participant from run")
 	}
 
