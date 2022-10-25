@@ -74,12 +74,18 @@ const RHSRunDetails = () => {
 
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun?.id || '', 'channel_rhs');
     const addToast = useToaster().add;
+    const removeToast = useToaster().remove;
     const displayReadOnlyToast = useMemo(() => debounce(() => {
-        addToast({
+        let toastID = -1;
+        const showConfirm = () => {
+            removeToast(toastID);
+            showParticipateConfirm();
+        };
+        toastID = addToast({
             content: formatMessage({defaultMessage: 'Become a participant to interact with this run'}),
             toastStyle: ToastStyle.Informational,
             buttonName: formatMessage({defaultMessage: 'Participate'}),
-            buttonCallback: showParticipateConfirm,
+            buttonCallback: showConfirm,
             iconName: 'account-plus-outline',
         });
     }, toastDebounce, {leading: true, trailing: false}), []);

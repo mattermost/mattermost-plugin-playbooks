@@ -32,7 +32,7 @@ interface ToastOptionsWithID extends ToastOptions {
 }
 
 interface ToastFuncs {
-    add: (options: ToastOptions) => void;
+    add: (options: ToastOptions) => number;
     remove: (id: number) => void;
 }
 
@@ -45,7 +45,7 @@ export const ToastProvider = (props: Props) => {
 
         setToasts((ts) => [...ts, {id, ...options}]);
         if (duration <= 0) {
-            return;
+            return id;
         }
 
         window.setTimeout(() => {
@@ -57,6 +57,8 @@ export const ToastProvider = (props: Props) => {
                 return [...ts.slice(0, index), ...ts.slice(index + 1)];
             });
         }, duration);
+
+        return id;
     };
 
     const remove = (id: number) => {
@@ -73,7 +75,7 @@ export const ToastProvider = (props: Props) => {
                             <CSSTransition
                                 key={options.id}
                                 classNames='fade'
-                                timeout={2000}
+                                timeout={500}
                             >
                                 <Toast
                                     {...options}
