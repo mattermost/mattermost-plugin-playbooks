@@ -336,7 +336,7 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): Checkbox
         },
         {
             display: 'Show skipped tasks',
-            value: 'checked',
+            value: 'skipped',
             selected: filter.skipped,
             disabled: filter.all,
         },
