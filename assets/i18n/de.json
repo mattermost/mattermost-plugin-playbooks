@@ -108,5 +108,13 @@
     {
         "id": "app.user.run.request_join_channel",
         "translation": "@{{.Name}} ist ein Laufteilnehmer und möchte diesem Kanal beitreten. Jedes Mitglied des Channels kann ihn einladen.\n"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für diesen Durchlauf aktiviert"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für diesen Durchlauf deaktiviert"
     }
 ]
