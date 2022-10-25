@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ArrowDownIcon, BullhornOutlineIcon, ClockOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {ArrowDownIcon, BullhornOutlineIcon, UpdateIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
@@ -191,7 +191,7 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                         onClick={() => toggleRunStatusUpdates(!statusUpdateEnabled)}
                         className='restartRun'
                     >
-                        <ClockOutlineIcon size={18}/>
+                        <UpdateIcon size={18}/>
                         {
                             statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status update'}/> : <FormattedMessage defaultMessage={'Enable status update'}/>
                         }

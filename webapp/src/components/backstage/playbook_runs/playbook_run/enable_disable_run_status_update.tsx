@@ -25,7 +25,7 @@ export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
             show: true,
             title: confirmTitle,
             message: confirmationMessage,
-            confirmButtonText: formatMessage({defaultMessage: 'Ok'}),
+            confirmButtonText: status ? formatMessage({defaultMessage: 'Enable updates'}) : formatMessage({defaultMessage: 'Disable updates'}),
             onConfirm,
             onCancel: () => null,
         })));
