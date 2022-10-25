@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
+import React, {MutableRefObject, useMemo, useRef, useState, useEffect} from 'react';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {debounce} from 'debounce';
 
@@ -19,7 +19,7 @@ const TextWithTooltipWhenEllipsis = (props: Props) => {
     const ref = useRef<HTMLElement|null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    const resizeListener = useCallback(debounce(() => {
+    const resizeListener = useMemo(() => debounce(() => {
         const parentWidth = (props.parentRef?.current && props.parentRef.current.offsetWidth) || 0;
         if (ref?.current && ref.current.offsetWidth > parentWidth) {
             setShowTooltip(true);
@@ -40,6 +40,9 @@ const TextWithTooltipWhenEllipsis = (props: Props) => {
     useEffect(() => {
         resizeListener();
     });
+
+    // Clean up the debounce handler on unmount.
+    useEffect(() => resizeListener.clear);
 
     const text = (
         <span

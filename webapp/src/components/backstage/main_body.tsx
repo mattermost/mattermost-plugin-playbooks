@@ -13,8 +13,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 
-import Playbook from 'src/components/backstage/playbooks/playbook';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEditor from 'src/components/backstage/playbook_editor/playbook_editor';
 import {ErrorPageTypes} from 'src/constants';
@@ -84,9 +82,6 @@ const MainBody = () => {
 
     return (
         <Switch>
-            <Route path={`${match.url}/playbooks/:playbookId/preview`}>
-                <Playbook/>
-            </Route>
             <Route
                 path={`${match.url}/playbooks/:playbookId`}
             >

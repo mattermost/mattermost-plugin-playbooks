@@ -25,7 +25,7 @@ const RHSAboutButtons = (props: Props) => {
     const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
-    const overviewURL = `/runs/${props.playbookRun.id}`;
+    const overviewURL = `/runs/${props.playbookRun.id}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
 
     return (

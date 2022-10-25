@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ArrowDownIcon, BullhornOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {ArrowDownIcon, BullhornOutlineIcon, UpdateIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
@@ -14,6 +14,8 @@ import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
 import {useToaster} from '../../toast_banner';
 import {Role, Separator} from '../shared';
+
+import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
@@ -173,4 +175,28 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     }
 
     return null;
+};
+
+export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
+    const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
+
+    const statusUpdateEnabled = props.playbookRun.status_update_enabled;
+
+    return (
+        <>
+            { props.role === Role.Participant &&
+                <>
+                    <Separator/>
+                    <StyledDropdownMenuItem
+                        onClick={() => toggleRunStatusUpdates(!statusUpdateEnabled)}
+                    >
+                        <UpdateIcon size={18}/>
+                        {
+                            statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status updates'}/> : <FormattedMessage defaultMessage={'Enable status updates'}/>
+                        }
+                    </StyledDropdownMenuItem>
+                </>
+            }
+        </>
+    );
 };

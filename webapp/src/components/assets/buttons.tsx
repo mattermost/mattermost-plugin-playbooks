@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
 export const Button = styled.button`
     display: inline-flex;
@@ -16,12 +16,22 @@ export const Button = styled.button`
     border: 0px;
     font-weight: 600;
     font-size: 14px;
-    align-items: center;
     padding: 0 20px;
     position: relative;
+    justify-content: center;
+
+    transition: all 0.15s ease-out;
 
     &:hover{
         background: rgba(var(--center-channel-color-rgb), 0.12);
+    }
+
+    &&, &&:focus {
+        text-decoration: none;
+    }
+
+    &&:hover:not([disabled]) {
+        text-decoration: none;
     }
 
     &:disabled {
@@ -36,12 +46,13 @@ export const Button = styled.button`
 `;
 
 export const PrimaryButton = styled(Button)`
-    background: var(--button-bg);
-    color: var(--button-color);
-    transition: background 0.15s ease-out;
-    white-space: nowrap;
+    &&, &&:focus {
+        background: var(--button-bg);
+        color: var(--button-color);
+        white-space: nowrap;
+    }
 
-    &:active:not([disabled])  {
+    &:active:not([disabled]) {
         background: rgba(var(--button-bg-rgb), 0.8);
     }
 
@@ -58,12 +69,18 @@ export const PrimaryButton = styled(Button)`
         border-radius: 4px;
     }
 
-    &:hover:enabled {
+    &&:hover:not([disabled]) {
+        color: var(--button-color);
         background: var(--button-bg);
         &:before {
             opacity: 1;
         }
     }
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }    
 `;
 
 export const SubtlePrimaryButton = styled(Button)`
@@ -84,7 +101,6 @@ export const TertiaryButton = styled.button`
     font-weight: 600;
     font-size: 14px;
     padding: 0 20px;
-    transition: all 0.15s ease-out;
 
     color: var(--button-bg);
     background: rgba(var(--button-bg-rgb), 0.08);
@@ -112,17 +128,28 @@ export const TertiaryButton = styled.button`
     }
 `;
 
-export const GrayTertiaryButton = styled.button`
-    border: none;
-    background: none;
-    font-size: 12px;
-    font-weight: normal;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    text-align: left;
+export const InvertedTertiaryButton = styled(Button)`
+    transition: all 0.15s ease-out;
 
-    &:hover {
-        color: rgba(var(--center-channel-color-rgb));
+    && {
+        color: var(--button-bg-rgb);
+        background-color: rgba(var(--button-color-rgb), 0.08);
+    }
+
+    &&:hover:not([disabled]) {
+        color: var(--button-bg-rgb);
+        background: rgba(var(--button-bg-rgb), 0.12);
+    }
+
+    &&:active:not([disabled]) {
+        color: var(--button-bg-rgb);
+        background: rgba(var(--button-bg-rgb), 0.16);
+    }
+
+    &&:focus:not([disabled]) {
+        color: var(--button-bg-rgb);
+        background-color: rgba(var(--button-color-rgb), 0.08);
+        box-shadow: inset 0px 0px 0px 2px var(--sidebar-text-active-border-rgb);
     }
 `;
 
@@ -175,7 +202,7 @@ export const UpgradeButton = (props: UpgradeButtonProps) => {
     return (
         <PrimaryButton {...rest}>
             {children}
-            <PositionedUpgradeBadge/>
+            <PositionedKeyVariantCircleIcon/>
         </PrimaryButton>
     );
 };
@@ -185,15 +212,16 @@ export const UpgradeTertiaryButton = (props: UpgradeButtonProps & {className?: s
     return (
         <TertiaryButton {...rest}>
             {children}
-            <PositionedUpgradeBadge/>
+            <PositionedKeyVariantCircleIcon/>
         </TertiaryButton>
     );
 };
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
+const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     position: absolute;
     top: -4px;
     right: -6px;
+    color: var(--online-indicator);
 `;
 
 export const ButtonIcon = styled.button`

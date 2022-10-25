@@ -41,7 +41,7 @@ export function usePlaybook(id: Playbook['id'] | undefined) {
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
 
-export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
+export function useEditPlaybook(id: Playbook['id'], callback?: () => void): EditPlaybookReturn {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
     useEffect(() => {
         clientFetchPlaybook(id).then(setPlaybook);
@@ -51,7 +51,7 @@ export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
         if (playbook) {
             const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
             setPlaybook(updatedPlaybook);
-            savePlaybook(updatedPlaybook);
+            savePlaybook(updatedPlaybook).then(callback);
         }
     };
 

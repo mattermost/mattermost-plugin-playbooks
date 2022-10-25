@@ -94,7 +94,19 @@
     "translation": "@{{.Name}} has joined the run. They haven't been automatically added to this private channel but any member of the channel can invite them to join.\n"
   },
   {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} is a run participant and wants join this channel. Any member of the channel can invite them.\n"
+  },
+  {
     "id": "app.user.run.request_update",
     "translation": "@here — @{{.Name}} requested a status update. \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} disabled the status updates for this run"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} enabled the status updates for this run"
   }
 ]

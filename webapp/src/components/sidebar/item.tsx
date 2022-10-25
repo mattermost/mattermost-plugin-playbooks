@@ -24,28 +24,29 @@ const Item = (props: ItemProps) => {
             isCollapsed={props.isCollapsed}
             data-testid={props.display_name}
         >
-            <StyledNavLink
-                className={props.className}
-                id={`sidebarItem_${props.id}`}
-                aria-label={props.areaLabel}
-                to={props.link}
-                tabIndex={props.isCollapsed ? -1 : 0}
-            >
-                <Tooltip
-                    id={`sidebarTooltip_${props.id}`}
-                    content={props.display_name}
+            {!props.isCollapsed &&
+                <StyledNavLink
+                    className={props.className}
+                    id={`sidebarItem_${props.id}`}
+                    aria-label={props.areaLabel}
+                    to={props.link}
                 >
-                    <NameIconContainer
-                        id={`sidebarItem_${props.id}`}
+                    <Tooltip
+                        id={`sidebarTooltip_${props.id}`}
+                        content={props.display_name}
                     >
-                        <Icon className={classNames('CompassIcon', props.icon)}/>
-                        <ItemDisplayLabel>
-                            {props.display_name}
-                        </ItemDisplayLabel>
-                    </NameIconContainer>
-                </Tooltip>
-                {<HoverMenu>{props.itemMenu}</HoverMenu>}
-            </StyledNavLink>
+                        <NameIconContainer
+                            id={`sidebarItem_${props.id}`}
+                        >
+                            <Icon className={classNames('CompassIcon', props.icon)}/>
+                            <ItemDisplayLabel>
+                                {props.display_name}
+                            </ItemDisplayLabel>
+                        </NameIconContainer>
+                    </Tooltip>
+                    {<HoverMenu>{props.itemMenu}</HoverMenu>}
+                </StyledNavLink>
+            }
         </ItemContainer>
     );
 };

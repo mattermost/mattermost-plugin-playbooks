@@ -19,11 +19,6 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
         margin-right: 11px;
         fill: rgb(var(--center-channel-color-rgb), 0.56);
     }
-
-    &&:focus {
-        text-decoration: none;
-        color: inherit;
-  }
 `;
 
 export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
