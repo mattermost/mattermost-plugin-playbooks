@@ -189,7 +189,6 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                     <Separator/>
                     <StyledDropdownMenuItem
                         onClick={() => toggleRunStatusUpdates(!statusUpdateEnabled)}
-                        className='restartRun'
                     >
                         <UpdateIcon size={18}/>
                         {
