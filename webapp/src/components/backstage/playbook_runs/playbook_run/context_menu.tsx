@@ -23,7 +23,7 @@ import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {telemetryEvent} from 'src/client';
 
-import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+import {CopyRunLinkMenuItem, ToggleRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -74,6 +74,10 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     role={role}
                 />
                 <RestoreRunMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
+                <ToggleRunStatusUpdateMenuItem
                     playbookRun={playbookRun}
                     role={role}
                 />

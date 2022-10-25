@@ -89,6 +89,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -892,6 +893,28 @@ func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *
 		h.HandleError(w, c.logger, err)
 		return
 	}
+}
+
+func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		StatusEnabled bool `json:"status_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if err := h.playbookRunService.ToggleStatusUpdates(playbookRunID, userID, payload.StatusEnabled); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
+
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a
