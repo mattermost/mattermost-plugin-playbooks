@@ -930,6 +930,27 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 	return announcementMsg
 }
 
+func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
+	telemetryString := fmt.Sprintf("?telem_run_id=%s", playbookRun.ID)
+	announcementMsg := fmt.Sprintf(
+		"### Run status update %s : [%s](%s%s)\n",
+		status,
+		playbookRun.Name,
+		GetRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
+	)
+	announcementMsg += fmt.Sprintf(
+		"@%s %s status update for [%s](%s%s). Visit the link above for more information.",
+		userName,
+		status,
+		playbookRun.Name,
+		GetRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
+	)
+
+	return announcementMsg
+}
+
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
@@ -1022,6 +1043,98 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		webhookEvent := PlaybookRunWebhookEvent{
 			Type:   RunFinished,
 			At:     endAt,
+			UserID: userID,
+		}
+
+		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
+		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
+	}
+
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
+
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	logger := logrus.WithField("playbook_run_id", playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	updateAt := model.GetMillis()
+	playbookRunToModify.StatusUpdateEnabled = enable
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return err
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	T := i18n.GetUserTranslations(user.Locale)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	statusUpdate := "enabled"
+	eventType := StatusUpdatesEnabled
+	if !enable {
+		statusUpdate = "disabled"
+		eventType = StatusUpdatesDisabled
+	}
+
+	data := map[string]interface{}{
+		"Username": user.Username,
+	}
+
+	message := T("app.user.run.status_disable", data)
+	if enable {
+		message = T("app.user.run.status_enable", data)
+	}
+
+	postID := ""
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
+	if err != nil {
+		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
+	} else {
+		postID = post.Id
+	}
+
+	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
+		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify, logger)
+		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
+	}
+
+	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
+	if err := s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID); err != nil {
+		logger.WithError(err).Error("failed to dm post toggle-run-status-updates to run followers")
+	}
+
+	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
+	if !enable {
+		s.RemoveReminder(playbookRunID)
+	}
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      updateAt,
+		EventAt:       updateAt,
+		EventType:     eventType,
+		PostID:        postID,
+		SubjectUserID: userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+		return err
+	}
+
+	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
+
+		webhookEvent := PlaybookRunWebhookEvent{
+			Type:   eventType,
+			At:     updateAt,
 			UserID: userID,
 		}
 
