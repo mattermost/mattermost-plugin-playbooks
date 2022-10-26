@@ -392,16 +392,16 @@ func TestMigration_000049(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		InsertStatusPost(store, runsIDs[0], postsIDs[2])
-		InsertStatusPost(store, runsIDs[0], postsIDs[3])
-		InsertStatusPost(store, runsIDs[0], postsIDs[0])
-		InsertStatusPost(store, runsIDs[0], postsIDs[1])
+		_ = InsertStatusPost(store, runsIDs[0], postsIDs[2])
+		_ = InsertStatusPost(store, runsIDs[0], postsIDs[3])
+		_ = InsertStatusPost(store, runsIDs[0], postsIDs[0])
+		_ = InsertStatusPost(store, runsIDs[0], postsIDs[1])
 
-		InsertStatusPost(store, runsIDs[1], postsIDs[4])
-		InsertStatusPost(store, runsIDs[1], postsIDs[5])
+		_ = InsertStatusPost(store, runsIDs[1], postsIDs[4])
+		_ = InsertStatusPost(store, runsIDs[1], postsIDs[5])
 
-		InsertStatusPost(store, runsIDs[2], postsIDs[7])
-		InsertStatusPost(store, runsIDs[2], postsIDs[6])
+		_ = InsertStatusPost(store, runsIDs[2], postsIDs[7])
+		_ = InsertStatusPost(store, runsIDs[2], postsIDs[6])
 
 		runMigrationUp(t, store, engine, 1)
 
