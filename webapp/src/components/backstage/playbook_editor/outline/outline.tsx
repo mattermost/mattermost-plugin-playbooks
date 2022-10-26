@@ -99,7 +99,6 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <ChecklistList
                     playbook={playbook}
-                    enableFinishRun={false}
                     isReadOnly={false}
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}

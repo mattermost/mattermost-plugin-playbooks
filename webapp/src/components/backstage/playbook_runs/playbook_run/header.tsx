@@ -1,27 +1,28 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import {AccountPlusOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarIcon, StarOutlineIcon, TimelineTextOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import {AccountPlusOutlineIcon, TimelineTextOutlineIcon, InformationOutlineIcon, LightningBoltOutlineIcon, StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
 
-import {PrimaryButton} from 'src/components/assets/buttons';
-import CopyLink from 'src/components/widgets/copy_link';
+import styled from 'styled-components';
+
 import {showRunActionsModal} from 'src/actions';
 import {
     getSiteUrl,
 } from 'src/client';
-import {useParticipateInRun, useFavoriteRun} from 'src/hooks';
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
-import {Role, Badge, ExpandRight} from 'src/components/backstage/playbook_runs/shared';
-import RunActionsModal from 'src/components/run_actions_modal';
-import {BadgeType} from 'src/components/backstage/status_badge';
-import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
+import {PrimaryButton} from 'src/components/assets/buttons';
 import {StarButton} from 'src/components/backstage/playbook_editor/playbook_editor';
-import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//header_button';
+import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
+import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
+import {Badge, ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
+import {BadgeType} from 'src/components/backstage/status_badge';
+import RunActionsModal from 'src/components/run_actions_modal';
+import CopyLink from 'src/components/widgets/copy_link';
+import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
+import {Metadata as PlaybookRunMetadata, PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;

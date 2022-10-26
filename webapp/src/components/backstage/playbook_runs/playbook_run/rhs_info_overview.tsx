@@ -20,14 +20,15 @@ import {
 import {UserProfile} from '@mattermost/types/users';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
-import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import FollowButton from 'src/components/backstage/follow_button';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {requestJoinChannel, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
@@ -45,9 +46,15 @@ const useRequestJoinChannel = (playbookRunId: string) => {
     const requestJoin = async () => {
         const response = await requestJoinChannel(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'The join channel request was unsuccessful.'}), ToastType.Failure);
+            addToast({
+                content: formatMessage({defaultMessage: 'The join channel request was unsuccessful.'}),
+                toastStyle: ToastStyle.Failure,
+            });
         } else {
-            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel.'}), ToastType.Success);
+            addToast({
+                content: formatMessage({defaultMessage: 'Your request was sent to the run channel.'}),
+                toastStyle: ToastStyle.Success,
+            });
         }
     };
     const RequestJoinModal = (
@@ -104,12 +111,18 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     message = formatMessage({defaultMessage: 'It was not possible to change the owner'});
                 }
 
-                addToast(message, ToastType.Failure);
+                addToast({
+                    content: message,
+                    toastStyle: ToastStyle.Failure,
+                });
             } else {
                 refreshLHS();
             }
         } catch (error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to change the owner'}), ToastType.Failure);
+            addToast({
+                content: formatMessage({defaultMessage: 'It was not possible to change the owner'}),
+                toastStyle: ToastStyle.Failure,
+            });
         }
     };
 
