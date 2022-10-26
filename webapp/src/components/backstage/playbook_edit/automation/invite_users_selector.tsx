@@ -76,15 +76,15 @@ const InviteUsersSelector = (props: Props) => {
     let options: UserProfile[] | GroupType<UserProfile>[] = nonInvitedProfiles;
     if (invitedProfiles.length !== 0) {
         options = [
-            {label: 'INVITED MEMBERS', options: invitedProfiles},
-            {label: 'NON INVITED MEMBERS', options: nonInvitedProfiles},
+            {label: 'SELECTED', options: invitedProfiles},
+            {label: 'ALL', options: nonInvitedProfiles},
         ];
     }
 
     let badgeContent = '';
     const numInvitedMembers = props.userIds.length;
     if (numInvitedMembers > 0) {
-        badgeContent = `${numInvitedMembers} MEMBER${numInvitedMembers > 1 ? 'S' : ''}`;
+        badgeContent = `${numInvitedMembers} SELECTED`;
     }
 
     // Type guard to check whether the current options is a group or a plain list
@@ -114,7 +114,7 @@ const InviteUsersSelector = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={false}
-            placeholder={formatMessage({defaultMessage: 'Search for member'})}
+            placeholder={formatMessage({defaultMessage: 'Search for people'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
                 control: (provided: ControlProps<UserProfile, boolean>) => ({

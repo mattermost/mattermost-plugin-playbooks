@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useDispatch} from 'react-redux';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
@@ -18,21 +17,20 @@ import {
     LockOutlineIcon,
     ArrowForwardIosIcon,
 } from '@mattermost/compass-icons/components';
-import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {UserProfile} from '@mattermost/types/users';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
-import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
 import FollowButton from 'src/components/backstage/follow_button';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import Following from 'src/components/backstage/playbook_runs/playbook_run/following';
 import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {requestJoinChannel, setOwner as clientSetOwner} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {useFormattedUsername} from 'src/hooks';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
@@ -48,9 +46,15 @@ const useRequestJoinChannel = (playbookRunId: string) => {
     const requestJoin = async () => {
         const response = await requestJoinChannel(playbookRunId);
         if (response?.error) {
-            addToast(formatMessage({defaultMessage: 'The join channel request was unsuccessful.'}), ToastType.Failure);
+            addToast({
+                content: formatMessage({defaultMessage: 'The join channel request was unsuccessful.'}),
+                toastStyle: ToastStyle.Failure,
+            });
         } else {
-            addToast(formatMessage({defaultMessage: 'Your request was sent to the run channel.'}), ToastType.Success);
+            addToast({
+                content: formatMessage({defaultMessage: 'Your request was sent to the run channel.'}),
+                toastStyle: ToastStyle.Success,
+            });
         }
     };
     const RequestJoinModal = (
@@ -90,8 +94,6 @@ const StyledArrowIcon = styled(ArrowForwardIosIcon)`
 const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
-    const [showAddToChannel, setShowAddToChannel] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const refreshLHS = useLHSRefresh();
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 
@@ -109,12 +111,18 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     message = formatMessage({defaultMessage: 'It was not possible to change the owner'});
                 }
 
-                addToast(message, ToastType.Failure);
+                addToast({
+                    content: message,
+                    toastStyle: ToastStyle.Failure,
+                });
             } else {
                 refreshLHS();
             }
         } catch (error) {
-            addToast(formatMessage({defaultMessage: 'It was not possible to change the owner'}), ToastType.Failure);
+            addToast({
+                content: formatMessage({defaultMessage: 'It was not possible to change the owner'}),
+                toastStyle: ToastStyle.Failure,
+            });
         }
     };
 
@@ -122,13 +130,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
         if (!user || !userType) {
             return;
         }
-
-        if (userType === 'Member') {
-            setOwner(user.id);
-        } else {
-            setSelectedUser(user);
-            setShowAddToChannel(true);
-        }
+        setOwner(user.id);
     };
 
     return (
@@ -190,17 +192,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     />
                 </FollowersWrapper>
             </Item>
-            {selectedUser &&
-            <AddToChannelModal
-                user={selectedUser}
-                channelId={run.channel_id}
-                setOwner={setOwner}
-                show={showAddToChannel}
-                onHide={() => {
-                    setShowAddToChannel(false);
-                    setSelectedUser(null);
-                }}
-            />}
             <Item
                 id='runinfo-channel'
                 icon={ProductChannelsIcon}
@@ -231,45 +222,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
 };
 
 export default RHSInfoOverview;
-
-interface AddToChannelModalProps {
-    user: UserProfile;
-    channelId: string;
-    setOwner: (id: string) => void;
-    show: boolean;
-    onHide: () => void;
-}
-
-const AddToChannelModal = ({user, channelId, setOwner, show, onHide}: AddToChannelModalProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    const displayName = useFormattedUsername(user);
-
-    if (!user) {
-        return null;
-    }
-
-    return (
-        <ConfirmModal
-            show={show}
-            title={formatMessage(
-                {defaultMessage: 'Add {displayName} to Channel'},
-                {displayName},
-            )}
-            message={formatMessage(
-                {defaultMessage: '{displayName} is not a participant of the run. Would you like to make them a participant? They will have access to all of the message history in the run channel.'},
-                {displayName},
-            )}
-            confirmButtonText={formatMessage({defaultMessage: 'Add'})}
-            onConfirm={() => {
-                dispatch(addChannelMember(channelId, user.id));
-                setOwner(user.id);
-                onHide();
-            }}
-            onCancel={onHide}
-        />
-    );
-};
 
 interface ItemProps {
     id: string;

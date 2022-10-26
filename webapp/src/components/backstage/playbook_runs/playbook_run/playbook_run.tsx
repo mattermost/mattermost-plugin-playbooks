@@ -174,9 +174,7 @@ const PlaybookRunDetails = () => {
     case RHSContent.RunParticipants:
         rhsComponent = (
             <Participants
-                playbookRunId={playbookRun.id}
-                participantsIds={playbookRun.participant_ids}
-                runOwnerUserId={playbookRun.owner_user_id}
+                playbookRun={playbookRun}
                 role={role}
                 teamName={metadata?.team_name}
             />

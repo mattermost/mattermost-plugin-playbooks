@@ -224,7 +224,7 @@ describe('lhs', () => {
             cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
             // # Add viewer user to the channel
-            cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+            cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`).wait('@telemetry');

@@ -14,7 +14,8 @@ import {
 import {useRunMembership, useUpdateRun} from 'src/graphql/hooks';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {CategoryItemType} from 'src/types/category';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
@@ -47,8 +48,14 @@ export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
     const onConfirmParticipate = async () => {
         addToRun()
-            .then(() => addToast(formatMessage({defaultMessage: 'You\'ve joined this run.'}), ToastType.Success))
-            .catch(() => addToast(formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}), ToastType.Failure));
+            .then(() => addToast({
+                content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
+                toastStyle: ToastStyle.Success,
+            }))
+            .catch(() => addToast({
+                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
+                toastStyle: ToastStyle.Failure,
+            }));
         telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
     };
     const ParticipateConfirmModal = (

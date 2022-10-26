@@ -9,7 +9,8 @@ import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/se
 
 import {followPlaybookRun, unfollowPlaybookRun, telemetryEvent} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
-import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {useRunFollowers} from 'src/hooks';
@@ -61,7 +62,10 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
                 });
             })
             .catch(() => {
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+                addToast({
+                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
+                    toastStyle: ToastStyle.Failure,
+                });
             });
     };
 
