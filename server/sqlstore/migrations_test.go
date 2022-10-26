@@ -368,15 +368,6 @@ func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
 	return id, err
 }
 
-func insertUserInfo(sqlStore *SQLStore, userInfo map[string]interface{}) (string, error) {
-	id := model.NewId()
-	_, err := sqlStore.execBuilder(sqlStore.db, sq.
-		Insert("IR_UserInfo").
-		SetMap(userInfo))
-
-	return id, err
-}
-
 // tableInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema after each migration
 // and returns the list. The first and last elements in the list describe DB before and after running all migrations.
 func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
@@ -444,16 +435,6 @@ func NewRunMapBuilder() *RunMapBuilder {
 	}
 }
 
-func NewUserInfoMapBuilder() *RunMapBuilder {
-	return &RunMapBuilder{
-		runAsMap: map[string]interface{}{
-			"ID":                             model.NewId(),
-			"LastDailyTodoDMAt":              model.GetMillis(),
-			"DigestNotificationSettingsJSON": "",
-		},
-	}
-}
-
 func (b *RunMapBuilder) WithName(name string) *RunMapBuilder {
 	b.runAsMap["Name"] = name
 	return b
@@ -471,11 +452,6 @@ func (b *RunMapBuilder) WithChecklists(checklistJSON string) *RunMapBuilder {
 
 func (b *RunMapBuilder) WithEndAt(endAt int64) *RunMapBuilder {
 	b.runAsMap["EndAt"] = endAt
-	return b
-}
-
-func (b *RunMapBuilder) WithDigestSettingsJSON(settingsJSON string) *RunMapBuilder {
-	b.runAsMap["DigestNotificationSettingsJSON"] = settingsJSON
 	return b
 }
 
