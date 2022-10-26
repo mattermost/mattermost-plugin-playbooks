@@ -1,2 +1,2 @@
-update IR_UserInfo
-set DigestNotificationSettingsJSON = JSON_REMOVE(DigestNotificationSettingsJSON, '$.DisableWeeklyDigest')
+UPDATE IR_UserInfo
+SET DigestNotificationSettingsJSON = JSON_REMOVE(DigestNotificationSettingsJSON, '$.disable_weekly_digest')

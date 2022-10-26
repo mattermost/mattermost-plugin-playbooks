@@ -1,3 +1,3 @@
-update IR_UserInfo
-set DigestNotificationSettingsJSON = DigestNotificationSettingsJSON ||
-    json_build_object('DisableWeeklyDigest', DigestNotificationSettingsJSON::json->>'DisableDailyDigest')
+UPDATE IR_UserInfo
+SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
+	jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::json->>'disable_daily_digest')::boolean))::json

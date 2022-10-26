@@ -2365,21 +2365,21 @@ var migrations = []Migration{
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
-					update IR_UserInfo
-					set DigestNotificationSettingsJSON =
-						JSON_SET(DigestNotificationSettingsJSON, '$.DisableWeeklyDigest',
-             				JSON_EXTRACT(DigestNotificationSettingsJSON, '$.DisableDailyDigest'))
+					UPDATE IR_UserInfo
+					SET DigestNotificationSettingsJSON =
+						JSON_SET(DigestNotificationSettingsJSON, '$.disable_weekly_digest',
+             				JSON_EXTRACT(DigestNotificationSettingsJSON, '$.disable_daily_digest'))
 				`); err != nil {
-					return errors.Wrapf(err, "failed adding DisableWeeklyDigest field to IR_UserInfo DigestNotificationSettingsJSON")
+					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			} else {
 				if _, err := e.Exec(`
-					update IR_UserInfo
-					set DigestNotificationSettingsJSON = DigestNotificationSettingsJSON ||
-						json_build_object('DisableWeeklyDigest', DigestNotificationSettingsJSON::json->>'DisableDailyDigest')
+				    UPDATE IR_UserInfo
+				    SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
+				    	jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json
 				
 				`); err != nil {
-					return errors.Wrapf(err, "failed adding DisableWeeklyDigest field to IR_UserInfo DigestNotificationSettingsJSON")
+					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			}
 
