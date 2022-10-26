@@ -132,7 +132,7 @@ func TestDBSchema(t *testing.T) {
 		{
 			Name:                 "0.24.0 > 0.25.0",
 			LegacyMigrationIndex: 24,
-			MorphMigrationLimit:  3, // 000054-000057
+			MorphMigrationLimit:  4, // 000054-000057
 		},
 	}
 
