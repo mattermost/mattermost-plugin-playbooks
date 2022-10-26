@@ -343,7 +343,7 @@ func TestMigration_000014(t *testing.T) {
 	}
 }
 
-func TestMigration_000060(t *testing.T) {
+func TestMigration_000050(t *testing.T) {
 	insertData := func(t *testing.T, store *SQLStore) {
 		_, err := insertUserInfo(store, NewUserInfoMapBuilder().WithDigestSettingsJSON(`
 			{"disable_daily_digest": false}
