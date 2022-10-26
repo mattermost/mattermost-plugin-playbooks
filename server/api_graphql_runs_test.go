@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -67,96 +68,127 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
 	require.NoError(t, err)
 
-	t.Run("add two participants", func(t *testing.T) {
-		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:                               "TestPlaybookNoMembersNoChannelRemove",
-			TeamID:                              e.BasicTeam.Id,
-			Public:                              true,
-			CreatePublicPlaybookRun:             true,
-			CreateChannelMemberOnNewParticipant: true,
+	// if the test fits this testTable structure, add it here
+	// otherwise, create another t.Run()
+	testCases := []struct {
+		Name                     string
+		PlaybookCreateOptions    client.PlaybookCreateOptions
+		PlaybookRunCreateOptions client.PlaybookRunCreateOptions
+		ParticipantsToBeAdded    []string
+		ExpectedRunParticipants  []string
+		ExpectedRunFollowers     []string
+		ExpectedChannelMembers   []string
+		UnexpectedChannelMembers []string
+	}{
+		{
+			Name: "Add 2 participants, actions ON, reporter = owner",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser.Id,
+			},
+			ParticipantsToBeAdded:    []string{e.RegularUser2.Id, user3.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			UnexpectedChannelMembers: []string{},
+		},
+		{
+			Name: "Add 1 participant, actions ON, reporter != owner",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser2.Id,
+			},
+			ParticipantsToBeAdded:    []string{user3.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			UnexpectedChannelMembers: []string{},
+		},
+		{
+			Name: "Add 2 participants, actions OFF, reporter = owner",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: false,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser.Id,
+			},
+			ParticipantsToBeAdded:    []string{e.RegularUser2.Id, user3.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id, user3.Id},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.PlaybookCreateOptions.Title = "Playbook title"
+			tc.PlaybookCreateOptions.TeamID = e.BasicTeam.Id
+			pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), tc.PlaybookCreateOptions)
+			require.NoError(t, err)
+
+			tc.PlaybookRunCreateOptions.Name = "Run title"
+			tc.PlaybookRunCreateOptions.TeamID = e.BasicTeam.Id
+			tc.PlaybookRunCreateOptions.PlaybookID = pbID
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), tc.PlaybookRunCreateOptions)
+			require.NoError(t, err)
+
+			_, err = addParticipants(e.PlaybooksClient, run.ID, tc.ParticipantsToBeAdded)
+			require.NoError(t, err)
+
+			// assert participants
+			run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+			require.NoError(t, err)
+			require.Len(t, run.ParticipantIDs, len(tc.ExpectedRunParticipants))
+			for _, ep := range tc.ExpectedRunParticipants {
+				found := false
+				for _, p := range run.ParticipantIDs {
+					if p == ep {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found, fmt.Sprintf("Participant %s not found", ep))
+			}
+			// assert followers
+			meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.TODO(), run.ID)
+			require.NoError(t, err)
+			require.Len(t, meta.Followers, len(tc.ExpectedRunFollowers))
+			for _, ef := range tc.ExpectedRunFollowers {
+				found := false
+				for _, f := range meta.Followers {
+					if f == ef {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found, fmt.Sprintf("Follower %s not found", ef))
+			}
+			//assert channel members
+			for _, ecm := range tc.ExpectedChannelMembers {
+				member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, ecm)
+				require.Nil(t, err)
+				assert.Equal(t, ecm, member.UserId)
+			}
+			// assert unexpected channel members
+			for _, ucm := range tc.UnexpectedChannelMembers {
+				_, err = e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, ucm)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "No channel member found for that user ID and channel ID")
+			}
 		})
-		require.NoError(t, err)
 
-		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  pbID,
-		})
-		require.NoError(t, err)
-
-		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id, user3.Id})
-		require.Empty(t, response.Errors)
-		require.NoError(t, err)
-
-		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
-		require.NoError(t, err)
-		require.Len(t, run.ParticipantIDs, 3)
-		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
-		assert.Equal(t, e.RegularUser2.Id, run.ParticipantIDs[1])
-		assert.Equal(t, user3.Id, run.ParticipantIDs[2])
-
-		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.TODO(), run.ID)
-		require.NoError(t, err)
-		require.Len(t, meta.Followers, 3)
-		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
-		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
-		assert.Equal(t, user3.Id, meta.Followers[2])
-
-		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
-		require.Nil(t, err)
-		assert.Equal(t, e.RegularUser2.Id, member.UserId)
-
-		member, err = e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, user3.Id)
-		require.Nil(t, err)
-		assert.Equal(t, user3.Id, member.UserId)
-	})
-
-	t.Run("add two participants without adding to channel members", func(t *testing.T) {
-
-		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:                               "TestPlaybookNoMembersNoChannelAdd",
-			TeamID:                              e.BasicTeam.Id,
-			Public:                              true,
-			CreatePublicPlaybookRun:             true,
-			CreateChannelMemberOnNewParticipant: false,
-		})
-		require.NoError(t, err)
-
-		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  pbID,
-		})
-		require.NoError(t, err)
-
-		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id, user3.Id})
-		require.Empty(t, response.Errors)
-		require.NoError(t, err)
-
-		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
-		require.NoError(t, err)
-		require.Len(t, run.ParticipantIDs, 3)
-		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
-		assert.Equal(t, e.RegularUser2.Id, run.ParticipantIDs[1])
-		assert.Equal(t, user3.Id, run.ParticipantIDs[2])
-
-		meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.TODO(), run.ID)
-		require.NoError(t, err)
-		require.Len(t, meta.Followers, 3)
-		assert.Equal(t, e.RegularUser.Id, meta.Followers[0])
-		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
-		assert.Equal(t, user3.Id, meta.Followers[2])
-
-		_, err = e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "No channel member found for that user ID and channel ID")
-
-		_, err = e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, user3.Id)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "No channel member found for that user ID and channel ID")
-	})
+	}
 
 	t.Run("remove two participants", func(t *testing.T) {
 		response, err := removeParticipants(e.PlaybooksClient, e.BasicRun.ID, []string{e.RegularUser2.Id, user3.Id})

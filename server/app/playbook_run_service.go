@@ -338,20 +338,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
 	s.metricsService.IncrementRunsCreatedCount(1)
 
-	// Add owner and reporter to channel after creating playbook run so that all automations trigger.
-	err = s.addPlaybookRunOwnerReporterToChannel(playbookRun, channel)
+	err = s.addPlaybookRunInitialMemberships(playbookRun, channel)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to add users to playbook run channel")
-	}
-
-	// add owner as user
-	err = s.AddParticipants(playbookRun.ID, []string{playbookRun.OwnerUserID}, playbookRun.OwnerUserID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to add owner as a participant")
-	}
-	err = s.Follow(playbookRun.ID, playbookRun.OwnerUserID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make owner follow run")
+		return nil, errors.Wrap(err, "failed to setup core memberships at run/channel")
 	}
 
 	invitedUserIDs := playbookRun.InvitedUserIDs
@@ -2312,11 +2301,13 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 	return channel, nil
 }
 
-func (s *PlaybookRunServiceImpl) addPlaybookRunOwnerReporterToChannel(playbookRun *PlaybookRun, channel *model.Channel) error {
+// addPlaybookRunInitialMemberships creates the memberships in run and channels for the most core users: playbooksbot, reporter and owner
+func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *PlaybookRun, channel *model.Channel) error {
 	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the team")
 	}
 
+	// channel related
 	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the channel")
 	}
@@ -2337,6 +2328,24 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunOwnerReporterToChannel(playbookRu
 			"channel_id":    channel.Id,
 			"owner_user_id": playbookRun.OwnerUserID,
 		}).Warn("failed to promote owner to admin")
+	}
+
+	// run related
+	participants := []string{playbookRun.OwnerUserID}
+	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
+		participants = append(participants, playbookRun.ReporterUserID)
+	}
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to add owner/reporter as a participant")
+	}
+	err = s.Follow(playbookRun.ID, playbookRun.OwnerUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to make owner follow run")
+	}
+	err = s.Follow(playbookRun.ID, playbookRun.ReporterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to make reporter follow run")
 	}
 
 	return nil
