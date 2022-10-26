@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/morph"
 	"github.com/stretchr/testify/require"
@@ -219,7 +218,7 @@ func TestMigration_000005(t *testing.T) {
 	insertData := func(store *SQLStore) int {
 		numRuns := 0
 		for _, d := range testData {
-			_, err := insertRun(store, NewRunMapBuilder().
+			err := InsertRun(store, NewRunMapBuilder().
 				WithName(d.Name).
 				WithActiveStage(d.ActiveStage).
 				WithChecklists(d.ChecklistJSON).ToRunAsMap())
@@ -295,13 +294,13 @@ func TestMigration_000005(t *testing.T) {
 
 func TestMigration_000014(t *testing.T) {
 	insertData := func(t *testing.T, store *SQLStore) {
-		_, err := insertRun(store, NewRunMapBuilder().WithName("0").ToRunAsMap())
+		err := InsertRun(store, NewRunMapBuilder().WithName("0").ToRunAsMap())
 		require.NoError(t, err)
-		_, err = insertRun(store, NewRunMapBuilder().WithName("1").WithEndAt(100000000000).ToRunAsMap())
+		err = InsertRun(store, NewRunMapBuilder().WithName("1").WithEndAt(100000000000).ToRunAsMap())
 		require.NoError(t, err)
-		_, err = insertRun(store, NewRunMapBuilder().WithName("2").WithEndAt(0).ToRunAsMap())
+		err = InsertRun(store, NewRunMapBuilder().WithName("2").WithEndAt(0).ToRunAsMap())
 		require.NoError(t, err)
-		_, err = insertRun(store, NewRunMapBuilder().WithName("3").WithEndAt(123861298332).ToRunAsMap())
+		err = InsertRun(store, NewRunMapBuilder().WithName("3").WithEndAt(123861298332).ToRunAsMap())
 		require.NoError(t, err)
 	}
 
@@ -347,6 +346,75 @@ func TestMigration_000014(t *testing.T) {
 	}
 }
 
+func TestMigration_000049(t *testing.T) {
+	numRuns := 5
+	numPosts := 10
+
+	getPostCreatedAtByIndex := func(i int) int64 { return int64(100000000 + i*100) }
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		runMigrationUp(t, store, engine, 48)
+
+		// insert test data
+		runsIDs := []string{}
+		postsIDs := []string{}
+		for i := 0; i < numRuns; i++ {
+			run := NewRunMapBuilder().WithName(fmt.Sprintf("run %d", i)).ToRunAsMap()
+			err := InsertRun(store, run)
+			require.NoError(t, err)
+			runsIDs = append(runsIDs, run["ID"].(string))
+		}
+
+		for i := 0; i < numPosts; i++ {
+			postsIDs = append(postsIDs, model.NewId())
+			err := InsertPost(store, postsIDs[i], getPostCreatedAtByIndex(i))
+			require.NoError(t, err)
+		}
+
+		InsertStatusPost(store, runsIDs[0], postsIDs[2])
+		InsertStatusPost(store, runsIDs[0], postsIDs[3])
+		InsertStatusPost(store, runsIDs[0], postsIDs[0])
+		InsertStatusPost(store, runsIDs[0], postsIDs[1])
+
+		InsertStatusPost(store, runsIDs[1], postsIDs[4])
+		InsertStatusPost(store, runsIDs[1], postsIDs[5])
+
+		InsertStatusPost(store, runsIDs[2], postsIDs[7])
+		InsertStatusPost(store, runsIDs[2], postsIDs[6])
+
+		runMigrationUp(t, store, engine, 1)
+
+		// validate migration
+		type Run struct {
+			ID                 string
+			Name               string
+			CreateAt           int64
+			LastStatusUpdateAt int64
+		}
+
+		var runs []Run
+		err = store.selectBuilder(store.db, &runs, store.builder.
+			Select("ID", "Name", "CreateAt", "LastStatusUpdateAt").
+			From("IR_Incident").
+			OrderBy("Name ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, runs, numRuns)
+
+		require.Equal(t, getPostCreatedAtByIndex(3), runs[0].LastStatusUpdateAt)
+		require.Equal(t, getPostCreatedAtByIndex(5), runs[1].LastStatusUpdateAt)
+		require.Equal(t, getPostCreatedAtByIndex(7), runs[2].LastStatusUpdateAt)
+		require.Equal(t, runs[3].CreateAt, runs[3].LastStatusUpdateAt)
+		require.Equal(t, runs[4].CreateAt, runs[4].LastStatusUpdateAt)
+	}
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
@@ -362,15 +430,6 @@ func runMigrationDown(t *testing.T, store *SQLStore, engine *morph.Morph, limit 
 func runLegacyMigration(t *testing.T, store *SQLStore, index int) {
 	err := store.migrate(migrations[index])
 	require.NoError(t, err)
-}
-
-func insertRun(sqlStore *SQLStore, run map[string]interface{}) (string, error) {
-	id := model.NewId()
-	_, err := sqlStore.execBuilder(sqlStore.db, sq.
-		Insert("IR_Incident").
-		SetMap(run))
-
-	return id, err
 }
 
 // tableInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema after each migration
