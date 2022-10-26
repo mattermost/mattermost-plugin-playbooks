@@ -12,19 +12,8 @@ const MenuListWrapper = styled.div`
     max-height: 280px;
 `;
 
-const MenuHeaderHeight = 44;
-
-const MenuHeader = styled.div`
-    height: ${MenuHeaderHeight}px;
-    padding: 16px 0 12px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    line-height: 16px;
-`;
-
 const StyledScrollbars = styled(Scrollbars)`
-    height: ${300 - MenuHeaderHeight}px;
+    height: 300px;
 `;
 
 const ThumbVertical = styled.div`
@@ -39,7 +28,6 @@ const ThumbVertical = styled.div`
 const MenuList = <T extends OptionTypeBase>(props: MenuListComponentProps<T, false>) => {
     return (
         <MenuListWrapper>
-            {props.selectProps.placeholder && <MenuHeader>{props.selectProps.placeholder}</MenuHeader>}
             <StyledScrollbars
                 autoHeight={true}
                 renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}

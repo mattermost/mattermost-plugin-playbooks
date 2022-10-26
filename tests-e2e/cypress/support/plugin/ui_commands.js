@@ -143,7 +143,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
 });
 
 Cypress.Commands.add('openSelector', () => {
-    cy.findByText('Search for member').click({force: true});
+    cy.findByText('Search for people').click({force: true});
 });
 
 Cypress.Commands.add('openChannelSelector', () => {

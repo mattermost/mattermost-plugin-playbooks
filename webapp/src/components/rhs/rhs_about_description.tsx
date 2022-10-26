@@ -19,6 +19,8 @@ interface DescriptionProps {
     onEdit: (value: string) => void;
     editing: boolean;
     setEditing: (editing: boolean) => void;
+    readOnly?: boolean;
+    onReadOnlyInteract?: () => void;
 }
 
 const RHSAboutDescription = (props: DescriptionProps) => {
@@ -45,10 +47,15 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 data-testid='rendered-description'
                 onClick={(event) => {
                     // Enter edit mode only if the user is not clicking a link and there's no selected text
+                    // and we are not in read only mode
                     const targetNode = event.target as Node;
                     const selectedText = window.getSelection();
                     const hasSelectedText = selectedText !== null && selectedText.toString() !== '';
                     if (targetNode.nodeName !== 'A' && !hasSelectedText) {
+                        if (props.readOnly) {
+                            props.onReadOnlyInteract?.();
+                            return;
+                        }
                         props.setEditing(true);
                     }
                 }}

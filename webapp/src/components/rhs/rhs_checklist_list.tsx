@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -13,12 +13,13 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 import {GlobalState} from 'mattermost-webapp/types/store';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     setEveryChecklistCollapsedStateChange,
+    finishRun,
 } from 'src/actions';
 import {
     Checklist,
@@ -41,12 +42,17 @@ import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
+import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import GiveFeedbackButton from 'src/components/give_feedback_button';
 
 interface Props {
     playbookRun: PlaybookRun;
     parentContainer: ChecklistParent;
     id?: string;
     viewerMode: boolean;
+    onViewerModeInteract?: () => void
 }
 
 export enum ChecklistParent {
@@ -54,7 +60,44 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props) => {
+const StyledTertiaryButton = styled(TertiaryButton)`
+    display: inline-block;
+    margin: 12px 0;
+`;
+
+const StyledPrimaryButton = styled(PrimaryButton)`
+    display: inline-block;
+    margin: 12px 0;
+`;
+
+const RHSGiveFeedbackButton = styled(GiveFeedbackButton)`
+    && {
+        color: var(--center-channel-color-64);
+    }
+
+    &&:hover:not([disabled]) {
+        color: var(--center-channel-color-72);
+        background-color: var(--center-channel-color-08);
+    }
+`;
+
+const allComplete = (checklists: Checklist[]) => {
+    return notFinishedTasks(checklists) === 0;
+};
+
+const notFinishedTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
+                count++;
+            }
+        }
+    }
+    return count;
+};
+
+const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewerModeInteract}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -162,6 +205,18 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
 
         return ItemButtonsFormat.Long;
     };
+    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
+    const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
+
+    const checklistsPunchout = useMeasurePunchouts(
+        ['pb-checklists-inner-container'],
+        [],
+        {y: -5, height: 10, x: -5, width: 10},
+    );
+    const showRunDetailsChecklistsStep = useShowTutorialStep(
+        RunDetailsTutorialSteps.Checklists,
+        TutorialTourCategories.RUN_DETAILS
+    );
 
     return (
         <InnerContainer
@@ -208,7 +263,6 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
             </MainTitleBG>
             <ChecklistList
                 playbookRun={playbookRun}
-                enableFinishRun={parentContainer === ChecklistParent.RHS}
                 isReadOnly={viewerMode}
                 checklistsCollapseState={checklistsState}
                 onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
@@ -216,6 +270,37 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode}: Props)
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
             />
+            {
+                active && parentContainer === ChecklistParent.RHS && playbookRun &&
+                <FinishButton
+                    onClick={() => {
+                        if (viewerMode && onViewerModeInteract) {
+                            onViewerModeInteract();
+                        } else {
+                            dispatch(finishRun(playbookRun?.team_id || ''));
+                        }
+                    }}
+                >
+                    {formatMessage({defaultMessage: 'Finish run'})}
+                </FinishButton>
+            }
+            <RHSGiveFeedbackButton/>
+            {showRunDetailsChecklistsStep && (
+                <TutorialTourTip
+                    title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
+                    screen={<FormattedMessage defaultMessage='Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.'/>}
+                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
+                    step={RunDetailsTutorialSteps.Checklists}
+                    showOptOut={false}
+                    placement='left'
+                    pulsatingDotPlacement='top-start'
+                    pulsatingDotTranslate={{x: 0, y: 0}}
+                    width={352}
+                    autoTour={true}
+                    punchOut={checklistsPunchout}
+                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.Checklists}_Checklists`}
+                />
+            )}
         </InnerContainer>
     );
 };

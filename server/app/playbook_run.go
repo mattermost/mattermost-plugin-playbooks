@@ -383,6 +383,8 @@ const (
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
+	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
+	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
 )
 
 type TimelineEvent struct {
@@ -571,6 +573,9 @@ type PlaybookRunService interface {
 
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
+
+	// ToggleStatusUpdates  enables or disables status update for the run
+	ToggleStatusUpdates(playbookRunID, userID string, enable bool) error
 
 	// GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
