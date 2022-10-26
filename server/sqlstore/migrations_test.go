@@ -67,7 +67,6 @@ func TestDBSchema(t *testing.T) {
 			LegacyMigrationIndex: 11,
 			MorphMigrationLimit:  4, // 000024 <> 000027
 		},
-
 		{
 			Name:                 "0.12.0 > 0.13.0",
 			LegacyMigrationIndex: 12,
@@ -134,6 +133,11 @@ func TestDBSchema(t *testing.T) {
 			LegacyMigrationIndex: 24,
 			MorphMigrationLimit:  4, // 000054-000057
 		},
+		{
+			Name:                 "0.25.0 > 0.26.0",
+			LegacyMigrationIndex: 25,
+			MorphMigrationLimit:  2, // 000058-000059
+		},
 	}
 
 	for _, driverName := range driverNames {
@@ -154,7 +158,10 @@ func TestDBSchema(t *testing.T) {
 				// compare table schemas
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
-				require.Equal(t, dbSchemaMorph, tableInfoList[i+1])
+				// this way it's easier to find out why test fails
+				for j := range dbSchemaMorph {
+					require.Equal(t, dbSchemaMorph[j], tableInfoList[i+1][j])
+				}
 
 				// compare indexes
 				dbIndexesMorph, err := getDBIndexesInfo(store)
