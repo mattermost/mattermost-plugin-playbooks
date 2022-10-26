@@ -1,7 +1,6 @@
 package sqlstore
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -336,64 +335,6 @@ func TestMigration_000014(t *testing.T) {
 			defer engine.Close()
 
 			runMigrationUp(t, store, engine, 13)
-			insertData(t, store)
-			runMigrationUp(t, store, engine, 1)
-			validateAfter(t, store)
-		})
-	}
-}
-
-func TestMigration_000050(t *testing.T) {
-	insertData := func(t *testing.T, store *SQLStore) {
-		_, err := insertUserInfo(store, NewUserInfoMapBuilder().WithDigestSettingsJSON(`
-			{"disable_daily_digest": false}
-		`).ToRunAsMap())
-		require.NoError(t, err)
-		_, err = insertUserInfo(store, NewUserInfoMapBuilder().WithDigestSettingsJSON(`
-			{"disable_daily_digest": true}
-		`).ToRunAsMap())
-		require.NoError(t, err)
-	}
-
-	type UserInfo struct {
-		ID                             string
-		LastDailyTodoDMAt              int
-		DigestNotificationSettingsJSON json.RawMessage
-	}
-
-	type DigestNotificationSettingsJSONAfter struct {
-		DisableDailyDigest  bool `json:"disable_daily_digest"`
-		DisableWeeklyDigest bool `json:"disable_weekly_digest"`
-	}
-
-	validateAfter := func(t *testing.T, store *SQLStore) {
-		var userInfos []UserInfo
-		err := store.selectBuilder(store.db, &userInfos, store.builder.
-			Select("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
-			From("IR_UserInfo"))
-
-		require.NoError(t, err)
-		require.Len(t, userInfos, 2)
-
-		for _, r := range userInfos {
-			var digestSettings DigestNotificationSettingsJSONAfter
-			err = json.Unmarshal([]byte(r.DigestNotificationSettingsJSON), &digestSettings)
-			// checking whether both fields are present
-			require.NoError(t, err)
-			// checking that they have equal values
-			require.Equal(t, digestSettings.DisableDailyDigest, digestSettings.DisableWeeklyDigest)
-		}
-	}
-
-	for _, driverName := range driverNames {
-		t.Run("run migration up", func(t *testing.T) {
-			db := setupTestDB(t, driverName)
-			store := setupTables(t, db)
-			engine, err := store.createMorphEngine()
-			require.NoError(t, err)
-			defer engine.Close()
-
-			runMigrationUp(t, store, engine, 49)
 			insertData(t, store)
 			runMigrationUp(t, store, engine, 1)
 			validateAfter(t, store)
