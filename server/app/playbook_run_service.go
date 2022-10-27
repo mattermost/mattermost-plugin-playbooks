@@ -2875,7 +2875,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		s.leaveActions(playbookRun, userID)
 	}
 
-	err = s.removeParticipantsTimeline(playbookRunID, requesterUser, users)
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
 	if err != nil {
 		return err
 	}
@@ -2906,6 +2906,9 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 }
 
 func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2934,11 +2937,13 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 				return errors.Wrap(err, "failed to get requester user")
 			}
 			users = append(users, user)
+		} else {
+			users = append(users, requesterUser)
 		}
 		s.participateActions(playbookRun, channel, user, requesterUser)
 	}
 
-	err = s.addParticipantsTimeline(playbookRunID, requesterUser, users)
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "joined")
 	if err != nil {
 		return err
 	}
@@ -2951,68 +2956,45 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) addParticipantsTimeline(playbookRunId string, requesterUser *model.User, users []*model.User) error {
+// changeParticipantsTimeline handles timeline event creation for run participation change triggers:
+// participate/leave events and add/remove participants (multiple allowed)
+func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string, requesterUser *model.User, users []*model.User, action string) error {
+	type Details struct {
+		Action    string   `json:"action,omitempty"`
+		Requester string   `json:"requester,omitempty"`
+		Users     []string `json:"users,omitempty"`
+	}
+	var details Details
 	now := model.GetMillis()
 
 	event := &TimelineEvent{
-		PlaybookRunID: playbookRunId,
+		PlaybookRunID: playbookRunID,
 		CreateAt:      now,
 		EventAt:       now,
+		Summary:       "", // copies managed in webapp using the injected data
 		CreatorUserID: requesterUser.Id,
+		SubjectUserID: requesterUser.Id,
 	}
 
-	// if only 1 itema and same users as requester is a Join event
+	event.EventType = ParticipantsChanged
 	if len(users) == 1 && users[0].Id == requesterUser.Id {
 		event.EventType = UserJoinedLeft
-		event.Details = `{"action": "joined", "title": ""}`
-		event.Summary = fmt.Sprintf("@%s joined the run", requesterUser.Username)
-
-	} else {
-		summary := fmt.Sprintf("@%s added @%d participants to the run", requesterUser.Username, len(users))
-		names := make([]string, 0)
-		for _, u := range users {
-			names = append(names, u.Username)
-		}
-
-		event.EventType = ParticipantsChanged
-		event.Details = fmt.Sprintf(`{"action": "joined", "users": ["%s"]}`, strings.Join(names, `","`))
-		event.Summary = summary
+	}
+	if len(users) == 1 {
+		event.SubjectUserID = users[0].Id
 	}
 
-	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+	details.Action = action
+	details.Requester = requesterUser.Username
+	details.Users = make([]string, 0)
+	for _, u := range users {
+		details.Users = append(details.Users, u.Username)
 	}
-
-	return nil
-}
-
-func (s *PlaybookRunServiceImpl) removeParticipantsTimeline(playbookRunId string, requesterUser *model.User, users []*model.User) error {
-	now := model.GetMillis()
-
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunId,
-		CreateAt:      now,
-		EventAt:       now,
-		CreatorUserID: requesterUser.Id,
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
 	}
-
-	// if only 1 itema and same users as requester is a Join event
-	if len(users) == 1 && users[0].Id == requesterUser.Id {
-		event.EventType = UserJoinedLeft
-		event.Details = `{"action": "left", "title": ""}`
-		event.Summary = fmt.Sprintf("@%s left the run", requesterUser.Username)
-
-	} else {
-		summary := fmt.Sprintf("@%s removed @%d participants from the run", requesterUser.Username, len(users))
-		names := make([]string, 0)
-		for _, u := range users {
-			names = append(names, u.Username)
-		}
-
-		event.EventType = ParticipantsChanged
-		event.Details = fmt.Sprintf(`{"action": "left", "users": ["%s"]}`, strings.Join(names, `","`))
-		event.Summary = summary
-	}
+	event.Details = string(detailsJSON)
 
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")

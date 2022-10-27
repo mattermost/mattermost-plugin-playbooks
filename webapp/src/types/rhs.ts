@@ -65,3 +65,16 @@ export const TimelineEventsFilterDefault = {
     ran_slash_command: false,
     user_joined_left: false,
 };
+
+export interface ParticipantsChangedDetails {
+    action: string;
+    requester: string;
+    users: string[];
+}
+
+export interface UserJoinedLeftDetails {
+    title?: string;
+    action: string;
+    requester: string;
+    users: string[];
+}
