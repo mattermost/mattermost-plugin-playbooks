@@ -10,6 +10,14 @@ func InsertRun(sqlStore *SQLStore, run map[string]interface{}) error {
 	return err
 }
 
+func InsertPlaybook(sqlStore *SQLStore, playbook map[string]interface{}) error {
+	_, err := sqlStore.execBuilder(sqlStore.db, sq.
+		Insert("IR_Playbook").
+		SetMap(playbook))
+
+	return err
+}
+
 func InsertPost(sqlStore *SQLStore, id string, createdAt int64) error {
 	_, err := sqlStore.execBuilder(sqlStore.db, sq.
 		Insert("Posts").

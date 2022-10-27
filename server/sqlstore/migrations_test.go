@@ -437,6 +437,90 @@ func TestMigration_000049(t *testing.T) {
 	}
 }
 
+func TestMigration_000058(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		runMigrationUp(t, store, engine, 57)
+
+		// insert test data
+		_ = InsertPlaybook(store, NewPBMapBuilder().WithTitle("pb0").WithCategorizeChannelEnabled(true).ToRunAsMap())
+		_ = InsertPlaybook(store, NewPBMapBuilder().WithTitle("pb1").WithCategorizeChannelEnabled(false).ToRunAsMap())
+		_ = InsertPlaybook(store, NewPBMapBuilder().WithTitle("pb2").ToRunAsMap())
+
+		runMigrationUp(t, store, engine, 1)
+
+		// validate migration
+		type Playbook struct {
+			ID                       string
+			Title                    string
+			CategorizeChannelEnabled bool
+			CategoryName             *string
+		}
+
+		var playbooks []Playbook
+		err = store.selectBuilder(store.db, &playbooks, store.builder.
+			Select("ID", "Title", "CategorizeChannelEnabled", "CategoryName").
+			From("IR_Playbook").
+			OrderBy("Title ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, playbooks, 3)
+		require.True(t, playbooks[0].CategorizeChannelEnabled)
+		require.False(t, playbooks[1].CategorizeChannelEnabled)
+		require.False(t, playbooks[2].CategorizeChannelEnabled)
+		require.Equal(t, "Playbook Runs", *playbooks[0].CategoryName)
+		require.True(t, playbooks[1].CategoryName == nil || *playbooks[1].CategoryName == "")
+		require.True(t, playbooks[2].CategoryName == nil || *playbooks[2].CategoryName == "")
+	}
+}
+
+func TestMigration_000059(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		runMigrationUp(t, store, engine, 58)
+
+		// insert test data
+		_ = InsertRun(store, NewRunMapBuilder().WithName("run0").WithCategorizeChannelEnabled(true).ToRunAsMap())
+		_ = InsertRun(store, NewRunMapBuilder().WithName("run1").WithCategorizeChannelEnabled(false).ToRunAsMap())
+		_ = InsertRun(store, NewRunMapBuilder().WithName("run2").ToRunAsMap())
+
+		runMigrationUp(t, store, engine, 1)
+
+		// validate migration
+		type Run struct {
+			ID                       string
+			Name                     string
+			CategorizeChannelEnabled bool
+			CategoryName             *string
+		}
+
+		var runs []Run
+		err = store.selectBuilder(store.db, &runs, store.builder.
+			Select("ID", "Name", "CategorizeChannelEnabled", "CategoryName").
+			From("IR_Incident").
+			OrderBy("Name ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, runs, 3)
+		require.True(t, runs[0].CategorizeChannelEnabled)
+		require.False(t, runs[1].CategorizeChannelEnabled)
+		require.False(t, runs[2].CategorizeChannelEnabled)
+		require.Equal(t, "Playbook Runs", *runs[0].CategoryName)
+		require.True(t, runs[1].CategoryName == nil || *runs[1].CategoryName == "")
+		require.True(t, runs[2].CategoryName == nil || *runs[2].CategoryName == "")
+	}
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
@@ -541,6 +625,51 @@ func (b *RunMapBuilder) WithEndAt(endAt int64) *RunMapBuilder {
 	return b
 }
 
+func (b *RunMapBuilder) WithCategorizeChannelEnabled(enabled bool) *RunMapBuilder {
+	b.runAsMap["CategorizeChannelEnabled"] = enabled
+	return b
+}
+
 func (b *RunMapBuilder) ToRunAsMap() map[string]interface{} {
 	return b.runAsMap
+}
+
+type PlaybookMapBuilder struct {
+	playbookAsMap map[string]interface{}
+}
+
+func NewPBMapBuilder() *PlaybookMapBuilder {
+	timeNow := model.GetMillis()
+	return &PlaybookMapBuilder{
+		playbookAsMap: map[string]interface{}{
+			"ID":                                   model.NewId(),
+			"Title":                                "base playbook",
+			"Description":                          "",
+			"TeamID":                               model.NewId(),
+			"CreatePublicIncident":                 false,
+			"CreateAt":                             model.GetMillis(),
+			"UpdateAt":                             timeNow,
+			"DeleteAt":                             0,
+			"ChecklistsJSON":                       "{}",
+			"NumStages":                            0,
+			"NumSteps":                             0,
+			"ReminderTimerDefaultSeconds":          0,
+			"RetrospectiveReminderIntervalSeconds": 0,
+			"ExportChannelOnFinishedEnabled":       false,
+		},
+	}
+}
+
+func (pb *PlaybookMapBuilder) WithCategorizeChannelEnabled(enabled bool) *PlaybookMapBuilder {
+	pb.playbookAsMap["CategorizeChannelEnabled"] = enabled
+	return pb
+}
+
+func (pb *PlaybookMapBuilder) WithTitle(name string) *PlaybookMapBuilder {
+	pb.playbookAsMap["Title"] = name
+	return pb
+}
+
+func (pb *PlaybookMapBuilder) ToRunAsMap() map[string]interface{} {
+	return pb.playbookAsMap
 }
