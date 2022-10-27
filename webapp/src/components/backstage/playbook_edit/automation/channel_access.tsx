@@ -97,7 +97,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     data-testid='playbook-channel-actions-button'
                     onClick={() => dispatch(showPlaybookActionsModal())}
                 >
-                    <LightningBoltOutlineIcon/>
+                    <LightningBoltOutlineIcon size={16}/>
                     {formatMessage({defaultMessage: 'Setup channel actions'})}
                 </ChannelActionButton>
             </HorizontalSplit>
@@ -146,4 +146,5 @@ const BigText = styled.div`
 
 const ChannelActionButton = styled(SecondaryButtonLarger)`
     margin-top: 8px;
+    height: 40px;
 `;

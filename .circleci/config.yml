@@ -166,6 +166,8 @@ commands:
           path: tests-e2e/cypress/results/junit
       - store_artifacts:
           path: tests-e2e/cypress/videos
+      - store_artifacts:
+          path: tests-e2e/cypress/screenshots
 
 jobs:
   lint:
