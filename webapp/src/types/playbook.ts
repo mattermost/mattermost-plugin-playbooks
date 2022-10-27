@@ -218,6 +218,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
 export interface ChecklistItemsFilter extends Record<string, boolean> {
     all: boolean;
     checked: boolean;
+    skipped: boolean;
     me: boolean;
     unassigned: boolean;
     others: boolean;
@@ -227,6 +228,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
     checked: true,
+    skipped: true,
     me: true,
     unassigned: true,
     others: true,
