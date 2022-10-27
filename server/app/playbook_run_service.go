@@ -2844,14 +2844,13 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 
 // Leave removes user from the run's participants
 func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get requester user")
 	}
 
 	// Check if any user is the owner
@@ -2865,13 +2864,23 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrapf(err, "users `%+v` failed to remove participation in run `%s`", userIDs, playbookRunID)
 	}
 
+	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
 	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
-		user, err := s.pluginAPI.User.Get(userID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get requester user")
+		user := requesterUser
+		if userID != requesterUserID {
+			user, err = s.pluginAPI.User.Get(userID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get user")
+			}
+			users = append(users, user)
+		} else {
+			users = append(users, requesterUser)
 		}
-		users = append(users, user)
 		s.leaveActions(playbookRun, userID)
 	}
 
@@ -2909,6 +2918,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	if len(userIDs) == 0 {
 		return nil
 	}
+
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2934,7 +2944,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return errors.Wrap(err, "failed to get requester user")
+				return errors.Wrap(err, "failed to get user")
 			}
 			users = append(users, user)
 		} else {
