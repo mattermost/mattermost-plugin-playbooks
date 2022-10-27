@@ -177,8 +177,19 @@ describe('runs > run details page > header', () => {
                         // # Open the run actions modal
                         openRunActionsModal();
 
+                        // Intercept all telemetry calls
+                        cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
+
+                        // * assert telemetry call
+                        cy.wait('@telemetry').then((interception) => {
+                            expect(interception.request.body.name).to.eq('playbookrun_update_actions');
+                            expect(interception.request.body.type).to.eq('track');
+                            expect(interception.request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                            expect(interception.request.body.properties.playbook_id).to.eq(playbookRun.playbook_id);
+                        });
                     });
 
                     it('can not save an invalid form', () => {
@@ -433,7 +444,7 @@ describe('runs > run details page > header', () => {
                     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
                     // # Add viewer user to the channel
-                    cy.apiAddUserToChannel(playbookRun.channel_id, testViewerUser.id);
+                    cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
 
                     // # Change the owner to testViewerUser
                     cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);

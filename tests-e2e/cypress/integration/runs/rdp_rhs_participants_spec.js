@@ -61,7 +61,7 @@ describe('runs > run details page > rhs > participants', () => {
             testRun = playbookRun;
 
             // # Add viewer user to the channel
-            cy.apiAddUserToChannel(testRun.channel_id, testUser2.id);
+            cy.apiAddUsersToRun(testRun.id, [testUser2.id]);
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);

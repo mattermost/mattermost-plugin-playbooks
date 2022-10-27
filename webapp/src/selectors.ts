@@ -217,6 +217,9 @@ export const isChannelActionsModalVisible = (state: GlobalState): boolean =>
 export const isRunActionsModalVisible = (state: GlobalState): boolean =>
     pluginState(state).runActionsModalVisibility;
 
+export const isPlaybookActionsModalVisible = (state: GlobalState): boolean =>
+    pluginState(state).playbookActionsModalVisibility;
+
 export const isCurrentUserAdmin = createSelector(
     'isCurrentUserAdmin',
     getCurrentUser,

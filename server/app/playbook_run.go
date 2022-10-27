@@ -173,6 +173,14 @@ type PlaybookRun struct {
 
 	// Playbook run metric values
 	MetricsData []RunMetricData `json:"metrics_data"`
+
+	// CreateChannelMemberOnNewParticipant is the Run action flag that defines if a new channel member will be added
+	// to the run's channel when a new participant is added to the run (by themselve or by other members).
+	CreateChannelMemberOnNewParticipant bool `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
+
+	// RemoveChannelMemberOnRemovedParticipant is the Run action flag that defines if an existent channel member will be removed
+	// from the run's channel when a new participant is added to the run (by themselve or by other members).
+	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
 }
 
 func (r *PlaybookRun) Clone() *PlaybookRun {
@@ -295,6 +303,9 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
 		r.RetrospectiveReminderIntervalSeconds = playbook.RetrospectiveReminderIntervalSeconds
 		r.Retrospective = playbook.RetrospectiveTemplate
 	}
+
+	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
+	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
 }
 
 type StatusPost struct {
@@ -530,6 +541,9 @@ type RunAction struct {
 
 	StatusUpdateBroadcastChannelsEnabled bool `json:"status_update_broadcast_channels_enabled"`
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
+
+	CreateChannelMemberOnNewParticipant     bool `json:"create_channel_member_on_new_participant"`
+	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant"`
 }
 
 const (
@@ -690,14 +704,6 @@ type PlaybookRunService interface {
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
-	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
-	// was invited by actorID.
-	UserHasJoinedChannel(userID, channelID, actorID string)
-
-	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
-	// was removed from the channel by actorID.
-	UserHasLeftChannel(userID, channelID, actorID string)
-
 	// UpdateRetrospective updates the retrospective for the given playbook run.
 	UpdateRetrospective(playbookRunID, userID string, retrospective RetrospectiveUpdate) error
 
@@ -739,9 +745,6 @@ type PlaybookRunService interface {
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
 
-	// UpdateRunActions updates status update broadcast settings
-	UpdateRunActions(playbookRunID, userID string, settings RunAction) error
-
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
@@ -753,6 +756,9 @@ type PlaybookRunService interface {
 
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -765,6 +771,9 @@ type PlaybookRunStore interface {
 
 	// UpdatePlaybookRun updates a playbook run.
 	UpdatePlaybookRun(playbookRun *PlaybookRun) error
+
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
 
 	// UpdateStatus updates the status of a playbook run.
 	UpdateStatus(statusPost *SQLStatusPost) error
@@ -951,9 +960,6 @@ type PlaybookRunTelemetry interface {
 
 	// RunAction tracks the run actions, i.e., status broadcast action
 	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numBroadcasts int)
-
-	// UpdateRunActions tracks actions settings update
-	UpdateRunActions(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {

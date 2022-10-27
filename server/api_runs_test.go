@@ -1005,49 +1005,6 @@ func TestChecklisFailTooLarge(t *testing.T) {
 	})
 }
 
-func TestRunActions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	t.Run("actions set settings", func(t *testing.T) {
-		settings := client.RunAction{
-			StatusUpdateBroadcastChannelsEnabled: true,
-			StatusUpdateBroadcastWebhooksEnabled: true,
-			BroadcastChannelIDs:                  []string{"chn1", "chn2"},
-			WebhookOnStatusUpdateURLs:            []string{"url1", "url2"},
-		}
-		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
-		assert.NoError(t, err)
-
-		// Make sure the action settings are updated
-		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
-		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
-		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
-		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
-	})
-
-	t.Run("actions update settings", func(t *testing.T) {
-		settings := client.RunAction{
-			StatusUpdateBroadcastChannelsEnabled: false,
-			StatusUpdateBroadcastWebhooksEnabled: false,
-			BroadcastChannelIDs:                  []string{"chn1", "chn3"},
-			WebhookOnStatusUpdateURLs:            []string{"url3", "url4"},
-		}
-		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
-		assert.NoError(t, err)
-
-		// Make sure the action settings are updated
-		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
-		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
-		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
-		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
-	})
-}
-
 func TestRunGetStatusUpdates(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

@@ -7,4 +7,7 @@ export interface RunActions {
 
     status_update_broadcast_webhooks_enabled: boolean;
     webhook_on_status_update_urls: string[];
+
+    create_channel_member_on_new_participant: boolean,
+    remove_channel_member_on_removed_participant: boolean,
 }
