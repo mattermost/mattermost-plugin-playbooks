@@ -2118,36 +2118,20 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, user.Locale)
 
-	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	// get user timezone
-	timezone, err := timeutils.GetUserTimezone(user)
-	if err != nil {
-		return nil, err
-	}
-
-	part2 := buildAssignedTaskMessageSummary(runsAssigned, user.Locale, timezone, !force)
-
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
 			return nil, err
 		}
-		part3 := buildRunsInProgressMessage(runsInProgress, user.Locale)
+		part2 := buildRunsInProgressMessage(runsInProgress, user.Locale)
 
-		return &model.Post{Message: part1 + part2 + part3}, nil
+		return &model.Post{Message: part1 + part2}, nil
 	}
 
 	// !force, so only return sections that have information.
 	var message string
 	if len(runsOverdue) != 0 {
 		message += part1
-	}
-	if len(runsAssigned) != 0 {
-		message += part2
 	}
 	if message == "" {
 		return nil, nil
