@@ -387,7 +387,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			continue
 		}
 
-		err := s.AddParticipants(playbookRun.ID, []string{userID}, s.configService.GetConfiguration().BotUserID)
+		err := s.AddParticipants(playbookRun.ID, []string{userID}, s.configService.GetConfiguration().BotUserID, false)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -1358,7 +1358,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID)
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -2335,7 +2335,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID)
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -2889,7 +2889,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2917,7 +2917,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 				return errors.Wrap(err, "failed to get requester user")
 			}
 		}
-		s.participateActions(playbookRun, channel, user, requesterUser)
+		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
 	}
 
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
@@ -2927,9 +2927,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User) {
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User, forceAddToChannel bool) {
 
-	if !playbookRun.CreateChannelMemberOnNewParticipant {
+	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
 		return
 	}
 

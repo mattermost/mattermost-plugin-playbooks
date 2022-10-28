@@ -32,7 +32,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const dispatch = useDispatch();
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
-    const [addToChannel, setAddToChannel] = useState(false);
+    const [forceAddToChannel, setForceAddToChannel] = useState(false);
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
 
     const searchUsers = (term: string) => {
@@ -46,9 +46,6 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 
     const renderFooter = () => {
-        // disable footer until we participants actions PR(#1518) is merged to keep the master branch clean
-        return null;
-
         if (playbookRun.create_channel_member_on_new_participant) {
             return (
                 <FooterExtraInfoContainer>
@@ -65,8 +62,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 <StyledCheckboxInput
                     testId={'also-add-to-channel'}
                     text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
-                    checked={addToChannel}
-                    onChange={(checked) => setAddToChannel(checked)}
+                    checked={forceAddToChannel}
+                    onChange={(checked) => setForceAddToChannel(checked)}
                 />
             );
         }
@@ -75,7 +72,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
 
     const onConfirm = () => {
         const ids = profiles.map((e) => e.id);
-        addToRun(ids);
+        addToRun(ids, forceAddToChannel);
         hideModal();
     };
 
@@ -90,7 +87,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             handleConfirm={onConfirm}
             isConfirmDisabled={!profiles || profiles.length === 0}
 
-            onExited={() => setProfiles([])}
+            onExited={() => {
+                setProfiles([]);
+                setForceAddToChannel(false);
+            }}
 
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}

@@ -170,8 +170,9 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 }
 
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
-	RunID   string
-	UserIDs []string
+	RunID             string
+	UserIDs           []string
+	ForceAddToChannel *bool
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -190,7 +191,8 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 
-	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID); err != nil {
+	forceAddToChannel := args.ForceAddToChannel != nil && *args.ForceAddToChannel
+	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, forceAddToChannel); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
