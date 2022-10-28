@@ -56,6 +56,10 @@ import {
     ShowRunActionsModal,
     HIDE_RUN_ACTIONS_MODAL,
     HideRunActionsModal,
+    SHOW_PLAYBOOK_ACTIONS_MODAL,
+    ShowPlaybookActionsModal,
+    HIDE_PLAYBOOK_ACTIONS_MODAL,
+    HidePlaybookActionsModal,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -309,6 +313,14 @@ export const showRunActionsModal = (): ShowRunActionsModal => ({
 
 export const hideRunActionsModal = (): HideRunActionsModal => ({
     type: HIDE_RUN_ACTIONS_MODAL,
+});
+
+export const showPlaybookActionsModal = (): ShowPlaybookActionsModal => ({
+    type: SHOW_PLAYBOOK_ACTIONS_MODAL,
+});
+
+export const hidePlaybookActionsModal = (): HidePlaybookActionsModal => ({
+    type: HIDE_PLAYBOOK_ACTIONS_MODAL,
 });
 
 export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({

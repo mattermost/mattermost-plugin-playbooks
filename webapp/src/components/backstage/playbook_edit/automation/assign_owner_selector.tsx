@@ -77,7 +77,7 @@ const AssignOwnerSelector = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={true}
-            placeholder={formatMessage({defaultMessage: 'Search for member'})}
+            placeholder={formatMessage({defaultMessage: 'Search for people'})}
             components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
                 control: (provided: ControlProps<UserProfile, boolean>) => ({

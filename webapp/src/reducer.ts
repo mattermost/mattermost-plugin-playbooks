@@ -37,6 +37,10 @@ import {
     ShowChannelActionsModal,
     SHOW_CHANNEL_ACTIONS_MODAL,
     HIDE_CHANNEL_ACTIONS_MODAL,
+    ShowPlaybookActionsModal,
+    HidePlaybookActionsModal,
+    SHOW_PLAYBOOK_ACTIONS_MODAL,
+    HIDE_PLAYBOOK_ACTIONS_MODAL,
     ShowRunActionsModal,
     HideRunActionsModal,
     SHOW_RUN_ACTIONS_MODAL,
@@ -309,6 +313,17 @@ const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | 
     }
 };
 
+const playbookActionsModalVisibility = (state = false, action: ShowPlaybookActionsModal | HidePlaybookActionsModal) => {
+    switch (action.type) {
+    case SHOW_PLAYBOOK_ACTIONS_MODAL:
+        return true;
+    case HIDE_PLAYBOOK_ACTIONS_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
 const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
     switch (action.type) {
     case SET_HAS_VIEWED_CHANNEL:
@@ -426,6 +441,7 @@ const reducer = combineReducers({
     postMenuModalVisibility,
     channelActionsModalVisibility,
     runActionsModalVisibility,
+    playbookActionsModalVisibility,
     hasViewedByChannel,
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,

@@ -277,6 +277,16 @@ const TimelineEventItem = (props: Props) => {
         summaryTitle = formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.CanceledRetrospective;
         break;
+    case TimelineEventType.StatusUpdatesEnabled:
+        iconClass = 'icon icon-clock-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdatesEnabled;
+        break;
+    case TimelineEventType.StatusUpdatesDisabled:
+        iconClass = 'icon icon-clock-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdatesDisabled;
+        break;
     }
 
     return (

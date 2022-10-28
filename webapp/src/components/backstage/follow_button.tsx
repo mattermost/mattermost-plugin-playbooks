@@ -14,7 +14,8 @@ import {
     telemetryEvent,
 } from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
@@ -69,7 +70,10 @@ export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {
                 });
             })
             .catch(() => {
-                addToast(formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}), ToastType.Failure);
+                addToast({
+                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
+                    toastStyle: ToastStyle.Failure,
+                });
             });
     };
 

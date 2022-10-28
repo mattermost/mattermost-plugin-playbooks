@@ -78,11 +78,19 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	return ret, nil
 }
 
+type RunUpdates struct {
+	IsFavorite                              *bool
+	CreateChannelMemberOnNewParticipant     *bool
+	RemoveChannelMemberOnRemovedParticipant *bool
+	StatusUpdateBroadcastChannelsEnabled    *bool
+	StatusUpdateBroadcastWebhooksEnabled    *bool
+	BroadcastChannelIDs                     *[]string
+	WebhookOnStatusUpdateURLs               *[]string
+}
+
 func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	ID      string
-	Updates struct {
-		IsFavorite *bool
-	}
+	Updates RunUpdates
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -90,16 +98,48 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
+		return "", err
+	}
+
 	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
 		return "", err
 	}
 
-	// Enough permissions to do a fav/unfav, check if future ops need RunManageProperties
-	if err := c.permissions.RunView(userID, playbookRun.ID); err != nil {
-		return "", err
+	// scalar updates
+	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
+	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
+	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
+	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
+
+	if args.Updates.BroadcastChannelIDs != nil {
+		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
+			return "", err
+		}
+		addConcatToSetmap(setmap, "ConcatenatedBroadcastChannelIDs", args.Updates.BroadcastChannelIDs)
 	}
 
+	if args.Updates.WebhookOnStatusUpdateURLs != nil {
+		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnStatusUpdateURLs); err != nil {
+			return "", err
+		}
+		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
+	}
+
+	// Auth level required: runManageProperties if non empty
+	if len(setmap) > 0 {
+		if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
+			return "", err
+		}
+
+		if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+			return "", err
+		}
+	}
+
+	// fav / unfav (auth level required: runView)
 	if args.Updates.IsFavorite != nil {
 		if *args.Updates.IsFavorite {
 			if err := c.categoryService.AddFavorite(
@@ -215,12 +255,8 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 		return "", errors.Wrap(err, "attempted to modify the run owner without permissions")
 	}
 
-	if err := c.permissions.RunManageProperties(args.OwnerID, args.RunID); err != nil {
-		return "", errors.Wrap(err, "new owner doesn't have permissions to the run")
-	}
-
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
-		return "", errors.Wrap(err, "failed to remove participant from run")
+		return "", errors.Wrap(err, "failed to change the run owner")
 	}
 
 	return "", nil

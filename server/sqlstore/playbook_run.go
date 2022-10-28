@@ -186,6 +186,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
+			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -296,9 +297,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 			AND rp.UserID = ?
 			AND rp.IsFollower = TRUE)`, userIDFilter)
 		participantFilterExpr := sq.Expr(`EXISTS(SELECT 1
-			FROM ChannelMembers AS cm
-			WHERE cm.ChannelId = i.ChannelID
-			AND cm.UserId = ?)`, userIDFilter)
+			FROM IR_Run_Participants as rp
+			WHERE rp.IncidentID = i.ID
+			AND rp.UserID = ?
+			AND rp.IsParticipant = TRUE)`, userIDFilter)
 		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
 		if options.IncludeFavorites {
@@ -441,41 +443,43 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                                    rawPlaybookRun.ID,
-			"Name":                                  rawPlaybookRun.Name,
-			"Description":                           rawPlaybookRun.Summary,
-			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
-			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
-			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
-			"TeamID":                                rawPlaybookRun.TeamID,
-			"ChannelID":                             rawPlaybookRun.ChannelID,
-			"CreateAt":                              rawPlaybookRun.CreateAt,
-			"EndAt":                                 rawPlaybookRun.EndAt,
-			"PostID":                                rawPlaybookRun.PostID,
-			"PlaybookID":                            rawPlaybookRun.PlaybookID,
-			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
-			"ReminderPostID":                        rawPlaybookRun.ReminderPostID,
-			"PreviousReminder":                      rawPlaybookRun.PreviousReminder,
-			"ReminderMessageTemplate":               rawPlaybookRun.ReminderMessageTemplate,
-			"StatusUpdateEnabled":                   rawPlaybookRun.StatusUpdateEnabled,
-			"ReminderTimerDefaultSeconds":           rawPlaybookRun.ReminderTimerDefaultSeconds,
-			"CurrentStatus":                         rawPlaybookRun.CurrentStatus,
-			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
-			"ConcatenatedInvitedUserIDs":            rawPlaybookRun.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":           rawPlaybookRun.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                    rawPlaybookRun.DefaultOwnerID,
-			"ConcatenatedBroadcastChannelIDs":       rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"ConcatenatedWebhookOnCreationURLs":     rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
-			"Retrospective":                         rawPlaybookRun.Retrospective,
-			"RetrospectivePublishedAt":              rawPlaybookRun.RetrospectivePublishedAt,
-			"RetrospectiveEnabled":                  rawPlaybookRun.RetrospectiveEnabled,
-			"MessageOnJoin":                         rawPlaybookRun.MessageOnJoin,
-			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
-			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"CategoryName":                          rawPlaybookRun.CategoryName,
-			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"ID":                                      rawPlaybookRun.ID,
+			"Name":                                    rawPlaybookRun.Name,
+			"Description":                             rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
+			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
+			"ReporterUserID":                          rawPlaybookRun.ReporterUserID,
+			"TeamID":                                  rawPlaybookRun.TeamID,
+			"ChannelID":                               rawPlaybookRun.ChannelID,
+			"CreateAt":                                rawPlaybookRun.CreateAt,
+			"EndAt":                                   rawPlaybookRun.EndAt,
+			"PostID":                                  rawPlaybookRun.PostID,
+			"PlaybookID":                              rawPlaybookRun.PlaybookID,
+			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
+			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
+			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
+			"ReminderMessageTemplate":                 rawPlaybookRun.ReminderMessageTemplate,
+			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
+			"ReminderTimerDefaultSeconds":             rawPlaybookRun.ReminderTimerDefaultSeconds,
+			"CurrentStatus":                           rawPlaybookRun.CurrentStatus,
+			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
+			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":             rawPlaybookRun.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                      rawPlaybookRun.DefaultOwnerID,
+			"ConcatenatedBroadcastChannelIDs":         rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
+			"ConcatenatedWebhookOnCreationURLs":       rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
+			"Retrospective":                           rawPlaybookRun.Retrospective,
+			"RetrospectivePublishedAt":                rawPlaybookRun.RetrospectivePublishedAt,
+			"RetrospectiveEnabled":                    rawPlaybookRun.RetrospectiveEnabled,
+			"MessageOnJoin":                           rawPlaybookRun.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds":    rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":                rawPlaybookRun.RetrospectiveWasCanceled,
+			"ConcatenatedWebhookOnStatusUpdateURLs":   rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
+			"CategoryName":                            rawPlaybookRun.CategoryName,
+			"StatusUpdateBroadcastChannelsEnabled":    rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
+			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
+			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -516,27 +520,30 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                                  "",
-			"Description":                           rawPlaybookRun.Summary,
-			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
-			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
-			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
-			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
-			"ReminderPostID":                        rawPlaybookRun.ReminderPostID,
-			"PreviousReminder":                      rawPlaybookRun.PreviousReminder,
-			"ConcatenatedInvitedUserIDs":            rawPlaybookRun.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":           rawPlaybookRun.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                    rawPlaybookRun.DefaultOwnerID,
-			"ConcatenatedBroadcastChannelIDs":       rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"ConcatenatedWebhookOnCreationURLs":     rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
-			"Retrospective":                         rawPlaybookRun.Retrospective,
-			"RetrospectivePublishedAt":              rawPlaybookRun.RetrospectivePublishedAt,
-			"MessageOnJoin":                         rawPlaybookRun.MessageOnJoin,
-			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
-			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"Name":                                    "",
+			"Description":                             rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
+			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
+			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
+			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
+			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
+			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
+			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":             rawPlaybookRun.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                      rawPlaybookRun.DefaultOwnerID,
+			"ConcatenatedBroadcastChannelIDs":         rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
+			"ConcatenatedWebhookOnCreationURLs":       rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
+			"Retrospective":                           rawPlaybookRun.Retrospective,
+			"RetrospectivePublishedAt":                rawPlaybookRun.RetrospectivePublishedAt,
+			"MessageOnJoin":                           rawPlaybookRun.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds":    rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":                rawPlaybookRun.RetrospectiveWasCanceled,
+			"ConcatenatedWebhookOnStatusUpdateURLs":   rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
+			"StatusUpdateBroadcastChannelsEnabled":    rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
+			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
+			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
+			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -1428,6 +1435,23 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
+	}
+
+	return nil
+}
+
+func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run with id '%s'", id)
 	}
 
 	return nil

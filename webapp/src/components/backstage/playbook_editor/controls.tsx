@@ -48,7 +48,7 @@ import {
     restorePlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
-import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -326,7 +326,7 @@ export const CopyPlaybookLinkMenuItem = (props: {playbookId: string}) => {
         <StyledDropdownMenuItem
             onClick={() => {
                 copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + props.playbookId);
-                addToast(formatMessage({defaultMessage: 'Copied!'}));
+                addToast({content: formatMessage({defaultMessage: 'Copied!'})});
             }}
         >
             <LinkVariantIcon size={18}/>
@@ -421,7 +421,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
                         navigateToPluginUrl(`/playbooks/${newID}/outline`);
-                        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                        addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
                     disabled={!permissionForDuplicate}
@@ -503,11 +503,7 @@ const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;
 
-const SecondaryButtonLarger = styled(SecondaryButton)`
-    ${buttonCommon};
-`;
-
-const TertiaryButtonLarger = styled(TertiaryButton)`
+export const SecondaryButtonLarger = styled(SecondaryButton)`
     ${buttonCommon};
 `;
 

@@ -76,7 +76,7 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const [playbookRun] = useRun(playbookRunId);
+    const [playbookRun, playbookRunResult] = useRun(playbookRunId);
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
@@ -89,11 +89,12 @@ const PlaybookRunDetails = () => {
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+    const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
     useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
         from: queryParams.from ?? '',
         playbook_id: playbookRun?.playbook_id,
         playbookrun_id: playbookRun?.id,
-        role: playbookRun?.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer,
+        role,
     });
 
     const RHS = useRHS(playbookRun);
@@ -133,17 +134,15 @@ const PlaybookRunDetails = () => {
         }
     }, [urlHash]);
 
-    // loading state
-    if (playbookRun === undefined) {
-        return null;
-    }
-
     // not found or error
-    if (playbookRun === null || metadataResult.error !== null) {
+    if (playbookRunResult.error !== null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
+    // loading state
+    if (!playbookRun) {
+        return null;
+    }
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
     const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
@@ -175,9 +174,7 @@ const PlaybookRunDetails = () => {
     case RHSContent.RunParticipants:
         rhsComponent = (
             <Participants
-                playbookRunId={playbookRun.id}
-                participantsIds={playbookRun.participant_ids}
-                runOwnerUserId={playbookRun.owner_user_id}
+                playbookRun={playbookRun}
                 role={role}
                 teamName={metadata?.team_name}
             />

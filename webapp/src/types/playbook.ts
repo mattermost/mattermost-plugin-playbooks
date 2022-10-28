@@ -57,6 +57,8 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_name_template: string;
     metrics: Metric[];
     is_favorite: boolean;
+    create_channel_member_on_new_participant: boolean;
+    remove_channel_member_on_removed_participant: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -186,6 +188,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         metrics: [],
         is_favorite: false,
         active_runs: 0,
+        create_channel_member_on_new_participant: true,
+        remove_channel_member_on_removed_participant: true,
     };
 }
 
@@ -219,6 +223,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
 export interface ChecklistItemsFilter extends Record<string, boolean> {
     all: boolean;
     checked: boolean;
+    skipped: boolean;
     me: boolean;
     unassigned: boolean;
     others: boolean;
@@ -228,6 +233,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
     checked: true,
+    skipped: true,
     me: true,
     unassigned: true,
     others: true,

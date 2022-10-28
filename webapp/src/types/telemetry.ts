@@ -34,6 +34,7 @@ export enum PlaybookRunEventTarget {
     Leave = 'playbookrun_leave',
     Follow = 'playbookrun_follow',
     Unfollow = 'playbookrun_unfollow',
+    UpdateActions = 'playbookrun_update_actions',
 }
 
 export type TelemetryViewTarget = GeneralViewTarget | PlaybookViewTarget | PlaybookRunViewTarget;

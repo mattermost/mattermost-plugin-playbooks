@@ -29,6 +29,8 @@ export const SHOW_CHANNEL_ACTIONS_MODAL = pluginId + '_show_channel_actions_moda
 export const HIDE_CHANNEL_ACTIONS_MODAL = pluginId + '_hide_channel_actions_modal';
 export const SHOW_RUN_ACTIONS_MODAL = pluginId + '_show_run_actions_modal';
 export const HIDE_RUN_ACTIONS_MODAL = pluginId + '_hide_run_actions_modal';
+export const SHOW_PLAYBOOK_ACTIONS_MODAL = pluginId + '_show_playbook_actions_modal';
+export const HIDE_PLAYBOOK_ACTIONS_MODAL = pluginId + '_hide_playbook_actions_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
 export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
 export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
@@ -135,6 +137,14 @@ export interface ShowRunActionsModal {
 
 export interface HideRunActionsModal {
     type: typeof HIDE_RUN_ACTIONS_MODAL;
+}
+
+export interface ShowPlaybookActionsModal {
+    type: typeof SHOW_PLAYBOOK_ACTIONS_MODAL;
+}
+
+export interface HidePlaybookActionsModal {
+    type: typeof HIDE_PLAYBOOK_ACTIONS_MODAL;
 }
 
 export interface SetHasViewedChannel {
