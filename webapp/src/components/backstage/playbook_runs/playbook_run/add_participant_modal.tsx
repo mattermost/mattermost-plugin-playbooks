@@ -10,6 +10,7 @@ import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/ac
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
+import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -18,6 +19,7 @@ import CheckboxInput from '../../runs_list/checkbox_input';
 import {isCurrentUserChannelMember} from 'src/selectors';
 
 import ProfileAutocomplete from '../../profile_autocomplete';
+import {useChannel} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -33,7 +35,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [forceAddToChannel, setForceAddToChannel] = useState(false);
+    const [channel, meta] = useChannel(playbookRun.channel_id);
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
+    const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
@@ -57,7 +61,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 </FooterExtraInfoContainer>
             );
         }
-        if (isChannelMember) {
+        if (isChannelMember || isPrivateChannelWithAccess) {
             return (
                 <StyledCheckboxInput
                     testId={'also-add-to-channel'}
