@@ -190,6 +190,21 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	return nil
 }
 
+func (s *PlaybookRunService) Archive(ctx context.Context, playbookRunID string) error {
+	archiveUrl := fmt.Sprintf("runs/%s/archive", playbookRunID)
+	req, err := s.client.newRequest(http.MethodDelete, archiveUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
 	req, err := s.client.newRequest(http.MethodPost, createURL, checklist)

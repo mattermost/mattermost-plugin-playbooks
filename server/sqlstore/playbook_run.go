@@ -618,6 +618,19 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 	return nil
 }
 
+func (s *playbookRunStore) ArchivePlaybookRun(playbookRunID string) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"DeleteAt": model.GetMillis(),
+		}).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to archive run for id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
 // CreateTimelineEvent creates the timeline event
 func (s *playbookRunStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.TimelineEvent, error) {
 	if event.PlaybookRunID == "" {
@@ -712,6 +725,7 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 	defer s.store.finalizeTransaction(tx)
 
 	var rawPlaybookRun sqlPlaybookRun
+	println(s.playbookRunSelect.ToSql())
 	err = s.store.getBuilder(tx, &rawPlaybookRun, s.playbookRunSelect.Where(sq.Eq{"i.ID": playbookRunID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(app.ErrNotFound, "playbook run with id '%s' does not exist", playbookRunID)

@@ -1216,6 +1216,34 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return err
 	}
 	s.sendPlaybookRunUpdatedWS(id)
+
+	run, err := s.store.GetPlaybookRun(id)
+
+	if err != nil {
+		return err
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, run, run.ChannelID)
+
+	return nil
+}
+
+// ArchivePlaybookRun Archives a playbook run by setting the DeleteAt field
+func (s *PlaybookRunServiceImpl) ArchivePlaybookRun(playbookRunID, userID string) error {
+
+	playbookRunToArchive, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	if playbookRunToArchive.DeleteAt != 0 {
+		return nil
+	}
+
+	if err = s.store.ArchivePlaybookRun(playbookRunID); err != nil {
+		return err
+	}
+
 	return nil
 }
 

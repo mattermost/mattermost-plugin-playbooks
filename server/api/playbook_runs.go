@@ -88,6 +88,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/archive", withContext(handler.archive)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
@@ -834,6 +835,20 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// archive marks a playbook run as deleted
+func (h *PlaybookRunHandler) archive(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.ArchivePlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

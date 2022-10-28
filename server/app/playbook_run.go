@@ -16,6 +16,7 @@ import (
 const (
 	StatusInProgress = "InProgress"
 	StatusFinished   = "Finished"
+	StatusArchived   = "Archived"
 )
 
 const (
@@ -59,7 +60,7 @@ type PlaybookRun struct {
 	// If 0, the run is still ongoing.
 	EndAt int64 `json:"end_at"`
 
-	// Deprecated: preserved for backwards compatibility with v1.2.
+	// Used by for archive / unarchive a playbook run
 	DeleteAt int64 `json:"delete_at"`
 
 	// Deprecated: preserved for backwards compatibility with v1.2.
@@ -758,6 +759,9 @@ type PlaybookRunService interface {
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
 
+	// ArchivePlaybookRun mark a run as deleted
+	ArchivePlaybookRun(playbookRunID, userID string) error
+
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
@@ -809,6 +813,9 @@ type PlaybookRunStore interface {
 
 	// RestorePlaybookRun restores a run at restoreAt (in millis)
 	RestorePlaybookRun(playbookRunID string, restoreAt int64) error
+
+	// ArchivePlaybookRun mark a run as deleted
+	ArchivePlaybookRun(playbookRunID string) error
 
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
