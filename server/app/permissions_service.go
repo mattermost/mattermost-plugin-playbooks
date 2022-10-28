@@ -61,7 +61,7 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	}
 
 	// Public playbooks
-	if playbook.Public {
+	if playbook.Public && p.canViewTeam(userID, playbook.TeamID) {
 		if playbook.DefaultPlaybookMemberRole == "" {
 			return []string{playbook.DefaultPlaybookMemberRole}
 		}

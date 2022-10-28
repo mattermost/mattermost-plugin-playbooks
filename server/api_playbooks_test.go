@@ -318,6 +318,23 @@ func TestPlaybookUpdate(t *testing.T) {
 	})
 }
 
+func TestPlaybookUpdateCrossTeam(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook properties not in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update playbook properties in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+	})
+}
+
 func TestPlaybooksSort(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
