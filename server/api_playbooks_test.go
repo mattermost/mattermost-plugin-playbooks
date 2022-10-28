@@ -328,6 +328,18 @@ func TestPlaybookUpdateCrossTeam(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
+	t.Run("lost acccess to playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members,
+			client.PlaybookMember{
+				UserID: e.RegularUserNotInTeam.Id,
+				Roles:  []string{app.PlaybookRoleMember},
+			})
+		e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
 	t.Run("update playbook properties in team public playbook", func(t *testing.T) {
 		e.BasicPlaybook.Description = "This is the updated description"
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
