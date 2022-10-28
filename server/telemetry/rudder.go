@@ -79,9 +79,8 @@ const (
 	actionRunChannelAction    = "run_channel_action"
 	actionChannelActionUpdate = "update_channel_action"
 
-	eventRunAction         = "playbookrun_action"
-	actionRunAction        = "run_playbookrun_action"
-	actionRunActionsUpdate = "update_playbookrun_actions"
+	eventRunAction  = "playbookrun_action"
+	actionRunAction = "run_playbookrun_action"
 
 	eventSidebarCategory     = "lhs_category"
 	actionFavoriteRun        = "favorite_run"
@@ -89,6 +88,9 @@ const (
 	actionFavoritePlaybook   = "favorite_playbook"
 	actionUnfavoritePlaybook = "unfavorite_playbook"
 )
+
+// Migrated
+// actionRunActionsUpdate = "update_playbookrun_actions" => playbookrun_update_actions
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
 // dataPlaneURL with the writeKey, identified with the diagnosticID. The
@@ -689,13 +691,6 @@ func runActionProperties(playbookRun *app.PlaybookRun, userID, triggerType, acti
 func (t *RudderTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
 	properties := runActionProperties(playbookRun, userID, triggerType, actionType, numBroadcasts)
 	properties["Action"] = actionRunAction
-	t.trackOld(eventRunAction, properties)
-}
-
-// UpdateRunActions tracks actions settings update
-func (t *RudderTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
-	properties := playbookRunProperties(playbookRun, userID)
-	properties["Action"] = actionRunActionsUpdate
 	t.trackOld(eventRunAction, properties)
 }
 

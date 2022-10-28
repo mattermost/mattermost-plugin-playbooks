@@ -196,10 +196,6 @@ func (t *NoopTelemetry) UpdateChannelAction(action app.GenericChannelAction, use
 func (t *NoopTelemetry) RunAction(playbookRun *app.PlaybookRun, userID, triggerType, actionType string, numBroadcasts int) {
 }
 
-// UpdateRunActions does nothing
-func (t *NoopTelemetry) UpdateRunActions(playbookRun *app.PlaybookRun, userID string) {
-}
-
 // FavoriteItem does nothing
 func (t *NoopTelemetry) FavoriteItem(item app.CategoryItem, userID string) {
 }

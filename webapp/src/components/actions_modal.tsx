@@ -165,6 +165,11 @@ export const TriggersContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
+    @media screen and (max-height: 900px) {
+        max-height: 500px;
+        overflow-x: hidden;
+        overflow-y: scroll;
+    }
 `;
 
 export const ActionsContainer = styled.div`

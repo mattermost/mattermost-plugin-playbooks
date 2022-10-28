@@ -42,7 +42,12 @@ export interface PlaybookRun {
     retrospective_enabled: boolean;
     participant_ids: string[];
     metrics_data: RunMetricData[];
+
+    /** Whether a channel member should be created when a new participant joins the run */
     create_channel_member_on_new_participant: boolean;
+
+    /** Whether a channel member should be removed when an existing participant leaves the run */
+    remove_channel_member_on_removed_participant: boolean;
 }
 
 export interface StatusPost {

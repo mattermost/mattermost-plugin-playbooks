@@ -1,3 +1,4 @@
-UPDATE IR_UserInfo
-SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
-	jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::json->>'disable_daily_digest')::boolean))::json
+ALTER TABLE IR_Playbook ADD COLUMN IF NOT EXISTS CreateChannelMemberOnNewParticipant BOOLEAN DEFAULT TRUE;
+ALTER TABLE IR_Playbook ADD COLUMN IF NOT EXISTS RemoveChannelMemberOnRemovedParticipant BOOLEAN DEFAULT TRUE;
+ALTER TABLE IR_Incident ADD COLUMN IF NOT EXISTS CreateChannelMemberOnNewParticipant BOOLEAN DEFAULT TRUE;
+ALTER TABLE IR_Incident ADD COLUMN IF NOT EXISTS RemoveChannelMemberOnRemovedParticipant BOOLEAN DEFAULT TRUE;

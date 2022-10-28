@@ -135,9 +135,9 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                 changeRunOwner={changeRunOwner}
             />
 
-            <SectionTitle>
+            {participantsProfiles.filter((user) => user.id !== playbookRun.owner_user_id).length ? <SectionTitle>
                 {formatMessage({defaultMessage: 'Participants'})}
-            </SectionTitle>
+            </SectionTitle> : null}
             <ListSection>
                 {
                     participantsProfiles.filter((user) => (includesTerm(user))).map((user: UserProfile) => {
@@ -306,7 +306,7 @@ const ProfileWrapper = styled.div<{manageMode: boolean}>`
         ${HoverButtonContainer} {
             opacity: 1;
         }
-    }  
+    }
 `;
 
 const HeaderSection = styled.div`
@@ -323,7 +323,7 @@ const StyledSecondaryButton = styled(TertiaryButton)`
     height: 32px;
     font-size: 12px;
     line-height: 10px;
-    margin-right: 8px;    
+    margin-right: 8px;
 `;
 
 const StyledPrimaryButton = styled(PrimaryButton)`
@@ -353,7 +353,7 @@ const ParticipantButton = styled.div`
     }
 
     position: absolute;
-    right: 20px; 
+    right: 20px;
 `;
 
 const IconWrapper = styled.div`

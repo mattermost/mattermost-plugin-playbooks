@@ -2364,25 +2364,58 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.60.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "CreateChannelMemberOnNewParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column CreateChannelMemberOnNewParticipant to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "RemoveChannelMemberOnRemovedParticipant", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RemoveChannelMemberOnRemovedParticipant to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.60.0"),
+		toVersion:   semver.MustParse("0.61.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					UPDATE IR_UserInfo
 					SET DigestNotificationSettingsJSON =
 						JSON_SET(DigestNotificationSettingsJSON, '$.disable_weekly_digest',
-             				JSON_EXTRACT(DigestNotificationSettingsJSON, '$.disable_daily_digest'))
+							JSON_EXTRACT(DigestNotificationSettingsJSON, '$.disable_daily_digest'));
 				`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			} else {
 				if _, err := e.Exec(`
-				    UPDATE IR_UserInfo
-				    SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
-				    	jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json
-				
+					UPDATE IR_UserInfo
+					SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
+						jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
+
 				`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			}
-
 			return nil
 		},
 	},

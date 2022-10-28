@@ -138,6 +138,8 @@ describe('channels > rhs > status update', () => {
                         playbookId: playbook.id,
                         playbookRunName: name,
                         ownerUserId: sysadmin.id,
+                    }).then((run) => {
+                        cy.apiAddUsersToRun(run.id, [testUser.id]);
                     });
                 });
             }).then(() => {
