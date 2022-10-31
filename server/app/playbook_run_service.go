@@ -2877,10 +2877,8 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 			if err != nil {
 				return errors.Wrap(err, "failed to get user")
 			}
-			users = append(users, user)
-		} else {
-			users = append(users, requesterUser)
 		}
+		users = append(users, user)
 		s.leaveActions(playbookRun, userID)
 	}
 
@@ -2946,10 +2944,8 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 			if err != nil {
 				return errors.Wrap(err, "failed to get user")
 			}
-			users = append(users, user)
-		} else {
-			users = append(users, requesterUser)
 		}
+		users = append(users, requesterUser)
 		s.participateActions(playbookRun, channel, user, requesterUser)
 	}
 
