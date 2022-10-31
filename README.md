@@ -91,6 +91,14 @@ A few guidelines when logging:
 * Use `WithFields` when passing more than one field that is not an `err`.
 * Common fields can be set once instead of being passed for every log
 
+### DB Migrations
+
+DB migrations should be placed in `sqlstore/migrations.go` as they are the ones being run at the moment.
+
+After transitioning to a new migration schema, the `sqlstore/migrations/future` folder will be utilised.
+It would ease the transition if migrations are also added there for both drivers (mysql, postgres).
+All migrations in the `future` folder should have both migration directions - `up` and `down`.
+
 ## Popular searches for Help Wanted issues:
 
 * [Help wanted tickets currently up for grab](https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Up+For+Grabs%22)
