@@ -19,6 +19,7 @@ import {
     LinkVariantIcon,
     RestoreIcon,
     PlayOutlineIcon,
+    LockOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -33,7 +34,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -61,6 +62,7 @@ import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
 import {StyledDropdownMenuItem} from '../shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from '../lhs_navigation';
+import useConfirmPlaybookConvertPrivateModal from '../convert_private_playbook_modal';
 
 type ControlProps = {
     playbook: {
@@ -372,6 +374,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         }
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
+    const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
     const {add: addToast} = useToaster();
 
@@ -381,6 +384,9 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
 
     const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
+    const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
+    const licenseToMakePrivate = useAllowMakePlaybookPrivate();
+    const isEligibleToMakePrivate = currentUserMember && playbook.public && permissionToMakePrivate && licenseToMakePrivate;
 
     const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 
@@ -440,6 +446,20 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
+                {isEligibleToMakePrivate && (
+                    <DropdownMenuItemStyled
+                        role={'button'}
+                        css={`${iconSplitStyling}`}
+                        onClick={() => {
+                            telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
+                            setShowMakePrivateConfirm(true);
+                        }}
+                    >
+                        <LockOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Convert to private playbook'/>
+                    </DropdownMenuItemStyled>
+                )
+                }
                 {currentUserMember && (
                     <>
                         <div className='MenuGroup menu-divider'/>
@@ -475,6 +495,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             </DotMenu>
             {confirmArchiveModal}
             {confirmRestoreModal}
+            {confirmConvertPrivateModal}
         </>
     );
 };
