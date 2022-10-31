@@ -335,7 +335,8 @@ func TestPlaybookUpdateCrossTeam(t *testing.T) {
 				UserID: e.RegularUserNotInTeam.Id,
 				Roles:  []string{app.PlaybookRoleMember},
 			})
-		e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		uperr := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, uperr)
 		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
