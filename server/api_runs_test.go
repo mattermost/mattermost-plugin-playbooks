@@ -343,6 +343,23 @@ func TestRunRetrieval(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
+	t.Run("can't get cross team", func(t *testing.T) {
+		_, err := e.PlaybooksClientNotInTeam.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("can't list cross team", func(t *testing.T) {
+		list, err := e.PlaybooksClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, len(list.Items), 1)
+		list2, err2 := e.PlaybooksClientNotInTeam.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		assert.NoError(t, err2)
+		assert.Len(t, list2.Items, 0)
+	})
 }
 
 func TestRunStatus(t *testing.T) {
