@@ -390,7 +390,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	if !opts.WithMembershipOnly { // return all public playbooks and private ones user is member of
 		permissionsAndFilter = sq.Or{sq.Expr(`p.Public = true`), permissionsAndFilter}
 	}
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, teamID, "p")
 
 	queryForResults := p.store.builder.
 		Select(
