@@ -11,6 +11,7 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -1425,6 +1426,93 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	}
 
 	return nil
+}
+
+// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+func (s *playbookRunStore) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
+	membershipClause := s.queryBuilder.
+		Select("1").
+		Prefix("EXISTS(").
+		From("IR_Run_Participants AS p").
+		Where("p.IncidentID = i.ID").
+		Where(sq.Or{sq.Eq{"p.IsParticipant": true}, sq.Eq{"p.IsFollower": true}}).
+		Where(sq.Eq{"p.UserID": strings.ToLower(userID)}).
+		Suffix(")")
+	query := s.store.builder.
+		Select("i.ID").
+		From("IR_Incident AS i").
+		Where(membershipClause)
+
+	var ids []string
+	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query for playbook runs")
+	}
+	return ids, nil
+}
+
+// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+// Notice that order of passed ids and returned runs might not coincide
+func (s *playbookRunStore) GetRunMetadataByIDs(runIDs []string) ([]app.RunMetadata, error) {
+	var runs []app.RunMetadata
+	query := s.store.builder.
+		Select("ID", "TeamID", "Name").
+		From("IR_Incident").
+		Where(fmt.Sprintf("ID IN ('%s')", strings.Join(runIDs, "', '")))
+	if err := s.store.selectBuilder(s.store.db, &runs, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query playbook run by runIDs")
+	}
+	return runs, nil
+}
+
+// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+func (s *playbookRunStore) GetTaskMetadataByIDs(taskIDs []string) ([]app.TopicMetadata, error) {
+	tasks := make([]app.TopicMetadata, 0, len(taskIDs))
+	var tasksInDB []app.TopicMetadata
+	for _, taskID := range taskIDs {
+		query := s.store.builder.
+			Select("ID AS RunID", "TeamID").
+			From("IR_Incident")
+
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
+			query = query.Where(sq.Like{"ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", taskID)})
+		} else {
+			query = query.Where(sq.Like{"ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", taskID)})
+		}
+
+		if err := s.store.selectBuilder(s.store.db, &tasksInDB, query); err != nil {
+			return nil, errors.Wrapf(err, "failed to query playbook run by taskID - %s", taskID)
+		}
+
+		if len(tasksInDB) == 0 {
+			logrus.WithField("task_id", taskID).Error("No task in the DB")
+			continue
+		}
+		if len(tasksInDB) > 1 {
+			// this might happen since taskID is not unique.
+			// Rather than returning a random task here, we will not return anything
+			logrus.WithField("task_id", taskID).Error("Multiple tasks in the DB")
+			continue
+		}
+		// we have single task from db
+		tasksInDB[0].ID = taskID
+		tasks = append(tasks, tasksInDB[0])
+	}
+
+	return tasks, nil
+}
+
+// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+func (s *playbookRunStore) GetStatusMetadataByIDs(statusIDs []string) ([]app.TopicMetadata, error) {
+	var statuses []app.TopicMetadata
+	query := s.store.builder.
+		Select("sp.PostID AS ID", "sp.IncidentID AS RunID", "i.TeamID AS TeamID").
+		From("IR_StatusPosts as sp").
+		Join("IR_Incident as i ON sp.IncidentID = i.ID").
+		Where(fmt.Sprintf("sp.PostID IN ('%s')", strings.Join(statusIDs, "', '")))
+	if err := s.store.selectBuilder(s.store.db, &statuses, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query playbook runs by statusIDs")
+	}
+	return statuses, nil
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {

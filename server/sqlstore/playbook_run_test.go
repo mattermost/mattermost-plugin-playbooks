@@ -1250,6 +1250,234 @@ func TestGetSchemeRolesForChannel(t *testing.T) {
 	}
 }
 
+func TestGetPlaybookRunIDsForUser(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		store := setupSQLStore(t, db)
+
+		alice := userInfo{
+			ID:   model.NewId(),
+			Name: "alice",
+		}
+		bob := userInfo{
+			ID:   model.NewId(),
+			Name: "bob",
+		}
+		tom := userInfo{
+			ID:   model.NewId(),
+			Name: "tom",
+		}
+		allIDs := []string{}
+		for i := 0; i < 10; i++ {
+			run := NewBuilder(t).ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+
+			allIDs = append(allIDs, returned.ID)
+		}
+
+		t.Run("no runs for user", func(t *testing.T) {
+			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(alice.ID)
+			require.NoError(t, err)
+			require.Len(t, returnedIDs, 0)
+		})
+
+		t.Run("all runs for user", func(t *testing.T) {
+			for _, id := range allIDs {
+				addUsersToRuns(t, store, []userInfo{tom}, []string{id})
+			}
+			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(tom.ID)
+			require.NoError(t, err)
+			require.Len(t, returnedIDs, len(allIDs))
+		})
+
+		t.Run("some runs for user", func(t *testing.T) {
+			for i := 0; i < len(allIDs)/2; i++ {
+				addUsersToRuns(t, store, []userInfo{bob}, []string{allIDs[i]})
+			}
+			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(bob.ID)
+			require.NoError(t, err)
+			require.Len(t, returnedIDs, len(allIDs)/2)
+		})
+	}
+}
+
+func TestGetRunMetadataByIDs(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+
+		allIDs := []string{}
+		teamID := model.NewId()
+		for i := 0; i < 10; i++ {
+			run := NewBuilder(t).WithTeamID(teamID).ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+
+			allIDs = append(allIDs, returned.ID)
+		}
+
+		t.Run("empty slice of ids", func(t *testing.T) {
+			runs, err := playbookRunStore.GetRunMetadataByIDs([]string{})
+			require.NoError(t, err)
+			require.Len(t, runs, 0)
+		})
+
+		t.Run("single id", func(t *testing.T) {
+			runs, err := playbookRunStore.GetRunMetadataByIDs([]string{allIDs[0]})
+			require.NoError(t, err)
+			require.Len(t, runs, 1)
+			require.Equal(t, allIDs[0], runs[0].ID)
+			require.Equal(t, teamID, runs[0].TeamID)
+			require.Equal(t, "base playbook run", runs[0].Name)
+		})
+
+		t.Run("many ids", func(t *testing.T) {
+			runs, err := playbookRunStore.GetRunMetadataByIDs(allIDs[0:5])
+			require.NoError(t, err)
+			require.Len(t, runs, 5)
+			m := map[string]app.RunMetadata{}
+			for _, run := range runs {
+				m[run.ID] = run
+			}
+			for _, id := range allIDs[0:5] {
+				run := m[id]
+				require.Equal(t, id, run.ID)
+				require.Equal(t, teamID, run.TeamID)
+				require.Equal(t, "base playbook run", run.Name)
+			}
+		})
+	}
+}
+
+func TestGetTaskMetadataByIDs(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+
+		teamID := model.NewId()
+		allRuns := []*app.PlaybookRun{}
+		for i := 0; i < 10; i++ {
+			run := NewBuilder(t).WithTeamID(teamID).WithChecklists([]int{1, 2, 3, 4, 5}).ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+
+			allRuns = append(allRuns, returned)
+		}
+
+		t.Run("empty slice of ids", func(t *testing.T) {
+			tasks, err := playbookRunStore.GetTaskMetadataByIDs([]string{})
+			require.NoError(t, err)
+			require.Len(t, tasks, 0)
+		})
+
+		t.Run("single id not in db", func(t *testing.T) {
+			tasks, err := playbookRunStore.GetTaskMetadataByIDs([]string{"random-task-id"})
+			println(fmt.Sprintf("%v", tasks))
+
+			require.NoError(t, err)
+			require.Len(t, tasks, 0)
+		})
+
+		t.Run("single task id from db", func(t *testing.T) {
+			tasks, err := playbookRunStore.GetTaskMetadataByIDs([]string{allRuns[0].Checklists[0].Items[0].ID})
+			require.NoError(t, err)
+			require.Len(t, tasks, 1)
+
+			require.Equal(t, allRuns[0].Checklists[0].Items[0].ID, tasks[0].ID)
+			require.Equal(t, teamID, tasks[0].TeamID)
+			require.Equal(t, allRuns[0].ID, tasks[0].RunID)
+		})
+
+		t.Run("multiple task id from db", func(t *testing.T) {
+			taskIDs := []string{
+				allRuns[0].Checklists[0].Items[0].ID,
+				allRuns[0].Checklists[1].Items[0].ID,
+				allRuns[1].Checklists[0].Items[0].ID,
+				allRuns[1].Checklists[1].Items[0].ID,
+				allRuns[5].Checklists[0].Items[0].ID,
+				allRuns[5].Checklists[1].Items[0].ID,
+			}
+			tasks, err := playbookRunStore.GetTaskMetadataByIDs(taskIDs)
+			require.NoError(t, err)
+			require.Len(t, tasks, 6)
+
+			for i, taskID := range taskIDs {
+				require.Equal(t, taskID, tasks[i].ID)
+				require.Equal(t, teamID, tasks[i].TeamID)
+			}
+		})
+	}
+}
+
+func TestGetStatusMetadataByIDs(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+
+		teamID := model.NewId()
+		allRuns := []*app.PlaybookRun{}
+		allStatusIDs := []string{}
+		for i := 0; i < 10; i++ {
+			run := NewBuilder(t).WithTeamID(teamID).WithChecklists([]int{1, 2, 3, 4, 5}).ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+
+			allRuns = append(allRuns, returned)
+			for j := 0; j < 10; j++ {
+				statusID := model.NewId()
+				err := playbookRunStore.UpdateStatus(&app.SQLStatusPost{
+					PlaybookRunID: returned.ID,
+					PostID:        statusID,
+				})
+				require.NoError(t, err)
+				allStatusIDs = append(allStatusIDs, statusID)
+			}
+		}
+
+		t.Run("empty slice of ids", func(t *testing.T) {
+			statuses, err := playbookRunStore.GetStatusMetadataByIDs([]string{})
+			require.NoError(t, err)
+			require.Len(t, statuses, 0)
+		})
+
+		t.Run("single id not in db", func(t *testing.T) {
+			statuses, err := playbookRunStore.GetStatusMetadataByIDs([]string{"random-status-id"})
+			require.NoError(t, err)
+			require.Len(t, statuses, 0)
+		})
+
+		t.Run("single status id from db", func(t *testing.T) {
+			statuses, err := playbookRunStore.GetStatusMetadataByIDs([]string{allStatusIDs[0]})
+			require.NoError(t, err)
+			require.Len(t, statuses, 1)
+
+			require.Equal(t, allStatusIDs[0], statuses[0].ID)
+			require.Equal(t, teamID, statuses[0].TeamID)
+			require.Equal(t, allRuns[0].ID, statuses[0].RunID)
+		})
+
+		t.Run("all status ids from db", func(t *testing.T) {
+			statuses, err := playbookRunStore.GetStatusMetadataByIDs(allStatusIDs)
+			require.NoError(t, err)
+			require.Len(t, statuses, len(allStatusIDs))
+
+			sort.Strings(allStatusIDs)
+			sort.Slice(statuses, func(i, j int) bool { return strings.Compare(statuses[i].ID, statuses[j].ID) < 0 })
+
+			for i, statusID := range allStatusIDs {
+				require.Equal(t, statusID, statuses[i].ID)
+				require.Equal(t, teamID, statuses[i].TeamID)
+			}
+		})
+	}
+}
+
 // PlaybookRunBuilder is a utility to build playbook runs with a default base.
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybookRun()

@@ -530,6 +530,18 @@ type RunAction struct {
 	StatusUpdateBroadcastWebhooksEnabled bool `json:"status_update_broadcast_webhooks_enabled"`
 }
 
+type RunMetadata struct {
+	ID     string
+	Name   string
+	TeamID string
+}
+
+type TopicMetadata struct {
+	ID     string
+	RunID  string
+	TeamID string
+}
+
 const (
 	ActionTypeBroadcastChannels = "broadcast_to_channels"
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
@@ -745,6 +757,19 @@ type PlaybookRunService interface {
 
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -851,6 +876,19 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

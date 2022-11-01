@@ -90,7 +90,7 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
 }
 
-func (p *PermissionsService) hasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
+func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
 	// Check at run level
 	if p.pluginAPI.User.RolesGrantPermission(p.getRunRole(userID, run), permission.Id) {
 		return true
@@ -406,7 +406,7 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	if p.hasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
+	if p.HasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
 		return nil
 	}
 

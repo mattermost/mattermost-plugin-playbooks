@@ -30,6 +30,11 @@ const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
 	metricsExposePort = ":9093"
+
+	RunCollectionType = "run"
+
+	StatusTopicType = "status"
+	TaskTopicType   = "task"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -69,6 +74,8 @@ type Plugin struct {
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+
+	collectionAndTopicTypes map[string][]string
 }
 
 type StatusRecorder struct {
@@ -217,6 +224,16 @@ func (p *Plugin) OnActivate() error {
 	mutex.Unlock()
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
+
+	p.collectionAndTopicTypes[RunCollectionType] = []string{StatusTopicType, TaskTopicType}
+	// register collections and topics
+	for collectionType, topicTypes := range p.collectionAndTopicTypes {
+		for _, topicType := range topicTypes {
+			if err := p.API.RegisterCollectionAndTopic(collectionType, topicType); err != nil {
+				return errors.Wrapf(err, "failed to register collection - %s and topic - %s", collectionType, topicType)
+			}
+		}
+	}
 
 	api.NewGraphQLHandler(
 		p.handler.APIRouter,
@@ -402,4 +419,127 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userId string, collectionType, collectionId string, permission *model.Permission) (bool, error) {
+	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
+		return false, errors.Errorf("Threads Everywhere feature is disabled")
+	}
+	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := p.playbookRunService.GetPlaybookRun(collectionId)
+	if err != nil {
+		return false, errors.Wrapf(err, "No run with id - %s", collectionId)
+	}
+	return p.permissions.HasPermissionsToRun(userId, run, permission), nil
+}
+
+func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
+	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
+		return nil, errors.Errorf("Threads Everywhere feature is disabled")
+	}
+	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	ids, err := p.playbookRunService.GetPlaybookRunIDsForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionId string) ([]string, error) {
+	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
+		return nil, errors.Errorf("Threads Everywhere feature is disabled")
+	}
+	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := p.playbookRunService.GetPlaybookRun(collectionId)
+	if err != nil {
+		return nil, errors.Wrapf(err, "No run with id - %s", collectionId)
+	}
+	followers, err := p.playbookRunService.GetFollowers(collectionId)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't get followers for run - %s", collectionId)
+	}
+	return mergeSlice(run.ParticipantIDs, followers), nil
+}
+
+func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIds []string) (map[string]*model.CollectionMetadata, error) {
+	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
+		return nil, errors.Errorf("Threads Everywhere feature is disabled")
+	}
+	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+	runsMetadata := map[string]*model.CollectionMetadata{}
+	runs, err := p.playbookRunService.GetRunMetadataByIDs(collectionIds)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get playbook run metadata by ids")
+	}
+	for _, run := range runs {
+		runsMetadata[run.ID] = &model.CollectionMetadata{
+			Id:             run.ID,
+			CollectionType: RunCollectionType,
+			TeamId:         run.TeamID,
+			Name:           run.Name,
+			RelativeURL:    app.GetRunDetailsRelativeURL(run.ID),
+		}
+	}
+	return runsMetadata, nil
+}
+
+func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIds []string) (map[string]*model.TopicMetadata, error) {
+	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
+		return nil, errors.Errorf("Threads Everywhere feature is disabled")
+	}
+
+	topicsMetadata := map[string]*model.TopicMetadata{}
+
+	var getTopicMetadataByIDs func(topicIds []string) ([]app.TopicMetadata, error)
+	switch topicType {
+	case StatusTopicType:
+		getTopicMetadataByIDs = p.playbookRunService.GetStatusMetadataByIDs
+	case TaskTopicType:
+		getTopicMetadataByIDs = p.playbookRunService.GetTaskMetadataByIDs
+	default:
+		return map[string]*model.TopicMetadata{}, errors.Errorf("topic type %s is not registered by playbooks", topicType)
+	}
+
+	topics, err := getTopicMetadataByIDs(topicIds)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata by topic ids")
+	}
+	for _, topic := range topics {
+		topicsMetadata[topic.ID] = &model.TopicMetadata{
+			Id:             topic.ID,
+			TopicType:      topicType,
+			CollectionType: RunCollectionType,
+			TeamId:         topic.TeamID,
+			CollectionId:   topic.RunID,
+		}
+	}
+
+	return topicsMetadata, nil
+}
+
+func mergeSlice(a, b []string) []string {
+	m := map[string]struct{}{}
+	for _, elem := range a {
+		m[elem] = struct{}{}
+	}
+	for _, elem := range b {
+		m[elem] = struct{}{}
+	}
+	merged := make([]string, 0, len(m))
+	for key := range m {
+		merged = append(merged, key)
+	}
+	return merged
 }
