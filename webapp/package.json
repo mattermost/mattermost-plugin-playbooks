@@ -105,7 +105,7 @@
     "@apollo/client": "3.5.10",
     "@floating-ui/react-dom-interactions": "0.6.3",
     "@mattermost/client": "7.1.0",
-    "@mattermost/compass-icons": "0.1.25",
+    "@mattermost/compass-icons": "0.1.26",
     "@mattermost/types": "7.1.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",

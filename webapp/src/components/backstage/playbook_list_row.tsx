@@ -7,44 +7,29 @@ import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-
-import {PlayOutlineIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
-
-import Icon from '@mdi/react';
-import {mdiRestore} from '@mdi/js';
-
+import {PlayOutlineIcon, RestoreIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
-
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-
 import {GlobalState} from '@mattermost/types/store';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
-
 import Tooltip from 'src/components/widgets/tooltip';
-
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
-
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-
 import {navigateToUrl} from 'src/browser_routing';
+import {usePlaybookMembership} from 'src/graphql/hooks';
+import {Timestamp} from 'src/webapp_globals';
+import {openPlaybookRunModal} from 'src/actions';
 
 import {DotMenuButton} from '../dot_menu';
 
-import {usePlaybookMembership} from 'src/graphql/hooks';
-
-import {Timestamp} from 'src/webapp_globals';
-
-import {openPlaybookRunModal} from 'src/actions';
-
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
+import {useLHSRefresh} from './lhs_navigation';
 
 interface Props {
     playbook: Playbook
@@ -120,6 +105,7 @@ const PlaybookListRow = (props: Props) => {
     const dispatch = useDispatch();
     const currentUser = useSelector(getCurrentUser);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
+    const refreshLHS = useLHSRefresh();
 
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
@@ -148,7 +134,8 @@ const PlaybookListRow = (props: Props) => {
                 props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
                 props.playbook.description,
                 props.playbook.team_id,
-                team.name
+                team.name,
+                refreshLHS
             ));
         }
     };
@@ -304,10 +291,7 @@ const PlaybookListRow = (props: Props) => {
                                 <DropdownMenuItem
                                     onClick={props.onRestore}
                                 >
-                                    <Icon
-                                        path={mdiRestore}
-                                        size='18px'
-                                    />
+                                    <RestoreIcon size={18}/>
                                     <FormattedMessage defaultMessage='Restore'/>
                                 </DropdownMenuItem>
                             ) : (

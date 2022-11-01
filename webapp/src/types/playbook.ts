@@ -57,6 +57,8 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_name_template: string;
     metrics: Metric[];
     is_favorite: boolean;
+    create_channel_member_on_new_participant: boolean;
+    remove_channel_member_on_removed_participant: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -185,6 +187,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         metrics: [],
         is_favorite: false,
         active_runs: 0,
+        create_channel_member_on_new_participant: true,
+        remove_channel_member_on_removed_participant: true,
     };
 }
 
@@ -218,6 +222,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
 export interface ChecklistItemsFilter extends Record<string, boolean> {
     all: boolean;
     checked: boolean;
+    skipped: boolean;
     me: boolean;
     unassigned: boolean;
     others: boolean;
@@ -227,30 +232,12 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
     checked: true,
+    skipped: true,
     me: true,
     unassigned: true,
     others: true,
     overdueOnly: false,
 };
-
-// eslint-disable-next-line
-export function isChecklist(arg: any): arg is Checklist {
-    return arg &&
-        typeof arg.title === 'string' &&
-        arg.items && Array.isArray(arg.items) && arg.items.every(isChecklistItem);
-}
-
-// eslint-disable-next-line
-export function isChecklistItem(arg: any): arg is ChecklistItem {
-    return arg &&
-        typeof arg.title === 'string' &&
-        typeof arg.state_modified === 'number' &&
-        typeof arg.assignee_id === 'string' &&
-        typeof arg.assignee_modified === 'number' &&
-        typeof arg.state === 'string' &&
-        typeof arg.command === 'string' &&
-        typeof arg.command_last_run === 'number';
-}
 
 export const newMetric = (type: MetricType, title = '', description = '', target = null): Metric => ({
     id: '',

@@ -11,14 +11,15 @@ interface Props {
     title: string;
     onToggle: () => void;
     editable: boolean;
-    children: React.ReactNode;
+    children?: React.ReactNode;
+    id?: string;
 }
 
 const Action = (props: Props) => {
     const onChange = props.editable ? props.onToggle : () => {/* do nothing */};
 
     return (
-        <Wrapper>
+        <Wrapper data-testid={props.id}>
             <Container
                 onClick={(e: React.MouseEvent) => {
                     e.preventDefault();
@@ -28,15 +29,13 @@ const Action = (props: Props) => {
             >
                 <Title clickable={props.editable}>{props.title}</Title>
                 <Toggle
+                    disabled={!props.editable}
                     isChecked={props.enabled}
                     onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
-                    disabled={!props.editable}
                 />
             </Container>
             {props.enabled &&
-            <ChildrenContainer>
-                {props.children}
-            </ChildrenContainer>
+                <ChildrenContainer>{props.children}</ChildrenContainer>
             }
         </Wrapper>
     );

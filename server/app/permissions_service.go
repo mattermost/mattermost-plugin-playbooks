@@ -54,6 +54,10 @@ func (p *PermissionsService) PlaybookIsPublic(playbook Playbook) bool {
 }
 
 func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) []string {
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return []string{}
+	}
+
 	for _, member := range playbook.Members {
 		if member.UserID == userID {
 			return member.SchemeRoles
@@ -71,15 +75,6 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	return []string{}
 }
 
-func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
-	// For now, everyone with access to the channel is a run admin
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{RunRoleMember, RunRoleAdmin}
-	}
-
-	return []string{}
-}
-
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
 	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
@@ -89,6 +84,16 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 	// Cascade normally to higher level permissions
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
 }
+
+func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
+	// For now, everyone with access to the channel is a run admin
+	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+		return []string{RunRoleMember, RunRoleAdmin}
+	}
+
+	return []string{}
+}
+
 
 func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
 	// Check at run level
@@ -116,7 +121,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	// Check the user has permissions over all broadcast channels
 	for _, channelID := range playbook.BroadcastChannelIDs {
 		if !p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
-			return errors.Errorf("userID %s does not have permission to create posts in the channel %s", userID, channelID)
+			return errors.Errorf("user `%s` does not have permission to create posts in channel `%s`", userID, channelID)
 		}
 	}
 
@@ -124,7 +129,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	for _, userID := range playbook.InvitedUserIDs {
 		if !p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
 			return errors.Errorf(
-				"invited user with ID %s does not have permission to playbook's team %s",
+				"invited user `%s` does not have permission to playbook's team `%s`",
 				userID,
 				playbook.TeamID,
 			)
@@ -140,7 +145,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 
 		if !group.AllowReference {
 			return errors.Errorf(
-				"group %s does not allow references",
+				"group `%s` does not allow references",
 				groupID,
 			)
 		}
@@ -156,7 +161,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {
@@ -169,7 +174,7 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
 }
 
 // PlaybookodifyWithFixes checks both ManageProperties and ManageMembers permissions
@@ -298,7 +303,7 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 			!p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
 			return errors.Wrapf(
 				ErrNoPermissions,
-				"userID %s does not have permission to create posts in the channel %s",
+				"user `%s` does not have permission to create posts in channel `%s`",
 				userID,
 				channelID,
 			)
@@ -318,7 +323,7 @@ func (p *PermissionsService) PlaybookManageMembers(userID string, playbook Playb
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage members for playbook `%s`", userID, playbook.ID)
 }
 
 func (p *PermissionsService) PlaybookManageRoles(userID string, playbook Playbook) error {
@@ -331,7 +336,7 @@ func (p *PermissionsService) PlaybookManageRoles(userID string, playbook Playboo
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage roles for playbook `%s`", userID, playbook.ID)
 }
 
 func (p *PermissionsService) PlaybookView(userID string, playbookID string) error {
@@ -349,19 +354,20 @@ func (p *PermissionsService) PlaybookList(userID, teamID string) error {
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to list playbooks for team `%s`", userID, teamID)
 }
 
 func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Playbook) error {
 	noAccessErr := errors.Wrapf(
 		ErrNoPermissions,
-		"userID %s to access playbook",
+		"user `%s` to access playbook `%s`",
 		userID,
+		playbook.ID,
 	)
 
 	// Playbooks are tied to teams. You must have permission to the team to have permission to the playbook.
 	if !p.canViewTeam(userID, playbook.TeamID) {
-		return errors.Wrap(noAccessErr, "no playbook access; no team view permission")
+		return errors.Wrapf(noAccessErr, "no playbook access; no team view permission for team `%s`", playbook.TeamID)
 	}
 
 	// If the playbook is public team access is enough to view
@@ -381,7 +387,7 @@ func (p *PermissionsService) PlaybookMakePrivate(userID string, playbook Playboo
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to make playbook `%s` private", userID, playbook.ID)
 }
 
 func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook) error {
@@ -389,7 +395,7 @@ func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to make playbook `%s` public", userID, playbook.ID)
 }
 
 func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
@@ -397,7 +403,7 @@ func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
 }
 
 func (p *PermissionsService) RunManageProperties(userID, runID string) error {
@@ -406,11 +412,21 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	if p.HasPermissionsToRun(userID, run, model.PermissionRunManageProperties) {
+	if run.OwnerUserID == userID {
 		return nil
 	}
 
-	return ErrNoPermissions
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
+	}
+
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, runID)
 }
 
 func (p *PermissionsService) RunManagePropertiesByChannel(userID, channelID string) error {
@@ -428,9 +444,16 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	// Has view permission if is in the channel
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+	// Has permission if is the owner of the run
+	if run.OwnerUserID == userID {
 		return nil
+	}
+
+	// Or if is a participant of the run
+	for _, participantID := range run.ParticipantIDs {
+		if participantID == userID {
+			return nil
+		}
 	}
 
 	// Or has view access to the playbook that created it
@@ -451,7 +474,7 @@ func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create actions for channel `%s`", userID, channelID)
 }
 
 func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
@@ -459,7 +482,7 @@ func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to view actions for channel `%s`", userID, channelID)
 }
 
 func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error {
@@ -467,7 +490,7 @@ func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error
 		return nil
 	}
 
-	return ErrNoPermissions
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to update actions for channel `%s`", userID, channelID)
 }
 
 // IsSystemAdmin returns true if the userID is a system admin

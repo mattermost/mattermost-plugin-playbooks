@@ -73,6 +73,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -88,7 +89,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/actions", withContext(handler.updateRunActions)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -699,17 +700,6 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	// Check if the target user (params.OwnerID) has permissions
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(params.OwnerID, playbookRun.ID)) {
-		return
-	}
-
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -850,24 +840,7 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
-// updateRunActions modifies status update broadcast settings.
-func (h *PlaybookRunHandler) updateRunActions(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-	var params app.RunAction
-
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal status update broadcast settings params state", err)
-		return
-	}
-
-	if err := h.playbookRunService.UpdateRunActions(playbookRunID, userID, params); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-}
-
-// RequestUpdate posts a status update request message in the run's channel
+// requestUpdate posts a status update request message in the run's channel
 func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -878,6 +851,23 @@ func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r 
 	}
 
 	if err := h.playbookRunService.RequestUpdate(playbookRunID, userID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+}
+
+// requestJoinChannel posts a channel-join request message in the run's channel
+func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// user must be a participant to be able to request to join the channel
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to request join channel", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RequestJoinChannel(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -903,6 +893,28 @@ func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *
 		h.HandleError(w, c.logger, err)
 		return
 	}
+}
+
+func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		StatusEnabled bool `json:"status_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if err := h.playbookRunService.ToggleStatusUpdates(playbookRunID, userID, payload.StatusEnabled); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
+
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a

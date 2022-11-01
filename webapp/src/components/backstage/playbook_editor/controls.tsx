@@ -6,9 +6,6 @@ import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
-import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiRestore} from '@mdi/js';
-
 import {
     PlusIcon,
     CloseIcon,
@@ -20,6 +17,9 @@ import {
     StarOutlineIcon,
     StarIcon,
     LinkVariantIcon,
+    RestoreIcon,
+    PlayOutlineIcon,
+    LockOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -34,7 +34,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -49,7 +49,7 @@ import {
     restorePlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
-import {ButtonIcon, PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -62,6 +62,7 @@ import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
 import {StyledDropdownMenuItem} from '../shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from '../lhs_navigation';
+import useConfirmPlaybookConvertPrivateModal from '../convert_private_playbook_modal';
 
 type ControlProps = {
     playbook: {
@@ -125,10 +126,13 @@ export const Back = styled((props: StyledProps) => {
 
 `;
 
-export const Members = (props: {playbookId: string, numMembers: number}) => {
+export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
     const dispatch = useDispatch();
     return (
-        <ButtonIconStyled onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId))}>
+        <ButtonIconStyled
+            data-testid={'playbook-members'}
+            onClick={() => dispatch(displayEditPlaybookAccessModal(props.playbookId, props.refetch))}
+        >
             <i className={'icon icon-account-multiple-outline'}/>
             <FormattedNumber value={props.numMembers}/>
         </ButtonIconStyled>
@@ -247,6 +251,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+    const refreshLHS = useLHSRefresh();
 
     return (
         <PrimaryButtonLarger
@@ -256,17 +261,15 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
                     playbook.default_owner_enabled ? playbook.default_owner_id : null,
                     playbook.description,
                     team.id,
-                    team.name
+                    team.name,
+                    refreshLHS
                 ));
             }}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
             data-testid='run-playbook'
         >
-            <Icon
-                path={mdiClipboardPlayOutline}
-                size={1.25}
-            />
+            <PlayOutlineIcon size={20}/>
             {isTutorialPlaybook ? (
                 <FormattedMessage defaultMessage='Start a test run'/>
             ) : (
@@ -325,7 +328,7 @@ export const CopyPlaybookLinkMenuItem = (props: {playbookId: string}) => {
         <StyledDropdownMenuItem
             onClick={() => {
                 copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + props.playbookId);
-                addToast(formatMessage({defaultMessage: 'Copied!'}));
+                addToast({content: formatMessage({defaultMessage: 'Copied!'})});
             }}
         >
             <LinkVariantIcon size={18}/>
@@ -371,6 +374,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
         }
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
+    const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
     const {add: addToast} = useToaster();
 
@@ -380,6 +384,9 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
 
     const permissionForDuplicate = useHasTeamPermission(playbook.team_id, 'playbook_public_create');
+    const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
+    const licenseToMakePrivate = useAllowMakePlaybookPrivate();
+    const isEligibleToMakePrivate = currentUserMember && playbook.public && permissionToMakePrivate && licenseToMakePrivate;
 
     const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 
@@ -400,7 +407,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 {currentUserMember && (
                     <>
                         <DropdownMenuItem
-                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id, refetch))}
                         >
                             <AccountMultipleOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Manage access'/>
@@ -420,7 +427,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     onClick={async () => {
                         const newID = await clientDuplicatePlaybook(playbook.id);
                         navigateToPluginUrl(`/playbooks/${newID}/outline`);
-                        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                        addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
                     disabled={!permissionForDuplicate}
@@ -439,6 +446,20 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
+                {isEligibleToMakePrivate && (
+                    <DropdownMenuItemStyled
+                        role={'button'}
+                        css={`${iconSplitStyling}`}
+                        onClick={() => {
+                            telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
+                            setShowMakePrivateConfirm(true);
+                        }}
+                    >
+                        <LockOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Convert to private playbook'/>
+                    </DropdownMenuItemStyled>
+                )
+                }
                 {currentUserMember && (
                     <>
                         <div className='MenuGroup menu-divider'/>
@@ -456,10 +477,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             <DropdownMenuItem
                                 onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
                             >
-                                <Icon
-                                    path={mdiRestore}
-                                    size={'18px'}
-                                />
+                                <RestoreIcon size={18}/>
                                 <FormattedMessage defaultMessage='Restore'/>
                             </DropdownMenuItem>
                         ) : (
@@ -477,6 +495,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             </DotMenu>
             {confirmArchiveModal}
             {confirmRestoreModal}
+            {confirmConvertPrivateModal}
         </>
     );
 };
@@ -505,11 +524,7 @@ const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;
 
-const SecondaryButtonLarger = styled(SecondaryButton)`
-    ${buttonCommon};
-`;
-
-const TertiaryButtonLarger = styled(TertiaryButton)`
+export const SecondaryButtonLarger = styled(SecondaryButton)`
     ${buttonCommon};
 `;
 

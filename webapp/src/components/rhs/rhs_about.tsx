@@ -12,12 +12,13 @@ import {GlobalState} from '@mattermost/types/store';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
+import {useProfilesInCurrentChannel, useProfilesInTeam, useParticipateInRun} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -31,6 +32,8 @@ import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 interface Props {
     playbookRun: PlaybookRun;
+    readOnly?: boolean;
+    onReadOnlyInteract?: () => void
 }
 
 const RHSAbout = (props: Props) => {
@@ -41,12 +44,14 @@ const RHSAbout = (props: Props) => {
     const channel = useSelector(getCurrentChannel);
     const profilesInTeam = useProfilesInTeam();
 
+    const myUserId = useSelector(getCurrentUserId);
     const team = useSelector(getCurrentTeam);
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
     const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`;
+    const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
+    const overviewURL = `/playbooks/runs/${props.playbookRun.id}?from=channel_rhs_item`;
 
     const markdownOptions = {
         singleline: true,
@@ -92,10 +97,6 @@ const RHSAbout = (props: Props) => {
         }
     };
 
-    const participantsIds = profilesInChannel
-        .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
-        .map((p) => p.id);
-
     const onTitleEdit = (value: string) => {
         changeChannelName(props.playbookRun.channel_id, value);
     };
@@ -110,6 +111,7 @@ const RHSAbout = (props: Props) => {
     };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun.id, 'channel_rhs');
 
     return (
         <>
@@ -123,6 +125,7 @@ const RHSAbout = (props: Props) => {
                         collapsed={collapsed}
                         toggleCollapsed={toggleCollapsed}
                         editSummary={editSummary}
+                        readOnly={props.readOnly}
                     />
                 </ButtonsRow>
                 <RHSAboutTitle
@@ -138,6 +141,8 @@ const RHSAbout = (props: Props) => {
                             onEdit={onDescriptionEdit}
                             editing={editingSummary}
                             setEditing={setEditingSummary}
+                            readOnly={props.readOnly}
+                            onReadOnlyInteract={props.onReadOnlyInteract}
                         />
                         <Row>
                             <OwnerSection>
@@ -148,7 +153,8 @@ const RHSAbout = (props: Props) => {
                                     placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished}
+                                    enableEdit={!isFinished && !props.readOnly}
+                                    onEditDisabledClick={props.onReadOnlyInteract}
                                     getUsers={fetchUsers}
                                     getUsersInTeam={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
@@ -157,13 +163,19 @@ const RHSAbout = (props: Props) => {
                             </OwnerSection>
                             <ParticipantsSection>
                                 <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
-                                <RHSParticipants userIds={participantsIds}/>
+                                <RHSParticipants
+                                    userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
+                                    playbookRunId={props.playbookRun.id}
+                                    onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
+                                />
                             </ParticipantsSection>
                         </Row>
                     </>
                 }
                 {props.playbookRun.status_update_enabled && (
                     <RHSPostUpdate
+                        readOnly={props.readOnly}
+                        onReadOnlyInteract={props.onReadOnlyInteract}
                         collapsed={collapsed}
                         playbookRun={props.playbookRun}
                         updatesExist={props.playbookRun.status_posts.length !== 0}
@@ -187,6 +199,7 @@ const RHSAbout = (props: Props) => {
                     onCancel={() => setShowAddToChannelConfirm(false)}
                 />
             ) : null}
+            {ParticipateConfirmModal}
         </>
     );
 };
@@ -265,12 +278,17 @@ const OwnerSection = styled(MemberSection)`
 const ParticipantsSection = styled(MemberSection)`
 `;
 
+const ParticipantsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
 const MemberSectionTitle = styled.div`
     font-weight: 600;
     font-size: 12px;
     line-height: 16px;
 
-    color: rgba(var(--center-channel-color-rgb), 0.72)
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 export default RHSAbout;

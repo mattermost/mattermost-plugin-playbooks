@@ -318,6 +318,36 @@ func TestPlaybookUpdate(t *testing.T) {
 	})
 }
 
+func TestPlaybookUpdateCrossTeam(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook properties not in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("lost acccess to playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members,
+			client.PlaybookMember{
+				UserID: e.RegularUserNotInTeam.Id,
+				Roles:  []string{app.PlaybookRoleMember},
+			})
+		uperr := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, uperr)
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update playbook properties in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+	})
+}
+
 func TestPlaybooksSort(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
@@ -1202,4 +1232,88 @@ func TestPlaybookGetAutoFollows(t *testing.T) {
 
 	}
 
+}
+
+func TestPlaybookChecklistCleanup(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook", func(t *testing.T) {
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "id1",
+						AssigneeModified: 101,
+						State:            "Closed",
+						StateModified:    102,
+						CommandLastRun:   103,
+					},
+				},
+			},
+		}
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		actual := []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "",
+						AssigneeModified: 0,
+						State:            "",
+						StateModified:    0,
+						CommandLastRun:   0,
+					},
+				},
+			},
+		}
+		require.Equal(t, pb.Checklists, actual)
+	})
+
+	t.Run("create playbook", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "test1",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:            "title1",
+							AssigneeID:       "id1",
+							AssigneeModified: 101,
+							State:            "Closed",
+							StateModified:    102,
+							CommandLastRun:   103,
+						},
+					},
+				},
+			}})
+		require.NoError(t, err)
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		actual := []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:            "title1",
+						AssigneeID:       "",
+						AssigneeModified: 0,
+						State:            "",
+						StateModified:    0,
+						CommandLastRun:   0,
+					},
+				},
+			},
+		}
+		require.Equal(t, pb.Checklists, actual)
+	})
 }

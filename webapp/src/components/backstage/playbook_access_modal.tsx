@@ -12,18 +12,18 @@ import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {useEditPlaybook, useHasPlaybookPermission, useAllowMakePlaybookPrivate} from 'src/hooks';
 import {Playbook, PlaybookMember, PlaybookWithChecklist} from 'src/types/playbook';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 
 import SelectUsersBelow from './select_users_below';
 import UpgradeModal from './upgrade_modal';
+import useConfirmPlaybookConvertPrivateModal from './convert_private_playbook_modal';
 
 const ID = 'playbooks_access';
 
 type Props = {
     playbookId: string
-    onPlaybookChange?: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | undefined>>
+    refetch?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makePlaybookAccessModalDefinition = (props: Props) => ({
@@ -66,24 +66,23 @@ const BlueArrow = styled.i`
 
 const PlaybookAccessModal = ({
     playbookId,
-    onPlaybookChange,
+    refetch,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const [playbook, updatePlaybook] = useEditPlaybook(playbookId);
+    const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
+    const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId, refetch, updater: updatePlaybook});
 
     const onChange = (update: Partial<PlaybookWithChecklist>) => {
         if (playbook) {
             const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
             updatePlaybook(updatedPlaybook);
-            onPlaybookChange?.(updatedPlaybook);
         }
     };
 
@@ -117,12 +116,6 @@ const PlaybookAccessModal = ({
         member.roles = roles;
         onChange({
             members: [...playbook.members.slice(0, idx), ...playbook.members.slice(idx + 1), member],
-        });
-    };
-
-    const modifyPublic = (pub: boolean) => {
-        onChange({
-            public: pub,
         });
     };
 
@@ -188,17 +181,7 @@ const PlaybookAccessModal = ({
                 </>
                 }
             </SizedGenericModal>
-            <ConfirmModal
-                show={showMakePrivateConfirm}
-                title={formatMessage({defaultMessage: 'Convert to Private playbook'})}
-                message={formatMessage({defaultMessage: 'When you convert to a private playbook, membership and run history is preserved. This change is permanent and cannot be undone. Are you sure you want to convert {playbookTitle} to a private playbook?'}, {playbookTitle: playbook?.title})}
-                confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
-                onConfirm={() => {
-                    modifyPublic(false);
-                    setShowMakePrivateConfirm(false);
-                }}
-                onCancel={() => setShowMakePrivateConfirm(false)}
-            />
+            {confirmConvertPrivateModal}
             <UpgradeModal
                 messageType={AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS}
                 show={showUpgradeModal}

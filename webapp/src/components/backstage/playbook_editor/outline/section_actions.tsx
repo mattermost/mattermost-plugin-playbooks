@@ -9,9 +9,7 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {PlayIcon} from '@mattermost/compass-icons/components';
-import Icon from '@mdi/react';
-import {mdiAccountCheckOutline} from '@mdi/js';
+import {PlayIcon, AccountPlusOutlineIcon, AccountMinusOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -19,10 +17,8 @@ import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styl
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
-import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import MarkdownEdit from 'src/components/markdown_edit';
 import {Toggle} from '../../playbook_edit/automation/toggle';
 import {AutomationTitle} from '../../playbook_edit/automation/styles';
 import {useProxyState} from 'src/hooks';
@@ -171,47 +167,46 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
             </StyledSection>
+
             <StyledSection>
                 <StyledSectionTitle>
-                    <Icon
-                        path={mdiAccountCheckOutline}
-                        size={1.75}
-                    />
-                    <FormattedMessage defaultMessage='When a new member joins the channel'/>
+                    <AccountPlusOutlineIcon size={22}/>
+                    <FormattedMessage defaultMessage='When a participant joins the run'/>
                 </StyledSectionTitle>
-                <Setting id={'user-joins-message'}>
+                <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
-                            isChecked={playbook.message_on_join_enabled}
+                            isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
-                                    messageOnJoinEnabled: !playbook.message_on_join_enabled,
+                                    createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
                                 });
                             }}
                         />
-                        <div><FormattedMessage defaultMessage='Send a welcome message'/></div>
+                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
                     </AutomationTitle>
-                    <MarkdownEdit
-                        placeholder={formatMessage({defaultMessage: 'Send a welcome message…'})}
-                        value={playbook.message_on_join}
-                        disabled={!playbook.message_on_join_enabled || archived}
-                        onSave={(messageOnJoin) => {
-                            updatePlaybook({
-                                messageOnJoin,
-                                messageOnJoinEnabled: Boolean(messageOnJoin.trim()),
-                            });
-                        }}
-                    />
                 </Setting>
-                <Setting id={'user-joins-channel-categorize'}>
-                    <CategorizePlaybookRun
-                        disabled={archived}
-                        enabled={playbook.categorize_channel_enabled}
-                        onToggle={handleToggleCategorizePlaybookRun}
-                        categoryName={playbook.category_name}
-                        onCategorySelected={handleCategoryNameChange}
-                    />
+            </StyledSection>
+
+            <StyledSection>
+                <StyledSectionTitle>
+                    <AccountMinusOutlineIcon size={22}/>
+                    <FormattedMessage defaultMessage='When a participant leaves the run'/>
+                </StyledSectionTitle>
+                <Setting id={'participant-leaves-run'}>
+                    <AutomationTitle>
+                        <Toggle
+                            disabled={archived}
+                            isChecked={playbook.remove_channel_member_on_removed_participant}
+                            onChange={() => {
+                                updatePlaybook({
+                                    removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
+                                });
+                            }}
+                        />
+                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                    </AutomationTitle>
                 </Setting>
             </StyledSection>
         </>

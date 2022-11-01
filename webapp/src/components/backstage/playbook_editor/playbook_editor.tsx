@@ -13,7 +13,6 @@ import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch, useSelector} from 'react-redux';
 import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
-
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -21,34 +20,22 @@ import {
     useForceDocumentTitle,
     useStats,
 } from 'src/hooks';
-
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
-
-import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
-
+import PlaybookUsage from 'src/components/backstage/playbook_usage';
+import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 import {SemiBoldHeading} from 'src/styles/headings';
-
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
-
 import CopyLink from 'src/components/widgets/copy_link';
-
 import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
-
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-
 import Tooltip from 'src/components/widgets/tooltip';
-
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
 import Outline, {Sections, ScrollNav} from './outline/outline';
-
 import * as Controls from './controls';
 
 const PlaybookEditor = () => {
@@ -175,6 +162,7 @@ const PlaybookEditor = () => {
                             <Controls.Members
                                 playbookId={playbook.id}
                                 numMembers={playbook.members.length}
+                                refetch={refetch}
                             />
                             <Controls.AutoFollowToggle playbook={playbook}/>
                             <Controls.RunPlaybook playbook={playbook}/>
@@ -213,7 +201,7 @@ const PlaybookEditor = () => {
                     `}
                 >
                     {(edit) => (
-                        <Heading>
+                        <Heading data-testid={'playbook-editor-header'}>
                             <Controls.CopyPlaybook playbook={playbook}/>
                             <Controls.TitleMenu
                                 playbook={playbook}

@@ -14,6 +14,8 @@ import {Placement} from '@floating-ui/react-dom-interactions';
 
 import {useUpdateEffect} from 'react-use';
 
+import styled from 'styled-components';
+
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {PlaybookRunFilterButton} from '../backstage/styles';
@@ -38,6 +40,7 @@ interface Props {
     profileButtonClass?: string;
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
+    onEditDisabledClick?: () => void
     isClearable?: boolean;
     customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
@@ -226,7 +229,7 @@ export default function ProfileSelector(props: Props) {
     const targetWrapped = (
         <div
             data-testid={props.testId}
-            onClick={props.enableEdit ? toggleOpen : () => null}
+            onClick={props.enableEdit ? toggleOpen : props.onEditDisabledClick}
             className={props.className}
         >
             {target}
@@ -309,8 +312,14 @@ export const formatProfileName = (descriptionSuffix: string) => {
         return (
             <>
                 <span>{name}</span>
-                {description && <span className={'description'}>{description}</span>}
+                {description && <Description className={'description'}>{description}</Description>}
             </>
         );
     };
 };
+
+const Description = styled.span`
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;

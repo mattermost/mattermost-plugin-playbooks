@@ -15,6 +15,7 @@ import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 import {fetchPlaybookRunByChannel} from 'src/client';
+import {ToastProvider} from '../backstage/toast_banner';
 
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
@@ -61,14 +62,22 @@ const RightHandSidebar = () => {
         }
     }
 
+    let content = null;
     if (rhsState === RHSState.ViewingPlaybookRun) {
         if (inPlaybookRun) {
-            return <RHSRunDetails/>;
+            content = <RHSRunDetails/>;
+        } else {
+            content = <RHSWelcomeView/>;
         }
-        return <RHSWelcomeView/>;
+    } else {
+        content = <RHSHome/>;
     }
 
-    return <RHSHome/>;
+    return (
+        <ToastProvider>
+            {content}
+        </ToastProvider>
+    );
 };
 
 export default RightHandSidebar;

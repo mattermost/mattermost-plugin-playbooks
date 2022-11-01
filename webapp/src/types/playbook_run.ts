@@ -1,8 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
-import {Checklist, isChecklist} from 'src/types/playbook';
+import {TimelineEvent} from 'src/types/rhs';
+import {Checklist} from 'src/types/playbook';
 
 export interface PlaybookRun {
     id: string;
@@ -42,6 +42,12 @@ export interface PlaybookRun {
     retrospective_enabled: boolean;
     participant_ids: string[];
     metrics_data: RunMetricData[];
+
+    /** Whether a channel member should be created when a new participant joins the run */
+    create_channel_member_on_new_participant: boolean;
+
+    /** Whether a channel member should be removed when an existing participant leaves the run */
+    remove_channel_member_on_removed_participant: boolean;
 }
 
 export interface StatusPost {
@@ -82,65 +88,6 @@ export enum PlaybookRunStatus {
 export interface RunMetricData {
     metric_config_id: string;
     value: number | null;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isPlaybookRun(arg: any): arg is PlaybookRun {
-    return Boolean(arg &&
-        arg.id && typeof arg.id === 'string' &&
-        arg.name && typeof arg.name === 'string' &&
-        typeof arg.description === 'string' &&
-        arg.owner_user_id && typeof arg.owner_user_id === 'string' &&
-        arg.reporter_user_id && typeof arg.reporter_user_id === 'string' &&
-        arg.team_id && typeof arg.team_id === 'string' &&
-        arg.channel_id && typeof arg.channel_id === 'string' &&
-        typeof arg.create_at === 'number' &&
-        typeof arg.end_at === 'number' &&
-        typeof arg.post_id === 'string' &&
-        arg.playbook_id && typeof arg.playbook_id === 'string' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
-        arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
-        typeof arg.reminder_post_id === 'string' &&
-        typeof arg.reminder_message_template === 'string' &&
-        typeof arg.reminder_timer_default_seconds === 'number' &&
-        arg.broadcast_channel_ids && Array.isArray(arg.broadcast_channel_ids) && arg.broadcast_channel_ids.every(isString) &&
-        arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent) &&
-        arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString)) &&
-        typeof arg.last_status_update_at === 'number' &&
-        typeof arg.previous_reminder === 'number';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isStatusPost(arg: any): arg is StatusPost {
-    return Boolean(arg &&
-        arg.id && typeof arg.id === 'string' &&
-        typeof arg.create_at === 'number' &&
-        typeof arg.delete_at === 'number');
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isMetadata(arg: any): arg is Metadata {
-    return Boolean(arg &&
-        arg.channel_name && typeof arg.channel_name === 'string' &&
-        arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
-        arg.team_name && typeof arg.team_name === 'string' &&
-        typeof arg.num_participants === 'number' &&
-        typeof arg.total_posts === 'number' &&
-        arg.followers && Array.isArray(arg.followers) && arg.followers.every(isString));
-}
-
-export function isTimelineEvent(arg: any): arg is TimelineEvent {
-    return Boolean(arg &&
-        typeof arg.id === 'string' &&
-        typeof arg.playbook_run_id === 'string' &&
-        typeof arg.create_at === 'number' &&
-        typeof arg.delete_at === 'number' &&
-        typeof arg.event_at === 'number' &&
-        typeof arg.event_type === 'string' && Object.values(TimelineEventType).includes(arg.event_type) &&
-        typeof arg.summary === 'string' &&
-        typeof arg.details === 'string' &&
-        typeof arg.subject_user_id === 'string' &&
-        typeof arg.creator_user_id === 'string');
 }
 
 function isString(arg: any): arg is string {

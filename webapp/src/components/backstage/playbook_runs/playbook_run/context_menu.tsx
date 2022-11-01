@@ -14,14 +14,17 @@ import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useRunMembership} from 'src/graphql/hooks';
-import {ToastType, useToaster} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {telemetryEvent} from 'src/client';
 
-import {CopyRunLinkMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+import {CopyRunLinkMenuItem, ToggleRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -33,7 +36,7 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing, 'run_details');
     const [showModal, setShowModal] = useState(false);
 
     return (
@@ -75,6 +78,10 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     playbookRun={playbookRun}
                     role={role}
                 />
+                <ToggleRunStatusUpdateMenuItem
+                    playbookRun={playbookRun}
+                    role={role}
+                />
                 <LeaveRunMenuItem
                     isFollowing={isFollowing}
                     role={role}
@@ -91,7 +98,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     );
 };
 
-export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
+export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, trigger: 'run_details' | 'playbooks_lhs') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
@@ -103,14 +110,20 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
         removeFromRun()
             .then(() => {
                 refreshLHS();
-                addToast(formatMessage({defaultMessage: "You've left the run."}), ToastType.Success);
+                addToast({
+                    content: formatMessage({defaultMessage: "You've left the run."}),
+                    toastStyle: ToastStyle.Success,
+                });
 
                 const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
-
+                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from: trigger});
                 if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }
-            }).catch(() => addToast(formatMessage({defaultMessage: "It wasn't possible to leave the run."}), ToastType.Failure));
+            }).catch(() => addToast({
+                content: formatMessage({defaultMessage: "It wasn't possible to leave the run."}),
+                toastStyle: ToastStyle.Failure,
+            }));
     };
     const leaveRunConfirmModal = (
         <ConfirmModal
@@ -131,7 +144,10 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
         leaveRunConfirmModal,
         showLeaveRunConfirm: () => {
             if (currentUserId === ownerUserId) {
-                addToast(formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}), ToastType.Failure);
+                addToast({
+                    content: formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
                 return;
             }
             setLeaveRunConfirm(true);

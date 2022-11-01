@@ -41,7 +41,7 @@ export function usePlaybook(id: Playbook['id'] | undefined) {
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
 
-export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
+export function useEditPlaybook(id: Playbook['id'], callback?: () => void): EditPlaybookReturn {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
     useEffect(() => {
         clientFetchPlaybook(id).then(setPlaybook);
@@ -51,7 +51,7 @@ export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
         if (playbook) {
             const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
             setPlaybook(updatedPlaybook);
-            savePlaybook(updatedPlaybook);
+            savePlaybook(updatedPlaybook).then(callback);
         }
     };
 
@@ -141,7 +141,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
-        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+        addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {

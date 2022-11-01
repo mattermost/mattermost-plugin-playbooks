@@ -360,6 +360,23 @@ func TestRunRetrieval(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
+	t.Run("can't get cross team", func(t *testing.T) {
+		_, err := e.PlaybooksClientNotInTeam.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("can't list cross team", func(t *testing.T) {
+		list, err := e.PlaybooksClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, len(list.Items), 1)
+		list2, err2 := e.PlaybooksClientNotInTeam.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		assert.NoError(t, err2)
+		assert.Len(t, list2.Items, 0)
+	})
 }
 
 func TestRunStatus(t *testing.T) {
@@ -1002,49 +1019,6 @@ func TestChecklisFailTooLarge(t *testing.T) {
 			},
 		})
 		require.Error(t, err)
-	})
-}
-
-func TestRunActions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	t.Run("actions set settings", func(t *testing.T) {
-		settings := client.RunAction{
-			StatusUpdateBroadcastChannelsEnabled: true,
-			StatusUpdateBroadcastWebhooksEnabled: true,
-			BroadcastChannelIDs:                  []string{"chn1", "chn2"},
-			WebhookOnStatusUpdateURLs:            []string{"url1", "url2"},
-		}
-		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
-		assert.NoError(t, err)
-
-		// Make sure the action settings are updated
-		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
-		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
-		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
-		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
-	})
-
-	t.Run("actions update settings", func(t *testing.T) {
-		settings := client.RunAction{
-			StatusUpdateBroadcastChannelsEnabled: false,
-			StatusUpdateBroadcastWebhooksEnabled: false,
-			BroadcastChannelIDs:                  []string{"chn1", "chn3"},
-			WebhookOnStatusUpdateURLs:            []string{"url3", "url4"},
-		}
-		err := e.PlaybooksClient.PlaybookRuns.UpdateRunActions(context.Background(), e.BasicRun.ID, settings)
-		assert.NoError(t, err)
-
-		// Make sure the action settings are updated
-		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
-		require.NoError(t, err)
-		require.Equal(t, settings.StatusUpdateBroadcastChannelsEnabled, editedRun.StatusUpdateBroadcastChannelsEnabled)
-		require.Equal(t, settings.StatusUpdateBroadcastWebhooksEnabled, editedRun.StatusUpdateBroadcastWebhooksEnabled)
-		require.Equal(t, settings.BroadcastChannelIDs, editedRun.BroadcastChannelIDs)
-		require.Equal(t, settings.WebhookOnStatusUpdateURLs, editedRun.WebhookOnStatusUpdateURLs)
 	})
 }
 

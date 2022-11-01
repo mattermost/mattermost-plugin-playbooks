@@ -5,7 +5,8 @@ import React, {useRef} from 'react';
 import {useIntl} from 'react-intl';
 
 import {importFile} from 'src/client';
-import {useToaster, ToastType} from 'src/components/backstage/toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -20,7 +21,10 @@ export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
             reader.onload = async (ev) => {
                 importFile(ev?.target?.result, teamId)
                     .then(({id}) => cb(id))
-                    .catch(() => addToast(formatMessage({defaultMessage: 'The playbook import has failed. Please check that JSON is valid and try again.'}), ToastType.Failure));
+                    .catch(() => addToast({
+                        content: formatMessage({defaultMessage: 'The playbook import has failed. Please check that JSON is valid and try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    }));
                 e.target.value = '';
             };
             reader.readAsArrayBuffer(file);

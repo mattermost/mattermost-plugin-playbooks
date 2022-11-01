@@ -96,5 +96,13 @@
     {
         "id": "app.user.run.retro_publish",
         "translation": "@{{.Name}} bir geçmiş değerlendirmesi yayınladı\n[Geçmiş değerlendirmesine bakın]({{.URL}})\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_participate",
+        "translation": "@{{.Name}} oyuna katıldı. Bu özel kanala otomatik olarak eklenmedi, ancak kanalın herhangi bir üyesi onu katılmaya davet edebilir.\n"
+    },
+    {
+        "id": "app.user.run.joined_run_channel_private_add_participant",
+        "translation": "@{{.Name}}, @{{.RequesterName}} tarafından oyuna eklendi. @{{.RequesterName}} bir kanal üyesi olmadığından ve kanal özel olduğundan otomatik olarak kanala eklenmedi.\n"
     }
 ]

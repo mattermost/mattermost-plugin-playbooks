@@ -9,9 +9,7 @@ import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
-import Icon from '@mdi/react';
-
-import {mdiClockOutline} from '@mdi/js';
+import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
@@ -279,6 +277,16 @@ const TimelineEventItem = (props: Props) => {
         summaryTitle = formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.CanceledRetrospective;
         break;
+    case TimelineEventType.StatusUpdatesEnabled:
+        iconClass = 'icon icon-clock-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdatesEnabled;
+        break;
+    case TimelineEventType.StatusUpdatesDisabled:
+        iconClass = 'icon icon-clock-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.StatusUpdatesDisabled;
+        break;
     }
 
     return (
@@ -309,10 +317,7 @@ const TimelineEventItem = (props: Props) => {
                             </>
                         )}
                     >
-                        <Icon
-                            path={mdiClockOutline}
-                            size={0.85}
-                        />
+                        <ClockOutlineIcon size={12}/>
                     </Tooltip>
                 </TimeStamp>
                 <SummaryTitle

@@ -73,6 +73,7 @@ export type Mutation = {
     addMetric: Scalars['String'];
     addPlaybookMember: Scalars['String'];
     addRunParticipants: Scalars['String'];
+    changeRunOwner: Scalars['String'];
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
     removeRunParticipants: Scalars['String'];
@@ -97,6 +98,11 @@ export type MutationAddPlaybookMemberArgs = {
 export type MutationAddRunParticipantsArgs = {
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']>;
+};
+
+export type MutationChangeRunOwnerArgs = {
+    ownerID: Scalars['String'];
+    runID: Scalars['String'];
 };
 
 export type MutationDeleteMetricArgs = {
@@ -138,6 +144,7 @@ export type Playbook = {
     categoryName: Scalars['String'];
     channelNameTemplate: Scalars['String'];
     checklists: Array<Checklist>;
+    createChannelMemberOnNewParticipant: Scalars['Boolean'];
     createPublicPlaybookRun: Scalars['Boolean'];
     defaultOwnerEnabled: Scalars['Boolean'];
     defaultOwnerID: Scalars['String'];
@@ -159,6 +166,7 @@ export type Playbook = {
     public: Scalars['Boolean'];
     reminderMessageTemplate: Scalars['String'];
     reminderTimerDefaultSeconds: Scalars['Float'];
+    removeChannelMemberOnRemovedParticipant: Scalars['Boolean'];
     retrospectiveEnabled: Scalars['Boolean'];
     retrospectiveReminderIntervalSeconds: Scalars['Float'];
     retrospectiveTemplate: Scalars['String'];
@@ -191,6 +199,7 @@ export type PlaybookUpdates = {
     categoryName?: InputMaybe<Scalars['String']>;
     channelNameTemplate?: InputMaybe<Scalars['String']>;
     checklists?: InputMaybe<Array<ChecklistUpdates>>;
+    createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
     createPublicPlaybookRun?: InputMaybe<Scalars['Boolean']>;
     defaultOwnerEnabled?: InputMaybe<Scalars['Boolean']>;
     defaultOwnerID?: InputMaybe<Scalars['String']>;
@@ -204,6 +213,7 @@ export type PlaybookUpdates = {
     public?: InputMaybe<Scalars['Boolean']>;
     reminderMessageTemplate?: InputMaybe<Scalars['String']>;
     reminderTimerDefaultSeconds?: InputMaybe<Scalars['Float']>;
+    removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
     retrospectiveEnabled?: InputMaybe<Scalars['Boolean']>;
     retrospectiveReminderIntervalSeconds?: InputMaybe<Scalars['Float']>;
     retrospectiveTemplate?: InputMaybe<Scalars['String']>;
@@ -257,6 +267,7 @@ export type Run = {
     channelID: Scalars['String'];
     checklists: Array<Checklist>;
     createAt: Scalars['Float'];
+    createChannelMemberOnNewParticipant: Scalars['Boolean'];
     currentStatus: Scalars['String'];
     endAt: Scalars['Float'];
     id: Scalars['String'];
@@ -272,6 +283,7 @@ export type Run = {
     reminderMessageTemplate: Scalars['String'];
     reminderPostId: Scalars['String'];
     reminderTimerDefaultSeconds: Scalars['Float'];
+    removeChannelMemberOnRemovedParticipant: Scalars['Boolean'];
     retrospective: Scalars['String'];
     retrospectiveEnabled: Scalars['Boolean'];
     retrospectivePublishedAt: Scalars['Float'];
@@ -289,7 +301,13 @@ export type Run = {
 };
 
 export type RunUpdates = {
+    broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
+    createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
     isFavorite?: InputMaybe<Scalars['Boolean']>;
+    removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
+    statusUpdateBroadcastChannelsEnabled?: InputMaybe<Scalars['Boolean']>;
+    statusUpdateBroadcastWebhooksEnabled?: InputMaybe<Scalars['Boolean']>;
+    webhookOnStatusUpdateURLs?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type StatusPost = {
@@ -316,7 +334,7 @@ export type PlaybookQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
+export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
 
 export type UpdatePlaybookMutationVariables = Exact<{
     id: Scalars['String'];
@@ -373,6 +391,13 @@ export type RemoveRunParticipantsMutationVariables = Exact<{
 
 export type RemoveRunParticipantsMutation = { __typename?: 'Mutation', removeRunParticipants: string };
 
+export type ChangeRunOwnerMutationVariables = Exact<{
+    runID: Scalars['String'];
+    ownerID: Scalars['String'];
+}>;
+
+export type ChangeRunOwnerMutation = { __typename?: 'Mutation', changeRunOwner: string };
+
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
   playbook(id: $id) {
@@ -407,6 +432,8 @@ export const PlaybookDocument = gql`
     categorize_channel_enabled: categorizeChannelEnabled
     create_public_playbook_run: createPublicPlaybookRun
     channel_name_template: channelNameTemplate
+    create_channel_member_on_new_participant: createChannelMemberOnNewParticipant
+    remove_channel_member_on_removed_participant: removeChannelMemberOnRemovedParticipant
     is_favorite: isFavorite
     checklists {
       title
@@ -753,6 +780,38 @@ export function useRemoveRunParticipantsMutation(baseOptions?: Apollo.MutationHo
 export type RemoveRunParticipantsMutationHookResult = ReturnType<typeof useRemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationResult = Apollo.MutationResult<RemoveRunParticipantsMutation>;
 export type RemoveRunParticipantsMutationOptions = Apollo.BaseMutationOptions<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
+export const ChangeRunOwnerDocument = gql`
+    mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
+  changeRunOwner(runID: $runID, ownerID: $ownerID)
+}
+    `;
+export type ChangeRunOwnerMutationFn = Apollo.MutationFunction<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
+
+/**
+ * __useChangeRunOwnerMutation__
+ *
+ * To run a mutation, you first call `useChangeRunOwnerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useChangeRunOwnerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [changeRunOwnerMutation, { data, loading, error }] = useChangeRunOwnerMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      ownerID: // value for 'ownerID'
+ *   },
+ * });
+ */
+export function useChangeRunOwnerMutation(baseOptions?: Apollo.MutationHookOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>(ChangeRunOwnerDocument, options);
+}
+export type ChangeRunOwnerMutationHookResult = ReturnType<typeof useChangeRunOwnerMutation>;
+export type ChangeRunOwnerMutationResult = Apollo.MutationResult<ChangeRunOwnerMutation>;
+export type ChangeRunOwnerMutationOptions = Apollo.BaseMutationOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

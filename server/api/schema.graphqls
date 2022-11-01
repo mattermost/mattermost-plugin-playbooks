@@ -31,6 +31,7 @@ type Mutation {
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
+	changeRunOwner(runID: String!, ownerID: String!): String!
 }
 
 input PlaybookUpdates {
@@ -66,6 +67,8 @@ input PlaybookUpdates {
 	channelNameTemplate: String
 	checklists: [ChecklistUpdates!]
 	isFavorite: Boolean
+	createChannelMemberOnNewParticipant: Boolean
+	removeChannelMemberOnRemovedParticipant: Boolean
 }
 
 input ChecklistUpdates {
@@ -129,6 +132,8 @@ type Playbook {
 	defaultRunMemberRole: String!
 	metrics: [PlaybookMetricConfig!]!
 	isFavorite: Boolean!
+	createChannelMemberOnNewParticipant: Boolean!
+	removeChannelMemberOnRemovedParticipant: Boolean!
 }
 
 type Checklist {
@@ -205,6 +210,8 @@ type Run {
 	statusUpdateBroadcastWebhooksEnabled: Boolean!
 	broadcastChannelIDs: [String!]!
 	webhookOnStatusUpdateURLs: [String!]!
+	createChannelMemberOnNewParticipant: Boolean!
+	removeChannelMemberOnRemovedParticipant: Boolean!
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!
@@ -230,6 +237,12 @@ type TimelineEvent {
 
 input RunUpdates {
 	isFavorite: Boolean
+	createChannelMemberOnNewParticipant: Boolean
+	removeChannelMemberOnRemovedParticipant: Boolean
+	statusUpdateBroadcastChannelsEnabled: Boolean
+	statusUpdateBroadcastWebhooksEnabled: Boolean
+	broadcastChannelIDs: [String!]
+	webhookOnStatusUpdateURLs: [String!]
 }
 
 type Metadata {

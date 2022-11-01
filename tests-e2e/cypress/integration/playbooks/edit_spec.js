@@ -14,6 +14,13 @@ describe('playbooks > edit', () => {
     let testUser2;
     let testUser3;
 
+    const openCategorySelector = () => {
+        cy.get('.channel-selector__control input').click({force: true});
+    };
+    const selectCategory = (name) => {
+        cy.get('.channel-selector__menu').findByText(name).click({force: true});
+    };
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
@@ -288,10 +295,10 @@ describe('playbooks > edit', () => {
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '1 MEMBER');
+                                .should('eq', '1 SELECTED');
 
                             // * Verify that the user shows in the group of invited members
-                            cy.findByText('INVITED MEMBERS')
+                            cy.findByText('SELECTED')
                                 .parent()
                                 .within(() => {
                                     cy.findByText(testUser2.username);
@@ -323,7 +330,7 @@ describe('playbooks > edit', () => {
                             cy.addInvitedUser(testUser2.username);
 
                             // * Verify that the user shows in the group of invited members
-                            cy.findByText('INVITED MEMBERS')
+                            cy.findByText('SELECTED')
                                 .parent()
                                 .within(() => {
                                     cy.findByText(testUser2.username);
@@ -335,10 +342,10 @@ describe('playbooks > edit', () => {
 
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '2 MEMBERS');
+                                .should('eq', '2 SELECTED');
 
                             // * Verify that the user shows in the group of invited members
-                            cy.findByText('INVITED MEMBERS')
+                            cy.findByText('SELECTED')
                                 .parent()
                                 .within(() => {
                                     cy.findByText(testUser2.username);
@@ -376,7 +383,7 @@ describe('playbooks > edit', () => {
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '2 MEMBERS');
+                                .should('eq', '2 SELECTED');
 
                             // # Remove the first users added
                             cy.get('.invite-users-selector__option')
@@ -389,9 +396,9 @@ describe('playbooks > edit', () => {
                             // * Verify that there is only one user, the one not removed
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '1 MEMBER');
+                                .should('eq', '1 SELECTED');
 
-                            cy.findByText('INVITED MEMBERS')
+                            cy.findByText('SELECTED')
                                 .parent()
                                 .within(() => {
                                     cy.get('.invite-users-selector__option')
@@ -430,7 +437,7 @@ describe('playbooks > edit', () => {
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '2 MEMBERS');
+                                .should('eq', '2 SELECTED');
 
                             // # Click on the toggle to disable the setting
                             cy.get('label input').click({force: true});
@@ -456,13 +463,13 @@ describe('playbooks > edit', () => {
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control')
                                 .after('content')
-                                .should('eq', '2 MEMBERS');
+                                .should('eq', '2 SELECTED');
 
                             // # Open the invited users selector
                             cy.openSelector();
 
                             // * Verify that the user shows in the group of invited members
-                            cy.findByText('INVITED MEMBERS')
+                            cy.findByText('SELECTED')
                                 .parent()
                                 .within(() => {
                                     cy.findByText(testUser2.username);
@@ -778,7 +785,7 @@ describe('playbooks > edit', () => {
                                 cy.get(
                                     '.assign-owner-selector__control'
                                 ).within(() => {
-                                    cy.findByText('Search for member');
+                                    cy.findByText('Search for people');
                                 });
                             });
                         });
@@ -967,18 +974,19 @@ describe('playbooks > edit', () => {
             beforeEach(() => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+                cy.findByTestId('playbook-channel-actions-button').click();
             });
 
             describe('add the channel to a sidebar category', () => {
                 it('is disabled in a new playbook', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
                     });
                 });
 
                 it('can be enabled', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -992,21 +1000,14 @@ describe('playbooks > edit', () => {
 
                 it('prevents category selection when disabled', () => {
                     // * Verify that the toggle is unchecked
-                    cy.get('#user-joins-channel-categorize label input').should(
-                        'not.be.checked'
-                    );
-
-                    // * Verify that the category selector is disabled
-                    cy.get('#user-joins-channel-categorize').within(() => {
-                        cy.getStyledComponent('StyledCreatable').should(
-                            'have.class',
-                            'channel-selector--is-disabled'
-                        );
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
+                        cy.get('label input').should('not.be.checked');
+                        cy.getStyledComponent('StyledCreatable').should('not.exist');
                     });
                 });
 
                 it('allows selecting a category when enabled', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -1017,20 +1018,18 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('be.checked');
 
                         // # Open the category selector
-                        cy.openCategorySelector();
+                        openCategorySelector();
 
                         // # Select a category
-                        cy.selectCategory('Favorites');
+                        selectCategory('Favorites');
 
                         // * Verify that the control shows the selected category
-                        cy.get('.channel-selector__control').contains(
-                            'Favorites'
-                        );
+                        cy.get('.channel-selector__control').contains('Favorites');
                     });
                 });
 
                 it.skip('allows changing the category', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -1041,10 +1040,10 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('be.checked');
 
                         // # Open the channel selector
-                        cy.openCategorySelector();
+                        openCategorySelector();
 
-                        // # Select a channel
-                        cy.selectCategory('Favorites');
+                        // # Select a category
+                        selectCategory('Favorites');
 
                         // * Verify that the control shows the selected category
                         cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
@@ -1057,7 +1056,7 @@ describe('playbooks > edit', () => {
                         });
 
                         // # Select a new channel
-                        cy.selectCategory('Channels');
+                        selectCategory('Channels');
 
                         // * Verify that the control shows the selected channel
                         cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
@@ -1067,55 +1066,53 @@ describe('playbooks > edit', () => {
                 });
 
                 it('persists the category even if the toggle is off', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
                         // # Open the channel selector
-                        cy.openCategorySelector();
+                        openCategorySelector();
 
                         // # Select a channel
-                        cy.selectCategory('Favorites');
+                        selectCategory('Favorites');
 
                         // * Verify that the control shows the selected category
-                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
-                            'Favorites'
-                        );
+                        cy.get('.channel-selector__control').contains('Favorites');
 
                         // # Click on the toggle to disable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
                     });
-
+                    cy.findByTestId('modal-confirm-button').click();
                     cy.reload();
 
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('playbook-channel-actions-button').click();
+
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.getStyledComponent('Container').click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
                         // * Verify that the control still shows the selected category
-                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
-                            'Favorites'
-                        );
+                        cy.get('.channel-selector__control').contains('Favorites');
                     });
                 });
 
                 it('shows new category name when category was created', () => {
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -1127,22 +1124,27 @@ describe('playbooks > edit', () => {
                     });
 
                     // # Type name to use new custom category
-                    cy.get('#playbook-automation-categorize-playbook-run')
-                        .click()
-                        .type('Custom category{enter}', {delay: 200});
+                    cy.get('.channel-selector__control').click().type('Custom category{enter}', {delay: 200});
 
+                    // # click save modal
+                    cy.findByTestId('modal-confirm-button').click();
+
+                    // # reload to check that changes aren't local
                     cy.reload();
 
-                    cy.get('#user-joins-channel-categorize').within(() => {
+                    // # Open the channel modal
+                    cy.findByTestId('playbook-channel-actions-button').click();
+
+                    cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
-                    });
 
-                    // * Verify that the control still shows the new category
-                    cy.get('#playbook-automation-categorize-playbook-run').should(
-                        'have.text',
-                        'Custom category',
-                    );
+                        // * Verify that the control still shows the new category
+                        cy.get('.channel-selector__control').should(
+                            'have.text',
+                            'Custom category',
+                        );
+                    });
                 });
             });
         });

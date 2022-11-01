@@ -156,6 +156,8 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	cleanUpChecklist(playbook.Checklists)
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -225,6 +227,8 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	cleanUpChecklist(playbook.Checklists)
+
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -232,6 +236,20 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// cleanUpChecklist sets empty values for playbooks checklist fields that are not editable
+// NOTE: Any changes to this function must be made to function 'cleanUpUpdateChecklist' for the GraphQL endpoint.
+func cleanUpChecklist(checklists []app.Checklist) {
+	for listIndex := range checklists {
+		for itemIndex := range checklists[listIndex].Items {
+			checklists[listIndex].Items[itemIndex].AssigneeID = ""
+			checklists[listIndex].Items[itemIndex].AssigneeModified = 0
+			checklists[listIndex].Items[itemIndex].State = ""
+			checklists[listIndex].Items[itemIndex].StateModified = 0
+			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
+		}
+	}
 }
 
 func (h *PlaybookHandler) archivePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -657,7 +675,11 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 		timezone = time.Now().UTC().Location()
 	}
 	// get unix time for duration
-	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
+	if appErr != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", appErr)
+		return
+	}
 
 	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &model.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),
@@ -710,7 +732,11 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 		timezone = time.Now().UTC().Location()
 	}
 	// get unix time for duration
-	startTime := model.StartOfDayForTimeRange(timeRange, timezone)
+	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
+	if appErr != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", appErr)
+		return
+	}
 
 	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &model.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),

@@ -4,12 +4,16 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {useDispatch} from 'react-redux';
+import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
+import {showPlaybookActionsModal} from 'src/actions';
+import {SecondaryButtonLarger} from 'src/components/backstage/playbook_editor/controls';
 
 type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at'>;
 
@@ -21,6 +25,7 @@ interface Props {
 
 export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const archived = playbook.delete_at !== 0;
 
     const handlePublicChange = (isPublic: boolean) => {
@@ -41,7 +46,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
 
     return (
         <AutomationHeader>
-            <AutomationTitle>
+            <AutomationTitle css={{alignSelf: 'flex-start'}}>
                 <Toggle
                     isChecked={true}
                     disabled={true}
@@ -88,6 +93,13 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     type={'text'}
                     errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
                 />
+                <ChannelActionButton
+                    data-testid='playbook-channel-actions-button'
+                    onClick={() => dispatch(showPlaybookActionsModal())}
+                >
+                    <LightningBoltOutlineIcon size={16}/>
+                    {formatMessage({defaultMessage: 'Setup channel actions'})}
+                </ChannelActionButton>
             </HorizontalSplit>
         </AutomationHeader>
     );
@@ -130,4 +142,9 @@ const BigText = styled.div`
     font-size: 14px;
     line-height: 20px;
     font-weight: 400;
+`;
+
+const ChannelActionButton = styled(SecondaryButtonLarger)`
+    margin-top: 8px;
+    height: 40px;
 `;

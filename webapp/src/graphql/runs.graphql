@@ -19,3 +19,8 @@ mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
 mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
 	removeRunParticipants(runID: $runID, userIDs: $userIDs)
 }
+
+mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
+	changeRunOwner(runID: $runID, ownerID: $ownerID)
+}
+

@@ -8,6 +8,21 @@ Mattermost Playbooks allows your team to create and run playbooks from within Ma
 
 ![Mattermost Playbooks](assets/incident_response.png)
 
+## Development Builds
+In your `mattermost-server` configuration (`config/config.json`), set the following values:
+
+`ServiceSettings.EnableLocalMode: true`
+
+`PluginSettings.EnableUploads: true`
+
+and restart the server. Once done, the relevant `make` commands should be able to install builds. Those commands are:
+
+`make deploy` - builds and installs the plugin a single time
+
+`make watch` - continuously builds and installs when files change
+
+which are run from the repo root.
+
 ## License
 
 This repository is licensed under the Apache 2.0 License, except for the [server/enterprise](server/enterprise) directory which is licensed under the [Mattermost Source Available License](LICENSE.enterprise). See [Mattermost Source Available License](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
@@ -75,6 +90,14 @@ A few guidelines when logging:
 * Pass errors using `WithError`.
 * Use `WithFields` when passing more than one field that is not an `err`.
 * Common fields can be set once instead of being passed for every log
+
+### DB Migrations
+
+DB migrations should be placed in `sqlstore/migrations.go` as they are the ones being run at the moment.
+
+After transitioning to a new migration schema, the `sqlstore/migrations/future` folder will be utilised.
+It would ease the transition if migrations are also added there for both drivers (mysql, postgres).
+All migrations in the `future` folder should have both migration directions - `up` and `down`.
 
 ## Popular searches for Help Wanted issues:
 

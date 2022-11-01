@@ -9,14 +9,15 @@ import styled from 'styled-components';
 import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import qs from 'qs';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
+import {useViewTelemetry} from 'src/hooks/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
@@ -33,7 +34,7 @@ import {Participants} from './rhs_participants';
 import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
-
+const RHSParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
@@ -61,22 +62,6 @@ const useRHS = (playbookRun?: PlaybookRun|null) => {
     return {isOpen, section, title, subtitle, open, close, onBack, scrollable};
 };
 
-export const useFollowers = (metadataFollowers: string[]) => {
-    const currentUser = useSelector(getCurrentUser);
-    const [followers, setFollowers] = useState(metadataFollowers);
-    const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-
-    useUpdateEffect(() => {
-        setFollowers(metadataFollowers);
-    }, [currentUser.id, JSON.stringify(metadataFollowers)]);
-
-    useUpdateEffect(() => {
-        setIsFollowing(followers.includes(currentUser.id));
-    }, [currentUser.id, JSON.stringify(followers)]);
-
-    return {isFollowing, followers, setFollowers};
-};
-
 export enum PlaybookRunIDs {
     SectionSummary = 'playbook-run-summary',
     SectionStatusUpdate = 'playbook-run-status-update',
@@ -91,19 +76,26 @@ const PlaybookRunDetails = () => {
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const [playbookRun] = useRun(playbookRunId);
+    const [playbookRun, playbookRunResult] = useRun(playbookRunId);
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
-
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id);
 
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
-    const [channel, channelFetchMetadata] = useChannel(playbookRun?.channel_id ?? '');
+    const [channel] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
-    const followState = useFollowers(metadata?.followers || []);
+    const followState = useRunFollowers(metadata?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
+
+    const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+    const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
+    useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
+        from: queryParams.from ?? '',
+        playbook_id: playbookRun?.playbook_id,
+        playbookrun_id: playbookRun?.id,
+        role,
+    });
 
     const RHS = useRHS(playbookRun);
 
@@ -114,7 +106,9 @@ const PlaybookRunDetails = () => {
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
         const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
-        if (RHSUpdatesOpened && emptyUpdates) {
+        if (queryParams.from === 'channel_rhs_participants') {
+            RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun?.name);
+        } else if (RHSUpdatesOpened && emptyUpdates) {
             RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
     }, [playbookRun, RHS.section, RHS.isOpen]);
@@ -140,17 +134,15 @@ const PlaybookRunDetails = () => {
         }
     }, [urlHash]);
 
-    // loading state
-    if (playbookRun === undefined) {
-        return null;
-    }
-
     // not found or error
-    if (playbookRun === null || metadataResult.error !== null) {
+    if (playbookRunResult.error !== null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    const role = playbookRun.participant_ids.includes(myUser.id) ? Role.Participant : Role.Viewer;
+    // loading state
+    if (!playbookRun) {
+        return null;
+    }
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
     const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
@@ -174,7 +166,7 @@ const PlaybookRunDetails = () => {
                 role={role}
                 followState={followState}
                 channel={channel}
-                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, formatMessage({defaultMessage: 'Participants'}), playbookRun.name, () => onViewInfo)}
+                onViewParticipants={() => RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
         );
@@ -182,8 +174,9 @@ const PlaybookRunDetails = () => {
     case RHSContent.RunParticipants:
         rhsComponent = (
             <Participants
-                participantsIds={playbookRun.participant_ids}
-                playbookRunMetadata={metadata ?? null}
+                playbookRun={playbookRun}
+                role={role}
+                teamName={metadata?.team_name}
             />
         );
         break;
@@ -215,7 +208,6 @@ const PlaybookRunDetails = () => {
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
-                        channel={channel}
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}

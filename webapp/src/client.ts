@@ -16,8 +16,6 @@ import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
     PlaybookRun,
-    isPlaybookRun,
-    isMetadata,
     Metadata,
     RunMetricData,
     StatusPostComplete,
@@ -25,6 +23,7 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
+import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItemState,
@@ -37,8 +36,6 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {RunActions} from 'src/types/run_actions';
-import {PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
 import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -83,13 +80,6 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
 
 export async function fetchPlaybookRun(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -149,26 +139,12 @@ export async function postStatusUpdate(
 
 export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isMetadata(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a Metadata in fetchPlaybookRunMetadata, received:', data);
-        }
-    }
 
     return data;
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
     const data = await doGet(`${apiUrl}/runs/channel/${channelId}`);
-    // eslint-disable-next-line no-process-env
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isPlaybookRun(data)) {
-            // eslint-disable-next-line no-console
-            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
-        }
-    }
 
     return data as PlaybookRun;
 }
@@ -306,6 +282,14 @@ export async function finishRun(playbookRunId: string) {
 export async function restoreRun(playbookRunId: string) {
     try {
         return await doPut(`${apiUrl}/runs/${playbookRunId}/restore`);
+    } catch (error) {
+        return {error};
+    }
+}
+
+export async function toggleRunStatusUpdates(playbookRunId: string, status_enabled: boolean) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/status-update-enabled`, JSON.stringify({status_enabled}));
     } catch (error) {
         return {error};
     }
@@ -538,6 +522,24 @@ export async function telemetryEventForTemplate(templateName: string, action: st
     });
 }
 
+export async function telemetryEvent(name: TelemetryEventTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'track', properties}
+        ),
+    });
+}
+
+export async function telemetryView(name: TelemetryViewTarget, properties: {[key: string]: string}) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry`, {
+        method: 'POST',
+        body: JSON.stringify(
+            {name, type: 'page', properties}
+        ),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
@@ -724,17 +726,17 @@ export const saveChannelAction = async (action: ChannelAction): Promise<string> 
     return action.id;
 };
 
-export const updateRunActions = async (playbookRunID: string, actions: RunActions) => {
+export const requestUpdate = async (playbookRunId: string) => {
     try {
-        return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/actions`, JSON.stringify(actions));
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
     } catch (error) {
         return {error};
     }
 };
 
-export const requestUpdate = async (playbookRunId: string) => {
+export const requestJoinChannel = async (playbookRunId: string) => {
     try {
-        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-update`);
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/request-join-channel`);
     } catch (error) {
         return {error};
     }
