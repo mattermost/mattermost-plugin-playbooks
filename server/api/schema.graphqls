@@ -29,7 +29,7 @@ type Mutation {
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
 	updateRun(id: String!, updates: RunUpdates!): String!
-	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean): String!
+	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
 }
