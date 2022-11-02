@@ -55,7 +55,7 @@ describe('runs > run details page > rhs > participants', () => {
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPublicPlaybook.id,
-            playbookRunName: 'the-run-name',
+            playbookRunName: 'the-run-name' + Date.now(),
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             testRun = playbookRun;
@@ -216,6 +216,7 @@ describe('runs > run details page > rhs > participants', () => {
 
                 // * Verify that no users were invited
                 cy.getFirstPostId().then((id) => {
+                    cy.contains('Someone').should('not.exist');
                     cy.get(`#postMessageText_${id}`)
                         .contains(`@${testViewerUser.username}`);
                 });

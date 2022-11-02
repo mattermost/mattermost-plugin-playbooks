@@ -164,6 +164,7 @@ const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
     margin-right: auto;
     white-space: normal;
+    font-weight: normal;
 
     &:hover {
         background-color: transparent;
