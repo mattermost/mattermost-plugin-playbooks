@@ -2,19 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {useUpdateEffect} from 'react-use';
 
 import {
     isFavoriteItem,
-    telemetryEvent,
 } from 'src/client';
-import {useRunMembership, useUpdateRun} from 'src/graphql/hooks';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
+import {useUpdateRun} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -42,34 +37,14 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
 };
 
 export const useParticipateInRun = (playbookRun: PlaybookRun, trigger: 'channel_rhs'|'run_details') => {
-    const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
-    const {addToRun} = useRunMembership(playbookRun.id, [currentUserId]);
-    const addToast = useToaster().add;
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
-    const onConfirmParticipate = async () => {
-        addToRun()
-            .then(() => addToast({
-                content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
-                toastStyle: ToastStyle.Success,
-            }))
-            .catch(() => addToast({
-                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
-                toastStyle: ToastStyle.Failure,
-            }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: trigger});
-    };
+
     const ParticipateConfirmModal = (
         <BecomeParticipantsModal
             playbookRun={playbookRun}
             show={showParticipateConfirm}
             hideModal={() => setShowParticipateConfirm(false)}
-
-            // onConfirm={() => {
-            //     onConfirmParticipate();
-            //     setShowParticipateConfirm(false);
-            // }}
-            // onCancel={() => setShowParticipateConfirm(false)}
+            trigger={trigger}
         />
     );
     return {

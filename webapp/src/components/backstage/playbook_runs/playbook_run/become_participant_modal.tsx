@@ -8,28 +8,37 @@ import styled from 'styled-components';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {useSelector} from 'react-redux';
 import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants';
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import CheckboxInput from '../../runs_list/checkbox_input';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useChannel} from 'src/hooks';
 import {isCurrentUserChannelMember} from 'src/selectors';
+import {useManageRunMembership} from 'src/graphql/hooks';
+import {useToaster} from '../../toast_banner';
+import {ToastStyle} from '../../toast';
+import {requestJoinChannel, telemetryEvent} from 'src/client';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 interface Props {
     playbookRun: PlaybookRun;
     show: boolean;
     hideModal: () => void;
+    trigger: string;
 }
 
-const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
+const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props) => {
     const {formatMessage} = useIntl();
 
-    const [forceAddToChannel, setForceAddToChannel] = useState(false);
-
+    const currentUserId = useSelector(getCurrentUserId);
+    const [checkboxState, setCheckboxState] = useState(false);
+    const {addToRun} = useManageRunMembership(playbookRun.id);
+    const addToast = useToaster().add;
     const [channel, meta] = useChannel(playbookRun.channel_id);
-    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
-    const isPublicChannel = meta.error === null && channel?.type === General.OPEN_CHANNEL;
+    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id)) || isPrivateChannelWithAccess;
+    const noAccessToJoinTheChannel = meta.error !== null && meta.error.status_code === 403;
 
     const renderExtraMsg = () => {
         if (playbookRun.create_channel_member_on_new_participant) {
@@ -45,22 +54,19 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
         }
 
         // no extra info if already a channel member
-        if (isChannelMember || isPrivateChannelWithAccess) {
+        if (isChannelMember) {
             return null;
         }
 
-        const text = isPublicChannel ? formatMessage({defaultMessage: 'Also add me to the channel linked to this run'}) : formatMessage({defaultMessage: 'Request access to the channel linked to this run'});
-        if (isChannelMember || isPrivateChannelWithAccess) {
-            return (
-                <StyledCheckboxInput
-                    testId={'also-add-to-channel'}
-                    text={text}
-                    checked={forceAddToChannel}
-                    onChange={(checked) => setForceAddToChannel(checked)}
-                />
-            );
-        }
-        return null;
+        const text = noAccessToJoinTheChannel ? formatMessage({defaultMessage: 'Request access to the channel linked to this run'}) : formatMessage({defaultMessage: 'Also add me to the channel linked to this run'});
+        return (
+            <StyledCheckboxInput
+                testId={'also-add-to-channel'}
+                text={text}
+                checked={checkboxState}
+                onChange={(checked) => setCheckboxState(checked)}
+            />
+        );
     };
 
     const header = (
@@ -70,6 +76,26 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
     );
 
     const onConfirm = () => {
+        const forceJoinChannel = !noAccessToJoinTheChannel && checkboxState;
+
+        addToRun([currentUserId], forceJoinChannel)
+            .then(() => {
+                addToast({
+                    content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
+                    toastStyle: ToastStyle.Success,
+                });
+
+                // if no permissions to join the channel and checkbox is selected send a join request
+                if (noAccessToJoinTheChannel && checkboxState) {
+                    requestJoinChannel(playbookRun.id);
+                }
+            })
+            .catch(() => addToast({
+                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
+                toastStyle: ToastStyle.Failure,
+            }));
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: trigger});
+
         hideModal();
     };
 
@@ -85,7 +111,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
             handleConfirm={onConfirm}
 
             onExited={() => {
-                setForceAddToChannel(false);
+                setCheckboxState(false);
             }}
 
             isConfirmDestructive={false}
@@ -110,15 +136,12 @@ const ModalHeader = styled(Modal.Header)`
     &&&& {
         margin-bottom: 16px;
     }
-    display: contents;
+    margin-left: auto;
+    margin-right: auto;
 `;
 
 const Header = styled.div`
-    display: flex;
-    flex-direction: row;
     margin-top: 20px;
-    margin-left: auto;
-    margin-right: auto;
     font-size: 22px;
 `;
 
@@ -162,6 +185,7 @@ export const ActionsContainer = styled.div`
 `;
 
 const StyledCheckboxInput = styled(CheckboxInput)`
+    font-weight: normal;
     padding: 10px 16px 10px 0;
     margin-right: auto;
     white-space: normal;
