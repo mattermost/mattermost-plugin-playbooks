@@ -15,6 +15,7 @@ import {PlaybookRunChecklistItem} from 'src/types/playbook_run';
 interface Props {
     item: PlaybookRunChecklistItem;
     enableAnimation: boolean;
+    style?: React.CSSProperties;
 }
 
 const Task = (props: Props) => {
@@ -36,7 +37,10 @@ const Task = (props: Props) => {
     };
 
     return (
-        <Container className={removed ? 'removed' : ''}>
+        <Container
+            className={removed ? 'removed' : ''}
+            style={props.style}
+        >
             <Header>
                 <PlayOutlineIcon
                     color={'rgba(63, 67, 80, 0.56)'}

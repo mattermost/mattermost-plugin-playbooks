@@ -1,11 +1,12 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, memo} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';
+import {VariableSizeList} from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 
@@ -16,7 +17,6 @@ import {selectMyTasks, isTaskOverdue} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
 import {GeneralViewTarget} from 'src/types/telemetry';
 import {useViewTelemetry} from 'src/hooks/telemetry';
-import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import Task from './task';
 
@@ -104,7 +104,24 @@ const TaskInbox = () => {
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
-
+    const itemTask = memo(({index, style}: {index: number, style: React.CSSProperties}) => {
+        return (
+            <Task
+                style={style}
+                key={tasks[index].id}
+                item={tasks[index]}
+                enableAnimation={!filters.includes(Filter.FilterChecked)}
+            />
+        );
+    });
+    const getTaskHeight = (index: number) => {
+        if (tasks[index].command !== '' && tasks[index].assignee_id !== '') {
+            return 153;
+        } else if (tasks[index].command !== '' || tasks[index].assignee_id !== '') {
+            return 125;
+        }
+        return 93;
+    };
     return (
         <Container>
             <Filters>
@@ -151,25 +168,22 @@ const TaskInbox = () => {
                     <ZeroCaseDescription>{zerocaseSubtitle}</ZeroCaseDescription>
                 </ZeroCase>
             ) : (
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'relative'}}
-                >
-                    <TaskList>
-                        {tasks.map((task) => (
-                            <Task
-                                key={task.id}
-                                item={task}
-                                enableAnimation={!filters.includes(Filter.FilterChecked)}
-                            />
-                        ))}
-                    </TaskList>
-                </Scrollbars>
+
+                <TaskList>
+                    <AutoSizer>
+                        {({height, width}: any) => (
+                            <VariableSizeList
+                                overscanCount={2}
+                                itemCount={tasks.length}
+                                width={width as number}
+                                height={height as number}
+                                itemSize={getTaskHeight}
+                            >
+                                {itemTask}
+                            </VariableSizeList>
+                        )}
+                    </AutoSizer>
+                </TaskList>
             )}
         </Container>
     );
