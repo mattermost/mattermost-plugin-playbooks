@@ -2887,6 +2887,8 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return err
 	}
 
+	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
@@ -2945,7 +2947,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 				return errors.Wrap(err, "failed to get user")
 			}
 		}
-		users = append(users, requesterUser)
+		users = append(users, user)
 		s.participateActions(playbookRun, channel, user, requesterUser)
 	}
 
@@ -2955,6 +2957,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
