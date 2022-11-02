@@ -671,9 +671,9 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 // UpdateRun updates the run
 func updateRun(c *client.Client, playbookRunID string, updates map[string]interface{}) (graphql.Response, error) {
 	mutation := `
-	mutation UpdateRun($id: String!, $updates: RunUpdates!) {
-		updateRun(id: $id, updates: $updates)
-	}
+		mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+			updateRun(id: $id, updates: $updates)
+		}
 	`
 	var response graphql.Response
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
