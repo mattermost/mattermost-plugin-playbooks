@@ -756,7 +756,7 @@ type PlaybookRunService interface {
 	RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
