@@ -2947,6 +2947,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 				return errors.Wrap(err, "failed to get user")
 			}
 		}
+		users = append(users, user)
 		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
 	}
 
