@@ -252,7 +252,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
@@ -840,7 +840,7 @@ func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID s
 // GetOwners returns the owners of the playbook runs selected by options
 func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
@@ -983,18 +983,32 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		))`, info.UserID, info.UserID)
 }
 
-func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
-	if teamID != "" {
-		return sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
-	}
-
-	return sq.Expr(fmt.Sprintf(`
+func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sqlizer {
+	filterToSelectedTeam := sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
+	onlyTeamsUserIsAMember := sq.Expr(fmt.Sprintf(`
 		EXISTS(SELECT 1
 					FROM TeamMembers as tm
 					WHERE tm.TeamId = %s.TeamID
 					  AND tm.DeleteAt = 0
 		  	  		  AND tm.UserId = ?)
-		`, tableName), userID)
+		`, tableName), info.UserID)
+
+	if info.IsAdmin {
+		if teamID != "" {
+			return filterToSelectedTeam
+		}
+		return nil
+	}
+
+	if teamID != "" {
+		return sq.And{
+			filterToSelectedTeam,
+			onlyTeamsUserIsAMember,
+		}
+	}
+
+	return onlyTeamsUserIsAMember
+
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {

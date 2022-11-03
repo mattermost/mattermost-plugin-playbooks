@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  ee-test-tag:
+    type: string
+    default: "prerelease"
+
 orbs:
   aws-s3: circleci/aws-s3@1.0.16
 
@@ -388,7 +393,7 @@ jobs:
           http.cors.allow-credentials: "true"
           transport.host: "127.0.0.1"
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mm-ee-test:$MM_DOCKER_IMAGE_TAG
+      - image: mattermost/mm-ee-test:<< pipeline.parameters.ee-test-tag >>
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -417,7 +422,6 @@ jobs:
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
-      MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
