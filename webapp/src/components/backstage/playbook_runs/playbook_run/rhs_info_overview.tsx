@@ -34,7 +34,6 @@ import {pluginUrl} from 'src/browser_routing';
 import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
-import {useEnsureProfiles} from 'src/hooks';
 
 import {useLHSRefresh} from '../../lhs_navigation';
 
@@ -97,7 +96,6 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
     const addToast = useToaster().add;
     const refreshLHS = useLHSRefresh();
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
-    useEnsureProfiles(run.participant_ids);
 
     const setOwner = async (userID: string) => {
         try {
