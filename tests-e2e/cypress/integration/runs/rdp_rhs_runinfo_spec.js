@@ -250,7 +250,7 @@ describe('runs > run details page > run info', () => {
                 getHeader().findByText('Participate').click();
 
                 // # Confirm modal
-                cy.get('#confirmModal').get('#confirmModalButton').click();
+                cy.findByTestId('modal-confirm-button').click();
 
                 // Assert that request-join button exist
                 getOverviewEntry('channel').within(() => {

@@ -146,11 +146,7 @@ describe('runs > run details page > header', () => {
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
-                // # Intercept these graphQL requests for wait()'s
-                // # that help ensure rendering has finished.
-                cy.gqlInterceptQuery('PlaybookLHS');
-                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                waitToLoadLHS(testUser.username);
             });
         });
 
@@ -479,7 +475,6 @@ describe('runs > run details page > header', () => {
     describe('as viewer', () => {
         let playbookRunChannelName;
         let playbookRunName;
-        let disableJoinAction = false;
 
         beforeEach(() => {
             // # Size the viewport to show the RHS without covering posts.
@@ -498,20 +493,13 @@ describe('runs > run details page > header', () => {
                 ownerUserId: testUser.id,
             }).then((run) => {
                 playbookRun = run;
-                if (disableJoinAction) {
-                    cy.apiUpdateRun(run.id, {createChannelMemberOnNewParticipant: false});
-                }
 
                 cy.apiLogin(testViewerUser).then(() => {
                     // # Visit the playbook run
                     cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
 
-                // # Intercept these graphQL requests for wait()'s
-                // # that help ensure rendering has finished.
-                cy.gqlInterceptQuery('PlaybookLHS');
-                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                waitToLoadLHS(testUser.username);
             });
         });
 
@@ -665,7 +653,17 @@ describe('runs > run details page > header', () => {
                 });
 
                 describe('Join action disabled', () => {
-                    disableJoinAction = true;
+                    beforeEach(() => {
+                        cy.apiLogin(testUser);
+                        cy.apiUpdateRun(playbookRun.id, {createChannelMemberOnNewParticipant: false});
+
+                        cy.apiLogin(testViewerUser).then(() => {
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                        });
+
+                        waitToLoadLHS(testUser.username);
+                    });
 
                     it('join the run with private channel, request to join the channel', () => {
                         // * Click start-participating button
@@ -834,6 +832,14 @@ describe('runs > run details page > header', () => {
         });
     });
 });
+
+const waitToLoadLHS = (username) => {
+    // # Intercept these graphQL requests for wait()'s
+    // # that help ensure rendering has finished.
+    cy.gqlInterceptQuery('PlaybookLHS');
+    cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+    cy.assertRunDetailsPageRenderComplete(username);
+};
 
 const verifyRunHasBeenAddedToLHS = (playbookRunName) => {
     // * Verify run has been added to LHS
