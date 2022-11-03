@@ -741,5 +741,13 @@
     "ha1TB3": "Wenn ein Teilnehmer an dem Durchlauf teilnimmt",
     "Z18I+c": "Kanalaktionen ermöglichen dir die Automatisierung von Aktivitäten für den Kanal",
     "Y1EoT/": "Wenn ein Teilnehmer den Durchlauf verlässt",
-    "5b1zuB": "Füge sie dem Kanal für den Durchlauf hinzu"
+    "5b1zuB": "Füge sie dem Kanal für den Durchlauf hinzu",
+    "u/yGzS": "{name} hat @{user} zum Durchlauf hinzugefügt",
+    "t6lwwM": "{requester} entfernt {users} aus dem Durchlauf",
+    "jfpnye": "@{user} hat den Durchlauf verlassen",
+    "feNxoJ": "{requester} hat {users} zum Durchlauf hinzugefügt",
+    "ecS/qx": "{name} hat {num} Teilnehmer dem Durchlauf hinzugefügt",
+    "VM75su": "{name} hat {num} Teilnehmer aus dem Durchlauf entfernt",
+    "SwlL5j": "@{user} nimmt am Durchlauf teil",
+    "RXjd3Q": "{name} entfernte @{user} aus dem Durchlauf"
 }
