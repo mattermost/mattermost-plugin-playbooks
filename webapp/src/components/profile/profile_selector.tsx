@@ -56,6 +56,7 @@ interface Props {
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
     memberUserIds: string[];
+    isMembersModeEnabled: boolean;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -243,8 +244,18 @@ export default function ProfileSelector(props: Props) {
         Control: props.customControl,
     } : noDropdown;
 
-    const selectOptions = (userNotInListOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}), options: userOptions},
-        {label: formatMessage({defaultMessage: 'NOT PARTICIPATING'}), options: userNotInListOptions}];
+    const getSelectOptions = () => {
+        if (!props.isMembersModeEnabled) {
+            return userNotInListOptions;
+        }
+        if (userNotInListOptions.length === 0) {
+            return userOptions;
+        }
+        return [
+            {label: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}), options: userOptions},
+            {label: formatMessage({defaultMessage: 'NOT PARTICIPATING'}), options: userNotInListOptions},
+        ];
+    };
 
     return (
         <Dropdown
@@ -261,7 +272,7 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={selectOptions}
+                options={getSelectOptions()}
                 placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}

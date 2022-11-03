@@ -182,6 +182,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                 memberUserIds={[]}
                 getAllUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
+                isMembersModeEnabled={false}
             />
             {!fixedPlaybook &&
                 <PlaybookSelector

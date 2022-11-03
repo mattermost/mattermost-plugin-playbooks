@@ -57,6 +57,7 @@ const AssignTo = (props: AssignedToProps) => {
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
+                isMembersModeEnabled={true}
             />
         );
     }
@@ -99,6 +100,7 @@ const AssignTo = (props: AssignedToProps) => {
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
+                isMembersModeEnabled={true}
             />
         </AssignToContainer>
     );

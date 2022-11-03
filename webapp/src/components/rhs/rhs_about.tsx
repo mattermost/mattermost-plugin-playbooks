@@ -160,6 +160,7 @@ const RHSAbout = (props: Props) => {
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}
                                     memberUserIds={props.playbookRun.participant_ids}
+                                    isMembersModeEnabled={true}
                                 />
                             </OwnerSection>
                             <ParticipantsSection>
