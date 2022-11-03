@@ -157,11 +157,11 @@ export const useManageRunMembership = (runID?: string) => {
         ],
     });
 
-    const addToRun = useCallback(async (userIDs?: string[]) => {
+    const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await add({variables: {runID: runID || '', userIDs: userIDs || []}});
+        await add({variables: {runID: runID || '', userIDs: userIDs || [], forceAddToChannel: forceAddToChannel || false}});
     }, [runID, add]);
 
     const removeFromRun = useCallback(async (userIDs?: string[]) => {

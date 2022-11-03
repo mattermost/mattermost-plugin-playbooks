@@ -389,6 +389,7 @@ const (
 	RanSlashCommand        timelineEventType = "ran_slash_command"
 	EventFromPost          timelineEventType = "event_from_post"
 	UserJoinedLeft         timelineEventType = "user_joined_left"
+	ParticipantsChanged    timelineEventType = "participants_changed"
 	PublishedRetrospective timelineEventType = "published_retrospective"
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
@@ -752,10 +753,10 @@ type PlaybookRunService interface {
 	RequestJoinChannel(playbookRunID, requesterID string) error
 
 	// RemoveParticipants removes users from the run's participants
-	RemoveParticipants(playbookRunID string, userIDs []string) error
+	RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error

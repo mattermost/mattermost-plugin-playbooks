@@ -11,7 +11,7 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
+import {TimelineEvent, TimelineEventType, ParticipantsChangedDetails, UserJoinedLeftDetails} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -62,16 +62,6 @@ const TimeStamp = styled.time`
         position: relative;
         top: -1px;
     }
-`;
-
-const TimeSinceStart = styled.span`
-    font-size: 11px;
-    display: inline-block;
-    white-space: nowrap;
-    border: 1px solid #EFF1F5;
-    padding: 0.1rem .25rem;
-    border-radius: 5px;
-    margin-left: 1rem;
 `;
 
 const TimeBetween = styled.div`
@@ -174,14 +164,133 @@ const TimelineEventItem = (props: Props) => {
             dispatch(toggleRHS());
         }
     };
-    const {formatMessage} = useIntl();
+    const {formatMessage, formatList} = useIntl();
 
-    let iconClass = '';
-    let summaryTitle = '';
-    let summary = '';
-    let testid = '';
+    const getSummary = (event: TimelineEvent, parsedDetails: unknown) => {
+        switch (event.event_type) {
+        case TimelineEventType.AssigneeChanged:
+        case TimelineEventType.RanSlashCommand:
+            return event.subject_display_name + ' ' + event.summary;
+        case TimelineEventType.UserJoinedLeft:
+            return event.summary;
+        case TimelineEventType.ParticipantsChanged: {
+            const details = parsedDetails as ParticipantsChangedDetails;
+            if (details.action === 'joined') {
+                return formatMessage({defaultMessage: '{requester} added {users} to the run'}, {
+                    users: formatList(details.users.map((u: string) => `@${u}`), {type: 'conjunction'}),
+                    requester: details.requester,
+                });
+            }
+            return formatMessage({defaultMessage: '{requester} removed {users} from the run'}, {
+                users: formatList(details.users.map((u: string) => `@${u}`), {type: 'conjunction'}),
+                requester: details.requester,
+            });
+        }
+        default:
+            return '';
+        }
+    };
+    const getSummaryTitle = (event: TimelineEvent, parsedDetails: unknown) => {
+        switch (event.event_type) {
+        case TimelineEventType.RunCreated:
+            return formatMessage({defaultMessage: 'Run started by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RunFinished:
+            return formatMessage({defaultMessage: 'Run finished by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RunRestored:
+            return formatMessage({defaultMessage: 'Run restored by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.StatusUpdated:
+            if (event.summary === '') {
+                return formatMessage({defaultMessage: '{name} posted a status update'}, {name: event.subject_display_name});
+            }
+            return formatMessage({defaultMessage: '{name} changed status from {summary}'}, {name: event.subject_display_name, summary: event.summary});
+        case TimelineEventType.StatusUpdateSnoozed:
+            return formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: event.subject_display_name});
+        case TimelineEventType.StatusUpdateRequested:
+            return event.summary;
+        case TimelineEventType.OwnerChanged:
+            return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
+        case TimelineEventType.TaskStateModified:
+            return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
+        case TimelineEventType.AssigneeChanged:
+            return formatMessage({defaultMessage: 'Assignee Changed'});
+        case TimelineEventType.RanSlashCommand:
+            return formatMessage({defaultMessage: 'Slash Command Executed'});
+        case TimelineEventType.EventFromPost:
+            return event.summary;
+        case TimelineEventType.UserJoinedLeft: {
+            const details = parsedDetails as UserJoinedLeftDetails;
+
+            // old format
+            if (details.title) {
+                return details.title;
+            }
+
+            // new format
+            if (details.action === 'joined') {
+                return formatMessage({defaultMessage: '@{user} joined the run'}, {user: details.users[0]});
+            }
+            return formatMessage({defaultMessage: '@{user} left the run'}, {user: details.users[0]});
+        }
+        case TimelineEventType.ParticipantsChanged: {
+            const details = parsedDetails as ParticipantsChangedDetails;
+            if (details.users.length > 1) {
+                if (details.action === 'joined') {
+                    return formatMessage({defaultMessage: '{name} added {num} participants to the run'}, {name: details.requester, num: details.users.length});
+                }
+                return formatMessage({defaultMessage: '{name} removed {num} participants from the run'}, {name: details.requester, num: details.users.length});
+            }
+            if (details.action === 'joined') {
+                return formatMessage({defaultMessage: '{name} added @{user} to the run'}, {name: details.requester, user: details.users[0]});
+            }
+            return formatMessage({defaultMessage: '{name} removed @{user} from the run'}, {name: details.requester, user: details.users[0]});
+        }
+        case TimelineEventType.PublishedRetrospective:
+            return formatMessage({defaultMessage: 'Retrospective published by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.CanceledRetrospective:
+            return formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.StatusUpdatesEnabled:
+            return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.StatusUpdatesDisabled:
+            return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+        default:
+            return '';
+        }
+    };
+
+    const getIcon = (event: TimelineEvent) => {
+        switch (event.event_type) {
+        case TimelineEventType.RunCreated:
+        case TimelineEventType.RunFinished:
+        case TimelineEventType.RunRestored:
+            return 'icon-shield-alert-outline';
+        case TimelineEventType.StatusUpdated:
+        case TimelineEventType.StatusUpdateSnoozed:
+            return 'icon-flag-outline';
+        case TimelineEventType.StatusUpdateRequested:
+            return 'icon-update';
+        case TimelineEventType.TaskStateModified:
+            return 'icon-format-list-bulleted';
+        case TimelineEventType.OwnerChanged:
+        case TimelineEventType.AssigneeChanged:
+        case TimelineEventType.RanSlashCommand:
+        case TimelineEventType.PublishedRetrospective:
+        case TimelineEventType.EventFromPost:
+            return 'icon-pencil-outline';
+        case TimelineEventType.UserJoinedLeft:
+        case TimelineEventType.ParticipantsChanged:
+            return 'icon-account-outline';
+        case TimelineEventType.CanceledRetrospective:
+            return 'icon-cancel';
+        case TimelineEventType.StatusUpdatesEnabled:
+        case TimelineEventType.StatusUpdatesDisabled:
+            return 'icon-clock-outline';
+        default:
+            return '';
+        }
+    };
 
     const eventTime = DateTime.fromMillis(props.event.event_at);
+
     const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
     let timeSinceStart: ReactNode = formatMessage({defaultMessage: '{duration} after run started'}, {duration: formatDuration(diff)});
     if (diff.toMillis() < 0) {
@@ -197,101 +306,22 @@ const TimelineEventItem = (props: Props) => {
         </TimeBetween>
     );
 
-    switch (props.event.event_type) {
-    case TimelineEventType.RunCreated:
-        iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run started by {name}'}, {name: props.event.subject_display_name});
+    if (props.event.event_type === TimelineEventType.RunCreated) {
         timeSinceStart = null;
-        testid = TimelineEventType.RunCreated;
-        break;
-    case TimelineEventType.RunFinished:
-        iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run finished by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.RunFinished;
-        break;
-    case TimelineEventType.RunRestored:
-        iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run restored by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.RunRestored;
-        break;
-    case TimelineEventType.StatusUpdated:
-        iconClass = 'icon icon-flag-outline';
-        if (props.event.summary === '') {
-            summaryTitle = formatMessage({defaultMessage: '{name} posted a status update'}, {name: props.event.subject_display_name});
-        } else {
-            summaryTitle = formatMessage({defaultMessage: '{name} changed status from {summary}'}, {name: props.event.subject_display_name, summary: props.event.summary});
-        }
-        testid = TimelineEventType.StatusUpdated;
-        break;
-    case TimelineEventType.StatusUpdateSnoozed:
-        iconClass = 'icon icon-flag-outline';
-        summaryTitle = formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.StatusUpdateSnoozed;
-        break;
-    case TimelineEventType.StatusUpdateRequested:
-        iconClass = 'icon icon-update';
-        summaryTitle = props.event.summary;
-        testid = TimelineEventType.StatusUpdateRequested;
-        break;
-    case TimelineEventType.OwnerChanged:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: props.event.summary});
-        testid = TimelineEventType.OwnerChanged;
-        break;
-    case TimelineEventType.TaskStateModified:
-        iconClass = 'icon icon-format-list-bulleted';
-        summaryTitle = props.event.subject_display_name + ' ' + props.event.summary;
-        summaryTitle = summaryTitle.replace(/\*\*/g, '"');
-        testid = TimelineEventType.TaskStateModified;
-        break;
-    case TimelineEventType.AssigneeChanged:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Assignee Changed'});
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
-        testid = TimelineEventType.AssigneeChanged;
-        break;
-    case TimelineEventType.RanSlashCommand:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Slash Command Executed'});
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
-        testid = TimelineEventType.RanSlashCommand;
-        break;
-    case TimelineEventType.EventFromPost:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = props.event.summary;
-        testid = TimelineEventType.EventFromPost;
-        break;
-    case TimelineEventType.UserJoinedLeft:
-        iconClass = 'icon icon-account-outline';
-        summaryTitle = JSON.parse(props.event.details).title;
-        summary = props.event.summary;
-        testid = TimelineEventType.UserJoinedLeft;
-        break;
-    case TimelineEventType.PublishedRetrospective:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Retrospective published by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.PublishedRetrospective;
-        break;
-    case TimelineEventType.CanceledRetrospective:
-        iconClass = 'icon icon-cancel';
-        summaryTitle = formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.CanceledRetrospective;
-        break;
-    case TimelineEventType.StatusUpdatesEnabled:
-        iconClass = 'icon icon-clock-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.StatusUpdatesEnabled;
-        break;
-    case TimelineEventType.StatusUpdatesDisabled:
-        iconClass = 'icon icon-clock-outline';
-        summaryTitle = formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: props.event.subject_display_name});
-        testid = TimelineEventType.StatusUpdatesDisabled;
-        break;
+    }
+
+    // enforce one only json parse, it should be json valid
+    // but we use the actual string as fallback anyways
+    let parsedDetails;
+    try {
+        parsedDetails = JSON.parse(props.event.details);
+    } catch (e) {
+        parsedDetails = props.event.details;
     }
 
     return (
         <TimelineItem
-            data-testid={'timeline-item ' + testid}
+            data-testid={'timeline-item ' + props.event.event_type}
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
@@ -301,7 +331,7 @@ const TimelineEventItem = (props: Props) => {
                 </TimeContainer>
             ) : null}
             <Circle>
-                <i className={iconClass}/>
+                <i className={'icon ' + getIcon(props.event)}/>
             </Circle>
 
             <SummaryContainer>
@@ -325,7 +355,7 @@ const TimelineEventItem = (props: Props) => {
                     deleted={statusPostDeleted}
                     postIdExists={props.event.post_id !== '' && props.editable}
                 >
-                    {summaryTitle}
+                    {getSummaryTitle(props.event, parsedDetails)}
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
@@ -336,7 +366,7 @@ const TimelineEventItem = (props: Props) => {
                         })}
                     </SummaryDeleted>
                 )}
-                <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
+                <SummaryDetail>{messageHtmlToComponent(formatText(getSummary(props.event, parsedDetails), markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
             {showMenu && props.editable &&
                 <StyledHoverMenu parent={props.parent}>
