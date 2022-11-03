@@ -2843,7 +2843,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 }
 
 // Leave removes user from the run's participants
-func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string) error {
+func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2860,10 +2864,31 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrapf(err, "users `%+v` failed to remove participation in run `%s`", userIDs, playbookRunID)
 	}
 
+	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
+		user := requesterUser
+		if userID != requesterUserID {
+			user, err = s.pluginAPI.User.Get(userID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get user")
+			}
+		}
+		users = append(users, user)
 		s.leaveActions(playbookRun, userID)
 	}
 
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
+	if err != nil {
+		return err
+	}
+
+	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
@@ -2890,6 +2915,10 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 }
 
 func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2909,19 +2938,75 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
 		user := requesterUser
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return errors.Wrap(err, "failed to get requester user")
+				return errors.Wrap(err, "failed to get user")
 			}
 		}
+		users = append(users, user)
 		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
 	}
 
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "joined")
+	if err != nil {
+		return err
+	}
+
+	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
+	}
+
+	return nil
+}
+
+// changeParticipantsTimeline handles timeline event creation for run participation change triggers:
+// participate/leave events and add/remove participants (multiple allowed)
+func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string, requesterUser *model.User, users []*model.User, action string) error {
+	type Details struct {
+		Action    string   `json:"action,omitempty"`
+		Requester string   `json:"requester,omitempty"`
+		Users     []string `json:"users,omitempty"`
+	}
+	var details Details
+	now := model.GetMillis()
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      now,
+		EventAt:       now,
+		Summary:       "", // copies managed in webapp using the injected data
+		CreatorUserID: requesterUser.Id,
+		SubjectUserID: requesterUser.Id,
+	}
+
+	event.EventType = ParticipantsChanged
+	if len(users) == 1 && users[0].Id == requesterUser.Id {
+		event.EventType = UserJoinedLeft
+	}
+	if len(users) == 1 {
+		event.SubjectUserID = users[0].Id
+	}
+
+	details.Action = action
+	details.Requester = requesterUser.Username
+	details.Users = make([]string, 0)
+	for _, u := range users {
+		details.Users = append(details.Users, u.Username)
+	}
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+	event.Details = string(detailsJSON)
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
 	return nil
