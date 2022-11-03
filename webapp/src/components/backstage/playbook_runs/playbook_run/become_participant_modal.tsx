@@ -3,7 +3,6 @@
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
-import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {useSelector} from 'react-redux';
@@ -20,6 +19,7 @@ import {useToaster} from '../../toast_banner';
 import {ToastStyle} from '../../toast';
 import {requestJoinChannel, telemetryEvent} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -33,7 +33,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
 
     const currentUserId = useSelector(getCurrentUserId);
     const [checkboxState, setCheckboxState] = useState(false);
-    const {addToRun} = useManageRunMembership(playbookRun.id);
+    const {addToRun} = useManageRunMembership(playbookRun.id, [PlaybookLhsDocument]);
     const addToast = useToaster().add;
     const [channel, meta] = useChannel(playbookRun.channel_id);
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
@@ -100,7 +100,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
     };
 
     return (
-        <GenericModal
+        <StyledGenericModal
             id={'become-participant-modal'}
             modalHeaderText={header}
             show={show}
@@ -119,7 +119,6 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
             autoCloseOnConfirmButton={false}
             enforceFocus={true}
             components={{
-                Header: ModalHeader,
                 FooterContainer: StyledFooterContainer,
             }}
         >
@@ -128,20 +127,21 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
                 {renderExtraMsg()}
             </Body>
 
-        </GenericModal>
+        </StyledGenericModal>
     );
 };
 
-const ModalHeader = styled(Modal.Header)`
-    &&&& {
-        margin-bottom: 16px;
+const StyledGenericModal = styled(GenericModal)`
+    &&& {
+        .GenericModal__header {
+            h1 {
+                margin: 20px auto 0 auto;
+            }
+        }
     }
-    margin-left: auto;
-    margin-right: auto;
 `;
 
 const Header = styled.div`
-    margin-top: 20px;
     font-size: 22px;
 `;
 

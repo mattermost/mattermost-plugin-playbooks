@@ -1,4 +1,5 @@
 import {useCallback} from 'react';
+import * as Apollo from '@apollo/client';
 
 import {autoFollowPlaybook} from 'src/client';
 
@@ -138,23 +139,18 @@ export const useRunMembership = (runID?: string, userIDs?: string[]) => {
     return {addToRun, removeFromRun};
 };
 
-export const useManageRunMembership = (runID?: string) => {
+export const useManageRunMembership = (runID?: string, refetch?: Apollo.DocumentNode[]) => {
+    const refetchQueries = refetch ?? [RunDocument];
     const [add] = useAddRunParticipantsMutation({
-        refetchQueries: [
-            RunDocument,
-        ],
+        refetchQueries,
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
-        refetchQueries: [
-            RunDocument,
-        ],
+        refetchQueries,
     });
 
     const [changeOwner] = useChangeRunOwnerMutation({
-        refetchQueries: [
-            RunDocument,
-        ],
+        refetchQueries,
     });
 
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
