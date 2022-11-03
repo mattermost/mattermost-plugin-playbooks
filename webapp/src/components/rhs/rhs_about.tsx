@@ -18,7 +18,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInCurrentChannel, useProfilesInTeam, useParticipateInRun} from 'src/hooks';
+import {useProfilesInCurrentChannel, useProfilesInTeam, useParticipateInRun, useEnsureProfiles} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -112,6 +112,7 @@ const RHSAbout = (props: Props) => {
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun.id, 'channel_rhs');
+    useEnsureProfiles(props.playbookRun.participant_ids);
 
     return (
         <>
@@ -155,10 +156,10 @@ const RHSAbout = (props: Props) => {
                                     profileButtonClass={'Assigned-button'}
                                     enableEdit={!isFinished && !props.readOnly}
                                     onEditDisabledClick={props.onReadOnlyInteract}
-                                    getUsers={fetchUsers}
-                                    getUsersInTeam={fetchUsersInTeam}
+                                    getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}
+                                    memberUserIds={props.playbookRun.participant_ids}
                                 />
                             </OwnerSection>
                             <ParticipantsSection>

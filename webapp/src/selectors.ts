@@ -208,6 +208,13 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
     return sortAndInjectProfiles(profiles, profileSet);
 };
 
+// export const getProfilesByIds = (state: GlobalState, userIds: string[]) => {
+//     const currentProfiles: UserProfile[] = [];
+//     const profiles = getUsers(state);
+//     userIds.forEach((id) => currentProfiles.push(profiles[id]));
+//     return currentProfiles;
+// };
+
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 

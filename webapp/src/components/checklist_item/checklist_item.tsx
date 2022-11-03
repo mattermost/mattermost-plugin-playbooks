@@ -66,6 +66,7 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    memberUserIds: string[];
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -171,7 +172,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
-                channelId={props.channelId}
+                memberUserIds={props.memberUserIds}
                 assignee_id={assigneeID || ''}
                 editable={!props.disabled}
                 withoutName={shouldHideName()}
@@ -244,7 +245,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.disabled && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
-                        channelId={props.channelId}
+                        memberUserIds={props.memberUserIds}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}

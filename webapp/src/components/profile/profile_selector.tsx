@@ -24,7 +24,7 @@ import Dropdown from 'src/components/dropdown';
 export interface Option {
     value: string;
     label: JSX.Element | string;
-    userType: string;
+    userType: 'participant' | 'non_participant';
     user: UserProfile;
 }
 
@@ -47,8 +47,7 @@ interface Props {
     withoutProfilePic?: boolean;
     defaultValue?: string;
     selfIsFirstOption?: boolean;
-    getUsers: () => Promise<UserProfile[]>;
-    getUsersInTeam: () => Promise<UserProfile[]>;
+    getAllUsers: () => Promise<UserProfile[]>;
     onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
     placement?: Placement;
@@ -56,6 +55,7 @@ interface Props {
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
+    memberUserIds: string[];
 }
 
 export default function ProfileSelector(props: Props) {
@@ -84,7 +84,7 @@ export default function ProfileSelector(props: Props) {
     }, [props.controlledOpenToggle]);
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
-    const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
+    const [userNotInListOptions, setUserNotInListOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
@@ -95,10 +95,11 @@ export default function ProfileSelector(props: Props) {
             return props.selfIsFirstOption && userId === currentUserId;
         };
 
-        const [users, usersInTeam] = await Promise.all([props.getUsers(), props.getUsersInTeam()]);
-        const usersNotInChannel = usersInTeam.filter((user) => !users.includes(user));
+        const allUsers = await props.getAllUsers();
+        const usersNotInList = allUsers.filter((user) => !props.memberUserIds.find((userId) => userId === user.id));
+        const usersInList = allUsers.filter((user) => props.memberUserIds.find((userId) => userId === user.id));
 
-        const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
+        const optionNotInList = usersNotInList.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                 label: (
@@ -107,12 +108,12 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
-                userType: 'NonMember',
+                userType: 'non_participant',
                 user,
             } as Option);
         });
 
-        const optionList = users.map((user: UserProfile) => {
+        const optionList = usersInList.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                 label: (
@@ -121,7 +122,7 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
-                userType: 'Member',
+                userType: 'participant',
                 user,
             } as Option);
         });
@@ -134,7 +135,7 @@ export default function ProfileSelector(props: Props) {
             }
         }
 
-        setUserNotInChannelOptions(optionNotInTeamList);
+        setUserNotInListOptions(optionNotInList);
         setUserOptions(optionList);
     }
 
@@ -242,8 +243,8 @@ export default function ProfileSelector(props: Props) {
         Control: props.customControl,
     } : noDropdown;
 
-    const selectOptions = (userNotInChannelOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
-        {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}];
+    const selectOptions = (userNotInListOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}), options: userOptions},
+        {label: formatMessage({defaultMessage: 'NOT PARTICIPATING'}), options: userNotInListOptions}];
 
     return (
         <Dropdown

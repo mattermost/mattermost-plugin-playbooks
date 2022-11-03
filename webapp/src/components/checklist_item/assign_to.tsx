@@ -1,35 +1,28 @@
 import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-
 import {Placement} from '@floating-ui/react-dom-interactions';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
-import {useProfilesInChannel, useProfilesInTeam} from 'src/hooks';
+import {useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
     assignee_id: string;
+    memberUserIds: string[];
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
-    channelId?: string; // If not provided, the ID of the current channel will be used
-
     onSelectedChange: (userType?: string, user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const currentChannelID = useSelector(getCurrentChannelId);
-    const channelID = props.channelId || currentChannelID;
-    const profilesInChannel = useProfilesInChannel(channelID);
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
@@ -50,10 +43,8 @@ const AssignTo = (props: AssignedToProps) => {
                     />
                 }
                 enableEdit={true}
-                getUsers={async () => {
-                    return profilesInChannel;
-                }}
-                getUsersInTeam={async () => {
+                memberUserIds={props.memberUserIds}
+                getAllUsers={async () => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}
@@ -79,6 +70,7 @@ const AssignTo = (props: AssignedToProps) => {
             <StyledProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
+                memberUserIds={props.memberUserIds}
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
@@ -93,10 +85,7 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholderButtonClass={'NoAssignee-button'}
                 profileButtonClass={props.withoutName ? 'NoName-Assigned-button' : 'Assigned-button'}
                 enableEdit={props.editable}
-                getUsers={async () => {
-                    return profilesInChannel;
-                }}
-                getUsersInTeam={async () => {
+                getAllUsers={async () => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}

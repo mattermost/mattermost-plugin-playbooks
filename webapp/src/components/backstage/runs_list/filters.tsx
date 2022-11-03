@@ -179,8 +179,8 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onCustomReset: resetOwner,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                getUsers={fetchOwners}
-                getUsersInTeam={() => Promise.resolve([])}
+                memberUserIds={[]}
+                getAllUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
             />
             {!fixedPlaybook &&
