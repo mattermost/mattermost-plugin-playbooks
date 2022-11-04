@@ -731,5 +731,13 @@
     "ha1TB3": "Kiedy uczestnik dołącza do uruchomienia",
     "Z18I+c": "Akcje kanałów pozwalają na automatyzację działań dla kanału",
     "Y1EoT/": "Gdy uczestnik opuszcza uruchomienie",
-    "5b1zuB": "Dodaj je do kanału uruchomienia"
+    "5b1zuB": "Dodaj je do kanału uruchomienia",
+    "u/yGzS": "{name} dodał @{user} do uruchomienia",
+    "t6lwwM": "{requester} usunął {users} z uruchomienia",
+    "jfpnye": "@{user} opuścił uruchomienie",
+    "feNxoJ": "{requester} dodał {users} do uruchomienia",
+    "ecS/qx": "{name} dodał {num} uczestników do uruchomienia",
+    "VM75su": "{name} usunął z uruchomienia {num} uczestników",
+    "SwlL5j": "@{user} dołączył do uruchomienia",
+    "RXjd3Q": "{name} usunął @{user} z uruchomienia"
 }
