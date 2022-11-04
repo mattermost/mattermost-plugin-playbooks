@@ -39,7 +39,11 @@ export const UpdatePost = (props: Props) => {
         channelNamesMap,
     };
 
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
     const numTasksChecked = props.post.props.numTasksChecked ?? 0;
     const numTasks = props.post.props.numTasks ?? 0;

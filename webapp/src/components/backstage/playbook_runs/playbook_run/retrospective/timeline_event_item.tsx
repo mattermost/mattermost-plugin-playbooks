@@ -148,6 +148,9 @@ const TimelineEventItem = (props: Props) => {
         team: props.team,
         channelNamesMap: props.channelNames,
     };
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
     const statusPostDeleted =
         props.event.event_type === TimelineEventType.StatusUpdated &&
         props.event.status_delete_at !== 0;
@@ -366,7 +369,7 @@ const TimelineEventItem = (props: Props) => {
                         })}
                     </SummaryDeleted>
                 )}
-                <SummaryDetail>{messageHtmlToComponent(formatText(getSummary(props.event, parsedDetails), markdownOptions), true, {})}</SummaryDetail>
+                <SummaryDetail>{messageHtmlToComponent(formatText(getSummary(props.event, parsedDetails), markdownOptions), true, messageHtmlToComponentOptions)}</SummaryDetail>
             </SummaryContainer>
             {showMenu && props.editable &&
                 <StyledHoverMenu parent={props.parent}>
