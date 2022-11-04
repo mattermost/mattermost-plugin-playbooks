@@ -37,19 +37,20 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI       *pluginapi.Client
-	httpClient      *http.Client
-	configService   config.Service
-	store           PlaybookRunStore
-	poster          bot.Poster
-	scheduler       JobOnceScheduler
-	telemetry       PlaybookRunTelemetry
-	api             plugin.API
-	playbookService PlaybookService
-	actionService   ChannelActionService
-	permissions     *PermissionsService
-	licenseChecker  LicenseChecker
-	metricsService  *metrics.Metrics
+	pluginAPI        *pluginapi.Client
+	httpClient       *http.Client
+	configService    config.Service
+	store            PlaybookRunStore
+	poster           bot.Poster
+	scheduler        JobOnceScheduler
+	telemetry        PlaybookRunTelemetry
+	genericTelemetry GenericTelemetry
+	api              plugin.API
+	playbookService  PlaybookService
+	actionService    ChannelActionService
+	permissions      *PermissionsService
+	licenseChecker   LicenseChecker
+	metricsService   *metrics.Metrics
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -95,6 +96,7 @@ func NewPlaybookRunService(
 	configService config.Service,
 	scheduler JobOnceScheduler,
 	telemetry PlaybookRunTelemetry,
+	genericTelemetry GenericTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
@@ -102,18 +104,19 @@ func NewPlaybookRunService(
 	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:       pluginAPI,
-		store:           store,
-		poster:          poster,
-		configService:   configService,
-		scheduler:       scheduler,
-		telemetry:       telemetry,
-		httpClient:      httptools.MakeClient(pluginAPI),
-		api:             api,
-		playbookService: playbookService,
-		actionService:   channelActionService,
-		licenseChecker:  licenseChecker,
-		metricsService:  metricsService,
+		pluginAPI:        pluginAPI,
+		store:            store,
+		poster:           poster,
+		configService:    configService,
+		scheduler:        scheduler,
+		telemetry:        telemetry,
+		genericTelemetry: genericTelemetry,
+		httpClient:       httptools.MakeClient(pluginAPI),
+		api:              api,
+		playbookService:  playbookService,
+		actionService:    channelActionService,
+		licenseChecker:   licenseChecker,
+		metricsService:   metricsService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -392,6 +395,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
 		}
+	}
+
+	if len(invitedUserIDs) > 0 {
+		s.genericTelemetry.Track(telemetryRunAddedByPlaybook, map[string]any{"count": len(invitedUserIDs) - len(usersFailedToInvite)})
 	}
 
 	if len(usersFailedToInvite) != 0 {

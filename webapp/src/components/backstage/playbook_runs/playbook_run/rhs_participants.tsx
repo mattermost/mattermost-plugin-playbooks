@@ -21,6 +21,10 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 import {Role} from '../shared';
 import {PlaybookRun} from 'src/types/playbook_run';
 
+import {telemetryEvent} from 'src/client';
+
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
+
 import {SendMessageButton} from './send_message_button';
 import AddParticipantsModal from './add_participant_modal';
 
@@ -41,6 +45,11 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const [showAddParticipantsModal, setShowAddParticipantsModal] = useState(false);
 
     const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRun.id);
+
+    const remove = (userIDs?: string[] | undefined) => {
+        telemetryEvent(PlaybookRunEventTarget.RemoveParticipant, {playbookrun_id: playbookRun.id, from: 'run_details'});
+        return removeFromRun(userIDs);
+    };
 
     useEffect(() => {
         const profiles = dispatch(getProfilesByIds(playbookRun.participant_ids));
@@ -131,7 +140,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                 teamName={teamName}
                 isRunOwner={true}
                 manageMode={manageMode}
-                removeFromRun={removeFromRun}
+                removeFromRun={remove}
                 changeRunOwner={changeRunOwner}
             />
 
@@ -153,7 +162,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                                 teamName={teamName}
                                 isRunOwner={false}
                                 manageMode={manageMode}
-                                removeFromRun={removeFromRun}
+                                removeFromRun={remove}
                                 changeRunOwner={changeRunOwner}
                             />
                         );
@@ -216,7 +225,9 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
                     {formatMessage({defaultMessage: 'Make run owner'})}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                    onClick={() => removeFromRun([id])}
+                    onClick={() => {
+                        removeFromRun([id]);
+                    }}
                 >
                     {formatMessage({defaultMessage: 'Remove from run'})}
                 </DropdownMenuItem>

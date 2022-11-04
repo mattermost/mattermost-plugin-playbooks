@@ -11,7 +11,7 @@ import {
     isFavoriteItem,
     telemetryEvent,
 } from 'src/client';
-import {useRunMembership, useUpdateRun} from 'src/graphql/hooks';
+import {useManageRunMembership, useUpdateRun} from 'src/graphql/hooks';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -43,11 +43,11 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
 export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs'|'run_details') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const {addToRun} = useRunMembership(playbookRunId, [currentUserId]);
+    const {addToRun} = useManageRunMembership(playbookRunId);
     const addToast = useToaster().add;
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
     const onConfirmParticipate = async () => {
-        addToRun()
+        addToRun([currentUserId])
             .then(() => addToast({
                 content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
                 toastStyle: ToastStyle.Success,
