@@ -249,6 +249,9 @@ describe('runs > run details page > run info', () => {
                 // # Click Participate button
                 getHeader().findByText('Participate').click();
 
+                // * Assert that modal is shown
+                cy.get('#become-participant-modal').should('exist');
+
                 // # Confirm modal
                 cy.findByTestId('modal-confirm-button').click();
 
