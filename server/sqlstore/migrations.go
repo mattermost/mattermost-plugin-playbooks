@@ -2393,4 +2393,26 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.60.0"),
+		toVersion:   semver.MustParse("0.61.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
 }

@@ -134,6 +134,8 @@ type Playbook {
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
+	channelID: String!
+	channelMode: String!
 }
 
 type Checklist {
