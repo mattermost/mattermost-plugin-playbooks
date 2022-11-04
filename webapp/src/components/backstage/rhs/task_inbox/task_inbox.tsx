@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';
+import InfiniteScroll from 'react-infinite-scroller';
 
 import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 
@@ -16,7 +16,6 @@ import {selectMyTasks, isTaskOverdue} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
 import {GeneralViewTarget} from 'src/types/telemetry';
 import {useViewTelemetry} from 'src/hooks/telemetry';
-import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import Task from './task';
 
@@ -55,6 +54,8 @@ const filterTasks = (checklistItems: PlaybookRunChecklistItem[], userId: string,
             return -1 * (b.playbook_run_create_at - a.playbook_run_create_at);
         });
 };
+
+const ITEMS_PER_PAGE = 20;
 
 const TaskInbox = () => {
     const {formatMessage} = useIntl();
@@ -104,7 +105,8 @@ const TaskInbox = () => {
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
-
+    const [visibleTasks, setVisibleTasks] = useState(tasks.slice(0, ITEMS_PER_PAGE));
+    const [currentPage, setCurrentPage] = useState(0);
     return (
         <Container>
             <Filters>
@@ -151,25 +153,31 @@ const TaskInbox = () => {
                     <ZeroCaseDescription>{zerocaseSubtitle}</ZeroCaseDescription>
                 </ZeroCase>
             ) : (
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'relative'}}
-                >
-                    <TaskList>
-                        {tasks.map((task) => (
-                            <Task
-                                key={task.id}
-                                item={task}
-                                enableAnimation={!filters.includes(Filter.FilterChecked)}
-                            />
-                        ))}
-                    </TaskList>
-                </Scrollbars>
+                <InfiniteScrollContainer>
+                    <InfiniteScroll
+                        pageStart={0}
+                        loadMore={(page: number) => {
+                            setVisibleTasks([
+                                ...visibleTasks,
+                                ...tasks.slice(page * ITEMS_PER_PAGE, (page * ITEMS_PER_PAGE) + ITEMS_PER_PAGE)]
+                            );
+                            setCurrentPage(page);
+                        }}
+                        hasMore={(currentPage * ITEMS_PER_PAGE) + ITEMS_PER_PAGE < tasks.length}
+                        loader={<span/>}
+                        useWindow={false}
+                    >
+                        <TaskList>
+                            {visibleTasks.map((task) => (
+                                <Task
+                                    key={task.id}
+                                    item={task}
+                                    enableAnimation={!filters.includes(Filter.FilterChecked)}
+                                />
+                            ))}
+                        </TaskList>
+                    </InfiniteScroll>
+                </InfiniteScrollContainer>
             )}
         </Container>
     );
@@ -314,4 +322,9 @@ const ZeroCaseDescription = styled.div`
     text-align: center;
     word-break: break-word;
     font-size: 14px;
+`;
+
+const InfiniteScrollContainer = styled.div`
+    height: calc(100vh - 129px);
+    overflow: auto;
 `;

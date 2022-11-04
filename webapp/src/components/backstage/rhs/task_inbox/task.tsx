@@ -133,6 +133,10 @@ const Header = styled.div`
 const HeaderText = styled.div`
     font-size: 12px;
     line-height: 16px;
+    max-width: 43%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-weight: 400;
     margin: 0 4px;
