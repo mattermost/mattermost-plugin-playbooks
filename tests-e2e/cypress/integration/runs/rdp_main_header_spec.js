@@ -533,14 +533,14 @@ describe('runs > run details page > header', () => {
                         // * Assert that component is rendered
                         getHeader().findByText('Participate').should('be.visible');
 
-                        // * Click Participate button
+                        // # Click Participate button
                         getHeader().findByText('Participate').click();
 
                         // * Verify modal message is correct
                         cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
 
                         // # cancel modal
-                        cy.findByTestId('modal-cancel-button').click();
+                        cy.findByTestId('modal-confirm-button').click();
 
                         // * Assert modal is not shown
                         cy.get('#become-participant-modal').should('not.exist');
@@ -550,8 +550,9 @@ describe('runs > run details page > header', () => {
                             // # Visit the channel run
                             cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
-                            // * Assert message has not been sent
-                            cy.getLastPost().should('not.contain', 'wants to participate in this run.');
+                            // * Assert user has not been added to the channel
+                            cy.getLastPost().should('not.contain', 'Someone');
+                            cy.getLastPost().should('not.contain', testViewerUser.username);
                         });
                     });
 
@@ -562,7 +563,7 @@ describe('runs > run details page > header', () => {
                         // * Assert component is rendered
                         getHeader().findByText('Participate').should('be.visible');
 
-                        // * Click start-participating button
+                        // # Click start-participating button
                         getHeader().findByText('Participate').click();
 
                         // * Verify modal message is correct
@@ -580,7 +581,7 @@ describe('runs > run details page > header', () => {
                         // # Navigate to the playbook run channel
                         cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-                        // * Verify that the user was added to the channel
+                        // * Verify the user was added to the channel
                         cy.getFirstPostId().then((id) => {
                             cy.get(`#postMessageText_${id}`).within(() => {
                                 cy.contains('You and');
@@ -588,7 +589,7 @@ describe('runs > run details page > header', () => {
                             });
                         });
 
-                        // # assert telemetry data
+                        // * assert telemetry data
                         cy.get('@telemetry.all').then((xhrs) => {
                             expect(xhrs.length).to.eq(1);
                             expect(xhrs[0].request.body.name).to.eq('playbookrun_participate');
@@ -606,7 +607,7 @@ describe('runs > run details page > header', () => {
                         playbookRunName = 'Playbook Run (' + now + ')';
                         playbookRunChannelName = 'playbook-run-' + now;
 
-                        // Create a run with public chanel
+                        // # Create a run with public chanel
                         cy.apiRunPlaybook({
                             teamId: testTeam.id,
                             playbookId: testPublicPlaybookAndChannel.id,
@@ -655,6 +656,8 @@ describe('runs > run details page > header', () => {
                 describe('Join action disabled', () => {
                     beforeEach(() => {
                         cy.apiLogin(testUser);
+
+                        // # Disable join action
                         cy.apiUpdateRun(playbookRun.id, {createChannelMemberOnNewParticipant: false});
 
                         cy.apiLogin(testViewerUser).then(() => {
@@ -666,7 +669,7 @@ describe('runs > run details page > header', () => {
                     });
 
                     it('join the run with private channel, request to join the channel', () => {
-                        // * Click start-participating button
+                        // # Click start-participating button
                         getHeader().findByText('Participate').click();
 
                         // * Verify modal message is correct
@@ -699,7 +702,7 @@ describe('runs > run details page > header', () => {
                     });
 
                     it('join the run with private channel, no request to join the channel', () => {
-                        // * Click start-participating button
+                        // # Click start-participating button
                         getHeader().findByText('Participate').click();
 
                         // * Verify modal message is correct
