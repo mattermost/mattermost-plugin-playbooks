@@ -404,7 +404,7 @@
     "TxmjKI": "Beskriv vad mätetalet handlar om",
     "a0hBZ0": "Ta bort mätvärden",
     "vQqT/8": "",
-    "gsMPAS": "Dollars",
+    "gsMPAS": "Kostnad",
     "6GTzTR": "Se vad som finns i denna playbook när som helst",
     "/fU9y/": "På den här sidan kan du läsa mer detaljer om olika delar av playbooken.",
     "lBqu4h": "Återställa playbook",
@@ -687,5 +687,13 @@
     "0QD99o": "Förfrågan om att ansluta till kanalen",
     "0Azlrb": "Hantera",
     "/GCoTA": "Nollställ",
-    "//o1Nu": "Inaktivera uppdateringar"
+    "//o1Nu": "Inaktivera uppdateringar",
+    "u/yGzS": "{name} la till @{user} till körningen",
+    "t6lwwM": "{requester} tog bort {users} från körningen",
+    "jfpnye": "@{user} lämnade körningen",
+    "feNxoJ": "{requester} la till {users} till körningen",
+    "ecS/qx": "{name} la till {num} deltagare till körningen",
+    "VM75su": "{name} tog bort {num} deltagare från körningen",
+    "SwlL5j": "@{user} anslöt till körningen",
+    "RXjd3Q": "{name} tog bort @{user} från körningen"
 }
