@@ -19,7 +19,7 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/mattermost/mattermost-plugin-api v0.0.29
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost-server/v6 v6.0.0-20221027094206-effbf7d620f1
+	github.com/mattermost/mattermost-server/v6 v6.0.0-20221103184330-b8da473da7f4
 	github.com/mattermost/morph v0.0.0-20220804124441-62627668af80
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1

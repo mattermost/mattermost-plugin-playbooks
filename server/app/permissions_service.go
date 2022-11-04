@@ -85,20 +85,10 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
 }
 
-func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
-	// For now, everyone with access to the channel is a run admin
-	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{RunRoleMember, RunRoleAdmin}
-	}
-
-	return []string{}
-}
-
-
 func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
 	// Check at run level
-	if p.pluginAPI.User.RolesGrantPermission(p.getRunRole(userID, run), permission.Id) {
-		return true
+	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
+		return false
 	}
 
 	// Cascade normally to higher level permissions
@@ -412,6 +402,10 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
+	return p.runManagePropertiesWithPlaybookRun(userID, run)
+}
+
+func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, run *PlaybookRun) error {
 	if run.OwnerUserID == userID {
 		return nil
 	}
@@ -426,7 +420,7 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return nil
 	}
 
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, runID)
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, run.ID)
 }
 
 func (p *PermissionsService) RunManagePropertiesByChannel(userID, channelID string) error {
