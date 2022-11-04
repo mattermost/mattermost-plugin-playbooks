@@ -255,13 +255,10 @@ describe('runs > run details page > run info', () => {
                 // # Confirm modal
                 cy.findByTestId('modal-confirm-button').click();
 
-                // Assert that request-join button exist
+                // Assert that request-join button doesn't exist
                 getOverviewEntry('channel').within(() => {
-                    cy.get('button').click();
+                    cy.get('button').should('not.exist');
                 });
-
-                // # Confirm modal
-                cy.get('#confirmModal').get('#confirmModalButton').click();
             });
         });
     });
