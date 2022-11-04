@@ -341,8 +341,8 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
 
 		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
-		require.Nil(t, member)
-		require.NotNil(t, err)
+		require.Nil(t, err)
+		assert.Equal(t, e.RegularUser2.Id, member.UserId)
 	})
 
 	t.Run("not participant tries to add other participant", func(t *testing.T) {
