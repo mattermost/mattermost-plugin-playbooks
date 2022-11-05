@@ -729,5 +729,13 @@
     "5b1zuB": "Add them to the run channel",
     "1prgB2": "Search for people",
     "1OluNs": "Confirm enable status updates",
-    "//o1Nu": "Disable updates"
+    "//o1Nu": "Disable updates",
+    "u/yGzS": "{name} added @{user} to the run",
+    "t6lwwM": "{requester} removed {users} from the run",
+    "jfpnye": "@{user} left the run",
+    "feNxoJ": "{requester} added {users} to the run",
+    "ecS/qx": "{name} added {num} participants to the run",
+    "VM75su": "{name} removed {num} participants from the run",
+    "SwlL5j": "@{user} joined the run",
+    "RXjd3Q": "{name} removed @{user} from the run"
 }
