@@ -133,7 +133,7 @@ const Header = styled.div`
 const HeaderText = styled.div`
     font-size: 12px;
     line-height: 16px;
-    max-width: 43%;
+    max-width: 50%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
