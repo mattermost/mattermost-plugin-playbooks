@@ -138,6 +138,11 @@ func TestDBSchema(t *testing.T) {
 			LegacyMigrationIndex: 25,
 			MorphMigrationLimit:  2, // 000058-000059
 		},
+		{
+			Name:                 "0.26.0 > 0.27.0",
+			LegacyMigrationIndex: 26,
+			MorphMigrationLimit:  2, // 000060-000061
+		},
 	}
 
 	for _, driverName := range driverNames {
