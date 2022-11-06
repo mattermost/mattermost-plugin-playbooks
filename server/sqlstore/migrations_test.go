@@ -531,6 +531,25 @@ func TestMigration_000059(t *testing.T) {
 	}
 }
 
+func TestMigration_000063(t *testing.T) {
+	driverName := model.DatabaseDriverMysql
+	db := setupTestDB(t, driverName)
+	store := setupTables(t, db)
+	engine, err := store.createMorphEngine()
+	require.NoError(t, err)
+	defer engine.Close()
+
+	runMigrationUp(t, store, engine, 63)
+	var result []string
+	err = store.db.Select(&result, `
+		SELECT TABLE_COLLATION FROM information_schema.TABLES
+		WHERE table_name = 'IR_System'
+		AND table_schema = DATABASE();
+	`)
+	require.NoError(t, err)
+	require.Equal(t, []string{"utf8mb4_general_ci"}, result)
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
