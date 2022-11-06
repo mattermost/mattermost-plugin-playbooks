@@ -105,8 +105,13 @@ const TaskInbox = () => {
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
-    const [visibleTasks, setVisibleTasks] = useState(tasks.slice(0, ITEMS_PER_PAGE));
     const [currentPage, setCurrentPage] = useState(0);
+    const [visibleTasks, setVisibleTasks] = useState(tasks.slice(0, ITEMS_PER_PAGE));
+
+    useEffect(() => {
+        setVisibleTasks(tasks.slice(0, (currentPage * ITEMS_PER_PAGE) + ITEMS_PER_PAGE));
+    }, [JSON.stringify(tasks), currentPage]);
+
     return (
         <Container>
             <Filters>
@@ -156,13 +161,7 @@ const TaskInbox = () => {
                 <InfiniteScrollContainer>
                     <InfiniteScroll
                         pageStart={0}
-                        loadMore={(page: number) => {
-                            setVisibleTasks([
-                                ...visibleTasks,
-                                ...tasks.slice(page * ITEMS_PER_PAGE, (page * ITEMS_PER_PAGE) + ITEMS_PER_PAGE)]
-                            );
-                            setCurrentPage(page);
-                        }}
+                        loadMore={(page: number) => setCurrentPage(page)}
                         hasMore={(currentPage * ITEMS_PER_PAGE) + ITEMS_PER_PAGE < tasks.length}
                         loader={<span/>}
                         useWindow={false}
