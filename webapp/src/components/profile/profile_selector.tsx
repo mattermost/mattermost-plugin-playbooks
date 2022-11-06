@@ -299,6 +299,10 @@ const selectStyles: StylesConfig<Option, boolean> = {
             color: 'unset',
         };
     },
+    groupHeading: (provided) => ({
+        ...provided,
+        fontWeight: 600,
+    }),
 };
 
 const getFullName = (firstName: string, lastName: string): string => {
