@@ -17,7 +17,8 @@ import {StyledSelect} from './styles';
 
 export interface Props {
     id?: string;
-    onChannelsSelected: (channelIds: string[]) => void;
+    onChannelsSelected?: (channelIds: string[]) => void; // if isMulti=true
+    onChannelSelected?: (channelId: string) => void; // if isMulti=false
     channelIds: string[];
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel, boolean>;
@@ -26,6 +27,7 @@ export interface Props {
     shouldRenderValue: boolean;
     placeholder?: string;
     teamId: string;
+    isMulti: boolean;
 }
 
 const getAllPublicChannelsInTeam = (teamId: string) => createSelector(
@@ -110,12 +112,11 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         });
     }, []);
 
-    const onChange = (channels: Channel[], {action}: {action: string}) => {
-        if (action === 'clear') {
-            props.onChannelsSelected([]);
-        } else {
-            props.onChannelsSelected(channels.map((c) => c.id));
-        }
+    const onChangeMulti = (channels: Channel[], {action}: {action: string}) => {
+        props.onChannelsSelected?.(action === 'clear' ? [] : channels.map((c) => c.id));
+    };
+    const onChange = (channel: Channel | Channel, {action}: {action: string}) => {
+        props.onChannelSelected?.(action === 'clear' ? '' : channel.id);
     };
 
     const getOptionValue = (channel: Channel) => {
@@ -150,11 +151,11 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         <StyledSelect
             className={props.className}
             id={props.id}
-            isMulti={true}
+            isMulti={props.isMulti}
             controlShouldRenderValue={props.shouldRenderValue}
             options={selectableChannels}
             filterOption={filterOption}
-            onChange={onChange}
+            onChange={props.isMulti ? onChangeMulti : onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}
             defaultMenuIsOpen={false}

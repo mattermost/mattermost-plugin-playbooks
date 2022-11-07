@@ -200,6 +200,8 @@ export type PlaybookUpdates = {
     broadcastEnabled?: InputMaybe<Scalars['Boolean']>;
     categorizeChannelEnabled?: InputMaybe<Scalars['Boolean']>;
     categoryName?: InputMaybe<Scalars['String']>;
+    channelId?: InputMaybe<Scalars['String']>;
+    channelMode?: InputMaybe<Scalars['String']>;
     channelNameTemplate?: InputMaybe<Scalars['String']>;
     checklists?: InputMaybe<Array<ChecklistUpdates>>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;

@@ -40,6 +40,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
+            channelMode: update.channel_mode,
+            channelId: update.channel_id,
         });
     }, [updatePlaybook]));
 

@@ -69,6 +69,8 @@ input PlaybookUpdates {
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
+	channelId: String
+	channelMode: String
 }
 
 input ChecklistUpdates {
