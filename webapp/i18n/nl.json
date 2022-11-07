@@ -735,5 +735,13 @@
     "VM75su": "{name} verwijderde {num} deelnemers van de uitvoering",
     "SwlL5j": "@{user} neemt mee deel aan de uitvoering",
     "RXjd3Q": "{name} verwijderde @{user} van de uitvoering",
-    "5b1zuB": "Voeg ze toe aan het uitvoerkanaal"
+    "5b1zuB": "Voeg ze toe aan het uitvoerkanaal",
+    "u/yGzS": "{name} voegde @{user} toe aan de run",
+    "t6lwwM": "{requester} verwijderde {users} uit de uitvoering",
+    "lqzBNa": "Verwijder ze uit het uitvoeringskanaal",
+    "jfpnye": "@{user} verliet de uitvoering",
+    "ieL3dC": "Kanaalacties instellen",
+    "ha1TB3": "Als een deelnemer toetreeedt tot de uitvoering",
+    "feNxoJ": "{requester} voegde {users} toe aan de uitvoering",
+    "ecS/qx": "{name} heeft {num} deelnemers aan de uitvoering toegevoegd"
 }
