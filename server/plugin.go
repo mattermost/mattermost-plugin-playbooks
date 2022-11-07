@@ -31,10 +31,15 @@ const (
 
 	metricsExposePort = ":9093"
 
-	RunCollectionType = "run"
-
+	// Topic represents a start of a thread. In playbooks we support 2 types of topics:
+	// status topic - indicating the start of the thread below status update and
+	// task topic - indicating the start of the thread below task(checklist item)
 	StatusTopicType = "status"
 	TaskTopicType   = "task"
+
+	// Collection is a group of topics and their corresponding threads.
+	// In Playbooks we support a single type of collection - a run
+	RunCollectionType = "run"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -75,8 +80,6 @@ type Plugin struct {
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
-
-	collectionAndTopicTypes map[string][]string
 }
 
 type StatusRecorder struct {
@@ -226,14 +229,12 @@ func (p *Plugin) OnActivate() error {
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
-	p.collectionAndTopicTypes[RunCollectionType] = []string{StatusTopicType, TaskTopicType}
 	// register collections and topics
-	for collectionType, topicTypes := range p.collectionAndTopicTypes {
-		for _, topicType := range topicTypes {
-			if err := p.API.RegisterCollectionAndTopic(collectionType, topicType); err != nil {
-				return errors.Wrapf(err, "failed to register collection - %s and topic - %s", collectionType, topicType)
-			}
-		}
+	if err := p.API.RegisterCollectionAndTopic(RunCollectionType, StatusTopicType); err != nil {
+		return errors.Wrapf(err, "failed to register collection - %s and topic - %s", RunCollectionType, StatusTopicType)
+	}
+	if err := p.API.RegisterCollectionAndTopic(RunCollectionType, TaskTopicType); err != nil {
+		return errors.Wrapf(err, "failed to register collection - %s and topic - %s", RunCollectionType, StatusTopicType)
 	}
 
 	api.NewGraphQLHandler(
@@ -414,10 +415,7 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 }
 
 func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userId string, collectionType, collectionId string, permission *model.Permission) (bool, error) {
-	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
-		return false, errors.Errorf("Threads Everywhere feature is disabled")
-	}
-	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+	if collectionType != RunCollectionType {
 		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -429,10 +427,7 @@ func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userId string,
 }
 
 func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
-	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
-		return nil, errors.Errorf("Threads Everywhere feature is disabled")
-	}
-	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+	if collectionType != RunCollectionType {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -445,10 +440,7 @@ func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectio
 }
 
 func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionId string) ([]string, error) {
-	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
-		return nil, errors.Errorf("Threads Everywhere feature is disabled")
-	}
-	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+	if collectionType != RunCollectionType {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -464,10 +456,7 @@ func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, c
 }
 
 func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIds []string) (map[string]*model.CollectionMetadata, error) {
-	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
-		return nil, errors.Errorf("Threads Everywhere feature is disabled")
-	}
-	if _, ok := p.collectionAndTopicTypes[collectionType]; !ok {
+	if collectionType != RunCollectionType {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 	runsMetadata := map[string]*model.CollectionMetadata{}
@@ -488,10 +477,6 @@ func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType st
 }
 
 func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIds []string) (map[string]*model.TopicMetadata, error) {
-	if !p.config.GetConfiguration().ThreadsEverywhereEnabled {
-		return nil, errors.Errorf("Threads Everywhere feature is disabled")
-	}
-
 	topicsMetadata := map[string]*model.TopicMetadata{}
 
 	var getTopicMetadataByIDs func(topicIds []string) ([]app.TopicMetadata, error)
@@ -522,7 +507,7 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 }
 
 func mergeSlice(a, b []string) []string {
-	m := map[string]struct{}{}
+	m := make(map[string]struct{}, len(a)+len(b))
 	for _, elem := range a {
 		m[elem] = struct{}{}
 	}

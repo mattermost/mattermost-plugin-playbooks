@@ -43,7 +43,6 @@ func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceI
 
 	// api.LoadPluginConfiguration never returns an error, so ignore it.
 	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
-	c.configuration.ThreadsEverywhereEnabled = c.api.Configuration.GetConfig().FeatureFlags.ThreadsEverywhere
 
 	return c
 }
@@ -123,7 +122,6 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	}
 
 	configuration.BotUserID = c.configuration.BotUserID
-	configuration.ThreadsEverywhereEnabled = c.api.Configuration.GetConfig().FeatureFlags.ThreadsEverywhere
 
 	c.setConfiguration(configuration)
 

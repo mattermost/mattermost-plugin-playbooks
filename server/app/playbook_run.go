@@ -901,11 +901,11 @@ type PlaybookRunStore interface {
 	// Notice that order of passed ids and returned runs might not coincide
 	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
 
-	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
-	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+	// GetTaskAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskAsTopicMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
 
-	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
-	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
+	// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

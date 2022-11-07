@@ -31,9 +31,6 @@ type Configuration struct {
 
 	// AdminLogVerbose: set to include full context with admin log messages.
 	AdminLogVerbose bool
-
-	// ThreadsEverywhereEnabled is a feature flag on a server
-	ThreadsEverywhereEnabled bool
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
