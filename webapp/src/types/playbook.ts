@@ -113,6 +113,7 @@ export enum ChecklistItemState {
 }
 
 export interface ChecklistItem {
+    id?: string;
     title: string;
     description: string;
     state: ChecklistItemState | string;

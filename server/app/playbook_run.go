@@ -771,7 +771,7 @@ type PlaybookRunStore interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// UpdatePlaybookRun updates a playbook run.
-	UpdatePlaybookRun(playbookRun *PlaybookRun) error
+	UpdatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error

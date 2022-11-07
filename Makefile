@@ -55,8 +55,12 @@ endif
 
 	cd tests-e2e && npm run check
 
+# It's highly recommended to run go-vet first
+# to find potential compile errors that could introduce
+# weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
+	$(GO) vet ./...
 	$(GOBIN)/golangci-lint run ./...
 endif
 
