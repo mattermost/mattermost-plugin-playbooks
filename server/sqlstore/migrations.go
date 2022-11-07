@@ -2410,6 +2410,9 @@ var migrations = []Migration{
 				if _, err := e.Exec("ALTER TABLE IR_Incident ADD INDEX ir_incident_channelid_key (ChannelID)"); err != nil {
 					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
 				}
+				if _, err := e.Exec("UPDATE IR_Incident i JOIN Channels c WHERE  c.id=i.ChannelID AND i.Name='' SET i.name=c.DisplayName"); err != nil {
+					return errors.Wrapf(err, "failed to update all old run names from channel names")
+				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
@@ -2419,6 +2422,9 @@ var migrations = []Migration{
 				}
 				if _, err := e.Exec("ALTER TABLE IR_Incident DROP CONSTRAINT IF EXISTS ir_incident_channelid_key"); err != nil {
 					return errors.Wrapf(err, "failed to drop constraint ir_incident_channelid_key on table ir_incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident i SET name=c.DisplayName FROM Channels c WHERE  c.id=i.ChannelID AND i.Name=''"); err != nil {
+					return errors.Wrapf(err, "failed to update all old run names from channel names")
 				}
 			}
 			return nil
