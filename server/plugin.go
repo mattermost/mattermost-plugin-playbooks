@@ -414,16 +414,16 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 	}
 }
 
-func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userId string, collectionType, collectionId string, permission *model.Permission) (bool, error) {
+func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userID string, collectionType, collectionID string, permission *model.Permission) (bool, error) {
 	if collectionType != RunCollectionType {
 		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
-	run, err := p.playbookRunService.GetPlaybookRun(collectionId)
+	run, err := p.playbookRunService.GetPlaybookRun(collectionID)
 	if err != nil {
-		return false, errors.Wrapf(err, "No run with id - %s", collectionId)
+		return false, errors.Wrapf(err, "No run with id - %s", collectionID)
 	}
-	return p.permissions.HasPermissionsToRun(userId, run, permission), nil
+	return p.permissions.HasPermissionsToRun(userID, run, permission), nil
 }
 
 func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
@@ -439,28 +439,28 @@ func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectio
 	return ids, nil
 }
 
-func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionId string) ([]string, error) {
+func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
 	if collectionType != RunCollectionType {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
-	run, err := p.playbookRunService.GetPlaybookRun(collectionId)
+	run, err := p.playbookRunService.GetPlaybookRun(collectionID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "No run with id - %s", collectionId)
+		return nil, errors.Wrapf(err, "No run with id - %s", collectionID)
 	}
-	followers, err := p.playbookRunService.GetFollowers(collectionId)
+	followers, err := p.playbookRunService.GetFollowers(collectionID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't get followers for run - %s", collectionId)
+		return nil, errors.Wrapf(err, "can't get followers for run - %s", collectionID)
 	}
 	return mergeSlice(run.ParticipantIDs, followers), nil
 }
 
-func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIds []string) (map[string]*model.CollectionMetadata, error) {
+func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIDs []string) (map[string]*model.CollectionMetadata, error) {
 	if collectionType != RunCollectionType {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 	runsMetadata := map[string]*model.CollectionMetadata{}
-	runs, err := p.playbookRunService.GetRunMetadataByIDs(collectionIds)
+	runs, err := p.playbookRunService.GetRunMetadataByIDs(collectionIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get playbook run metadata by ids")
 	}
@@ -476,10 +476,10 @@ func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType st
 	return runsMetadata, nil
 }
 
-func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIds []string) (map[string]*model.TopicMetadata, error) {
+func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIDs []string) (map[string]*model.TopicMetadata, error) {
 	topicsMetadata := map[string]*model.TopicMetadata{}
 
-	var getTopicMetadataByIDs func(topicIds []string) ([]app.TopicMetadata, error)
+	var getTopicMetadataByIDs func(topicIDs []string) ([]app.TopicMetadata, error)
 	switch topicType {
 	case StatusTopicType:
 		getTopicMetadataByIDs = p.playbookRunService.GetStatusMetadataByIDs
@@ -489,7 +489,7 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 		return map[string]*model.TopicMetadata{}, errors.Errorf("topic type %s is not registered by playbooks", topicType)
 	}
 
-	topics, err := getTopicMetadataByIDs(topicIds)
+	topics, err := getTopicMetadataByIDs(topicIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get metadata by topic ids")
 	}

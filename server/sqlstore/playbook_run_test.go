@@ -1255,6 +1255,7 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		store := setupSQLStore(t, db)
+		setupTeamMembersTable(t, db)
 
 		alice := userInfo{
 			ID:   model.NewId(),
@@ -1269,8 +1270,11 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 			Name: "tom",
 		}
 		allIDs := []string{}
+		teamID := model.NewId()
+		addUsersToTeam(t, store, []userInfo{alice, bob, tom}, teamID)
+
 		for i := 0; i < 10; i++ {
-			run := NewBuilder(t).ToPlaybookRun()
+			run := NewBuilder(t).WithTeamID(teamID).ToPlaybookRun()
 
 			returned, err := playbookRunStore.CreatePlaybookRun(run)
 			require.NoError(t, err)
@@ -1300,6 +1304,21 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(bob.ID)
 			require.NoError(t, err)
 			require.Len(t, returnedIDs, len(allIDs)/2)
+		})
+
+		t.Run("remove user from team", func(t *testing.T) {
+			for _, id := range allIDs {
+				addUsersToRuns(t, store, []userInfo{alice}, []string{id})
+			}
+			updateBuilder := store.builder.Update("TeamMembers").
+				Set("DeleteAt", model.GetMillis()).
+				Where(sq.And{sq.Eq{"TeamID": teamID}, sq.Eq{"UserID": alice.ID}})
+			_, err := store.execBuilder(store.db, updateBuilder)
+			require.NoError(t, err)
+
+			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(alice.ID)
+			require.NoError(t, err)
+			require.Len(t, returnedIDs, 0)
 		})
 	}
 }
