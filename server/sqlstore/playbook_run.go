@@ -1450,20 +1450,18 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 func (s *playbookRunStore) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
-	teamFilter := sq.Expr(`
-		EXISTS(SELECT 1
-					FROM TeamMembers as tm
-					WHERE tm.TeamId = i.TeamID
-					  AND tm.DeleteAt = 0
-		  	  		  AND tm.UserId = ?)`,
-		userID)
+	requesterInfo := app.RequesterInfo{UserID: userID}
+	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, "", "i")
+
 	query := s.store.builder.
 		Select("i.ID").
 		From("IR_Incident AS i").
 		Join("IR_Run_Participants AS p ON p.IncidentID = i.ID").
 		Where(sq.Or{sq.Eq{"p.IsParticipant": true}, sq.Eq{"p.IsFollower": true}}).
 		Where(sq.Eq{"p.UserID": strings.ToLower(userID)}).
-		Where(teamFilter)
+		Where(teamLimitExpr).
+		Where(permissionsExpr)
 
 	var ids []string
 	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
