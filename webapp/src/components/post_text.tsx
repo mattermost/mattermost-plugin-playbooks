@@ -32,9 +32,13 @@ const PostText = (props: Props) => {
         channelNamesMap,
     };
 
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
     return (
         <UpdateBody className={props.className}>
-            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
+            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, messageHtmlToComponentOptions)}
             {props.children}
         </UpdateBody>
     );
