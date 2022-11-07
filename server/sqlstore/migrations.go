@@ -2404,12 +2404,21 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
 				}
+				if _, err := e.Exec("DROP INDEX ir_incident_channelid_key ON IR_Incident"); err != nil {
+					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
+				}
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD INDEX ir_incident_channelid_key (ChannelID)"); err != nil {
+					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
+				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
 				}
 				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
+				}
+				if _, err := e.Exec("ALTER TABLE IR_Incident DROP CONSTRAINT IF EXISTS ir_incident_channelid_key"); err != nil {
+					return errors.Wrapf(err, "failed to drop constraint ir_incident_channelid_key on table ir_incident")
 				}
 			}
 			return nil

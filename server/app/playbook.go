@@ -579,7 +579,7 @@ type PlaybookInsight struct {
 type ChannelPlaybookMode int
 
 const (
-	PlaybookRunCreateNewChannel TelemetryTrack = iota
+	PlaybookRunCreateNewChannel ChannelPlaybookMode = iota
 	PlaybookRunLinkExistingChannel
 )
 
