@@ -739,5 +739,15 @@
     "ecS/qx": "{name} dodał {num} uczestników do uruchomienia",
     "VM75su": "{name} usunął z uruchomienia {num} uczestników",
     "SwlL5j": "@{user} dołączył do uruchomienia",
-    "RXjd3Q": "{name} usunął @{user} z uruchomienia"
+    "RXjd3Q": "{name} usunął @{user} z uruchomienia",
+    "zSOvI0": "Filtry",
+    "qxYWTy": "Pokaż wszystkie zadania z uruchomień, które posiadam",
+    "grv9Fm": "Wybierz, aby przełączyć listę zadań.",
+    "YBvwXR": "Brak przydzielonych zadań",
+    "WFd88+": "Pokaż sprawdzone zadania",
+    "TnUG7m": "Nie masz przypisanego żadnego oczekującego zadania.",
+    "SRqpbI": "{assignedNum, plural, =0 {Brak przydzielonych zadań} other {# przydzielone}}",
+    "I0NIMp": "Twoje zadania",
+    "DUU48k": "Nie ma zadania jednoznacznie przypisanego do Ciebie. Możesz rozszerzyć swoje poszukiwania za pomocą filtrów.",
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# zaległe}}"
 }
