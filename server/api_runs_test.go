@@ -392,6 +392,32 @@ func TestRunStatus(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "  \t  \r ", 600)
 		assert.Error(t, err)
 	})
+
+	t.Run("no permissions to run", func(t *testing.T) {
+		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
+		require.NoError(t, err)
+		err = e.PlaybooksClient2.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("test no permissions to broadcast channel", func(t *testing.T) {
+		// Create a run with a private channel in the broadcast channels
+		e.BasicPlaybook.BroadcastChannelIDs = []string{e.BasicPrivateChannel.Id}
+		err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Poison broadcast channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Update should fail because no access to private broadcast channel
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
 }
 
 func TestChecklistManagement(t *testing.T) {
