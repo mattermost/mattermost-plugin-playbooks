@@ -749,5 +749,15 @@
     "ecS/qx": "{name} hat {num} Teilnehmer dem Durchlauf hinzugefügt",
     "VM75su": "{name} hat {num} Teilnehmer aus dem Durchlauf entfernt",
     "SwlL5j": "@{user} nimmt am Durchlauf teil",
-    "RXjd3Q": "{name} entfernte @{user} aus dem Durchlauf"
+    "RXjd3Q": "{name} entfernte @{user} aus dem Durchlauf",
+    "zSOvI0": "Filter",
+    "qxYWTy": "Alle Aufgaben aus meinen eigenen Durchläufen anzeigen",
+    "grv9Fm": "Wählen, um eine Aufgabenliste umzuschalten.",
+    "YBvwXR": "Keine zugewiesenen Aufgaben",
+    "WFd88+": "Geprüfte Aufgaben anzeigen",
+    "TnUG7m": "Du hast keine ausstehende Aufgabe zugewiesen bekommen.",
+    "SRqpbI": "{assignedNum, plural, =0 {Keine zugewiesenen Aufgaben} other {# zugewiesen}}",
+    "I0NIMp": "Deine Aufgaben",
+    "DUU48k": "Es gibt keine Aufgabe, die dir explizit zugewiesen ist. Du kannst deine Suche mit Hilfe der Filter erweitern.",
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# überfällig}}"
 }
