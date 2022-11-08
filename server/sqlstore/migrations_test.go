@@ -15,142 +15,154 @@ type MigrationMapping struct {
 	MorphMigrationLimit  int
 }
 
+var migrationsMapping []MigrationMapping = []MigrationMapping{
+	{
+		Name:                 "0.0.0 > 0.0.1",
+		LegacyMigrationIndex: 0,
+		MorphMigrationLimit:  4, // 000001 <> 000004
+	},
+	{
+		Name:                 "0.2.0 > 0.3.0",
+		LegacyMigrationIndex: 2,
+		MorphMigrationLimit:  1, // 000005
+	},
+	{
+		Name:                 "0.3.0 > 0.4.0",
+		LegacyMigrationIndex: 3,
+		MorphMigrationLimit:  4, // 000006 <> 000009
+	},
+	{
+		Name:                 "0.4.0 > 0.5.0",
+		LegacyMigrationIndex: 4,
+		MorphMigrationLimit:  4, // 000010 <> 000013
+	},
+	{
+		Name:                 "0.5.0 > 0.6.0",
+		LegacyMigrationIndex: 5,
+		MorphMigrationLimit:  2, // 000014 <> 000015
+	},
+	{
+		Name:                 "0.6.0 > 0.7.0",
+		LegacyMigrationIndex: 6,
+		MorphMigrationLimit:  1, // 000016
+	},
+	{
+		Name:                 "0.7.0 > 0.8.0",
+		LegacyMigrationIndex: 7,
+		MorphMigrationLimit:  1, // 000017
+	},
+	{
+		Name:                 "0.8.0 > 0.9.0",
+		LegacyMigrationIndex: 8,
+		MorphMigrationLimit:  3, // 000018 <> 000020
+	},
+	{
+		Name:                 "0.9.0 > 0.10.0",
+		LegacyMigrationIndex: 9,
+		MorphMigrationLimit:  3, // 000021 <> 000023
+	},
+	{
+		Name:                 "0.11.0 > 0.12.0",
+		LegacyMigrationIndex: 11,
+		MorphMigrationLimit:  4, // 000024 <> 000027
+	},
+	{
+		Name:                 "0.12.0 > 0.13.0",
+		LegacyMigrationIndex: 12,
+		MorphMigrationLimit:  3, // 000028 <> 000030
+	},
+
+	{
+		Name:                 "0.13.0 > 0.14.0",
+		LegacyMigrationIndex: 13,
+		MorphMigrationLimit:  2, // 000031 <> 000032
+	},
+	{
+		Name:                 "0.14.0 > 0.15.0",
+		LegacyMigrationIndex: 14,
+		MorphMigrationLimit:  1, // 000033
+	},
+	{
+		Name:                 "0.15.0 > 0.16.0",
+		LegacyMigrationIndex: 15,
+		MorphMigrationLimit:  4, // 000034-000037
+	},
+	{
+		Name:                 "0.16.0 > 0.17.0",
+		LegacyMigrationIndex: 16,
+		MorphMigrationLimit:  1, // 000038
+	},
+	{
+		Name:                 "0.17.0 > 0.18.0",
+		LegacyMigrationIndex: 17,
+		MorphMigrationLimit:  3, // 000039-000041
+	},
+	{
+		Name:                 "0.18.0 > 0.19.0",
+		LegacyMigrationIndex: 18,
+		MorphMigrationLimit:  1, // 000042
+	},
+	{
+		Name:                 "0.19.0 > 0.20.0",
+		LegacyMigrationIndex: 19,
+		MorphMigrationLimit:  3, // 000043-00045
+	},
+	{
+		Name:                 "0.20.0 > 0.21.0",
+		LegacyMigrationIndex: 20,
+		MorphMigrationLimit:  3, // 000046-00048
+	},
+	{
+		Name:                 "0.21.0 > 0.22.0",
+		LegacyMigrationIndex: 21,
+		MorphMigrationLimit:  1, // 000049
+	},
+	{
+		Name:                 "0.22.0 > 0.23.0",
+		LegacyMigrationIndex: 22,
+		MorphMigrationLimit:  2, // 000050-000051
+	},
+	{
+		Name:                 "0.23.0 > 0.24.0",
+		LegacyMigrationIndex: 23,
+		MorphMigrationLimit:  2, // 000052-000053
+	},
+	{
+		Name:                 "0.24.0 > 0.25.0",
+		LegacyMigrationIndex: 24,
+		MorphMigrationLimit:  4, // 000054-000057
+	},
+	{
+		Name:                 "0.25.0 > 0.26.0",
+		LegacyMigrationIndex: 25,
+		MorphMigrationLimit:  2, // 000058-000059
+	},
+	{
+		Name:                 "0.26.0 > 0.27.0",
+		LegacyMigrationIndex: 26,
+		MorphMigrationLimit:  2, // 000060-000061
+	},
+	{
+		Name:                 "0.27.0 > 0.28.0",
+		LegacyMigrationIndex: 27,
+		MorphMigrationLimit:  1, // 000062
+	},
+	{
+		Name:                 "0.28.0 > 0.29.0",
+		LegacyMigrationIndex: 28,
+		MorphMigrationLimit:  1, // 000063
+	},
+	{
+		Name:                 "0.29.0 > 0.30.0",
+		LegacyMigrationIndex: 29,
+		MorphMigrationLimit:  6, // 000064-000069
+	},
+}
+
 func TestDBSchema(t *testing.T) {
-	migrationsMapping := []MigrationMapping{
-		{
-			Name:                 "0.0.0 > 0.0.1",
-			LegacyMigrationIndex: 0,
-			MorphMigrationLimit:  4, // 000001 <> 000004
-		},
-		{
-			Name:                 "0.2.0 > 0.3.0",
-			LegacyMigrationIndex: 2,
-			MorphMigrationLimit:  1, // 000005
-		},
-		{
-			Name:                 "0.3.0 > 0.4.0",
-			LegacyMigrationIndex: 3,
-			MorphMigrationLimit:  4, // 000006 <> 000009
-		},
-		{
-			Name:                 "0.4.0 > 0.5.0",
-			LegacyMigrationIndex: 4,
-			MorphMigrationLimit:  4, // 000010 <> 000013
-		},
-		{
-			Name:                 "0.5.0 > 0.6.0",
-			LegacyMigrationIndex: 5,
-			MorphMigrationLimit:  2, // 000014 <> 000015
-		},
-		{
-			Name:                 "0.6.0 > 0.7.0",
-			LegacyMigrationIndex: 6,
-			MorphMigrationLimit:  1, // 000016
-		},
-		{
-			Name:                 "0.7.0 > 0.8.0",
-			LegacyMigrationIndex: 7,
-			MorphMigrationLimit:  1, // 000017
-		},
-		{
-			Name:                 "0.8.0 > 0.9.0",
-			LegacyMigrationIndex: 8,
-			MorphMigrationLimit:  3, // 000018 <> 000020
-		},
-		{
-			Name:                 "0.9.0 > 0.10.0",
-			LegacyMigrationIndex: 9,
-			MorphMigrationLimit:  3, // 000021 <> 000023
-		},
-		{
-			Name:                 "0.11.0 > 0.12.0",
-			LegacyMigrationIndex: 11,
-			MorphMigrationLimit:  4, // 000024 <> 000027
-		},
-		{
-			Name:                 "0.12.0 > 0.13.0",
-			LegacyMigrationIndex: 12,
-			MorphMigrationLimit:  3, // 000028 <> 000030
-		},
-
-		{
-			Name:                 "0.13.0 > 0.14.0",
-			LegacyMigrationIndex: 13,
-			MorphMigrationLimit:  2, // 000031 <> 000032
-		},
-		{
-			Name:                 "0.14.0 > 0.15.0",
-			LegacyMigrationIndex: 14,
-			MorphMigrationLimit:  1, // 000033
-		},
-		{
-			Name:                 "0.15.0 > 0.16.0",
-			LegacyMigrationIndex: 15,
-			MorphMigrationLimit:  4, // 000034-000037
-		},
-		{
-			Name:                 "0.16.0 > 0.17.0",
-			LegacyMigrationIndex: 16,
-			MorphMigrationLimit:  1, // 000038
-		},
-		{
-			Name:                 "0.17.0 > 0.18.0",
-			LegacyMigrationIndex: 17,
-			MorphMigrationLimit:  3, // 000039-000041
-		},
-		{
-			Name:                 "0.18.0 > 0.19.0",
-			LegacyMigrationIndex: 18,
-			MorphMigrationLimit:  1, // 000042
-		},
-		{
-			Name:                 "0.19.0 > 0.20.0",
-			LegacyMigrationIndex: 19,
-			MorphMigrationLimit:  3, // 000043-00045
-		},
-		{
-			Name:                 "0.20.0 > 0.21.0",
-			LegacyMigrationIndex: 20,
-			MorphMigrationLimit:  3, // 000046-00048
-		},
-		{
-			Name:                 "0.21.0 > 0.22.0",
-			LegacyMigrationIndex: 21,
-			MorphMigrationLimit:  1, // 000049
-		},
-		{
-			Name:                 "0.22.0 > 0.23.0",
-			LegacyMigrationIndex: 22,
-			MorphMigrationLimit:  2, // 000050-000051
-		},
-		{
-			Name:                 "0.23.0 > 0.24.0",
-			LegacyMigrationIndex: 23,
-			MorphMigrationLimit:  2, // 000052-000053
-		},
-		{
-			Name:                 "0.24.0 > 0.25.0",
-			LegacyMigrationIndex: 24,
-			MorphMigrationLimit:  4, // 000054-000057
-		},
-		{
-			Name:                 "0.25.0 > 0.26.0",
-			LegacyMigrationIndex: 25,
-			MorphMigrationLimit:  2, // 000058-000059
-		},
-		{
-			Name:                 "0.26.0 > 0.27.0",
-			LegacyMigrationIndex: 26,
-			MorphMigrationLimit:  2, // 000060-000061
-		},
-		{
-			Name:                 "0.27.0 > 0.28.0",
-			LegacyMigrationIndex: 27,
-			MorphMigrationLimit:  1, // 000062
-		},
-	}
-
 	for _, driverName := range driverNames {
+		driverName = model.DatabaseDriverMysql
+
 		tableInfoList := tableInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 		indexInfoList := indexInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 
@@ -170,13 +182,13 @@ func TestDBSchema(t *testing.T) {
 				require.NoError(t, err)
 				// this way it's easier to find out why test fails
 				for j := range dbSchemaMorph {
-					require.Equal(t, dbSchemaMorph[j], tableInfoList[i+1][j])
+					require.Equal(t, tableInfoList[i+1][j], dbSchemaMorph[j])
 				}
 
 				// compare indexes
 				dbIndexesMorph, err := getDBIndexesInfo(store)
 				require.NoError(t, err)
-				require.Equal(t, dbIndexesMorph, indexInfoList[i+1])
+				require.Equal(t, indexInfoList[i+1], dbIndexesMorph)
 			})
 		}
 
@@ -188,7 +200,10 @@ func TestDBSchema(t *testing.T) {
 				// compare table schemas
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
-				require.Equal(t, dbSchemaMorph, tableInfoList[migrationIndex])
+				// this way it's easier to find out why test fails
+				for j := range dbSchemaMorph {
+					require.Equal(t, tableInfoList[migrationIndex][j], dbSchemaMorph[j])
+				}
 
 				// compare indexes
 				dbIndexesMorph, err := getDBIndexesInfo(store)
