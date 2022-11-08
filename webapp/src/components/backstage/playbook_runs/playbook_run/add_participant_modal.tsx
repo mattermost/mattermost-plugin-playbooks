@@ -79,7 +79,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const onConfirm = () => {
         const ids = profiles.map((e) => e.id);
         addToRun(ids, forceAddToChannel);
-        telemetryEvent(PlaybookRunEventTarget.AddParticipant, {playbookrun_id: playbookRun.id, from: 'run_details'});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: 'run_details', trigger: 'add_participant'});
         hideModal();
     };
 

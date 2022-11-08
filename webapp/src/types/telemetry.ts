@@ -28,8 +28,6 @@ export enum PlaybookRunEventTarget {
     RequestUpdateClick = 'playbookrun_request_update',
     Participate = 'playbookrun_participate',
     Leave = 'playbookrun_leave',
-    AddParticipant = 'playbookrun_add_participant',
-    RemoveParticipant = 'playbookrun_remove_participant',
     Follow = 'playbookrun_follow',
     Unfollow = 'playbookrun_unfollow',
     UpdateActions = 'playbookrun_update_actions',

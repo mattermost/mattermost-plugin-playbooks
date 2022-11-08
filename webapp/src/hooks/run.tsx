@@ -40,7 +40,7 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs'|'run_details') => {
+export const useParticipateInRun = (playbookRunId: string, from: 'channel_rhs'|'run_details') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const {addToRun} = useManageRunMembership(playbookRunId);
@@ -56,7 +56,7 @@ export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate'});
     };
     const ParticipateConfirmModal = (
         <ConfirmModal

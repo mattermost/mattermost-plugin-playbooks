@@ -143,7 +143,7 @@ describe('runs > run details page > rhs > participants', () => {
                 cy.findByTestId('modal-confirm-button').click();
 
                 cy.wait('@telemetry').then((interception) => {
-                    expect(interception.request.body.name).to.eq('playbookrun_add_participant');
+                    expect(interception.request.body.name).to.eq('playbookrun_participate');
                     expect(interception.request.body.type).to.eq('track');
                     expect(interception.request.body.properties.from).to.eq('run_details');
                 });

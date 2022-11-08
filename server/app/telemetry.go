@@ -34,20 +34,14 @@ const (
 	telemetryRunParticipate
 	telemetryRunLeave
 	telemetryRunUpdateActions
-	telemetryRunAddedByPlaybook
-	telemetryRunAddParticipant
-	telemetryRunRemoveParticipant
 )
 
 var trackTypes = [...]string{
-	telemetryRunFollow:            "playbookrun_follow",
-	telemetryRunUnfollow:          "playbookrun_unfollow",
-	telemetryRunParticipate:       "playbookrun_participate",
-	telemetryRunLeave:             "playbookrun_leave",
-	telemetryRunUpdateActions:     "playbookrun_update_actions",
-	telemetryRunAddedByPlaybook:   "playbookrun_addedbyplaybook",
-	telemetryRunAddParticipant:    "playbookrun_add_participant",
-	telemetryRunRemoveParticipant: "playbookrun_remove_participant",
+	telemetryRunFollow:        "playbookrun_follow",
+	telemetryRunUnfollow:      "playbookrun_unfollow",
+	telemetryRunParticipate:   "playbookrun_participate",
+	telemetryRunLeave:         "playbookrun_leave",
+	telemetryRunUpdateActions: "playbookrun_update_actions",
 }
 
 // String creates the string version of the TelemetryTrack

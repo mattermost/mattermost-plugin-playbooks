@@ -98,7 +98,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     );
 };
 
-export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, trigger: 'run_details' | 'playbooks_lhs') => {
+export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, from: 'run_details' | 'playbooks_lhs') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
@@ -116,7 +116,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                 });
 
                 const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
-                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from: trigger});
+                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from, trigger: 'leave'});
                 if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }

@@ -398,7 +398,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if len(invitedUserIDs) > 0 {
-		s.genericTelemetry.Track(telemetryRunAddedByPlaybook, map[string]any{"count": len(invitedUserIDs) - len(usersFailedToInvite)})
+		s.genericTelemetry.Track(
+			telemetryRunParticipate,
+			map[string]any{
+				"count":   len(invitedUserIDs) - len(usersFailedToInvite),
+				"trigger": "invite_on_create",
+			},
+		)
 	}
 
 	if len(usersFailedToInvite) != 0 {
