@@ -193,7 +193,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         create_channel_member_on_new_participant: true,
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
-        channel_mode: '',
+        channel_mode: 'create_new_channel',
     };
 }
 

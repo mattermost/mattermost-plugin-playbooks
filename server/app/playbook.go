@@ -611,11 +611,15 @@ func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
 
 // Scan parses a ChannelPlaybookMode back from the DB
 func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
-	txt, ok := src.(string)
+	txt, ok := src.([]byte) // mysql
 	if !ok {
-		return fmt.Errorf("could not cast to string: %v", src)
+		txt, ok := src.(string) //postgres
+		if !ok {
+			return fmt.Errorf("could not cast to string: %v", src)
+		}
+		return cpm.UnmarshalText([]byte(txt))
 	}
-	return cpm.UnmarshalText([]byte(txt))
+	return cpm.UnmarshalText(txt)
 }
 
 // Value represents a ChannelPlaybookMode as a type writable into the DB
