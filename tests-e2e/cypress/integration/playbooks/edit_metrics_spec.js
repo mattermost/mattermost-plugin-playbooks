@@ -282,7 +282,7 @@ describe('playbooks > edit_metrics', () => {
         });
 
         describe('delete metric', () => {
-            it('verifies when clicking delete button; saved metrics have different confirmation text; deleted metrics are deleted', () => {
+            it.only('verifies when clicking delete button; saved metrics have different confirmation text; deleted metrics are deleted', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
@@ -448,6 +448,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify currency
                 addMetric('Dollars', 'test money', '0', 'test description 2');
+                cy.wait('@addMetric');
                 verifyViewMetric(1, 'test money', '0', 'test description 2');
 
                 // # Verify it shows 0, then turn it into null.
@@ -470,6 +471,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify Integer
                 addMetric('Integer', 'test number', '0', 'test description 3');
+                cy.wait('@addMetric');
                 verifyViewMetric(2, 'test number', '0', 'test description 3');
 
                 // # Verify it shows 0, then turn it into null.
