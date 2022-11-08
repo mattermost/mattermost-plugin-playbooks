@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS IR_Checklist;
+DROP TABLE IF EXISTS IR_Checklist_Item;

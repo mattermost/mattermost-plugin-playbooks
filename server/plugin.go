@@ -167,7 +167,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	checklistStore := sqlstore.NewChecklistStore(apiClient, sqlStore)
+	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore, checklistStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
@@ -187,6 +188,7 @@ func (p *Plugin) OnActivate() error {
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
+		checklistStore,
 		p.bot,
 		p.config,
 		scheduler,

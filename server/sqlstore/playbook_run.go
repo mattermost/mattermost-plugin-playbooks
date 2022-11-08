@@ -50,6 +50,7 @@ type playbookRunStore struct {
 	timelineEventsSelect             sq.SelectBuilder
 	metricsDataSelectSingleRun       sq.SelectBuilder
 	sqlMetricsDataSelectMultipleRuns sq.SelectBuilder
+	checklistStore                   *checklistStore
 }
 
 // Ensure playbookRunStore implements the app.PlaybookRunStore interface.
@@ -151,7 +152,7 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 }
 
 // NewPlaybookRunStore creates a new store for playbook run ServiceImpl.
-func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.PlaybookRunStore {
+func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore, checklistStore *checklistStore) app.PlaybookRunStore {
 	// construct the participants list so that the frontend doesn't have to query the server, bc if
 	// the user is not a member of the channel they won't have permissions to get the user list
 	participantsCol := `
@@ -246,6 +247,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 		timelineEventsSelect:             timelineEventsSelect,
 		metricsDataSelectSingleRun:       metricsDataSelectSingleRun,
 		sqlMetricsDataSelectMultipleRuns: sqlMetricsDataSelectMultipleRuns,
+		checklistStore:                   checklistStore,
 	}
 }
 
@@ -404,6 +406,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, err
 	}
 
+	checklistsPerRun, err := s.checklistStore.getChecklistsForPlaybookRunIDs(tx, playbookRunIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
@@ -411,6 +418,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	addStatusPostsToPlaybookRuns(statusPosts, playbookRuns)
 	addTimelineEventsToPlaybookRuns(timelineEvents, playbookRuns)
 	addMetricsToPlaybookRuns(metricsData, playbookRuns)
+	addChecklistsToPlaybookRuns(checklistsPerRun, playbookRuns)
 
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,
@@ -1556,6 +1564,12 @@ func addMetricsToPlaybookRuns(metrics []sqlRunMetricData, playbookRuns []app.Pla
 
 	for i, run := range playbookRuns {
 		playbookRuns[i].MetricsData = playbookRunToMetrics[run.ID]
+	}
+}
+
+func addChecklistsToPlaybookRuns(checklistsPerRun map[string][]app.Checklist, playbookRuns []app.PlaybookRun) {
+	for i, runs := range playbookRuns {
+		playbookRuns[i].Checklists = checklistsPerRun[runs.ID]
 	}
 }
 

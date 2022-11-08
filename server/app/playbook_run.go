@@ -963,6 +963,33 @@ type PlaybookRunTelemetry interface {
 	RunAction(playbookRun *PlaybookRun, userID, triggerType, actionType string, numBroadcasts int)
 }
 
+type ChecklistStore interface {
+	GetChecklistID(playbookID string, checklistNumber int) (string, error)
+	GetChecklistItem(playbookID string, checklistNumber, itemNumber int) (*ChecklistItem, error)
+	ModifyCheckedState(checklistItem *ChecklistItem, newState string) (*ChecklistItem, error)
+	SetAssignee(checklistItem *ChecklistItem, assigneeID string) (*ChecklistItem, error)
+
+	/*
+		SetCommandToChecklistItem(playbookRunID, newCommand string, checklistNumber, itemNumber int) error
+		SetDueDate(playbookRunID string, duedate int64, checklistNumber, itemNumber int) error
+		SetLastRunTime(playbookRunID string, lastRunTime int64, checklistNumber, itemNumber int) error
+		DuplicateChecklistItem(playbookRunID string, checklistNumber, itemNumber int) error
+		AddChecklist(playbookRunID, userID string, checklist Checklist) error
+		DuplicateChecklist(playbookRunID string, checklistNumber int) error
+		RemoveChecklist(playbookRunID string, checklistNumber int)
+		RenameChecklist(playbookRunID, newTitle string, checklistNumber int) error
+		AddChecklistItem(playbookRunID string, checklistNumber int, checklistItem ChecklistItem) error
+		RemoveChecklistItem(playbookRunID string, checklistNumber, itemNumber int) error
+		SkipChecklist(playbookRunID string, checklistNumber int) error
+		RestoreChecklist(playbookRunID string, checklistNumber int) error
+		SkipChecklistItem(playbookRunID string, checklistNumber, itemNumber int) error
+		RestoreChecklistItem(playbookRunID string, checklistNumber, itemNumber int) error
+		EditChecklistItem(playbookRunID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error
+		MoveChecklist(playbookRunID string, sourceChecklistIdx, destChecklistIdx int) error
+		MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
+	*/
+}
+
 type JobOnceScheduler interface {
 	Start() error
 	SetCallback(callback func(string)) error

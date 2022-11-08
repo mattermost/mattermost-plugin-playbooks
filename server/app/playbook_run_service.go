@@ -41,6 +41,7 @@ type PlaybookRunServiceImpl struct {
 	httpClient      *http.Client
 	configService   config.Service
 	store           PlaybookRunStore
+	checklistStore  ChecklistStore
 	poster          bot.Poster
 	scheduler       JobOnceScheduler
 	telemetry       PlaybookRunTelemetry
@@ -91,6 +92,7 @@ const DialogFieldItemCommandKey = "command"
 func NewPlaybookRunService(
 	pluginAPI *pluginapi.Client,
 	store PlaybookRunStore,
+	checklistStore ChecklistStore,
 	poster bot.Poster,
 	configService config.Service,
 	scheduler JobOnceScheduler,
@@ -104,6 +106,7 @@ func NewPlaybookRunService(
 	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
 		store:           store,
+		checklistStore:  checklistStore,
 		poster:          poster,
 		configService:   configService,
 		scheduler:       scheduler,
@@ -1410,46 +1413,40 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRun, err := s.CanModifyPlaybookRun(playbookRunID, userID)
 	if err != nil {
 		return err
 	}
-
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indicies")
+	checklistItem, err := s.checklistStore.GetChecklistItem(playbookRunID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
 	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-	if newState == itemToCheck.State {
+	if newState == checklistItem.State {
 		return nil
 	}
 
-	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(checklistItem.Title))
 	if newState == ChecklistItemStateOpen {
-		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(checklistItem.Title))
 	}
 	if newState == ChecklistItemStateSkipped {
-		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(checklistItem.Title))
 	}
-	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
-		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	if checklistItem.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
+		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(checklistItem.Title))
 	}
 
-	itemToCheck.State = newState
-	itemToCheck.StateModified = model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
-
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	updatedItem, err := s.checklistStore.ModifyCheckedState(checklistItem, newState)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
 	}
 
-	s.telemetry.ModifyCheckedState(playbookRunID, userID, itemToCheck, playbookRunToModify.OwnerUserID == userID)
+	s.telemetry.ModifyCheckedState(playbookRunID, userID, *updatedItem, playbookRun.OwnerUserID == userID)
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
-		CreateAt:      itemToCheck.StateModified,
-		EventAt:       itemToCheck.StateModified,
+		CreateAt:      updatedItem.StateModified,
+		EventAt:       updatedItem.StateModified,
 		EventType:     TaskStateModified,
 		Summary:       modifyMessage,
 		SubjectUserID: userID,
@@ -1489,17 +1486,16 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 // SetAssignee sets the assignee for the specified checklist item
 // Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error {
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRun, err := s.CanModifyPlaybookRun(playbookRunID, userID)
+	if err != nil {
+		return err
+	}
+	checklistItem, err := s.checklistStore.GetChecklistItem(playbookRunID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-	if assigneeID == itemToCheck.AssigneeID {
+	if assigneeID == checklistItem.AssigneeID {
 		return nil
 	}
 
@@ -1514,26 +1510,22 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	oldAssigneeUserAtMention := noAssigneeName
-	if itemToCheck.AssigneeID != "" {
+	if checklistItem.AssigneeID != "" {
 		var oldUser *model.User
-		oldUser, err = s.pluginAPI.User.Get(itemToCheck.AssigneeID)
+		oldUser, err = s.pluginAPI.User.Get(checklistItem.AssigneeID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 		oldAssigneeUserAtMention = "@" + oldUser.Username
 	}
 
-	itemToCheck.AssigneeID = assigneeID
-	itemToCheck.AssigneeModified = model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
-
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	updatedItem, err := s.checklistStore.SetAssignee(checklistItem, assigneeID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
 	// Do we send a DM to the new assignee?
-	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
+	if updatedItem.AssigneeID != "" && updatedItem.AssigneeID != userID {
 		var subjectUser *model.User
 		subjectUser, err = s.pluginAPI.User.Get(userID)
 		if err != nil {
@@ -1541,13 +1533,13 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		}
 
 		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get channel")
 		}
 
 		var team *model.Team
-		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
+		team, err = s.pluginAPI.Team.Get(playbookRun.TeamID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get team")
 		}
@@ -1555,21 +1547,21 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
 			channel.DisplayName, team.Name, channel.Name, playbookRunID)
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
+			subjectUser.Username, stripmd.Strip(updatedItem.Title), oldAssigneeUserAtMention, channelURL)
 
-		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
+		if err = s.poster.DM(updatedItem.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in SetAssignee")
 		}
 	}
 
-	s.telemetry.SetAssignee(playbookRunID, userID, itemToCheck)
+	s.telemetry.SetAssignee(playbookRunID, userID, *updatedItem)
 
 	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
-		stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
+		stripmd.Strip(updatedItem.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
-		CreateAt:      itemToCheck.AssigneeModified,
-		EventAt:       itemToCheck.AssigneeModified,
+		CreateAt:      updatedItem.AssigneeModified,
+		EventAt:       updatedItem.AssigneeModified,
 		EventType:     AssigneeChanged,
 		Summary:       modifyMessage,
 		SubjectUserID: userID,
@@ -2219,6 +2211,19 @@ func (s *PlaybookRunServiceImpl) GetParticipatingRuns(userID string) ([]RunLink,
 // GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
 func (s *PlaybookRunServiceImpl) GetOverdueUpdateRuns(userID string) ([]RunLink, error) {
 	return s.store.GetOverdueUpdateRuns(userID)
+}
+
+func (s *PlaybookRunServiceImpl) CanModifyPlaybookRun(playbookRunID, userID string) (*PlaybookRun, error) {
+	// TODO maybe get run without checklists
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
+		return nil, errors.New("user does not have permission to modify playbook run")
+	}
+	return playbookRunToModify, nil
 }
 
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
