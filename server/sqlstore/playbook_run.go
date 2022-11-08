@@ -425,11 +425,14 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
+
 	playbookRun = playbookRun.Clone()
 
 	if playbookRun.ID == "" {
 		playbookRun.ID = model.NewId()
 	}
+
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
@@ -492,21 +495,24 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 }
 
 // UpdatePlaybookRun updates a playbook run.
-func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error {
+func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
-		return errors.New("playbook run is nil")
+		return nil, errors.New("playbook run is nil")
 	}
 	if playbookRun.ID == "" {
-		return errors.New("ID should not be empty")
+		return nil, errors.New("ID should not be empty")
 	}
+
+	playbookRun = playbookRun.Clone()
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
@@ -542,18 +548,18 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
 	}
 
 	if err = s.updateRunMetrics(tx, rawPlaybookRun.PlaybookRun); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	return nil
+	return playbookRun, nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
@@ -1466,8 +1472,7 @@ func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
-	newChecklists := populateChecklistIDs(playbookRun.Checklists)
-	checklistsJSON, err := checklistsToJSON(newChecklists)
+	checklistsJSON, err := checklistsToJSON(playbookRun.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id '%s'", playbookRun.ID)
 	}
