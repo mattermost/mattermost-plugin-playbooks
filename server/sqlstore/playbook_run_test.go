@@ -1190,8 +1190,8 @@ func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	}
 
 	sqlStore := setupSQLStore(t, db)
-
-	return NewPlaybookRunStore(pluginAPIClient, sqlStore)
+	checklistStore := NewChecklistStore(pluginAPIClient, sqlStore)
+	return NewPlaybookRunStore(pluginAPIClient, sqlStore, checklistStore)
 }
 
 func TestGetSchemeRolesForChannel(t *testing.T) {
