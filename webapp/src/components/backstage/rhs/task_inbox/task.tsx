@@ -65,7 +65,7 @@ const Task = (props: Props) => {
                     collapsibleDescription={true}
                     descriptionCollapsedByDefault={true}
                     newItem={false}
-                    disabled={false}
+                    readOnly={false}
                     itemNum={props.item.item_num}
                     onChange={onChangeState}
                 />

@@ -25,12 +25,13 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 interface Props {
     id: string
     playbookRun?: PlaybookRun
-    disabled: boolean;
+    readOnly: boolean;
     checklist: Checklist;
     checklistIndex: number;
     onUpdateChecklist: (newChecklist: Checklist) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -96,7 +97,7 @@ const GenericChecklist = (props: Props) => {
                                 <DraggableChecklistItem
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
-                                    disabled={props.disabled}
+                                    readOnly={props.readOnly}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
@@ -108,6 +109,7 @@ const GenericChecklist = (props: Props) => {
                                     onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                     itemButtonsFormat={props.itemButtonsFormat}
+                                    onViewerModeInteract={props.onViewerModeInteract}
                                 />
                             );
                         })}
@@ -115,7 +117,7 @@ const GenericChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
-                                disabled={props.disabled}
+                                readOnly={props.readOnly}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
@@ -125,13 +127,14 @@ const GenericChecklist = (props: Props) => {
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
                                 itemButtonsFormat={props.itemButtonsFormat}
+                                onViewerModeInteract={props.onViewerModeInteract}
                             />
                         }
                         {droppableProvided.placeholder}
                     </div>
-                    {props.disabled ? null : (
+                    {props.readOnly ? null : (
                         <AddTaskLink
-                            disabled={props.disabled}
+                            disabled={props.readOnly}
                             onClick={() => {
                                 setAddingItem(true);
                             }}

@@ -11,7 +11,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     item: ChecklistItem;
-    disabled: boolean;
+    readOnly: boolean;//when true, component can receive events, but can't be modified.
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
@@ -30,6 +30,10 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     //     Additionally, we prevent the user from clicking multiple times
     //     and leaving the item in an unknown state
     const handleOnChange = async () => {
+        if (props.readOnly) {
+            props.onChange(isChecked ? ChecklistItemState.Closed : ChecklistItemState.Open);
+            return;
+        }
         const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
         setIsChecked(!isChecked);
         const res = await props.onChange(newValue);
@@ -43,7 +47,6 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
             className='checkbox'
             type='checkbox'
             checked={isChecked}
-            disabled={props.disabled}
             onChange={handleOnChange}
         />);
 };

@@ -15,16 +15,25 @@ interface Props {
     item: ChecklistItemType;
     itemIndex: number;
     newItem: boolean;
-    disabled?: boolean;
+    readOnly?: boolean;
     cancelAddingItem: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void
 }
 
 const DraggableChecklistItem = (props: Props) => {
+    const onChange = (newState: ChecklistItemState) => {
+        if (props.readOnly) {
+            props.onViewerModeInteract?.();
+            return undefined;
+        }
+        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
+    };
+
     return (
         <Draggable
             draggableId={props.item.title + props.itemIndex}
@@ -37,10 +46,10 @@ const DraggableChecklistItem = (props: Props) => {
                     itemNum={props.itemIndex}
                     playbookRunId={props.playbookRun?.id}
                     channelId={props.playbookRun?.channel_id}
-                    onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
+                    onChange={onChange}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
-                    disabled={props.disabled ?? false}
+                    readOnly={props.readOnly ?? false}
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}
