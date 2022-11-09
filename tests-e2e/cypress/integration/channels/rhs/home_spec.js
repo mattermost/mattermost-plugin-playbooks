@@ -38,6 +38,10 @@ describe('channels > rhs > home', () => {
 
         // # Navigate to the application, starting in a non-run channel.
         cy.visit(`/${testTeam.name}/`);
+
+        // * Check time bar in the channel section
+        // * as an indicator of page stability / end of rendering
+        cy.findByText('Today').should('be.visible');
     });
 
     describe('shows available', () => {
