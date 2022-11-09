@@ -17,6 +17,8 @@ import {receivedPlaybookRuns} from 'src/actions';
 import {GeneralViewTarget} from 'src/types/telemetry';
 import {useViewTelemetry} from 'src/hooks/telemetry';
 
+import {useEnsureProfiles} from 'src/hooks';
+
 import Task from './task';
 
 export const TaskInboxTitle = <FormattedMessage defaultMessage={'Your tasks'}/>;
@@ -102,11 +104,16 @@ const TaskInbox = () => {
     };
 
     const tasks = filterTasks(myTasks, currentUserId, filters);
+    const uniqueParticipantIds = tasks
+        .map((t) => t.playbook_run_participant_user_ids)
+        .reduce((first, second) => [...new Set(first.concat(second))], []);
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
     const [currentPage, setCurrentPage] = useState(0);
     const [visibleTasks, setVisibleTasks] = useState(tasks.slice(0, ITEMS_PER_PAGE));
+
+    useEnsureProfiles(uniqueParticipantIds);
 
     useEffect(() => {
         setVisibleTasks(tasks.slice(0, (currentPage * ITEMS_PER_PAGE) + ITEMS_PER_PAGE));
