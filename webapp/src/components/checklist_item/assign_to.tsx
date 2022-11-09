@@ -12,7 +12,7 @@ import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
     assignee_id: string;
-    memberUserIds: string[];
+    participantUserIds: string[];
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
@@ -44,7 +44,7 @@ const AssignTo = (props: AssignedToProps) => {
                 }
                 enableEdit={true}
                 userGroups={{
-                    subsetUserIds: props.memberUserIds,
+                    subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
                     subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
                 }}
@@ -75,7 +75,7 @@ const AssignTo = (props: AssignedToProps) => {
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
                 userGroups={{
-                    subsetUserIds: props.memberUserIds,
+                    subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
                     subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
                 }}

@@ -152,7 +152,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     assignee_id={run.owner_user_id}
                     editable={editable}
                     onSelectedChange={onOwnerChange}
-                    memberUserIds={run.participant_ids}
+                    participantUserIds={run.participant_ids}
                     placement={'bottom-end'}
                 />
             </Item>

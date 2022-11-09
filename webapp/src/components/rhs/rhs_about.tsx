@@ -55,8 +55,8 @@ const RHSAbout = (props: Props) => {
         }
     };
 
-    const onSelectedProfileChange = (userType?: string, user?: UserProfile) => {
-        if (!user || !userType) {
+    const onSelectedProfileChange = (user?: UserProfile) => {
+        if (!user) {
             return;
         }
         setOwnerUtil(user?.id);
@@ -129,7 +129,6 @@ const RHSAbout = (props: Props) => {
                                         defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
                                         subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
                                     }}
-                                    isMembersModeEnabled={true}
                                 />
                             </OwnerSection>
                             <ParticipantsSection>
