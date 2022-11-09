@@ -104,9 +104,9 @@ const TaskInbox = () => {
     };
 
     const tasks = filterTasks(myTasks, currentUserId, filters);
-    const uniqueParticipantIds = tasks
-        .map((t) => t.playbook_run_participant_user_ids)
-        .reduce((first, second) => [...new Set(first.concat(second))], []);
+    const uniqueParticipantIds = [...new Set(
+        tasks.reduce((cumm: string[], task) => cumm.concat(task.playbook_run_participant_user_ids), [])
+    )];
     const assignedNum = tasks.filter((item) => item.assignee_id === currentUserId).length;
     const overdueNum = tasks.filter((item) => isTaskOverdue(item)).length;
     const [zerocaseTitle, zerocaseSubtitle] = getZeroCaseTexts(myTasks.length, tasks.length);
