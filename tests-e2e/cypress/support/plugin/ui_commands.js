@@ -291,14 +291,21 @@ Cypress.Commands.add('getFirstPostId', () => {
         .invoke('replace', 'post_', '');
 });
 
-Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
+Cypress.Commands.add('assertRunDetailsPageRenderComplete', () => {
     cy.findByTestId('lhs-navigation').should('be.visible').within(() => {
         cy.contains('Playbooks').should('be.visible');
         cy.contains('Runs').should('be.visible');
     });
     cy.get('#playbooks-sidebar-right').should('be.visible').within(() => {
-        cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
+        cy.findByTestId('assignee-profile-selector').should('contain', '@');
         cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
-        cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
+        cy.findAllByTestId('profile-option', {exact: false})
+            .should('have.length.of.at.least', 1)
+            .each(($profileDiv) => {
+                cy.wrap($profileDiv)
+                    .find('img')
+                    .should('have.attr', 'src')
+                    .should('not.be.empty');
+            });
     });
 });

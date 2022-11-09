@@ -182,13 +182,14 @@ describe('lhs', () => {
             // # intercept all telemetry calls
             cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
-            // # The assertions here guard against the click() on 194
+            // # The assertions here guard against the `Follow` click()
             // # happening on a detached element.
-            cy.assertRunDetailsPageRenderComplete(testUser.username);
+            cy.assertRunDetailsPageRenderComplete();
             cy.findByTestId('runinfo-following').should('be.visible').within(() => {
                 // # Verify follower icon
                 cy.findAllByTestId('profile-option', {exact: false}).should('have.length', 1);
-                cy.findByText('Follow').should('be.visible').click().wait('@telemetry');
+                cy.findByText('Follow').should('be.visible').click();
+                cy.wait('@telemetry');
 
                 // # Verify icons update
                 cy.wait('@gqlPlaybookLHS');

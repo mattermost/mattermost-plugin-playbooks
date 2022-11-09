@@ -65,7 +65,7 @@ describe('runs > run details page > status update', () => {
             // # that help ensure rendering has finished.
             cy.gqlInterceptQuery('PlaybookLHS');
             cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-            cy.assertRunDetailsPageRenderComplete(testUser.username);
+            cy.assertRunDetailsPageRenderComplete();
         });
     });
 
@@ -141,7 +141,7 @@ describe('runs > run details page > status update', () => {
                     // # reload url
                     cy.visit(`/playbooks/runs/${testRun.id}`);
                     cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                    cy.assertRunDetailsPageRenderComplete(testUser.username);
+                    cy.assertRunDetailsPageRenderComplete();
 
                     // # Click on kebab menu
                     cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
@@ -202,7 +202,7 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete();
             });
         });
 
@@ -232,7 +232,7 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete();
             });
 
             // # Click post update
@@ -255,7 +255,7 @@ describe('runs > run details page > status update', () => {
             cy.apiLogin(testViewerUser).then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete();
 
                 // * Check new due date
                 cy.findByTestId('update-due-date-text').contains('Update due');

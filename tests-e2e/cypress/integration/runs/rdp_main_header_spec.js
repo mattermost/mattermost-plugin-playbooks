@@ -150,7 +150,7 @@ describe('runs > run details page > header', () => {
                 // # that help ensure rendering has finished.
                 cy.gqlInterceptQuery('PlaybookLHS');
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete();
             });
         });
 
@@ -508,7 +508,7 @@ describe('runs > run details page > header', () => {
                 // # that help ensure rendering has finished.
                 cy.gqlInterceptQuery('PlaybookLHS');
                 cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                cy.assertRunDetailsPageRenderComplete();
             });
         });
 
@@ -612,7 +612,7 @@ describe('runs > run details page > header', () => {
                         // # Visit the playbook run
                         cy.visit(`/playbooks/runs/${run.id}`);
                         cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                        cy.assertRunDetailsPageRenderComplete(testUser.username);
+                        cy.assertRunDetailsPageRenderComplete();
 
                         // * Assert that component is rendered
                         getHeader().findByText('Participate').should('be.visible');
