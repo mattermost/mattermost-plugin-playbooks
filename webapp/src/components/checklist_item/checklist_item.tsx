@@ -84,11 +84,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const toggleDescription = () => setShowDescription(!showDescription);
 
     useUpdateEffect(() => {
-        setTitleValue(props.checklistItem.title);
-        setDescValue(props.checklistItem.description);
-        setCommand(props.checklistItem.command);
-        setAssigneeID(props.checklistItem.assignee_id);
-        setDueDate(props.checklistItem.due_date);
+        if (!isEditing) {
+            setTitleValue(props.checklistItem.title);
+            setDescValue(props.checklistItem.description);
+            setCommand(props.checklistItem.command);
+            setAssigneeID(props.checklistItem.assignee_id);
+            setDueDate(props.checklistItem.due_date);
+        }
     }, [props.checklistItem]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
