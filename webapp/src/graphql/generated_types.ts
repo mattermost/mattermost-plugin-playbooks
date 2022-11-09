@@ -256,6 +256,7 @@ export type QueryRunArgs = {
 };
 
 export type QueryRunsArgs = {
+    channelID?: InputMaybe<Scalars['String']>;
     participantOrFollowerID?: InputMaybe<Scalars['String']>;
     sort?: InputMaybe<Scalars['String']>;
     statuses?: InputMaybe<Array<Scalars['String']>>;
