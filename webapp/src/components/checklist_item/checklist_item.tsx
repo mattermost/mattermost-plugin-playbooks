@@ -92,7 +92,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem]);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+    const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {

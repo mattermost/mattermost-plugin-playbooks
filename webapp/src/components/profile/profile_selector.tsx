@@ -24,12 +24,17 @@ import Dropdown from 'src/components/dropdown';
 export interface Option {
     value: string;
     label: JSX.Element | string;
-    userType: 'participant' | 'non_participant';
     user: UserProfile;
 }
 
 interface ActionObj {
     action: ActionTypes;
+}
+
+interface UserGroup {
+    defaultLabel: string;
+    subsetLabel: string;
+    subsetUserIds: string[];
 }
 
 interface Props {
@@ -47,16 +52,27 @@ interface Props {
     withoutProfilePic?: boolean;
     defaultValue?: string;
     selfIsFirstOption?: boolean;
-    getAllUsers: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userType?: string, user?: UserProfile) => void;
+    onSelectedChange?: (user?: UserProfile) => void;
     customControlProps?: any;
     placement?: Placement;
     className?: string;
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
-    memberUserIds: string[];
-    isMembersModeEnabled: boolean;
+
+    // isMembersModeEnabled: boolean;
+
+    /**
+     * Handler for getting the main user group.
+     */
+    getAllUsers: () => Promise<UserProfile[]>;
+
+    /**
+     * When passed, two user groups will be shown in the dropdown
+     * - one with subsetLabel with all the users that are in the subsetUserIds
+     * - one with defaultLabel and the rest of the users
+     */
+    userGroups?: UserGroup;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -84,8 +100,8 @@ export default function ProfileSelector(props: Props) {
         }
     }, [props.controlledOpenToggle]);
 
-    const [userOptions, setUserOptions] = useState<Option[]>([]);
-    const [userNotInListOptions, setUserNotInListOptions] = useState<Option[]>([]);
+    const [userInSubsetOptions, setUserInSubsetOptions] = useState<Option[]>([]);
+    const [userNotInSubsetOptions, setUserNotInSubsetOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
@@ -96,12 +112,13 @@ export default function ProfileSelector(props: Props) {
             return props.selfIsFirstOption && userId === currentUserId;
         };
 
+        const subsetUserIds = props.userGroups?.subsetUserIds || [];
         const allUsers = await props.getAllUsers();
-        const usersNotInList = allUsers.filter((user) => !props.memberUserIds.find((userId) => userId === user.id));
-        const usersInList = allUsers.filter((user) => props.memberUserIds.find((userId) => userId === user.id));
+        const usersNotInSubset = allUsers.filter((user) => !subsetUserIds.find((userId) => userId === user.id));
+        const usersInSubset = allUsers.filter((user) => subsetUserIds.find((userId) => userId === user.id));
 
-        const optionNotInList = usersNotInList.map((user: UserProfile) => {
-            return ({
+        const userToOption = (user: UserProfile) => {
+            return {
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                 label: (
                     <Profile
@@ -109,35 +126,23 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
-                userType: 'non_participant',
                 user,
-            } as Option);
-        });
+            } as Option;
+        };
 
-        const optionList = usersInList.map((user: UserProfile) => {
-            return ({
-                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
-                label: (
-                    <Profile
-                        userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
-                    />
-                ),
-                userType: 'participant',
-                user,
-            } as Option);
-        });
+        const optionNotInSubsetGroup = usersNotInSubset.map((user: UserProfile) => userToOption(user));
+        const optionSubsetGroup = usersInSubset.map((user: UserProfile) => userToOption(user));
 
         if (props.selfIsFirstOption) {
-            const idx = optionList.findIndex((elem) => elem.user.id === currentUserId);
+            const idx = optionSubsetGroup.findIndex((elem) => elem.user.id === currentUserId);
             if (idx > 0) {
-                const currentUser = optionList.splice(idx, 1);
-                optionList.unshift(currentUser[0]);
+                const currentUser = optionSubsetGroup.splice(idx, 1);
+                optionSubsetGroup.unshift(currentUser[0]);
             }
         }
 
-        setUserNotInListOptions(optionNotInList);
-        setUserOptions(optionList);
+        setUserNotInSubsetOptions(optionNotInSubsetGroup);
+        setUserInSubsetOptions(optionSubsetGroup);
     }
 
     // Fill in the userOptions on mount.
@@ -150,16 +155,16 @@ export default function ProfileSelector(props: Props) {
     // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
     // have userOptions
     useEffect(() => {
-        if (userOptions === []) {
+        if (userInSubsetOptions === []) {
             return;
         }
-        const user = userOptions.find((option: Option) => option.user.id === props.selectedUserId);
+        const user = userInSubsetOptions.find((option: Option) => option.user.id === props.selectedUserId);
         if (user) {
             setSelected(user);
         } else {
             setSelected(null);
         }
-    }, [userOptions, props.selectedUserId]);
+    }, [userInSubsetOptions, props.selectedUserId]);
 
     const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
@@ -170,7 +175,7 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userType, value?.user);
+            props.onSelectedChange(value?.user);
         }
     };
 
@@ -245,15 +250,15 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
-        if (!props.isMembersModeEnabled) {
-            return userNotInListOptions;
+        if (!props.userGroups) {
+            return userNotInSubsetOptions;
         }
-        if (userNotInListOptions.length === 0) {
-            return userOptions;
+        if (userNotInSubsetOptions.length === 0) {
+            return userInSubsetOptions;
         }
         return [
-            {label: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}), options: userOptions},
-            {label: formatMessage({defaultMessage: 'NOT PARTICIPATING'}), options: userNotInListOptions},
+            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
         ];
     };
 
@@ -278,8 +283,8 @@ export default function ProfileSelector(props: Props) {
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-react-select'
+                className='playbook-react-select'
                 {...props.customControlProps}
             />
         </Dropdown>

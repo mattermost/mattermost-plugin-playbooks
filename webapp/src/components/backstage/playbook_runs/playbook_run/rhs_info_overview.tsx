@@ -126,8 +126,8 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
         }
     };
 
-    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
-        if (!user || !userType) {
+    const onOwnerChange = async (user?: UserProfile) => {
+        if (!user) {
             return;
         }
         setOwner(user.id);

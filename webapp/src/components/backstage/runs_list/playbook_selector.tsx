@@ -162,8 +162,8 @@ export default function PlaybookSelector(props: Props) {
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-react-select'
+                className='playbook-react-select'
                 {...props.customControlProps}
             />
         </Dropdown>

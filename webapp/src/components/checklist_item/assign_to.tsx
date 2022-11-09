@@ -17,7 +17,7 @@ interface AssignedToProps {
     withoutName?: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
-    onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onSelectedChange: (user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -43,7 +43,11 @@ const AssignTo = (props: AssignedToProps) => {
                     />
                 }
                 enableEdit={true}
-                memberUserIds={props.memberUserIds}
+                userGroups={{
+                    subsetUserIds: props.memberUserIds,
+                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                }}
                 getAllUsers={async () => {
                     return profilesInTeam;
                 }}
@@ -57,7 +61,6 @@ const AssignTo = (props: AssignedToProps) => {
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
-                isMembersModeEnabled={true}
             />
         );
     }
@@ -71,7 +74,11 @@ const AssignTo = (props: AssignedToProps) => {
             <StyledProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
-                memberUserIds={props.memberUserIds}
+                userGroups={{
+                    subsetUserIds: props.memberUserIds,
+                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                }}
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
@@ -100,7 +107,6 @@ const AssignTo = (props: AssignedToProps) => {
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
-                isMembersModeEnabled={true}
             />
         </AssignToContainer>
     );

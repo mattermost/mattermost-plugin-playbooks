@@ -124,7 +124,11 @@ const RHSAbout = (props: Props) => {
                                     getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}
-                                    memberUserIds={props.playbookRun.participant_ids}
+                                    userGroups={{
+                                        subsetUserIds: props.playbookRun.participant_ids,
+                                        defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                                        subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                                    }}
                                     isMembersModeEnabled={true}
                                 />
                             </OwnerSection>

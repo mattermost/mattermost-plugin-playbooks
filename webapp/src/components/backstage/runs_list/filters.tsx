@@ -86,7 +86,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         });
     };
 
-    const setOwnerId = (userType?: string, user?: UserProfile) => {
+    const setOwnerId = (user?: UserProfile) => {
         setFetchParams((oldParams) => {
             return {...oldParams, owner_user_id: user?.id, page: 0};
         });
@@ -179,10 +179,8 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onCustomReset: resetOwner,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                memberUserIds={[]}
                 getAllUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
-                isMembersModeEnabled={false}
             />
             {!fixedPlaybook &&
                 <PlaybookSelector

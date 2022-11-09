@@ -33,7 +33,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
-    onAssigneeChange: (userType?: string, user?: UserProfile) => void;
+    onAssigneeChange: (user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
