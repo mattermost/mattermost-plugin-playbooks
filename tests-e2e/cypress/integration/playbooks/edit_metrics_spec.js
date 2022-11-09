@@ -61,7 +61,7 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewMetric(0, 'test duration', '1 minute per run', 'test description');
 
                 // # Add and verify metric
-                addMetric('Dollars', 'test dollars', '2', 'test description 2');
+                addMetric('Cost', 'test dollars', '2', 'test description 2');
                 verifyViewMetric(1, 'test dollars', '2 per run', 'test description 2');
 
                 // # Add and verify metric
@@ -199,7 +199,7 @@ describe('playbooks > edit_metrics', () => {
                 // # Add metric
                 cy.findByRole('button', {name: 'Add Metric'}).click();
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Dollars').click();
+                    cy.findByText('Cost').click();
                 });
 
                 // # Don't fill in the metric's details
@@ -312,7 +312,7 @@ describe('playbooks > edit_metrics', () => {
                 // # Add metric
                 cy.findByRole('button', {name: 'Add Metric'}).click();
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Dollars').click();
+                    cy.findByText('Cost').click();
                 });
 
                 // # Don't fill in the metric's details
@@ -380,7 +380,7 @@ describe('playbooks > edit_metrics', () => {
                 // # Make sure we can add a metric and then delete it, then can keep editing
                 cy.findByRole('button', {name: 'Add Metric'}).click();
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Dollars').click();
+                    cy.findByText('Cost').click();
                 });
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
@@ -393,13 +393,13 @@ describe('playbooks > edit_metrics', () => {
                 // # Make sure we can add a metric and then delete it, then can keep adding
                 cy.findByRole('button', {name: 'Add Metric'}).click();
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Dollars').click();
+                    cy.findByText('Cost').click();
                 });
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findByRole('button', {name: 'Add Metric'}).click();
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Dollars').click();
+                    cy.findByText('Cost').click();
                 });
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
@@ -456,7 +456,7 @@ describe('playbooks > edit_metrics', () => {
                 saveMetric();
 
                 // # Add and verify currency
-                addMetric('Dollars', 'test money', '0', 'test description 2');
+                addMetric('Cost', 'test money', '0', 'test description 2');
                 verifyViewMetric(1, 'test money', '0', 'test description 2');
 
                 // # Verify it shows 0, then turn it into null.
