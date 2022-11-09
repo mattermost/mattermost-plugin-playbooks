@@ -274,7 +274,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     isDragging={props.dragging}
                 />
                 <CheckBoxButton
-                    readOnly={props.readOnly || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
+                    readOnly={props.readOnly}
+                    disabled={props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                 />

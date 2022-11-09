@@ -1,7 +1,7 @@
 
 import React, {useRef, useState} from 'react';
 import {useUpdateEffect} from 'react-use';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 import {ClientError} from '@mattermost/client';
 
@@ -12,6 +12,7 @@ interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
     item: ChecklistItem;
     readOnly: boolean;//when true, component can receive events, but can't be modified.
+    disabled?: boolean;
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
@@ -48,13 +49,22 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
             type='checkbox'
             checked={isChecked}
             onChange={handleOnChange}
+            disabled={props.disabled}
+            readOnly={props.readOnly}
         />);
 };
 
-const ChecklistItemInput = styled.input`
+const ChecklistItemInput = styled.input<{readOnly: boolean}>`
     :disabled:hover {
         cursor: default;
     }
+
+    ${({readOnly}) => readOnly && css`
+        opacity: 0.38;
+        &&:hover {
+            cursor: default;
+        }
+    `}
 `;
 
 export const CollapsibleChecklistItemDescription = (props: {expanded: boolean, children: React.ReactNode}) => {
