@@ -2393,4 +2393,20 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.60.0"),
+		toVersion:   semver.MustParse("0.61.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := dropIndexIfExists(e, sqlStore, "IR_Incident", "ChannelID"); err != nil {
+					return errors.Wrapf(err, "failed to remove channelid uniqueness constraint")
+				}
+			} else {
+				if _, err := e.Exec(`ALTER TABLE IR_Incident DROP CONSTRAINT IF EXISTS ir_incident_channelid_key`); err != nil {
+					return errors.Wrapf(err, "failed to remove channelid uniqueness constraint")
+				}
+			}
+			return nil
+		},
+	},
 }
