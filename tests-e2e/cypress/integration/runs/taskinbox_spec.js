@@ -106,6 +106,9 @@ describe('Task Inbox >', () => {
         cy.apiLogin(testUser);
 
         cy.visit(`/playbooks/runs/${testRun.id}`);
+        cy.gqlInterceptQuery('PlaybookLHS');
+        cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+        cy.assertRunDetailsPageRenderComplete(testUser.username);
     });
 
     const getRHS = () => cy.get('#playbooks-backstage-sidebar-right');
@@ -114,16 +117,13 @@ describe('Task Inbox >', () => {
         // # Intercept all calls to telemetry
         cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
-        // * assert RHS is not shown
-        getRHS().should('not.exist');
-
         // # Click on global header icon to open
         cy.findByTestId('header-task-inbox-icon').click();
 
         // * assert RHS is shown
         getRHS().should('be.visible');
 
-        // * assert  telemetry pageview
+        // * assert telemetry pageview
         cy.wait('@telemetry').then((interception) => {
             expect(interception.request.body.name).to.eq('task_inbox');
             expect(interception.request.body.type).to.eq('page');
