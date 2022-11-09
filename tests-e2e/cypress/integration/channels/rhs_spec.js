@@ -400,7 +400,7 @@ describe('channels > rhs', () => {
     });
 
     describe('is toggled', () => {
-        it.only('by icon in channel header', () => {
+        it('by icon in channel header', () => {
             // # Size the viewport to show plugin icons even when RHS is open
             cy.viewport('macbook-13');
 
