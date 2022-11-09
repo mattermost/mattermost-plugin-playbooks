@@ -18,7 +18,7 @@ import styled from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {PlaybookRunFilterButton} from '../backstage/styles';
+import {FilterButton} from '../backstage/styles';
 import Dropdown from 'src/components/dropdown';
 
 export interface Option {
@@ -212,7 +212,7 @@ export default function ProfileSelector(props: Props) {
         );
     } else {
         target = (
-            <PlaybookRunFilterButton
+            <FilterButton
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -222,7 +222,7 @@ export default function ProfileSelector(props: Props) {
             >
                 {selected === null ? props.placeholder : selected.label}
                 {dropdownArrow}
-            </PlaybookRunFilterButton>
+            </FilterButton>
         );
     }
 
