@@ -23,6 +23,14 @@ export function transformEvent(event, metadata) {
     case 'playbookrun_request_update_click':
         event.event = 'playbookrun_request_update';
         break;
+    case 'playbookrun_action':
+        switch (action) {
+        case 'update_playbookrun_actions':
+            event.event = 'playbookrun_update_actions';
+            delete event.properties.Action;
+            break;
+        }
+        break;
 
     // Convert old frontend events
     case 'frontend':

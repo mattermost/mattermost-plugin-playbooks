@@ -186,6 +186,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
+			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -251,7 +252,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
@@ -296,9 +297,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 			AND rp.UserID = ?
 			AND rp.IsFollower = TRUE)`, userIDFilter)
 		participantFilterExpr := sq.Expr(`EXISTS(SELECT 1
-			FROM ChannelMembers AS cm
-			WHERE cm.ChannelId = i.ChannelID
-			AND cm.UserId = ?)`, userIDFilter)
+			FROM IR_Run_Participants as rp
+			WHERE rp.IncidentID = i.ID
+			AND rp.UserID = ?
+			AND rp.IsParticipant = TRUE)`, userIDFilter)
 		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
 		if options.IncludeFavorites {
@@ -423,11 +425,14 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
+
 	playbookRun = playbookRun.Clone()
 
 	if playbookRun.ID == "" {
 		playbookRun.ID = model.NewId()
 	}
+
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
@@ -438,41 +443,43 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                                    rawPlaybookRun.ID,
-			"Name":                                  rawPlaybookRun.Name,
-			"Description":                           rawPlaybookRun.Summary,
-			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
-			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
-			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
-			"TeamID":                                rawPlaybookRun.TeamID,
-			"ChannelID":                             rawPlaybookRun.ChannelID,
-			"CreateAt":                              rawPlaybookRun.CreateAt,
-			"EndAt":                                 rawPlaybookRun.EndAt,
-			"PostID":                                rawPlaybookRun.PostID,
-			"PlaybookID":                            rawPlaybookRun.PlaybookID,
-			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
-			"ReminderPostID":                        rawPlaybookRun.ReminderPostID,
-			"PreviousReminder":                      rawPlaybookRun.PreviousReminder,
-			"ReminderMessageTemplate":               rawPlaybookRun.ReminderMessageTemplate,
-			"StatusUpdateEnabled":                   rawPlaybookRun.StatusUpdateEnabled,
-			"ReminderTimerDefaultSeconds":           rawPlaybookRun.ReminderTimerDefaultSeconds,
-			"CurrentStatus":                         rawPlaybookRun.CurrentStatus,
-			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
-			"ConcatenatedInvitedUserIDs":            rawPlaybookRun.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":           rawPlaybookRun.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                    rawPlaybookRun.DefaultOwnerID,
-			"ConcatenatedBroadcastChannelIDs":       rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"ConcatenatedWebhookOnCreationURLs":     rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
-			"Retrospective":                         rawPlaybookRun.Retrospective,
-			"RetrospectivePublishedAt":              rawPlaybookRun.RetrospectivePublishedAt,
-			"RetrospectiveEnabled":                  rawPlaybookRun.RetrospectiveEnabled,
-			"MessageOnJoin":                         rawPlaybookRun.MessageOnJoin,
-			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
-			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"CategoryName":                          rawPlaybookRun.CategoryName,
-			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"ID":                                      rawPlaybookRun.ID,
+			"Name":                                    rawPlaybookRun.Name,
+			"Description":                             rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
+			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
+			"ReporterUserID":                          rawPlaybookRun.ReporterUserID,
+			"TeamID":                                  rawPlaybookRun.TeamID,
+			"ChannelID":                               rawPlaybookRun.ChannelID,
+			"CreateAt":                                rawPlaybookRun.CreateAt,
+			"EndAt":                                   rawPlaybookRun.EndAt,
+			"PostID":                                  rawPlaybookRun.PostID,
+			"PlaybookID":                              rawPlaybookRun.PlaybookID,
+			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
+			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
+			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
+			"ReminderMessageTemplate":                 rawPlaybookRun.ReminderMessageTemplate,
+			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
+			"ReminderTimerDefaultSeconds":             rawPlaybookRun.ReminderTimerDefaultSeconds,
+			"CurrentStatus":                           rawPlaybookRun.CurrentStatus,
+			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
+			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":             rawPlaybookRun.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                      rawPlaybookRun.DefaultOwnerID,
+			"ConcatenatedBroadcastChannelIDs":         rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
+			"ConcatenatedWebhookOnCreationURLs":       rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
+			"Retrospective":                           rawPlaybookRun.Retrospective,
+			"RetrospectivePublishedAt":                rawPlaybookRun.RetrospectivePublishedAt,
+			"RetrospectiveEnabled":                    rawPlaybookRun.RetrospectiveEnabled,
+			"MessageOnJoin":                           rawPlaybookRun.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds":    rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":                rawPlaybookRun.RetrospectiveWasCanceled,
+			"ConcatenatedWebhookOnStatusUpdateURLs":   rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
+			"CategoryName":                            rawPlaybookRun.CategoryName,
+			"StatusUpdateBroadcastChannelsEnabled":    rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
+			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
+			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -488,21 +495,24 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 }
 
 // UpdatePlaybookRun updates a playbook run.
-func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error {
+func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
-		return errors.New("playbook run is nil")
+		return nil, errors.New("playbook run is nil")
 	}
 	if playbookRun.ID == "" {
-		return errors.New("ID should not be empty")
+		return nil, errors.New("ID should not be empty")
 	}
+
+	playbookRun = playbookRun.Clone()
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
@@ -510,44 +520,46 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                                  "",
-			"Description":                           rawPlaybookRun.Summary,
-			"SummaryModifiedAt":                     rawPlaybookRun.SummaryModifiedAt,
-			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
-			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
-			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
-			"ReminderPostID":                        rawPlaybookRun.ReminderPostID,
-			"PreviousReminder":                      rawPlaybookRun.PreviousReminder,
-			"ConcatenatedInvitedUserIDs":            rawPlaybookRun.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":           rawPlaybookRun.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                    rawPlaybookRun.DefaultOwnerID,
-			"ConcatenatedBroadcastChannelIDs":       rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"ConcatenatedWebhookOnCreationURLs":     rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
-			"Retrospective":                         rawPlaybookRun.Retrospective,
-			"RetrospectivePublishedAt":              rawPlaybookRun.RetrospectivePublishedAt,
-			"MessageOnJoin":                         rawPlaybookRun.MessageOnJoin,
-			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
-			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"StatusUpdateBroadcastChannelsEnabled":  rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
-			"StatusUpdateBroadcastWebhooksEnabled":  rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
-			"StatusUpdateEnabled":                   rawPlaybookRun.StatusUpdateEnabled,
+			"Name":                                    "",
+			"Description":                             rawPlaybookRun.Summary,
+			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
+			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
+			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
+			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
+			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
+			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
+			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":             rawPlaybookRun.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                      rawPlaybookRun.DefaultOwnerID,
+			"ConcatenatedBroadcastChannelIDs":         rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
+			"ConcatenatedWebhookOnCreationURLs":       rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
+			"Retrospective":                           rawPlaybookRun.Retrospective,
+			"RetrospectivePublishedAt":                rawPlaybookRun.RetrospectivePublishedAt,
+			"MessageOnJoin":                           rawPlaybookRun.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds":    rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":                rawPlaybookRun.RetrospectiveWasCanceled,
+			"ConcatenatedWebhookOnStatusUpdateURLs":   rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
+			"StatusUpdateBroadcastChannelsEnabled":    rawPlaybookRun.StatusUpdateBroadcastChannelsEnabled,
+			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
+			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
+			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
+			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
 	}
 
 	if err = s.updateRunMetrics(tx, rawPlaybookRun.PlaybookRun); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	return nil
+	return playbookRun, nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
@@ -834,7 +846,7 @@ func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID s
 // GetOwners returns the owners of the playbook runs selected by options
 func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
@@ -977,18 +989,32 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		))`, info.UserID, info.UserID)
 }
 
-func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
-	if teamID != "" {
-		return sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
-	}
-
-	return sq.Expr(fmt.Sprintf(`
+func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sqlizer {
+	filterToSelectedTeam := sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
+	onlyTeamsUserIsAMember := sq.Expr(fmt.Sprintf(`
 		EXISTS(SELECT 1
 					FROM TeamMembers as tm
 					WHERE tm.TeamId = %s.TeamID
 					  AND tm.DeleteAt = 0
 		  	  		  AND tm.UserId = ?)
-		`, tableName), userID)
+		`, tableName), info.UserID)
+
+	if info.IsAdmin {
+		if teamID != "" {
+			return filterToSelectedTeam
+		}
+		return nil
+	}
+
+	if teamID != "" {
+		return sq.And{
+			filterToSelectedTeam,
+			onlyTeamsUserIsAMember,
+		}
+	}
+
+	return onlyTeamsUserIsAMember
+
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {
@@ -1428,9 +1454,25 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	return nil
 }
 
+func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if id == "" {
+		return errors.New("id should not be empty")
+	}
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(setmap).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run with id '%s'", id)
+	}
+
+	return nil
+}
+
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
-	newChecklists := populateChecklistIDs(playbookRun.Checklists)
-	checklistsJSON, err := checklistsToJSON(newChecklists)
+	checklistsJSON, err := checklistsToJSON(playbookRun.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id '%s'", playbookRun.ID)
 	}

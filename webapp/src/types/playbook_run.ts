@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {TimelineEvent} from 'src/types/rhs';
-import {Checklist} from 'src/types/playbook';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 export interface PlaybookRun {
     id: string;
@@ -42,7 +42,12 @@ export interface PlaybookRun {
     retrospective_enabled: boolean;
     participant_ids: string[];
     metrics_data: RunMetricData[];
+
+    /** Whether a channel member should be created when a new participant joins the run */
     create_channel_member_on_new_participant: boolean;
+
+    /** Whether a channel member should be removed when an existing participant leaves the run */
+    remove_channel_member_on_removed_participant: boolean;
 }
 
 export interface StatusPost {
@@ -131,3 +136,15 @@ export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParams, b: FetchPlayboo
         a.started_gte === b.started_gte &&
         a.started_lt === b.started_lt);
 };
+
+// PlaybookRunChecklistItem annotates ChecklistsItem with properties that associate it with the
+// containing playbook run.
+export interface PlaybookRunChecklistItem extends ChecklistItem {
+    item_num: number;
+    playbook_run_id: string;
+    playbook_run_name: string;
+    playbook_run_owner_user_id: string;
+    playbook_run_create_at: number;
+    checklist_title: string;
+    checklist_num: number;
+}

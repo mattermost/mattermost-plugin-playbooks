@@ -15,14 +15,17 @@ import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/compone
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    RECEIVED_PLAYBOOK_RUNS,
+    ReceivedPlaybookRuns,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
-    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedTeamPlaybookRuns,
+    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
@@ -53,6 +56,10 @@ import {
     ShowRunActionsModal,
     HIDE_RUN_ACTIONS_MODAL,
     HideRunActionsModal,
+    SHOW_PLAYBOOK_ACTIONS_MODAL,
+    ShowPlaybookActionsModal,
+    HIDE_PLAYBOOK_ACTIONS_MODAL,
+    HidePlaybookActionsModal,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -63,6 +70,10 @@ import {
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
+    OPEN_BACKSTAGE_RHS,
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
+    OpenBackstageRHS,
     SetEveryChecklistCollapsedState,
     SET_EVERY_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
@@ -260,6 +271,11 @@ export const playbookRestored = (teamID: string): PlaybookRestored => ({
     teamID,
 });
 
+export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({
+    type: RECEIVED_PLAYBOOK_RUNS,
+    playbookRuns,
+});
+
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
     type: RECEIVED_TEAM_PLAYBOOK_RUNS,
     playbookRuns,
@@ -299,6 +315,14 @@ export const hideRunActionsModal = (): HideRunActionsModal => ({
     type: HIDE_RUN_ACTIONS_MODAL,
 });
 
+export const showPlaybookActionsModal = (): ShowPlaybookActionsModal => ({
+    type: SHOW_PLAYBOOK_ACTIONS_MODAL,
+});
+
+export const hidePlaybookActionsModal = (): HidePlaybookActionsModal => ({
+    type: HIDE_PLAYBOOK_ACTIONS_MODAL,
+});
+
 export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({
     type: SET_HAS_VIEWED_CHANNEL,
     channelId,
@@ -335,4 +359,14 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
     type: SET_CHECKLIST_ITEMS_FILTER,
     key,
     nextState,
+});
+
+export const closeBackstageRHS = (): CloseBackstageRHS => ({
+    type: CLOSE_BACKSTAGE_RHS,
+});
+
+export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
+    type: OPEN_BACKSTAGE_RHS,
+    section,
+    viewMode,
 });

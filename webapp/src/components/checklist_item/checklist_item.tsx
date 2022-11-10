@@ -59,6 +59,7 @@ interface ChecklistItemProps {
     dragging: boolean;
     disabled: boolean;
     collapsibleDescription: boolean;
+    descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
     cancelAddingItem?: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
@@ -70,7 +71,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
-    const [showDescription, setShowDescription] = useState(true);
+    const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
@@ -83,8 +84,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const toggleDescription = () => setShowDescription(!showDescription);
 
     useUpdateEffect(() => {
-        setAssigneeID(props.checklistItem.assignee_id);
+        setTitleValue(props.checklistItem.title);
+        setDescValue(props.checklistItem.description);
         setCommand(props.checklistItem.command);
+        setAssigneeID(props.checklistItem.assignee_id);
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem]);
 
