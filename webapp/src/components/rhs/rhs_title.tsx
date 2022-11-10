@@ -7,7 +7,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -16,10 +15,11 @@ import LeftChevron from 'src/components/assets/icons/left_chevron';
 import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
-import {setRHSViewingList} from 'src/actions';
+import {setRHSViewingList, setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
+import {HeaderSubtitle, HeaderVerticalDivider} from '../backstage/playbook_runs/playbook_run/rhs';
 
 const RHSTitle = () => {
     const dispatch = useDispatch();
@@ -69,6 +69,35 @@ const RHSTitle = () => {
                         trigger={'channel_rhs'}
                     />
                 </FollowingWrapper>
+            </RHSTitleContainer>
+        );
+    } else if (rhsState === RHSState.ViewingParticipants) {
+        const tooltip = (
+            <Tooltip id={'view-run-overview'}>
+                {formatMessage({defaultMessage: 'Manage run participants list'})}
+            </Tooltip>
+        );
+
+        return (
+            <RHSTitleContainer>
+                <Button
+                    onClick={() => dispatch(setRHSViewingPlaybookRun())}
+                    data-testid='back-button'
+                >
+                    <LeftChevron/>
+                </Button>
+
+                <OverlayTrigger
+                    placement={'top'}
+                    delay={OVERLAY_DELAY}
+                    overlay={tooltip}
+                >
+                    <RHSTitleText>
+                        {formatMessage({defaultMessage: 'Participants'})}
+                    </RHSTitleText>
+                </OverlayTrigger>
+                <HeaderVerticalDivider/>
+                {<HeaderSubtitle data-testid='rhs-subtitle'>{playbookRun?.name}</HeaderSubtitle>}
             </RHSTitleContainer>
         );
     }
