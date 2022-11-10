@@ -36,7 +36,7 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRun: PlaybookRun, trigger: 'channel_rhs'|'run_details') => {
+export const useParticipateInRun = (playbookRun: PlaybookRun | undefined, trigger: 'channel_rhs'|'run_details') => {
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
 
     const ParticipateConfirmModal = (

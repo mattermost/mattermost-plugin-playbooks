@@ -21,7 +21,7 @@ import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
@@ -72,7 +72,7 @@ const RHSRunDetails = () => {
         }
     }, [runDetailsStep]);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun || {} as PlaybookRun, 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
     const displayReadOnlyToast = useMemo(() => debounce(() => {

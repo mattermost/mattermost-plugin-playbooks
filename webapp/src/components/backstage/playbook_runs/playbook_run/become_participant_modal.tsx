@@ -22,7 +22,7 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: PlaybookRun | undefined;
     show: boolean;
     hideModal: () => void;
     trigger: string;
@@ -33,15 +33,22 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
 
     const currentUserId = useSelector(getCurrentUserId);
     const [checkboxState, setCheckboxState] = useState(false);
-    const {addToRun} = useManageRunMembership(playbookRun.id, [PlaybookLhsDocument]);
+    const {addToRun} = useManageRunMembership(playbookRun?.id, [PlaybookLhsDocument]);
     const addToast = useToaster().add;
-    const [channel, meta] = useChannel(playbookRun.channel_id);
+    const channelId = playbookRun?.channel_id ?? '';
+    const playbookRunId = playbookRun?.id || '';
+    const [channel, meta] = useChannel(channelId);
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
-    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id)) || isPrivateChannelWithAccess;
+    const isChannelMember = useSelector(isCurrentUserChannelMember(channelId)) || isPrivateChannelWithAccess;
     const noAccessToJoinTheChannel = meta.error !== null && meta.error.status_code === 403;
 
     const renderExtraMsg = () => {
-        if (playbookRun.create_channel_member_on_new_participant) {
+        // no extra info if already a channel member
+        if (isChannelMember) {
+            return null;
+        }
+
+        if (playbookRun?.create_channel_member_on_new_participant) {
             return (
                 <ExtraInfoContainer>
                     <LightningBoltOutlineIcon
@@ -51,11 +58,6 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
                     {formatMessage({defaultMessage: 'You’ll also be added to the channel linked to this run.'})}
                 </ExtraInfoContainer>
             );
-        }
-
-        // no extra info if already a channel member
-        if (isChannelMember) {
-            return null;
         }
 
         const text = noAccessToJoinTheChannel ? formatMessage({defaultMessage: 'Request access to the channel linked to this run'}) : formatMessage({defaultMessage: 'Also add me to the channel linked to this run'});
@@ -87,14 +89,14 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
 
                 // if no permissions to join the channel and checkbox is selected send a join request
                 if (noAccessToJoinTheChannel && checkboxState) {
-                    requestJoinChannel(playbookRun.id);
+                    requestJoinChannel(playbookRunId);
                 }
             })
             .catch(() => addToast({
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: trigger});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
 
         hideModal();
     };
