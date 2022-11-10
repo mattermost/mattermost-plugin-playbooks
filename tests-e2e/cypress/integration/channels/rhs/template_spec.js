@@ -31,6 +31,10 @@ describe('channels > rhs > template', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 
+                // * Checking the bot badge as an indicator of page
+                // * stability / rendering finished
+                cy.findByText('BOT').should('be.visible');
+
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -50,6 +54,10 @@ describe('channels > rhs > template', () => {
             it('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                // * Checking the bot badge as an indicator of page
+                // * stability / rendering finished
+                cy.findByText('BOT').should('be.visible');
 
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();

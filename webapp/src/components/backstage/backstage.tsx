@@ -14,6 +14,8 @@ import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
+import BackstageRHS from 'src/components/backstage/rhs/rhs';
+
 import {ToastProvider} from './toast_banner';
 import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
@@ -58,6 +60,7 @@ const Backstage = () => {
                 </MainContainer>
                 <CloudModal/>
             </ToastProvider>
+            <BackstageRHS/>
         </BackstageContainer>
     );
 };
