@@ -13,6 +13,9 @@ type GlobalSettings struct {
 	// are enabled. Changing this field requires access to the system console plugin
 	// configuration.
 	EnableExperimentalFeatures bool `json:"enable_experimental_features"`
+
+	// LinkRunToExistingChannelEnabled is a read-only field set to true when link to exsiting channel is enabled
+	LinkRunToExistingChannelEnabled bool `json:"link_to_existing_channel_enabled"`
 }
 
 // SettingsService handles communication with the settings related methods.
