@@ -17,6 +17,7 @@ export enum TimelineEventType {
     RanSlashCommand = 'ran_slash_command',
     EventFromPost = 'event_from_post',
     UserJoinedLeft = 'user_joined_left',
+    ParticipantsChanged = 'participants_changed',
     PublishedRetrospective = 'published_retrospective',
     CanceledRetrospective = 'canceled_retrospective',
     RunFinished = 'run_finished',
@@ -64,3 +65,16 @@ export const TimelineEventsFilterDefault = {
     ran_slash_command: false,
     user_joined_left: false,
 };
+
+export interface ParticipantsChangedDetails {
+    action: string;
+    requester: string;
+    users: string[];
+}
+
+export interface UserJoinedLeftDetails {
+    title?: string;
+    action: string;
+    requester: string;
+    users: string[];
+}

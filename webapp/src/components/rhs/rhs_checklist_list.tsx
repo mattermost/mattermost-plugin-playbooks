@@ -274,6 +274,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                 onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
+                onViewerModeInteract={onViewerModeInteract}
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&

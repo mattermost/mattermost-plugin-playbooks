@@ -61,7 +61,11 @@ const RHSAbout = (props: Props) => {
         channelNamesMap,
     };
 
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
     const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
 

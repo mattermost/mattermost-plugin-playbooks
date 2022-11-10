@@ -117,13 +117,13 @@ const RHSRunDetails = () => {
                     <RHSAbout
                         playbookRun={playbookRun}
                         readOnly={!isParticipant}
-                        onReadOnlyInteract={displayReadOnlyToast}
+                        onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
                     />
                     <RHSChecklistList
                         playbookRun={playbookRun}
                         parentContainer={ChecklistParent.RHS}
                         viewerMode={!isParticipant}
-                        onViewerModeInteract={displayReadOnlyToast}
+                        onViewerModeInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
                     />
                 </Scrollbars>
             </RHSContent>
