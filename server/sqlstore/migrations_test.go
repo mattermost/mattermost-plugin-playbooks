@@ -15,7 +15,7 @@ type MigrationMapping struct {
 	MorphMigrationLimit  int
 }
 
-var migrationsMapping []MigrationMapping = []MigrationMapping{
+var migrationsMapping = []MigrationMapping{
 	{
 		Name:                 "0.0.0 > 0.0.1",
 		LegacyMigrationIndex: 0,
@@ -546,21 +546,35 @@ func TestMigration_000059(t *testing.T) {
 
 func TestMigration_000063(t *testing.T) {
 	driverName := model.DatabaseDriverMysql
+	encodingQuery := `
+		SELECT TABLE_COLLATION FROM information_schema.TABLES
+		WHERE table_name = 'IR_System'
+		AND table_schema = DATABASE();
+	`
+
+	// run legacy migrations and get IR_System table encoding
 	db := setupTestDB(t, driverName)
 	store := setupTables(t, db)
+
+	for i := 0; i <= 28; i++ {
+		runLegacyMigration(t, store, 0)
+	}
+	var encodingExpected []string
+	err := store.db.Select(&encodingExpected, encodingQuery)
+	require.NoError(t, err)
+
+	// run morph migrations on new db and get IR_System table encoding
+	db = setupTestDB(t, driverName)
+	store = setupTables(t, db)
 	engine, err := store.createMorphEngine()
 	require.NoError(t, err)
 	defer engine.Close()
 
 	runMigrationUp(t, store, engine, 63)
-	var result []string
-	err = store.db.Select(&result, `
-		SELECT TABLE_COLLATION FROM information_schema.TABLES
-		WHERE table_name = 'IR_System'
-		AND table_schema = DATABASE();
-	`)
+	var encodingActual []string
+	err = store.db.Select(&encodingActual, encodingQuery)
 	require.NoError(t, err)
-	require.Equal(t, []string{"utf8mb4_general_ci"}, result)
+	require.Equal(t, encodingExpected, encodingActual)
 }
 
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
