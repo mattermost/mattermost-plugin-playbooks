@@ -70,10 +70,10 @@ type Playbook struct {
 
 	// ChannelID is the identifier of the channel that would be -potentially- linked
 	// to any new run of this playbook
-	ChannelID string `json:"channel_id"`
+	ChannelID string `json:"channel_id" export:"channel_id"`
 
 	// ChannelMode is the playbook>run>channel flow used
-	ChannelMode ChannelPlaybookMode `json:"channel_mode"`
+	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`

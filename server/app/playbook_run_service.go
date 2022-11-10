@@ -226,7 +226,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 
 	// TODO: forced until start-a-run modal can overwrite it
-	if pb.ChannelMode == PlaybookRunLinkExistingChannel {
+	if pb != nil && pb.ChannelMode == PlaybookRunLinkExistingChannel {
 		playbookRun.ChannelID = pb.ChannelID
 	}
 

@@ -520,7 +520,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                                    "",
+			"Name":                                    rawPlaybookRun.Name,
 			"Description":                             rawPlaybookRun.Summary,
 			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
