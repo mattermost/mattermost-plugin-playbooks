@@ -1029,6 +1029,9 @@ type PlaybookRunFilterOptions struct {
 	// StartedLT filters playbook runs that were started before the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
+
+	// ChannelID filters to playbook runs that are associated with the given channel ID
+	ChannelID string `url:"channel_id,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -1107,6 +1110,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
+	}
+
+	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
 	}
 
 	for _, s := range options.Statuses {
