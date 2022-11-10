@@ -2404,7 +2404,7 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
 				}
-				if _, err := e.Exec("DROP INDEX ChannelID ON IR_Incident"); err != nil {
+				if err := dropIndexIfExists(e, sqlStore, "IR_Incident", "ChannelID"); err != nil {
 					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
 				}
 				if _, err := e.Exec("UPDATE IR_Incident i JOIN Channels c ON c.id=i.ChannelID AND i.Name='' SET i.name=c.DisplayName"); err != nil {
