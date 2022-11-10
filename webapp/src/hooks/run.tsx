@@ -56,7 +56,7 @@ export const useParticipateInRun = (playbookRunId: string, from: 'channel_rhs'|'
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate'});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate', count: '1'});
     };
     const ParticipateConfirmModal = (
         <ConfirmModal

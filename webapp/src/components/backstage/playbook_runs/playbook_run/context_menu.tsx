@@ -116,7 +116,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                 });
 
                 const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
-                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from, trigger: 'leave'});
+                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from, trigger: 'leave', count: '1'});
                 if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }

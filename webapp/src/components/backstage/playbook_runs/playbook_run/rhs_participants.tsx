@@ -47,7 +47,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRun.id);
 
     const remove = (userIDs?: string[] | undefined) => {
-        telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRun.id, from: 'run_details', trigger: 'remove_participant'});
+        telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRun.id, from: 'run_details', trigger: 'remove_participant', count: userIDs?.length.toString() ?? ''});
         return removeFromRun(userIDs);
     };
 

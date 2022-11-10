@@ -401,8 +401,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		s.genericTelemetry.Track(
 			telemetryRunParticipate,
 			map[string]any{
-				"count":   len(invitedUserIDs) - len(usersFailedToInvite),
-				"trigger": "invite_on_create",
+				"count":          len(invitedUserIDs) - len(usersFailedToInvite),
+				"trigger":        "invite_on_create",
+				"playbookrun_id": playbookRun.ID,
 			},
 		)
 	}
