@@ -26,14 +26,6 @@ interface Props {
 }
 
 const DraggableChecklistItem = (props: Props) => {
-    const onChange = (newState: ChecklistItemState) => {
-        if (props.readOnly) {
-            props.onViewerModeInteract?.();
-            return undefined;
-        }
-        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
-    };
-
     return (
         <Draggable
             draggableId={props.item.title + props.itemIndex}
@@ -46,7 +38,7 @@ const DraggableChecklistItem = (props: Props) => {
                     itemNum={props.itemIndex}
                     playbookRunId={props.playbookRun?.id}
                     channelId={props.playbookRun?.channel_id}
-                    onChange={onChange}
+                    onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
                     readOnly={props.readOnly ?? false}
@@ -58,6 +50,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                     onDeleteChecklistItem={props.onDeleteChecklistItem}
                     buttonsFormat={props.itemButtonsFormat}
+                    onViewerModeInteract={props.onViewerModeInteract}
                 />
             )}
         </Draggable>

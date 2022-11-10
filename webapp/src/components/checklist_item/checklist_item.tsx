@@ -67,6 +67,7 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    onViewerModeInteract?: () => void
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -278,6 +279,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     disabled={props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                    onViewerModeInteract={props.onViewerModeInteract}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
