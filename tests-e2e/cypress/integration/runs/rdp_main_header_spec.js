@@ -445,6 +445,7 @@ describe('runs > run details page > header', () => {
 
                     // # Add viewer user to the channel
                     cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
+                    cy.findAllByTestId('timeline-item', {exact: false}).should('have.length', 3);
 
                     // # Change the owner to testViewerUser
                     cy.apiChangePlaybookRunOwner(playbookRun.id, testViewerUser.id);
