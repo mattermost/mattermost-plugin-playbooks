@@ -161,8 +161,6 @@ var migrationsMapping []MigrationMapping = []MigrationMapping{
 
 func TestDBSchema(t *testing.T) {
 	for _, driverName := range driverNames {
-		driverName = model.DatabaseDriverMysql
-
 		tableInfoList := tableInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 		indexInfoList := indexInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 
