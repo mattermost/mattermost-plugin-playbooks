@@ -431,6 +431,18 @@ func TestChecklistManagement(t *testing.T) {
 		require.Equal(t, title, editedRun.Checklists[0].Title)
 	})
 
+	t.Run("checklist creation - failure: no permissions", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+		title := "A new checklist"
+
+		// Create a valid, empty checklist
+		err := e.PlaybooksClient2.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: title,
+			Items: []client.ChecklistItem{},
+		})
+		require.Error(t, err)
+	})
+
 	t.Run("checklist creation - success: checklist with items", func(t *testing.T) {
 		run := createNewRunWithNoChecklists(t)
 		title := "A new checklist"
