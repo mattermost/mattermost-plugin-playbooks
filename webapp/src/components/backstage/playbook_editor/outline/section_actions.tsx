@@ -121,7 +121,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
-                <Setting id={'create-channel'}>
+                <Setting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}

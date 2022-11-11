@@ -67,8 +67,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
 
     return (
         <Container>
-            {linkRunToExistingChannelEnabled && <AutomationHeader>
-                <AutomationTitle css={{alignSelf: 'flex-start'}}>
+            {linkRunToExistingChannelEnabled && <AutomationHeader id={'link-existing-channel'}>
+                <AutomationTitle
+                    css={{alignSelf: 'flex-start'}}
+                >
                     <ChannelModeRadio
                         type='radio'
                         disabled={archived}
@@ -92,8 +94,8 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                     />
                 </SelectorWrapper>
             </AutomationHeader>}
-            <AutomationHeader>
-                <AutomationTitle css={{alignSelf: 'flex-start'}}>
+            <AutomationHeader id={'create-new-channel'}>
+                <AutomationTitle css={{alignSelf: 'flex-start'}} >
                     <ChannelModeRadio
                         type='radio'
                         disabled={archived}
