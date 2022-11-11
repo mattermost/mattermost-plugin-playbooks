@@ -32,7 +32,7 @@ type itemWithPosition struct {
 var _ app.ChecklistStore = (*checklistStore)(nil)
 
 // NewChecklistStore creates a new store for Checklist ServiceImpl.
-func NewChecklistStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) *checklistStore {
+func NewChecklistStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.ChecklistStore {
 	checklistSelect := sqlStore.builder.
 		Select("ch.ID", "ch.Title", "ch.Position", "ch.PlaybookRunID").
 		From("IR_Checklist AS ch")
@@ -108,7 +108,7 @@ func (c *checklistStore) getChecklistsWithoutItemsForPlaybookRunIDs(q sqlx.Query
 	return checklistsPerRun, checklistsNum, nil
 }
 
-func (c *checklistStore) getChecklistsForPlaybookRunIDs(q sqlx.Queryer, playbookRunIDs []string) (map[string][]app.Checklist, error) {
+func (c *checklistStore) GetChecklistsForPlaybookRunIDs(q sqlx.Queryer, playbookRunIDs []string) (map[string][]app.Checklist, error) {
 	checklistsPerRun, checklistsNum, err := c.getChecklistsWithoutItemsForPlaybookRunIDs(q, playbookRunIDs)
 	if err != nil {
 		return nil, err

@@ -50,7 +50,7 @@ type playbookRunStore struct {
 	timelineEventsSelect             sq.SelectBuilder
 	metricsDataSelectSingleRun       sq.SelectBuilder
 	sqlMetricsDataSelectMultipleRuns sq.SelectBuilder
-	checklistStore                   *checklistStore
+	checklistStore                   app.ChecklistStore
 }
 
 // Ensure playbookRunStore implements the app.PlaybookRunStore interface.
@@ -152,7 +152,7 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 }
 
 // NewPlaybookRunStore creates a new store for playbook run ServiceImpl.
-func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore, checklistStore *checklistStore) app.PlaybookRunStore {
+func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore, checklistStore app.ChecklistStore) app.PlaybookRunStore {
 	// construct the participants list so that the frontend doesn't have to query the server, bc if
 	// the user is not a member of the channel they won't have permissions to get the user list
 	participantsCol := `
@@ -406,7 +406,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, err
 	}
 
-	checklistsPerRun, err := s.checklistStore.getChecklistsForPlaybookRunIDs(tx, playbookRunIDs)
+	checklistsPerRun, err := s.checklistStore.GetChecklistsForPlaybookRunIDs(tx, playbookRunIDs)
 	if err != nil {
 		return nil, err
 	}

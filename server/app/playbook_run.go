@@ -7,6 +7,7 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
@@ -966,6 +967,7 @@ type PlaybookRunTelemetry interface {
 type ChecklistStore interface {
 	GetChecklistID(playbookID string, checklistNumber int) (string, error)
 	GetChecklistItem(playbookID string, checklistNumber, itemNumber int) (*ChecklistItem, error)
+	GetChecklistsForPlaybookRunIDs(q sqlx.Queryer, playbookRunIDs []string) (map[string][]Checklist, error)
 	ModifyCheckedState(checklistItem *ChecklistItem, newState string) (*ChecklistItem, error)
 	SetAssignee(checklistItem *ChecklistItem, assigneeID string) (*ChecklistItem, error)
 
