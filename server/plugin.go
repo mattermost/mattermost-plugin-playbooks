@@ -34,12 +34,12 @@ const (
 	// Topic represents a start of a thread. In playbooks we support 2 types of topics:
 	// status topic - indicating the start of the thread below status update and
 	// task topic - indicating the start of the thread below task(checklist item)
-	StatusTopicType = "status"
-	TaskTopicType   = "task"
+	TopicTypeStatus = "status"
+	TopicTypeTask   = "task"
 
 	// Collection is a group of topics and their corresponding threads.
 	// In Playbooks we support a single type of collection - a run
-	RunCollectionType = "run"
+	CollectionTypeRun = "run"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -229,12 +229,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
-	// register collections and topics
-	if err := p.API.RegisterCollectionAndTopic(RunCollectionType, StatusTopicType); err != nil {
-		return errors.Wrapf(err, "failed to register collection - %s and topic - %s", RunCollectionType, StatusTopicType)
+	// register collections and topics.
+	// TODO bump the minimum server version
+	if err := p.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeStatus); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeStatus)
 	}
-	if err := p.API.RegisterCollectionAndTopic(RunCollectionType, TaskTopicType); err != nil {
-		return errors.Wrapf(err, "failed to register collection - %s and topic - %s", RunCollectionType, StatusTopicType)
+	if err := p.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeTask); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeTask)
 	}
 
 	api.NewGraphQLHandler(
@@ -415,7 +416,7 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 }
 
 func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userID string, collectionType, collectionID string, permission *model.Permission) (bool, error) {
-	if collectionType != RunCollectionType {
+	if collectionType != CollectionTypeRun {
 		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -427,7 +428,7 @@ func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userID string,
 }
 
 func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
-	if collectionType != RunCollectionType {
+	if collectionType != CollectionTypeRun {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -440,7 +441,7 @@ func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectio
 }
 
 func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
-	if collectionType != RunCollectionType {
+	if collectionType != CollectionTypeRun {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 
@@ -456,7 +457,7 @@ func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, c
 }
 
 func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIDs []string) (map[string]*model.CollectionMetadata, error) {
-	if collectionType != RunCollectionType {
+	if collectionType != CollectionTypeRun {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}
 	runsMetadata := map[string]*model.CollectionMetadata{}
@@ -467,7 +468,7 @@ func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType st
 	for _, run := range runs {
 		runsMetadata[run.ID] = &model.CollectionMetadata{
 			Id:             run.ID,
-			CollectionType: RunCollectionType,
+			CollectionType: CollectionTypeRun,
 			TeamId:         run.TeamID,
 			Name:           run.Name,
 			RelativeURL:    app.GetRunDetailsRelativeURL(run.ID),
@@ -481,9 +482,9 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 
 	var getTopicMetadataByIDs func(topicIDs []string) ([]app.TopicMetadata, error)
 	switch topicType {
-	case StatusTopicType:
+	case TopicTypeStatus:
 		getTopicMetadataByIDs = p.playbookRunService.GetStatusMetadataByIDs
-	case TaskTopicType:
+	case TopicTypeTask:
 		getTopicMetadataByIDs = p.playbookRunService.GetTaskMetadataByIDs
 	default:
 		return map[string]*model.TopicMetadata{}, errors.Errorf("topic type %s is not registered by playbooks", topicType)
@@ -497,7 +498,7 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 		topicsMetadata[topic.ID] = &model.TopicMetadata{
 			Id:             topic.ID,
 			TopicType:      topicType,
-			CollectionType: RunCollectionType,
+			CollectionType: CollectionTypeRun,
 			TeamId:         topic.TeamID,
 			CollectionId:   topic.RunID,
 		}
