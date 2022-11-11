@@ -60,7 +60,9 @@ describe('playbooks > edit', () => {
 
     after(() => {
         if (!featureFlagPrevValue) {
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+            });
         }
     });
 
