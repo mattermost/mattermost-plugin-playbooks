@@ -37,7 +37,7 @@ describe('playbooks > edit', () => {
                 testSysadmin = sysadmin;
             });
 
-            cy.apiEnsureFeatureFlag('linktoexistingchannelenabled', true).then(({prevValue}) => {
+            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
                 featureFlagPrevValue = prevValue;
             });
 
@@ -60,7 +60,7 @@ describe('playbooks > edit', () => {
 
     after(() => {
         if (!featureFlagPrevValue) {
-            cy.apiEnsureFeatureFlag('linktoexistingchannelenabled', featureFlagPrevValue);
+            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
         }
     });
 
