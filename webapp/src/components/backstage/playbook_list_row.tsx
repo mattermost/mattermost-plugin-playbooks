@@ -158,6 +158,7 @@ const PlaybookListRow = (props: Props) => {
         <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
+            data-testid='playbook-item'
         >
             <PlaybookItemTitle data-testid='playbook-title'>
                 <TextWithTooltip
