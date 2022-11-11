@@ -88,6 +88,16 @@ const Outline = ({playbook, refetch}: Props) => {
                         />
                     </HoverMenuContainer>
                 )}
+                onHeaderClick={() => {
+                    if (archived) {
+                        return;
+                    }
+                    updatePlaybook({
+                        statusUpdateEnabled: !playbook.status_update_enabled,
+                        webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
+                        broadcastEnabled: !playbook.status_update_enabled,
+                    });
+                }}
             >
                 <StatusUpdates
                     playbook={playbook}
@@ -122,6 +132,14 @@ const Outline = ({playbook, refetch}: Props) => {
                         />
                     </HoverMenuContainer>
                 )}
+                onHeaderClick={() => {
+                    if (archived || !retrospectiveAccess) {
+                        return;
+                    }
+                    updatePlaybook({
+                        retrospectiveEnabled: !playbook.retrospective_enabled,
+                    });
+                }}
             >
                 <Retrospective
                     playbook={playbook}
@@ -204,7 +222,6 @@ const HoverMenuContainer = styled.div`
     position: relative;
     height: 32px;
     right: 1px;
-    top: 2px;
 `;
 
 export default Outline;

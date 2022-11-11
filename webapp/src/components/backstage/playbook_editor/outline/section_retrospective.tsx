@@ -4,6 +4,8 @@
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
+import styled from 'styled-components';
+
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import {Card} from 'src/components/backstage/playbook_preview_cards';
@@ -47,7 +49,9 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
     }
 
     if (!playbook.retrospective_enabled) {
-        return <FormattedMessage defaultMessage='A retrospective is not expected.'/>;
+        return (<RetrospectiveTextContainer>
+            <FormattedMessage defaultMessage='A retrospective is not expected.'/>
+        </RetrospectiveTextContainer>);
     }
 
     return (
@@ -61,7 +65,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                 </BackstageSubheader>
                 <StyledSelect
                     value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                    onChange={(option: {label: string; value: number;}) => {
+                    onChange={(option: { label: string; value: number; }) => {
                         updatePlaybook({
                             retrospectiveReminderIntervalSeconds: option?.value,
                         });
@@ -111,5 +115,9 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
         </Card>
     );
 };
+
+const RetrospectiveTextContainer = styled.div`
+    padding: 0 8px;
+`;
 
 export default SectionRetrospective;
