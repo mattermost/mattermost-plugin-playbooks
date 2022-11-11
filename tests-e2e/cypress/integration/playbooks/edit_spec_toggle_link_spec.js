@@ -19,6 +19,7 @@ describe('playbooks > edit', () => {
     let testUser;
     let testUser2;
     let testUser3;
+    let featureFlagPrevValue;
 
     const openCategorySelector = () => {
         cy.get('.channel-selector__control input').click({force: true});
@@ -36,7 +37,9 @@ describe('playbooks > edit', () => {
                 testSysadmin = sysadmin;
             });
 
-            cy.apiEnsureFeatureFlag('linktoexistingchannelenabled', true);
+            cy.apiEnsureFeatureFlag('linktoexistingchannelenabled', true).then(({prevValue}) => {
+                featureFlagPrevValue = prevValue;
+            });
 
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
@@ -53,6 +56,12 @@ describe('playbooks > edit', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
         });
+    });
+
+    after(() => {
+        if (!featureFlagPrevValue) {
+            cy.apiEnsureFeatureFlag('linktoexistingchannelenabled', featureFlagPrevValue);
+        }
     });
 
     beforeEach(() => {
