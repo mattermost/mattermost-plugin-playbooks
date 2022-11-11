@@ -27,7 +27,11 @@ export const RetrospectivePost = (props: Props) => {
         atMentions: true,
     };
 
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
     const metricsConfigs: Array<Metric> = JSON.parse(props.post.props.metricsConfigs);
     const metricsData: Array<RunMetricData> = JSON.parse(props.post.props.metricsData);

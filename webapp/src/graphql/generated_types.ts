@@ -96,6 +96,7 @@ export type MutationAddPlaybookMemberArgs = {
 };
 
 export type MutationAddRunParticipantsArgs = {
+    forceAddToChannel?: InputMaybe<Scalars['Boolean']>;
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']>;
 };
@@ -255,6 +256,7 @@ export type QueryRunArgs = {
 };
 
 export type QueryRunsArgs = {
+    channelID?: InputMaybe<Scalars['String']>;
     participantOrFollowerID?: InputMaybe<Scalars['String']>;
     sort?: InputMaybe<Scalars['String']>;
     statuses?: InputMaybe<Array<Scalars['String']>>;
@@ -380,6 +382,7 @@ export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
 export type AddRunParticipantsMutationVariables = Exact<{
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']> | Scalars['String'];
+    forceAddToChannel?: InputMaybe<Scalars['Boolean']>;
 }>;
 
 export type AddRunParticipantsMutation = { __typename?: 'Mutation', addRunParticipants: string };
@@ -717,8 +720,12 @@ export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation
 export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
 export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
 export const AddRunParticipantsDocument = gql`
-    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-  addRunParticipants(runID: $runID, userIDs: $userIDs)
+    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!, $forceAddToChannel: Boolean = false) {
+  addRunParticipants(
+    runID: $runID
+    userIDs: $userIDs
+    forceAddToChannel: $forceAddToChannel
+  )
 }
     `;
 export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
@@ -738,6 +745,7 @@ export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunPartici
  *   variables: {
  *      runID: // value for 'runID'
  *      userIDs: // value for 'userIDs'
+ *      forceAddToChannel: // value for 'forceAddToChannel'
  *   },
  * });
  */

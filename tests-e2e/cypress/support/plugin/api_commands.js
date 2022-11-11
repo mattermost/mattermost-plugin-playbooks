@@ -346,6 +346,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         reminderTimerDefaultSeconds,
         invitedUserIds,
         channelNameTemplate,
+        createChannelMemberOnNewParticipant: true,
+        removeChannelMemberOnRemovedParticipant: true,
     })
 ));
 
@@ -437,6 +439,23 @@ Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
         userIDs: usersIds,
     };
     return doGraphqlQuery(query, 'AddRunParticipants', vars).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+//updateRun
+Cypress.Commands.add('apiUpdateRun', (playbookRunId, updates) => {
+    const query = `
+        mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+            updateRun(id: $id, updates: $updates)
+        }
+    `;
+    const vars = {
+        id: playbookRunId,
+        updates,
+    };
+    return doGraphqlQuery(query, 'UpdateRun', vars).then((response) => {
         expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });

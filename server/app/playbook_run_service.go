@@ -387,7 +387,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			continue
 		}
 
-		err := s.AddParticipants(playbookRun.ID, []string{userID}, s.configService.GetConfiguration().BotUserID)
+		err := s.AddParticipants(playbookRun.ID, []string{userID}, s.configService.GetConfiguration().BotUserID, false)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -1063,7 +1063,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	updateAt := model.GetMillis()
 	playbookRunToModify.StatusUpdateEnabled = enable
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return err
 	}
 
@@ -1358,7 +1358,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID)
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -1368,7 +1368,9 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	playbookRunToModify.OwnerUserID = ownerID
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1437,7 +1439,8 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	itemToCheck.StateModified = model.GetMillis()
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
 	}
 
@@ -1524,7 +1527,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck.AssigneeModified = model.GetMillis()
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
@@ -1595,7 +1599,8 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1619,7 +1624,8 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 	itemToCheck.DueDate = duedate
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
@@ -1681,7 +1687,9 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	// Record the last (successful) run time.
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
-	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
+
+	_, err = s.store.UpdatePlaybookRun(playbookRun)
+	if err != nil {
 		return "", errors.Wrapf(err, "failed to update playbook run recording run of slash command")
 	}
 
@@ -1726,7 +1734,8 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber:]...)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1] = checklistItem
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1743,16 +1752,10 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
-	}
-
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
-	}
-
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1771,7 +1774,9 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, duplicate)
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1791,7 +1796,9 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 	oldChecklist := playbookRunToModify.Checklists[checklistNumber]
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1809,7 +1816,9 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1828,7 +1837,8 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1851,7 +1861,8 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1:]...,
 	)
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1875,7 +1886,8 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1898,7 +1910,8 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1920,7 +1933,8 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1941,7 +1955,8 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1963,7 +1978,8 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -1995,7 +2011,8 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
 	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -2047,7 +2064,8 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
 	}
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
@@ -2201,10 +2219,6 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return nil, errors.New("user does not have permission to modify playbook run")
-	}
-
 	if checklistNumber < 0 || checklistNumber >= len(playbookRunToModify.Checklists) {
 		return nil, errors.New("invalid checklist number")
 	}
@@ -2243,18 +2257,15 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 
 	playbookRun.Summary = description
 	playbookRun.SummaryModifiedAt = model.GetMillis()
-	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
+
+	playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+	if err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
-	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
@@ -2335,7 +2346,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID)
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -2615,7 +2626,8 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 	playbookRunToModify.Retrospective = newRetrospective.Text
 	playbookRunToModify.MetricsData = newRetrospective.Metrics
 
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
@@ -2640,7 +2652,9 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	playbookRunToPublish.MetricsData = retrospective.Metrics
 	playbookRunToPublish.RetrospectivePublishedAt = now
 	playbookRunToPublish.RetrospectiveWasCanceled = false
-	if err = s.store.UpdatePlaybookRun(playbookRunToPublish); err != nil {
+
+	playbookRunToPublish, err = s.store.UpdatePlaybookRun(playbookRunToPublish)
+	if err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
@@ -2733,7 +2747,9 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	playbookRunToCancel.Retrospective = "No retrospective for this run."
 	playbookRunToCancel.RetrospectivePublishedAt = now
 	playbookRunToCancel.RetrospectiveWasCanceled = true
-	if err = s.store.UpdatePlaybookRun(playbookRunToCancel); err != nil {
+
+	playbookRunToCancel, err = s.store.UpdatePlaybookRun(playbookRunToCancel)
+	if err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
@@ -2843,7 +2859,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 }
 
 // Leave removes user from the run's participants
-func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string) error {
+func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2860,10 +2880,31 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrapf(err, "users `%+v` failed to remove participation in run `%s`", userIDs, playbookRunID)
 	}
 
+	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get requester user")
+	}
+
+	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
+		user := requesterUser
+		if userID != requesterUserID {
+			user, err = s.pluginAPI.User.Get(userID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get user")
+			}
+		}
+		users = append(users, user)
 		s.leaveActions(playbookRun, userID)
 	}
 
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
+	if err != nil {
+		return err
+	}
+
+	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
@@ -2889,7 +2930,11 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
 		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
 	}
@@ -2909,17 +2954,26 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
 		user := requesterUser
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return errors.Wrap(err, "failed to get requester user")
+				return errors.Wrap(err, "failed to get user")
 			}
 		}
-		s.participateActions(playbookRun, channel, user, requesterUser)
+		users = append(users, user)
+		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
 	}
 
+	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "joined")
+	if err != nil {
+		return err
+	}
+
+	// ws send run
+	userIDs = append(userIDs, requesterUserID)
 	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
@@ -2927,9 +2981,56 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User) {
+// changeParticipantsTimeline handles timeline event creation for run participation change triggers:
+// participate/leave events and add/remove participants (multiple allowed)
+func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string, requesterUser *model.User, users []*model.User, action string) error {
+	type Details struct {
+		Action    string   `json:"action,omitempty"`
+		Requester string   `json:"requester,omitempty"`
+		Users     []string `json:"users,omitempty"`
+	}
+	var details Details
+	now := model.GetMillis()
 
-	if !playbookRun.CreateChannelMemberOnNewParticipant {
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      now,
+		EventAt:       now,
+		Summary:       "", // copies managed in webapp using the injected data
+		CreatorUserID: requesterUser.Id,
+		SubjectUserID: requesterUser.Id,
+	}
+
+	event.EventType = ParticipantsChanged
+	if len(users) == 1 && users[0].Id == requesterUser.Id {
+		event.EventType = UserJoinedLeft
+	}
+	if len(users) == 1 {
+		event.SubjectUserID = users[0].Id
+	}
+
+	details.Action = action
+	details.Requester = requesterUser.Username
+	details.Users = make([]string, 0)
+	for _, u := range users {
+		details.Users = append(details.Users, u.Username)
+	}
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+	event.Details = string(detailsJSON)
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User, forceAddToChannel bool) {
+
+	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
 		return
 	}
 

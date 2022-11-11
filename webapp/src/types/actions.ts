@@ -5,6 +5,7 @@ import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {pluginId} from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -17,6 +18,7 @@ export const PLAYBOOK_RUN_UPDATED = pluginId + '_playbook_run_updated';
 export const PLAYBOOK_CREATED = pluginId + '_playbook_created';
 export const PLAYBOOK_ARCHIVED = pluginId + '_playbook_archived';
 export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
+export const RECEIVED_PLAYBOOK_RUNS = pluginId + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
@@ -35,6 +37,13 @@ export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checkl
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
+
+// Backstage RHS related action types
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
+export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -79,6 +88,11 @@ export interface PlaybookArchived {
 export interface PlaybookRestored {
     type: typeof PLAYBOOK_RESTORED;
     teamID: string;
+}
+
+export interface ReceivedPlaybookRuns {
+    type: typeof RECEIVED_PLAYBOOK_RUNS;
+    playbookRuns: PlaybookRun[];
 }
 
 export interface ReceivedTeamPlaybookRuns {
@@ -169,4 +183,18 @@ export interface SetChecklistItemsFilter {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
     key: string;
     nextState: ChecklistItemsFilter;
+}
+
+// Backstage RHS related action types
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export interface OpenBackstageRHS {
+    type: typeof OPEN_BACKSTAGE_RHS;
+    section: BackstageRHSSection;
+    viewMode: BackstageRHSViewMode;
+}
+
+export interface CloseBackstageRHS {
+    type: typeof CLOSE_BACKSTAGE_RHS;
 }
