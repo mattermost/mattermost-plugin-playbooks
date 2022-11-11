@@ -146,6 +146,8 @@ describe('runs > run details page > rhs > participants', () => {
                     expect(interception.request.body.name).to.eq('playbookrun_participate');
                     expect(interception.request.body.type).to.eq('track');
                     expect(interception.request.body.properties.from).to.eq('run_details');
+                    expect(interception.request.body.properties.trigger).to.eq('add_participant');
+                    expect(interception.request.body.properties.count).to.eq('2');
                 });
 
                 // * Verify modal message is correct
