@@ -8,8 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // MaxRequestSize is the size limit for any incoming request
@@ -26,17 +24,15 @@ const MaxRequestSize = 5 * 1024 * 1024 // 5MB
 // Handler Root API handler.
 type Handler struct {
 	*ErrorHandler
-	pluginAPI *pluginapi.Client
 	APIRouter *mux.Router
 	root      *mux.Router
 	config    config.Service
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
+func NewHandler(config config.Service) *Handler {
 	handler := &Handler{
 		ErrorHandler: &ErrorHandler{},
-		pluginAPI:    pluginAPI,
 		config:       config,
 	}
 

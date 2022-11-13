@@ -1,22 +1,22 @@
 package config
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/product/adapters"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const npsPluginID = "com.mattermost.nps"
 
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
-	api *pluginapi.Client
+	api              playbooks.ServicesAPI
+	pluginAPIAdapter *adapters.PluginAPIAdapter
 
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
@@ -33,16 +33,17 @@ type ServiceImpl struct {
 }
 
 // NewConfigService Creates a new ServiceImpl struct.
-func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceImpl {
+func NewConfigService(api playbooks.ServicesAPI, pluginAPIAdapter *adapters.PluginAPIAdapter, manifest *model.Manifest) *ServiceImpl {
 	c := &ServiceImpl{
 		manifest: manifest,
 	}
 	c.api = api
+	c.pluginAPIAdapter = pluginAPIAdapter
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
 
-	// api.LoadPluginConfiguration never returns an error, so ignore it.
-	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
+	// LoadPluginConfiguration never returns an error, so ignore it.
+	_ = pluginAPIAdapter.LoadPluginConfiguration(c.configuration)
 
 	return c
 }
@@ -77,7 +78,7 @@ func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Unlock()
 
 	if !reflect.DeepEqual(oldStorableConfig, newStorableConfig) {
-		if appErr := c.api.Configuration.SavePluginConfig(newStorableConfig); appErr != nil {
+		if appErr := c.pluginAPIAdapter.SavePluginConfig(newStorableConfig); appErr != nil {
 			return errors.New(appErr.Error())
 		}
 	}
@@ -117,7 +118,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	var configuration = new(Configuration)
 
 	// Load the public configuration fields from the Mattermost server configuration.
-	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
+	if err := c.pluginAPIAdapter.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrapf(err, "failed to load plugin configuration")
 	}
 
@@ -167,7 +168,7 @@ func (c *ServiceImpl) setConfiguration(configuration *Configuration) {
 // IsConfiguredForDevelopmentAndTesting returns true when the server has `EnableDeveloper` and
 // `EnableTesting` configuration settings enabled.
 func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
-	config := c.api.Configuration.GetConfig()
+	config := c.pluginAPIAdapter.GetConfig()
 
 	return config != nil &&
 		config.ServiceSettings.EnableTesting != nil &&
@@ -178,7 +179,7 @@ func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
 
 // IsCloud returns true when the server is on cloud, and false otherwise
 func (c *ServiceImpl) IsCloud() bool {
-	license := c.api.System.GetLicense()
+	license := c.api.GetLicense()
 	if license == nil || license.Features == nil || license.Features.Cloud == nil {
 		return false
 	}
@@ -188,20 +189,21 @@ func (c *ServiceImpl) IsCloud() bool {
 
 // SupportsGivingFeedback returns nil when the nps plugin is installed and enabled, thus enabling giving feedback.
 func (c *ServiceImpl) SupportsGivingFeedback() error {
-	pluginState := c.api.Configuration.GetConfig().PluginSettings.PluginStates[npsPluginID]
+	//TODO: Do we need this functions?
+	// pluginState := c.pluginAPIAdapter.GetConfig().PluginSettings.PluginStates[npsPluginID]
 
-	if pluginState == nil || !pluginState.Enable {
-		return errors.New("nps plugin not enabled")
-	}
+	// if pluginState == nil || !pluginState.Enable {
+	// 	return errors.New("nps plugin not enabled")
+	// }
 
-	pluginStatus, err := c.api.Plugin.GetPluginStatus(npsPluginID)
-	if err != nil {
-		return fmt.Errorf("failed to query nps plugin status: %w", err)
-	}
+	// pluginStatus, err := c.api.Plugin.GetPluginStatus(npsPluginID)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to query nps plugin status: %w", err)
+	// }
 
-	if pluginStatus == nil {
-		return errors.New("nps plugin not running")
-	}
+	// if pluginStatus == nil {
+	// 	return errors.New("nps plugin not running")
+	// }
 
-	return nil
+	return errors.New("can't get nps plugin status")
 }

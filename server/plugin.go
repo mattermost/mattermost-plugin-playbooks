@@ -102,7 +102,7 @@ func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
-	p.config = config.NewConfigService(pluginAPIClient, manifest)
+	// p.config = config.NewConfigService(pluginAPIClient, manifest)
 
 	logger := logrus.StandardLogger()
 	pluginapi.ConfigureLogrus(logger, pluginAPIClient)
@@ -174,7 +174,7 @@ func (p *Plugin) OnActivate() error {
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config)
+	p.handler = api.NewHandler(p.config)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 

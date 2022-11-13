@@ -9,13 +9,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/product/adapters"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	mmapp "github.com/mattermost/mattermost-server/v6/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/product"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
@@ -32,6 +35,14 @@ const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
 	metricsExposePort = ":9093"
+)
+
+// These credentials for Rudder need to be populated at build-time,
+// passing the following flags to the go build command:
+// -ldflags "-X main.rudderDataplaneURL=<url> -X main.rudderWriteKey=<write_key>"
+var (
+	rudderDataplaneURL string
+	rudderWriteKey     string
 )
 
 var errServiceTypeAssert = errors.New("type assertion failed")
@@ -243,33 +254,73 @@ func (pp *playbooksProduct) Start() error {
 	ConfigureLogrus(logger, pp.logger)
 	logrus.Warn("################ Playbooks product start ##################")
 
-	// adapter := newServiceAPIAdapter(pp)
+	serviceAdapter := newServiceAPIAdapter(pp)
+	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, pp.configService, manifest)
+	botID, err := serviceAdapter.EnsureBot(&model.Bot{
+		Username:    "playbooks",
+		DisplayName: "Playbooks",
+		Description: "Playbooks bot.",
+		OwnerId:     "playbooks",
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure bot")
+	}
 
-	// botID, err := adapter.EnsureBot(&model.Bot{
-	// 	Username:    "playbooks",
-	// 	DisplayName: "Playbooks",
-	// 	Description: "Playbooks bot.",
-	// 	OwnerId:     "playbooks",
-	// })
-	// if err != nil {
-	// 	return errors.Wrapf(err, "failed to ensure bot")
-	// }
+	pp.config = config.NewConfigService(serviceAdapter, pluginAPIAdapter, manifest)
+	err = pp.config.UpdateConfiguration(func(c *config.Configuration) {
+		c.BotUserID = botID
+		c.AdminLogLevel = "debug"
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed save bot to config")
+	}
 
-	// pp.config = config.NewConfigService(adapter, manifest)
+	pp.handler = api.NewHandler(pp.config)
 
 	enableMetrics := pp.configService.Config().MetricsSettings.Enable
 	if enableMetrics != nil && *enableMetrics {
+		pp.metricsService = newMetricsInstance()
 		// run metrics server to expose data
 		pp.runMetricsServer()
+		//TODO: uncomment after store layer initialization
 		// run metrics updater recurring task
 		// pp.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
 		// set error counter middleware handler
 		pp.handler.APIRouter.Use(pp.getErrorCounterHandler())
+		logrus.Warn("################ 003 ##################")
+
 	}
 
-	pp.metricsService = newMetricsInstance()
-	// run metrics server to expose data
-	pp.runMetricsServer()
+	if rudderDataplaneURL == "" || rudderWriteKey == "" {
+		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
+		pp.telemetryClient = &telemetry.NoopTelemetry{}
+	} else {
+		diagnosticID := serviceAdapter.GetDiagnosticID()
+		serverVersion := pluginAPIAdapter.GetServerVersion()
+		pp.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
+		if err != nil {
+			return errors.Wrapf(err, "failed init telemetry client")
+		}
+	}
+
+	toggleTelemetry := func() {
+		diagnosticsFlag := pluginAPIAdapter.GetConfig().LogSettings.EnableDiagnostics
+		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
+
+		if telemetryEnabled {
+			if err = pp.telemetryClient.Enable(); err != nil {
+				logrus.WithError(err).Error("Telemetry could not be enabled")
+			}
+			return
+		}
+
+		if err = pp.telemetryClient.Disable(); err != nil {
+			logrus.WithError(err).Error("Telemetry could not be disabled")
+		}
+	}
+
+	toggleTelemetry()
+	pp.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	logrus.Warn("################ Start END ##################")
 	return nil
