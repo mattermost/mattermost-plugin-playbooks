@@ -34,10 +34,11 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 }
 
 func (r *RunRootResolver) Runs(ctx context.Context, args struct {
-	TeamID                  string `url:"team_id,omitempty"`
+	TeamID                  string
 	Sort                    string
 	Statuses                []string
-	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+	ParticipantOrFollowerID string
+	ChannelID               string
 }) ([]*RunResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -60,6 +61,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		ChannelID:               args.ChannelID,
 		IncludeFavorites:        true,
 		Page:                    0,
 		PerPage:                 10000,
