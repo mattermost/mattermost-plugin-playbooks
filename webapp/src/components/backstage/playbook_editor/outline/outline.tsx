@@ -72,6 +72,7 @@ const Outline = ({playbook, refetch}: Props) => {
             <Section
                 id={'status-updates'}
                 title={formatMessage({defaultMessage: 'Status Updates'})}
+                hasSubtitle={true}
                 hoverEffect={true}
                 headerRight={(
                     <HoverMenuContainer data-testid={'status-update-toggle'}>
@@ -118,6 +119,7 @@ const Outline = ({playbook, refetch}: Props) => {
             <Section
                 id={'retrospective'}
                 title={formatMessage({defaultMessage: 'Retrospective'})}
+                hasSubtitle={retrospectiveAccess && !playbook.retrospective_enabled}
                 hoverEffect={true}
                 headerRight={(
                     <HoverMenuContainer>

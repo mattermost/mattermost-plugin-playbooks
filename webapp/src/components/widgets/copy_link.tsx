@@ -33,7 +33,8 @@ const CopyLink = ({
     const {formatMessage} = useIntl();
     const [wasCopied, setWasCopied] = useState(false);
 
-    const copyLink = () => {
+    const copyLink = (e: React.MouseEvent) => {
+        e.stopPropagation();
         copyToClipboard(to);
         setWasCopied(true);
     };

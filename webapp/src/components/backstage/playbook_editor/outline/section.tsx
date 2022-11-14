@@ -15,6 +15,7 @@ interface Props {
     headerRight?: React.ReactNode;
     hoverEffect?: boolean;
     onHeaderClick?: () => void;
+    hasSubtitle?: boolean;
 }
 
 const Section = ({
@@ -24,6 +25,7 @@ const Section = ({
     children,
     hoverEffect,
     onHeaderClick,
+    hasSubtitle,
 }: Props) => {
     const {url} = useRouteMatch();
 
@@ -33,6 +35,7 @@ const Section = ({
         >
             <Header
                 $clickable={Boolean(onHeaderClick)}
+                $hasSubtitle={hasSubtitle}
                 $hoverEffect={hoverEffect}
                 onClick={onHeaderClick}
             >
@@ -60,7 +63,7 @@ const Wrapper = styled.div`
     padding: 0.5rem 3rem 2rem;
 `;
 
-const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hideHeaderRight?: boolean; }>`
+const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hasSubtitle?: boolean; $hideHeaderRight?: boolean; }>`
     ${({$clickable}) => $clickable && css`
         cursor: pointer;
     `}
@@ -81,7 +84,7 @@ const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hideH
     align-items: center;
     justify-content: space-between;
     margin-top: 20px;
-    margin-bottom: 10px;
+    margin-bottom: ${({$hasSubtitle}) => ($hasSubtitle ? '2px' : '10px')};
     padding: 4px 0 4px 8px;
 `;
 
