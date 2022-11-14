@@ -737,5 +737,14 @@
     "ecS/qx": "{name} added {num} participants to the run",
     "VM75su": "{name} removed {num} participants from the run",
     "SwlL5j": "@{user} joined the run",
-    "RXjd3Q": "{name} removed @{user} from the run"
+    "RXjd3Q": "{name} removed @{user} from the run",
+    "zSOvI0": "Filters",
+    "qxYWTy": "Show all tasks from runs I own",
+    "grv9Fm": "Select to toggle a list of tasks.",
+    "YBvwXR": "No assigned tasks",
+    "TnUG7m": "You don't have any pending task assigned.",
+    "SRqpbI": "{assignedNum, plural, =0 {No assigned tasks} other {# assigned}}",
+    "I0NIMp": "Your tasks",
+    "DUU48k": "There are no tasks explicitly assigned to you. You can expand your search using the filters.",
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# overdue}}"
 }
