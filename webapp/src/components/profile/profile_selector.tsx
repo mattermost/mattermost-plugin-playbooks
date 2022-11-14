@@ -60,8 +60,6 @@ interface Props {
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
 
-    // isMembersModeEnabled: boolean;
-
     /**
      * Handler for getting the main user group.
      */

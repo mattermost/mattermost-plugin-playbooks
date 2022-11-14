@@ -1546,6 +1546,21 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
+	// add the user as run participant if they was not already
+	var isParticipant bool
+	for _, participantID := range playbookRunToModify.ParticipantIDs {
+		if participantID == assigneeID {
+			isParticipant = true
+			break
+		}
+	}
+	if !isParticipant {
+		err := s.AddParticipants(playbookRunToModify.ID, []string{assigneeID}, userID, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to add assignee to run")
+		}
+	}
+
 	// Do we send a DM to the new assignee?
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
 		var subjectUser *model.User
