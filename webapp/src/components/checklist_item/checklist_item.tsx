@@ -67,6 +67,7 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    participantUserIds: string[];
     onViewerModeInteract?: () => void
 }
 
@@ -92,7 +93,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem]);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+    const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -175,7 +176,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
-                channelId={props.channelId}
+                participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
                 editable={!props.readOnly}
                 withoutName={shouldHideName()}
@@ -248,7 +249,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
-                        channelId={props.channelId}
+                        participantUserIds={props.participantUserIds}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
