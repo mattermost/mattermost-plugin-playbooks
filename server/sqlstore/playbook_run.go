@@ -339,6 +339,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
+	if options.ChannelID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.ChannelId": options.ChannelID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.ChannelId": options.ChannelID})
+	}
+
 	queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
 	queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, options.ActiveLT)
 

@@ -37,19 +37,20 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI       *pluginapi.Client
-	httpClient      *http.Client
-	configService   config.Service
-	store           PlaybookRunStore
-	poster          bot.Poster
-	scheduler       JobOnceScheduler
-	telemetry       PlaybookRunTelemetry
-	api             plugin.API
-	playbookService PlaybookService
-	actionService   ChannelActionService
-	permissions     *PermissionsService
-	licenseChecker  LicenseChecker
-	metricsService  *metrics.Metrics
+	pluginAPI        *pluginapi.Client
+	httpClient       *http.Client
+	configService    config.Service
+	store            PlaybookRunStore
+	poster           bot.Poster
+	scheduler        JobOnceScheduler
+	telemetry        PlaybookRunTelemetry
+	genericTelemetry GenericTelemetry
+	api              plugin.API
+	playbookService  PlaybookService
+	actionService    ChannelActionService
+	permissions      *PermissionsService
+	licenseChecker   LicenseChecker
+	metricsService   *metrics.Metrics
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -95,6 +96,7 @@ func NewPlaybookRunService(
 	configService config.Service,
 	scheduler JobOnceScheduler,
 	telemetry PlaybookRunTelemetry,
+	genericTelemetry GenericTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
@@ -102,18 +104,19 @@ func NewPlaybookRunService(
 	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:       pluginAPI,
-		store:           store,
-		poster:          poster,
-		configService:   configService,
-		scheduler:       scheduler,
-		telemetry:       telemetry,
-		httpClient:      httptools.MakeClient(pluginAPI),
-		api:             api,
-		playbookService: playbookService,
-		actionService:   channelActionService,
-		licenseChecker:  licenseChecker,
-		metricsService:  metricsService,
+		pluginAPI:        pluginAPI,
+		store:            store,
+		poster:           poster,
+		configService:    configService,
+		scheduler:        scheduler,
+		telemetry:        telemetry,
+		genericTelemetry: genericTelemetry,
+		httpClient:       httptools.MakeClient(pluginAPI),
+		api:              api,
+		playbookService:  playbookService,
+		actionService:    channelActionService,
+		licenseChecker:   licenseChecker,
+		metricsService:   metricsService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -398,6 +401,17 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
 		}
+	}
+
+	if len(invitedUserIDs) > 0 {
+		s.genericTelemetry.Track(
+			telemetryRunParticipate,
+			map[string]any{
+				"count":          len(invitedUserIDs) - len(usersFailedToInvite),
+				"trigger":        "invite_on_create",
+				"playbookrun_id": playbookRun.ID,
+			},
+		)
 	}
 
 	if len(usersFailedToInvite) != 0 {
@@ -1758,14 +1772,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
-	}
-
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
-	}
-
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2233,10 +2239,6 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return nil, errors.New("user does not have permission to modify playbook run")
-	}
-
 	if checklistNumber < 0 || checklistNumber >= len(playbookRunToModify.Checklists) {
 		return nil, errors.New("invalid checklist number")
 	}
@@ -2284,11 +2286,6 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
-	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {

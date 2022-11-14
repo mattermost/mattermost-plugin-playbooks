@@ -15,6 +15,7 @@ type Query {
 		sort: String = "",
 		statuses: [String!] = [],
 		participantOrFollowerID: String = "",
+		channelID: String = "",
 	): [Run!]!
 }
 

@@ -191,6 +191,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		scheduler,
 		p.telemetryClient,
+		p.telemetryClient,
 		p.API,
 		p.playbookService,
 		p.channelActionService,
