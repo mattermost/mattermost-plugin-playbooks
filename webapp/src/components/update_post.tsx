@@ -121,7 +121,7 @@ const Separator = styled.hr`
         border: none;
         height: 1px;
         background: rgba(var(--center-channel-color-rgb), 0.16);
-        margin: 0;
+        margin: 12px 0;
     }
 `;
 
