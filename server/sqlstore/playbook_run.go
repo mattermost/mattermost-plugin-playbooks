@@ -189,8 +189,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
-		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+		From("IR_Incident AS i")
 
 	statusPostsSelect := sqlStore.builder.
 		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt").
@@ -261,7 +260,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
 		Where(teamLimitExpr)
 
@@ -325,13 +323,13 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "c.DisplayName"
+		column := "i.Name"
 		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
-			column = "LOWER(c.DisplayName)"
+			column = "LOWER(i.Name)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
 

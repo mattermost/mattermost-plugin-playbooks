@@ -269,14 +269,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		playbookRun.ChannelID = channel.Id
 	} else {
-		/*	PRE MULTIPLERUNS IN A CHANNEL
-			existingPlaybookRunID, err := s.GetPlaybookRunIDForChannel(playbookRun.ChannelID)
-			if err != nil && !errors.Is(err, ErrNotFound) {
-				return nil, err
-			} else if existingPlaybookRunID != "" {
-				return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
-			}
-		*/
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
 			return nil, err
@@ -284,7 +276,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	}
 
-	if playbookRun.Name == "" {
+	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && playbookRun.Name == "" {
 		playbookRun.Name = pb.ChannelNameTemplate
 	}
 
