@@ -1,5 +1,4 @@
 import {useCallback} from 'react';
-import * as Apollo from '@apollo/client';
 
 import {autoFollowPlaybook} from 'src/client';
 
@@ -102,55 +101,25 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useRunMembership = (runID?: string, userIDs?: string[]) => {
+export const useManageRunMembership = (runID?: string) => {
     const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
+            RunDocument,
             PlaybookLhsDocument,
         ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
+            RunDocument,
             PlaybookLhsDocument,
         ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const addToRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await add();
-    }, [runID, JSON.stringify(userIDs), add]);
-
-    const removeFromRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await remove();
-    }, [runID, JSON.stringify(userIDs), remove]);
-    return {addToRun, removeFromRun};
-};
-
-export const useManageRunMembership = (runID?: string, refetch?: Apollo.DocumentNode[]) => {
-    const refetchQueries = refetch ?? [RunDocument];
-    const [add] = useAddRunParticipantsMutation({
-        refetchQueries,
-    });
-
-    const [remove] = useRemoveRunParticipantsMutation({
-        refetchQueries,
     });
 
     const [changeOwner] = useChangeRunOwnerMutation({
-        refetchQueries,
+        refetchQueries: [
+            RunDocument,
+        ],
     });
 
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {

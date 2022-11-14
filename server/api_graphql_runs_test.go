@@ -52,6 +52,42 @@ func TestGraphQLRunList(t *testing.T) {
 		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
 		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
 	})
+
+	t.Run("list by channel", func(t *testing.T) {
+		var rResultTest struct {
+			Data struct {
+				Runs []struct {
+					ID         string
+					Name       string
+					IsFavorite bool
+				}
+			}
+			Errors []struct {
+				Message string
+				Path    string
+			}
+		}
+		testRunsQuery := `
+		query Runs($channelID: String!) {
+			runs(channelID: $channelID) {
+				id
+				name
+				isFavorite
+			}
+		}
+		`
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID},
+		}, &rResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, rResultTest.Data.Runs, 1)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
+		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+	})
 }
 
 func TestGraphQLChangeRunParticipants(t *testing.T) {
