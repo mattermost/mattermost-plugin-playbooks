@@ -53,7 +53,7 @@ const StatusUpdates = ({playbook}: Props) => {
                                         setSeconds={(seconds: number) => {
                                             if (
                                                 seconds !== playbook.reminder_timer_default_seconds &&
-                                            seconds > 0
+                                                seconds > 0
                                             ) {
                                                 updatePlaybook({
                                                     reminderTimerDefaultSeconds: seconds,
@@ -78,7 +78,7 @@ const StatusUpdates = ({playbook}: Props) => {
                                         onChannelsSelected={(channelIds: string[]) => {
                                             if (
                                                 channelIds.length !== playbook.broadcast_channel_ids.length ||
-                                            channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
+                                                channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
                                             ) {
                                                 updatePlaybook({
                                                     broadcastChannelIDs: channelIds,
