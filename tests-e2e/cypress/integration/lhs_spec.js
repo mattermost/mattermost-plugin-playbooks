@@ -238,7 +238,7 @@ describe('lhs', () => {
 
             // # Change the owner to testViewerUser
             cy.findByTestId('runinfo-owner').findByTestId('assignee-profile-selector').click();
-            cy.get('.playbook-run-user-select').findByText('@' + testViewerUser.username).click();
+            cy.get('.playbook-react-select').findByText('@' + testViewerUser.username).click();
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
