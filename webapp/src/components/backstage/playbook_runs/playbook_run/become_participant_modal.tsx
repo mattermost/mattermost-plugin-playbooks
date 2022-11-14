@@ -19,21 +19,20 @@ import {useToaster} from '../../toast_banner';
 import {ToastStyle} from '../../toast';
 import {requestJoinChannel, telemetryEvent} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {PlaybookLhsDocument} from 'src/graphql/generated_types';
 
 interface Props {
     playbookRun: PlaybookRun | undefined;
     show: boolean;
     hideModal: () => void;
-    trigger: string;
+    from: string;
 }
 
-const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props) => {
+const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) => {
     const {formatMessage} = useIntl();
 
     const currentUserId = useSelector(getCurrentUserId);
     const [checkboxState, setCheckboxState] = useState(false);
-    const {addToRun} = useManageRunMembership(playbookRun?.id, [PlaybookLhsDocument]);
+    const {addToRun} = useManageRunMembership(playbookRun?.id);
     const addToast = useToaster().add;
     const channelId = playbookRun?.channel_id ?? '';
     const playbookRunId = playbookRun?.id || '';
@@ -96,7 +95,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, trigger}: Props)
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate', count: '1'});
 
         hideModal();
     };
