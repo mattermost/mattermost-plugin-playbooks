@@ -125,40 +125,6 @@ const useOpenMembersModalIfPresent = () => {
     };
 };
 
-const AddParticipants = () => {
-    const dispatch = useDispatch();
-    const channel = useSelector(getCurrentChannel);
-
-    // @ts-ignore
-    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CHANNEL_INVITE || !window.Components?.ChannelInviteModal) {
-        return null;
-    }
-
-    // @ts-ignore
-    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
-
-    // @ts-ignore
-    const ChannelInviteModal = window.Components.ChannelInviteModal;
-
-    return (
-        <a
-            href={'#'}
-            tabIndex={0}
-            role={'button'}
-            onClick={(e) => {
-                e.preventDefault();
-                dispatch(openModal({
-                    modalId: ModalIdentifiers.CHANNEL_INVITE,
-                    dialogType: ChannelInviteModal,
-                    dialogProps: {channel},
-                }));
-            }}
-        >
-            <FormattedMessage defaultMessage='Add participants?'/>
-        </a>
-    );
-};
-
 const NoParticipants = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 11px;

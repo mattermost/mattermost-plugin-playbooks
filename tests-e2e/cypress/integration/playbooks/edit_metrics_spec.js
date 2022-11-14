@@ -14,24 +14,11 @@ describe('playbooks > edit_metrics', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
-    });
-
-    beforeEach(() => {
-        // # Login as testUser
-        cy.apiLogin(testUser);
     });
 
     describe('actions', () => {
         let testPlaybook;
-
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
 
         beforeEach(() => {
             // # Create a playbook
@@ -45,6 +32,7 @@ describe('playbooks > edit_metrics', () => {
 
             // # Set a bigger viewport so the action don't scroll out of view
             cy.viewport('macbook-16');
+            cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/**').as('addMetric');
         });
 
         describe('adding and editing metrics', () => {
@@ -239,10 +227,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByTestId('dropdownmenu').within(() => {
                     cy.findByText('Integer').click();
                 });
-
-                // Delay for the save/re-render triggered by line 240
-                // to finish before attempting to verifyViewMetric
-                cy.wait(500);
+                cy.getStyledComponent('EditContainer').should('be.visible');
 
                 // * Verify metric was added without target or description.
                 verifyViewMetric(1, 'test currency!', '', '');
@@ -448,6 +433,12 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('input[type=text]').eq(2).should('have.value', '00:00:00')
                     .clear();
                 saveMetric();
+
+                // # Verify that the 'Target' section is gone
+                cy.getStyledComponent('ViewContainer')
+                    .getStyledComponent('Detail')
+                    .should('have.length', 1);
+
                 verifyViewMetric(0, 'test duration', '', 'test description');
 
                 // * Verify it has null value when editing again.
@@ -457,6 +448,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify currency
                 addMetric('Cost', 'test money', '0', 'test description 2');
+                cy.wait('@addMetric');
                 verifyViewMetric(1, 'test money', '0', 'test description 2');
 
                 // # Verify it shows 0, then turn it into null.
@@ -464,6 +456,12 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('input[type=text]').eq(2).should('have.value', '0')
                     .clear();
                 saveMetric();
+                cy.getStyledComponent('ViewContainer').should('have.length', 2).eq(1).within(() => {
+                    // # Verify that the 'Target' section is gone
+                    cy.getStyledComponent('Detail')
+                        .should('have.length', 1);
+                });
+
                 verifyViewMetric(1, 'test money', '', 'test description 2');
 
                 // * Verify it has null value when editing again.
@@ -473,6 +471,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify Integer
                 addMetric('Integer', 'test number', '0', 'test description 3');
+                cy.wait('@addMetric');
                 verifyViewMetric(2, 'test number', '0', 'test description 3');
 
                 // # Verify it shows 0, then turn it into null.
@@ -480,6 +479,12 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('input[type=text]').eq(2).should('have.value', '0')
                     .clear();
                 saveMetric();
+                cy.getStyledComponent('ViewContainer').should('have.length', 3).eq(2).within(() => {
+                    // # Verify that the 'Target' section is gone
+                    cy.getStyledComponent('Detail')
+                        .should('have.length', 1);
+                });
+
                 verifyViewMetric(2, 'test number', '', 'test description 3');
 
                 // * Verify it has null value when editing again.
@@ -518,11 +523,12 @@ const addMetric = (type, title, target, description) => {
 
     // # Add the metric
     saveMetric();
+    cy.wait('@addMetric');
 };
 
 const verifyViewMetric = (index, title, target, description) => {
-    cy.getStyledComponent('ViewContainer').eq(index).within(() => {
-        cy.getStyledComponent('Title').contains(title);
+    cy.getStyledComponent('ViewContainer').should('have.length.of.at.least', index + 1).eq(index).within(() => {
+        cy.getStyledComponent('Title').should('have.text', title);
 
         if (target) {
             cy.getStyledComponent('Detail').eq(0).contains(target);
@@ -552,6 +558,5 @@ const verifyViewsAndEdits = (numViews, numEdits) => {
 function saveMetric() {
     cy.get('#retrospective-metrics').within(() => {
         cy.findByRole('button', {name: 'Save'}).click();
-        cy.wait(500);
     });
 }
