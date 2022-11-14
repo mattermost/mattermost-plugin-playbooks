@@ -4,7 +4,7 @@
 export enum RHSState {
     ViewingList,
     ViewingPlaybookRun,
-    ViewingParticipants,
+    ViewingPlaybookRunParticipants,
 }
 
 export enum TimelineEventType {

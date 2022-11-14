@@ -71,7 +71,7 @@ const RHSTitle = () => {
                 </FollowingWrapper>
             </RHSTitleContainer>
         );
-    } else if (rhsState === RHSState.ViewingParticipants) {
+    } else if (rhsState === RHSState.ViewingPlaybookRunParticipants) {
         const tooltip = (
             <Tooltip id={'view-run-overview'}>
                 {formatMessage({defaultMessage: 'Manage run participants list'})}
@@ -93,7 +93,7 @@ const RHSTitle = () => {
                     overlay={tooltip}
                 >
                     <RHSTitleText>
-                        {formatMessage({defaultMessage: 'Participants'})}
+                        {formatMessage({defaultMessage: 'Run participants'})}
                     </RHSTitleText>
                 </OverlayTrigger>
                 <HeaderVerticalDivider/>

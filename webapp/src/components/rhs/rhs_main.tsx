@@ -70,7 +70,7 @@ const RightHandSidebar = () => {
         } else {
             content = <RHSWelcomeView/>;
         }
-    } else if (rhsState === RHSState.ViewingParticipants) {
+    } else if (rhsState === RHSState.ViewingPlaybookRunParticipants) {
         content = <RHSRunParticipants/>;
     } else {
         content = <RHSHome/>;

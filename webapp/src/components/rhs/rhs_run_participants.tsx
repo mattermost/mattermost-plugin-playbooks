@@ -11,8 +11,6 @@ import {
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
 import {currentPlaybookRun} from 'src/selectors';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {Participants} from '../backstage/playbook_runs/playbook_run/rhs_participants';
 import {Role} from '../backstage/playbook_runs/shared';
 
@@ -21,7 +19,6 @@ const RHSRunParticipants = () => {
 
     const playbookRun = useSelector(currentPlaybookRun);
     const team = useSelector(getCurrentTeam);
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     if (!playbookRun) {
         return null;
