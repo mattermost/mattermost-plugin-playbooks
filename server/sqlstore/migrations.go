@@ -2404,6 +2404,7 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
 				}
+				// We drop entirely the unique index for MySQL, there's an additional index on ChannelID that is kept
 				if err := dropIndexIfExists(e, sqlStore, "IR_Incident", "ChannelID"); err != nil {
 					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
 				}
@@ -2417,6 +2418,7 @@ var migrations = []Migration{
 				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
 					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
 				}
+				// Unique constraint is dropped but index is kept
 				if _, err := e.Exec("ALTER TABLE IR_Incident DROP CONSTRAINT IF EXISTS ir_incident_channelid_key"); err != nil {
 					return errors.Wrapf(err, "failed to drop constraint ir_incident_channelid_key on table ir_incident")
 				}
