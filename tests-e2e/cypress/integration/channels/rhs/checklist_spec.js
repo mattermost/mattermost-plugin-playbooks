@@ -199,7 +199,7 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it.only('runs /playbook slash commands', () => {
+        it('runs /playbook slash commands', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the `/playbook check 0 0` command has not yet been run.
                 cy.findAllByTestId('run').eq(2).should('have.text', 'Run');
