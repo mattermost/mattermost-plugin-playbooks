@@ -674,5 +674,7 @@
     "RXjd3Q": "{name}, @{user} kullanıcısını oyundan çıkardı",
     "I0NIMp": "Görevleriniz",
     "DUU48k": "Size açıkça atanmış bir görev yok. Süzgeçleri kullanarak aramanızı genişletebilirsiniz.",
-    "CgAtTJ": "{overdueNum, plural, =0 {} other {süresi geçmiş}}"
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {süresi geçmiş}}",
+    "meD+1Q": "OYUN KATILIMCILARI",
+    "Gg/nch": "KATILMIYOR"
 }
