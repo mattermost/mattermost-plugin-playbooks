@@ -1280,3 +1280,114 @@ func TestReminderReset(t *testing.T) {
 		require.Len(t, statusSnoozed, 1)
 	})
 }
+
+func TestChecklisItem_SetAssignee(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	addSimpleChecklistToTun := func(t *testing.T, runID string) *client.PlaybookRun {
+		checklist := client.Checklist{
+			Title: "Test Checklist",
+			Items: []client.ChecklistItem{
+				{
+					Title: "Test Item",
+				},
+			},
+		}
+
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), runID, checklist)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 1)
+		require.Len(t, run.Checklists[0].Items, 1)
+		return run
+	}
+
+	t.Run("set assignee and participant", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// assignee is not set and user is not participant (before)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+		require.Len(t, run.ParticipantIDs, 1)
+		require.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		// set assignee
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// assignee is not set and user is not participant (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser2.Id, run.Checklists[0].Items[0].AssigneeID)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+	})
+
+	t.Run("set and unset", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// set assignee
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+
+		// unset assignee
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, "")
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "", run.Checklists[0].Items[0].AssigneeID)
+	})
+
+	t.Run("idempotent action", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 0)
+
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// set assignee
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+
+		// unset assignee
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+}

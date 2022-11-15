@@ -58,8 +58,9 @@ const Task = (props: Props) => {
             </Header>
             <Body>
                 <ItemComponent
-                    checklistItem={props.item}
                     playbookRunId={props.item.playbook_run_id}
+                    participantUserIds={props.item.playbook_run_participant_user_ids}
+                    checklistItem={props.item}
                     checklistNum={props.item.checklist_num}
                     dragging={false}
                     collapsibleDescription={true}

@@ -152,8 +152,8 @@ export const DateTimeSelector = ({
                 styles={selectStyles}
                 noOptionsMessage={() => <InvalidLabel>{formatMessage({defaultMessage: 'Invalid time duration'})}</InvalidLabel>}
                 onChange={onSelectedChange}
-                classNamePrefix='playbook-run-user-select' // TODO debt: rename
-                className='playbook-run-user-select' // TODO debt: rename
+                classNamePrefix='playbook-react-select'
+                className='playbook-react-select'
                 formatOptionLabel={OptionLabel}
                 {...props.customControlProps}
             />
