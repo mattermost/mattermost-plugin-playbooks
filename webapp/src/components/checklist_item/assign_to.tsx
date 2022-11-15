@@ -21,7 +21,7 @@ interface AssignedToProps {
     placement?: Placement;
     channelId?: string; // If not provided, the ID of the current channel will be used
 
-    onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -34,7 +34,7 @@ const AssignTo = (props: AssignedToProps) => {
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
     const resetAssignee = () => {
-        props.onSelectedChange();
+        props.onSelectedChange?.();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
