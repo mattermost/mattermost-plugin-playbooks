@@ -164,8 +164,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
     }
 
     .NoName-Assigned-button {
-        background: none;
-        padding: 0px;
+        padding: 0 6px 0 0;
 
         .image {
             background: rgba(var(--center-channel-color-rgb),0.08);
@@ -216,6 +215,7 @@ export const AssignToContainer = styled.div`
         margin-left: 36px;
     }
     max-width: calc(100% - 210px);
+    display: flex;
 `;
 
 const ControlComponentAnchor = styled.a`
