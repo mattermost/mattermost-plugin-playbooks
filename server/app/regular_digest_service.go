@@ -15,13 +15,12 @@ func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, c
 	lastSentYear, lastSentWeek := lastSentTime.ISOWeek()
 	isFirstLoginOfTheWeek := currentYear != lastSentYear || currentWeek != lastSentWeek
 
-	return ShouldSendDailyDigestMessage(userInfo, timezone, currentTime) && isFirstLoginOfTheWeek
+	return !userInfo.DigestNotificationSettings.DisableDailyDigest &&
+		ShouldSendDailyDigestMessage(userInfo, timezone, currentTime) &&
+		isFirstLoginOfTheWeek
 }
 
 func ShouldSendDailyDigestMessage(userInfo UserInfo, timezone *time.Location, currentTime time.Time) bool {
-	if userInfo.DigestNotificationSettings.DisableDailyDigest {
-		return false
-	}
 	// DM message if it's the next day and been more than an hour since the last post
 	// Hat tip to Github plugin for the logic.
 	lastSentTime := time.UnixMilli(userInfo.LastDailyTodoDMAt).In(timezone)

@@ -209,7 +209,7 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 	currentTime := time.UnixMilli(model.GetMillis()).In(timezone)
 	if app.ShouldSendWeeklyDigestMessage(info, timezone, currentTime) {
 		sendRegularDigest(DigestSenderParams{isWeekly: true})
-	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
+	} else if !info.DisableDailyDigest && app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
 		sendRegularDigest(DigestSenderParams{isWeekly: false})
 	}
 
