@@ -3071,29 +3071,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, ch
 		return
 	}
 
-	// Send message to channel if one the following scenarios happens:
-	// - channel is private and is a "participate" action )
-	// - channel is private and the user adding a new participant has no access to it
-	requesterHasAccessToChannel := s.permissions.ChannelActionView(requesterUser.Id, playbookRun.ChannelID) == nil
-	isParticipateFlow := requesterUser.Id == user.Id
-	if channel.Type == "P" && (isParticipateFlow || !requesterHasAccessToChannel) {
-		T := i18n.GetUserTranslations(requesterUser.Locale)
-		data := map[string]interface{}{
-			"Name":          user.Username,
-			"RequesterName": requesterUser.Username,
-		}
-		msg := T("app.user.run.joined_run_channel_private_add_participant", data)
-		if isParticipateFlow {
-			msg = T("app.user.run.joined_run_channel_private_participate", data)
-		}
-
-		if _, err := s.poster.PostMessage(playbookRun.ChannelID, msg); err != nil {
-			logrus.WithError(err).Errorf("participateActions: failed to send message to private channel, userID '%s'", user.Id)
-		}
-		return
-	}
-
-	// Regular add channel member otherwise
+	// Add user to the channel
 	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
 		logrus.WithError(err).Errorf("participateActions: failed to add user to linked channel, userID '%s'", user.Id)
 	}
