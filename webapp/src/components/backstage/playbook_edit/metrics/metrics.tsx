@@ -212,8 +212,8 @@ const Metrics = ({
                     <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Currency)}>
                         <MetricTypeOption
                             icon={<DollarSign sizePx={18}/>}
-                            title={formatMessage({defaultMessage: 'Dollars'})}
-                            description={formatMessage({defaultMessage: 'e.g., Cost, Purchases'})}
+                            title={formatMessage({defaultMessage: 'Cost'})}
+                            description={formatMessage({defaultMessage: 'e.g., Sales impact, Purchases'})}
                         />
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Integer)}>
