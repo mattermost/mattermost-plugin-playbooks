@@ -124,7 +124,7 @@ const HeaderTitle = styled.div`
     }
 `;
 
-const HeaderVerticalDivider = styled.div`
+export const HeaderVerticalDivider = styled.div`
     height: 2.4rem;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     margin: 0 8px;
@@ -132,7 +132,7 @@ const HeaderVerticalDivider = styled.div`
     align-self: center;
 `;
 
-const HeaderSubtitle = styled.div`
+export const HeaderSubtitle = styled.div`
     overflow: hidden;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;

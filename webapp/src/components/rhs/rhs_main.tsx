@@ -13,9 +13,10 @@ import {currentRHSState, inPlaybookRunChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
-
 import {fetchPlaybookRunByChannel} from 'src/client';
 import {ToastProvider} from '../backstage/toast_banner';
+
+import RHSRunParticipants from './rhs_run_participants';
 
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
@@ -69,6 +70,8 @@ const RightHandSidebar = () => {
         } else {
             content = <RHSWelcomeView/>;
         }
+    } else if (rhsState === RHSState.ViewingPlaybookRunParticipants) {
+        content = <RHSRunParticipants/>;
     } else {
         content = <RHSHome/>;
     }
