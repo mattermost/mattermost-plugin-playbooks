@@ -743,5 +743,19 @@
     "ieL3dC": "Kanaalacties instellen",
     "ha1TB3": "Als een deelnemer toetreeedt tot de uitvoering",
     "feNxoJ": "{requester} voegde {users} toe aan de uitvoering",
-    "ecS/qx": "{name} heeft {num} deelnemers aan de uitvoering toegevoegd"
+    "ecS/qx": "{name} heeft {num} deelnemers aan de uitvoering toegevoegd",
+    "zSOvI0": "Filters",
+    "qxYWTy": "Toon alle taken van uitvoeringen waar ik eigenaar van ben",
+    "meD+1Q": "DEELNEMERS AAN DE UITVOERING",
+    "grv9Fm": "Selecteer om te wisselen tussen een lijst van taken.",
+    "YBvwXR": "Geen toegewezen taken",
+    "WFd88+": "Geef gecontroleerde taken weer",
+    "TnUG7m": "Je hebt geen toegewezen openstaande taken.",
+    "SRqpbI": "{assignedNum, plural, =0 {geen toegewezen taken} other {# toegewezen taken}}",
+    "L6vn9U": "Deelnemers aan de uitvoering",
+    "I0NIMp": "Jouw taken",
+    "Gg/nch": "GEEN DEELNEMER VAN",
+    "DUU48k": "Er is geen taak expliciet aan jou toegewezen. Je kan jouw zoekopdracht uitbreiden met behulp van de filters.",
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# overtijd}}",
+    "36NwLv": "Deelnemerslijst beheren"
 }
