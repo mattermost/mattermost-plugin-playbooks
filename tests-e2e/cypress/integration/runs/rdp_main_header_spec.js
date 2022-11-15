@@ -541,7 +541,7 @@ describe('runs > run details page > header', () => {
                         cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
 
                         // # cancel modal
-                        cy.findByTestId('modal-confirm-button').click();
+                        cy.findByTestId('modal-cancel-button').click();
 
                         // * Assert modal is not shown
                         cy.get('#become-participant-modal').should('not.exist');
