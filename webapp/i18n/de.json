@@ -759,5 +759,9 @@
     "SRqpbI": "{assignedNum, plural, =0 {Keine zugewiesenen Aufgaben} other {# zugewiesen}}",
     "I0NIMp": "Deine Aufgaben",
     "DUU48k": "Es gibt keine Aufgabe, die dir explizit zugewiesen ist. Du kannst deine Suche mit Hilfe der Filter erweitern.",
-    "CgAtTJ": "{overdueNum, plural, =0 {} other {# überfällig}}"
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# überfällig}}",
+    "meD+1Q": "DURCHLAUF TEILNEHMER",
+    "L6vn9U": "Teilnehmer am Durchlauf",
+    "Gg/nch": "NICHT TEILNEHMEND",
+    "36NwLv": "Verwalte Teilnehmerliste des Durchlaufs"
 }
