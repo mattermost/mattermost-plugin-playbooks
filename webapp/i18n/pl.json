@@ -749,5 +749,7 @@
     "SRqpbI": "{assignedNum, plural, =0 {Brak przydzielonych zadań} other {# przydzielone}}",
     "I0NIMp": "Twoje zadania",
     "DUU48k": "Nie ma zadania jednoznacznie przypisanego do Ciebie. Możesz rozszerzyć swoje poszukiwania za pomocą filtrów.",
-    "CgAtTJ": "{overdueNum, plural, =0 {} other {# zaległe}}"
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# zaległe}}",
+    "meD+1Q": "UCZESTNICY URUCHOMIENIA",
+    "Gg/nch": "NIEUCZESTNICZĄCY"
 }
