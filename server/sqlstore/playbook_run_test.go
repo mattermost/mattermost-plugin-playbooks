@@ -783,7 +783,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			for _, run := range runs {
 				for _, task := range run.Tasks {
-					require.Contains(t, expected[run.ChannelName], task.Title)
+					require.Contains(t, expected[run.Name], task.Title)
 				}
 			}
 		})
@@ -807,7 +807,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			actual := make(map[string]int)
 
 			for _, run := range runs {
-				actual[run.ChannelName]++
+				actual[run.Name]++
 			}
 
 			require.Equal(t, expected, actual)
@@ -830,7 +830,7 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			actual := make(map[string]int)
 
 			for _, run := range runs {
-				actual[run.ChannelName]++
+				actual[run.Name]++
 			}
 
 			require.Equal(t, expected, actual)

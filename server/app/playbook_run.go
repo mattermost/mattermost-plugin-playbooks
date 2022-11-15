@@ -512,10 +512,8 @@ type DialogStateAddToTimeline struct {
 
 // RunLink represents the info needed to display and link to a run
 type RunLink struct {
-	PlaybookRunID      string
-	TeamName           string
-	ChannelName        string
-	ChannelDisplayName string
+	PlaybookRunID string
+	Name          string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
