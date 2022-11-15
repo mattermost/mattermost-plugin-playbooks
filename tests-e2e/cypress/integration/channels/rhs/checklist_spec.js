@@ -294,7 +294,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('due-date-info-button').eq(0).click();
 
             // # Enter due date in 3 days
-            cy.get('.playbook-run-user-select__value-container').type('in 3 days')
+            cy.get('.playbook-react-select__value-container').type('in 3 days')
                 .wait(HALF_SEC)
                 .trigger('keydown', {
                     key: 'Enter',
@@ -400,7 +400,7 @@ describe('channels > rhs > checklist', () => {
             });
 
             // * Verify if date selector is visible
-            cy.get('.playbook-run-user-select').should('be.visible');
+            cy.get('.playbook-react-select').should('be.visible');
         });
     });
 });
@@ -413,7 +413,7 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
     });
 
     // # Enter due date query
-    cy.get('.playbook-run-user-select').within(() => {
+    cy.get('.playbook-react-select').within(() => {
         cy.get('input').type(dateQuery, {force: true})
             .wait(HALF_SEC)
             .trigger('keydown', {
