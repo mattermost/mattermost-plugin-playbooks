@@ -48,6 +48,26 @@ const Outline = ({playbook, refetch}: Props) => {
         setChecklistCollapseState(state);
     };
 
+    const toggleStatusUpdate = () => {
+        if (archived) {
+            return;
+        }
+        updatePlaybook({
+            statusUpdateEnabled: !playbook.status_update_enabled,
+            webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
+            broadcastEnabled: !playbook.status_update_enabled,
+        });
+    };
+
+    const toggleRetrospective = () => {
+        if (archived || !retrospectiveAccess) {
+            return;
+        }
+        updatePlaybook({
+            retrospectiveEnabled: !playbook.retrospective_enabled,
+        });
+    };
+
     return (
         <Sections
             playbookId={playbook.id}
@@ -79,26 +99,11 @@ const Outline = ({playbook, refetch}: Props) => {
                         <Toggle
                             disabled={archived}
                             isChecked={playbook.status_update_enabled}
-                            onChange={() => {
-                                updatePlaybook({
-                                    statusUpdateEnabled: !playbook.status_update_enabled,
-                                    webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
-                                    broadcastEnabled: !playbook.status_update_enabled,
-                                });
-                            }}
+                            onChange={toggleStatusUpdate}
                         />
                     </HoverMenuContainer>
                 )}
-                onHeaderClick={() => {
-                    if (archived) {
-                        return;
-                    }
-                    updatePlaybook({
-                        statusUpdateEnabled: !playbook.status_update_enabled,
-                        webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
-                        broadcastEnabled: !playbook.status_update_enabled,
-                    });
-                }}
+                onHeaderClick={toggleStatusUpdate}
             >
                 <StatusUpdates
                     playbook={playbook}
@@ -126,22 +131,11 @@ const Outline = ({playbook, refetch}: Props) => {
                         <Toggle
                             disabled={archived || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
-                            onChange={() => {
-                                updatePlaybook({
-                                    retrospectiveEnabled: !playbook.retrospective_enabled,
-                                });
-                            }}
+                            onChange={toggleRetrospective}
                         />
                     </HoverMenuContainer>
                 )}
-                onHeaderClick={() => {
-                    if (archived || !retrospectiveAccess) {
-                        return;
-                    }
-                    updatePlaybook({
-                        retrospectiveEnabled: !playbook.retrospective_enabled,
-                    });
-                }}
+                onHeaderClick={toggleRetrospective}
             >
                 <Retrospective
                     playbook={playbook}

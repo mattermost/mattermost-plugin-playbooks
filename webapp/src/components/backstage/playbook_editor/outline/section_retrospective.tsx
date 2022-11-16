@@ -65,7 +65,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                 </BackstageSubheader>
                 <StyledSelect
                     value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                    onChange={(option: { label: string; value: number; }) => {
+                    onChange={(option: {label: string; value: number;}) => {
                         updatePlaybook({
                             retrospectiveReminderIntervalSeconds: option?.value,
                         });
