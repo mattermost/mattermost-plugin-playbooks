@@ -875,7 +875,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	s.telemetry.UpdateStatus(playbookRunToModify, userID)
 
 	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
-		return err
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1140,7 +1140,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	}
 
 	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
-		return err
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1747,7 +1747,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	if err = s.sendPlaybookRunUpdatedWS(playbookRun); err != nil {
-		return "", errors.Wrap(err, "failed to send playbook run to client")
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return cmdResponse.TriggerId, nil
