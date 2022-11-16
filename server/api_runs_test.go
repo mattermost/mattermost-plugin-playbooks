@@ -1415,7 +1415,8 @@ func TestGetOwners(t *testing.T) {
 	t.Run("showfullname set to true", func(t *testing.T) {
 		cfg := e.Srv.Config()
 		cfg.PrivacySettings.ShowFullName = model.NewBool(true)
-		e.ServerClient.UpdateConfig(cfg)
+		_, _, err = e.ServerAdminClient.UpdateConfig(cfg)
+		require.NoError(t, err)
 
 		owners, err := e.PlaybooksClient.PlaybookRuns.GetOwners(context.Background())
 		require.NoError(t, err)
@@ -1441,7 +1442,8 @@ func TestGetOwners(t *testing.T) {
 	t.Run("showfullname set to false", func(t *testing.T) {
 		cfg := e.Srv.Config()
 		cfg.PrivacySettings.ShowFullName = model.NewBool(false)
-		e.ServerClient.UpdateConfig(cfg)
+		_, _, err = e.ServerAdminClient.UpdateConfig(cfg)
+		require.NoError(t, err)
 
 		owners, err := e.PlaybooksClient.PlaybookRuns.GetOwners(context.Background())
 		require.NoError(t, err)
