@@ -2609,7 +2609,7 @@ func WithPlaybookRun(playbookRun *PlaybookRun) RunWSOption {
 // sendPlaybookRunUpdatedWS send run updates to users via websocket
 // Individual Websocket messages will be sent to the owner/participants and users
 // (optionally passed as parameter)
-func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunId string, options ...RunWSOption) {
+func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, options ...RunWSOption) {
 	var err error
 
 	sendWSOptions := RunWSOptions{}
@@ -2620,7 +2620,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunId string, 
 	// Get playbookRun if not provided
 	playbookRun := sendWSOptions.PlaybookRun
 	if playbookRun == nil {
-		playbookRun, err = s.store.GetPlaybookRun(playbookRunId)
+		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			logrus.WithError(err).Error("failed to retrieve playbook run when sending websocket")
 			return
