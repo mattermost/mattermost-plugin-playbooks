@@ -1337,10 +1337,14 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 
 	// ShowFullName is coming as nil when setting is set to false
 	// TODO: further investigation
-	showFullName := false
-	cfg := s.pluginAPI.Configuration.GetConfig()
-	if cfg.PrivacySettings.ShowFullName != nil {
-		showFullName = *cfg.PrivacySettings.ShowFullName
+	var showFullName bool
+	if IsSystemAdmin(requesterInfo.UserID, s.pluginAPI) {
+		showFullName = true
+	} else {
+		cfg := s.pluginAPI.Configuration.GetConfig()
+		if cfg.PrivacySettings.ShowFullName != nil {
+			showFullName = *cfg.PrivacySettings.ShowFullName
+		}
 	}
 
 	for k, o := range owners {
