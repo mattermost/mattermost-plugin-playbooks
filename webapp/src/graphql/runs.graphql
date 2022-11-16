@@ -8,6 +8,19 @@ query Run($id: String!) {
     }
 }
 
+query RHSRuns($channelID: String!) {
+	runs(channelID: $channelID) {
+		id
+		name
+		participantIDs
+		ownerUserID
+		playbook {
+			title
+		}
+		lastUpdatedAt
+	}
+}
+
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }

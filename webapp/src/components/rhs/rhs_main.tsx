@@ -17,6 +17,8 @@ import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 import {fetchPlaybookRunByChannel} from 'src/client';
 import {ToastProvider} from '../backstage/toast_banner';
 
+import {useRhsRunsQuery} from 'src/graphql/generated_types';
+
 import RHSRunList from './rhs_run_list';
 
 const RightHandSidebar = () => {
@@ -25,6 +27,12 @@ const RightHandSidebar = () => {
     const inPlaybookRun = useSelector<GlobalState, boolean>(inPlaybookRunChannel);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [seenChannelId, setSeenChannelId] = useState('');
+    const {data, runsQueryError} = useRhsRunsQuery({
+        variables: {
+            channelID: currentChannelId,
+        },
+        fetchPolicy: 'cache-and-network',
+    });
 
     useEffect(() => {
         dispatch(setRHSOpen(true));
@@ -64,16 +72,22 @@ const RightHandSidebar = () => {
         }
     }
 
+    if (runsQueryError || !data) {
+        return null;
+    }
+
     return (
         <RHSRunList
-            runs={Array(20).fill({
+
+            /*runs={Array(20).fill({
                 id: '1',
                 name: 'Test card',
                 participantIDs: ['e6y158woxpyexnumbyo69st1jo', 'dxf17xih4j8nbxgs4uz963nxje', 'qrc87rcfz7n7984pd5a886yjfc'],
                 ownerUserID: 'e6y158woxpyexnumbyo69st1jo',
                 playbook: {title: 'My Cool Playbook'},
                 lastUpdatedAt: 0,
-            }).map((v) => ({...v, id: Math.random().toString(36).substr(2, 5)}))}
+            }).map((v) => ({...v, id: Math.random().toString(36).substr(2, 5)}))}*/
+            runs={data?.runs}
         />
     );
 

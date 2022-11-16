@@ -177,6 +177,7 @@ type PlaybookMetricConfig {
 type Run {
 	id: String!
 	playbookID: String!
+	playbook: Playbook!
 	name: String!
 	ownerUserID: String!
 	channelID: String!
@@ -213,6 +214,8 @@ type Run {
 	webhookOnStatusUpdateURLs: [String!]!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
+
+	lastUpdatedAt: Float!
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!

@@ -275,10 +275,12 @@ export type Run = {
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
     lastStatusUpdateAt: Scalars['Float'];
+    lastUpdatedAt: Scalars['Float'];
     metadata: Metadata;
     name: Scalars['String'];
     ownerUserID: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
+    playbook: Playbook;
     playbookID: Scalars['String'];
     postID: Scalars['String'];
     previousReminder: Scalars['Float'];
@@ -371,6 +373,12 @@ export type RunQueryVariables = Exact<{
 }>;
 
 export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
+
+export type RhsRunsQueryVariables = Exact<{
+    channelID: Scalars['String'];
+}>;
+
+export type RhsRunsQuery = { __typename?: 'Query', runs: Array<{ __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, lastUpdatedAt: number, playbook: { __typename?: 'Playbook', title: string } }> };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -687,6 +695,48 @@ export function useRunLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunQue
 export type RunQueryHookResult = ReturnType<typeof useRunQuery>;
 export type RunLazyQueryHookResult = ReturnType<typeof useRunLazyQuery>;
 export type RunQueryResult = Apollo.QueryResult<RunQuery, RunQueryVariables>;
+export const RhsRunsDocument = gql`
+    query RHSRuns($channelID: String!) {
+  runs(channelID: $channelID) {
+    id
+    name
+    participantIDs
+    ownerUserID
+    playbook {
+      title
+    }
+    lastUpdatedAt
+  }
+}
+    `;
+
+/**
+ * __useRhsRunsQuery__
+ *
+ * To run a query within a React component, call `useRhsRunsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRhsRunsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRhsRunsQuery({
+ *   variables: {
+ *      channelID: // value for 'channelID'
+ *   },
+ * });
+ */
+export function useRhsRunsQuery(baseOptions: Apollo.QueryHookOptions<RhsRunsQuery, RhsRunsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<RhsRunsQuery, RhsRunsQueryVariables>(RhsRunsDocument, options);
+}
+export function useRhsRunsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RhsRunsQuery, RhsRunsQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<RhsRunsQuery, RhsRunsQueryVariables>(RhsRunsDocument, options);
+}
+export type RhsRunsQueryHookResult = ReturnType<typeof useRhsRunsQuery>;
+export type RhsRunsLazyQueryHookResult = ReturnType<typeof useRhsRunsLazyQuery>;
+export type RhsRunsQueryResult = Apollo.QueryResult<RhsRunsQuery, RhsRunsQueryVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)

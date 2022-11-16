@@ -133,6 +133,14 @@ func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
 	return &MetadataResolver{*metadata}, nil
 }
 
+func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
+	return getGraphqlPlaybook(ctx, r.PlaybookID)
+}
+
+func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
+	return 0
+}
+
 type MetadataResolver struct {
 	app.Metadata
 }

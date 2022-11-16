@@ -14,6 +14,20 @@ import (
 type PlaybookRootResolver struct {
 }
 
+func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	playbook, err := c.playbookService.Get(playbookID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PlaybookResolver{playbook}, nil
+}
+
 func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	ID string
 }) (*PlaybookResolver, error) {
@@ -28,12 +42,7 @@ func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	playbook, err := c.playbookService.Get(playbookID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PlaybookResolver{playbook}, nil
+	return getGraphqlPlaybook(ctx, playbookID)
 }
 
 func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
