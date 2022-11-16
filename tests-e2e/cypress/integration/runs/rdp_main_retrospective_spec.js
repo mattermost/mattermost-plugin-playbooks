@@ -290,7 +290,7 @@ describe('runs > run details page', () => {
                 });
             });
 
-            it('auto save', () => {
+            it.only('auto save', () => {
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();
@@ -305,15 +305,30 @@ describe('runs > run details page', () => {
                     cy.get('input[type=text]').eq(0).should('have.value', '12:11:10');
                     cy.get('input[type=text]').eq(1).should('have.value', '56');
                     cy.get('input[type=text]').eq(2).should('have.value', '123');
+                });
 
+                // * Verify that RHS has updated
+                cy.get('#playbooks-sidebar-right')
+                    .contains('Key Metrics')
+                    .parent()
+                    .parent()
+                    .within(() => {
+                        cy.contains('12d, 11h, 10m').should('be.visible');
+                        cy.contains('56').should('be.visible');
+                        cy.contains('123').should('be.visible');
+                    });
+
+                getRetro().within(() => {
                     // # Enter new values
                     cy.get('input[type=text]').eq(0).click();
                     cy.get('input[type=text]').eq(0).clear().type('12:00:10')
                         .tab().clear().type('20')
                         .tab().clear().type('21');
+
+                    cy.findByText('Retrospective').click({force: true});
                 });
 
-                // * Verify updates in the RHS
+                // * Verify tat RHS has updated
                 cy.get('#playbooks-sidebar-right')
                     .contains('Key Metrics')
                     .parent()
