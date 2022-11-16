@@ -173,6 +173,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 		},
 		userID,
+		playbookRunCreateOptions.CreatePublicRun,
 	)
 
 	if errors.Is(err, app.ErrNoPermissions) {
@@ -252,15 +253,23 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+		return
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
+			ChannelID:   getRunChannelID(playbook),
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
 		},
 		request.UserId,
+		nil,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -412,7 +421,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -454,6 +463,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	// Copy data from playbook if needed
 	public := true
+	if createPublicRun != nil {
+		public = *createPublicRun
+	}
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
 		pb, err := h.playbookService.Get(playbookRun.PlaybookID)
@@ -470,7 +482,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
-		public = pb.CreatePublicPlaybookRun
+		if createPublicRun == nil {
+			public = pb.CreatePublicPlaybookRun
+		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook)
@@ -1892,4 +1906,11 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
+}
+
+func getRunChannelID(playbook app.Playbook) string {
+	if playbook.ChannelMode == app.PlaybookRunLinkExistingChannel {
+		return playbook.ChannelID
+	}
+	return ""
 }

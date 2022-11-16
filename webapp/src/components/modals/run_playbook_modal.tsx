@@ -15,11 +15,16 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 
 import {UserProfile} from '@mattermost/types/users';
 
-import {usePlaybook} from 'src/hooks';
+import {useLinkRunToExistingChannelEnabled, usePlaybook} from 'src/hooks';
 import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
+import {AutomationTitle} from '../backstage/playbook_edit/automation/styles';
+import {ButtonLabel, StyledChannelSelector, VerticalSplit} from '../backstage/playbook_edit/automation/channel_access';
+import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
+import MenuList from '../backstage/playbook_edit/automation/menu_list';
+import {HorizontalSpacer, RadioInput} from '../backstage/styles';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -64,17 +69,32 @@ const RunPlaybookModal = ({
     const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const playbookOwner = getFullName(user) || displayUsername(user, teammateNameDisplaySetting);
     const profileUri = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
+    const linkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const playbook = usePlaybook(playbookId)[0];
+    const [channelMode, setChannelMode] = useState('');
+    const [channelId, setChannelId] = useState('');
+    const [createPublicRun, setCreatePublicRun] = useState(false);
 
     useEffect(() => {
         if (playbook) {
             setRunName(playbook.channel_name_template);
+            setChannelMode(playbook.channel_mode);
+            setChannelId(playbook.channel_id);
+            setCreatePublicRun(playbook.create_public_playbook_run);
         }
     }, [playbook, playbook?.id]);
 
     const onSubmit = () => {
-        createPlaybookRun(playbookId, user.id, teamId, runName, description)
+        createPlaybookRun(
+            playbookId,
+            user.id,
+            teamId,
+            runName,
+            description,
+            channelMode === 'link_existing_channel' ? channelId : undefined,
+            channelMode === 'create_new_channel' ? createPublicRun : undefined,
+        )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
                 navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
@@ -83,6 +103,78 @@ const RunPlaybookModal = ({
             // show error
             });
     };
+
+    const channelConfigSection = (
+        <Container>
+            <AutomationTitle
+                css={{alignSelf: 'flex-start'}}
+            >
+                <StyledRadioInput
+                    type='radio'
+                    checked={channelMode === 'link_existing_channel'}
+                    onChange={() => setChannelMode('link_existing_channel')}
+                />
+                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+            </AutomationTitle>
+            <SelectorWrapper>
+                <StyledChannelSelector
+                    id={'link_existing_channel_selector'}
+                    onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
+                    channelIds={channelId ? [channelId] : []}
+                    isClearable={true}
+                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                    isDisabled={channelMode === 'create_new_channel'}
+                    captureMenuScroll={false}
+                    shouldRenderValue={true}
+                    teamId={teamId}
+                    isMulti={false}
+                />
+            </SelectorWrapper>
+
+            <AutomationTitle css={{alignSelf: 'flex-start'}} >
+                <StyledRadioInput
+                    type='radio'
+                    checked={channelMode === 'create_new_channel'}
+                    onChange={() => setChannelMode('create_new_channel')}
+                />
+                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+            </AutomationTitle>
+
+            <HorizontalSplit>
+                <VerticalSplit>
+                    <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
+                        <RadioInput
+                            type='radio'
+                            disabled={channelMode === 'link_existing_channel'}
+                            checked={createPublicRun}
+                            onChange={() => setCreatePublicRun(true)}
+                        />
+                        <Icon
+                            disabled={channelMode === 'link_existing_channel'}
+                            active={createPublicRun}
+                            className={'icon-globe'}
+                        />
+                        <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
+                    </ButtonLabel>
+                    <HorizontalSpacer size={8}/>
+                    <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
+                        <RadioInput
+                            type='radio'
+                            disabled={channelMode === 'link_existing_channel'}
+                            checked={!createPublicRun}
+                            onChange={() => setCreatePublicRun(false)}
+                        />
+                        <Icon
+                            disabled={channelMode === 'link_existing_channel'}
+                            active={!createPublicRun}
+                            className={'icon-lock-outline'}
+                        />
+                        <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
+                    </ButtonLabel>
+                </VerticalSplit>
+            </HorizontalSplit>
+        </Container>
+    );
 
     return (
         <StyledGenericModal
@@ -144,6 +236,7 @@ const RunPlaybookModal = ({
                 >
                     {formatMessage({defaultMessage: 'A channel will be created with this name'})}
                 </Description>
+                {linkRunToExistingChannelEnabled && channelConfigSection}
             </Body>
         </StyledGenericModal>
     );
@@ -235,5 +328,40 @@ const PlaybookOwnerDetail = styled.div`
 `;
 
 const PlaybookOwner = styled.div``;
+
+const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+`;
+
+const StyledRadioInput = styled(RadioInput)`
+    && {
+        margin: 0;
+    }
+`;
+
+export const SelectorWrapper = styled.div`
+    margin-left: 28px;
+    min-height: 40px;
+`;
+
+const Icon = styled.i<{ active?: boolean, disabled: boolean }>`
+    font-size: 16px;
+    line-height: 16px;
+    color: ${({active, disabled}) => (active && !disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+`;
+
+const BigText = styled.div`
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+`;
+
+const HorizontalSplit = styled.div`
+    display: block;
+    text-align: left;
+    margin-left: 28px;
+`;
 
 export default RunPlaybookModal;
