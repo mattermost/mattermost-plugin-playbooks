@@ -1336,7 +1336,7 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	}
 
 	// ShowFullName is coming as nil when setting is set to false
-	// TODO: further investigation
+	// TODO: further investigation https://mattermost.atlassian.net/browse/MM-48464
 	var showFullName bool
 	if IsSystemAdmin(requesterInfo.UserID, s.pluginAPI) {
 		showFullName = true
@@ -1348,7 +1348,10 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	}
 
 	for k, o := range owners {
-		o.Sanitize(map[string]bool{"fullname": showFullName})
+		if !showFullName {
+			o.FirstName = ""
+			o.LastName = ""
+		}
 		owners[k] = o
 	}
 	return owners, nil

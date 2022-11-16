@@ -498,13 +498,6 @@ type OwnerInfo struct {
 	Nickname  string `json:"nickname"`
 }
 
-func (o *OwnerInfo) Sanitize(options map[string]bool) {
-	if len(options) != 0 && !options["fullname"] {
-		o.FirstName = ""
-		o.LastName = ""
-	}
-}
-
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client
 // and is submitted back to the server.
 type DialogState struct {
