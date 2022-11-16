@@ -1391,3 +1391,77 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
 	})
 }
+
+func TestGetOwners(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	_, err = e.PlaybooksClient2.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser2.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	t.Run("showfullname set to true", func(t *testing.T) {
+		cfg := e.Srv.Config()
+		cfg.PrivacySettings.ShowFullName = model.NewBool(true)
+		e.ServerClient.UpdateConfig(cfg)
+
+		owners, err := e.PlaybooksClient.PlaybookRuns.GetOwners(context.Background())
+		require.NoError(t, err)
+		require.Len(t, owners, 2)
+
+		require.Contains(t, owners, client.OwnerInfo{
+			UserID:    e.RegularUser.Id,
+			Username:  e.RegularUser.Username,
+			FirstName: e.RegularUser.FirstName,
+			LastName:  e.RegularUser.LastName,
+			Nickname:  e.RegularUser.Nickname,
+		})
+
+		require.Contains(t, owners, client.OwnerInfo{
+			UserID:    e.RegularUser2.Id,
+			Username:  e.RegularUser2.Username,
+			FirstName: e.RegularUser2.FirstName,
+			LastName:  e.RegularUser2.LastName,
+			Nickname:  e.RegularUser2.Nickname,
+		})
+	})
+
+	t.Run("showfullname set to false", func(t *testing.T) {
+		cfg := e.Srv.Config()
+		cfg.PrivacySettings.ShowFullName = model.NewBool(false)
+		e.ServerClient.UpdateConfig(cfg)
+
+		owners, err := e.PlaybooksClient.PlaybookRuns.GetOwners(context.Background())
+		require.NoError(t, err)
+		require.Len(t, owners, 2)
+
+		require.Contains(t, owners, client.OwnerInfo{
+			UserID:    e.RegularUser.Id,
+			Username:  e.RegularUser.Username,
+			FirstName: "",
+			LastName:  "",
+			Nickname:  e.RegularUser.Nickname,
+		})
+
+		require.Contains(t, owners, client.OwnerInfo{
+			UserID:    e.RegularUser2.Id,
+			Username:  e.RegularUser2.Username,
+			FirstName: "",
+			LastName:  "",
+			Nickname:  e.RegularUser2.Nickname,
+		})
+	})
+
+}

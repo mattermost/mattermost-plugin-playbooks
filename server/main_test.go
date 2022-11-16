@@ -211,16 +211,20 @@ func (e *TestEnvironment) CreateClients() {
 	e.AdminUser = admin
 
 	user, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
-		Email:    "playbooksuser@example.com",
-		Username: "playbooksuser",
-		Password: userPassword,
+		Email:     "playbooksuser@example.com",
+		Username:  "playbooksuser",
+		Password:  userPassword,
+		FirstName: "First 1",
+		LastName:  "Last 1",
 	})
 	e.RegularUser = user
 
 	user2, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
-		Email:    "playbooksuser2@example.com",
-		Username: "playbooksuser2",
-		Password: userPassword,
+		Email:     "playbooksuser2@example.com",
+		Username:  "playbooksuser2",
+		Password:  userPassword,
+		FirstName: "First 2",
+		LastName:  "Last 2",
 	})
 	e.RegularUser2 = user2
 
