@@ -1334,6 +1334,21 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get owners from the store")
 	}
+
+	// ShowFullName is coming as nil when setting is set to false
+	// TODO: further investigation
+	showFullName := false
+	cfg := s.pluginAPI.Configuration.GetConfig()
+	if cfg.PrivacySettings.ShowFullName != nil {
+		showFullName = *cfg.PrivacySettings.ShowFullName
+	}
+
+	if !showFullName {
+		for k, o := range owners {
+			o.Sanitize(map[string]bool{"fullname": showFullName})
+			owners[k] = o
+		}
+	}
 	return owners, nil
 }
 
