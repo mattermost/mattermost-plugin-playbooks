@@ -1343,11 +1343,9 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 		showFullName = *cfg.PrivacySettings.ShowFullName
 	}
 
-	if !showFullName {
-		for k, o := range owners {
-			o.Sanitize(map[string]bool{"fullname": showFullName})
-			owners[k] = o
-		}
+	for k, o := range owners {
+		o.Sanitize(map[string]bool{"fullname": showFullName})
+		owners[k] = o
 	}
 	return owners, nil
 }
