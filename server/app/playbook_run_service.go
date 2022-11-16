@@ -691,8 +691,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 
 	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunModified); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -717,8 +717,8 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 
 	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunModified); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -874,7 +874,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 	s.telemetry.UpdateStatus(playbookRunToModify, userID)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
 		return err
 	}
 
@@ -1047,8 +1047,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
 	s.metricsService.IncrementRunsFinishedCount(1)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1139,7 +1139,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
 		return err
 	}
 
@@ -1210,8 +1210,8 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 	s.telemetry.RestorePlaybookRun(playbookRunToRestore, userID)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return err
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToRestore); err != nil {
+		logrus.WithError(err).Errorf("failed to send playbook run to client")
 	}
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
@@ -1240,7 +1240,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return err
 	}
 
-	err = s.sendPlaybookRunToClient(run.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(run)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1417,8 +1417,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 	s.telemetry.ChangeOwner(playbookRunToModify, userID)
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -1476,8 +1476,8 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -1613,8 +1613,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -1638,7 +1638,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1666,8 +1666,8 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
+	if err = s.sendPlaybookRunUpdatedWS(playbookRunToModify); err != nil {
+		logrus.WithError(err).Error("failed to send websocket event")
 	}
 
 	return nil
@@ -1746,7 +1746,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err = s.sendPlaybookRunUpdatedWS(playbookRun); err != nil {
 		return "", errors.Wrap(err, "failed to send playbook run to client")
 	}
 
@@ -1776,7 +1776,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1799,7 +1799,7 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1823,7 +1823,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1848,7 +1848,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1871,7 +1871,7 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1894,7 +1894,7 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1921,7 +1921,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1949,7 +1949,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -1976,7 +1976,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2002,7 +2002,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2027,7 +2027,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2053,7 +2053,7 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2089,7 +2089,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2145,7 +2145,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2342,7 +2342,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRun.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRun)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2677,36 +2677,50 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 	}, nil
 }
 
-// sendPlaybookRunToClient send Run to users via websocket
+// structure to handle optional parameters for sendPlaybookRunUpdatedWS
+type RunWSOptions struct {
+	AdditionalUserIDs []string
+}
+type RunWSOption func(options *RunWSOptions)
+
+func WithAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
+	return func(options *RunWSOptions) {
+		options.AdditionalUserIDs = additionalUserIDs
+	}
+}
+
+// sendPlaybookRunUpdatedWS send run updates to users via websocket
 // Two flows will be handled:
 //   - one message as broadcast channel-id based
 //   - individual messages for those users that are explicitely passed (userIDs)
 //     or are participant (but not in the channel)
-func (s *PlaybookRunServiceImpl) sendPlaybookRunToClient(playbookRunID string, userIDs []string) error {
-	playbookRunToSend, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
+func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRun *PlaybookRun, options ...RunWSOption) error {
 	// Broadcast WebSocket for all users who are channel members
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToSend, playbookRunToSend.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	// check which participants+userIDs are not in the channel to send individual WebSocket
-	chanMembers, err := s.permissions.pluginAPI.Channel.ListMembers(playbookRunToSend.ChannelID, 0, 1000)
+	// we don't expect run channels to have several hundreds of users
+	sendWSOptions := RunWSOptions{}
+	for _, option := range options {
+		option(&sendWSOptions)
+	}
+
+	chanMembers, err := s.permissions.pluginAPI.Channel.ListMembers(playbookRun.ChannelID, 0, 1000)
 	if err != nil {
 		return errors.Wrap(err, "failed to get channel members")
 	}
 	uniqueUserIDs := make(map[string]bool, 0)
-	uniqueUserIDs[playbookRunToSend.OwnerUserID] = true
-	for _, u := range userIDs {
-		uniqueUserIDs[u] = true
+	uniqueUserIDs[playbookRun.OwnerUserID] = true
+	if len(sendWSOptions.AdditionalUserIDs) > 0 {
+		for _, u := range sendWSOptions.AdditionalUserIDs {
+			uniqueUserIDs[u] = true
+		}
 	}
-	for _, u := range playbookRunToSend.ParticipantIDs {
+	for _, u := range playbookRun.ParticipantIDs {
 		uniqueUserIDs[u] = true
 	}
 
-	// Exclude those who are already channel members
-	for userID, _ := range uniqueUserIDs {
+	for userID := range uniqueUserIDs {
 		isChannelMember := false
 		for _, cm := range chanMembers {
 			if cm.UserId == userID {
@@ -2715,7 +2729,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunToClient(playbookRunID string, u
 			}
 		}
 		if !isChannelMember {
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRunToSend, userID)
+			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, userID)
 		}
 	}
 
@@ -2736,7 +2750,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	err = s.sendPlaybookRunToClient(playbookRunToModify.ID, []string{})
+	err = s.sendPlaybookRunUpdatedWS(playbookRunToModify)
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -2800,7 +2814,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err := s.sendPlaybookRunUpdatedWS(playbookRunToPublish); err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
 	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
@@ -2882,7 +2896,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err := s.sendPlaybookRunUpdatedWS(playbookRunToCancel); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
 
@@ -2959,7 +2973,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	}
 
 	// send updated run through websocket
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
+	if err := s.sendPlaybookRunUpdatedWS(playbookRun); err != nil {
 		logger.WithError(err).Warn("failed send websocket event")
 	}
 
@@ -3013,7 +3027,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 
 	// ws send run
 	userIDs = append(userIDs, requesterUserID)
-	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
+	if err := s.sendPlaybookRunUpdatedWS(playbookRun, WithAdditionalUserIDs(userIDs)); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
 
@@ -3082,7 +3096,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	// ws send run
 	userIDs = append(userIDs, requesterUserID)
-	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
+	if err := s.sendPlaybookRunUpdatedWS(playbookRun, WithAdditionalUserIDs(userIDs)); err != nil {
 		logrus.WithError(err).Error("failed send websocket event")
 	}
 
@@ -3192,7 +3206,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	}
 	s.telemetry.Follow(playbookRun, userID)
 
-	err = s.sendPlaybookRunToClient(playbookRun.ID, []string{userID})
+	err = s.sendPlaybookRunUpdatedWS(playbookRun, WithAdditionalUserIDs([]string{userID}))
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
@@ -3212,7 +3226,7 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 	s.telemetry.Unfollow(playbookRun, userID)
 
-	err = s.sendPlaybookRunToClient(playbookRun.ID, []string{userID})
+	err = s.sendPlaybookRunUpdatedWS(playbookRun, WithAdditionalUserIDs([]string{userID}))
 	if err != nil {
 		logrus.WithError(err).Error("failed to send websocket event")
 	}
