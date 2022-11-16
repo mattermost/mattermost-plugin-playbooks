@@ -2606,8 +2606,8 @@ func WithAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
 }
 
 // sendPlaybookRunUpdatedWS send run updates to users via websocket
-// Individual Websocket messages will be sent to the owner/participants and users (optioanlly)
-// passed as parameter
+// Individual Websocket messages will be sent to the owner/participants and users
+// (optionally passed as parameter)
 func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRun *PlaybookRun, options ...RunWSOption) {
 	sendWSOptions := RunWSOptions{}
 	for _, option := range options {
@@ -3084,7 +3084,6 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Follow(playbookRun, userID)
-
 	s.sendPlaybookRunUpdatedWS(playbookRun, WithAdditionalUserIDs([]string{userID}))
 
 	return nil
