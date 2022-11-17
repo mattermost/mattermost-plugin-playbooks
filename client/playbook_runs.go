@@ -282,3 +282,19 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 
 	return err
 }
+
+func (s *PlaybookRunService) GetOwners(ctx context.Context) ([]OwnerInfo, error) {
+	req, err := s.client.newRequest(http.MethodGet, "runs/owners", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	owners := make([]OwnerInfo, 0)
+	resp, err := s.client.do(ctx, req, &owners)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return owners, nil
+}
