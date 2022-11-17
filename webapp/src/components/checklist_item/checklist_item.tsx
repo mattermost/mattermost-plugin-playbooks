@@ -86,14 +86,24 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const toggleDescription = () => setShowDescription(!showDescription);
 
     useUpdateEffect(() => {
-        if (!isEditing) {
-            setTitleValue(props.checklistItem.title);
-            setDescValue(props.checklistItem.description);
-            setCommand(props.checklistItem.command);
-            setAssigneeID(props.checklistItem.assignee_id);
-            setDueDate(props.checklistItem.due_date);
-        }
-    }, [props.checklistItem]);
+        setTitleValue(props.checklistItem.title);
+    }, [props.checklistItem.title]);
+
+    useUpdateEffect(() => {
+        setDescValue(props.checklistItem.description);
+    }, [props.checklistItem.description]);
+
+    useUpdateEffect(() => {
+        setCommand(props.checklistItem.command);
+    }, [props.checklistItem.command]);
+
+    useUpdateEffect(() => {
+        setAssigneeID(props.checklistItem.assignee_id);
+    }, [props.checklistItem.assignee_id]);
+
+    useUpdateEffect(() => {
+        setDueDate(props.checklistItem.due_date);
+    }, [props.checklistItem.due_date]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
