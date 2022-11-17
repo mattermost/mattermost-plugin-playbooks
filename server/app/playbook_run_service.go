@@ -2622,22 +2622,22 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 	if playbookRun == nil {
 		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
 		if err != nil {
-			logrus.WithError(err).Error("failed to retrieve playbook run when sending websocket")
+			logrus.WithError(err).WithField("playbookRunID", playbookRunID).Error("failed to retrieve playbook run when sending websocket")
 			return
 		}
 	}
 
-	uniqueUserIDs := make(map[string]bool, 0)
+	// create a unique list of user ids to send the message to
+	uniqueUserIDs := make(map[string]bool, len(sendWSOptions.AdditionalUserIDs)+len(playbookRun.ParticipantIDs)+1)
 	uniqueUserIDs[playbookRun.OwnerUserID] = true
-	if len(sendWSOptions.AdditionalUserIDs) > 0 {
-		for _, u := range sendWSOptions.AdditionalUserIDs {
-			uniqueUserIDs[u] = true
-		}
+	for _, u := range sendWSOptions.AdditionalUserIDs {
+		uniqueUserIDs[u] = true
 	}
 	for _, u := range playbookRun.ParticipantIDs {
 		uniqueUserIDs[u] = true
 	}
 
+	// send the websocket message
 	for userID := range uniqueUserIDs {
 		s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, userID)
 	}
