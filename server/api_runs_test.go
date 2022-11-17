@@ -1337,3 +1337,82 @@ func TestLeave(t *testing.T) {
 		assert.NotContains(t, meta.Followers, e.RegularUser2.Id)
 	})
 }
+
+func TestGetOwners(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	ownerFromUser := func(u *model.User) client.OwnerInfo {
+		return client.OwnerInfo{
+			UserID:    u.Id,
+			Username:  u.Username,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Nickname:  u.Nickname,
+		}
+	}
+
+	_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	_, err = e.PlaybooksClient2.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser2.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	fullOwner1 := ownerFromUser(e.RegularUser)
+	fullOwner2 := ownerFromUser(e.RegularUser2)
+	partialOwner1 := fullOwner1
+	partialOwner1.FirstName = ""
+	partialOwner1.LastName = ""
+	partialOwner2 := fullOwner2
+	partialOwner2.FirstName = ""
+	partialOwner2.LastName = ""
+	for _, tc := range []struct {
+		Name         string
+		ShowFullName bool
+		Client       *client.Client
+		MustContain  []client.OwnerInfo
+	}{
+		{
+			Name:         "showfullname set to true",
+			ShowFullName: true,
+			Client:       e.PlaybooksClient,
+			MustContain:  []client.OwnerInfo{fullOwner1, fullOwner2},
+		},
+		{
+			Name:         "showfullname set to false",
+			ShowFullName: false,
+			Client:       e.PlaybooksClient,
+			MustContain:  []client.OwnerInfo{partialOwner1, partialOwner2},
+		},
+		{
+			Name:         "showfullname set to false and sysadmin",
+			ShowFullName: false,
+			Client:       e.PlaybooksAdminClient,
+			MustContain:  []client.OwnerInfo{fullOwner1, fullOwner2},
+		},
+	} {
+		t.Run(tc.Name, func(t *testing.T) {
+			cfg := e.Srv.Config()
+			cfg.PrivacySettings.ShowFullName = model.NewBool(tc.ShowFullName)
+			_, _, err = e.ServerAdminClient.UpdateConfig(cfg)
+			require.NoError(t, err)
+
+			owners, err := tc.Client.PlaybookRuns.GetOwners(context.Background())
+			require.NoError(t, err)
+			require.Len(t, owners, len(tc.MustContain))
+			for _, mc := range tc.MustContain {
+				require.Contains(t, owners, mc)
+			}
+		})
+	}
+}
