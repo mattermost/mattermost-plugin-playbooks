@@ -202,6 +202,7 @@ export default function ProfileSelector(props: Props) {
                         toggleOpen();
                     }
                 }}
+                disabled={!props.enableEdit}
                 className={props.placeholderButtonClass}
             >
                 {props.placeholder}

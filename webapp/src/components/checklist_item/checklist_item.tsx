@@ -179,7 +179,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <AssignTo
                 participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
-                editable={!props.readOnly && !isSkipped()}
+                editable={isEditing || (!props.readOnly && !isSkipped())}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
@@ -196,7 +196,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 checklistNum={props.checklistNum}
                 command={command}
                 command_last_run={props.checklistItem.command_last_run}
-                disabled={props.readOnly || isSkipped()}
+                disabled={!isEditing && (props.readOnly || isSkipped())}
                 itemNum={props.itemNum}
                 playbookRunId={props.playbookRunId}
                 isEditing={isEditing}
@@ -214,7 +214,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <DueDateButton
-                editable={!props.readOnly && !isSkipped()}
+                editable={isEditing || (!props.readOnly && !isSkipped())}
                 date={dueDate}
                 ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
@@ -514,7 +514,7 @@ const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMen
         background-color: var(--button-bg-08);
     `}
 
-    ${({$disabled}) => $disabled && css`
+    ${({$disabled, editing}) => !editing && $disabled && css`
         ${ChecklistItemTitleWrapper},
         & > ${Row} {
             opacity: 0.64;
