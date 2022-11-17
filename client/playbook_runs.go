@@ -299,3 +299,33 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 
 	return err
 }
+
+func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeID string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneeID string `json:"assignee_id"`
+	}{assigneeID}
+
+	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) SetItemDueDate(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, duedate int64) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		DueDate int64 `json:"due_date"`
+	}{duedate}
+
+	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}

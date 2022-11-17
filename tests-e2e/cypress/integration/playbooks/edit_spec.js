@@ -150,45 +150,20 @@ describe('playbooks > edit', () => {
         });
     });
 
-    describe('actions', () => {
-        let testPrivateChannel;
-        let testPlaybook;
-
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
-            // # Create a public channel
-            cy.apiCreateChannel(
-                testTeam.id,
-                'public-channel',
-                'Public Channel',
-                'O'
-            );
-
-            // # Create a private channel
-            cy.apiCreateChannel(
-                testTeam.id,
-                'private-channel',
-                'Private Channel',
-                'P'
-            ).then(({channel}) => {
-                testPrivateChannel = channel;
-            });
-        });
-
-        beforeEach(() => {
-            // # Create a playbook
-            cy.apiCreateTestPlaybook({
-                teamId: testTeam.id,
-                title: 'Playbook (' + Date.now() + ')',
-                userId: testUser.id,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-            });
-        });
-
+    const commonActionTests = () => {
         describe('when a playbook run starts', () => {
+            let testPlaybook;
+            beforeEach(() => {
+                // # Create a playbook
+                cy.apiCreateTestPlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook (' + Date.now() + ')',
+                    userId: testUser.id,
+                }).then((playbook) => {
+                    testPlaybook = playbook;
+                });
+            });
+
             describe('create channel setting', () => {
                 it('is enabled by default in a new playbook', () => {
                     // # Visit the selected playbook
@@ -197,9 +172,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section.
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is checked
-                        cy.get('#create-new-channel label input').should(
-                            'be.checked'
-                        );
+                        cy.get('#create-new-channel label input').should('be.checked');
                     });
                 });
             });
@@ -244,9 +217,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
-                        cy.get('#invite-users label input').should(
-                            'not.be.checked'
-                        );
+                        cy.get('#invite-users label input').should('not.be.checked');
 
                         // * Verify that the menu is disabled
                         cy.get('#invite-users').within(() => {
@@ -779,6 +750,145 @@ describe('playbooks > edit', () => {
                             });
                         });
                 });
+            });
+        });
+    };
+
+    describe('actions toggled linkruntoexistingchannelenabled=OFF', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+        commonActionTests();
+    });
+
+    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
+        let testPlaybook;
+
+        before(() => {
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
+                    featureFlagPrevValue = prevValue;
+                });
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        after(() => {
+            if (!featureFlagPrevValue) {
+                cy.apiLogin(testSysadmin).then(() => {
+                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+                });
+            }
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        commonActionTests();
+
+        describe('link to an existing channel setting', () => {
+            it('can be checked', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                // # select the action section.
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // * Verify that the toggle is unchecked and input is disabled
+                    cy.get('input[type=radio]').should('not.be.checked');
+                    cy.get('input[type=text]').should('be.disabled');
+
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+
+                    // * Verify that the toggle is checked and input is enabled
+                    cy.get('input[type=radio]').should('be.checked');
+                    cy.get('input[type=text]').should('not.be.disabled');
+                });
+            });
+
+            it('create channel choices are disabled when is checked', () => {
+                // # select the action section.
+                cy.get('#actions #create-new-channel').within(() => {
+                    // * Verify that the toggle is unchecked and inputs are disabled
+                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('button').should('be.disabled');
+                });
+            });
+
+            it('can fill a channel', () => {
+                cy.get('#actions #link-existing-channel').within(() => {
+                    cy.findByText('Select a channel').click().type('Town{enter}');
+                });
+            });
+
+            it('channel and channel mode are persisted', () => {
+                cy.reload();
+                cy.get('#actions #create-new-channel').within(() => {
+                    // * Verify that the toggle is unchecked and inputs are disabled
+                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('button').should('be.disabled');
+                });
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // * Verify that the toggle is checked and input is enabled
+                    cy.get('input[type=radio]').should('be.checked');
+                    cy.get('input[type=text]').should('not.be.disabled');
+                    cy.findByText('Town Square').should('exist');
+                });
+            });
+        });
+    });
+
+    describe('actions', () => {
+        let testPrivateChannel;
+        let testPlaybook;
+
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a public channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'public-channel',
+                'Public Channel',
+                'O'
+            );
+
+            // # Create a private channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'private-channel',
+                'Private Channel',
+                'P'
+            ).then(({channel}) => {
+                testPrivateChannel = channel;
+            });
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
 

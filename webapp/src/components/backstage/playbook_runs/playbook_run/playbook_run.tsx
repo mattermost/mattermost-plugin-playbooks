@@ -11,7 +11,7 @@ import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/action
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers} from 'src/hooks';
+import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers, useEnsureProfiles} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -90,6 +90,8 @@ const PlaybookRunDetails = () => {
 
     const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
     const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
+
+    useEnsureProfiles(playbookRun?.participant_ids ?? []);
     useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
         from: queryParams.from ?? '',
         playbook_id: playbookRun?.playbook_id,
