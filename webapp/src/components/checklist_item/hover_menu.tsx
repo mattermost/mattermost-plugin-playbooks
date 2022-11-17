@@ -85,26 +85,6 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     props.onEdit();
                 }}
             />
-            {props.playbookRunId !== undefined &&
-                <ChecklistHoverMenuButton
-                    data-testid='hover-menu-toggle-skip-button'
-                    title={props.isSkipped ? formatMessage({defaultMessage: 'Restore'}) : formatMessage({defaultMessage: 'Skip'})}
-                    className={props.isSkipped ? 'icon-refresh icon-12 btn-icon' : 'icon-close icon-12 btn-icon'}
-                    onClick={() => {
-                        if (props.isSkipped) {
-                            clientRestoreChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                            if (props.onChange) {
-                                props.onChange(ChecklistItemState.Open);
-                            }
-                        } else {
-                            clientSkipChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                            if (props.onChange) {
-                                props.onChange(ChecklistItemState.Skip);
-                            }
-                        }
-                    }}
-                />
-            }
             <DotMenu
                 icon={<DotMenuIcon/>}
                 dotMenuButton={DotMenuButton}
@@ -126,6 +106,26 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-content-copy icon-16'/>
                     {formatMessage({defaultMessage: 'Duplicate task'})}
                 </StyledDropdownMenuItem>
+                {props.playbookRunId !== undefined &&
+                    <StyledDropdownMenuItem
+                        onClick={() => {
+                            if (props.isSkipped) {
+                                clientRestoreChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
+                                if (props.onChange) {
+                                    props.onChange(ChecklistItemState.Open);
+                                }
+                            } else {
+                                clientSkipChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
+                                if (props.onChange) {
+                                    props.onChange(ChecklistItemState.Skip);
+                                }
+                            }
+                        }}
+                    >
+                        <DropdownIcon className={props.isSkipped ? 'icon-refresh icon-16 btn-icon' : 'icon-close icon-16 btn-icon'}/>
+                        {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
+                    </StyledDropdownMenuItem>
+                }
                 {props.playbookRunId === undefined &&
                     <StyledDropdownMenuItemRed
                         onClick={() => props.onDeleteChecklistItem?.()}
