@@ -57,7 +57,7 @@ interface ChecklistItemProps {
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
-    disabled: boolean;
+    readOnly: boolean;
     collapsibleDescription: boolean;
     descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
@@ -67,6 +67,8 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    participantUserIds: string[];
+    onViewerModeInteract?: () => void
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -93,7 +95,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     }, [props.checklistItem]);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+    const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -176,9 +178,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
-                channelId={props.channelId}
+                participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
-                editable={!props.disabled}
+                editable={!props.readOnly}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
@@ -195,7 +197,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 checklistNum={props.checklistNum}
                 command={command}
                 command_last_run={props.checklistItem.command_last_run}
-                disabled={props.disabled}
+                disabled={props.readOnly}
                 itemNum={props.itemNum}
                 playbookRunId={props.playbookRunId}
                 isEditing={isEditing}
@@ -213,7 +215,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <DueDateButton
-                editable={!props.disabled}
+                editable={!props.readOnly}
                 date={dueDate}
                 ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
@@ -243,13 +245,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             data-testid='checkbox-item-container'
             editing={isEditing}
             hoverMenuItemOpen={isHoverMenuItemOpen}
-            $disabled={props.disabled}
+            $disabled={props.readOnly}
         >
             <CheckboxContainer>
-                {!props.disabled && !props.dragging &&
+                {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
-                        channelId={props.channelId}
+                        participantUserIds={props.participantUserIds}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
@@ -272,13 +274,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                     className={'icon icon-drag-vertical'}
                     {...props.draggableProvided?.dragHandleProps}
-                    isVisible={!props.disabled}
+                    isVisible={!props.readOnly}
                     isDragging={props.dragging}
                 />
                 <CheckBoxButton
-                    disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
+                    readOnly={props.readOnly}
+                    disabled={props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                    onViewerModeInteract={props.onViewerModeInteract}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}

@@ -37,19 +37,20 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI       *pluginapi.Client
-	httpClient      *http.Client
-	configService   config.Service
-	store           PlaybookRunStore
-	poster          bot.Poster
-	scheduler       JobOnceScheduler
-	telemetry       PlaybookRunTelemetry
-	api             plugin.API
-	playbookService PlaybookService
-	actionService   ChannelActionService
-	permissions     *PermissionsService
-	licenseChecker  LicenseChecker
-	metricsService  *metrics.Metrics
+	pluginAPI        *pluginapi.Client
+	httpClient       *http.Client
+	configService    config.Service
+	store            PlaybookRunStore
+	poster           bot.Poster
+	scheduler        JobOnceScheduler
+	telemetry        PlaybookRunTelemetry
+	genericTelemetry GenericTelemetry
+	api              plugin.API
+	playbookService  PlaybookService
+	actionService    ChannelActionService
+	permissions      *PermissionsService
+	licenseChecker   LicenseChecker
+	metricsService   *metrics.Metrics
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -95,6 +96,7 @@ func NewPlaybookRunService(
 	configService config.Service,
 	scheduler JobOnceScheduler,
 	telemetry PlaybookRunTelemetry,
+	genericTelemetry GenericTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
@@ -102,18 +104,19 @@ func NewPlaybookRunService(
 	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:       pluginAPI,
-		store:           store,
-		poster:          poster,
-		configService:   configService,
-		scheduler:       scheduler,
-		telemetry:       telemetry,
-		httpClient:      httptools.MakeClient(pluginAPI),
-		api:             api,
-		playbookService: playbookService,
-		actionService:   channelActionService,
-		licenseChecker:  licenseChecker,
-		metricsService:  metricsService,
+		pluginAPI:        pluginAPI,
+		store:            store,
+		poster:           poster,
+		configService:    configService,
+		scheduler:        scheduler,
+		telemetry:        telemetry,
+		genericTelemetry: genericTelemetry,
+		httpClient:       httptools.MakeClient(pluginAPI),
+		api:              api,
+		playbookService:  playbookService,
+		actionService:    channelActionService,
+		licenseChecker:   licenseChecker,
+		metricsService:   metricsService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -392,6 +395,17 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
 		}
+	}
+
+	if len(invitedUserIDs) > 0 {
+		s.genericTelemetry.Track(
+			telemetryRunParticipate,
+			map[string]any{
+				"count":          len(invitedUserIDs) - len(usersFailedToInvite),
+				"trigger":        "invite_on_create",
+				"playbookrun_id": playbookRun.ID,
+			},
+		)
 	}
 
 	if len(usersFailedToInvite) != 0 {
@@ -1532,6 +1546,23 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
+	// add the user as run participant if they was not already
+	if assigneeID != "" && assigneeID != playbookRunToModify.OwnerUserID {
+		var isParticipant bool
+		for _, participantID := range playbookRunToModify.ParticipantIDs {
+			if participantID == assigneeID {
+				isParticipant = true
+				break
+			}
+		}
+		if !isParticipant {
+			err := s.AddParticipants(playbookRunToModify.ID, []string{assigneeID}, userID, false)
+			if err != nil {
+				return errors.Wrapf(err, "failed to add assignee to run")
+			}
+		}
+	}
+
 	// Do we send a DM to the new assignee?
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
 		var subjectUser *model.User
@@ -1750,14 +1781,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve playbook run")
-	}
-
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
-	}
-
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return errors.New("user does not have permission to modify playbook run")
 	}
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
@@ -2227,10 +2250,6 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
-		return nil, errors.New("user does not have permission to modify playbook run")
-	}
-
 	if checklistNumber < 0 || checklistNumber >= len(playbookRunToModify.Checklists) {
 		return nil, errors.New("invalid checklist number")
 	}
@@ -2278,11 +2297,6 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
-	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
@@ -3057,29 +3071,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, ch
 		return
 	}
 
-	// Send message to channel if one the following scenarios happens:
-	// - channel is private and is a "participate" action )
-	// - channel is private and the user adding a new participant has no access to it
-	requesterHasAccessToChannel := s.permissions.ChannelActionView(requesterUser.Id, playbookRun.ChannelID) == nil
-	isParticipateFlow := requesterUser.Id == user.Id
-	if channel.Type == "P" && (isParticipateFlow || !requesterHasAccessToChannel) {
-		T := i18n.GetUserTranslations(requesterUser.Locale)
-		data := map[string]interface{}{
-			"Name":          user.Username,
-			"RequesterName": requesterUser.Username,
-		}
-		msg := T("app.user.run.joined_run_channel_private_add_participant", data)
-		if isParticipateFlow {
-			msg = T("app.user.run.joined_run_channel_private_participate", data)
-		}
-
-		if _, err := s.poster.PostMessage(playbookRun.ChannelID, msg); err != nil {
-			logrus.WithError(err).Errorf("participateActions: failed to send message to private channel, userID '%s'", user.Id)
-		}
-		return
-	}
-
-	// Regular add channel member otherwise
+	// Add user to the channel
 	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
 		logrus.WithError(err).Errorf("participateActions: failed to add user to linked channel, userID '%s'", user.Id)
 	}
@@ -3461,4 +3453,24 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 			logger.WithError(err).WithField("user_id", user).Warn("failed to broadcast post to the user")
 		}
 	}
+}
+
+// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
+	return s.store.GetPlaybookRunIDsForUser(userID)
+}
+
+// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+func (s *PlaybookRunServiceImpl) GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error) {
+	return s.store.GetRunMetadataByIDs(runIDs)
+}
+
+// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+func (s *PlaybookRunServiceImpl) GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error) {
+	return s.store.GetTaskAsTopicMetadataByIDs(taskIDs)
+}
+
+// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+func (s *PlaybookRunServiceImpl) GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error) {
+	return s.store.GetStatusAsTopicMetadataByIDs(statusIDs)
 }
