@@ -762,7 +762,7 @@ describe('playbooks > edit', () => {
         commonActionTests();
     });
 
-    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
+    describe.only('actions toggled linkruntoexistingchannelenabled=ON', () => {
         let testPlaybook;
 
         before(() => {
@@ -1090,7 +1090,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('be.checked');
@@ -1133,7 +1133,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
@@ -1216,7 +1216,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
