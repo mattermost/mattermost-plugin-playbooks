@@ -33,6 +33,7 @@ interface RunToDisplay {
 
 interface Props {
     runs: RunToDisplay[];
+    onSelectRun: (runID: string) => void
 }
 
 const Container = styled.div`
@@ -147,6 +148,7 @@ const RHSRunList = (props: Props) => {
                 {props.runs.map((run: RunToDisplay) => (
                     <RHSRunListCard
                         key={run.id}
+                        onClick={() => props.onSelectRun(run.id)}
                         {...run}
                     />
                 ))}
@@ -160,9 +162,19 @@ const CardContainer = styled.div`
     flex-direction: column;
     padding: 16px 20px 20px;
     border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     gap: 8px;
+
+    cursor: pointer;
+
+    &:hover {
+        box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.12);
+    }
+
+    &:active {
+        box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
+    }
 `;
 const TitleRow = styled.div`
     font-size: 14px;
@@ -231,11 +243,17 @@ const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
 `;
 
-const RHSRunListCard = (props: RunToDisplay) => {
+interface RHSRunListCardProps extends RunToDisplay {
+    onClick: () => void
+}
+
+const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
 
     return (
-        <CardContainer>
+        <CardContainer
+            onClick={props.onClick}
+        >
             <TitleRow>{props.name}</TitleRow>
             <PeopleRow>
                 <OwnerProfileChip userId={props.ownerUserID}/>

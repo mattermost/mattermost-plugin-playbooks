@@ -91,7 +91,12 @@ const OldRoutesRedirect = () => {
     );
 };
 
-const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<NormalizedCacheObject>}) => {
+interface PlaybooksWrappersProps {
+    component: React.ReactNode
+    client: ApolloClient<NormalizedCacheObject>
+}
+
+const PlaybooksWrappers = (props: PlaybooksWrappersProps) => {
     return (
         <ApolloProvider client={props.client}>
             {props.component}
@@ -157,7 +162,7 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const BackstageWrapped = () => (
-            <ApolloWrapped
+            <PlaybooksWrappers
                 component={<Backstage/>}
                 client={graphqlClient}
             />
@@ -165,14 +170,14 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const RHSWrapped = () => (
-            <ApolloWrapped
+            <PlaybooksWrappers
                 component={<RightHandSidebar/>}
                 client={graphqlClient}
             />
         );
         // eslint-disable-next-line react/require-optimization
         const RHSTitleWrapped = () => (
-            <ApolloWrapped
+            <PlaybooksWrappers
                 component={<RHSTitle/>}
                 client={graphqlClient}
             />

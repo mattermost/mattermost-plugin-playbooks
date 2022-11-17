@@ -17,10 +17,9 @@ import {
     RHSContainer,
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
-import {usePrevious} from 'src/hooks/general';
+import {usePrevious, useRun} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
@@ -35,13 +34,17 @@ import {useParticipateInRun} from 'src/hooks';
 
 const toastDebounce = 2000;
 
-const RHSRunDetails = () => {
+interface Props {
+    runID: string
+}
+
+const RHSRunDetails = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const scrollbarsRef = useRef<Scrollbars>(null);
     const currentUserId = useSelector(getCurrentUserId);
 
-    const playbookRun = useSelector(currentPlaybookRun);
+    const [playbookRun] = useRun(props.runID);
     const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
     usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
