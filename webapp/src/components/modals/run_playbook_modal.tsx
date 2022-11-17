@@ -180,11 +180,14 @@ const RunPlaybookModal = ({
         </Container>
     );
 
+    const isFormValid = runName !== '' && (channelMode === 'create_new_channel' || channelId !== '');
+
     return (
         <StyledGenericModal
             modalHeaderText={formatMessage({defaultMessage: 'Run Playbook'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+            isConfirmDisabled={!isFormValid}
             handleConfirm={onSubmit}
             id={ID}
             handleCancel={() => true}
