@@ -172,10 +172,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 return true;
             }
             const notFinished = [ChecklistItemState.Open, ChecklistItemState.InProgress].includes(props.checklistItem.state as ChecklistItemState);
-            if (dueDate > 0 && notFinished) {
-                return true;
-            }
-            return false;
+            return dueDate > 0 && notFinished;
         };
 
         return (
@@ -519,13 +516,12 @@ const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMen
 
     ${({$disabled}) => $disabled && css`
         ${ChecklistItemTitleWrapper},
-        ${Row} {
-            z-index: 1;
+        & > ${Row} {
             opacity: 0.64;
         }
 
         ${HoverMenu} {
-            z-index: 2;
+            z-index: 1;
         }
     `}
 
