@@ -690,10 +690,7 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 	}
 
 	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -716,10 +713,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	}
 
 	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -873,10 +867,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	s.telemetry.UpdateStatus(playbookRunToModify, userID)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return err
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1046,10 +1037,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
 	s.metricsService.IncrementRunsFinishedCount(1)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1139,9 +1127,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return err
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1209,10 +1195,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	}
 
 	s.telemetry.RestorePlaybookRun(playbookRunToRestore, userID)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return err
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1234,14 +1217,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
 		return err
 	}
-
-	run, err := s.store.GetPlaybookRun(id)
-	if err != nil {
-		return err
-	}
-
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, run, run.ChannelID)
-
+	s.sendPlaybookRunUpdatedWS(id)
 	return nil
 }
 
@@ -1433,10 +1409,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	s.telemetry.ChangeOwner(playbookRunToModify, userID)
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -1492,10 +1465,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -1630,9 +1600,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -1655,7 +1623,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 
 	return nil
 }
@@ -1679,10 +1647,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return errors.Wrap(err, "failed to send playbook run to client")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -1759,11 +1724,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
-
-	if err = s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		return "", errors.Wrap(err, "failed to send playbook run to client")
-	}
-
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return cmdResponse.TriggerId, nil
 }
 
@@ -1790,7 +1751,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1810,7 +1771,7 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1831,7 +1792,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
@@ -1853,7 +1814,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.RemoveChecklist(playbookRunID, userID, oldChecklist)
 
 	return nil
@@ -1873,7 +1834,7 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	s.telemetry.RenameChecklist(playbookRunID, userID, playbookRunToModify.Checklists[checklistNumber])
 
 	return nil
@@ -1893,7 +1854,7 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1917,7 +1878,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.RemoveTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1942,7 +1903,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.SkipChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1966,7 +1927,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.RestoreChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1989,7 +1950,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.SkipTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -2011,7 +1972,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.RestoreTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -2034,7 +1995,7 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.RenameTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -2067,7 +2028,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
 
 	return nil
@@ -2120,7 +2081,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
 	s.telemetry.MoveTask(playbookRunID, userID, itemMoved)
 
 	return nil
@@ -2314,8 +2275,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
-
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRun))
 	return nil
 }
 
@@ -2647,25 +2607,60 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 	}, nil
 }
 
-// sendPlaybookRunToClient send Run to users via websocket
-// Two cases will be handled:
-// - one message as broadcast channel-id based
-// - additional messages user-id based (one per userid passed)
-func (s *PlaybookRunServiceImpl) sendPlaybookRunToClient(playbookRunID string, userIDs []string) error {
-	playbookRunToSend, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+// structure to handle optional parameters for sendPlaybookRunUpdatedWS
+type RunWSOptions struct {
+	AdditionalUserIDs []string
+	PlaybookRun       *PlaybookRun
+}
+type RunWSOption func(options *RunWSOptions)
+
+func WithAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
+	return func(options *RunWSOptions) {
+		options.AdditionalUserIDs = additionalUserIDs
+	}
+}
+
+func WithPlaybookRun(playbookRun *PlaybookRun) RunWSOption {
+	return func(options *RunWSOptions) {
+		options.PlaybookRun = playbookRun
+	}
+}
+
+// sendPlaybookRunUpdatedWS send run updates to users via websocket
+// Individual Websocket messages will be sent to the owner/participants and users
+// (optionally passed as parameter)
+func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, options ...RunWSOption) {
+	var err error
+
+	sendWSOptions := RunWSOptions{}
+	for _, option := range options {
+		option(&sendWSOptions)
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToSend, playbookRunToSend.ChannelID)
-
-	// Additional explicit users (not channelid based)
-	// Temporary workaround until we have GQL real time mechanism
-	for _, userID := range userIDs {
-		s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRunToSend, userID)
+	// Get playbookRun if not provided
+	playbookRun := sendWSOptions.PlaybookRun
+	if playbookRun == nil {
+		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+		if err != nil {
+			logrus.WithError(err).WithField("playbookRunID", playbookRunID).Error("failed to retrieve playbook run when sending websocket")
+			return
+		}
 	}
 
-	return nil
+	// create a unique list of user ids to send the message to
+	uniqueUserIDs := make(map[string]bool, len(sendWSOptions.AdditionalUserIDs)+len(playbookRun.ParticipantIDs)+1)
+	uniqueUserIDs[playbookRun.OwnerUserID] = true
+	for _, u := range sendWSOptions.AdditionalUserIDs {
+		uniqueUserIDs[u] = true
+	}
+	for _, u := range playbookRun.ParticipantIDs {
+		uniqueUserIDs[u] = true
+	}
+
+	// send the websocket message
+	for userID := range uniqueUserIDs {
+		s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, userID)
+	}
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
@@ -2682,7 +2677,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	s.telemetry.UpdateRetrospective(playbookRunToModify, updaterID)
 
 	return nil
@@ -2743,9 +2738,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		logrus.WithError(err).Error("failed to send websocket event")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
 
 	return nil
@@ -2825,9 +2818,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		logrus.WithError(err).Error("failed send websocket event")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -2863,8 +2854,6 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
-	logger := logrus.WithField("playbook_run_id", playbookRunID)
-
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2902,9 +2891,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	}
 
 	// send updated run through websocket
-	if err := s.sendPlaybookRunToClient(playbookRunID, []string{}); err != nil {
-		logger.WithError(err).Warn("failed send websocket event")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 
 	return nil
 }
@@ -2956,9 +2943,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 
 	// ws send run
 	userIDs = append(userIDs, requesterUserID)
-	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
-		logrus.WithError(err).Error("failed send websocket event")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs(userIDs))
 
 	return nil
 }
@@ -3025,9 +3010,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	// ws send run
 	userIDs = append(userIDs, requesterUserID)
-	if err := s.sendPlaybookRunToClient(playbookRunID, userIDs); err != nil {
-		logrus.WithError(err).Error("failed send websocket event")
-	}
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs(userIDs))
 
 	return nil
 }
@@ -3134,6 +3117,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Follow(playbookRun, userID)
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs([]string{userID}))
 
 	return nil
 }
@@ -3149,6 +3133,8 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Unfollow(playbookRun, userID)
+
+	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs([]string{userID}))
 
 	return nil
 }
