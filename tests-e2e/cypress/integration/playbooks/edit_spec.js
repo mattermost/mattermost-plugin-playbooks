@@ -830,14 +830,16 @@ describe('playbooks > edit', () => {
                 });
             });
 
-            it('can fill a channel', () => {
+            it('can fill a channel and is persisted', () => {
                 cy.get('#actions #link-existing-channel').within(() => {
                     cy.findByText('Select a channel').click().type('Town{enter}');
                 });
-            });
 
-            it('channel and channel mode are persisted', () => {
                 cy.reload();
+
+                // * wait for page to load
+                cy.get('h1').should('be.visible');
+
                 cy.get('#actions #create-new-channel').within(() => {
                     // * Verify that the toggle is unchecked and inputs are disabled
                     cy.get('input[type=radio]').eq(0).should('not.be.checked');
