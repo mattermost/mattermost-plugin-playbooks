@@ -76,7 +76,7 @@ const RHSAbout = (props: Props) => {
     };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun.id, 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun, 'channel_rhs');
     useEnsureProfiles(props.playbookRun.participant_ids);
 
     return (

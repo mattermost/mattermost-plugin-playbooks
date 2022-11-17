@@ -133,7 +133,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
     };
 
     async function fetchOwners() {
-        const owners = await fetchOwnersInTeam(currentTeamId);
+        const owners = await fetchOwnersInTeam(fetchParams.team_id || currentTeamId);
         return owners.map((c) => {
             //@ts-ignore TODO Fix this strangeness
             return {...c, id: c.user_id} as UserProfile;

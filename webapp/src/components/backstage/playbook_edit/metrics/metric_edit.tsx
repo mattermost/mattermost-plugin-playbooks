@@ -75,7 +75,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
     let inputIcon = <DollarSign sizePx={18}/>;
     let typeTitle = (
         <FormattedMessage
-            defaultMessage='{icon} Dollars'
+            defaultMessage='{icon} Cost'
             values={{icon: inputIcon}}
             tagName={React.Fragment}
         />

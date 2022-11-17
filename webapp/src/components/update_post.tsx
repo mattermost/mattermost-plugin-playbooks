@@ -117,10 +117,12 @@ const StyledPostText = styled(PostText)`
 `;
 
 const Separator = styled.hr`
-    && {
+    &&& {
         border: none;
         height: 1px;
-        background: rgba(var(--center-channel-color-rgb), 0.61);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+        margin: 12px 0;
+        opacity: 1;
     }
 `;
 
