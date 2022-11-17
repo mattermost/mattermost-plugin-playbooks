@@ -762,7 +762,7 @@ describe('playbooks > edit', () => {
         commonActionTests();
     });
 
-    describe.only('actions toggled linkruntoexistingchannelenabled=ON', () => {
+    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
         let testPlaybook;
 
         before(() => {
