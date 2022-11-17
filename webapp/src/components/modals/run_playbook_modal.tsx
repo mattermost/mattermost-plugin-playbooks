@@ -110,6 +110,7 @@ const RunPlaybookModal = ({
                 css={{alignSelf: 'flex-start'}}
             >
                 <StyledRadioInput
+                    data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={channelMode === 'link_existing_channel'}
                     onChange={() => setChannelMode('link_existing_channel')}
@@ -118,7 +119,7 @@ const RunPlaybookModal = ({
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledChannelSelector
-                    id={'link_existing_channel_selector'}
+                    id={'link-existing-channel-selector'}
                     onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
                     channelIds={channelId ? [channelId] : []}
                     isClearable={true}
@@ -133,6 +134,7 @@ const RunPlaybookModal = ({
 
             <AutomationTitle css={{alignSelf: 'flex-start'}} >
                 <StyledRadioInput
+                    data-testid={'create-channel-radio'}
                     type='radio'
                     checked={channelMode === 'create_new_channel'}
                     onChange={() => setChannelMode('create_new_channel')}
@@ -144,6 +146,7 @@ const RunPlaybookModal = ({
                 <VerticalSplit>
                     <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
                         <RadioInput
+                            data-testid={'create-public-channel-radio'}
                             type='radio'
                             disabled={channelMode === 'link_existing_channel'}
                             checked={createPublicRun}
@@ -159,6 +162,7 @@ const RunPlaybookModal = ({
                     <HorizontalSpacer size={8}/>
                     <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
                         <RadioInput
+                            data-testid={'create-private-channel-radio'}
                             type='radio'
                             disabled={channelMode === 'link_existing_channel'}
                             checked={!createPublicRun}
