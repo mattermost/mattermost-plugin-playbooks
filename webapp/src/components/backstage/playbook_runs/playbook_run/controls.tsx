@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ArrowDownIcon, BullhornOutlineIcon, UpdateIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {ArrowDownIcon, BullhornOutlineIcon, UpdateIcon, PencilOutlineIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
@@ -51,6 +51,17 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
         >
             <LinkVariantIcon size={18}/>
             <FormattedMessage defaultMessage='Copy link'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
+export const RenameRunItem = (props: {onClick: () => void}) => {
+    return (
+        <StyledDropdownMenuItem
+            onClick={props.onClick}
+        >
+            <PencilOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Rename run'/>
         </StyledDropdownMenuItem>
     );
 };

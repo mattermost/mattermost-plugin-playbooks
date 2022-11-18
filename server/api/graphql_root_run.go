@@ -5,6 +5,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -81,6 +82,8 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 }
 
 type RunUpdates struct {
+	Name                                    *string
+	Summary                                 *string
 	IsFavorite                              *bool
 	CreateChannelMemberOnNewParticipant     *bool
 	RemoveChannelMemberOnRemovedParticipant *bool
@@ -100,7 +103,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.RunView(userID, args.ID); err != nil {
+	if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
 		return "", err
 	}
 
@@ -109,12 +112,20 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
+	now := model.GetMillis()
+
 	// scalar updates
 	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "Name", args.Updates.Name)
+	addToSetmap(setmap, "Description", args.Updates.Summary)
 	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
 	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
 	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
 	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
+
+	if args.Updates.Summary != nil {
+		addToSetmap(setmap, "SummaryModifiedAt", &now)
+	}
 
 	if args.Updates.BroadcastChannelIDs != nil {
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
