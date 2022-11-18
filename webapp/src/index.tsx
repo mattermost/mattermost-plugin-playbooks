@@ -37,7 +37,6 @@ import {
     ChannelHeaderTooltip,
 } from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
-import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
@@ -74,6 +73,7 @@ import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
+import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -176,9 +176,9 @@ export default class Plugin {
             />
         );
         // eslint-disable-next-line react/require-optimization
-        const RHSTitleWrapped = () => (
+        const RHSTitlePlaceholderWrapped = () => (
             <PlaybooksWrappers
-                component={<RHSTitle/>}
+                component={<RHSTitlePlaceholder/>}
                 client={graphqlClient}
             />
         );
@@ -197,7 +197,7 @@ export default class Plugin {
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitleWrapped/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitlePlaceholderWrapped/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later

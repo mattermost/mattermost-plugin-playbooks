@@ -41,6 +41,7 @@ import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 const WelcomeBlock = styled.div`
     padding: 4rem 3rem 2rem;
@@ -186,6 +187,33 @@ const ListSection = styled.div`
     }
 `;
 
+const RHSTitleText = styled.div<{ clickable?: boolean }>`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border-radius: 4px;
+
+    ${(props) => props.clickable && css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            fill: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+
+        &:active,
+        &--active,
+        &--active:hover {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+        }
+    `}
+`;
+
 const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
@@ -295,60 +323,69 @@ const RHSHome = () => {
     }
 
     return (
-        <RHSContainer>
-            <RHSContent>
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    renderTrackHorizontal={renderTrackHorizontal}
-                    style={{position: 'absolute'}}
-                >
-                    {!isLoading && <Header>{headerContent}</Header>}
+        <>
+            <RHSTitleRemoteRender>
+                <RHSTitleText>
+                    {/* product name; don't translate */}
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {'Playbooks'}
+                </RHSTitleText>
+            </RHSTitleRemoteRender>
+            <RHSContainer>
+                <RHSContent>
+                    <Scrollbars
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                        renderThumbVertical={renderThumbVertical}
+                        renderView={renderView}
+                        renderTrackHorizontal={renderTrackHorizontal}
+                        style={{position: 'absolute'}}
+                    >
+                        {!isLoading && <Header>{headerContent}</Header>}
 
-                    {Boolean(playbooks?.length) && (
-                        <>
-                            <ListHeading><FormattedMessage defaultMessage='Your Playbooks'/></ListHeading>
-                            <ListSection>
-                                {playbooks?.map((p) => (
-                                    <RHSHomePlaybook
-                                        key={p.id}
-                                        playbook={p}
-                                    />
-                                ))}
-                            </ListSection>
-                            {hasMore && (
-                                <PaginationContainer>
-                                    <TertiaryButton
-                                        onClick={() => setPage()}
-                                    >
-                                        <FormattedMessage defaultMessage='Show more'/>
-                                    </TertiaryButton>
-                                </PaginationContainer>
-                            )}
-                        </>
-                    )}
+                        {Boolean(playbooks?.length) && (
+                            <>
+                                <ListHeading><FormattedMessage defaultMessage='Your Playbooks'/></ListHeading>
+                                <ListSection>
+                                    {playbooks?.map((p) => (
+                                        <RHSHomePlaybook
+                                            key={p.id}
+                                            playbook={p}
+                                        />
+                                    ))}
+                                </ListSection>
+                                {hasMore && (
+                                    <PaginationContainer>
+                                        <TertiaryButton
+                                            onClick={() => setPage()}
+                                        >
+                                            <FormattedMessage defaultMessage='Show more'/>
+                                        </TertiaryButton>
+                                    </PaginationContainer>
+                                )}
+                            </>
+                        )}
 
-                    {canCreatePlaybooks && (
-                        <>
-                            <ListHeading><FormattedMessage defaultMessage='Playbook Templates'/></ListHeading>
-                            <ListSection>
-                                {PresetTemplates.map(({title, template}) => (
-                                    <RHSHomeTemplate
-                                        key={title}
-                                        title={title}
-                                        template={template}
-                                        onUse={newPlaybook}
-                                    />
-                                ))}
-                            </ListSection>
-                        </>
-                    )}
-                </Scrollbars>
-            </RHSContent>
-        </RHSContainer>
+                        {canCreatePlaybooks && (
+                            <>
+                                <ListHeading><FormattedMessage defaultMessage='Playbook Templates'/></ListHeading>
+                                <ListSection>
+                                    {PresetTemplates.map(({title, template}) => (
+                                        <RHSHomeTemplate
+                                            key={title}
+                                            title={title}
+                                            template={template}
+                                            onUse={newPlaybook}
+                                        />
+                                    ))}
+                                </ListSection>
+                            </>
+                        )}
+                    </Scrollbars>
+                </RHSContent>
+            </RHSContainer>
+        </>
     );
 };
 

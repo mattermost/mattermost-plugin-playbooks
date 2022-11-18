@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {BookOutlineIcon, FilterVariantIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
@@ -15,6 +15,8 @@ import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/compone
 
 import {SecondaryButton} from '../assets/buttons';
 import {openPlaybookRunModal} from 'src/actions';
+
+import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import {UserList} from './rhs_participants';
 
@@ -87,73 +89,109 @@ const SortDotMenuButton = styled(DotMenuButton)`
 
 const SortAscendingIcon = FilterVariantIcon;
 
+const RHSTitleText = styled.div<{ clickable?: boolean }>`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border-radius: 4px;
+
+    ${(props) => props.clickable && css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            fill: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+
+        &:active,
+        &--active,
+        &--active:hover {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+        }
+    `}
+`;
+
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
 
     return (
-        <Container>
-            <Header>
-                <DotMenu
-                    dotMenuButton={TitleButton}
-                    placement='bottom-start'
-                    icon={
-                        <FilterMenuTitle>
+        <>
+            <RHSTitleRemoteRender>
+                <RHSTitleText>
+                    {/* product name; don't translate */}
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {'Playbooks'}
+                </RHSTitleText>
+            </RHSTitleRemoteRender>
+            <Container>
+                <Header>
+                    <DotMenu
+                        dotMenuButton={TitleButton}
+                        placement='bottom-start'
+                        icon={
+                            <FilterMenuTitle>
+                                {formatMessage({defaultMessage: 'Runs in progress'})}
+                                <i className={'icon icon-chevron-down'}/>
+                            </FilterMenuTitle>
+                        }
+                    >
+                        <DropdownMenuItem
+                            onClick={() => console.log('testing')}
+                        >
                             {formatMessage({defaultMessage: 'Runs in progress'})}
-                            <i className={'icon icon-chevron-down'}/>
-                        </FilterMenuTitle>
-                    }
-                >
-                    <DropdownMenuItem
-                        onClick={() => console.log('testing')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => console.log('testing')}
+                        >
+                            {formatMessage({defaultMessage: 'Finished runs'})}
+                        </DropdownMenuItem>
+                    </DotMenu>
+                    <Spacer/>
+                    <StartRunButton
+                        onClick={() => dispatch(openPlaybookRunModal())}
                     >
-                        {formatMessage({defaultMessage: 'Runs in progress'})}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => console.log('testing')}
+                        <PlayOutlineIcon size={14}/>
+                        {formatMessage({defaultMessage: 'Start run'})}
+                    </StartRunButton>
+                    <DotMenu
+                        dotMenuButton={SortDotMenuButton}
+                        placement='bottom-start'
+                        icon={<SortAscendingIcon/>}
                     >
-                        {formatMessage({defaultMessage: 'Finished runs'})}
-                    </DropdownMenuItem>
-                </DotMenu>
-                <Spacer/>
-                <StartRunButton
-                    onClick={() => dispatch(openPlaybookRunModal())}
-                >
-                    <PlayOutlineIcon size={14}/>
-                    {formatMessage({defaultMessage: 'Start run'})}
-                </StartRunButton>
-                <DotMenu
-                    dotMenuButton={SortDotMenuButton}
-                    placement='bottom-start'
-                    icon={<SortAscendingIcon/>}
-                >
-                    <DropdownMenuItem
-                        onClick={() => console.log('testing')}
-                    >
-                        {formatMessage({defaultMessage: 'Recently created'})}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => console.log('testing')}
-                    >
-                        {formatMessage({defaultMessage: 'Recently updated'})}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => console.log('testing')}
-                    >
-                        {formatMessage({defaultMessage: 'Alphabetically'})}
-                    </DropdownMenuItem>
-                </DotMenu>
-            </Header>
-            <RunsList>
-                {props.runs.map((run: RunToDisplay) => (
-                    <RHSRunListCard
-                        key={run.id}
-                        onClick={() => props.onSelectRun(run.id)}
-                        {...run}
-                    />
-                ))}
-            </RunsList>
-        </Container>
+                        <DropdownMenuItem
+                            onClick={() => console.log('testing')}
+                        >
+                            {formatMessage({defaultMessage: 'Recently created'})}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => console.log('testing')}
+                        >
+                            {formatMessage({defaultMessage: 'Recently updated'})}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => console.log('testing')}
+                        >
+                            {formatMessage({defaultMessage: 'Alphabetically'})}
+                        </DropdownMenuItem>
+                    </DotMenu>
+                </Header>
+                <RunsList>
+                    {props.runs.map((run: RunToDisplay) => (
+                        <RHSRunListCard
+                            key={run.id}
+                            onClick={() => props.onSelectRun(run.id)}
+                            {...run}
+                        />
+                    ))}
+                </RunsList>
+            </Container>
+        </>
     );
 };
 

@@ -31,6 +31,9 @@ import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useParticipateInRun} from 'src/hooks';
+import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
+
+import RHSRunDetailsTitle from './rhs_run_details_title';
 
 const toastDebounce = 2000;
 
@@ -105,49 +108,54 @@ const RHSRunDetails = (props: Props) => {
     }
 
     return (
-        <RHSContainer>
-            <RHSContent>
-                <Scrollbars
-                    ref={scrollbarsRef}
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbHorizontal={renderThumbHorizontal}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                    style={{position: 'absolute'}}
-                >
-                    <RHSAbout
-                        playbookRun={playbookRun}
-                        readOnly={!isParticipant}
-                        onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+        <>
+            <RHSTitleRemoteRender>
+                <RHSRunDetailsTitle/>
+            </RHSTitleRemoteRender>
+            <RHSContainer>
+                <RHSContent>
+                    <Scrollbars
+                        ref={scrollbarsRef}
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                        renderThumbHorizontal={renderThumbHorizontal}
+                        renderThumbVertical={renderThumbVertical}
+                        renderView={renderView}
+                        style={{position: 'absolute'}}
+                    >
+                        <RHSAbout
+                            playbookRun={playbookRun}
+                            readOnly={!isParticipant}
+                            onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                        />
+                        <RHSChecklistList
+                            playbookRun={playbookRun}
+                            parentContainer={ChecklistParent.RHS}
+                            viewerMode={!isParticipant}
+                            onViewerModeInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                        />
+                    </Scrollbars>
+                </RHSContent>
+                {ParticipateConfirmModal}
+                {showRunDetailsSidePanelStep && (
+                    <TutorialTourTip
+                        title={<FormattedMessage defaultMessage='View run details in a side panel'/>}
+                        screen={<FormattedMessage defaultMessage='See who is involved and what needs to be done without leaving the conversation.'/>}
+                        tutorialCategory={TutorialTourCategories.RUN_DETAILS}
+                        step={RunDetailsTutorialSteps.SidePanel}
+                        showOptOut={false}
+                        placement='left-start'
+                        pulsatingDotPlacement='top-start'
+                        pulsatingDotTranslate={{x: 0, y: -7}}
+                        width={352}
+                        autoTour={true}
+                        punchOut={rhsContainerPunchout}
+                        telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.SidePanel}_SidePanel`}
                     />
-                    <RHSChecklistList
-                        playbookRun={playbookRun}
-                        parentContainer={ChecklistParent.RHS}
-                        viewerMode={!isParticipant}
-                        onViewerModeInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
-                    />
-                </Scrollbars>
-            </RHSContent>
-            {ParticipateConfirmModal}
-            {showRunDetailsSidePanelStep && (
-                <TutorialTourTip
-                    title={<FormattedMessage defaultMessage='View run details in a side panel'/>}
-                    screen={<FormattedMessage defaultMessage='See who is involved and what needs to be done without leaving the conversation.'/>}
-                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
-                    step={RunDetailsTutorialSteps.SidePanel}
-                    showOptOut={false}
-                    placement='left-start'
-                    pulsatingDotPlacement='top-start'
-                    pulsatingDotTranslate={{x: 0, y: -7}}
-                    width={352}
-                    autoTour={true}
-                    punchOut={rhsContainerPunchout}
-                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.SidePanel}_SidePanel`}
-                />
-            )}
-        </RHSContainer>
+                )}
+            </RHSContainer>
+        </>
     );
 };
 

@@ -21,7 +21,7 @@ import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
 
-const RHSTitle = () => {
+const RHSRunDetailsTitle = () => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
 
@@ -30,55 +30,45 @@ const RHSTitle = () => {
     const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
     const followState = useRunFollowers(metadata?.followers || []);
 
-    if (rhsState === RHSState.ViewingPlaybookRun) {
-        const tooltip = (
-            <Tooltip id={'view-run-overview'}>
-                {formatMessage({defaultMessage: 'View run overview'})}
-            </Tooltip>
-        );
-
-        return (
-            <RHSTitleContainer>
-                <Button
-                    onClick={() => dispatch(setRHSViewingList())}
-                    data-testid='back-button'
-                >
-                    <LeftChevron/>
-                </Button>
-
-                <OverlayTrigger
-                    placement={'top'}
-                    delay={OVERLAY_DELAY}
-                    overlay={tooltip}
-                >
-                    <RHSTitleLink
-                        data-testid='rhs-title'
-                        role={'button'}
-                        to={pluginUrl(`/runs/${playbookRun?.id}?from=channel_rhs_title`)}
-                    >
-                        {formatMessage({defaultMessage: 'Run details'})}
-                        <StyledButtonIcon>
-                            <ExternalLink/>
-                        </StyledButtonIcon>
-                    </RHSTitleLink>
-                </OverlayTrigger>
-                <FollowingWrapper>
-                    <FollowButton
-                        runID={playbookRun?.id || ''}
-                        followState={metadata ? followState : undefined}
-                        trigger={'channel_rhs'}
-                    />
-                </FollowingWrapper>
-            </RHSTitleContainer>
-        );
-    }
+    const tooltip = (
+        <Tooltip id={'view-run-overview'}>
+            {formatMessage({defaultMessage: 'View run overview'})}
+        </Tooltip>
+    );
 
     return (
-        <RHSTitleText>
-            {/* product name; don't translate */}
-            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-            {'Playbooks'}
-        </RHSTitleText>
+        <RHSTitleContainer>
+            <Button
+                onClick={() => dispatch(setRHSViewingList())}
+                data-testid='back-button'
+            >
+                <LeftChevron/>
+            </Button>
+
+            <OverlayTrigger
+                placement={'top'}
+                delay={OVERLAY_DELAY}
+                overlay={tooltip}
+            >
+                <RHSTitleLink
+                    data-testid='rhs-title'
+                    role={'button'}
+                    to={pluginUrl(`/runs/${playbookRun?.id}?from=channel_rhs_title`)}
+                >
+                    {formatMessage({defaultMessage: 'Run details'})}
+                    <StyledButtonIcon>
+                        <ExternalLink/>
+                    </StyledButtonIcon>
+                </RHSTitleLink>
+            </OverlayTrigger>
+            <FollowingWrapper>
+                <FollowButton
+                    runID={playbookRun?.id || ''}
+                    followState={metadata ? followState : undefined}
+                    trigger={'channel_rhs'}
+                />
+            </FollowingWrapper>
+        </RHSTitleContainer>
     );
 };
 
@@ -197,4 +187,4 @@ const StyledButtonIcon = styled.i`
     }
 `;
 
-export default RHSTitle;
+export default RHSRunDetailsTitle;
