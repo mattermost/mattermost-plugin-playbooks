@@ -263,7 +263,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
-			ChannelID:   getRunChannelID(playbook),
+			ChannelID:   playbook.GetRunChannelID(),
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
@@ -1906,11 +1906,4 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
-}
-
-func getRunChannelID(playbook app.Playbook) string {
-	if playbook.ChannelMode == app.PlaybookRunLinkExistingChannel {
-		return playbook.ChannelID
-	}
-	return ""
 }
