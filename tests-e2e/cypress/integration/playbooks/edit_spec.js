@@ -830,7 +830,7 @@ describe('playbooks > edit', () => {
                 });
             });
 
-            it('can fill a channel and is persisted', () => {
+            it.skip('can fill a channel and is persisted', () => {
                 cy.get('#actions #link-existing-channel').within(() => {
                     cy.findByText('Select a channel').click().type('Town{enter}');
                 });
