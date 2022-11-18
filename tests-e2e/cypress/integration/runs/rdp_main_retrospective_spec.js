@@ -290,7 +290,8 @@ describe('runs > run details page', () => {
                 });
             });
 
-            it.only('auto save', () => {
+            // https://community.mattermost.com/core/pl/16nzrobustrkumz73qfyej5t7e
+            it.skip('auto save', () => {
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();
