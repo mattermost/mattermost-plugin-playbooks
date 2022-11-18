@@ -388,7 +388,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 					WHERE pm.PlaybookID = p.ID
 					AND pm.MemberID = ?)
 		)`, requesterInfo.UserID)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, teamID, "p")
 
 	queryForResults := p.store.builder.
 		Select(

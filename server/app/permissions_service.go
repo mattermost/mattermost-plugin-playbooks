@@ -53,6 +53,10 @@ func (p *PermissionsService) PlaybookIsPublic(playbook Playbook) bool {
 }
 
 func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) []string {
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return []string{}
+	}
+
 	for _, member := range playbook.Members {
 		if member.UserID == userID {
 			return member.SchemeRoles
