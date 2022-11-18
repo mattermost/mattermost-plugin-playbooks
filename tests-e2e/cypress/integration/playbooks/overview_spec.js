@@ -387,7 +387,7 @@ describe('playbooks > overview', () => {
 
             // * Verify that channel configuration matches playbook config
             cy.findByTestId('link-existing-channel-radio').should('not.be.checked');
-            cy.get('#link-existing-channel-selector').get('input[type=text]').should('be.disabled');
+            cy.get('#link-existing-channel-selector').should('not.exist');
             cy.findByTestId('create-channel-radio').should('be.checked');
             cy.findByTestId('create-private-channel-radio').should('be.checked');
 
@@ -437,7 +437,7 @@ describe('playbooks > overview', () => {
             cy.findByTestId('link-existing-channel-radio').should('be.checked');
             cy.get('#link-existing-channel-selector').get('input[type=text]').should('be.enabled');
             cy.findByTestId('create-channel-radio').should('not.be.checked');
-            cy.findByTestId('create-private-channel-radio').should('be.disabled');
+            cy.findByTestId('create-private-channel-radio').should('not.exist');
 
             // # Click start run button
             cy.get('button[data-testid=modal-confirm-button]').click();

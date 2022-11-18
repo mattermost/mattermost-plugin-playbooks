@@ -117,20 +117,22 @@ const RunPlaybookModal = ({
                 />
                 <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
             </AutomationTitle>
-            <SelectorWrapper>
-                <StyledChannelSelector
-                    id={'link-existing-channel-selector'}
-                    onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
-                    channelIds={channelId ? [channelId] : []}
-                    isClearable={true}
-                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                    isDisabled={channelMode === 'create_new_channel'}
-                    captureMenuScroll={false}
-                    shouldRenderValue={true}
-                    teamId={teamId}
-                    isMulti={false}
-                />
-            </SelectorWrapper>
+            {channelMode === 'link_existing_channel' && (
+                <SelectorWrapper>
+                    <StyledChannelSelector
+                        id={'link-existing-channel-selector'}
+                        onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
+                        channelIds={channelId ? [channelId] : []}
+                        isClearable={true}
+                        selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                        isDisabled={false}
+                        captureMenuScroll={false}
+                        shouldRenderValue={true}
+                        teamId={teamId}
+                        isMulti={false}
+                    />
+                </SelectorWrapper>
+            )}
 
             <AutomationTitle css={{alignSelf: 'flex-start'}} >
                 <StyledRadioInput
@@ -142,41 +144,41 @@ const RunPlaybookModal = ({
                 <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
             </AutomationTitle>
 
-            <HorizontalSplit>
-                <VerticalSplit>
-                    <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
-                        <RadioInput
-                            data-testid={'create-public-channel-radio'}
-                            type='radio'
-                            disabled={channelMode === 'link_existing_channel'}
-                            checked={createPublicRun}
-                            onChange={() => setCreatePublicRun(true)}
-                        />
-                        <Icon
-                            disabled={channelMode === 'link_existing_channel'}
-                            active={createPublicRun}
-                            className={'icon-globe'}
-                        />
-                        <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
-                    </ButtonLabel>
-                    <HorizontalSpacer size={8}/>
-                    <ButtonLabel disabled={channelMode === 'link_existing_channel'}>
-                        <RadioInput
-                            data-testid={'create-private-channel-radio'}
-                            type='radio'
-                            disabled={channelMode === 'link_existing_channel'}
-                            checked={!createPublicRun}
-                            onChange={() => setCreatePublicRun(false)}
-                        />
-                        <Icon
-                            disabled={channelMode === 'link_existing_channel'}
-                            active={!createPublicRun}
-                            className={'icon-lock-outline'}
-                        />
-                        <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
-                    </ButtonLabel>
-                </VerticalSplit>
-            </HorizontalSplit>
+            {channelMode === 'create_new_channel' && (
+                <HorizontalSplit>
+                    <VerticalSplit>
+                        <ButtonLabel disabled={false}>
+                            <RadioInput
+                                data-testid={'create-public-channel-radio'}
+                                type='radio'
+                                checked={createPublicRun}
+                                onChange={() => setCreatePublicRun(true)}
+                            />
+                            <Icon
+                                disabled={false}
+                                active={createPublicRun}
+                                className={'icon-globe'}
+                            />
+                            <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
+                        </ButtonLabel>
+                        <HorizontalSpacer size={8}/>
+                        <ButtonLabel disabled={false}>
+                            <RadioInput
+                                data-testid={'create-private-channel-radio'}
+                                type='radio'
+                                checked={!createPublicRun}
+                                onChange={() => setCreatePublicRun(false)}
+                            />
+                            <Icon
+                                disabled={false}
+                                active={!createPublicRun}
+                                className={'icon-lock-outline'}
+                            />
+                            <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
+                        </ButtonLabel>
+                    </VerticalSplit>
+                </HorizontalSplit>
+            )}
         </Container>
     );
 
