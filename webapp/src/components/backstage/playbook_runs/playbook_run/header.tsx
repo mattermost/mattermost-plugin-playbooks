@@ -66,6 +66,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                             input {
                                 ${titleCommon}
                                 height: 36px;
+                                width: 240px;
                             }
                             ${CancelSaveContainer} {
                                 padding: 0;
@@ -76,31 +77,33 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                         `}
             >
                 {(edit) => (
-                    <ContextMenu
-                        playbookRun={playbookRun}
-                        role={role}
-                        onRenameClick={edit}
-                        isFavoriteRun={isFavoriteRun}
-                        isFollowing={isFollowing}
-                        toggleFavorite={toggleFavorite}
-                        hasPermanentViewerAccess={hasPermanentViewerAccess}
-                    />
+                    <>
+                        <ContextMenu
+                            playbookRun={playbookRun}
+                            role={role}
+                            onRenameClick={edit}
+                            isFavoriteRun={isFavoriteRun}
+                            isFollowing={isFollowing}
+                            toggleFavorite={toggleFavorite}
+                            hasPermanentViewerAccess={hasPermanentViewerAccess}
+                        />
+                        <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                        <HeaderButton
+                            tooltipId={'run-actions-button-tooltip'}
+                            tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
+                            aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+                            Icon={LightningBoltOutlineIcon}
+                            onClick={() => dispatch(showRunActionsModal())}
+                            data-testid={'rhs-header-button-run-actions'}
+                        />
+                        <StyledCopyLink
+                            id='copy-run-link-tooltip'
+                            to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                            tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
+                        />
+                    </>
                 )}
             </TextEdit>
-            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
-            <HeaderButton
-                tooltipId={'run-actions-button-tooltip'}
-                tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
-                Icon={LightningBoltOutlineIcon}
-                onClick={() => dispatch(showRunActionsModal())}
-                data-testid={'rhs-header-button-run-actions'}
-            />
-            <StyledCopyLink
-                id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
-                tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
-            />
             <ExpandRight/>
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
