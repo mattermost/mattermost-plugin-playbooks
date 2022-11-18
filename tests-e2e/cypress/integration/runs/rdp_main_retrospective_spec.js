@@ -292,7 +292,8 @@ describe('runs > run details page', () => {
                 });
             });
 
-            it('auto save', () => {
+            // skipped flaky test: https://mattermost.atlassian.net/browse/MM-48509
+            it.skip('auto save', () => {
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();
