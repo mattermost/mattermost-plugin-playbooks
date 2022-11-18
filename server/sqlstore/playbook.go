@@ -156,6 +156,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.CategorizeChannelEnabled",
 			"p.CreateChannelMemberOnNewParticipant",
 			"p.RemoveChannelMemberOnRemovedParticipant",
+			"p.ChannelID",
+			"p.ChannelMode",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -264,6 +266,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChannelNameTemplate":                     rawPlaybook.ChannelNameTemplate,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybook.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
+			"ChannelID":                               rawPlaybook.ChannelID,
+			"ChannelMode":                             rawPlaybook.ChannelMode,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -688,6 +692,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ChannelNameTemplate":                     rawPlaybook.ChannelNameTemplate,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybook.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
+			"ChannelID":                               rawPlaybook.ChannelID,
+			"ChannelMode":                             rawPlaybook.ChannelMode,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -1124,7 +1130,6 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
 		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
 	}
-
 	return p, nil
 }
 
