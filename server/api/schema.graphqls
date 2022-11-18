@@ -70,6 +70,8 @@ input PlaybookUpdates {
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
+	channelId: String
+	channelMode: String
 }
 
 input ChecklistUpdates {
@@ -135,6 +137,8 @@ type Playbook {
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
+	channelID: String!
+	channelMode: String!
 }
 
 type Checklist {

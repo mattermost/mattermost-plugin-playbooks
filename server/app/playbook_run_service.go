@@ -227,6 +227,12 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
+
+	// TODO: forced until start-a-run modal can overwrite it
+	if pb != nil && pb.ChannelMode == PlaybookRunLinkExistingChannel {
+		playbookRun.ChannelID = pb.ChannelID
+	}
+
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -256,10 +262,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 				pb.Title, playbookURL, overviewURL)
 		}
 
-		if playbookRun.Name == "" {
-			playbookRun.Name = pb.ChannelNameTemplate
-		}
-
 		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
 		if err != nil {
 			return nil, err
@@ -267,19 +269,15 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		playbookRun.ChannelID = channel.Id
 	} else {
-		existingPlaybookRunID, err := s.GetPlaybookRunIDForChannel(playbookRun.ChannelID)
-		if err != nil && !errors.Is(err, ErrNotFound) {
-			return nil, err
-		} else if existingPlaybookRunID != "" {
-			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
-		}
-
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
 			return nil, err
 		}
 
-		playbookRun.Name = channel.Name
+	}
+
+	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && playbookRun.Name == "" {
+		playbookRun.Name = pb.ChannelNameTemplate
 	}
 
 	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {

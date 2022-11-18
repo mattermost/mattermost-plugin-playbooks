@@ -31,6 +31,7 @@ const BroadcastChannelSelector = (props: Props) => {
             shouldRenderValue={true}
             placeholder={'Select channels'}
             teamId={props.teamId}
+            isMulti={true}
         />
     );
 };
