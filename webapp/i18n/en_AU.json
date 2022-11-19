@@ -746,5 +746,20 @@
     "SRqpbI": "{assignedNum, plural, =0 {No assigned tasks} other {# assigned}}",
     "I0NIMp": "Your tasks",
     "DUU48k": "There are no tasks explicitly assigned to you. You can expand your search using the filters.",
-    "CgAtTJ": "{overdueNum, plural, =0 {} other {# overdue}}"
+    "CgAtTJ": "{overdueNum, plural, =0 {} other {# overdue}}",
+    "meD+1Q": "RUN PARTICIPANTS",
+    "iH5e4J": "You’ll also be added to the channel linked to this run.",
+    "fBG/Ge": "Cost",
+    "dK2JKl": "Link to an existing channel",
+    "WFd88+": "Show completed tasks",
+    "VjJYEV": "e.g. Sales impact, Purchases",
+    "UAS7Bn": "Request access to the channel linked to this run",
+    "NGKqOC": "Also add me to the channel linked to this run",
+    "L6vn9U": "Run participants",
+    "IdTL+v": "Create a run channel",
+    "Gg/nch": "NOT PARTICIPATING",
+    "BJNrYQ": "As a participant, you’ll be able to update the run summary, tick off tasks, post status updates and edit the retrospective.",
+    "9X3jwi": "{icon} Cost",
+    "36NwLv": "Manage run participants list",
+    "2BCWLD": "Configure channel"
 }
