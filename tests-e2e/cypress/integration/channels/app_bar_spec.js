@@ -63,9 +63,7 @@ describe('channels > App Bar', () => {
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // * Verify App Bar icon is not showing
-            cy.get('#channel_view').within(() => {
-                cy.getPlaybooksAppBarIcon().should('not.exist');
-            });
+            cy.getPlaybooksAppBarIcon().should('not.exist');
         });
     });
 
@@ -77,9 +75,7 @@ describe('channels > App Bar', () => {
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // * Verify App Bar icon is showing
-            cy.get('#channel_view').within(() => {
-                cy.getPlaybooksAppBarIcon().should('exist');
-            });
+            cy.getPlaybooksAppBarIcon().should('exist');
         });
 
         describe('tooltip text', () => {
