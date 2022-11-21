@@ -1,2 +1,6 @@
+
+# i18n PRs
 webapp/i18n/* @mattermost/playbooks
+webapp/i18n/en.json @ghost
 assets/i18n/* @mattermost/playbooks
+assets/i18n/en.json @ghost
