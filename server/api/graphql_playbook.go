@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/pkg/errors"
@@ -9,6 +10,10 @@ import (
 
 type PlaybookResolver struct {
 	app.Playbook
+}
+
+func (r *PlaybookResolver) ChannelMode(ctx context.Context) string {
+	return fmt.Sprint(r.Playbook.ChannelMode)
 }
 
 func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {

@@ -15,6 +15,7 @@ type Query {
 		sort: String = "",
 		statuses: [String!] = [],
 		participantOrFollowerID: String = "",
+		channelID: String = "",
 	): [Run!]!
 }
 
@@ -69,6 +70,8 @@ input PlaybookUpdates {
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
+	channelId: String
+	channelMode: String
 }
 
 input ChecklistUpdates {
@@ -134,6 +137,8 @@ type Playbook {
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
+	channelID: String!
+	channelMode: String!
 }
 
 type Checklist {

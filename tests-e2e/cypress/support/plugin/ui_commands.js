@@ -44,6 +44,7 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
 // Selects Playbooks icon in the App Bar
 Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
     cy.apiGetConfig(true).then(({config}) => {
+        cy.get('#channel_view').should('be.visible');
         return cy.get(`.app-bar .app-bar__icon-inner img[src="${config.SiteURL}/plugins/playbooks/public/app-bar-icon.png"]`);
     });
 });
@@ -291,11 +292,13 @@ Cypress.Commands.add('getFirstPostId', () => {
 });
 
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
-    cy.findByTestId('lhs-navigation').within(() => {
+    cy.findByTestId('lhs-navigation').should('be.visible').within(() => {
         cy.contains('Playbooks').should('be.visible');
         cy.contains('Runs').should('be.visible');
     });
-    cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
-    cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
-    cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
+    cy.get('#playbooks-sidebar-right').should('be.visible').within(() => {
+        cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
+        cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
+        cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
+    });
 });

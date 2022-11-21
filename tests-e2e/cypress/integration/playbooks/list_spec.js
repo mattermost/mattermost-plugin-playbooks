@@ -10,11 +10,18 @@ describe('playbooks > list', () => {
     const playbookTitle = 'The Playbook Name';
     let testTeam;
     let testUser;
+    let testUser2;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // Create another user in the same team
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
             // # Login as user-1
             cy.apiLogin(testUser);
@@ -75,6 +82,9 @@ describe('playbooks > list', () => {
     });
 
     it('can duplicate playbook', () => {
+        // # Login as testUser2
+        cy.apiLogin(testUser2);
+
         // # Open the product
         cy.visit('/playbooks');
 
@@ -89,6 +99,12 @@ describe('playbooks > list', () => {
 
         // * Verify that playbook got duplicated
         cy.findByText('Copy of ' + playbookTitle).should('exist');
+
+        // * Verify that the current user is a member and can run the playbook.
+        cy.findByText('Copy of ' + playbookTitle).closest('[data-testid="playbook-item"]').within(() => {
+            cy.findByTestId('run-playbook').should('exist');
+            cy.findByTestId('join-playbook').should('not.exist');
+        });
     });
 
     context('archived playbooks', () => {

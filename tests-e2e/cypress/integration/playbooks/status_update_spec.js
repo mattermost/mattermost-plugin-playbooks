@@ -147,7 +147,7 @@ describe('playbooks > edit status update', () => {
 
                 // * Verify selected channels style
                 cy.findAllByTestId('status-update-broadcast-channels').click();
-                cy.get('.playbook-run-user-select__option').contains('Public Channel')
+                cy.get('.playbook-react-select__option').contains('Public Channel')
                     .invoke('css', 'text-decoration')
                     .should('equal', 'line-through solid rgba(63, 67, 80, 0.48)');
 

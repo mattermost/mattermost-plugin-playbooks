@@ -86,7 +86,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         });
     };
 
-    const setOwnerId = (userType?: string, user?: UserProfile) => {
+    const setOwnerId = (user?: UserProfile) => {
         setFetchParams((oldParams) => {
             return {...oldParams, owner_user_id: user?.id, page: 0};
         });
@@ -133,7 +133,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
     };
 
     async function fetchOwners() {
-        const owners = await fetchOwnersInTeam(fetchParams.team_id || '');
+        const owners = await fetchOwnersInTeam(fetchParams.team_id || currentTeamId);
         return owners.map((c) => {
             //@ts-ignore TODO Fix this strangeness
             return {...c, id: c.user_id} as UserProfile;
@@ -179,8 +179,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onCustomReset: resetOwner,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
-                getUsers={fetchOwners}
-                getUsersInTeam={() => Promise.resolve([])}
+                getAllUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
             />
             {!fixedPlaybook &&

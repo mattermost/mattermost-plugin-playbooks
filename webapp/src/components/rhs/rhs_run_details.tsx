@@ -72,7 +72,7 @@ const RHSRunDetails = () => {
         }
     }, [runDetailsStep]);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun?.id || '', 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
     const displayReadOnlyToast = useMemo(() => debounce(() => {
@@ -117,13 +117,13 @@ const RHSRunDetails = () => {
                     <RHSAbout
                         playbookRun={playbookRun}
                         readOnly={!isParticipant}
-                        onReadOnlyInteract={displayReadOnlyToast}
+                        onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
                     />
                     <RHSChecklistList
                         playbookRun={playbookRun}
                         parentContainer={ChecklistParent.RHS}
                         viewerMode={!isParticipant}
-                        onViewerModeInteract={displayReadOnlyToast}
+                        onViewerModeInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
                     />
                 </Scrollbars>
             </RHSContent>
