@@ -8,8 +8,6 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {setRHSOpen, setRHSViewingPlaybookRun} from 'src/actions';
-import {currentRHSState} from 'src/selectors';
-import {RHSState} from 'src/types/rhs';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 import {ToastProvider} from '../backstage/toast_banner';
@@ -22,7 +20,6 @@ import RHSHome from './rhs_home';
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [currentRun, setCurrentRun] = useState<string|undefined>();
     const {data, error} = useRhsRunsQuery({
         variables: {
@@ -53,11 +50,20 @@ const RightHandSidebar = () => {
         return null;
     }
 
+    const clearCurrentRun = () => {
+        setCurrentRun(undefined);
+    };
+
     // No runs (ever) in this channel
     if (data.runs.length === 0) {
         // Keep showing a run we have displayed if one is open
         if (currentRun) {
-            return <RHSRunDetails runID={currentRun}/>;
+            return (
+                <RHSRunDetails
+                    runID={currentRun}
+                    onBackClick={clearCurrentRun}
+                />
+            );
         }
 
         // Otherwise show the home screen
@@ -66,7 +72,12 @@ const RightHandSidebar = () => {
 
     // If we have a run selected and it's in the current channel show that
     if (currentRun && data.runs.find((run) => run.id === currentRun)) {
-        return <RHSRunDetails runID={currentRun}/>;
+        return (
+            <RHSRunDetails
+                runID={currentRun}
+                onBackClick={clearCurrentRun}
+            />
+        );
     }
 
     // We have more than one run, and the currently selected run isn't in this channel.

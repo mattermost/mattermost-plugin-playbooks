@@ -39,6 +39,7 @@ const toastDebounce = 2000;
 
 interface Props {
     runID: string
+    onBackClick: () => void;
 }
 
 const RHSRunDetails = (props: Props) => {
@@ -110,7 +111,10 @@ const RHSRunDetails = (props: Props) => {
     return (
         <>
             <RHSTitleRemoteRender>
-                <RHSRunDetailsTitle/>
+                <RHSRunDetailsTitle
+                    runID={props.runID}
+                    onBackClick={props.onBackClick}
+                />
             </RHSTitleRemoteRender>
             <RHSContainer>
                 <RHSContent>

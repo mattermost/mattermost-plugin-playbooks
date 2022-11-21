@@ -3,31 +3,26 @@
 
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from '@mattermost/types/store';
-
-import {PlaybookRun} from 'src/types/playbook_run';
 import {useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
-import {RHSState} from 'src/types/rhs';
-import {setRHSViewingList} from 'src/actions';
-import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
 
-const RHSRunDetailsTitle = () => {
-    const dispatch = useDispatch();
+interface Props {
+    onBackClick: () => void;
+    runID: string;
+}
+
+const RHSRunDetailsTitle = (props: Props) => {
     const {formatMessage} = useIntl();
 
-    const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
-    const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
-    const [metadata] = useRunMetadata(playbookRun?.id && rhsState === RHSState.ViewingPlaybookRun ? playbookRun.id : '');
+    const [metadata] = useRunMetadata(props.runID);
     const followState = useRunFollowers(metadata?.followers || []);
 
     const tooltip = (
@@ -39,7 +34,7 @@ const RHSRunDetailsTitle = () => {
     return (
         <RHSTitleContainer>
             <Button
-                onClick={() => dispatch(setRHSViewingList())}
+                onClick={props.onBackClick}
                 data-testid='back-button'
             >
                 <LeftChevron/>
@@ -53,7 +48,7 @@ const RHSRunDetailsTitle = () => {
                 <RHSTitleLink
                     data-testid='rhs-title'
                     role={'button'}
-                    to={pluginUrl(`/runs/${playbookRun?.id}?from=channel_rhs_title`)}
+                    to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
                 >
                     {formatMessage({defaultMessage: 'Run details'})}
                     <StyledButtonIcon>
@@ -63,7 +58,7 @@ const RHSRunDetailsTitle = () => {
             </OverlayTrigger>
             <FollowingWrapper>
                 <FollowButton
-                    runID={playbookRun?.id || ''}
+                    runID={props.runID}
                     followState={metadata ? followState : undefined}
                     trigger={'channel_rhs'}
                 />

@@ -8,19 +8,14 @@ import {Store} from 'src/types/store';
 import {
     toggleRHS,
     setClientId,
-    setRHSViewingList,
-    setRHSViewingPlaybookRun,
     promptUpdateStatus,
 } from 'src/actions';
 
 import {
     inPlaybookRunChannel,
     isPlaybookRunRHSOpen,
-    currentRHSState,
     currentPlaybookRun,
 } from 'src/selectors';
-
-import {RHSState} from 'src/types/rhs';
 
 type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};
 
@@ -52,10 +47,6 @@ export function makeSlashCommandHook(store: Store) {
                 store.dispatch(toggleRHS());
             }
 
-            if (inPlaybookRunChannel(state) && currentRHSState(state) !== RHSState.ViewingPlaybookRun) {
-                store.dispatch(setRHSViewingPlaybookRun());
-            }
-
             return {message, args};
         }
 
@@ -63,10 +54,6 @@ export function makeSlashCommandHook(store: Store) {
             if (!isPlaybookRunRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
-            }
-
-            if (inPlaybookRunChannel(state) && currentRHSState(state) !== RHSState.ViewingList) {
-                store.dispatch(setRHSViewingList());
             }
 
             return {message, args};
