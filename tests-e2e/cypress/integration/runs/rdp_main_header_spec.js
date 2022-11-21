@@ -146,11 +146,7 @@ describe('runs > run details page > header', () => {
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
-                // # Intercept these graphQL requests for wait()'s
-                // # that help ensure rendering has finished.
-                cy.gqlInterceptQuery('PlaybookLHS');
-                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                waitToLoadLHS(testUser.username);
             });
         });
 
@@ -504,11 +500,7 @@ describe('runs > run details page > header', () => {
                     cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
 
-                // # Intercept these graphQL requests for wait()'s
-                // # that help ensure rendering has finished.
-                cy.gqlInterceptQuery('PlaybookLHS');
-                cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                cy.assertRunDetailsPageRenderComplete(testUser.username);
+                waitToLoadLHS(testUser.username);
             });
         });
 
@@ -537,97 +529,260 @@ describe('runs > run details page > header', () => {
                     getHeader().findByText('Participate').should('be.visible');
                 });
 
-                it('click button to show modal and cancel', () => {
-                    // * Assert that component is rendered
-                    getHeader().findByText('Participate').should('be.visible');
-
-                    // * Click Participate button
-                    getHeader().findByText('Participate').click();
-
-                    // # cancel modal
-                    cy.get('#confirmModal').get('#cancelModalButton').click();
-
-                    // * Assert modal is not shown
-                    cy.get('#confirmModal').should('not.exist');
-
-                    // # Login as testUser
-                    cy.apiLogin(testUser).then(() => {
-                        // # Visit the channel run
-                        cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
-
-                        // * Assert message has not been sent
-                        cy.getLastPost().should('not.contain', 'wants to participate in this run.');
-                    });
-                });
-
-                it('click button to show modal and confirm when private channel', () => {
-                    // # Intercept all calls to telemetry
-                    cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
-
-                    // * Assert component is rendered
-                    getHeader().findByText('Participate').should('be.visible');
-
-                    // * Click start-participating button
-                    getHeader().findByText('Participate').click();
-
-                    // # confirm modal
-                    cy.get('#confirmModal').get('#confirmModalButton').click().wait('@telemetry');
-
-                    // * Assert that modal is not shown
-                    cy.get('#confirmModal').should('not.exist');
-
-                    // * Verify run has been added to LHS
-                    cy.findByTestId('lhs-navigation')
-                        .should('be.visible')
-                        .findByText(playbookRunName)
-                        .should('be.visible');
-
-                    // # assert telemetry data
-                    cy.get('@telemetry.all').then((xhrs) => {
-                        expect(xhrs.length).to.eq(1);
-                        expect(xhrs[0].request.body.name).to.eq('playbookrun_participate');
-                        expect(xhrs[0].request.body.type).to.eq('track');
-                        expect(xhrs[0].request.body.properties.from).to.eq('run_details');
-                        expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
-                    });
-                });
-
-                it('click button and confirm to when public channel', () => {
-                    // # Login as testUser
-                    cy.apiLogin(testUser);
-
-                    const now = Date.now();
-                    playbookRunName = 'Playbook Run (' + now + ')';
-                    playbookRunChannelName = 'playbook-run-' + now;
-
-                    // Create a run with public chanel
-                    cy.apiRunPlaybook({
-                        teamId: testTeam.id,
-                        playbookId: testPublicPlaybookAndChannel.id,
-                        playbookRunName,
-                        ownerUserId: testUser.id,
-                    }).then((run) => {
-                        cy.apiLogin(testViewerUser);
-
-                        // # Visit the playbook run
-                        cy.visit(`/playbooks/runs/${run.id}`);
-                        cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
-                        cy.assertRunDetailsPageRenderComplete(testUser.username);
-
+                describe('Join action enabled', () => {
+                    it('click button to show modal and cancel', () => {
                         // * Assert that component is rendered
+                        getHeader().findByText('Participate').should('be.visible');
+
+                        // # Click Participate button
+                        getHeader().findByText('Participate').click();
+
+                        // * Verify modal message is correct
+                        cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
+
+                        // # cancel modal
+                        cy.findByTestId('modal-cancel-button').click();
+
+                        // * Assert modal is not shown
+                        cy.get('#become-participant-modal').should('not.exist');
+
+                        // # Login as testUser
+                        cy.apiLogin(testUser).then(() => {
+                            // # Visit the channel run
+                            cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                            // * Assert user has not been added to the channel
+                            cy.getLastPost().should('not.contain', 'Someone');
+                            cy.getLastPost().should('not.contain', testViewerUser.username);
+                        });
+                    });
+
+                    it('click button to show modal and confirm when private channel', () => {
+                        // # Intercept all calls to telemetry
+                        cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+
+                        // * Assert component is rendered
                         getHeader().findByText('Participate').should('be.visible');
 
                         // # Click start-participating button
                         getHeader().findByText('Participate').click();
 
+                        // * Verify modal message is correct
+                        cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
+
                         // # confirm modal
-                        cy.get('#confirmModal').get('#confirmModalButton').click();
+                        cy.findByTestId('modal-confirm-button').click().wait('@telemetry');
 
                         // * Assert that modal is not shown
-                        cy.get('#confirmModal').should('not.exist');
+                        cy.get('#become-participant-modal').should('not.exist');
 
                         // * Verify run has been added to LHS
-                        cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+                        verifyRunHasBeenAddedToLHS(playbookRunName);
+
+                        // # Navigate to the playbook run channel
+                        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Verify the user was added to the channel
+                        cy.getFirstPostId().then((id) => {
+                            cy.get(`#postMessageText_${id}`).within(() => {
+                                cy.contains('You and');
+                                cy.contains('joined the channel');
+                            });
+                        });
+
+                        // * assert telemetry data
+                        cy.get('@telemetry.all').then((xhrs) => {
+                            expect(xhrs.length).to.eq(1);
+                            expect(xhrs[0].request.body.name).to.eq('playbookrun_participate');
+                            expect(xhrs[0].request.body.type).to.eq('track');
+                            expect(xhrs[0].request.body.properties.from).to.eq('run_details');
+                            expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
+                        });
+                    });
+
+                    it('click button and confirm to when public channel', () => {
+                        // # Login as testUser
+                        cy.apiLogin(testUser);
+
+                        const now = Date.now();
+                        playbookRunName = 'Playbook Run (' + now + ')';
+                        playbookRunChannelName = 'playbook-run-' + now;
+
+                        // # Create a run with public chanel
+                        cy.apiRunPlaybook({
+                            teamId: testTeam.id,
+                            playbookId: testPublicPlaybookAndChannel.id,
+                            playbookRunName,
+                            ownerUserId: testUser.id,
+                        }).then((run) => {
+                            cy.apiLogin(testViewerUser);
+
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${run.id}`);
+                            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+                            // * Assert that component is rendered
+                            getHeader().findByText('Participate').should('be.visible');
+
+                            // # Click start-participating button
+                            getHeader().findByText('Participate').click();
+
+                            // * Verify modal message is correct
+                            cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
+
+                            // # confirm modal
+                            cy.findByTestId('modal-confirm-button').click();
+
+                            // * Assert that modal is not shown
+                            cy.get('#become-participant-modal').should('not.exist');
+
+                            // * Verify run has been added to LHS
+                            cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+
+                            // # Navigate to the playbook run channel
+                            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                            // * Verify that the user was added to the channel
+                            cy.getFirstPostId().then((id) => {
+                                cy.get(`#postMessageText_${id}`).within(() => {
+                                    cy.contains('You and');
+                                    cy.contains('joined the channel');
+                                });
+                            });
+                        });
+                    });
+                });
+
+                describe('Join action disabled', () => {
+                    beforeEach(() => {
+                        cy.apiLogin(testUser);
+
+                        // # Disable join action
+                        cy.apiUpdateRun(playbookRun.id, {createChannelMemberOnNewParticipant: false});
+
+                        cy.apiLogin(testViewerUser).then(() => {
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                        });
+
+                        waitToLoadLHS(testUser.username);
+                    });
+
+                    it('join the run with private channel, request to join the channel', () => {
+                        // # Click start-participating button
+                        getHeader().findByText('Participate').click();
+
+                        // * Verify modal message is correct
+                        cy.findByText('Request access to the channel linked to this run').should('exist');
+
+                        // # Select checkbox
+                        cy.findByTestId('also-add-to-channel').click({force: true});
+
+                        // # confirm modal
+                        cy.findByTestId('modal-confirm-button').click();
+
+                        // * Assert that modal is not shown
+                        cy.get('#become-participant-modal').should('not.exist');
+
+                        // * Verify run has been added to LHS
+                        verifyRunHasBeenAddedToLHS(playbookRunName);
+
+                        // # Login as testUser to check if join request was posted in the channel
+                        cy.apiLogin(testUser);
+
+                        // # Navigate to the playbook run channel
+                        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Verify that the request was sent to the channel
+                        cy.getLastPostId().then((id) => {
+                            cy.get(`#postMessageText_${id}`).within(() => {
+                                cy.contains(`@${testViewerUser.username} is a run participant and wants join this channel. Any member of the channel can invite them.`);
+                            });
+                        });
+                    });
+
+                    it('join the run with private channel, no request to join the channel', () => {
+                        // # Click start-participating button
+                        getHeader().findByText('Participate').click();
+
+                        // * Verify modal message is correct
+                        cy.findByText('Request access to the channel linked to this run').should('exist');
+
+                        // # confirm modal
+                        cy.findByTestId('modal-confirm-button').click();
+
+                        // * Assert that modal is not shown
+                        cy.get('#become-participant-modal').should('not.exist');
+
+                        // * Verify run has been added to LHS
+                        verifyRunHasBeenAddedToLHS(playbookRunName);
+
+                        // # Login as testUser to check if join request was posted in the channel
+                        cy.apiLogin(testUser);
+
+                        // # Navigate to the playbook run channel
+                        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                        // * Verify that the request was sent to the channel
+                        cy.getLastPostId().then((id) => {
+                            cy.get(`#postMessageText_${id}`).within(() => {
+                                cy.contains(`@${testViewerUser.username} is a run participant and wants join this channel. Any member of the channel can invite them.`).should('not.exist');
+                            });
+                        });
+                    });
+
+                    it('join run with public channel, join the channel', () => {
+                        // # Login as testUser
+                        cy.apiLogin(testUser);
+
+                        const now = Date.now();
+                        playbookRunName = 'Playbook Run (' + now + ')';
+                        playbookRunChannelName = 'playbook-run-' + now;
+
+                        // Create a run with public chanel
+                        cy.apiRunPlaybook({
+                            teamId: testTeam.id,
+                            playbookId: testPublicPlaybookAndChannel.id,
+                            playbookRunName,
+                            ownerUserId: testUser.id,
+                        }).then((run) => {
+                            cy.apiLogin(testViewerUser);
+
+                            // # Visit the playbook run
+                            cy.visit(`/playbooks/runs/${run.id}`);
+                            cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+                            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+                            // * Assert that component is rendered
+                            getHeader().findByText('Participate').should('be.visible');
+
+                            // # Click start-participating button
+                            getHeader().findByText('Participate').click();
+
+                            // * Verify modal message is correct
+                            cy.findByText('You’ll also be added to the channel linked to this run.').should('exist');
+
+                            // # confirm modal
+                            cy.findByTestId('modal-confirm-button').click();
+
+                            // * Assert that modal is not shown
+                            cy.get('#become-participant-modal').should('not.exist');
+
+                            // * Verify run has been added to LHS
+                            cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
+
+                            // # Navigate to the playbook run channel
+                            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+                            // * Verify that the user was added to the channel
+                            cy.getFirstPostId().then((id) => {
+                                cy.get(`#postMessageText_${id}`).within(() => {
+                                    cy.contains('You and');
+                                    cy.contains('joined the channel');
+                                });
+                            });
+                        });
                     });
                 });
             });
@@ -681,3 +836,19 @@ describe('runs > run details page > header', () => {
         });
     });
 });
+
+const waitToLoadLHS = (username) => {
+    // # Intercept these graphQL requests for wait()'s
+    // # that help ensure rendering has finished.
+    cy.gqlInterceptQuery('PlaybookLHS');
+    cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
+    cy.assertRunDetailsPageRenderComplete(username);
+};
+
+const verifyRunHasBeenAddedToLHS = (playbookRunName) => {
+    // * Verify run has been added to LHS
+    cy.findByTestId('lhs-navigation')
+        .should('be.visible')
+        .findByText(playbookRunName)
+        .should('be.visible');
+};

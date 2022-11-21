@@ -30,7 +30,7 @@ DEALLOCATE PREPARE addColumnIfNotExists;
 
 --  We drop entirely the unique index for MySQL, there's an additional index on ChannelID that is kept
 SET @preparedStatement = (SELECT IF(
-    NOT EXISTS(
+    EXISTS(
         SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
         WHERE table_name = 'IR_Incident'
         AND index_schema = DATABASE()

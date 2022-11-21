@@ -249,16 +249,16 @@ describe('runs > run details page > run info', () => {
                 // # Click Participate button
                 getHeader().findByText('Participate').click();
 
-                // # Confirm modal
-                cy.get('#confirmModal').get('#confirmModalButton').click();
+                // * Assert that modal is shown
+                cy.get('#become-participant-modal').should('exist');
 
-                // Assert that request-join button exist
+                // # Confirm modal
+                cy.findByTestId('modal-confirm-button').click();
+
+                // Assert that request-join button doesn't exist
                 getOverviewEntry('channel').within(() => {
-                    cy.get('button').click();
+                    cy.get('button').should('not.exist');
                 });
-
-                // # Confirm modal
-                cy.get('#confirmModal').get('#confirmModalButton').click();
             });
         });
     });
