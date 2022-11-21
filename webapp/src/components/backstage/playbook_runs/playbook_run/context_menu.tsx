@@ -74,6 +74,8 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     playbookRunId={playbookRun.id}
                 />
                 <RenameRunItem
+                    playbookRun={playbookRun}
+                    role={role}
                     onClick={onRenameClick}
                 />
                 <Separator/>

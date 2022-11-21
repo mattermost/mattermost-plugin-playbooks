@@ -55,15 +55,18 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
     );
 };
 
-export const RenameRunItem = (props: {onClick: () => void}) => {
-    return (
-        <StyledDropdownMenuItem
-            onClick={props.onClick}
-        >
-            <PencilOutlineIcon size={18}/>
-            <FormattedMessage defaultMessage='Rename run'/>
-        </StyledDropdownMenuItem>
-    );
+export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
+    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+        return (
+            <StyledDropdownMenuItem
+                onClick={props.onClick}
+            >
+                <PencilOutlineIcon size={18}/>
+                <FormattedMessage defaultMessage='Rename run'/>
+            </StyledDropdownMenuItem>
+        );
+    }
+    return null;
 };
 
 export const FollowRunMenuItem = (props: {isFollowing: boolean, toggleFollow: () => void}) => {
