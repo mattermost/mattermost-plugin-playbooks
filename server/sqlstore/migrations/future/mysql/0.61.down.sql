@@ -29,7 +29,7 @@ EXECUTE dropColumnIfExists;
 DEALLOCATE PREPARE dropColumnIfExists;
 
 SET @preparedStatement = (SELECT IF(
-    EXISTS(
+    NOT EXISTS(
         SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
         WHERE table_name = 'IR_Incident'
         AND index_schema = DATABASE()
