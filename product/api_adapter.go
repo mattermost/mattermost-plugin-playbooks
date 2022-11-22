@@ -5,8 +5,11 @@ package product
 
 import (
 	"database/sql"
+	"encoding/json"
+	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/app/request"
@@ -14,12 +17,20 @@ import (
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
+// ErrNotFound is returned by the plugin API when an object is not found.
+var ErrNotFound = errors.New("not found")
+
 // normalizeAppError returns a truly nil error if appErr is nil
 // See https://golang.org/doc/faq#nil_error for more details.
 func normalizeAppErr(appErr *mm_model.AppError) error {
 	if appErr == nil {
 		return nil
 	}
+
+	if appErr.StatusCode == http.StatusNotFound {
+		return ErrNotFound
+	}
+
 	return appErr
 }
 
@@ -73,6 +84,15 @@ func (a *serviceAPIAdapter) GetChannelsForTeamForUser(teamID string, userID stri
 func (a *serviceAPIAdapter) CreatePost(post *mm_model.Post) (*mm_model.Post, error) {
 	post, appErr := a.api.postService.CreatePost(a.ctx, post)
 	return post, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetPostsByIds(postIDs []string) ([]*mm_model.Post, error) {
+	post, _, appErr := a.api.postService.GetPostsByIds(postIDs)
+	return post, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) SendEphemeralPost(userID string, post *mm_model.Post) {
+	*post = *a.api.postService.SendEphemeralPost(a.ctx, userID, post)
 }
 
 //
@@ -204,12 +224,45 @@ func (a *serviceAPIAdapter) KVSetWithOptions(key string, value []byte, options m
 	return b, normalizeAppErr(appErr)
 }
 
+// Get gets the value for the given key into the given interface.
+//
+// An error is returned only if the value cannot be fetched. A non-existent key will return no
+// error, with nothing written to the given interface.
+//
+// Minimum server version: 5.2
+func (a *serviceAPIAdapter) Get(key string, o interface{}) error {
+	data, appErr := a.api.kvStoreService.KVGet(playbooksProductID, key)
+	if appErr != nil {
+		return normalizeAppErr(appErr)
+	}
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	if bytesOut, ok := o.(*[]byte); ok {
+		*bytesOut = data
+		return nil
+	}
+
+	if err := json.Unmarshal(data, o); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal value for key %s", key)
+	}
+
+	return nil
+}
+
 //
 // Store service.
 //
 
 func (a *serviceAPIAdapter) GetMasterDB() (*sql.DB, error) {
 	return a.api.storeService.GetMasterDB(), nil
+}
+
+// DriverName returns the driver name for the datasource.
+func (a *serviceAPIAdapter) DriverName() string {
+	return *a.api.configService.Config().SqlSettings.DriverName
 }
 
 //

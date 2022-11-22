@@ -3,7 +3,6 @@ package sqlstore
 import (
 	"context"
 	"embed"
-	"fmt"
 	"path/filepath"
 
 	"github.com/blang/semver"
@@ -15,9 +14,6 @@ import (
 	"github.com/pkg/errors"
 
 	ms "github.com/mattermost/morph/drivers/mysql"
-	ps "github.com/mattermost/morph/drivers/postgres"
-
-	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 //go:embed migrations
@@ -84,27 +80,9 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 }
 
 func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
-	driverName := sqlStore.db.DriverName()
-	config := drivers.Config{
-		StatementTimeoutInSecs: 100000,
-		MigrationsTable:        "IR_db_migrations",
-	}
-
 	var driver drivers.Driver
 	var err error
-	switch driverName {
-	case model.DatabaseDriverMysql:
-		driver, err = ms.WithInstance(sqlStore.db.DB, &ms.Config{
-			Config: config,
-		})
-
-	case model.DatabaseDriverPostgres:
-		driver, err = ps.WithInstance(sqlStore.db.DB, &ps.Config{
-			Config: config,
-		})
-	default:
-		err = fmt.Errorf("unsupported database type %s for migration", driverName)
-	}
+	driver, err = ms.WithInstance(sqlStore.db.DB)
 	return driver, err
 }
 

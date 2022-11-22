@@ -2,17 +2,16 @@ package bot
 
 import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // Bot stores the information for the plugin configuration, and implements the Poster interfaces.
 type Bot struct {
-	configService config.Service
-	pluginAPI     *pluginapi.Client
-	botUserID     string
-	telemetry     Telemetry
+	configService  config.Service
+	serviceAdapter playbooks.ServicesAPI
+	botUserID      string
+	telemetry      Telemetry
 }
 
 // Poster interface - a small subset of the plugin posting API.
@@ -73,11 +72,11 @@ type Telemetry interface {
 }
 
 // New creates a new bot poster.
-func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
+func New(serviceAdapter playbooks.ServicesAPI, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
 	return &Bot{
-		pluginAPI:     api,
-		botUserID:     botUserID,
-		configService: configService,
-		telemetry:     telemetry,
+		serviceAdapter: serviceAdapter,
+		botUserID:      botUserID,
+		configService:  configService,
+		telemetry:      telemetry,
 	}
 }

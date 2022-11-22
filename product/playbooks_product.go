@@ -123,139 +123,22 @@ type playbooksProduct struct {
 	metricsService       *metrics.Metrics
 
 	plugin.MattermostPlugin
+
+	// pluginAPIAdapter *adapters.PluginAPIAdapter
 }
 
 func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]interface{}) (mmapp.Product, error) {
 	playbooks := &playbooksProduct{}
-
-	for key, service := range services {
-		switch key {
-		case mmapp.TeamKey:
-			teamService, ok := service.(product.TeamService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.teamService = teamService
-		case mmapp.ChannelKey:
-			channelService, ok := service.(product.ChannelService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.channelService = channelService
-		case mmapp.UserKey:
-			userService, ok := service.(product.UserService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.userService = userService
-		case mmapp.PostKey:
-			postService, ok := service.(product.PostService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.postService = postService
-		case mmapp.PermissionsKey:
-			permissionsService, ok := service.(product.PermissionService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.permissionsService = permissionsService
-		case mmapp.BotKey:
-			botService, ok := service.(product.BotService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.botService = botService
-		case mmapp.ClusterKey:
-			clusterService, ok := service.(product.ClusterService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.clusterService = clusterService
-		case mmapp.ConfigKey:
-			configService, ok := service.(product.ConfigService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.configService = configService
-		case mmapp.LogKey:
-			logger, ok := service.(mlog.LoggerIFace)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.logger = logger.With(mlog.String("product", playbooksProductName))
-		case mmapp.LicenseKey:
-			licenseService, ok := service.(product.LicenseService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.licenseService = licenseService
-		case mmapp.FilestoreKey:
-			filestoreService, ok := service.(product.FilestoreService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.filestoreService = filestoreService
-		case mmapp.FileInfoStoreKey:
-			fileInfoStoreService, ok := service.(product.FileInfoStoreService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.fileInfoStoreService = fileInfoStoreService
-		case mmapp.RouterKey:
-			routerService, ok := service.(product.RouterService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.routerService = routerService
-		case mmapp.CloudKey:
-			cloudService, ok := service.(product.CloudService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.cloudService = cloudService
-		case mmapp.KVStoreKey:
-			kvStoreService, ok := service.(product.KVStoreService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.kvStoreService = kvStoreService
-		case mmapp.StoreKey:
-			storeService, ok := service.(product.StoreService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.storeService = storeService
-		case mmapp.SystemKey:
-			systemService, ok := service.(product.SystemService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.systemService = systemService
-		case mmapp.PreferencesKey:
-			preferencesService, ok := service.(product.PreferencesService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.preferencesService = preferencesService
-		case mmapp.HooksKey:
-			hooksService, ok := service.(product.HooksService)
-			if !ok {
-				return nil, fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
-			}
-			playbooks.hooksService = hooksService
-		}
+	err := playbooks.setProductServices(services)
+	if err != nil {
+		return nil, err
 	}
-	return playbooks, nil
-}
 
-func (pp *playbooksProduct) Start() error {
 	logger := logrus.StandardLogger()
-	ConfigureLogrus(logger, pp.logger)
-	logrus.Warn("################ Playbooks product start ##################")
+	ConfigureLogrus(logger, playbooks.logger)
 
-	serviceAdapter := newServiceAPIAdapter(pp)
-	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, pp.configService, manifest)
+	serviceAdapter := newServiceAPIAdapter(playbooks)
+	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, playbooks.configService, manifest)
 	botID, err := serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
@@ -263,19 +146,181 @@ func (pp *playbooksProduct) Start() error {
 		OwnerId:     "playbooks",
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure bot")
+		return nil, errors.Wrapf(err, "failed to ensure bot")
 	}
 
-	pp.config = config.NewConfigService(serviceAdapter, pluginAPIAdapter, manifest)
-	err = pp.config.UpdateConfiguration(func(c *config.Configuration) {
+	playbooks.config = config.NewConfigService(serviceAdapter, pluginAPIAdapter, manifest)
+	err = playbooks.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed save bot to config")
+		return nil, errors.Wrapf(err, "failed save bot to config")
 	}
 
-	pp.handler = api.NewHandler(pp.config)
+	playbooks.handler = api.NewHandler(playbooks.config)
+
+	if rudderDataplaneURL == "" || rudderWriteKey == "" {
+		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
+		playbooks.telemetryClient = &telemetry.NoopTelemetry{}
+	} else {
+		diagnosticID := serviceAdapter.GetDiagnosticID()
+		serverVersion := pluginAPIAdapter.GetServerVersion()
+		playbooks.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed init telemetry client")
+		}
+	}
+
+	toggleTelemetry := func() {
+		diagnosticsFlag := pluginAPIAdapter.GetConfig().LogSettings.EnableDiagnostics
+		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
+
+		if telemetryEnabled {
+			if err = playbooks.telemetryClient.Enable(); err != nil {
+				logrus.WithError(err).Error("Telemetry could not be enabled")
+			}
+			return
+		}
+
+		if err = playbooks.telemetryClient.Disable(); err != nil {
+			logrus.WithError(err).Error("Telemetry could not be disabled")
+		}
+	}
+
+	toggleTelemetry()
+	playbooks.config.RegisterConfigChangeListener(toggleTelemetry)
+
+	// apiClient := sqlstore.NewClient(serviceAdapter)
+	playbooks.bot = bot.New(serviceAdapter, playbooks.config.GetConfiguration().BotUserID, playbooks.config, playbooks.telemetryClient)
+
+	return playbooks, nil
+}
+
+func (pp *playbooksProduct) setProductServices(services map[mmapp.ServiceKey]interface{}) error {
+	for key, service := range services {
+		switch key {
+		case mmapp.TeamKey:
+			teamService, ok := service.(product.TeamService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.teamService = teamService
+		case mmapp.ChannelKey:
+			channelService, ok := service.(product.ChannelService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.channelService = channelService
+		case mmapp.UserKey:
+			userService, ok := service.(product.UserService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.userService = userService
+		case mmapp.PostKey:
+			postService, ok := service.(product.PostService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.postService = postService
+		case mmapp.PermissionsKey:
+			permissionsService, ok := service.(product.PermissionService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.permissionsService = permissionsService
+		case mmapp.BotKey:
+			botService, ok := service.(product.BotService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.botService = botService
+		case mmapp.ClusterKey:
+			clusterService, ok := service.(product.ClusterService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.clusterService = clusterService
+		case mmapp.ConfigKey:
+			configService, ok := service.(product.ConfigService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.configService = configService
+		case mmapp.LogKey:
+			logger, ok := service.(mlog.LoggerIFace)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.logger = logger.With(mlog.String("product", playbooksProductName))
+		case mmapp.LicenseKey:
+			licenseService, ok := service.(product.LicenseService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.licenseService = licenseService
+		case mmapp.FilestoreKey:
+			filestoreService, ok := service.(product.FilestoreService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.filestoreService = filestoreService
+		case mmapp.FileInfoStoreKey:
+			fileInfoStoreService, ok := service.(product.FileInfoStoreService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.fileInfoStoreService = fileInfoStoreService
+		case mmapp.RouterKey:
+			routerService, ok := service.(product.RouterService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.routerService = routerService
+		case mmapp.CloudKey:
+			cloudService, ok := service.(product.CloudService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.cloudService = cloudService
+		case mmapp.KVStoreKey:
+			kvStoreService, ok := service.(product.KVStoreService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.kvStoreService = kvStoreService
+		case mmapp.StoreKey:
+			storeService, ok := service.(product.StoreService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.storeService = storeService
+		case mmapp.SystemKey:
+			systemService, ok := service.(product.SystemService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.systemService = systemService
+		case mmapp.PreferencesKey:
+			preferencesService, ok := service.(product.PreferencesService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.preferencesService = preferencesService
+		case mmapp.HooksKey:
+			hooksService, ok := service.(product.HooksService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.hooksService = hooksService
+		}
+	}
+	return nil
+}
+
+func (pp *playbooksProduct) Start() error {
+	logrus.Warn("################ Playbooks product start ##################")
 
 	enableMetrics := pp.configService.Config().MetricsSettings.Enable
 	if enableMetrics != nil && *enableMetrics {
@@ -287,40 +332,7 @@ func (pp *playbooksProduct) Start() error {
 		// pp.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
 		// set error counter middleware handler
 		pp.handler.APIRouter.Use(pp.getErrorCounterHandler())
-		logrus.Warn("################ 003 ##################")
-
 	}
-
-	if rudderDataplaneURL == "" || rudderWriteKey == "" {
-		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
-		pp.telemetryClient = &telemetry.NoopTelemetry{}
-	} else {
-		diagnosticID := serviceAdapter.GetDiagnosticID()
-		serverVersion := pluginAPIAdapter.GetServerVersion()
-		pp.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
-		if err != nil {
-			return errors.Wrapf(err, "failed init telemetry client")
-		}
-	}
-
-	toggleTelemetry := func() {
-		diagnosticsFlag := pluginAPIAdapter.GetConfig().LogSettings.EnableDiagnostics
-		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
-
-		if telemetryEnabled {
-			if err = pp.telemetryClient.Enable(); err != nil {
-				logrus.WithError(err).Error("Telemetry could not be enabled")
-			}
-			return
-		}
-
-		if err = pp.telemetryClient.Disable(); err != nil {
-			logrus.WithError(err).Error("Telemetry could not be disabled")
-		}
-	}
-
-	toggleTelemetry()
-	pp.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	logrus.Warn("################ Start END ##################")
 	return nil

@@ -158,8 +158,8 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	apiClient := sqlstore.NewClient(pluginAPIClient)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
+	apiClient := sqlstore.NewClient(nil) //sqlstore.NewClient(pluginAPIClient)
+	// p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)

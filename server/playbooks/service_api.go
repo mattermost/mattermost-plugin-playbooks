@@ -37,6 +37,8 @@ type ServicesAPI interface {
 
 	// Post service
 	CreatePost(post *mm_model.Post) (*mm_model.Post, error)
+	GetPostsByIds(postIDs []string) ([]*mm_model.Post, error)
+	SendEphemeralPost(userID string, post *mm_model.Post)
 
 	// User service
 	GetUserByID(userID string) (*mm_model.User, error)
@@ -78,9 +80,11 @@ type ServicesAPI interface {
 
 	// KVStore service
 	KVSetWithOptions(key string, value []byte, options mm_model.PluginKVSetOptions) (bool, error)
+	Get(key string, o interface{}) error
 
 	// Store service
 	GetMasterDB() (*sql.DB, error)
+	DriverName() string
 
 	// System service
 	GetDiagnosticID() string

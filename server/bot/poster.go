@@ -18,7 +18,7 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if _, err := b.serviceAdapter.CreatePost(post); err != nil {
 		return nil, err
 	}
 	return post, nil
@@ -36,8 +36,8 @@ func (b *Bot) Post(post *model.Post) error {
 	}
 
 	post.UserId = b.botUserID
-
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err := b.serviceAdapter.CreatePost(post)
+	return err
 }
 
 // PostMessageToThread posts a message to a specified thread identified by rootPostID.
@@ -46,16 +46,17 @@ func (b *Bot) Post(post *model.Post) error {
 func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	rootID := ""
 	if rootPostID != "" {
-		root, err := b.pluginAPI.Post.GetPost(rootPostID)
-		if err == nil && root != nil && root.DeleteAt == 0 {
-			rootID = root.Id
+		root, err := b.serviceAdapter.GetPostsByIds([]string{rootPostID})
+		if err == nil && len(root) > 0 && root[0].DeleteAt == 0 {
+			rootID = root[0].Id
 		}
 	}
 
 	post.UserId = b.botUserID
 	post.RootId = rootID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err := b.serviceAdapter.CreatePost(post)
+	return err
 }
 
 // PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
@@ -67,7 +68,7 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 		ChannelId: channelID,
 	}
 	model.ParseSlackAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if _, err := b.serviceAdapter.CreatePost(post); err != nil {
 		return nil, err
 	}
 	return post, nil
@@ -81,7 +82,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 		Type:      customType,
 	}
 	model.ParseSlackAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if _, err := b.serviceAdapter.CreatePost(post); err != nil {
 		return nil, err
 	}
 	return post, nil
@@ -89,14 +90,15 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 
 // DM sends a DM from the plugin bot to the specified user
 func (b *Bot) DM(userID string, post *model.Post) error {
-	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
+	channel, err := b.serviceAdapter.GetDirectChannel(userID, b.botUserID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get bot DM channel with user_id %s", userID)
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err = b.serviceAdapter.CreatePost(post)
+	return err
 }
 
 // EphemeralPost sends an ephemeral message to a user
@@ -104,14 +106,14 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	post.UserId = b.botUserID
 	post.ChannelId = channelID
 
-	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+	b.serviceAdapter.SendEphemeralPost(userID, post)
 }
 
 // SystemEphemeralPost sends an ephemeral message to a user authored by the System
 func (b *Bot) SystemEphemeralPost(userID, channelID string, post *model.Post) {
 	post.ChannelId = channelID
 
-	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+	b.serviceAdapter.SendEphemeralPost(userID, post)
 }
 
 // EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
@@ -124,13 +126,13 @@ func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, att
 	}
 
 	model.ParseSlackAttachment(post, attachments)
-	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+	b.serviceAdapter.SendEphemeralPost(userID, post)
 }
 
 // PublishWebsocketEventToTeam sends a websocket event with payload to teamID
 func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
 	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.serviceAdapter.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
 		TeamId: teamID,
 	})
 }
@@ -138,7 +140,7 @@ func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, tea
 // PublishWebsocketEventToChannel sends a websocket event with payload to channelID
 func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
 	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.serviceAdapter.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
 		ChannelId: channelID,
 	})
 }
@@ -146,18 +148,18 @@ func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, 
 // PublishWebsocketEventToUser sends a websocket event with payload to userID
 func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, userID string) {
 	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.serviceAdapter.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
 		UserId: userID,
 	})
 }
 
 func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {
-	author, err := b.pluginAPI.User.Get(authorUserID)
+	author, err := b.serviceAdapter.GetUserByID(authorUserID)
 	if err != nil {
 		return errors.Wrap(err, "unable to find author user")
 	}
 
-	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
+	admins, err := b.serviceAdapter.GetUsersFromProfiles(&model.UserGetOptions{
 		Role:    string(model.SystemAdminRoleId),
 		Page:    0,
 		PerPage: maxAdminsToQueryForNotification,
@@ -257,7 +259,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 	for _, admin := range admins {
 		go func(adminID string) {
-			channel, err := b.pluginAPI.Channel.GetDirect(adminID, b.botUserID)
+			channel, err := b.serviceAdapter.GetDirectChannel(adminID, b.botUserID)
 			if err != nil {
 				logrus.WithError(err).WithFields(logrus.Fields{
 					"user_id": adminID,
@@ -278,12 +280,12 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 }
 
 func (b *Bot) PromptForFeedback(userID string) error {
-	feedbackBot, err := b.pluginAPI.User.GetByUsername("feedbackbot")
+	feedbackBot, err := b.serviceAdapter.GetUserByUsername("feedbackbot")
 	if err != nil {
 		return fmt.Errorf("unable to find feedbackbot user: %w", err)
 	}
 
-	channel, err := b.pluginAPI.Channel.GetDirect(userID, feedbackBot.Id)
+	channel, err := b.serviceAdapter.GetDirectChannel(userID, feedbackBot.Id)
 	if err != nil {
 		return fmt.Errorf("failed to get direct message channel between user %s and feedbackbot %s: %w", userID, feedbackBot.Id, err)
 	}
@@ -293,7 +295,7 @@ func (b *Bot) PromptForFeedback(userID string) error {
 		UserId:    feedbackBot.Id,
 		Message:   "Have feedback about Playbooks?",
 	}
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if _, err := b.serviceAdapter.CreatePost(post); err != nil {
 		return fmt.Errorf("failed to create post: %w", err)
 	}
 

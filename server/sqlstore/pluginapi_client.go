@@ -3,7 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 )
@@ -35,10 +35,10 @@ type PluginAPIClient struct {
 
 // NewClient receives a pluginapi.Client and returns the PluginAPIClient, which is what the
 // store will use to access pluginapi.Client.
-func NewClient(api *pluginapi.Client) PluginAPIClient {
+func NewClient(serviceAdapter playbooks.ServicesAPI) PluginAPIClient {
 	return PluginAPIClient{
-		Store:         api.Store,
-		KV:            &api.KV,
-		Configuration: &api.Configuration,
+		Store:         serviceAdapter,
+		KV:            serviceAdapter,
+		Configuration: serviceAdapter,
 	}
 }
