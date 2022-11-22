@@ -389,6 +389,7 @@ const (
 	RanSlashCommand        timelineEventType = "ran_slash_command"
 	EventFromPost          timelineEventType = "event_from_post"
 	UserJoinedLeft         timelineEventType = "user_joined_left"
+	ParticipantsChanged    timelineEventType = "participants_changed"
 	PublishedRetrospective timelineEventType = "published_retrospective"
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
@@ -544,6 +545,18 @@ type RunAction struct {
 
 	CreateChannelMemberOnNewParticipant     bool `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant"`
+}
+
+type RunMetadata struct {
+	ID     string
+	Name   string
+	TeamID string
+}
+
+type TopicMetadata struct {
+	ID     string
+	RunID  string
+	TeamID string
 }
 
 const (
@@ -752,10 +765,23 @@ type PlaybookRunService interface {
 	RequestJoinChannel(playbookRunID, requesterID string) error
 
 	// RemoveParticipants removes users from the run's participants
-	RemoveParticipants(playbookRunID string, userIDs []string) error
+	RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
@@ -770,7 +796,7 @@ type PlaybookRunStore interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// UpdatePlaybookRun updates a playbook run.
-	UpdatePlaybookRun(playbookRun *PlaybookRun) error
+	UpdatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
@@ -868,6 +894,19 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskAsTopicMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -1028,6 +1067,9 @@ type PlaybookRunFilterOptions struct {
 	// StartedLT filters playbook runs that were started before the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
+
+	// ChannelID filters to playbook runs that are associated with the given channel ID
+	ChannelID string `url:"channel_id,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -1106,6 +1148,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
+	}
+
+	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
 	}
 
 	for _, s := range options.Statuses {

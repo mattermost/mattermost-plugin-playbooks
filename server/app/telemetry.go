@@ -59,11 +59,13 @@ type TelemetryPage int
 const (
 	telemetryRunStatusUpdate TelemetryPage = iota
 	telemetryRunDetails
+	telemetryTaskInbox
 )
 
 var pageTypes = [...]string{
 	telemetryRunStatusUpdate: "run_status_update",
 	telemetryRunDetails:      "run_details",
+	telemetryTaskInbox:       "task_inbox",
 }
 
 // String creates the string version of the Telemetrypage

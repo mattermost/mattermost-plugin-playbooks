@@ -2398,21 +2398,57 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.61.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
+				}
+				// We drop entirely the unique index for MySQL, there's an additional index on ChannelID that is kept
+				if err := dropIndexIfExists(e, sqlStore, "IR_Incident", "ChannelID"); err != nil {
+					return errors.Wrapf(err, "failed to drop ir_incident_channelid_key index on table ir_incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident i JOIN Channels c ON c.id=i.ChannelID AND i.Name='' SET i.name=c.DisplayName"); err != nil {
+					return errors.Wrapf(err, "failed to update all old run names from channel names")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelID to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelMode", "VARCHAR(32) DEFAULT 'create_new_channel'"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelMode to table IR_Incident")
+				}
+				// Unique constraint is dropped but index is kept
+				if _, err := e.Exec("ALTER TABLE IR_Incident DROP CONSTRAINT IF EXISTS ir_incident_channelid_key"); err != nil {
+					return errors.Wrapf(err, "failed to drop constraint ir_incident_channelid_key on table ir_incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident i SET name=c.DisplayName FROM Channels c WHERE  c.id=i.ChannelID AND i.Name=''"); err != nil {
+					return errors.Wrapf(err, "failed to update all old run names from channel names")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.61.0"),
+		toVersion:   semver.MustParse("0.62.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
-					UPDATE IR_UserInfo
-					SET DigestNotificationSettingsJSON =
+						UPDATE IR_UserInfo
+						SET DigestNotificationSettingsJSON =
 						JSON_SET(DigestNotificationSettingsJSON, '$.disable_weekly_digest',
 							JSON_EXTRACT(DigestNotificationSettingsJSON, '$.disable_daily_digest'));
-				`); err != nil {
+					`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			} else {
 				if _, err := e.Exec(`
-					UPDATE IR_UserInfo
-					SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
-						jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
-
-				`); err != nil {
+						UPDATE IR_UserInfo
+						SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
+							jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
+						
+					`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
 			}

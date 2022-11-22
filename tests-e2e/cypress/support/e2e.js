@@ -103,8 +103,6 @@ Cypress.on('uncaught:exception', () => {
     return false;
 });
 
-require('cypress-terminal-report/src/installLogsCollector')();
-
 before(() => {
     // # Clear localforage state
     localforage.clear();

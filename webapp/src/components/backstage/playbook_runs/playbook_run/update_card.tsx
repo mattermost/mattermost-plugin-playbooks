@@ -50,6 +50,10 @@ const StatusUpdateCard = ({post}: Props) => {
         atMentions: true,
     };
 
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
     return (
         <Container data-testid='status-update-card'>
             <Header>
@@ -63,7 +67,7 @@ const StatusUpdateCard = ({post}: Props) => {
                 </Date>
             </Header>
             <Body>
-                {messageHtmlToComponent(formatText(post.message, markdownOptions), true, {})}
+                {messageHtmlToComponent(formatText(post.message, markdownOptions), true, messageHtmlToComponentOptions)}
             </Body>
         </Container>
     );

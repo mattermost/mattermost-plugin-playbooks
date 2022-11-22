@@ -96,6 +96,7 @@ export type MutationAddPlaybookMemberArgs = {
 };
 
 export type MutationAddRunParticipantsArgs = {
+    forceAddToChannel?: InputMaybe<Scalars['Boolean']>;
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']>;
 };
@@ -142,6 +143,8 @@ export type Playbook = {
     broadcastEnabled: Scalars['Boolean'];
     categorizeChannelEnabled: Scalars['Boolean'];
     categoryName: Scalars['String'];
+    channelID: Scalars['String'];
+    channelMode: Scalars['String'];
     channelNameTemplate: Scalars['String'];
     checklists: Array<Checklist>;
     createChannelMemberOnNewParticipant: Scalars['Boolean'];
@@ -197,6 +200,8 @@ export type PlaybookUpdates = {
     broadcastEnabled?: InputMaybe<Scalars['Boolean']>;
     categorizeChannelEnabled?: InputMaybe<Scalars['Boolean']>;
     categoryName?: InputMaybe<Scalars['String']>;
+    channelId?: InputMaybe<Scalars['String']>;
+    channelMode?: InputMaybe<Scalars['String']>;
     channelNameTemplate?: InputMaybe<Scalars['String']>;
     checklists?: InputMaybe<Array<ChecklistUpdates>>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
@@ -255,6 +260,7 @@ export type QueryRunArgs = {
 };
 
 export type QueryRunsArgs = {
+    channelID?: InputMaybe<Scalars['String']>;
     participantOrFollowerID?: InputMaybe<Scalars['String']>;
     sort?: InputMaybe<Scalars['String']>;
     statuses?: InputMaybe<Array<Scalars['String']>>;
@@ -334,7 +340,7 @@ export type PlaybookQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
+export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, channel_id: string, channel_mode: string, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
 
 export type UpdatePlaybookMutationVariables = Exact<{
     id: Scalars['String'];
@@ -380,6 +386,7 @@ export type UpdateRunMutation = { __typename?: 'Mutation', updateRun: string };
 export type AddRunParticipantsMutationVariables = Exact<{
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']> | Scalars['String'];
+    forceAddToChannel?: InputMaybe<Scalars['Boolean']>;
 }>;
 
 export type AddRunParticipantsMutation = { __typename?: 'Mutation', addRunParticipants: string };
@@ -434,6 +441,8 @@ export const PlaybookDocument = gql`
     channel_name_template: channelNameTemplate
     create_channel_member_on_new_participant: createChannelMemberOnNewParticipant
     remove_channel_member_on_removed_participant: removeChannelMemberOnRemovedParticipant
+    channel_id: channelID
+    channel_mode: channelMode
     is_favorite: isFavorite
     checklists {
       title
@@ -717,8 +726,12 @@ export type UpdateRunMutationHookResult = ReturnType<typeof useUpdateRunMutation
 export type UpdateRunMutationResult = Apollo.MutationResult<UpdateRunMutation>;
 export type UpdateRunMutationOptions = Apollo.BaseMutationOptions<UpdateRunMutation, UpdateRunMutationVariables>;
 export const AddRunParticipantsDocument = gql`
-    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-  addRunParticipants(runID: $runID, userIDs: $userIDs)
+    mutation AddRunParticipants($runID: String!, $userIDs: [String!]!, $forceAddToChannel: Boolean = false) {
+  addRunParticipants(
+    runID: $runID
+    userIDs: $userIDs
+    forceAddToChannel: $forceAddToChannel
+  )
 }
     `;
 export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunParticipantsMutation, AddRunParticipantsMutationVariables>;
@@ -738,6 +751,7 @@ export type AddRunParticipantsMutationFn = Apollo.MutationFunction<AddRunPartici
  *   variables: {
  *      runID: // value for 'runID'
  *      userIDs: // value for 'userIDs'
+ *      forceAddToChannel: // value for 'forceAddToChannel'
  *   },
  * });
  */

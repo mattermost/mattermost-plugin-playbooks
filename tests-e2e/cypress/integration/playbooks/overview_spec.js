@@ -11,6 +11,7 @@ describe('playbooks > overview', () => {
     let testTeam;
     let testOtherTeam;
     let testUser;
+    let testUser2;
     let testPublicPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
@@ -19,6 +20,12 @@ describe('playbooks > overview', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // Create another user in the same team
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
             // # Create another team
             cy.apiCreateTeam('second-team', 'Second Team').then(({team: createdTeam}) => {
@@ -177,6 +184,9 @@ describe('playbooks > overview', () => {
     });
 
     it('should duplicate playbook', () => {
+        // # Login as testUser2
+        cy.apiLogin(testUser2);
+
         // # Navigate directly to the playbook
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
@@ -188,6 +198,13 @@ describe('playbooks > overview', () => {
 
         // * Verify that playbook got duplicated
         cy.findByTestId('playbook-editor-title').should('contain', `Copy of ${testPublicPlaybook.title}`);
+
+        // * Verify that the current user is a member and can run the playbook.
+        cy.findByTestId('run-playbook').should('exist');
+        cy.findByTestId('join-playbook').should('not.exist');
+
+        // * Verify that the current user is the only member.
+        cy.findByTestId('playbook-members').should('contain', '1');
     });
 
     it('shows checklists', () => {

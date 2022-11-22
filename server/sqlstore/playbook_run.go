@@ -179,7 +179,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
-		Select("i.ID", "c.DisplayName AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
@@ -189,8 +189,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
-		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+		From("IR_Incident AS i")
 
 	statusPostsSelect := sqlStore.builder.
 		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt").
@@ -252,7 +251,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
@@ -261,7 +260,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
 		Where(teamLimitExpr)
 
@@ -325,18 +323,23 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "c.DisplayName"
+		column := "i.Name"
 		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
-			column = "LOWER(c.DisplayName)"
+			column = "LOWER(i.Name)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+	}
+
+	if options.ChannelID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.ChannelId": options.ChannelID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.ChannelId": options.ChannelID})
 	}
 
 	queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
@@ -425,11 +428,14 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
+
 	playbookRun = playbookRun.Clone()
 
 	if playbookRun.ID == "" {
 		playbookRun.ID = model.NewId()
 	}
+
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
@@ -492,21 +498,24 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 }
 
 // UpdatePlaybookRun updates a playbook run.
-func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error {
+func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
-		return errors.New("playbook run is nil")
+		return nil, errors.New("playbook run is nil")
 	}
 	if playbookRun.ID == "" {
-		return errors.New("ID should not be empty")
+		return nil, errors.New("ID should not be empty")
 	}
+
+	playbookRun = playbookRun.Clone()
+	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
@@ -514,7 +523,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                                    "",
+			"Name":                                    rawPlaybookRun.Name,
 			"Description":                             rawPlaybookRun.Summary,
 			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
@@ -542,18 +551,18 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
 	}
 
 	if err = s.updateRunMetrics(tx, rawPlaybookRun.PlaybookRun); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
+		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	return nil
+	return playbookRun, nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
@@ -840,7 +849,7 @@ func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID s
 // GetOwners returns the owners of the playbook runs selected by options
 func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
@@ -983,18 +992,32 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		))`, info.UserID, info.UserID)
 }
 
-func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
-	if teamID != "" {
-		return sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
-	}
-
-	return sq.Expr(fmt.Sprintf(`
+func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sqlizer {
+	filterToSelectedTeam := sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
+	onlyTeamsUserIsAMember := sq.Expr(fmt.Sprintf(`
 		EXISTS(SELECT 1
 					FROM TeamMembers as tm
 					WHERE tm.TeamId = %s.TeamID
 					  AND tm.DeleteAt = 0
 		  	  		  AND tm.UserId = ?)
-		`, tableName), userID)
+		`, tableName), info.UserID)
+
+	if info.IsAdmin {
+		if teamID != "" {
+			return filterToSelectedTeam
+		}
+		return nil
+	}
+
+	if teamID != "" {
+		return sq.And{
+			filterToSelectedTeam,
+			onlyTeamsUserIsAMember,
+		}
+	}
+
+	return onlyTeamsUserIsAMember
+
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {
@@ -1434,6 +1457,129 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	return nil
 }
 
+// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+func (s *playbookRunStore) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
+	requesterInfo := app.RequesterInfo{UserID: userID}
+	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, "", "i")
+
+	query := s.store.builder.
+		Select("i.ID").
+		From("IR_Incident AS i").
+		Join("IR_Run_Participants AS p ON p.IncidentID = i.ID").
+		Where(sq.Or{sq.Eq{"p.IsParticipant": true}, sq.Eq{"p.IsFollower": true}}).
+		Where(sq.Eq{"p.UserID": strings.ToLower(userID)}).
+		Where(teamLimitExpr).
+		Where(permissionsExpr)
+
+	var ids []string
+	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query for playbook runs")
+	}
+	return ids, nil
+}
+
+// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+func (s *playbookRunStore) GetRunMetadataByIDs(runIDs []string) ([]app.RunMetadata, error) {
+	var runs []app.RunMetadata
+	query := s.store.builder.
+		Select("ID", "TeamID", "Name").
+		From("IR_Incident").
+		Where(sq.Eq{"ID": runIDs})
+	if err := s.store.selectBuilder(s.store.db, &runs, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query playbook run by runIDs")
+	}
+
+	runsMap := make(map[string]app.RunMetadata, len(runs))
+	for _, run := range runs {
+		runsMap[run.ID] = run
+	}
+	orderedRuns := make([]app.RunMetadata, len(runIDs))
+	for i, runID := range runIDs {
+		orderedRuns[i] = runsMap[runID]
+	}
+	return orderedRuns, nil
+}
+
+// GetTaskAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+func (s *playbookRunStore) GetTaskAsTopicMetadataByIDs(taskIDs []string) ([]app.TopicMetadata, error) {
+	tasksMap := make(map[string]app.TopicMetadata, len(taskIDs))
+	for _, taskID := range taskIDs {
+		var runsInDB []struct {
+			app.TopicMetadata
+			ChecklistsJSON json.RawMessage
+		}
+		query := s.store.builder.
+			Select("ID AS RunID", "TeamID", "ChecklistsJSON").
+			From("IR_Incident")
+
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
+			query = query.Where(sq.Like{"ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", taskID)})
+		} else {
+			query = query.Where(sq.Like{"ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", taskID)})
+		}
+
+		if err := s.store.selectBuilder(s.store.db, &runsInDB, query); err != nil {
+			return nil, errors.Wrapf(err, "failed to query playbook run by taskID - %s", taskID)
+		}
+
+		for _, run := range runsInDB {
+			var checklists []app.Checklist
+			err := json.Unmarshal(run.ChecklistsJSON, &checklists)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: %s", run.RunID)
+			}
+
+			if isTaskInChecklists(checklists, taskID) {
+				tasksMap[taskID] = app.TopicMetadata{
+					ID:     taskID,
+					RunID:  run.RunID,
+					TeamID: run.TeamID,
+				}
+			}
+		}
+	}
+	tasks := make([]app.TopicMetadata, len(taskIDs))
+	for i, taskID := range taskIDs {
+		tasks[i] = tasksMap[taskID]
+	}
+
+	return tasks, nil
+}
+
+func isTaskInChecklists(checklists []app.Checklist, taskID string) bool {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if item.ID == taskID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+func (s *playbookRunStore) GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]app.TopicMetadata, error) {
+	var statuses []app.TopicMetadata
+	query := s.store.builder.
+		Select("sp.PostID AS ID", "sp.IncidentID AS RunID", "i.TeamID AS TeamID").
+		From("IR_StatusPosts as sp").
+		Join("IR_Incident as i ON sp.IncidentID = i.ID").
+		Where(sq.Eq{"sp.PostID": statusIDs})
+	if err := s.store.selectBuilder(s.store.db, &statuses, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query playbook runs by statusIDs")
+	}
+	statusesMap := make(map[string]app.TopicMetadata, len(statuses))
+	for _, status := range statuses {
+		statusesMap[status.ID] = status
+	}
+	orderedStatuses := make([]app.TopicMetadata, len(statusIDs))
+	for i, statusID := range statusIDs {
+		orderedStatuses[i] = statusesMap[statusID]
+	}
+	return orderedStatuses, nil
+}
+
 func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if id == "" {
 		return errors.New("id should not be empty")
@@ -1452,8 +1598,7 @@ func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
-	newChecklists := populateChecklistIDs(playbookRun.Checklists)
-	checklistsJSON, err := checklistsToJSON(newChecklists)
+	checklistsJSON, err := checklistsToJSON(playbookRun.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id '%s'", playbookRun.ID)
 	}

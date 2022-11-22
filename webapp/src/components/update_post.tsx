@@ -39,7 +39,11 @@ export const UpdatePost = (props: Props) => {
         channelNamesMap,
     };
 
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
     const numTasksChecked = props.post.props.numTasksChecked ?? 0;
     const numTasks = props.post.props.numTasks ?? 0;
@@ -113,10 +117,12 @@ const StyledPostText = styled(PostText)`
 `;
 
 const Separator = styled.hr`
-    && {
+    &&& {
         border: none;
         height: 1px;
-        background: rgba(var(--center-channel-color-rgb), 0.61);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+        margin: 12px 0;
+        opacity: 1;
     }
 `;
 

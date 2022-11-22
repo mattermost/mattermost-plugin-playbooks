@@ -8,6 +8,7 @@ import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -17,6 +18,8 @@ import {
     SetClientId,
     PLAYBOOK_RUN_CREATED,
     PlaybookRunCreated,
+    RECEIVED_PLAYBOOK_RUNS,
+    ReceivedPlaybookRuns,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     ReceivedTeamPlaybookRuns,
     SetRHSState,
@@ -54,6 +57,10 @@ import {
     SET_EVERY_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
+    OPEN_BACKSTAGE_RHS,
+    OpenBackstageRHS,
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -93,6 +100,94 @@ function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
         return state;
     }
 }
+
+type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
+
+/**
+ * @returns a map of playbookRunId -> playbookRun for all playbook runs for which the current user
+ * is a playbook run member.
+ * @remarks
+ * It is lazy loaded on team change, but will also track incremental updates as provided by websocket events.
+ */
+const myPlaybookRuns = (
+    state: TStateMyPlaybookRuns = {},
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
+): TStateMyPlaybookRuns => {
+    switch (action.type) {
+    case PLAYBOOK_RUN_CREATED: {
+        const playbookRunCreatedAction = action as PlaybookRunCreated;
+        const playbookRun = playbookRunCreatedAction.playbookRun;
+        return {
+            ...state,
+            [playbookRun.id]: playbookRun,
+        };
+    }
+
+    case PLAYBOOK_RUN_UPDATED: {
+        const playbookRunUpdated = action as PlaybookRunUpdated;
+        const playbookRun = playbookRunUpdated.playbookRun;
+        return {
+            ...state,
+            [playbookRun.id]: playbookRun,
+        };
+    }
+
+    case RECEIVED_PLAYBOOK_RUNS: {
+        const receivedPlaybookRunsAction = action as ReceivedPlaybookRuns;
+        const playbookRuns = receivedPlaybookRunsAction.playbookRuns;
+        if (playbookRuns.length === 0) {
+            return state;
+        }
+
+        const newState = {
+            ...state,
+        };
+
+        for (const playbookRun of playbookRuns) {
+            newState[playbookRun.id] = playbookRun;
+        }
+
+        return newState;
+    }
+
+    case RECEIVED_TEAM_PLAYBOOK_RUNS: {
+        const receivedTeamPlaybookRunsAction = action as ReceivedTeamPlaybookRuns;
+        const playbookRuns = receivedTeamPlaybookRunsAction.playbookRuns;
+        if (playbookRuns.length === 0) {
+            return state;
+        }
+
+        const newState = {
+            ...state,
+        };
+
+        for (const playbookRun of playbookRuns) {
+            newState[playbookRun.id] = playbookRun;
+        }
+
+        return newState;
+    }
+
+    // TODO: REMOVED_FROM_CHANNEL
+    // case REMOVED_FROM_CHANNEL: {
+    //     const removedFromChannelAction = action as RemovedFromChannel;
+    //     const channelId = removedFromChannelAction.channelId;
+
+    //     const newState = {
+    //         ...state,
+    //         [teamId]: {...state[teamId]},
+    //     };
+    //     const runMap = newState[teamId];
+    //     if (runMap) {
+    //         delete runMap[channelId];
+    //     }
+    //     return newState;
+    // }
+
+    default:
+        return state;
+    }
+};
 
 type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id'], PlaybookRun>>;
 
@@ -307,10 +402,39 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     }
 };
 
+// Backstage RHS related reducer
+// Note That this is not the same as channel RHS management
+// TODO: make a refactor with some naming change now we have multiple RHS
+//       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
+export type backstageRHSState = {
+    isOpen: boolean;
+    viewMode: BackstageRHSViewMode;
+    section: BackstageRHSSection;
+}
+const initialBackstageRHSState = {
+    isOpen: false,
+    viewMode: BackstageRHSViewMode.Overlap,
+    section: BackstageRHSSection.TaskInbox,
+};
+
+const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, action: OpenBackstageRHS | CloseBackstageRHS) => {
+    switch (action.type) {
+    case OPEN_BACKSTAGE_RHS: {
+        const openAction = action as OpenBackstageRHS;
+        return {isOpen: true, viewMode: openAction.viewMode, section: openAction.section};
+    }
+    case CLOSE_BACKSTAGE_RHS:
+        return {...state, isOpen: false};
+    default:
+        return state;
+    }
+};
+
 const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
+    myPlaybookRuns,
     myPlaybookRunsByTeam,
     rhsState,
     globalSettings,
@@ -322,6 +446,7 @@ const reducer = combineReducers({
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,
     checklistItemsFilterByChannel,
+    backstageRHS,
 });
 
 export default reducer;

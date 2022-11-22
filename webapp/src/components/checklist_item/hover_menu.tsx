@@ -21,6 +21,7 @@ import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId?: string;
+    participantUserIds: string[];
     channelId?: string;
     checklistNum: number;
     itemNum: number;
@@ -32,7 +33,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
-    onAssigneeChange: (userType?: string, user?: UserProfile) => void;
+    onAssigneeChange: (user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
@@ -57,7 +58,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
             }
             {props.playbookRunId !== undefined &&
                 <AssignTo
-                    channelId={props.channelId}
+                    participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
                     editable={props.isEditing}
                     inHoverMenu={true}

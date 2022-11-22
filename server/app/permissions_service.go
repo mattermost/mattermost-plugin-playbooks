@@ -54,6 +54,10 @@ func (p *PermissionsService) PlaybookIsPublic(playbook Playbook) bool {
 }
 
 func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) []string {
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return []string{}
+	}
+
 	for _, member := range playbook.Members {
 		if member.UserID == userID {
 			return member.SchemeRoles
@@ -79,6 +83,16 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 
 	// Cascade normally to higher level permissions
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
+}
+
+func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
+	// Check at run level
+	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
+		return false
+	}
+
+	// Cascade normally to higher level permissions
+	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
@@ -388,6 +402,10 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
+	return p.runManagePropertiesWithPlaybookRun(userID, run)
+}
+
+func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, run *PlaybookRun) error {
 	if run.OwnerUserID == userID {
 		return nil
 	}
@@ -402,7 +420,7 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		return nil
 	}
 
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, runID)
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, run.ID)
 }
 
 func (p *PermissionsService) RunManagePropertiesByChannel(userID, channelID string) error {
@@ -443,6 +461,20 @@ func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
 	}
 
 	return p.RunView(userID, runID)
+}
+
+func (p *PermissionsService) RunUpdateStatus(userID string, playbookRun *PlaybookRun) error {
+	if !CanPostToChannel(userID, playbookRun.ChannelID, p.pluginAPI) {
+		return errors.Wrapf(ErrNoPermissions, "user %s cannot post to playbook run channel %s", userID, playbookRun.ChannelID)
+	}
+
+	for _, channelID := range playbookRun.BroadcastChannelIDs {
+		if !CanPostToChannel(userID, channelID, p.pluginAPI) {
+			return errors.Wrapf(ErrNoPermissions, "user %s cannot post to broadcast channel %s", userID, channelID)
+		}
+	}
+
+	return nil
 }
 
 func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {

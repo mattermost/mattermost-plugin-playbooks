@@ -708,7 +708,7 @@ func createRunsWithMetrics(t *testing.T, playbookRunStore app.PlaybookRunStore, 
 			playbookRun.RetrospectiveWasCanceled = false
 		}
 
-		err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+		_, err = playbookRunStore.UpdatePlaybookRun(playbookRun)
 		require.NoError(t, err)
 	}
 

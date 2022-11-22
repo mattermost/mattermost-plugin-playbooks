@@ -6,29 +6,22 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {getCurrentChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {UserProfile} from '@mattermost/types/users';
-import {GlobalState} from '@mattermost/types/store';
-import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInCurrentChannel, useProfilesInTeam, useParticipateInRun} from 'src/hooks';
+import {useProfilesInTeam, useParticipateInRun, useEnsureProfiles} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
-import {setRHSAboutCollapsedState, addToCurrentChannel} from 'src/actions';
-import {ChannelNamesMap} from 'src/types/backstage';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {setRHSAboutCollapsedState} from 'src/actions';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -39,36 +32,14 @@ interface Props {
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const profilesInChannel = useProfilesInCurrentChannel();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
     const channel = useSelector(getCurrentChannel);
     const profilesInTeam = useProfilesInTeam();
 
     const myUserId = useSelector(getCurrentUserId);
-    const team = useSelector(getCurrentTeam);
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
-    const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
-    const overviewURL = `/playbooks/runs/${props.playbookRun.id}?from=channel_rhs_item`;
-
-    const markdownOptions = {
-        singleline: true,
-        mentionHighlight: true,
-        atMentions: true,
-        team,
-        channelNamesMap,
-    };
-
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
 
     const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
-
-    const fetchUsers = async () => {
-        return profilesInChannel;
-    };
-
     const fetchUsersInTeam = async () => {
         return profilesInTeam;
     };
@@ -84,17 +55,11 @@ const RHSAbout = (props: Props) => {
         }
     };
 
-    const onSelectedProfileChange = (userType?: string, user?: UserProfile) => {
-        if (!user || !userType) {
+    const onSelectedProfileChange = (user?: UserProfile) => {
+        if (!user) {
             return;
         }
-
-        if (userType === 'Member') {
-            setOwnerUtil(user?.id);
-        } else {
-            setCurrentUserSelect(user);
-            setShowAddToChannelConfirm(true);
-        }
+        setOwnerUtil(user?.id);
     };
 
     const onTitleEdit = (value: string) => {
@@ -111,7 +76,8 @@ const RHSAbout = (props: Props) => {
     };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun.id, 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun, 'channel_rhs');
+    useEnsureProfiles(props.playbookRun.participant_ids);
 
     return (
         <>
@@ -155,17 +121,20 @@ const RHSAbout = (props: Props) => {
                                     profileButtonClass={'Assigned-button'}
                                     enableEdit={!isFinished && !props.readOnly}
                                     onEditDisabledClick={props.onReadOnlyInteract}
-                                    getUsers={fetchUsers}
-                                    getUsersInTeam={fetchUsersInTeam}
+                                    getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}
+                                    userGroups={{
+                                        subsetUserIds: props.playbookRun.participant_ids,
+                                        defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                                        subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                                    }}
                                 />
                             </OwnerSection>
                             <ParticipantsSection>
                                 <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
                                 <RHSParticipants
                                     userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
-                                    playbookRunId={props.playbookRun.id}
                                     onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
                                 />
                             </ParticipantsSection>
@@ -182,23 +151,6 @@ const RHSAbout = (props: Props) => {
                     />
                 )}
             </Container>
-            {(currentUserSelect?.id) ? (
-                <ConfirmModal
-                    show={showAddToChannel}
-                    title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
-                    message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all of the message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channel.name, overviewUrl: overviewURL}))}
-                    confirmButtonText={formatMessage({defaultMessage: 'Add'})}
-                    onConfirm={() => {
-                        if (currentUserSelect) {
-                            dispatch(addToCurrentChannel(currentUserSelect.id));
-                            setShowAddToChannelConfirm(false);
-                            setOwnerUtil(currentUserSelect.id);
-                        }
-                    }
-                    }
-                    onCancel={() => setShowAddToChannelConfirm(false)}
-                />
-            ) : null}
             {ParticipateConfirmModal}
         </>
     );
@@ -276,11 +228,6 @@ const OwnerSection = styled(MemberSection)`
 `;
 
 const ParticipantsSection = styled(MemberSection)`
-`;
-
-const ParticipantsContainer = styled.div`
-    display: flex;
-    flex-direction: row;
 `;
 
 const MemberSectionTitle = styled.div`
