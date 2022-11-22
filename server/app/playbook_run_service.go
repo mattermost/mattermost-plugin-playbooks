@@ -1699,6 +1699,13 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.Wrap(err, "failed to run slash command")
 	}
 
+	// Fetch the playbook run again, in case the slash command actually changed the run
+	// (e.g. `/playbook owner`).
+	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to retrieve playbook run after running slash command")
+	}
+
 	// Record the last (successful) run time.
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 

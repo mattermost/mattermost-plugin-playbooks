@@ -31,7 +31,7 @@ describe('channels > rhs > checklist', () => {
                         items: [
                             {title: 'Step 1', command: '/invalid'},
                             {title: 'Step 2', command: '/echo VALID'},
-                            {title: 'Step 3'},
+                            {title: 'Step 3', command: '/playbook check 0 0'},
                             {title: 'Step 4'},
                             {title: 'Step 5'},
                             {title: 'Step 6'},
@@ -196,6 +196,39 @@ describe('channels > rhs > checklist', () => {
 
                 // * Verify the valid command has been run.
                 cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
+            });
+        });
+
+        it('runs /playbook slash commands', () => {
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the `/playbook check 0 0` command has not yet been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Run');
+
+                // * Run the slash command
+                cy.findAllByTestId('run').eq(2).click();
+
+                // * Verify the command has now been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Rerun');
+
+                // * Verify the first checklist item is checked
+                cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                    // # Check the overdue task
+                    cy.get('input').should('be.checked');
+                });
+            });
+
+            // # Reload the page
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the command has still been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Rerun');
+
+                // * Verify the first checklist item is still checked
+                cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                    // # Check the overdue task
+                    cy.get('input').should('be.checked');
+                });
             });
         });
 
