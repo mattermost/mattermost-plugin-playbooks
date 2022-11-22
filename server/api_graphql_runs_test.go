@@ -608,7 +608,7 @@ func TestUpdateRun(t *testing.T) {
 		require.Empty(t, response.Errors)
 		require.NoError(t, err)
 
-		// Make sure the action settings are updated
+		// Make sure the name is updated
 		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Equal(t, updates["name"], editedRun.Name)
