@@ -1143,6 +1143,26 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get owners from the store")
 	}
+
+	// ShowFullName is coming as nil when setting is set to false
+	// TODO: further investigation https://mattermost.atlassian.net/browse/MM-48464
+	var showFullName bool
+	if IsSystemAdmin(requesterInfo.UserID, s.pluginAPI) {
+		showFullName = true
+	} else {
+		cfg := s.pluginAPI.Configuration.GetConfig()
+		if cfg.PrivacySettings.ShowFullName != nil {
+			showFullName = *cfg.PrivacySettings.ShowFullName
+		}
+	}
+
+	for k, o := range owners {
+		if !showFullName {
+			o.FirstName = ""
+			o.LastName = ""
+		}
+		owners[k] = o
+	}
 	return owners, nil
 }
 
