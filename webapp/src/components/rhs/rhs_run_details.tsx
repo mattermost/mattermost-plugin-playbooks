@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useMemo} from 'react';
+import React, {useEffect, useRef, useMemo, useState} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -34,6 +34,8 @@ import {useParticipateInRun} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';
+import RHSRunParticipants from './rhs_run_participants';
+import RHSRunParticipantsTitle from './rhs_run_participants_title';
 
 const toastDebounce = 2000;
 
@@ -55,6 +57,7 @@ const RHSRunDetails = (props: Props) => {
     const prevStatus = usePrevious(playbookRun?.current_status);
 
     const {currentStep: runDetailsStep, setStep: setRunDetailsStep} = useTutorialStepper(TutorialTourCategories.RUN_DETAILS);
+    const [showParticipants, setShowParticipants] = useState(false);
 
     useEffect(() => {
         if ((prevStatus !== playbookRun?.current_status) && (playbookRun?.current_status === PlaybookRunStatus.Finished)) {
@@ -108,6 +111,24 @@ const RHSRunDetails = (props: Props) => {
         return null;
     }
 
+    if (showParticipants) {
+        return (
+            <>
+                <RHSTitleRemoteRender>
+                    <RHSRunParticipantsTitle
+                        onBackClick={() => {
+                            setShowParticipants(false);
+                        }}
+                        runName={playbookRun.name}
+                    />
+                </RHSTitleRemoteRender>
+                <RHSRunParticipants
+                    playbookRun={playbookRun}
+                />
+            </>
+        );
+    }
+
     return (
         <>
             <RHSTitleRemoteRender>
@@ -132,6 +153,7 @@ const RHSRunDetails = (props: Props) => {
                             playbookRun={playbookRun}
                             readOnly={!isParticipant}
                             onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                            setShowParticipants={setShowParticipants}
                         />
                         <RHSChecklistList
                             playbookRun={playbookRun}

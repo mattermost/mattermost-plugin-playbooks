@@ -78,7 +78,6 @@ const RightHandSidebar = () => {
                 <RHSRunDetails
                     runID={currentRun}
                     onBackClick={clearCurrentRun}
-
                 />
             );
         }

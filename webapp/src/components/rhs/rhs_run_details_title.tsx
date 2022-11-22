@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Link} from 'react-router-dom';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 
@@ -13,6 +12,8 @@ import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
+
+import {RHSTitleButton, RHSTitleContainer, RHSTitleLink, RHSTitleStyledButtonIcon} from './rhs_title_common';
 
 interface Props {
     onBackClick: () => void;
@@ -33,12 +34,12 @@ const RHSRunDetailsTitle = (props: Props) => {
 
     return (
         <RHSTitleContainer>
-            <Button
+            <RHSTitleButton
                 onClick={props.onBackClick}
                 data-testid='back-button'
             >
                 <LeftChevron/>
-            </Button>
+            </RHSTitleButton>
 
             <OverlayTrigger
                 placement={'top'}
@@ -51,9 +52,9 @@ const RHSRunDetailsTitle = (props: Props) => {
                     to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
                 >
                     {formatMessage({defaultMessage: 'Run details'})}
-                    <StyledButtonIcon>
+                    <RHSTitleStyledButtonIcon>
                         <ExternalLink/>
-                    </StyledButtonIcon>
+                    </RHSTitleStyledButtonIcon>
                 </RHSTitleLink>
             </OverlayTrigger>
             <FollowingWrapper>
@@ -66,15 +67,6 @@ const RHSRunDetailsTitle = (props: Props) => {
         </RHSTitleContainer>
     );
 };
-
-const RHSTitleContainer = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    overflow: visible;
-    flex: 1;
-    justify-content: flex-start;
-`;
 
 const FollowingWrapper = styled.div`
     display: flex;
@@ -97,88 +89,6 @@ const FollowingWrapper = styled.div`
             color: rgba(var(--center-channel-color-rgb), 0.72);
             background: rgba(var(--center-channel-color-rgb), 0.08);
         }
-    }
-`;
-
-const RHSTitleText = styled.div<{ clickable?: boolean }>`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    border-radius: 4px;
-
-    ${(props) => props.clickable && css`
-        &:hover {
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-            fill: rgba(var(--center-channel-color-rgb), 0.72);
-        }
-
-        &:active,
-        &--active,
-        &--active:hover {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
-        }
-    `}
-`;
-
-const RHSTitleLink = styled(Link)`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px;
-
-    &&& {
-        color: var(--center-channel-color);
-    }
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    border-radius: 4px;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        text-decoration: none;
-    }
-
-    &:active,
-    &--active,
-    &--active:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-`;
-
-const Button = styled.button`
-    display: flex;
-    border: none;
-    background: none;
-    padding: 0px 11px 0 0;
-    align-items: center;
-`;
-
-const StyledButtonIcon = styled.i`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin-left: 4px;
-
-    width: 18px;
-    height: 18px;
-
-    color: rgba(var(--center-channel-color-rgb), 0.48);
-
-    ${RHSTitleText}:hover &,
-    ${RHSTitleLink}:hover & {
-        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 `;
 
