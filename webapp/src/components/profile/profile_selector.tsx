@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useSelector, useStore} from 'react-redux';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, makeGetProfilesByIdsAndUsernames} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 
@@ -85,6 +85,12 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
+    // props.userGroups?.subsetUserIds are not guaranteed to be in the page returned by props.getAllUsers
+    // but they're expected to be at redux
+    const getProfiles = makeGetProfilesByIdsAndUsernames();
+    const store = useStore();
+    const usersInSubset = getProfiles(store.getState(), {allUserIds: props.userGroups?.subsetUserIds || [], allUsernames: []});
+
     useUpdateEffect(() => {
         props.onOpenChange?.(isOpen);
     }, [isOpen]);
@@ -113,7 +119,6 @@ export default function ProfileSelector(props: Props) {
         const subsetUserIds = props.userGroups?.subsetUserIds || [];
         const allUsers = await props.getAllUsers();
         const usersNotInSubset = allUsers.filter((user) => !subsetUserIds.find((userId) => userId === user.id));
-        const usersInSubset = allUsers.filter((user) => subsetUserIds.find((userId) => userId === user.id));
 
         const userToOption = (user: UserProfile) => {
             return {
