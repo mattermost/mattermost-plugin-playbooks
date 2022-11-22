@@ -42,6 +42,9 @@ describe('channels > rhs > home', () => {
 
     describe('shows available', () => {
         it('team playbooks', () => {
+            // # wait for content to load
+            cy.get('#channelIntro').should('be.visible');
+
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('exist').click();
 
@@ -67,6 +70,9 @@ describe('channels > rhs > home', () => {
                 {name: 'Learn how to use playbooks', checklists: '2 checklists', actions: '2 actions'},
             ];
 
+            // # wait for content to load
+            cy.get('#channelIntro').should('be.visible');
+
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -88,6 +94,9 @@ describe('channels > rhs > home', () => {
 
     describe('runs playbook', () => {
         beforeEach(() => {
+            // # wait for content to load
+            cy.get('#channelIntro').should('be.visible');
+
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
         });
