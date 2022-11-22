@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {PlaybookRunFilterButton} from '../../backstage/styles';
+import {FilterButton} from '../../backstage/styles';
 import {Playbook} from '../../../types/playbook';
 import {SelectedButton} from 'src/components/team/team_selector';
 import Dropdown from 'src/components/dropdown';
@@ -113,7 +113,7 @@ export default function PlaybookSelector(props: Props) {
         );
     } else {
         target = (
-            <PlaybookRunFilterButton
+            <FilterButton
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -123,7 +123,7 @@ export default function PlaybookSelector(props: Props) {
             >
                 {selected === null ? props.placeholder : selected.label}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
-            </PlaybookRunFilterButton>
+            </FilterButton>
         );
     }
 
@@ -162,8 +162,8 @@ export default function PlaybookSelector(props: Props) {
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-react-select'
+                className='playbook-react-select'
                 {...props.customControlProps}
             />
         </Dropdown>

@@ -30,6 +30,16 @@ const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
 	metricsExposePort = ":9093"
+
+	// Topic represents a start of a thread. In playbooks we support 2 types of topics:
+	// status topic - indicating the start of the thread below status update and
+	// task topic - indicating the start of the thread below task(checklist item)
+	TopicTypeStatus = "status"
+	TopicTypeTask   = "task"
+
+	// Collection is a group of topics and their corresponding threads.
+	// In Playbooks we support a single type of collection - a run
+	CollectionTypeRun = "run"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -220,6 +230,15 @@ func (p *Plugin) OnActivate() error {
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
+	// register collections and topics.
+	// TODO bump the minimum server version
+	if err := p.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeStatus); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeStatus)
+	}
+	if err := p.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeTask); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeTask)
+	}
+
 	api.NewGraphQLHandler(
 		p.handler.APIRouter,
 		p.playbookService,
@@ -395,4 +414,111 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+func (p *Plugin) UserHasPermissionToCollection(c *plugin.Context, userID string, collectionType, collectionID string, permission *model.Permission) (bool, error) {
+	if collectionType != CollectionTypeRun {
+		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := p.playbookRunService.GetPlaybookRun(collectionID)
+	if err != nil {
+		return false, errors.Wrapf(err, "No run with id - %s", collectionID)
+	}
+	return p.permissions.HasPermissionsToRun(userID, run, permission), nil
+}
+
+func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	ids, err := p.playbookRunService.GetPlaybookRunIDsForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := p.playbookRunService.GetPlaybookRun(collectionID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "No run with id - %s", collectionID)
+	}
+	followers, err := p.playbookRunService.GetFollowers(collectionID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't get followers for run - %s", collectionID)
+	}
+	return mergeSlice(run.ParticipantIDs, followers), nil
+}
+
+func (p *Plugin) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIDs []string) (map[string]*model.CollectionMetadata, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+	runsMetadata := map[string]*model.CollectionMetadata{}
+	runs, err := p.playbookRunService.GetRunMetadataByIDs(collectionIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get playbook run metadata by ids")
+	}
+	for _, run := range runs {
+		runsMetadata[run.ID] = &model.CollectionMetadata{
+			Id:             run.ID,
+			CollectionType: CollectionTypeRun,
+			TeamId:         run.TeamID,
+			Name:           run.Name,
+			RelativeURL:    app.GetRunDetailsRelativeURL(run.ID),
+		}
+	}
+	return runsMetadata, nil
+}
+
+func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIDs []string) (map[string]*model.TopicMetadata, error) {
+	topicsMetadata := map[string]*model.TopicMetadata{}
+
+	var getTopicMetadataByIDs func(topicIDs []string) ([]app.TopicMetadata, error)
+	switch topicType {
+	case TopicTypeStatus:
+		getTopicMetadataByIDs = p.playbookRunService.GetStatusMetadataByIDs
+	case TopicTypeTask:
+		getTopicMetadataByIDs = p.playbookRunService.GetTaskMetadataByIDs
+	default:
+		return map[string]*model.TopicMetadata{}, errors.Errorf("topic type %s is not registered by playbooks", topicType)
+	}
+
+	topics, err := getTopicMetadataByIDs(topicIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata by topic ids")
+	}
+	for _, topic := range topics {
+		topicsMetadata[topic.ID] = &model.TopicMetadata{
+			Id:             topic.ID,
+			TopicType:      topicType,
+			CollectionType: CollectionTypeRun,
+			TeamId:         topic.TeamID,
+			CollectionId:   topic.RunID,
+		}
+	}
+
+	return topicsMetadata, nil
+}
+
+func mergeSlice(a, b []string) []string {
+	m := make(map[string]struct{}, len(a)+len(b))
+	for _, elem := range a {
+		m[elem] = struct{}{}
+	}
+	for _, elem := range b {
+		m[elem] = struct{}{}
+	}
+	merged := make([]string, 0, len(m))
+	for key := range m {
+		merged = append(merged, key)
+	}
+	return merged
 }

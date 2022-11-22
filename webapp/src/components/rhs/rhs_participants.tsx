@@ -9,20 +9,24 @@ import {Link} from 'react-router-dom';
 import {OpenInNewIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {pluginUrl} from 'src/browser_routing';
 import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
+import {setRHSViewingParticipants} from 'src/actions';
 
 interface Props {
     userIds: string[];
-    playbookRunId: string;
     onParticipate?: () => void;
 }
 
 const RHSParticipants = (props: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
     const openMembersModal = useOpenMembersModalIfPresent();
 
+    const onShowParticipants = () => {
+        dispatch(setRHSViewingParticipants());
+        return false;
+    };
     const becomeParticipant = (
         <Tooltip
             id={'rhs-participate'}
@@ -47,7 +51,10 @@ const RHSParticipants = (props: Props) => {
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
                     {props.onParticipate ? null : (
-                        <LinkAddParticipants to={pluginUrl(`/runs/${props.playbookRunId}?from=channel_rhs_participants`)}>
+                        <LinkAddParticipants
+                            to={'#'}
+                            onClick={onShowParticipants}
+                        >
                             {formatMessage({defaultMessage: 'Add participant'})}
                             <OpenInNewIcon size={11}/>
                         </LinkAddParticipants>
@@ -65,7 +72,7 @@ const RHSParticipants = (props: Props) => {
             <UserRow
                 tabIndex={0}
                 role={'button'}
-                onClick={openMembersModal}
+                onClick={onShowParticipants}
                 onKeyDown={(e) => {
                     // Handle Enter and Space as clicking on the button
                     if (e.keyCode === 13 || e.keyCode === 32) {

@@ -79,7 +79,7 @@ const RHSRunDetails = (props: Props) => {
         }
     }, [runDetailsStep]);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun?.id || '', 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
     const displayReadOnlyToast = useMemo(() => debounce(() => {

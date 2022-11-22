@@ -29,12 +29,12 @@ const FloatingContainer = styled.div`
 		}
 	}
 
-    .playbook-run-user-select__menu-list {
+    .playbook-react-select__menu-list {
         padding: 0 0 12px;
         border: none;
     }
 
-    .playbook-run-user-select {
+    .playbook-react-select {
         border-radius: 4px;
         -webkit-overflow-scrolling: touch;
         background-color: var(--center-channel-bg);

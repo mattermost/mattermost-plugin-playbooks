@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useSelector, useStore} from 'react-redux';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, makeGetProfilesByIdsAndUsernames} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 
@@ -18,18 +18,23 @@ import styled from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {PlaybookRunFilterButton} from '../backstage/styles';
+import {FilterButton} from '../backstage/styles';
 import Dropdown from 'src/components/dropdown';
 
 export interface Option {
     value: string;
     label: JSX.Element | string;
-    userType: string;
     user: UserProfile;
 }
 
 interface ActionObj {
     action: ActionTypes;
+}
+
+interface UserGroup {
+    defaultLabel: string;
+    subsetLabel: string;
+    subsetUserIds: string[];
 }
 
 interface Props {
@@ -47,15 +52,25 @@ interface Props {
     withoutProfilePic?: boolean;
     defaultValue?: string;
     selfIsFirstOption?: boolean;
-    getUsers: () => Promise<UserProfile[]>;
-    getUsersInTeam: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userType?: string, user?: UserProfile) => void;
+    onSelectedChange?: (user?: UserProfile) => void;
     customControlProps?: any;
     placement?: Placement;
     className?: string;
     selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
+
+    /**
+     * Handler for getting the main user group.
+     */
+    getAllUsers: () => Promise<UserProfile[]>;
+
+    /**
+     * When passed, two user groups will be shown in the dropdown
+     * - one with subsetLabel with all the users that are in the subsetUserIds
+     * - one with defaultLabel and the rest of the users
+     */
+    userGroups?: UserGroup;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -70,6 +85,12 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
+    // props.userGroups?.subsetUserIds are not guaranteed to be in the page returned by props.getAllUsers
+    // but they're expected to be at redux
+    const getProfiles = makeGetProfilesByIdsAndUsernames();
+    const store = useStore();
+    const usersInSubset = getProfiles(store.getState(), {allUserIds: props.userGroups?.subsetUserIds || [], allUsernames: []});
+
     useUpdateEffect(() => {
         props.onOpenChange?.(isOpen);
     }, [isOpen]);
@@ -83,8 +104,8 @@ export default function ProfileSelector(props: Props) {
         }
     }, [props.controlledOpenToggle]);
 
-    const [userOptions, setUserOptions] = useState<Option[]>([]);
-    const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
+    const [userInSubsetOptions, setUserInSubsetOptions] = useState<Option[]>([]);
+    const [userNotInSubsetOptions, setUserNotInSubsetOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
@@ -95,11 +116,12 @@ export default function ProfileSelector(props: Props) {
             return props.selfIsFirstOption && userId === currentUserId;
         };
 
-        const [users, usersInTeam] = await Promise.all([props.getUsers(), props.getUsersInTeam()]);
-        const usersNotInChannel = usersInTeam.filter((user) => !users.includes(user));
+        const subsetUserIds = props.userGroups?.subsetUserIds || [];
+        const allUsers = await props.getAllUsers();
+        const usersNotInSubset = allUsers.filter((user) => !subsetUserIds.find((userId) => userId === user.id));
 
-        const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
-            return ({
+        const userToOption = (user: UserProfile) => {
+            return {
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                 label: (
                     <Profile
@@ -107,35 +129,23 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
                     />
                 ),
-                userType: 'NonMember',
                 user,
-            } as Option);
-        });
+            } as Option;
+        };
 
-        const optionList = users.map((user: UserProfile) => {
-            return ({
-                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
-                label: (
-                    <Profile
-                        userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatProfileName(' (assign to me)') : formatProfileName('')}
-                    />
-                ),
-                userType: 'Member',
-                user,
-            } as Option);
-        });
+        const optionNotInSubsetGroup = usersNotInSubset.map((user: UserProfile) => userToOption(user));
+        const optionSubsetGroup = usersInSubset.map((user: UserProfile) => userToOption(user));
 
         if (props.selfIsFirstOption) {
-            const idx = optionList.findIndex((elem) => elem.user.id === currentUserId);
+            const idx = optionSubsetGroup.findIndex((elem) => elem.user.id === currentUserId);
             if (idx > 0) {
-                const currentUser = optionList.splice(idx, 1);
-                optionList.unshift(currentUser[0]);
+                const currentUser = optionSubsetGroup.splice(idx, 1);
+                optionSubsetGroup.unshift(currentUser[0]);
             }
         }
 
-        setUserNotInChannelOptions(optionNotInTeamList);
-        setUserOptions(optionList);
+        setUserNotInSubsetOptions(optionNotInSubsetGroup);
+        setUserInSubsetOptions(optionSubsetGroup);
     }
 
     // Fill in the userOptions on mount.
@@ -148,16 +158,16 @@ export default function ProfileSelector(props: Props) {
     // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
     // have userOptions
     useEffect(() => {
-        if (userOptions === []) {
+        if (userInSubsetOptions === []) {
             return;
         }
-        const user = userOptions.find((option: Option) => option.user.id === props.selectedUserId);
+        const user = userInSubsetOptions.find((option: Option) => option.user.id === props.selectedUserId);
         if (user) {
             setSelected(user);
         } else {
             setSelected(null);
         }
-    }, [userOptions, props.selectedUserId]);
+    }, [userInSubsetOptions, props.selectedUserId]);
 
     const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
@@ -168,7 +178,7 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userType, value?.user);
+            props.onSelectedChange(value?.user);
         }
     };
 
@@ -205,7 +215,7 @@ export default function ProfileSelector(props: Props) {
         );
     } else {
         target = (
-            <PlaybookRunFilterButton
+            <FilterButton
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -215,7 +225,7 @@ export default function ProfileSelector(props: Props) {
             >
                 {selected === null ? props.placeholder : selected.label}
                 {dropdownArrow}
-            </PlaybookRunFilterButton>
+            </FilterButton>
         );
     }
 
@@ -242,8 +252,18 @@ export default function ProfileSelector(props: Props) {
         Control: props.customControl,
     } : noDropdown;
 
-    const selectOptions = (userNotInChannelOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
-        {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}];
+    const getSelectOptions = () => {
+        if (!props.userGroups) {
+            return userNotInSubsetOptions;
+        }
+        if (userNotInSubsetOptions.length === 0) {
+            return userInSubsetOptions;
+        }
+        return [
+            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
+        ];
+    };
 
     return (
         <Dropdown
@@ -260,14 +280,14 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={selectOptions}
+                options={getSelectOptions()}
                 placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
-                classNamePrefix='playbook-run-user-select'
-                className='playbook-run-user-select'
+                classNamePrefix='playbook-react-select'
+                className='playbook-react-select'
                 {...props.customControlProps}
             />
         </Dropdown>
@@ -287,6 +307,10 @@ const selectStyles: StylesConfig<Option, boolean> = {
             color: 'unset',
         };
     },
+    groupHeading: (provided) => ({
+        ...provided,
+        fontWeight: 600,
+    }),
 };
 
 const getFullName = (firstName: string, lastName: string): string => {

@@ -548,6 +548,18 @@ type RunAction struct {
 	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant"`
 }
 
+type RunMetadata struct {
+	ID     string
+	Name   string
+	TeamID string
+}
+
+type TopicMetadata struct {
+	ID     string
+	RunID  string
+	TeamID string
+}
+
 const (
 	ActionTypeBroadcastChannels = "broadcast_to_channels"
 	ActionTypeBroadcastWebhooks = "broadcast_to_webhooks"
@@ -720,11 +732,11 @@ type PlaybookRunService interface {
 
 	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
-	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error
+	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool, includeRunsInProgress bool) error
 
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
-	DMTodoDigestToUser(userID string, force bool) error
+	DMTodoDigestToUser(userID string, force bool, includeRunsInProgress bool) error
 
 	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
 	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
@@ -758,6 +770,19 @@ type PlaybookRunService interface {
 
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
@@ -870,6 +895,19 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskAsTopicMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

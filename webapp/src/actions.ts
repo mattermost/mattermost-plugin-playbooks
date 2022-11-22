@@ -215,6 +215,13 @@ export function setRHSViewingList(): SetRHSState {
     };
 }
 
+export function setRHSViewingParticipants(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingPlaybookRunParticipants,
+    };
+}
+
 /**
  * Stores`showRHSPlugin` action returned by
  * registerRightHandSidebarComponent in plugin initialization.

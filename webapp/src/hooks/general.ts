@@ -44,7 +44,7 @@ import {debounce, isEqual} from 'lodash';
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
+import {getProfileSetForChannel, selectExperimentalFeatures, getRun, selectLinkRunToExistingChannelEnabled} from 'src/selectors';
 import {
     fetchPlaybookRuns,
     clientFetchPlaybook,
@@ -286,6 +286,10 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
+}
+
+export function useLinkRunToExistingChannelEnabled() {
+    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been

@@ -67,6 +67,7 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    participantUserIds: string[];
     onViewerModeInteract?: () => void
 }
 
@@ -86,13 +87,25 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     useUpdateEffect(() => {
         setTitleValue(props.checklistItem.title);
-        setDescValue(props.checklistItem.description);
-        setCommand(props.checklistItem.command);
-        setAssigneeID(props.checklistItem.assignee_id);
-        setDueDate(props.checklistItem.due_date);
-    }, [props.checklistItem]);
+    }, [props.checklistItem.title]);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+    useUpdateEffect(() => {
+        setDescValue(props.checklistItem.description);
+    }, [props.checklistItem.description]);
+
+    useUpdateEffect(() => {
+        setCommand(props.checklistItem.command);
+    }, [props.checklistItem.command]);
+
+    useUpdateEffect(() => {
+        setAssigneeID(props.checklistItem.assignee_id);
+    }, [props.checklistItem.assignee_id]);
+
+    useUpdateEffect(() => {
+        setDueDate(props.checklistItem.due_date);
+    }, [props.checklistItem.due_date]);
+
+    const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -175,7 +188,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <AssignTo
-                channelId={props.channelId}
+                participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
                 editable={!props.readOnly}
                 withoutName={shouldHideName()}
@@ -248,7 +261,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
-                        channelId={props.channelId}
+                        participantUserIds={props.participantUserIds}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
