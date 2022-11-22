@@ -31,6 +31,9 @@ describe('channels > rhs > template', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 
+                // # wait for content to load
+                cy.get('#channelIntro').should('be.visible');
+
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -50,6 +53,9 @@ describe('channels > rhs > template', () => {
             it('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                // # wait for content to load
+                cy.get('#channelIntro').should('be.visible');
 
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
