@@ -103,7 +103,8 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
+	// some updates require just view permission (like fav/unfav)
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
 		return "", err
 	}
 
