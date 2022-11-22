@@ -14,9 +14,10 @@ import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 
 import {SecondaryButton} from '../assets/buttons';
-import {openPlaybookRunModal} from 'src/actions';
 
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
+
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {UserList} from './rhs_participants';
 
@@ -33,9 +34,17 @@ interface RunToDisplay {
     lastUpdatedAt: number
 }
 
+export interface RunListOptions {
+    sort: string
+    direction: string
+}
+
 interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void
+    options: RunListOptions
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+    getMore: () => void
 }
 
 const Container = styled.div`
@@ -142,19 +151,21 @@ const RHSRunList = (props: Props) => {
                         }
                     >
                         <DropdownMenuItem
-                            onClick={() => console.log('testing')}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, statuses: [PlaybookRunStatus.InProgress]}))}
                         >
                             {formatMessage({defaultMessage: 'Runs in progress'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => console.log('testing')}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, statuses: [PlaybookRunStatus.Finished]}))}
                         >
                             {formatMessage({defaultMessage: 'Finished runs'})}
                         </DropdownMenuItem>
                     </DotMenu>
                     <Spacer/>
                     <StartRunButton
-                        onClick={() => dispatch(openPlaybookRunModal())}
+
+                        //onClick={() => dispatch(openPlaybookRunModal())}
+                        onClick={props.getMore}
                     >
                         <PlayOutlineIcon size={14}/>
                         {formatMessage({defaultMessage: 'Start run'})}

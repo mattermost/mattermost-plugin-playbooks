@@ -12,26 +12,42 @@ import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 import {ToastProvider} from '../backstage/toast_banner';
 
-import {useRhsRunsQuery} from 'src/graphql/generated_types';
+import {useRhsActiveRunsQuery} from 'src/graphql/generated_types';
 
-import RHSRunList from './rhs_run_list';
+import RHSRunList, {RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
 
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRun, setCurrentRun] = useState<string|undefined>();
-    const {data, error} = useRhsRunsQuery({
+    const [listOptions, setListOptions] = useState<RunListOptions>({
+        sort: 'create_at',
+        direction: 'DESC',
+    });
+    const {data, error, fetchMore} = useRhsActiveRunsQuery({
         variables: {
             channelID: currentChannelId,
+            sort: listOptions.sort,
+            direction: listOptions.direction,
+            first: 10,
         },
         fetchPolicy: 'cache-and-network',
     });
+    const runs = data?.runs.edges.map((edge) => edge.node);
+
+    const getMoreRuns = () => {
+        fetchMore({
+            variables: {
+                after: data?.runs.pageInfo.endCursor,
+            },
+        });
+    };
 
     // If there is only one run in this channel select it.
     useEffect(() => {
-        if (data && data.runs.length === 1) {
-            const singleRunID = data.runs[0].id;
+        if (runs && runs.length === 1) {
+            const singleRunID = runs[0].id;
             if (singleRunID !== currentRun) {
                 setCurrentRun(singleRunID);
             }
@@ -46,7 +62,7 @@ const RightHandSidebar = () => {
         };
     }, [dispatch]);
 
-    if (error || !data) {
+    if (error || !runs) {
         return null;
     }
 
@@ -55,13 +71,14 @@ const RightHandSidebar = () => {
     };
 
     // No runs (ever) in this channel
-    if (data.runs.length === 0) {
+    if (runs.length === 0) {
         // Keep showing a run we have displayed if one is open
         if (currentRun) {
             return (
                 <RHSRunDetails
                     runID={currentRun}
                     onBackClick={clearCurrentRun}
+
                 />
             );
         }
@@ -71,7 +88,7 @@ const RightHandSidebar = () => {
     }
 
     // If we have a run selected and it's in the current channel show that
-    if (currentRun && data.runs.find((run) => run.id === currentRun)) {
+    if (currentRun && runs.find((run) => run.id === currentRun)) {
         return (
             <RHSRunDetails
                 runID={currentRun}
@@ -83,11 +100,14 @@ const RightHandSidebar = () => {
     // We have more than one run, and the currently selected run isn't in this channel.
     return (
         <RHSRunList
-            runs={data.runs}
+            runs={runs}
             onSelectRun={(runID: string) => {
                 dispatch(setRHSViewingPlaybookRun());
                 setCurrentRun(runID);
             }}
+            options={listOptions}
+            setOptions={setListOptions}
+            getMore={getMoreRuns}
         />
     );
 };

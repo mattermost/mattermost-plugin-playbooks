@@ -13,10 +13,13 @@ type Query {
 	runs(
 		teamID: String = "",
 		sort: String = "",
+		direction: String = "",
 		statuses: [String!] = [],
 		participantOrFollowerID: String = "",
 		channelID: String = "",
-	): [Run!]!
+		first: Int,
+		after: String,
+	): RunConnection!
 }
 
 type Mutation {
@@ -33,6 +36,12 @@ type Mutation {
 	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
+}
+
+type PageInfo {
+	hasNextPage: Boolean!
+	startCursor: String!
+	endCursor: String!
 }
 
 input PlaybookUpdates {
@@ -219,6 +228,17 @@ type Run {
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!
+}
+
+type RunConnection {
+	totalCount: Int!
+	edges: [RunEdge!]!
+	pageInfo: PageInfo!
+}
+
+type RunEdge {
+	cursor: String!
+	node: Run!
 }
 
 type StatusPost {

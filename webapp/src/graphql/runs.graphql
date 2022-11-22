@@ -8,16 +8,70 @@ query Run($id: String!) {
     }
 }
 
-query RHSRuns($channelID: String!) {
-	runs(channelID: $channelID) {
-		id
-		name
-		participantIDs
-		ownerUserID
-		playbook {
-			title
+fragment RHSRunFields on Run {
+	id
+	name
+	participantIDs
+	ownerUserID
+	playbook {
+		title
+	}
+	lastUpdatedAt
+}
+
+query RHSActiveRuns(
+	$channelID: String!,
+	$sort: String!,
+	$direction: String!,
+	$first: Int,
+	$after: String,
+) {
+	runs(
+		channelID: $channelID,
+		sort: $sort,
+		direction: $direction,
+		statuses: ["InProgress"],
+		first: $first,
+		after: $after,
+	) {
+		totalCount
+		edges {
+			node {
+				...RHSRunFields
+			}
 		}
-		lastUpdatedAt
+		pageInfo {
+			endCursor
+			hasNextPage
+		}
+	}
+}
+
+query RHSFinishedRuns(
+	$channelID: String!,
+	$sort: String!,
+	$direction: String!,
+	$first: Int,
+	$after: String,
+) {
+	finishedRuns: runs(
+		channelID: $channelID,
+		sort: $sort,
+		direction: $direction,
+		statuses: ["Finished"],
+		first: $first,
+		after: $after,
+	) {
+		totalCount
+		edges {
+			node {
+				...RHSRunFields
+			}
+		}
+		pageInfo {
+			endCursor
+			hasNextPage
+		}
 	}
 }
 

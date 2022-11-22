@@ -21,6 +21,8 @@ import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, Http
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {relayStylePagination} from '@apollo/client/utilities';
+
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 
@@ -322,7 +324,15 @@ export default class Plugin {
         };
         const graphqlClient = new ApolloClient({
             link: new HttpLink({fetch: graphqlFetch}),
-            cache: new InMemoryCache(),
+            cache: new InMemoryCache({
+                typePolicies: {
+                    Query: {
+                        fields: {
+                            runs: relayStylePagination(),
+                        },
+                    },
+                },
+            }),
         });
 
         // Store graphql client for bad modals.
