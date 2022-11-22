@@ -407,6 +407,9 @@ describe('channels > rhs', () => {
             // # Navigate to the application and a channel without a playbook run
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
+            // # wait for content to load
+            cy.get('#channelIntro').should('be.visible');
+
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
