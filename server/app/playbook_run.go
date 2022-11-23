@@ -731,11 +731,11 @@ type PlaybookRunService interface {
 
 	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
-	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error
+	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool, includeRunsInProgress bool) error
 
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
-	DMTodoDigestToUser(userID string, force bool) error
+	DMTodoDigestToUser(userID string, force bool, includeRunsInProgress bool) error
 
 	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
 	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
