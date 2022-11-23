@@ -5,17 +5,17 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {BookOutlineIcon, FilterVariantIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, FilterVariantIcon} from '@mattermost/compass-icons/components';
+
+import Scrollbars from 'react-custom-scrollbars';
 
 import Profile from 'src/components/profile/profile';
 
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 
-import {SecondaryButton} from '../assets/buttons';
+import {SecondaryButton, TertiaryButton} from '../assets/buttons';
 
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
-import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -33,22 +33,21 @@ interface RunToDisplay {
     lastUpdatedAt: number
 }
 
+export enum FilterType {
+    InProgress,
+    Finished,
+}
+
 export interface RunListOptions {
     sort: string
     direction: string
-}
-
-interface Props {
-    runs: RunToDisplay[];
-    onSelectRun: (runID: string) => void
-    options: RunListOptions
-    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
-    getMore: () => void
+    filter: FilterType
 }
 
 const Container = styled.div`
     display: flex;
     flex-direction: column;
+    height: 100%;
 `;
 
 const Header = styled.div`
@@ -95,10 +94,35 @@ const SortDotMenuButton = styled(DotMenuButton)`
     align-items: center;
 `;
 
+const FilterMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: 182px;
+`;
+
+const FilterMenuNumericValue = styled.div`
+    color: rgba(var(--center-channel-text-rgb), 0.56);
+`;
+
 const SortAscendingIcon = FilterVariantIcon;
+
+interface Props {
+    runs: RunToDisplay[];
+    onSelectRun: (runID: string) => void
+    getMore: () => void
+
+    options: RunListOptions
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+    numInProgress: number
+    numFinished: number
+    filterMenuOpened: () => void
+}
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
+
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
 
     return (
         <>
@@ -112,66 +136,84 @@ const RHSRunList = (props: Props) => {
             <Container>
                 <Header>
                     <DotMenu
+                        onOpenChange={(open: boolean) => {
+                            if (open) {
+                                props.filterMenuOpened();
+                            }
+                        }}
                         dotMenuButton={TitleButton}
                         placement='bottom-start'
                         icon={
                             <FilterMenuTitle>
-                                {formatMessage({defaultMessage: 'Runs in progress'})}
+                                {filterMenuTitleText}
                                 <i className={'icon icon-chevron-down'}/>
                             </FilterMenuTitle>
                         }
                     >
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, statuses: [PlaybookRunStatus.InProgress]}))}
+                        <FilterMenuItem
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                         >
                             {formatMessage({defaultMessage: 'Runs in progress'})}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, statuses: [PlaybookRunStatus.Finished]}))}
+                            <FilterMenuNumericValue>
+                                {props.numInProgress}
+                            </FilterMenuNumericValue>
+                        </FilterMenuItem>
+                        <FilterMenuItem
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                         >
                             {formatMessage({defaultMessage: 'Finished runs'})}
-                        </DropdownMenuItem>
+                            <FilterMenuNumericValue>
+                                {props.numFinished}
+                            </FilterMenuNumericValue>
+                        </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <StartRunButton
-
-                        //onClick={() => dispatch(openPlaybookRunModal())}
-                        onClick={props.getMore}
-                    >
+                    {/*<StartRunButton>
                         <PlayOutlineIcon size={14}/>
                         {formatMessage({defaultMessage: 'Start run'})}
-                    </StartRunButton>
+                    </StartRunButton>*/}
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
                         icon={<SortAscendingIcon/>}
                     >
                         <DropdownMenuItem
-                            onClick={() => console.log('testing')}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'create_at'}))}
                         >
                             {formatMessage({defaultMessage: 'Recently created'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => console.log('testing')}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at'}))}
                         >
                             {formatMessage({defaultMessage: 'Recently updated'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => console.log('testing')}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name'}))}
                         >
                             {formatMessage({defaultMessage: 'Alphabetically'})}
                         </DropdownMenuItem>
                     </DotMenu>
                 </Header>
-                <RunsList>
-                    {props.runs.map((run: RunToDisplay) => (
-                        <RHSRunListCard
-                            key={run.id}
-                            onClick={() => props.onSelectRun(run.id)}
-                            {...run}
-                        />
-                    ))}
-                </RunsList>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                >
+                    <RunsList>
+                        {props.runs.map((run: RunToDisplay) => (
+                            <RHSRunListCard
+                                key={run.id}
+                                onClick={() => props.onSelectRun(run.id)}
+                                {...run}
+                            />
+                        ))}
+                        <TertiaryButton
+                            onClick={props.getMore}
+                        >
+                            {formatMessage({defaultMessage: 'Show more'})}
+                        </TertiaryButton>
+                    </RunsList>
+                </Scrollbars>
             </Container>
         </>
     );

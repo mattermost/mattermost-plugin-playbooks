@@ -421,7 +421,7 @@ export type RhsFinishedRunsQueryVariables = Exact<{
     after?: InputMaybe<Scalars['String']>;
 }>;
 
-export type RhsFinishedRunsQuery = { __typename?: 'Query', finishedRuns: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, lastUpdatedAt: number, playbook: { __typename?: 'Playbook', title: string } } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+export type RhsFinishedRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, lastUpdatedAt: number, playbook: { __typename?: 'Playbook', title: string } } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -813,7 +813,7 @@ export type RhsActiveRunsLazyQueryHookResult = ReturnType<typeof useRhsActiveRun
 export type RhsActiveRunsQueryResult = Apollo.QueryResult<RhsActiveRunsQuery, RhsActiveRunsQueryVariables>;
 export const RhsFinishedRunsDocument = gql`
     query RHSFinishedRuns($channelID: String!, $sort: String!, $direction: String!, $first: Int, $after: String) {
-  finishedRuns: runs(
+  runs(
     channelID: $channelID
     sort: $sort
     direction: $direction

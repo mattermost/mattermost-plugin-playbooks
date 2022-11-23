@@ -328,7 +328,7 @@ export default class Plugin {
                 typePolicies: {
                     Query: {
                         fields: {
-                            runs: relayStylePagination(),
+                            runs: relayStylePagination(['teamID', 'sort', 'direction', 'statuses', 'participantOrFollowerID', 'channelID']),
                         },
                     },
                 },

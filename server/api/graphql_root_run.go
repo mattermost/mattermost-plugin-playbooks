@@ -89,7 +89,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	return &RunConnectionResolver{results: *runResults}, nil
+	return &RunConnectionResolver{results: *runResults, page: page}, nil
 }
 
 type RunUpdates struct {

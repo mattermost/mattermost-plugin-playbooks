@@ -54,7 +54,7 @@ query RHSFinishedRuns(
 	$first: Int,
 	$after: String,
 ) {
-	finishedRuns: runs(
+	runs(
 		channelID: $channelID,
 		sort: $sort,
 		direction: $direction,

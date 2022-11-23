@@ -148,6 +148,7 @@ type MetadataResolver struct {
 
 type RunConnectionResolver struct {
 	results app.GetPlaybookRunsResults
+	page    int
 }
 
 func (r *RunConnectionResolver) TotalCount() int32 {
@@ -171,8 +172,8 @@ func (r *RunConnectionResolver) PageInfo() *PageInfoResolver {
 
 	if len(r.results.Items) > 0 {
 		// "Cursors" are just the page numbers
-		startCursor = encodeRunConnectionCursor(r.results.PageCount - 1)
-		endCursor = encodeRunConnectionCursor(r.results.PageCount)
+		startCursor = encodeRunConnectionCursor(r.page)
+		endCursor = encodeRunConnectionCursor(r.page + 1)
 	}
 
 	return &PageInfoResolver{
