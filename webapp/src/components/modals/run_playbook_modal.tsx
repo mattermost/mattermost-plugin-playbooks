@@ -85,6 +85,9 @@ const RunPlaybookModal = ({
         }
     }, [playbook, playbook?.id]);
 
+    const createNewChannel = channelMode === 'create_new_channel';
+    const linkExistingChannel = channelMode === 'link_existing_channel';
+
     const onSubmit = () => {
         createPlaybookRun(
             playbookId,
@@ -92,8 +95,8 @@ const RunPlaybookModal = ({
             teamId,
             runName,
             description,
-            channelMode === 'link_existing_channel' ? channelId : undefined,
-            channelMode === 'create_new_channel' ? createPublicRun : undefined,
+            linkExistingChannel ? channelId : undefined,
+            createNewChannel ? createPublicRun : undefined,
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
@@ -112,12 +115,12 @@ const RunPlaybookModal = ({
                 <StyledRadioInput
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
-                    checked={channelMode === 'link_existing_channel'}
+                    checked={linkExistingChannel}
                     onChange={() => setChannelMode('link_existing_channel')}
                 />
                 <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
             </AutomationTitle>
-            {channelMode === 'link_existing_channel' && (
+            {linkExistingChannel && (
                 <SelectorWrapper>
                     <StyledChannelSelector
                         id={'link-existing-channel-selector'}
@@ -138,13 +141,13 @@ const RunPlaybookModal = ({
                 <StyledRadioInput
                     data-testid={'create-channel-radio'}
                     type='radio'
-                    checked={channelMode === 'create_new_channel'}
+                    checked={createNewChannel}
                     onChange={() => setChannelMode('create_new_channel')}
                 />
                 <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
             </AutomationTitle>
 
-            {channelMode === 'create_new_channel' && (
+            {createNewChannel && (
                 <HorizontalSplit>
                     <VerticalSplit>
                         <ButtonLabel disabled={false}>
@@ -182,7 +185,7 @@ const RunPlaybookModal = ({
         </Container>
     );
 
-    const isFormValid = runName !== '' && (channelMode === 'create_new_channel' || channelId !== '');
+    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     return (
         <StyledGenericModal
@@ -243,7 +246,7 @@ const RunPlaybookModal = ({
                         color: rgba(var(--center-channel-color-rgb), 0.56);
                     `}
                 >
-                    {formatMessage({defaultMessage: 'A channel will be created with this name'})}
+                    {createNewChannel && formatMessage({defaultMessage: 'A channel will be created with this name'})}
                 </Description>
                 {linkRunToExistingChannelEnabled && channelConfigSection}
             </Body>
