@@ -761,5 +761,6 @@
     "BJNrYQ": "As a participant, you’ll be able to update the run summary, tick off tasks, post status updates and edit the retrospective.",
     "9X3jwi": "{icon} Cost",
     "36NwLv": "Manage run participants list",
-    "2BCWLD": "Configure channel"
+    "2BCWLD": "Configure channel",
+    "lqceIp": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>"
 }
