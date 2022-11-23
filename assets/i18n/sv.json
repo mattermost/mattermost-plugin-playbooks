@@ -100,5 +100,17 @@
     {
         "id": "app.user.run.joined_run_channel_private_add_participant",
         "translation": "@{{.Name}} har lagts till i körningen av @{{.RequesterName}}. De har inte blivit automatiskt tillagda i kanalen eftersom @{{.RequesterName}} inte är en kanalmedlem och detta är en privat kanal.\n"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{{.Username}} aktiverade statusuppdateringar för den här körningen"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{{.Användarnamn}} inaktiverade statusuppdateringarna för den här körningen"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{{.Name}} är en deltagare i en körning och vill gå med i den här kanalen. Alla medlemmar i kanalen kan bjuda in dem.\n"
     }
 ]

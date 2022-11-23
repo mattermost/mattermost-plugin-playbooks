@@ -87,11 +87,23 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     useUpdateEffect(() => {
         setTitleValue(props.checklistItem.title);
+    }, [props.checklistItem.title]);
+
+    useUpdateEffect(() => {
         setDescValue(props.checklistItem.description);
+    }, [props.checklistItem.description]);
+
+    useUpdateEffect(() => {
         setCommand(props.checklistItem.command);
+    }, [props.checklistItem.command]);
+
+    useUpdateEffect(() => {
         setAssigneeID(props.checklistItem.assignee_id);
+    }, [props.checklistItem.assignee_id]);
+
+    useUpdateEffect(() => {
         setDueDate(props.checklistItem.due_date);
-    }, [props.checklistItem]);
+    }, [props.checklistItem.due_date]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
