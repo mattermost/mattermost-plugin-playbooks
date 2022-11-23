@@ -139,7 +139,10 @@ func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
 }
 
 func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
-	return 0
+	if len(r.PlaybookRun.TimelineEvents) < 1 {
+		return float64(r.PlaybookRun.CreateAt)
+	}
+	return float64(r.PlaybookRun.TimelineEvents[len(r.PlaybookRun.TimelineEvents)-1].EventAt)
 }
 
 type MetadataResolver struct {

@@ -9,6 +9,8 @@ import {BookOutlineIcon, FilterVariantIcon} from '@mattermost/compass-icons/comp
 
 import Scrollbars from 'react-custom-scrollbars';
 
+import {DateTime} from 'luxon';
+
 import Profile from 'src/components/profile/profile';
 
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
@@ -330,7 +332,12 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 </ParticipantsProfiles>
             </PeopleRow>
             <InfoRow>
-                <LastUpdatedText>{formatMessage({defaultMessage: 'Last status update {time}'}, {time: '8 hours ago'})}</LastUpdatedText>
+                <LastUpdatedText>
+                    {formatMessage(
+                        {defaultMessage: 'Last updated {time}'},
+                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                    )}
+                </LastUpdatedText>
                 <PlaybookChip>
                     <StyledBookOutlineIcon
                         size={11}
