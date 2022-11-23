@@ -7,7 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen, setRHSViewingPlaybookRun} from 'src/actions';
+import {setRHSOpen} from 'src/actions';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 import {ToastProvider} from '../backstage/toast_banner';
@@ -77,8 +77,20 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     };
 };
 
-const RightHandSidebar = () => {
+const useSetRHSState = () => {
     const dispatch = useDispatch();
+
+    // Let other parts of the app know if we are open or not
+    useEffect(() => {
+        dispatch(setRHSOpen(true));
+        return () => {
+            dispatch(setRHSOpen(false));
+        };
+    }, [dispatch]);
+};
+
+const RightHandSidebar = () => {
+    useSetRHSState();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRun, setCurrentRun] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>({
@@ -88,7 +100,7 @@ const RightHandSidebar = () => {
     });
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
 
-    // If there is only one run in this channel select it.
+    // If there is only one active run in this channel select it.
     useEffect(() => {
         if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
             const singleRunID = fetchedRuns.runsInProgress[0].id;
@@ -96,17 +108,9 @@ const RightHandSidebar = () => {
                 setCurrentRun(singleRunID);
             }
         }
-    }, [fetchedRuns.runsInProgress]);
+    }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
 
-    // Let other parts of the app know if we are open or not
-    useEffect(() => {
-        dispatch(setRHSOpen(true));
-        return () => {
-            dispatch(setRHSOpen(false));
-        };
-    }, [dispatch]);
-
-    if (!fetchedRuns.runsInProgress) {
+    if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
         return null;
     }
 
@@ -114,19 +118,8 @@ const RightHandSidebar = () => {
         setCurrentRun(undefined);
     };
 
-    // No runs in this channel
-    if (fetchedRuns.numRunsInProgress === 0) {
-        // Keep showing a run we have displayed if one is open
-        if (currentRun) {
-            return (
-                <RHSRunDetails
-                    runID={currentRun}
-                    onBackClick={clearCurrentRun}
-                />
-            );
-        }
-
-        // Otherwise show the home screen
+    // No runs (ever) in this channel
+    if (fetchedRuns.numRunsInProgress + fetchedRuns.numRunsFinished === 0) {
         return <RHSHome/>;
     }
 
@@ -149,7 +142,6 @@ const RightHandSidebar = () => {
         <RHSRunList
             runs={runsList}
             onSelectRun={(runID: string) => {
-                dispatch(setRHSViewingPlaybookRun());
                 setCurrentRun(runID);
             }}
             options={listOptions}
