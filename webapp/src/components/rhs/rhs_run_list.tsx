@@ -111,6 +111,7 @@ interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void
     getMore: () => void
+    hasMore: boolean
 
     options: RunListOptions
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
@@ -207,11 +208,13 @@ const RHSRunList = (props: Props) => {
                                 {...run}
                             />
                         ))}
-                        <TertiaryButton
-                            onClick={props.getMore}
-                        >
-                            {formatMessage({defaultMessage: 'Show more'})}
-                        </TertiaryButton>
+                        {props.hasMore &&
+                            <TertiaryButton
+                                onClick={props.getMore}
+                            >
+                                {formatMessage({defaultMessage: 'Show more'})}
+                            </TertiaryButton>
+                        }
                     </RunsList>
                 </Scrollbars>
             </Container>

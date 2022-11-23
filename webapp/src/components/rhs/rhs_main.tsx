@@ -29,6 +29,7 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     });
     const runsInProgress = inProgressResult.data?.runs.edges.map((edge) => edge.node);
     const numRunsInProgress = inProgressResult.data?.runs.totalCount ?? 0;
+    const hasMoreInProgress = inProgressResult.data?.runs.pageInfo.hasNextPage ?? false;
 
     const finishedResult = useRhsFinishedRunsQuery({
         variables: {
@@ -41,6 +42,7 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     });
     const runsFinished = finishedResult.data?.runs.edges.map((edge) => edge.node);
     const numRunsFinished = finishedResult.data?.runs.totalCount ?? 0;
+    const hasMoreFinished = finishedResult.data?.runs.pageInfo.hasNextPage ?? false;
 
     const getMoreInProgress = () => {
         inProgressResult.fetchMore({
@@ -68,6 +70,8 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
         numRunsFinished,
         getMoreInProgress,
         getMoreFinished,
+        hasMoreInProgress,
+        hasMoreFinished,
         fetchFinished,
         error,
     };
@@ -138,6 +142,7 @@ const RightHandSidebar = () => {
 
     const runsList = listOptions.filter === FilterType.InProgress ? fetchedRuns.runsInProgress : (fetchedRuns.runsFinished ?? []);
     const getMoreRuns = listOptions.filter === FilterType.InProgress ? fetchedRuns.getMoreInProgress : fetchedRuns.getMoreFinished;
+    const hasMore = listOptions.filter === FilterType.InProgress ? fetchedRuns.hasMoreInProgress : fetchedRuns.hasMoreFinished;
 
     // We have more than one run, and the currently selected run isn't in this channel.
     return (
@@ -150,6 +155,7 @@ const RightHandSidebar = () => {
             options={listOptions}
             setOptions={setListOptions}
             getMore={getMoreRuns}
+            hasMore={hasMore}
             filterMenuOpened={fetchedRuns.fetchFinished}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
