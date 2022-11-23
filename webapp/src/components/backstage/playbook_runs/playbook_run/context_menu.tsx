@@ -130,7 +130,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
             show={showLeaveRunConfirm}
             title={formatMessage({defaultMessage: 'Confirm leave{isFollowing, select, true { and unfollow} other {}}'}, {isFollowing})}
             message={formatMessage({defaultMessage: 'When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'}, {isFollowing})}
-            confirmButtonText={formatMessage({defaultMessage: 'Leave and unfollow'})}
+            confirmButtonText={isFollowing ? formatMessage({defaultMessage: 'Leave and unfollow'}) : formatMessage({defaultMessage: 'Leave'})}
             onConfirm={() => {
                 onLeaveRun();
                 setLeaveRunConfirm(false);
