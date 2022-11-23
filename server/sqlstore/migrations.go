@@ -2429,4 +2429,30 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.61.0"),
+		toVersion:   semver.MustParse("0.62.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+						UPDATE IR_UserInfo
+						SET DigestNotificationSettingsJSON =
+						JSON_SET(DigestNotificationSettingsJSON, '$.disable_weekly_digest',
+							JSON_EXTRACT(DigestNotificationSettingsJSON, '$.disable_daily_digest'));
+					`); err != nil {
+					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
+				}
+			} else {
+				if _, err := e.Exec(`
+						UPDATE IR_UserInfo
+						SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
+							jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
+						
+					`); err != nil {
+					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
+				}
+			}
+			return nil
+		},
+	},
 }

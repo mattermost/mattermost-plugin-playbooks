@@ -75,6 +75,7 @@ const GenericChecklist = (props: Props) => {
     const keys = generateKeys(props.checklist.items.map((item) => props.id + item.title));
 
     return (
+
         <Droppable
             droppableId={props.checklistIndex.toString()}
             direction='vertical'
@@ -131,21 +132,21 @@ const GenericChecklist = (props: Props) => {
                             />
                         }
                         {droppableProvided.placeholder}
+                        {props.readOnly ? null : (
+                            <AddTaskLink
+                                disabled={props.readOnly}
+                                onClick={() => {
+                                    setAddingItem(true);
+                                }}
+                                data-testid={`add-new-task-${props.checklistIndex}`}
+                            >
+                                <IconWrapper>
+                                    <i className='icon icon-plus'/>
+                                </IconWrapper>
+                                {formatMessage({defaultMessage: 'Add a task'})}
+                            </AddTaskLink>
+                        )}
                     </div>
-                    {props.readOnly ? null : (
-                        <AddTaskLink
-                            disabled={props.readOnly}
-                            onClick={() => {
-                                setAddingItem(true);
-                            }}
-                            data-testid={`add-new-task-${props.checklistIndex}`}
-                        >
-                            <IconWrapper>
-                                <i className='icon icon-plus'/>
-                            </IconWrapper>
-                            {formatMessage({defaultMessage: 'Add a task'})}
-                        </AddTaskLink>
-                    )}
                 </ChecklistContainer>
             )}
         </Droppable>
