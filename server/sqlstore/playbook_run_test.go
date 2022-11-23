@@ -413,6 +413,40 @@ func TestArchivePlaybookRun(t *testing.T) {
 	}
 }
 
+func TestUnArchivePlaybookRun(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		store := setupSQLStore(t, db)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		require.Equal(t, returned.DeleteAt, int64(0))
+
+		err = playbookRunStore.ArchivePlaybookRun(returned.ID)
+		require.NoError(t, err)
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.NotEqual(t, actual.DeleteAt, int64(0))
+
+		err = playbookRunStore.UnArchivePlaybookRun(returned.ID)
+		require.NoError(t, err)
+
+		unarchived, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, unarchived.DeleteAt, int64(0))
+	}
+}
+
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())

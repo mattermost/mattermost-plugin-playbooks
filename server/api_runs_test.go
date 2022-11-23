@@ -434,6 +434,27 @@ func TestArchiveRun(t *testing.T) {
 	})
 }
 
+func TestUnArchiveRun(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("archive", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.Archive(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+
+		playbookRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+		assert.NotEqual(t, playbookRun.DeleteAt, 0)
+
+		error := e.PlaybooksClient.PlaybookRuns.UnArchive(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, error)
+
+		unArvhivedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.NoError(t, err)
+		assert.NotEqual(t, unArvhivedRun.DeleteAt, 0)
+	})
+}
+
 func TestChecklistManagement(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

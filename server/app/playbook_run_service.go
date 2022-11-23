@@ -1247,6 +1247,25 @@ func (s *PlaybookRunServiceImpl) ArchivePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
+// UnArchivePlaybookRun UnArchives a playbook run by setting the DeleteAt field to 0
+func (s *PlaybookRunServiceImpl) UnArchivePlaybookRun(playbookRunID, userID string) error {
+
+	playbookRunToUnArchive, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	if playbookRunToUnArchive.DeleteAt == 0 {
+		return nil
+	}
+
+	if err = s.store.UnArchivePlaybookRun(playbookRunID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRun.ID)
 

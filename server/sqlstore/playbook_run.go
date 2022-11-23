@@ -631,6 +631,19 @@ func (s *playbookRunStore) ArchivePlaybookRun(playbookRunID string) error {
 	return nil
 }
 
+func (s *playbookRunStore) UnArchivePlaybookRun(playbookRunID string) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"DeleteAt": 0,
+		}).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to un archive run for id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
 // CreateTimelineEvent creates the timeline event
 func (s *playbookRunStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.TimelineEvent, error) {
 	if event.PlaybookRunID == "" {

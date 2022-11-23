@@ -762,6 +762,9 @@ type PlaybookRunService interface {
 	// ArchivePlaybookRun mark a run as deleted
 	ArchivePlaybookRun(playbookRunID, userID string) error
 
+	// UnArchivePlaybookRun mark a run as deleted
+	UnArchivePlaybookRun(playbookRunID, userID string) error
+
 	// RequestUpdate posts a status update request message in the run's channel
 	RequestUpdate(playbookRunID, requesterID string) error
 
@@ -816,6 +819,9 @@ type PlaybookRunStore interface {
 
 	// ArchivePlaybookRun mark a run as deleted
 	ArchivePlaybookRun(playbookRunID string) error
+
+	// UnArchivePlaybookRun mark a run as not deleted
+	UnArchivePlaybookRun(playbookRunID string) error
 
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
