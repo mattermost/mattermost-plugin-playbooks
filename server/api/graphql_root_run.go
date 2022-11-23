@@ -193,11 +193,28 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 
-	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel); err != nil {
+	run, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get run")
+	}
+
+	failed, err := c.playbookRunService.AddParticipants(run, args.UserIDs, userID, args.ForceAddToChannel)
+	if err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
 	for _, userID := range args.UserIDs {
+		hasFailed := false
+		for _, f := range failed {
+			if f == userID {
+				hasFailed = true
+				break
+			}
+		}
+		if hasFailed {
+			continue
+		}
+
 		if err := c.playbookRunService.Follow(args.RunID, userID); err != nil {
 			return "", errors.Wrap(err, "failed to make participant to unfollow run")
 		}

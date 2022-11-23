@@ -768,7 +768,7 @@ type PlaybookRunService interface {
 	RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
+	AddParticipants(playbookRun *PlaybookRun, userIDs []string, requesterUserID string, forceAddToChannel bool) ([]string, error)
 
 	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 	GetPlaybookRunIDsForUser(userID string) ([]string, error)
@@ -884,7 +884,7 @@ type PlaybookRunStore interface {
 	GetParticipantsActiveTotal() (int64, error)
 
 	// AddParticipants adds particpants to the run
-	AddParticipants(playbookRunID string, userIDs []string) error
+	AddParticipants(playbookRunId string, userIDs []string) error
 
 	// RemoveParticipants removes participants from the run
 	RemoveParticipants(playbookRunID string, userIDs []string) error
