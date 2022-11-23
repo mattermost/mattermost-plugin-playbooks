@@ -36,6 +36,7 @@ interface SidebarProps {
     team_id: string;
     groups: Array<SidebarGroup>;
     headerDropdown: React.ReactNode;
+    fixed: React.ReactNode;
 }
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): Team => getTeam(state, teamId);
@@ -63,6 +64,7 @@ const Sidebar = (props: SidebarProps) => {
                 </OverlayTrigger>
                 {props.headerDropdown}
             </Header>
+            {props.fixed}
             <Scrollbars
                 autoHide={true}
                 autoHideTimeout={500}

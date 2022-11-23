@@ -3,13 +3,15 @@ import {Switch, Route, useRouteMatch, Redirect, useLocation, matchPath, useHisto
 
 import {useSelector, useDispatch} from 'react-redux';
 
-import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
 import {useUpdateEffect, useEffectOnce, useLocalStorage} from 'react-use';
 
 import {selectTeam} from 'mattermost-redux/actions/teams';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import styled from 'styled-components';
 
 import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 
@@ -19,6 +21,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl, pluginUrl} from 'src/browser_routing';
 import ErrorPage from 'src/components/error_page';
 import RunsPage from 'src/components/backstage/runs_page';
+import {GlobalThreads} from 'src/webapp_globals';
 
 const useInitTeamRoutingLogic = () => {
     const dispatch = useDispatch();
@@ -35,7 +38,7 @@ const useInitTeamRoutingLogic = () => {
     /**
      * * These routes will select the proper team they belong too.
      * ! Don't restore prev team on these routes or those routes will redirect back to default route.
-     * @see {useDefaultRedirectOnTeamChange}
+     * @see {@link useDefaultRedirectOnTeamChange}
      */
     const negateTeamRestore = matchPath<{playbookRunId?: string; playbookId?: string;}>(location.pathname, {
         path: [
@@ -78,6 +81,8 @@ export const useDefaultRedirectOnTeamChange = (teamScopedModelTeamId: string | u
 
 const MainBody = () => {
     const match = useRouteMatch();
+    const currentTeam = useSelector(getCurrentTeam);
+
     useInitTeamRoutingLogic();
 
     return (
@@ -118,6 +123,14 @@ const MainBody = () => {
             >
                 <Redirect to={`${match.url}/runs`}/>
             </Route>
+            <Route path={`${match.url}/threads/:threadIdentifier?`}>
+                {currentTeam && (
+                    <GlobalThreadsStyled
+                        pathDef={`${match.url}/threads/:threadIdentifier?`}
+                        teamName={currentTeam?.name}
+                    />
+                )}
+            </Route>
             <Route>
                 <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
             </Route>
@@ -126,3 +139,7 @@ const MainBody = () => {
 };
 
 export default MainBody;
+
+const GlobalThreadsStyled = styled(GlobalThreads)`
+    padding-top: 0%;
+`;

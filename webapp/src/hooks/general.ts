@@ -657,7 +657,8 @@ export const useScrollListener = (el: HTMLElement | null, listener: EventListene
  * For controlled props or other pieces of state that need immediate updates with a debounced side effect.
  * @remarks
  * This is a problem solving hook; it is not intended for general use unless it is specifically needed.
- * Also consider {@link https://github.com/streamich/react-use/blob/master/docs/useDebounce.md react-use#useDebounce}.
+ * Also consider {@link https://github.com/streamich/react-use/blob/master/docs/useDebounce.md react-use#useDebounce}
+ *
  *
  * @example
  * const [debouncedValue, setDebouncedValue] = useState('…');

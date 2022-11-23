@@ -24,3 +24,10 @@ export const {
     // @ts-ignore
 } = global.Components ?? {};
 
+export const {
+    GlobalThreads,
+}: {
+    GlobalThreads: React.ComponentType<{className?: string; pathDef: string; teamName?: string}>;
+
+    // @ts-ignore
+} = global.ProductApi ?? {};

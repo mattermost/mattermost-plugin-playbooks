@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
+import {useRouteMatch} from 'react-router-dom';
 
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
@@ -120,7 +121,6 @@ const useLHSData = (teamID: string) => {
 
 const ViewAllRuns = () => {
     const {formatMessage} = useIntl();
-    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
     return (
         <ItemContainer>
             <ViewAllNavLink
@@ -130,7 +130,7 @@ const ViewAllRuns = () => {
                 to={'/playbooks/runs'}
                 exact={true}
             >
-                {viewAllMessage}
+                {formatMessage({defaultMessage: 'View all...'})}
             </ViewAllNavLink>
         </ItemContainer>
     );
@@ -138,7 +138,6 @@ const ViewAllRuns = () => {
 
 const ViewAllPlaybooks = () => {
     const {formatMessage} = useIntl();
-    const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
     return (
         <ItemContainer key={'sidebarItem_view_all_playbooks'}>
             <ViewAllNavLink
@@ -148,8 +147,25 @@ const ViewAllPlaybooks = () => {
                 to={'/playbooks/playbooks'}
                 exact={true}
             >
-                {viewAllMessage}
+                {formatMessage({defaultMessage: 'View all...'})}
             </ViewAllNavLink>
+        </ItemContainer>
+    );
+};
+
+const ViewThreads = () => {
+    const {formatMessage} = useIntl();
+    const {url} = useRouteMatch();
+    return (
+        <ItemContainer key={'sidebarItem_view_threads'}>
+            <ThreadsNavLink
+                id={'sidebarItem_view_threads'}
+                aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
+                data-testid={'playbooksLHSButton'}
+                to={`${url}/threads`}
+            >
+                {formatMessage({defaultMessage: 'Threads'})}
+            </ThreadsNavLink>
         </ItemContainer>
     );
 };
@@ -168,21 +184,18 @@ const PlaybooksSidebar = () => {
     const teamID = useSelector(getCurrentTeamId);
     const {groups, ready} = useLHSData(teamID);
 
-    if (!ready) {
-        return (
-            <Sidebar
-                groups={[]}
-                headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
-                team_id={teamID}
-            />
-        );
+    if (ready) {
+        addViewAllsToGroups(groups);
     }
-
-    addViewAllsToGroups(groups);
 
     return (
         <Sidebar
             groups={groups}
+            fixed={(
+                <>
+                    <ViewThreads/>
+                </>
+            )}
             headerDropdown={<CreatePlaybookDropdown team_id={teamID}/>}
             team_id={teamID}
         />
@@ -192,6 +205,16 @@ const PlaybooksSidebar = () => {
 export default PlaybooksSidebar;
 
 const ViewAllNavLink = styled(StyledNavLink)`
+    &&& {
+        &:not(.active) {
+            color: rgba(var(--sidebar-text-rgb), 0.56);
+        }
+
+        padding-left: 23px;
+    }
+`;
+
+const ThreadsNavLink = styled(StyledNavLink)`
     &&& {
         &:not(.active) {
             color: rgba(var(--sidebar-text-rgb), 0.56);
