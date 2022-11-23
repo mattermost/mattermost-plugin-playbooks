@@ -19,6 +19,8 @@ import {SecondaryButton, TertiaryButton} from '../assets/buttons';
 
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
+import ClipboardChecklist from '../assets/illustrations/clipboard_checklist_svg';
+
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
 
@@ -107,6 +109,29 @@ const FilterMenuNumericValue = styled.div`
     color: rgba(var(--center-channel-text-rgb), 0.56);
 `;
 
+const NoActiveRunsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    gap: 24px;
+    max-width: 325px;
+    margin-top: 82px;
+`;
+const NoRunsText = styled.div`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+`;
+const ViewFinishedRunsButton = styled(TertiaryButton)`
+    background: none;
+`;
+const StyledClipboardChecklist = styled(ClipboardChecklist)`
+    width: 98px;
+    height: 98px;
+`;
+
 const SortAscendingIcon = FilterVariantIcon;
 
 interface Props {
@@ -126,6 +151,8 @@ const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+
+    const showNoActiveRuns = props.runs.length === 0 && props.options.filter === FilterType.InProgress;
 
     return (
         <>
@@ -147,7 +174,7 @@ const RHSRunList = (props: Props) => {
                         dotMenuButton={TitleButton}
                         placement='bottom-start'
                         icon={
-                            <FilterMenuTitle>
+                            <FilterMenuTitle data-testid='rhs-runs-filter-menu'>
                                 {filterMenuTitleText}
                                 <i className={'icon icon-chevron-down'}/>
                             </FilterMenuTitle>
@@ -197,28 +224,43 @@ const RHSRunList = (props: Props) => {
                         </DropdownMenuItem>
                     </DotMenu>
                 </Header>
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                >
-                    <RunsList>
-                        {props.runs.map((run: RunToDisplay) => (
-                            <RHSRunListCard
-                                key={run.id}
-                                onClick={() => props.onSelectRun(run.id)}
-                                {...run}
-                            />
-                        ))}
-                        {props.hasMore &&
-                            <TertiaryButton
-                                onClick={props.getMore}
-                            >
-                                {formatMessage({defaultMessage: 'Show more'})}
-                            </TertiaryButton>
-                        }
-                    </RunsList>
-                </Scrollbars>
+                {showNoActiveRuns &&
+                    <NoActiveRunsContainer data-testid={'no-active-runs'}>
+                        <StyledClipboardChecklist/>
+                        <NoRunsText>
+                            {formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'})}
+                        </NoRunsText>
+                        <ViewFinishedRunsButton
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
+                        >
+                            {formatMessage({defaultMessage: 'View finished runs'})}
+                        </ViewFinishedRunsButton>
+                    </NoActiveRunsContainer>
+                }
+                {!showNoActiveRuns &&
+                    <Scrollbars
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                    >
+                        <RunsList data-testid='rhs-runs-list'>
+                            {props.runs.map((run: RunToDisplay) => (
+                                <RHSRunListCard
+                                    key={run.id}
+                                    onClick={() => props.onSelectRun(run.id)}
+                                    {...run}
+                                />
+                            ))}
+                            {props.hasMore &&
+                                <TertiaryButton
+                                    onClick={props.getMore}
+                                >
+                                    {formatMessage({defaultMessage: 'Show more'})}
+                                </TertiaryButton>
+                            }
+                        </RunsList>
+                    </Scrollbars>
+                }
             </Container>
         </>
     );
