@@ -392,9 +392,9 @@ describe('channels > rhs', () => {
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-            // * Verify RHS Home shows the run details
+            // * Verify no active runs screen shows
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Run details').should('exist');
+                cy.findByTestId('no-active-runs').should('exist');
             });
         });
     });
