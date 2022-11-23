@@ -884,7 +884,7 @@ type PlaybookRunStore interface {
 	GetParticipantsActiveTotal() (int64, error)
 
 	// AddParticipants adds particpants to the run
-	AddParticipants(playbookRunId string, userIDs []string) error
+	AddParticipants(playbookRunID string, userIDs []string) error
 
 	// RemoveParticipants removes participants from the run
 	RemoveParticipants(playbookRunID string, userIDs []string) error
