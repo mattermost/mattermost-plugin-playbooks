@@ -188,7 +188,7 @@ const RHSRunList = (props: Props) => {
                         <DropdownMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at'}))}
                         >
-                            {formatMessage({defaultMessage: 'Recently updated'})}
+                            {formatMessage({defaultMessage: 'Last status update'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name'}))}
