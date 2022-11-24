@@ -2410,11 +2410,11 @@ func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel
 }
 
 func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {
-	message := "Are you sure you want to finish the run?"
+	message := "Are you sure you want to finish the run for all participants?"
 	if outstanding == 1 {
-		message = "There is **1 outstanding task**. Are you sure you want to finish the run?"
+		message = "There is **1 outstanding task**. Are you sure you want to finish the run for all participants?"
 	} else if outstanding > 1 {
-		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. Are you sure you want to finish the run?"
+		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. Are you sure you want to finish the run for all participants?"
 	}
 
 	return &model.Dialog{
