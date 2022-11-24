@@ -103,14 +103,14 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{{.Username}} aktiverade statusuppdateringar för den här körningen"
+        "translation": "@{{.Username}} aktiverade statusuppdateringar för den här körningen"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{{.Användarnamn}} inaktiverade statusuppdateringarna för den här körningen"
+        "translation": "@{{.Användarnamn}} inaktiverade statusuppdateringarna för den här körningen"
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{{{.Name}} är en deltagare i en körning och vill gå med i den här kanalen. Alla medlemmar i kanalen kan bjuda in dem.\n"
+        "translation": "@{{.Name}} är en deltagare i en körning och vill gå med i den här kanalen. Alla medlemmar i kanalen kan bjuda in dem.\n"
     }
 ]
