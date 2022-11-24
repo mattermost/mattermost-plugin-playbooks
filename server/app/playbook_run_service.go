@@ -3005,6 +3005,8 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 	}
 
 	if err := s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
+		usersFailedToInvite = userIDs
+		usersToInvite = make([]string, 0)
 		return usersFailedToInvite, errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", usersToInvite, playbookRun.ID)
 	}
 
@@ -3037,9 +3039,11 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 	}
 
 	// ws send run
-	usersToNotify := usersToInvite
-	usersToNotify = append(usersToNotify, requesterUserID)
-	s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToNotify))
+	if len(usersToInvite) > 0 {
+		usersToNotify := usersToInvite
+		usersToNotify = append(usersToNotify, requesterUserID)
+		s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToNotify))
+	}
 
 	return usersFailedToInvite, nil
 }
