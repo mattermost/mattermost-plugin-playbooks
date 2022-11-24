@@ -48,92 +48,6 @@ export interface RunListOptions {
     filter: FilterType
 }
 
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-`;
-
-const Header = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 12px 16px;
-    gap: 4px;
-`;
-
-const RunsList = styled.div`
-    display: flex;
-    flex-direction: column;
-    padding: 0px 16px;
-    gap: 12px;
-`;
-
-const FilterMenuTitle = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-`;
-
-const Spacer = styled.div`
-    flex-grow: 1;
-`;
-
-const StartRunButton = styled(SecondaryButton)`
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    padding: 8px 16px;
-
-    border: 0;
-    height: 100%;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--button-bg);
-    background: rgba(var(--button-bg-rgb), 0.08);
-`;
-
-const SortDotMenuButton = styled(DotMenuButton)`
-    justify-content: center;
-    align-items: center;
-`;
-
-const FilterMenuItem = styled(DropdownMenuItem)`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    min-width: 182px;
-`;
-
-const FilterMenuNumericValue = styled.div`
-    color: rgba(var(--center-channel-text-rgb), 0.56);
-`;
-
-const NoActiveRunsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    align-self: center;
-    gap: 24px;
-    max-width: 325px;
-    margin-top: 82px;
-`;
-const NoRunsText = styled.div`
-    font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
-    text-align: center;
-`;
-const ViewFinishedRunsButton = styled(TertiaryButton)`
-    background: none;
-`;
-const StyledClipboardChecklist = styled(ClipboardChecklist)`
-    width: 98px;
-    height: 98px;
-`;
-
-const SortAscendingIcon = FilterVariantIcon;
-
 interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void
@@ -265,6 +179,130 @@ const RHSRunList = (props: Props) => {
         </>
     );
 };
+const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+`;
+
+const Header = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 4px;
+`;
+
+const RunsList = styled.div`
+    display: flex;
+    flex-direction: column;
+    padding: 0px 16px;
+    gap: 12px;
+`;
+
+const FilterMenuTitle = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+`;
+
+const Spacer = styled.div`
+    flex-grow: 1;
+`;
+
+const StartRunButton = styled(SecondaryButton)`
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    padding: 8px 16px;
+
+    border: 0;
+    height: 100%;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--button-bg);
+    background: rgba(var(--button-bg-rgb), 0.08);
+`;
+
+const SortDotMenuButton = styled(DotMenuButton)`
+    justify-content: center;
+    align-items: center;
+`;
+
+const FilterMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: 182px;
+`;
+
+const FilterMenuNumericValue = styled.div`
+    color: rgba(var(--center-channel-text-rgb), 0.56);
+`;
+
+const NoActiveRunsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    gap: 24px;
+    max-width: 325px;
+    margin-top: 82px;
+`;
+const NoRunsText = styled.div`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+`;
+const ViewFinishedRunsButton = styled(TertiaryButton)`
+    background: none;
+`;
+const StyledClipboardChecklist = styled(ClipboardChecklist)`
+    width: 98px;
+    height: 98px;
+`;
+
+const SortAscendingIcon = FilterVariantIcon;
+
+interface RHSRunListCardProps extends RunToDisplay {
+    onClick: () => void
+}
+
+const RHSRunListCard = (props: RHSRunListCardProps) => {
+    const {formatMessage} = useIntl();
+
+    return (
+        <CardContainer
+            onClick={props.onClick}
+        >
+            <TitleRow>{props.name}</TitleRow>
+            <PeopleRow>
+                <OwnerProfileChip userId={props.ownerUserID}/>
+                <ParticipantsProfiles>
+                    <UserList
+                        userIds={props.participantIDs}
+                        sizeInPx={20}
+                    />
+                </ParticipantsProfiles>
+            </PeopleRow>
+            <InfoRow>
+                <LastUpdatedText>
+                    {formatMessage(
+                        {defaultMessage: 'Last updated {time}'},
+                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                    )}
+                </LastUpdatedText>
+                <PlaybookChip>
+                    <StyledBookOutlineIcon
+                        size={11}
+                    />
+                    {props.playbook.title}
+                </PlaybookChip>
+            </InfoRow>
+        </CardContainer>
+    );
+};
 
 const CardContainer = styled.div`
     display: flex;
@@ -351,44 +389,5 @@ const ParticipantsProfiles = styled.div`
 const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
 `;
-
-interface RHSRunListCardProps extends RunToDisplay {
-    onClick: () => void
-}
-
-const RHSRunListCard = (props: RHSRunListCardProps) => {
-    const {formatMessage} = useIntl();
-
-    return (
-        <CardContainer
-            onClick={props.onClick}
-        >
-            <TitleRow>{props.name}</TitleRow>
-            <PeopleRow>
-                <OwnerProfileChip userId={props.ownerUserID}/>
-                <ParticipantsProfiles>
-                    <UserList
-                        userIds={props.participantIDs}
-                        sizeInPx={20}
-                    />
-                </ParticipantsProfiles>
-            </PeopleRow>
-            <InfoRow>
-                <LastUpdatedText>
-                    {formatMessage(
-                        {defaultMessage: 'Last updated {time}'},
-                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                    )}
-                </LastUpdatedText>
-                <PlaybookChip>
-                    <StyledBookOutlineIcon
-                        size={11}
-                    />
-                    {props.playbook.title}
-                </PlaybookChip>
-            </InfoRow>
-        </CardContainer>
-    );
-};
 
 export default RHSRunList;
