@@ -764,5 +764,7 @@
     "dK2JKl": "Link do istniejącego kanału",
     "IdTL+v": "Utwórz kanał uruchomienia",
     "2BCWLD": "Skonfiguruj kanał",
-    "lqceIp": "lub <ImportPlaybookButton>Importuj playbook</ImportPlaybookButton>"
+    "lqceIp": "lub <ImportPlaybookButton>Importuj playbook</ImportPlaybookButton>",
+    "ORJ0Hb": "Jest {outstanding, plural, =1 {# zaległe zadanie} other {# zaległych zadań}}. Czy na pewno chcesz zakończyć uruchomienie dla wszystkich uczestników?",
+    "0boT49": "Czy na pewno chcesz zakończyć uruchomienie dla wszystkich uczestników?"
 }
