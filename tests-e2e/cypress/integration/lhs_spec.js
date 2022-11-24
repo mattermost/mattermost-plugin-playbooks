@@ -219,7 +219,7 @@ describe('lhs', () => {
             });
         });
 
-        it('leave run', () => {
+        it.skip('leave run', () => {
             // # Intercept all calls to telemetry
             cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
