@@ -17,11 +17,9 @@ import {General} from 'mattermost-redux/constants';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
-import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-
-import {relayStylePagination} from '@apollo/client/utilities';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
@@ -66,7 +64,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getApiUrl, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -76,6 +74,7 @@ import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
+import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -90,19 +89,6 @@ const OldRoutesRedirect = () => {
         <Redirect
             to={'/playbooks' + redirPath}
         />
-    );
-};
-
-interface PlaybooksWrappersProps {
-    component: React.ReactNode
-    client: ApolloClient<NormalizedCacheObject>
-}
-
-const PlaybooksWrappers = (props: PlaybooksWrappersProps) => {
-    return (
-        <ApolloProvider client={props.client}>
-            {props.component}
-        </ApolloProvider>
     );
 };
 
@@ -164,7 +150,7 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const BackstageWrapped = () => (
-            <PlaybooksWrappers
+            <ApolloWrapper
                 component={<Backstage/>}
                 client={graphqlClient}
             />
@@ -172,14 +158,14 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const RHSWrapped = () => (
-            <PlaybooksWrappers
+            <ApolloWrapper
                 component={<RightHandSidebar/>}
                 client={graphqlClient}
             />
         );
         // eslint-disable-next-line react/require-optimization
         const RHSTitlePlaceholderWrapped = () => (
-            <PlaybooksWrappers
+            <ApolloWrapper
                 component={<RHSTitlePlaceholder/>}
                 client={graphqlClient}
             />
@@ -319,21 +305,7 @@ export default class Plugin {
         Client4.setUrl(siteUrl);
 
         // Setup our graphql client
-        const graphqlFetch = (_: RequestInfo, options: any) => {
-            return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
-        };
-        const graphqlClient = new ApolloClient({
-            link: new HttpLink({fetch: graphqlFetch}),
-            cache: new InMemoryCache({
-                typePolicies: {
-                    Query: {
-                        fields: {
-                            runs: relayStylePagination(['teamID', 'sort', 'direction', 'statuses', 'participantOrFollowerID', 'channelID']),
-                        },
-                    },
-                },
-            }),
-        });
+        const graphqlClient = makeGraphqlClient();
 
         // Store graphql client for bad modals.
         setPlaybooksGraphQLClient(graphqlClient);
