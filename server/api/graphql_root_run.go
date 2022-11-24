@@ -203,16 +203,12 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
+OUTER:
 	for _, userID := range args.UserIDs {
-		hasFailed := false
 		for _, f := range failed {
 			if f == userID {
-				hasFailed = true
-				break
+				continue OUTER
 			}
-		}
-		if hasFailed {
-			continue
 		}
 
 		if err := c.playbookRunService.Follow(args.RunID, userID); err != nil {
