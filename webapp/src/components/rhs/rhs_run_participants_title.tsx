@@ -4,7 +4,7 @@ import {useIntl} from 'react-intl';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import {OVERLAY_DELAY} from 'src/constants';
-import {HeaderSubtitle, HeaderVerticalDivider} from '../backstage/playbook_runs/playbook_run/rhs';
+import {HeaderSubtitle, HeaderVerticalDivider} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {RHSTitleButton, RHSTitleContainer, RHSTitleText} from './rhs_title_common';
 

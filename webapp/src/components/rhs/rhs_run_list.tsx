@@ -15,11 +15,11 @@ import Profile from 'src/components/profile/profile';
 
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 
-import {SecondaryButton, TertiaryButton} from '../assets/buttons';
+import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
-import ClipboardChecklist from '../assets/illustrations/clipboard_checklist_svg';
+import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
