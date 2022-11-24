@@ -34,7 +34,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {useToaster} from '../toast_banner';
 
 import {
@@ -52,7 +52,7 @@ import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from '../runs_list/checkbox_input';
 
-import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
@@ -252,11 +252,12 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
     const refreshLHS = useLHSRefresh();
-
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                dispatch(openPlaybookRunModal(
+                const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
+                dispatch(actionModal(
                     playbook.id,
                     playbook.default_owner_enabled ? playbook.default_owner_id : null,
                     playbook.description,

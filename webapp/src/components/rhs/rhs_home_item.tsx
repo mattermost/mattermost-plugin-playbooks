@@ -16,8 +16,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {openPlaybookRunModal} from 'src/actions';
+import {usePlaybooksRouting, useHasPlaybookPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -166,6 +166,7 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
     const {view} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const {
         id,
@@ -243,7 +244,8 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             <RunButton
                 data-testid={'run-playbook'}
                 onClick={() => {
-                    return dispatch(openPlaybookRunModal(
+                    const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
+                    return dispatch(actionModal(
                         id,
                         default_owner_enabled ? default_owner_id : null,
                         description,

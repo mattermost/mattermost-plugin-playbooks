@@ -12,7 +12,7 @@ import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 
-import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
@@ -23,7 +23,7 @@ import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
-import {openPlaybookRunModal} from 'src/actions';
+import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 
 import {DotMenuButton} from '../dot_menu';
 
@@ -115,6 +115,7 @@ const PlaybookListRow = (props: Props) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
     const enableRunPlaybook = props.playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const run = async () => {
         if (props.playbook && isTutorialPlaybook) {
@@ -129,7 +130,8 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            dispatch(openPlaybookRunModal(
+            const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
+            dispatch(actionModal(
                 props.playbook.id,
                 props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
                 props.playbook.description,
