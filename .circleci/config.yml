@@ -184,11 +184,6 @@ jobs:
       - *restore_go_cache
       - npm-dependencies
       - npm-e2e-dependencies
-      # Base image already bundle a golanci-lint but it's not updated enough (staticcheck linter needed)
-      - run:
-          name: install golangci-lint 1.46.2
-          command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin v1.46.2
       - run:
           name: Checking code style
           command: |

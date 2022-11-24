@@ -68,8 +68,6 @@ endif
 check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
-
-	@# Keep the version in sync with the command in .circleci/config.yml
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
 endif
 
