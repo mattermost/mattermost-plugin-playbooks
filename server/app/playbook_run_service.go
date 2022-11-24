@@ -2289,24 +2289,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 	return s.store.ChangeCreationDate(playbookRunID, creationTimestamp)
 }
 
-func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get playbook run")
-	}
-
-	playbookRun.Summary = description
-	playbookRun.SummaryModifiedAt = model.GetMillis()
-
-	playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
-	if err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
-	}
-
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRun))
-	return nil
-}
-
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
 	channelType := model.ChannelTypePrivate
 	if public {

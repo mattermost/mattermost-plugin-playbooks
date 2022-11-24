@@ -310,9 +310,11 @@ export type RunUpdates = {
     broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
     isFavorite?: InputMaybe<Scalars['Boolean']>;
+    name?: InputMaybe<Scalars['String']>;
     removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
     statusUpdateBroadcastChannelsEnabled?: InputMaybe<Scalars['Boolean']>;
     statusUpdateBroadcastWebhooksEnabled?: InputMaybe<Scalars['Boolean']>;
+    summary?: InputMaybe<Scalars['String']>;
     webhookOnStatusUpdateURLs?: InputMaybe<Array<Scalars['String']>>;
 };
 
