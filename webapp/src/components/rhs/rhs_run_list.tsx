@@ -5,8 +5,7 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {BookOutlineIcon, FilterVariantIcon} from '@mattermost/compass-icons/components';
-
+import {BookOutlineIcon, SortAscendingIcon, CheckIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {DateTime} from 'luxon';
@@ -113,23 +112,30 @@ const RHSRunList = (props: Props) => {
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
-                        icon={<SortAscendingIcon/>}
+                        icon={<SortAscendingIcon size={18}/>}
                     >
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'create_at', direction: 'DESC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Recently created'})}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at', direction: 'DESC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Last status update'})}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name', direction: 'ASC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Alphabetically'})}
-                        </DropdownMenuItem>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Recently created'})}
+                            sortItem={'create_at'}
+                            sortDirection={'DESC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Last status update'})}
+                            sortItem={'last_status_update_at'}
+                            sortDirection={'DESC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Alphabetically'})}
+                            sortItem={'name'}
+                            sortDirection={'ASC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
                     </DotMenu>
                 </Header>
                 {showNoRuns &&
@@ -166,6 +172,7 @@ const RHSRunList = (props: Props) => {
         </>
     );
 };
+
 const Container = styled.div`
     display: flex;
     flex-direction: column;
@@ -216,6 +223,15 @@ const SortDotMenuButton = styled(DotMenuButton)`
     align-items: center;
 `;
 
+const SortMenuTitle = styled.div`
+    color: rgba(var(--center-channel-text-rgb), 0.56);
+    text-transform: uppercase;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    margin: 5px 18px;
+`;
+
 const FilterMenuItem = styled(DropdownMenuItem)`
     display: flex;
     flex-direction: row;
@@ -223,11 +239,44 @@ const FilterMenuItem = styled(DropdownMenuItem)`
     min-width: 182px;
 `;
 
+const StyledDropdownMenuSort = styled(DropdownMenuItem)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: 190px;
+    align-items: center;
+`;
+
+interface SortMenuItemProps {
+    label: string
+    sortItem: string
+    sortDirection: string
+    options: RunListOptions
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+}
+
+const SortMenuItem = (props: SortMenuItemProps) => {
+    return (
+        <StyledDropdownMenuSort
+            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: props.sortItem, direction: props.sortDirection}))}
+        >
+            {props.label}
+            {props.sortItem === props.options.sort &&
+                <BlueCheckmark/>
+            }
+        </StyledDropdownMenuSort>
+    );
+};
+
 const FilterMenuNumericValue = styled.div`
     color: rgba(var(--center-channel-text-rgb), 0.56);
 `;
 
-const SortAscendingIcon = FilterVariantIcon;
+const BlueCheckmark = styled(CheckIcon)`
+    color: var(--button-bg);
+    width: 18px;
+    height: 18px;
+`;
 
 interface RHSRunListCardProps extends RunToDisplay {
     onClick: () => void
