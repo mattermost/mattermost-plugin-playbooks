@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ControlProps, components} from 'react-select';
+import {components, ControlProps} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
@@ -85,7 +85,10 @@ const AssignTo = (props: AssignedToProps) => {
                             title={formatMessage({defaultMessage: 'Assignee...'})}
                             className={'icon-account-plus-outline icon-12'}
                         />
-                        <AssignToTextContainer isPlaceholder={!props.assignee_id}>
+                        <AssignToTextContainer
+                            isPlaceholder={!props.assignee_id}
+                            enableEdit={props.editable}
+                        >
                             {formatMessage({defaultMessage: 'Assignee...'})}
                         </AssignToTextContainer>
                     </PlaceholderDiv>
@@ -177,9 +180,11 @@ const StyledProfileSelector = styled(ProfileSelector)`
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         color: rgba(var(--center-channel-color-rgb), 0.64);
 
-        :hover {
-            color: var(--center-channel-color);
-        }
+        ${({enableEdit}) => enableEdit && css`
+            :hover {
+                color: var(--center-channel-color);
+            }
+        `}
     }
 `;
 
@@ -189,11 +194,14 @@ const PlaceholderDiv = styled.div`
     flex-direction: row;
 `;
 
-const AssignToTextContainer = styled.div<{isPlaceholder: boolean}>`
+const AssignToTextContainer = styled.div<{isPlaceholder: boolean, enableEdit: boolean}>`
     color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
-    :hover {
-        color: var(--center-channel-color);
-    }
+
+     ${({enableEdit}) => enableEdit && css`
+        :hover {
+            color: var(--center-channel-color);
+        }
+    `}
     font-weight: 400;
     font-size: 12px;
     line-height: 15px;

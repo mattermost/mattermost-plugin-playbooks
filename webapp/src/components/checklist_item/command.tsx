@@ -45,8 +45,11 @@ const Command = (props: CommandProps) => {
 
     const placeholder = (
         <PlaceholderDiv
+            isDisabled={props.disabled}
             onClick={() => {
-                setCommandOpen((open) => !open);
+                if (!props.disabled) {
+                    setCommandOpen((open) => !open);
+                }
             }}
         >
             <CommandIcon
@@ -141,14 +144,16 @@ const Command = (props: CommandProps) => {
     );
 };
 
-const PlaceholderDiv = styled.div`
+const PlaceholderDiv = styled.div<{isDisabled: boolean}>`
     display: flex;
     align-items: center;
     flex-direction: row;
 
-    &:hover {
-        cursor: pointer;
-    }
+    ${({isDisabled}) => !isDisabled && css`
+        :hover {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlaceholder: boolean}>`

@@ -153,7 +153,7 @@ describe('runs > run details page > header', () => {
         describe('title, icons and buttons', () => {
             commonHeaderTests();
 
-            it('has not get-involved button', () => {
+            it('has not participate button', () => {
                 // * Assert button is not showed
                 getHeader().findByText('Participate').should('not.exist');
             });
@@ -373,6 +373,29 @@ describe('runs > run details page > header', () => {
 
         describe('context menu', () => {
             commonContextDropdownTests();
+
+            it('can rename run', () => {
+                // # Click on rename run
+                getDropdownItemByText('Rename run').click();
+
+                cy.findByTestId('run-header-section').within(() => {
+                    // # Type a new name
+                    cy.findByTestId('rendered-editable-text').clear().type('The new fancy name');
+
+                    // # Save
+                    cy.findByTestId('checklist-item-save-button').click();
+
+                    // * Assert name is updated
+                    cy.get('h1').contains('The new fancy name');
+                });
+
+                cy.reload();
+
+                cy.findByTestId('run-header-section').within(() => {
+                    // * Assert name is persisted
+                    cy.get('h1').contains('The new fancy name');
+                });
+            });
 
             describe('finish run', () => {
                 it('can be confirmed', () => {
@@ -654,7 +677,7 @@ describe('runs > run details page > header', () => {
                     });
                 });
 
-                describe('Join action disabled', () => {
+                describe.skip('Join action disabled', () => {
                     beforeEach(() => {
                         cy.apiLogin(testUser);
 
@@ -810,11 +833,14 @@ describe('runs > run details page > header', () => {
         describe('context menu', () => {
             commonContextDropdownTests();
 
-            describe('finish run', () => {
-                it('does not exist', () => {
-                    // * There's no finish run item
-                    getDropdownItemByText('Finish run').should('not.exist');
-                });
+            it('can not rename run', () => {
+                // # There's no rename  option
+                getDropdownItemByText('Rename run').should('not.exist');
+            });
+
+            it('can not finish run', () => {
+                // * There's no finish run item
+                getDropdownItemByText('Finish run').should('not.exist');
             });
 
             describe('run actions', () => {
