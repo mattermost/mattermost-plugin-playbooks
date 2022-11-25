@@ -17,7 +17,7 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {useLinkRunToExistingChannelEnabled, usePlaybook} from 'src/hooks';
 import {BaseInput} from 'src/components/assets/inputs';
-import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
+import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {AutomationTitle} from '../backstage/playbook_edit/automation/styles';
