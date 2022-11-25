@@ -24,7 +24,17 @@ import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {telemetryEvent} from 'src/client';
 
-import {CopyRunLinkMenuItem, ToggleRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+import {
+    RenameRunItem,
+    CopyRunLinkMenuItem,
+    ToggleRunStatusUpdateMenuItem,
+    ExportChannelLogsMenuItem,
+    FavoriteRunMenuItem,
+    FinishRunMenuItem,
+    LeaveRunMenuItem,
+    RestoreRunMenuItem,
+    RunActionsMenuItem,
+} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -33,9 +43,10 @@ interface Props {
     isFollowing: boolean;
     hasPermanentViewerAccess: boolean;
     toggleFavorite: () => void;
+    onRenameClick: () => void;
 }
 
-export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing, 'run_details');
     const [showModal, setShowModal] = useState(false);
 
@@ -61,6 +72,11 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 />
                 <CopyRunLinkMenuItem
                     playbookRunId={playbookRun.id}
+                />
+                <RenameRunItem
+                    playbookRun={playbookRun}
+                    role={role}
+                    onClick={onRenameClick}
                 />
                 <Separator/>
                 <RunActionsMenuItem

@@ -241,6 +241,8 @@ type TimelineEvent {
 }
 
 input RunUpdates {
+	name: String
+	summary: String
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
