@@ -89,15 +89,17 @@ const useSetRHSState = () => {
     }, [dispatch]);
 };
 
+const defaultListOptions : RunListOptions = {
+    sort: 'create_at',
+    direction: 'DESC',
+    filter: FilterType.InProgress,
+};
+
 const RightHandSidebar = () => {
     useSetRHSState();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRun, setCurrentRun] = useState<string|undefined>();
-    const [listOptions, setListOptions] = useState<RunListOptions>({
-        sort: 'create_at',
-        direction: 'DESC',
-        filter: FilterType.InProgress,
-    });
+    const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
 
     // If there is only one active run in this channel select it.
@@ -109,6 +111,11 @@ const RightHandSidebar = () => {
             }
         }
     }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
+
+    // Reset the list options on channel change
+    useEffect(() => {
+        setListOptions(defaultListOptions);
+    }, [currentChannelId]);
 
     if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
         return null;
@@ -124,7 +131,7 @@ const RightHandSidebar = () => {
     }
 
     // If we have a run selected and it's in the current channel show that
-    if (currentRun && fetchedRuns.runsInProgress.find((run) => run.id === currentRun)) {
+    if (currentRun && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRun)) {
         return (
             <RHSRunDetails
                 runID={currentRun}
