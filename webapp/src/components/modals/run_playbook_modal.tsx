@@ -240,14 +240,6 @@ const RunPlaybookModal = ({
                         }
                     }}
                 />
-                <Description
-                    css={`
-                        font-size: 12px;
-                        color: rgba(var(--center-channel-color-rgb), 0.56);
-                    `}
-                >
-                    {createNewChannel && formatMessage({defaultMessage: 'A channel will be created with this name'})}
-                </Description>
                 {linkRunToExistingChannelEnabled && channelConfigSection}
             </Body>
         </StyledGenericModal>
@@ -345,6 +337,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
+    margin-top: 12px;
 `;
 
 const StyledRadioInput = styled(RadioInput)`
