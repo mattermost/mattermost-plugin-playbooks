@@ -284,7 +284,7 @@ describe('runs > run details page > status update', () => {
             });
         });
 
-        it('requests an update and cancel', () => {
+        it.skip('requests an update and cancel', () => {
             // # Click request update
             cy.findByTestId('run-statusupdate-section')
                 .should('be.visible')

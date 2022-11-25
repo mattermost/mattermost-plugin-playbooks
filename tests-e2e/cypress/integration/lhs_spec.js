@@ -292,7 +292,7 @@ describe('lhs', () => {
             });
         });
 
-        it('leave run, when on rdp of the same run', () => {
+        it.skip('leave run, when on rdp of the same run', () => {
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
