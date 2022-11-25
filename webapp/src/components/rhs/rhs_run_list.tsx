@@ -66,7 +66,7 @@ const RHSRunList = (props: Props) => {
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
 
-    const showNoActiveRuns = props.runs.length === 0 && props.options.filter === FilterType.InProgress;
+    const showNoRuns = props.runs.length === 0;
 
     return (
         <>
@@ -138,20 +138,13 @@ const RHSRunList = (props: Props) => {
                         </DropdownMenuItem>
                     </DotMenu>
                 </Header>
-                {showNoActiveRuns &&
-                    <NoActiveRunsContainer data-testid={'no-active-runs'}>
-                        <StyledClipboardChecklist/>
-                        <NoRunsText>
-                            {formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'})}
-                        </NoRunsText>
-                        <ViewFinishedRunsButton
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
-                        >
-                            {formatMessage({defaultMessage: 'View finished runs'})}
-                        </ViewFinishedRunsButton>
-                    </NoActiveRunsContainer>
+                {showNoRuns &&
+                    <NoRuns
+                        active={props.options.filter === FilterType.InProgress}
+                        setOptions={props.setOptions}
+                    />
                 }
-                {!showNoActiveRuns &&
+                {!showNoRuns &&
                     <Scrollbars
                         autoHide={true}
                         autoHideTimeout={500}
@@ -238,29 +231,6 @@ const FilterMenuItem = styled(DropdownMenuItem)`
 
 const FilterMenuNumericValue = styled.div`
     color: rgba(var(--center-channel-text-rgb), 0.56);
-`;
-
-const NoActiveRunsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    align-self: center;
-    gap: 24px;
-    max-width: 325px;
-    margin-top: 82px;
-`;
-const NoRunsText = styled.div`
-    font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
-    text-align: center;
-`;
-const ViewFinishedRunsButton = styled(TertiaryButton)`
-    background: none;
-`;
-const StyledClipboardChecklist = styled(ClipboardChecklist)`
-    width: 98px;
-    height: 98px;
 `;
 
 const SortAscendingIcon = FilterVariantIcon;
@@ -388,6 +358,59 @@ const ParticipantsProfiles = styled.div`
 
 const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
+`;
+
+interface NoRunsProps {
+    active: boolean
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+}
+
+const NoRuns = (props: NoRunsProps) => {
+    const {formatMessage} = useIntl();
+
+    let text = formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'});
+    if (!props.active) {
+        text = formatMessage({defaultMessage: 'There are no finished runs linked to this channel'});
+    }
+
+    return (
+        <NoActiveRunsContainer data-testid={'no-active-runs'}>
+            <StyledClipboardChecklist/>
+            <NoRunsText>
+                {text}
+            </NoRunsText>
+            {props.active &&
+                <ViewFinishedRunsButton
+                    onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
+                >
+                    {formatMessage({defaultMessage: 'View finished runs'})}
+                </ViewFinishedRunsButton>
+            }
+        </NoActiveRunsContainer>
+    );
+};
+
+const NoActiveRunsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    gap: 24px;
+    max-width: 325px;
+    margin-top: 82px;
+`;
+const NoRunsText = styled.div`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+`;
+const ViewFinishedRunsButton = styled(TertiaryButton)`
+    background: none;
+`;
+const StyledClipboardChecklist = styled(ClipboardChecklist)`
+    width: 98px;
+    height: 98px;
 `;
 
 export default RHSRunList;
