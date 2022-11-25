@@ -122,5 +122,13 @@
     {
         "id": "app.user.run.request_join_channel",
         "translation": "@{{.Name}} je sudionik izvođenja i želi se pridružiti ovom kanalu. Svaki član kanala ih može pozvati.\n"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{.Username}} je aktivirao/la aktualiziranja stanja za ovo izvođenje"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Username}} je deaktivirao/la aktualiziranja stanja za ovo izvođenje"
     }
 ]

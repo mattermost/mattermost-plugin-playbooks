@@ -6,23 +6,25 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {showRunActionsModal} from 'src/actions';
-import {
-    getSiteUrl,
-} from 'src/client';
-import {PrimaryButton} from 'src/components/assets/buttons';
+import {getSiteUrl} from 'src/client';
 import {StarButton} from 'src/components/backstage/playbook_editor/playbook_editor';
 import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//header_button';
 import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 import {Badge, ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {BadgeType} from 'src/components/backstage/status_badge';
 import RunActionsModal from 'src/components/run_actions_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
-import {Metadata as PlaybookRunMetadata, PlaybookRun} from 'src/types/playbook_run';
+import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
+import {useUpdateRun} from 'src/graphql/hooks';
+import TextEdit from 'src/components/text_edit';
+import {SemiBoldHeading} from 'src/styles/headings';
+import {PlaybookRunStatus, Metadata as PlaybookRunMetadata, PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
@@ -38,6 +40,7 @@ interface Props {
 export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const updateRun = useUpdateRun(playbookRun.id);
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
 
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun, 'run_details');
@@ -53,28 +56,54 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                     color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                 />
             </StarButton>
-            <ContextMenu
-                playbookRun={playbookRun}
-                role={role}
-                isFavoriteRun={isFavoriteRun}
-                isFollowing={isFollowing}
-                toggleFavorite={toggleFavorite}
-                hasPermanentViewerAccess={hasPermanentViewerAccess}
-            />
-            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
-            <HeaderButton
-                tooltipId={'run-actions-button-tooltip'}
-                tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-                aria-label={formatMessage({defaultMessage: 'Run Actions'})}
-                Icon={LightningBoltOutlineIcon}
-                onClick={() => dispatch(showRunActionsModal())}
-                data-testid={'rhs-header-button-run-actions'}
-            />
-            <StyledCopyLink
-                id='copy-run-link-tooltip'
-                to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
-                tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
-            />
+
+            <TextEdit
+                disabled={playbookRun.current_status !== PlaybookRunStatus.InProgress}
+                placeholder={formatMessage({defaultMessage: 'Run name'})}
+                value={playbookRun.name}
+                onSave={(name) => updateRun({name})}
+                editStyles={css`
+                            input {
+                                ${titleCommon}
+                                height: 36px;
+                                width: 240px;
+                            }
+                            ${CancelSaveContainer} {
+                                padding: 0;
+                            }
+                            ${PrimaryButton}, ${TertiaryButton} {
+                                height: 36px;
+                            }
+                        `}
+            >
+                {(edit) => (
+                    <>
+                        <ContextMenu
+                            playbookRun={playbookRun}
+                            role={role}
+                            onRenameClick={edit}
+                            isFavoriteRun={isFavoriteRun}
+                            isFollowing={isFollowing}
+                            toggleFavorite={toggleFavorite}
+                            hasPermanentViewerAccess={hasPermanentViewerAccess}
+                        />
+                        <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                        <HeaderButton
+                            tooltipId={'run-actions-button-tooltip'}
+                            tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
+                            aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+                            Icon={LightningBoltOutlineIcon}
+                            onClick={() => dispatch(showRunActionsModal())}
+                            data-testid={'rhs-header-button-run-actions'}
+                        />
+                        <StyledCopyLink
+                            id='copy-run-link-tooltip'
+                            to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
+                            tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
+                        />
+                    </>
+                )}
+            </TextEdit>
             <ExpandRight/>
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
@@ -155,4 +184,15 @@ const GetInvolvedIcon = styled(AccountPlusOutlineIcon)`
     height: 14px;
     width: 14px;
     margin-right: 3px;
+`;
+
+const titleCommon = css`
+    ${SemiBoldHeading}
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
 `;

@@ -32,6 +32,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
 	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
 	"* `/playbook settings digest [on/off]` - turn daily digest on/off. \n" +
+	"* `/playbook settings weekly-digest [on/off]` - turn weekly digest on/off. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -113,9 +114,20 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
 	command.AddCommand(todo)
 
-	settings := model.NewAutocompleteData("settings", "digest [on/off]", "Change personal playbook settings")
+	settings := model.NewAutocompleteData("settings", "", "Change personal playbook settings")
 	display := model.NewAutocompleteData(" ", "Display current settings", "")
 	settings.AddCommand(display)
+
+	weeklyDigest := model.NewAutocompleteData("weekly-digest", "[on/off]", "Turn weekly digest on/off")
+	weeklyDigestValues := []model.AutocompleteListItem{{
+		HelpText: "Turn weekly digest on",
+		Item:     "on",
+	}, {
+		HelpText: "Turn weekly digest off",
+		Item:     "off",
+	}}
+	weeklyDigest.AddStaticListArgument("", true, weeklyDigestValues)
+	settings.AddCommand((weeklyDigest))
 
 	digest := model.NewAutocompleteData("digest", "[on/off]", "Turn digest on/off")
 	digestValue := []model.AutocompleteListItem{{
@@ -833,7 +845,7 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 }
 
 func (r *Runner) actionTodo() {
-	if err := r.playbookRunService.EphemeralPostTodoDigestToUser(r.args.UserId, r.args.ChannelId, true); err != nil {
+	if err := r.playbookRunService.EphemeralPostTodoDigestToUser(r.args.UserId, r.args.ChannelId, true, true); err != nil {
 		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
 	}
 }
@@ -842,14 +854,18 @@ func (r *Runner) actionSettings(args []string) {
 	settingsHelpText := "###### Playbooks Personal Settings - Slash Command Help\n" +
 		"* `/playbook settings` - display current settings. \n" +
 		"* `/playbook settings digest on` - turn daily digest on. \n" +
-		"* `/playbook settings digest off` - turn daily digest off."
+		"* `/playbook settings digest off` - turn daily digest off. \n" +
+		"* `/playbook settings weekly-digest on` - turn weekly digest on. \n" +
+		"* `/playbook settings weekly-digest off` - turn weekly digest off. \n"
 
 	if len(args) == 0 {
 		r.displayCurrentSettings()
 		return
 	}
 
-	if len(args) != 2 || args[0] != "digest" || (args[1] != "on" && args[1] != "off") {
+	isDigest := args[0] == "digest" || args[0] == "weekly-digest"
+
+	if len(args) != 2 || !isDigest || (args[1] != "on" && args[1] != "off") {
 		r.postCommandResponse(settingsHelpText)
 		return
 	}
@@ -866,7 +882,11 @@ func (r *Runner) actionSettings(args []string) {
 
 	oldInfo := info
 
-	if args[1] == "off" {
+	if args[0] == "weekly-digest" && args[1] == "off" {
+		info.DisableWeeklyDigest = true
+	} else if args[0] == "weekly-digest" {
+		info.DisableWeeklyDigest = false
+	} else if args[0] == "digest" && args[1] == "off" {
 		info.DisableDailyDigest = true
 	} else {
 		info.DisableDailyDigest = false
@@ -895,7 +915,11 @@ func (r *Runner) displayCurrentSettings() {
 	if info.DisableDailyDigest {
 		dailyDigestSetting = "Daily digest: off"
 	}
-	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s", dailyDigestSetting))
+	weeklyDigestSetting := "Weekly digest: on"
+	if info.DisableWeeklyDigest {
+		weeklyDigestSetting = "Weekly digest: off"
+	}
+	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s, %s", dailyDigestSetting, weeklyDigestSetting))
 }
 
 func (r *Runner) actionTestSelf(args []string) {

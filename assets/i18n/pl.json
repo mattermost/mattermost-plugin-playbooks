@@ -114,5 +114,13 @@
     {
         "id": "app.user.run.request_join_channel",
         "translation": "@{{.Name}} jest uczestnikiem uruchomienia i chce dołączyć do tego kanału. Każdy członek kanału może go zaprosić.\n"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "{{.Username}} wyłączył aktualizacje statusu dla tego uruchomienia"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Username}} wyłączył aktualizacje statusu dla tego uruchomienia"
     }
 ]
