@@ -317,60 +317,6 @@ describe('channels > rhs', () => {
             });
         });
 
-        it('when clicking on a todo digest link when rhs is already open', () => {
-            const runName = 'Playbook Run (' + Date.now() + ')';
-
-            // # Start a run
-            cy.apiRunPlaybook({
-                teamId: testTeam.id,
-                playbookId: testPlaybook.id,
-                playbookRunName: runName,
-                ownerUserId: testUser.id,
-            }).then((run) => {
-                // # Set a timer that will expire.
-                cy.apiUpdateStatus({
-                    playbookRunId: run.id,
-                    message: 'no message 1',
-                    reminder: 1,
-                });
-
-                // # Switch to playbooks DM channel
-                cy.visit(`/${testTeam.name}/messages/@playbooks`);
-
-                // # Wait until the channel loads enough to show the post textbox.
-                cy.get('#post-create').should('exist');
-
-                // # Run a slash command to show the to-do list.
-                cy.executeSlashCommand('/playbook todo');
-
-                // # Open the saved posts RHS
-                cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
-                    .click({force: true});
-
-                // * Verify Saved Posts is open
-                cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
-
-                // # Should show the runs overdue -- ignoring the rest
-                cy.getLastPost().within(() => {
-                    cy.get('li').then((liItems) => {
-                        // # Click to get to the run's channel
-                        cy.wrap(liItems[0]).get('a').contains(runName).click();
-                    });
-                });
-
-                // # Wait until the channel loads enough to show the post textbox.
-                cy.get('#post-create').should('exist');
-
-                // * Verify we're in the playbook channel
-                cy.get('#channelHeaderTitle').should('contain.text', runName);
-
-                // * Verify the playbook run RHS is open.
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText(runName).should('exist');
-                });
-            });
-        });
-
         it('when navigating directly to a finished playbook run channel and clicking on the button', () => {
             // # Run the playbook
             const now = Date.now();
