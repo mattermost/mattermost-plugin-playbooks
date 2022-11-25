@@ -17,6 +17,7 @@ import {
     setAssignee,
     clientSetChecklistItemCommand,
     setChecklistItemState,
+    clientSetChecklistItemTaskActions,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 
@@ -30,6 +31,9 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
 import {DueDateButton} from './duedate';
+
+import TaskActions from './task_actions';
+import {TaskAction as TaskActionType} from 'src/types/playbook';
 
 export enum ButtonsFormat {
 
@@ -76,6 +80,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
+    const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
@@ -86,6 +91,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setAssigneeID(props.checklistItem.assignee_id);
         setCommand(props.checklistItem.command);
         setDueDate(props.checklistItem.due_date);
+        setTaskActions(props.checklistItem.task_actions);
     }, [props.checklistItem]);
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
@@ -137,6 +143,21 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             const newItem = {...props.checklistItem};
             newItem.command = newCommand;
+            props.onUpdateChecklistItem?.(newItem);
+        }
+    };
+
+    const onTaskActionsChange = async (taskActions: TaskActionType[]) => {
+        setTaskActions(taskActions)
+        if (props.newItem) {
+            return;
+        }
+        if (props.playbookRunId) {
+            clientSetChecklistItemTaskActions(props.playbookRunId, props.checklistNum, props.itemNum, taskActions);
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.task_actions = taskActions;
+            console.log(taskActions)
             props.onUpdateChecklistItem?.(newItem);
         }
     };
@@ -218,8 +239,24 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const renderTaskActions = (): null | React.ReactNode => {
+        const haveTaskActions = taskActions?.length > 0
+        if (buttonsFormat !== ButtonsFormat.Long && (!isEditing && !haveTaskActions)) {
+            return null;
+        }
+
+        return (
+            <TaskActions
+                taskActions={taskActions}
+                playbookRunId={props.playbookRunId}
+                onTaskActionsChange={onTaskActionsChange}
+            />
+        )
+    }
+
     const renderRow = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !isEditing)) {
+        const haveTaskActions = taskActions?.length > 0
+        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !haveTaskActions && !isEditing)) {
             return null;
         }
         return (
@@ -227,6 +264,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {renderAssignTo()}
                 {renderCommand()}
                 {renderDueDate()}
+                {renderTaskActions()}
             </Row>
         );
     };
@@ -316,6 +354,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 command_last_run: 0,
                                 due_date: dueDate,
                                 assignee_id: assigneeID,
+                                task_actions: [],
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);

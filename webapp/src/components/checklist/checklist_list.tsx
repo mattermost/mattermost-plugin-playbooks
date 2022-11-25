@@ -40,6 +40,7 @@ import {useProxyState} from 'src/hooks';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
+import { ConsoleIcon } from '@mattermost/compass-icons/components';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -88,6 +89,7 @@ const ChecklistList = ({
                         command: ci.command,
                         commandLastRun: ci.command_last_run,
                         dueDate: ci.due_date,
+                        taskActions: ci.task_actions,
                     };
                 }),
             };

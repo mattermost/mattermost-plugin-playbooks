@@ -12,6 +12,7 @@ import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/s
 
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 
+import {TaskAction as TaskActionType} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
@@ -79,6 +80,7 @@ import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbo
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
+import {makeTaskActionsModalDefinition} from './components/checklist_item/task_actions_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -348,3 +350,7 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
     key,
     nextState,
 });
+
+export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null, playbookRunId?: string) {
+    return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions, playbookRunId));
+}

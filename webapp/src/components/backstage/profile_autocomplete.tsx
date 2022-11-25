@@ -74,6 +74,8 @@ interface Props {
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
     placeholder?: string;
+    defaultValue?: UserProfile[]
+    disableAutoFocus?: boolean;
 }
 
 const ProfileAutocomplete = (props: Props) => {
@@ -143,13 +145,14 @@ const ProfileAutocomplete = (props: Props) => {
     return (
         <StyledAsyncSelect
             id={'profile-autocomplete'}
-            autoFocus={true}
+            autoFocus={!props.disableAutoFocus && true}
             isDisabled={props.isDisabled}
             isMulti={props.isMultiMode}
             controlShouldRenderValue={props.isMultiMode}
             cacheOptions={false}
             defaultOptions={!props.isMultiMode}
             loadOptions={usersLoader}
+            defaultValue={props.defaultValue}
             filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
             onChange={onChange}
             getOptionValue={getOptionValue}
@@ -190,5 +193,5 @@ const StyledProfile = styled(Profile)`
         font-size: 14px;
         line-height: 16px;
     }
-    
+
 `;

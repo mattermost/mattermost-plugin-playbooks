@@ -18,6 +18,17 @@ export type Scalars = {
     Float: number;
 };
 
+export type Action = {
+    __typename?: 'Action';
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
+export type ActionUpdates = {
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
 export type Checklist = {
     __typename?: 'Checklist';
     items: Array<ChecklistItem>;
@@ -34,6 +45,7 @@ export type ChecklistItem = {
     dueDate: Scalars['Float'];
     state: Scalars['String'];
     stateModified: Scalars['Float'];
+    taskActions: Array<TaskAction>;
     title: Scalars['String'];
 };
 
@@ -46,6 +58,7 @@ export type ChecklistItemUpdates = {
     dueDate: Scalars['Float'];
     state: Scalars['String'];
     stateModified: Scalars['Float'];
+    taskActions?: InputMaybe<Array<TaskActionUpdates>>;
     title: Scalars['String'];
 };
 
@@ -317,6 +330,17 @@ export type StatusPost = {
     id: Scalars['String'];
 };
 
+export type TaskAction = {
+    __typename?: 'TaskAction';
+    actions: Array<Action>;
+    trigger: Trigger;
+};
+
+export type TaskActionUpdates = {
+    actions: Array<ActionUpdates>;
+    trigger: TriggerUpdates;
+};
+
 export type TimelineEvent = {
     __typename?: 'TimelineEvent';
     createAt: Scalars['Float'];
@@ -330,11 +354,22 @@ export type TimelineEvent = {
     summary: Scalars['String'];
 };
 
+export type Trigger = {
+    __typename?: 'Trigger';
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
+export type TriggerUpdates = {
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
 export type PlaybookQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
+export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number, task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
 
 export type UpdatePlaybookMutationVariables = Exact<{
     id: Scalars['String'];
@@ -447,6 +482,16 @@ export const PlaybookDocument = gql`
         command
         command_last_run: commandLastRun
         due_date: dueDate
+        task_actions: taskActions {
+          trigger: trigger {
+            type
+            payload
+          }
+          actions: actions {
+            type
+            payload
+          }
+        }
       }
     }
     members {
