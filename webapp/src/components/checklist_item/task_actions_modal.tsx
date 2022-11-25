@@ -1,6 +1,5 @@
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {Store} from 'redux';
 import {useDispatch, useSelector} from 'react-redux';
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import styled from 'styled-components';
@@ -10,16 +9,16 @@ import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import ActionsModal from 'src/components/actions_modal';
-import Action from 'src/components/actions_modal_action'
+import Action from 'src/components/actions_modal_action';
 import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
-import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger'
+import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
 import GenericModal from 'src/components/widgets/generic_modal';
-import { getRun } from 'src/selectors';
+import {getRun} from 'src/selectors';
 import {TaskAction as TaskActionType} from 'src/types/playbook';
 
 const ID = 'playbooks_task_actions_modal';
-const KeywordsByUsersTriggerType = "keywords_by_users";
-const MarkItemAsDoneActionType = "mark_item_as_done";
+const KeywordsByUsersTriggerType = 'keywords_by_users';
+const MarkItemAsDoneActionType = 'mark_item_as_done';
 
 export const makeTaskActionsModalDefinition = (
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void,
@@ -35,64 +34,61 @@ type Props = {
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void,
     taskActions?: TaskActionType[] | null,
     playbookRunId?: string,
-}  & Partial<ComponentProps<typeof GenericModal>>;
+} & Partial<ComponentProps<typeof GenericModal>>;
 
-const TaskActionsModal = ( {onTaskActionsChange, taskActions, playbookRunId, ...modalProps}: Props) => {
-
+const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...modalProps}: Props) => {
     const {formatMessage} = useIntl();
+    const emptyTask = {} as TaskActionType;
+    const taskAction = (taskActions && (taskActions.length > 0)) ? taskActions[0] : emptyTask;
 
-    const emptyTask = {} as TaskActionType
-    const taskAction = (taskActions && (taskActions.length>0)) ? taskActions[0]: emptyTask
-
-    const keywordsTriggerEmptyPayload= {keywords: [] as string[], user_ids: [] as string[]};
-    const markAsDoneEmptyPayload= {enabled: false};
+    const keywordsTriggerEmptyPayload = {keywords: [] as string[], user_ids: [] as string[]};
+    const markAsDoneEmptyPayload = {enabled: false};
 
     // we only have one kind of trigger
-    const triggerType = taskAction.trigger?.type ? taskAction.trigger.type : KeywordsByUsersTriggerType
-    const triggerPayload = taskAction.trigger?.payload ? JSON.parse(taskAction.trigger.payload) :  keywordsTriggerEmptyPayload
+    const triggerType = taskAction.trigger?.type ? taskAction.trigger.type : KeywordsByUsersTriggerType;
+    const triggerPayload = taskAction.trigger?.payload ? JSON.parse(taskAction.trigger.payload) : keywordsTriggerEmptyPayload;
 
     // we currently only support one action per trigger
-    const actionType = (taskAction.actions?.length>0 && taskAction.actions[0]?.type) ? taskAction.actions[0].type : MarkItemAsDoneActionType
-    const actionPayload = (taskAction.actions?.length>0 && taskAction.actions[0]?.payload) ? JSON.parse(taskAction.actions[0].payload): markAsDoneEmptyPayload
+    const actionType = (taskAction.actions?.length > 0 && taskAction.actions[0]?.type) ? taskAction.actions[0].type : MarkItemAsDoneActionType;
+    const actionPayload = (taskAction.actions?.length > 0 && taskAction.actions[0]?.payload) ? JSON.parse(taskAction.actions[0].payload) : markAsDoneEmptyPayload;
 
     const [show, setShow] = useState(true);
     const users = useSelector(getUsers);
-    const defaultUsers = triggerPayload.user_ids.map((user_id: string) => users[user_id])
+    const defaultUsers = triggerPayload.user_ids.map((user_id: string) => users[user_id]);
 
-    const [newKeywords, setNewKeywords] = useState(triggerPayload.keywords)
-    const [newUserIDs, setNewUserIDs] = useState(triggerPayload.user_ids)
-    const [newIsEnabled, setNewEnabled] = useState(actionPayload.enabled)
+    const [newKeywords, setNewKeywords] = useState(triggerPayload.keywords);
+    const [newUserIDs, setNewUserIDs] = useState(triggerPayload.user_ids);
+    const [newIsEnabled, setNewEnabled] = useState(actionPayload.enabled);
 
-
-    let searchOpts
+    const runID = playbookRunId || '';
+    const run = useSelector(getRun(runID));
+    const teamID = useSelector(getCurrentTeamId);
+    let searchOpts = {} as any;
     if (playbookRunId) {
-        const run = useSelector(getRun(playbookRunId))
-        searchOpts = {in_channel_id: run?.channel_id}
+        searchOpts = {in_channel_id: run?.channel_id};
     } else {
-        const teamID = useSelector(getCurrentTeamId)
-        searchOpts =  {team_id: teamID}
+        searchOpts = {team_id: teamID};
     }
     const dispatch = useDispatch();
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, searchOpts));
     };
 
-
     const onSave = () => {
-        let newTaskAction = {} as TaskActionType
-        const triggerPayload = {keywords: newKeywords, user_ids: newUserIDs}
+        const newTaskAction = {} as TaskActionType;
+        const newTriggerPayload = {keywords: newKeywords, user_ids: newUserIDs};
         newTaskAction.trigger = {
             type: KeywordsByUsersTriggerType,
-            payload: JSON.stringify(triggerPayload)
-        }
+            payload: JSON.stringify(newTriggerPayload),
+        };
 
-        const actionPayload = {enabled: newIsEnabled}
+        const newActionPayload = {enabled: newIsEnabled};
         newTaskAction.actions = [{
             type: MarkItemAsDoneActionType,
-            payload: JSON.stringify(actionPayload)
-        }]
+            payload: JSON.stringify(newActionPayload),
+        }];
 
-        onTaskActionsChange([newTaskAction])
+        onTaskActionsChange([newTaskAction]);
     };
 
     return (
@@ -101,14 +97,19 @@ const TaskActionsModal = ( {onTaskActionsChange, taskActions, playbookRunId, ...
             title={formatMessage({defaultMessage: 'Task actions'})}
             subtitle={formatMessage({defaultMessage: 'Automate activities for this task'})}
             show={show}
-            onHide={() => {setShow(false)}}
+            onHide={() => {
+                setShow(false);
+            }}
             editable={true}
-            onSave={() => {onSave(); setShow(false)}}
+            onSave={() => {
+                onSave();
+                setShow(false);
+            }}
             autoCloseOnConfirmButton={true}
             isValid={true}
             {...modalProps}
         >
-             <TaskActionsContainer>
+            <TaskActionsContainer>
                 <Trigger
                     title={formatMessage({defaultMessage: 'When a message with specific keywords is posted'})}
                     triggerModifier={(
@@ -116,7 +117,7 @@ const TaskActionsModal = ( {onTaskActionsChange, taskActions, playbookRunId, ...
                             <TriggerKeywords
                                 editable={true}
                                 keywords={triggerPayload.keywords}
-                                onUpdate={(newKeywords) => setNewKeywords(newKeywords)}
+                                onUpdate={(updatedKeywords) => setNewKeywords(updatedKeywords)}
                             />
                             <ProfileAutocomplete
                                 disableAutoFocus={true}
@@ -136,10 +137,12 @@ const TaskActionsModal = ( {onTaskActionsChange, taskActions, playbookRunId, ...
                         enabled={(newIsEnabled && newKeywords.length > 0)}
                         title={formatMessage({defaultMessage: 'Mark the task as done'})}
                         editable={newKeywords.length > 0}
-                        onToggle={() => {setNewEnabled(!newIsEnabled)}}
+                        onToggle={() => {
+                            setNewEnabled(!newIsEnabled);
+                        }}
                     />
                 </Trigger>
-             </TaskActionsContainer>
+            </TaskActionsContainer>
         </ActionsModal>
     );
 };
@@ -156,7 +159,7 @@ export const TaskActionsContainer = styled.div`
 `;
 
 const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
-    container: (provided) =>({
+    container: (provided) => ({
         ...provided,
         marginTop: '8px',
 

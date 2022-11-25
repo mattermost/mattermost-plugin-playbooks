@@ -19,7 +19,7 @@ import {
     setChecklistItemState,
     clientSetChecklistItemTaskActions,
 } from 'src/client';
-import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
@@ -33,7 +33,6 @@ import {CheckBoxButton, CancelSaveButtons} from './inputs';
 import {DueDateButton} from './duedate';
 
 import TaskActions from './task_actions';
-import {TaskAction as TaskActionType} from 'src/types/playbook';
 
 export enum ButtonsFormat {
 
@@ -147,17 +146,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
-    const onTaskActionsChange = async (taskActions: TaskActionType[]) => {
-        setTaskActions(taskActions)
+    const onTaskActionsChange = async (newTaskActions: TaskActionType[]) => {
+        setTaskActions(newTaskActions);
         if (props.newItem) {
             return;
         }
         if (props.playbookRunId) {
-            clientSetChecklistItemTaskActions(props.playbookRunId, props.checklistNum, props.itemNum, taskActions);
+            clientSetChecklistItemTaskActions(props.playbookRunId, props.checklistNum, props.itemNum, newTaskActions);
         } else {
             const newItem = {...props.checklistItem};
-            newItem.task_actions = taskActions;
-            console.log(taskActions)
+            newItem.task_actions = newTaskActions;
             props.onUpdateChecklistItem?.(newItem);
         }
     };
@@ -240,7 +238,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderTaskActions = (): null | React.ReactNode => {
-        const haveTaskActions = taskActions?.length > 0
+        const haveTaskActions = taskActions?.length > 0;
         if (buttonsFormat !== ButtonsFormat.Long && (!isEditing && !haveTaskActions)) {
             return null;
         }
@@ -251,11 +249,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 playbookRunId={props.playbookRunId}
                 onTaskActionsChange={onTaskActionsChange}
             />
-        )
-    }
+        );
+    };
 
     const renderRow = (): null | React.ReactNode => {
-        const haveTaskActions = taskActions?.length > 0
+        const haveTaskActions = taskActions?.length > 0;
         if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !haveTaskActions && !isEditing)) {
             return null;
         }

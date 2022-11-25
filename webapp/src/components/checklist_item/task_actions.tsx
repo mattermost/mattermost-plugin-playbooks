@@ -15,28 +15,30 @@ interface TaskActionsProps {
 const TaskActions = (props: TaskActionsProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const lenTasks = props.taskActions ? props.taskActions.length:0
-    var placeholder = (
+    const lenTasks = props.taskActions ? props.taskActions.length : 0;
+    const placeholder = (
         <FormattedMessage
-        defaultMessage="{actions, plural, =0 {Task Actions} one {# action} other {# actions}}"
-        values = {{"actions": lenTasks, }}
+            defaultMessage='{actions, plural, =0 {Task Actions} one {# action} other {# actions}}'
+            values={{actions: lenTasks}}
         />
-    )
+    );
 
     return (
         <TaskActionsContainer
-                isPlaceholder={lenTasks<1}
-                onClick={() => { dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions, props.playbookRunId)) }}
+            isPlaceholder={lenTasks < 1}
+            onClick={() => {
+                dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions, props.playbookRunId));
+            }}
         >
-                <ActionIcon
-                    title={formatMessage({defaultMessage: 'Task Actions...'})}
-                    className={'icon-lightning-bolt-outline icon-12'}
-                />
-                <TaskActionsTextContainer>
-                    {placeholder}
-                </TaskActionsTextContainer>
+            <ActionIcon
+                title={formatMessage({defaultMessage: 'Task Actions...'})}
+                className={'icon-lightning-bolt-outline icon-12'}
+            />
+            <TaskActionsTextContainer>
+                {placeholder}
+            </TaskActionsTextContainer>
         </TaskActionsContainer>
-    )
+    );
 };
 
 export default TaskActions;

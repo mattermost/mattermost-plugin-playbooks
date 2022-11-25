@@ -412,7 +412,7 @@ export async function clientSetChecklistItemCommand(playbookRunID: string, check
 export async function clientSetChecklistItemTaskActions(playbookRunID: string, checklistNum: number, itemNum: number, taskActions: TaskAction[]) {
     const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/taskactions`,
         JSON.stringify(taskActions)
-        );
+    );
 
     return data;
 }
