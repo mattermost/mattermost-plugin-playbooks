@@ -315,6 +315,7 @@ func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.Ch
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	p.channelActionService.MessageHasBeenPosted(c.SessionId, post)
+	p.playbookRunService.MessageHasBeenPosted(c.SessionId, post)
 }
 
 func (p *Plugin) newMetricsInstance() *metrics.Metrics {

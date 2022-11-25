@@ -119,6 +119,7 @@ func NewPlaybookRunHandler(
 	checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
 	checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
 	checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/taskactions", withContext(handler.itemSetTaskActions)).Methods(http.MethodPut)
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
@@ -1282,6 +1283,40 @@ func (h *PlaybookRunHandler) itemSetCommand(c *Context, w http.ResponseWriter, r
 	}
 
 	if err := h.playbookRunService.SetCommandToChecklistItem(id, userID, checklistNum, itemNum, params.Command); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) itemSetTaskActions(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var taskActions []app.TaskAction
+	if err := json.NewDecoder(r.Body).Decode(&taskActions); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := validateTaskActions(taskActions); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid task actions", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetTaskActionsToChecklistItem(id, userID, checklistNum, itemNum, taskActions); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

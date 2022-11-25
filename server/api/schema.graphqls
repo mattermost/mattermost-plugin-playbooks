@@ -86,6 +86,22 @@ input ChecklistItemUpdates {
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
+	taskActions: [TaskActionUpdates!]
+}
+
+input TaskActionUpdates {
+	trigger: TriggerUpdates!
+	actions: [ActionUpdates!]!
+}
+
+input TriggerUpdates {
+	type: String!
+	payload: String!
+}
+
+input ActionUpdates {
+	type: String!
+	payload: String!
 }
 
 type Playbook {
@@ -157,6 +173,22 @@ type ChecklistItem {
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
+	taskActions: [TaskAction!]!
+}
+
+type TaskAction {
+	trigger: Trigger!
+	actions: [Action!]!
+}
+
+type Trigger {
+	type: String!
+	payload: String!
+}
+
+type Action {
+	type: String!
+	payload: String!
 }
 
 enum MetricType {
