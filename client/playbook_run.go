@@ -15,6 +15,7 @@ type PlaybookRun struct {
 	ID                                      string          `json:"id"`
 	Name                                    string          `json:"name"`
 	Summary                                 string          `json:"summary"`
+	SummaryModifiedAt                       int64           `json:"summary_modified_at"`
 	OwnerUserID                             string          `json:"owner_user_id"`
 	ReporterUserID                          string          `json:"reporter_user_id"`
 	TeamID                                  string          `json:"team_id"`
@@ -274,4 +275,13 @@ type StatusUpdateOptions struct {
 type RunMetricData struct {
 	MetricConfigID string   `json:"metric_config_id"`
 	Value          null.Int `json:"value"`
+}
+
+// OwnerInfo holds the summary information of a owner.
+type OwnerInfo struct {
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 }

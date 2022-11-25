@@ -15,13 +15,14 @@ interface Props {
     item: ChecklistItemType;
     itemIndex: number;
     newItem: boolean;
-    disabled?: boolean;
+    readOnly?: boolean;
     cancelAddingItem: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -36,11 +37,11 @@ const DraggableChecklistItem = (props: Props) => {
                     checklistNum={props.checklistIndex}
                     itemNum={props.itemIndex}
                     playbookRunId={props.playbookRun?.id}
-                    channelId={props.playbookRun?.channel_id}
+                    participantUserIds={props.playbookRun?.participant_ids ?? []}
                     onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
-                    disabled={props.disabled ?? false}
+                    readOnly={props.readOnly ?? false}
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}
@@ -49,6 +50,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                     onDeleteChecklistItem={props.onDeleteChecklistItem}
                     buttonsFormat={props.itemButtonsFormat}
+                    onViewerModeInteract={props.onViewerModeInteract}
                 />
             )}
         </Draggable>

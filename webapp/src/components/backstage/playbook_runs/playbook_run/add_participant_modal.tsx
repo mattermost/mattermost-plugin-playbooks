@@ -10,6 +10,7 @@ import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/ac
 import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
+import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -18,6 +19,9 @@ import CheckboxInput from '../../runs_list/checkbox_input';
 import {isCurrentUserChannelMember} from 'src/selectors';
 
 import ProfileAutocomplete from '../../profile_autocomplete';
+import {useChannel} from 'src/hooks';
+import {telemetryEvent} from 'src/client';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -32,8 +36,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const dispatch = useDispatch();
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
-    const [addToChannel, setAddToChannel] = useState(false);
+    const [forceAddToChannel, setForceAddToChannel] = useState(false);
+    const [channel, meta] = useChannel(playbookRun.channel_id);
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
+    const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
@@ -46,9 +52,6 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 
     const renderFooter = () => {
-        // disable footer until we participants actions PR(#1518) is merged to keep the master branch clean
-        return null;
-
         if (playbookRun.create_channel_member_on_new_participant) {
             return (
                 <FooterExtraInfoContainer>
@@ -60,13 +63,13 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 </FooterExtraInfoContainer>
             );
         }
-        if (isChannelMember) {
+        if (isChannelMember || isPrivateChannelWithAccess) {
             return (
                 <StyledCheckboxInput
                     testId={'also-add-to-channel'}
                     text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
-                    checked={addToChannel}
-                    onChange={(checked) => setAddToChannel(checked)}
+                    checked={forceAddToChannel}
+                    onChange={(checked) => setForceAddToChannel(checked)}
                 />
             );
         }
@@ -75,7 +78,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
 
     const onConfirm = () => {
         const ids = profiles.map((e) => e.id);
-        addToRun(ids);
+        addToRun(ids, forceAddToChannel);
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: 'run_details', trigger: 'add_participant', count: ids.length.toString()});
         hideModal();
     };
 
@@ -90,7 +94,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             handleConfirm={onConfirm}
             isConfirmDisabled={!profiles || profiles.length === 0}
 
-            onExited={() => setProfiles([])}
+            onExited={() => {
+                setProfiles([]);
+                setForceAddToChannel(false);
+            }}
 
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
@@ -160,6 +167,7 @@ const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
     margin-right: auto;
     white-space: normal;
+    font-weight: normal;
 
     &:hover {
         background-color: transparent;

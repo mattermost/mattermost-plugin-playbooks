@@ -1,35 +1,28 @@
 import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ControlProps, components} from 'react-select';
+import {components, ControlProps} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
-
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
-import {useProfilesInChannel, useProfilesInTeam} from 'src/hooks';
+import {useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
     assignee_id: string;
+    participantUserIds: string[];
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
-    channelId?: string; // If not provided, the ID of the current channel will be used
-
-    onSelectedChange: (userType?: string, user?: UserProfile) => void;
+    onSelectedChange: (user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const currentChannelID = useSelector(getCurrentChannelId);
-    const channelID = props.channelId || currentChannelID;
-    const profilesInChannel = useProfilesInChannel(channelID);
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
@@ -50,10 +43,12 @@ const AssignTo = (props: AssignedToProps) => {
                     />
                 }
                 enableEdit={true}
-                getUsers={async () => {
-                    return profilesInChannel;
+                userGroups={{
+                    subsetUserIds: props.participantUserIds,
+                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
                 }}
-                getUsersInTeam={async () => {
+                getAllUsers={async () => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}
@@ -79,13 +74,21 @@ const AssignTo = (props: AssignedToProps) => {
             <StyledProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
+                userGroups={{
+                    subsetUserIds: props.participantUserIds,
+                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                }}
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
                             title={formatMessage({defaultMessage: 'Assignee...'})}
                             className={'icon-account-plus-outline icon-12'}
                         />
-                        <AssignToTextContainer isPlaceholder={!props.assignee_id}>
+                        <AssignToTextContainer
+                            isPlaceholder={!props.assignee_id}
+                            enableEdit={props.editable}
+                        >
                             {formatMessage({defaultMessage: 'Assignee...'})}
                         </AssignToTextContainer>
                     </PlaceholderDiv>
@@ -93,10 +96,7 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholderButtonClass={'NoAssignee-button'}
                 profileButtonClass={props.withoutName ? 'NoName-Assigned-button' : 'Assigned-button'}
                 enableEdit={props.editable}
-                getUsers={async () => {
-                    return profilesInChannel;
-                }}
-                getUsersInTeam={async () => {
+                getAllUsers={async () => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}
@@ -167,8 +167,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
     }
 
     .NoName-Assigned-button {
-        background: none;
-        padding: 0px;
+        padding: 0 6px 0 0;
 
         .image {
             background: rgba(var(--center-channel-color-rgb),0.08);
@@ -181,9 +180,11 @@ const StyledProfileSelector = styled(ProfileSelector)`
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         color: rgba(var(--center-channel-color-rgb), 0.64);
 
-        :hover {
-            color: var(--center-channel-color);
-        }
+        ${({enableEdit}) => enableEdit && css`
+            :hover {
+                color: var(--center-channel-color);
+            }
+        `}
     }
 `;
 
@@ -193,11 +194,14 @@ const PlaceholderDiv = styled.div`
     flex-direction: row;
 `;
 
-const AssignToTextContainer = styled.div<{isPlaceholder: boolean}>`
+const AssignToTextContainer = styled.div<{isPlaceholder: boolean, enableEdit: boolean}>`
     color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
-    :hover {
-        color: var(--center-channel-color);
-    }
+
+     ${({enableEdit}) => enableEdit && css`
+        :hover {
+            color: var(--center-channel-color);
+        }
+    `}
     font-weight: 400;
     font-size: 12px;
     line-height: 15px;
@@ -219,6 +223,7 @@ export const AssignToContainer = styled.div`
         margin-left: 36px;
     }
     max-width: calc(100% - 210px);
+    display: flex;
 `;
 
 const ControlComponentAnchor = styled.a`

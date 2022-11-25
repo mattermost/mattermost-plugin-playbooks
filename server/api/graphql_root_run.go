@@ -5,6 +5,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -34,10 +35,11 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 }
 
 func (r *RunRootResolver) Runs(ctx context.Context, args struct {
-	TeamID                  string `url:"team_id,omitempty"`
+	TeamID                  string
 	Sort                    string
 	Statuses                []string
-	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+	ParticipantOrFollowerID string
+	ChannelID               string
 }) ([]*RunResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -60,6 +62,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
+		ChannelID:               args.ChannelID,
 		IncludeFavorites:        true,
 		Page:                    0,
 		PerPage:                 10000,
@@ -79,6 +82,8 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 }
 
 type RunUpdates struct {
+	Name                                    *string
+	Summary                                 *string
 	IsFavorite                              *bool
 	CreateChannelMemberOnNewParticipant     *bool
 	RemoveChannelMemberOnRemovedParticipant *bool
@@ -98,6 +103,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	// some updates require just view permission (like fav/unfav)
 	if err := c.permissions.RunView(userID, args.ID); err != nil {
 		return "", err
 	}
@@ -107,12 +113,20 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
+	now := model.GetMillis()
+
 	// scalar updates
 	setmap := map[string]interface{}{}
+	addToSetmap(setmap, "Name", args.Updates.Name)
+	addToSetmap(setmap, "Description", args.Updates.Summary)
 	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
 	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
 	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
 	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
+
+	if args.Updates.Summary != nil {
+		addToSetmap(setmap, "SummaryModifiedAt", &now)
+	}
 
 	if args.Updates.BroadcastChannelIDs != nil {
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
@@ -170,8 +184,9 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 }
 
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
-	RunID   string
-	UserIDs []string
+	RunID             string
+	UserIDs           []string
+	ForceAddToChannel bool
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -190,7 +205,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 
-	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID); err != nil {
+	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
@@ -224,7 +239,7 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 		}
 	}
 
-	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs); err != nil {
+	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs, userID); err != nil {
 		return "", errors.Wrap(err, "failed to remove participant from run")
 	}
 

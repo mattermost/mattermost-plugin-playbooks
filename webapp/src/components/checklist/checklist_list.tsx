@@ -55,6 +55,7 @@ interface Props {
     onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void;
 }
 
 const ChecklistList = ({
@@ -66,6 +67,7 @@ const ChecklistList = ({
     onEveryChecklistCollapsedStateChange,
     showItem,
     itemButtonsFormat,
+    onViewerModeInteract,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -100,7 +102,7 @@ const ChecklistList = ({
     const checklists = playbookRun?.checklists || playbook?.checklists || [];
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
-    const disabled = finished || archived || isReadOnly;
+    const readOnly = finished || archived || isReadOnly;
 
     if (!playbook && !playbookRun) {
         return null;
@@ -334,7 +336,7 @@ const ChecklistList = ({
                                                 index={checklistIndex}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}
-                                                disabled={disabled}
+                                                disabled={readOnly}
                                                 playbookRunID={playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
@@ -351,12 +353,13 @@ const ChecklistList = ({
                                                 <GenericChecklist
                                                     id={playbookRun?.id || ''}
                                                     playbookRun={playbookRun}
-                                                    disabled={disabled}
+                                                    readOnly={readOnly}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
+                                                    onViewerModeInteract={onViewerModeInteract}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -373,7 +376,7 @@ const ChecklistList = ({
                         </ChecklistsContainer>
                     )}
                 </Droppable>
-                {!disabled && addChecklist}
+                {!readOnly && addChecklist}
             </DragDropContext>
         </>
     );

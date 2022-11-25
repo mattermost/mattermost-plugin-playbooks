@@ -15,7 +15,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {useRunMembership} from 'src/graphql/hooks';
+import {useManageRunMembership} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -24,7 +24,17 @@ import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {telemetryEvent} from 'src/client';
 
-import {CopyRunLinkMenuItem, ToggleRunStatusUpdateMenuItem, ExportChannelLogsMenuItem, FavoriteRunMenuItem, FinishRunMenuItem, LeaveRunMenuItem, RestoreRunMenuItem, RunActionsMenuItem} from './controls';
+import {
+    RenameRunItem,
+    CopyRunLinkMenuItem,
+    ToggleRunStatusUpdateMenuItem,
+    ExportChannelLogsMenuItem,
+    FavoriteRunMenuItem,
+    FinishRunMenuItem,
+    LeaveRunMenuItem,
+    RestoreRunMenuItem,
+    RunActionsMenuItem,
+} from './controls';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -33,9 +43,10 @@ interface Props {
     isFollowing: boolean;
     hasPermanentViewerAccess: boolean;
     toggleFavorite: () => void;
+    onRenameClick: () => void;
 }
 
-export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing, 'run_details');
     const [showModal, setShowModal] = useState(false);
 
@@ -61,6 +72,11 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 />
                 <CopyRunLinkMenuItem
                     playbookRunId={playbookRun.id}
+                />
+                <RenameRunItem
+                    playbookRun={playbookRun}
+                    role={role}
+                    onClick={onRenameClick}
                 />
                 <Separator/>
                 <RunActionsMenuItem
@@ -98,16 +114,16 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     );
 };
 
-export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, trigger: 'run_details' | 'playbooks_lhs') => {
+export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, from: 'run_details' | 'playbooks_lhs') => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
-    const {removeFromRun} = useRunMembership(playbookRunId, [currentUserId]);
+    const {removeFromRun} = useManageRunMembership(playbookRunId);
     const refreshLHS = useLHSRefresh();
 
     const onLeaveRun = async () => {
-        removeFromRun()
+        removeFromRun([currentUserId])
             .then(() => {
                 refreshLHS();
                 addToast({
@@ -116,7 +132,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                 });
 
                 const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
-                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from: trigger});
+                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from, trigger: 'leave', count: '1'});
                 if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }

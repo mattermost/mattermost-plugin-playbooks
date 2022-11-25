@@ -87,7 +87,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
-	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
@@ -714,25 +713,18 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRunToModify.ChannelID))
-		return
-	}
-
 	var options app.StatusUpdateOptions
-	if err = json.NewDecoder(r.Body).Decode(&options); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode body into StatusUpdateOptions", err)
 		return
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		if errors.Is(internalErr, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+		} else {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		}
 		return
 	}
 
@@ -742,6 +734,15 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
+	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := h.permissions.RunUpdateStatus(userID, playbookRunToModify); err != nil {
+		return "Not authorized", err
+	}
+
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
 		return "message must not be empty", errors.New("message field empty")
@@ -924,19 +925,8 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRunToModify.ChannelID))
-		return
-	}
-
 	var request *model.SubmitDialogRequest
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
@@ -1075,37 +1065,6 @@ func (h *PlaybookRunHandler) removeTimelineEvent(c *Context, w http.ResponseWrit
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *PlaybookRunHandler) updateDescription(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	var requestBody struct {
-		Description string `json:"description"`
-	}
-
-	if err2 := json.NewDecoder(r.Body).Decode(&requestBody); err2 != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook run description", err2)
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
-		return
-	}
-
-	if err := h.playbookRunService.UpdateDescription(playbookRunID, requestBody.Description); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to update description", err)
-		return
-	}
-
-	ReturnJSON(w, nil, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.ResponseWriter, r *http.Request) {

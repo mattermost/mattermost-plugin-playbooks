@@ -87,7 +87,7 @@ describe('runs > run details page > summary', () => {
                 cy.findByTestId('hover-menu-edit-button').click();
 
                 // # Write a summary
-                cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
+                cy.findByTestId('editabletext-markdown-textbox2').clear().type('This is my new summary');
 
                 // # Save changes
                 cy.findByTestId('checklist-item-save-button').click();
@@ -109,7 +109,7 @@ describe('runs > run details page > summary', () => {
                 cy.findByTestId('hover-menu-edit-button').click();
 
                 // # Write a summary
-                cy.findByTestId('editabletext-markdown-textbox1').clear().type('This is my new summary');
+                cy.findByTestId('editabletext-markdown-textbox2').clear().type('This is my new summary');
 
                 // # Cancel changes
                 cy.findByText('Cancel').click();

@@ -101,53 +101,18 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useRunMembership = (runID?: string, userIDs?: string[]) => {
-    const [add] = useAddRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const [remove] = useRemoveRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const addToRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await add();
-    }, [runID, JSON.stringify(userIDs), add]);
-
-    const removeFromRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await remove();
-    }, [runID, JSON.stringify(userIDs), remove]);
-    return {addToRun, removeFromRun};
-};
-
 export const useManageRunMembership = (runID?: string) => {
     const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
@@ -157,11 +122,11 @@ export const useManageRunMembership = (runID?: string) => {
         ],
     });
 
-    const addToRun = useCallback(async (userIDs?: string[]) => {
+    const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await add({variables: {runID: runID || '', userIDs: userIDs || []}});
+        await add({variables: {runID: runID || '', userIDs: userIDs || [], forceAddToChannel: forceAddToChannel || false}});
     }, [runID, add]);
 
     const removeFromRun = useCallback(async (userIDs?: string[]) => {

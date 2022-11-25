@@ -21,6 +21,7 @@ import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId?: string;
+    participantUserIds: string[];
     channelId?: string;
     checklistNum: number;
     itemNum: number;
@@ -32,7 +33,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
-    onAssigneeChange: (userType?: string, user?: UserProfile) => void;
+    onAssigneeChange: (user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
@@ -55,9 +56,9 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            {props.playbookRunId !== undefined &&
+            {props.playbookRunId !== undefined && !props.isSkipped &&
                 <AssignTo
-                    channelId={props.channelId}
+                    participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
                     editable={props.isEditing}
                     inHoverMenu={true}
@@ -66,14 +67,16 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onOpenChange={props.onItemOpenChange}
                 />
             }
-            <DueDateHoverMenuButton
-                date={props.due_date}
-                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
-                onSelectedChange={props.onDueDateChange}
-                placement={'bottom-end'}
-                onOpenChange={props.onItemOpenChange}
-                editable={props.isEditing}
-            />
+            {!props.isSkipped &&
+                <DueDateHoverMenuButton
+                    date={props.due_date}
+                    mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
+                    onSelectedChange={props.onDueDateChange}
+                    placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
+                    editable={props.isEditing}
+                />
+            }
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
                 title={formatMessage({defaultMessage: 'Edit'})}

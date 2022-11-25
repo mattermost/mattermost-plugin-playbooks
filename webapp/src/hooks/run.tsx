@@ -2,21 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {useUpdateEffect} from 'react-use';
 
 import {
     isFavoriteItem,
-    telemetryEvent,
 } from 'src/client';
-import {useRunMembership, useUpdateRun} from 'src/graphql/hooks';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
+import {useUpdateRun} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
+import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
@@ -40,35 +36,15 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRunId: string, trigger: 'channel_rhs'|'run_details') => {
-    const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
-    const {addToRun} = useRunMembership(playbookRunId, [currentUserId]);
-    const addToast = useToaster().add;
+export const useParticipateInRun = (playbookRun: PlaybookRun | undefined, from: 'channel_rhs'|'run_details') => {
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
-    const onConfirmParticipate = async () => {
-        addToRun()
-            .then(() => addToast({
-                content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
-                toastStyle: ToastStyle.Success,
-            }))
-            .catch(() => addToast({
-                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
-                toastStyle: ToastStyle.Failure,
-            }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from: trigger});
-    };
+
     const ParticipateConfirmModal = (
-        <ConfirmModal
+        <BecomeParticipantsModal
+            playbookRun={playbookRun}
             show={showParticipateConfirm}
-            title={formatMessage({defaultMessage: 'Participate in the run'})}
-            message={formatMessage({defaultMessage: 'Become a participant of the run. As a participant, you can post status updates, assign and complete tasks, and perform retrospectives.'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
-            onConfirm={() => {
-                onConfirmParticipate();
-                setShowParticipateConfirm(false);
-            }}
-            onCancel={() => setShowParticipateConfirm(false)}
+            hideModal={() => setShowParticipateConfirm(false)}
+            from={from}
         />
     );
     return {

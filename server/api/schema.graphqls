@@ -15,6 +15,7 @@ type Query {
 		sort: String = "",
 		statuses: [String!] = [],
 		participantOrFollowerID: String = "",
+		channelID: String = "",
 	): [Run!]!
 }
 
@@ -29,7 +30,7 @@ type Mutation {
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
 	updateRun(id: String!, updates: RunUpdates!): String!
-	addRunParticipants(runID: String!, userIDs: [String!]!): String!
+	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
 }
@@ -69,6 +70,8 @@ input PlaybookUpdates {
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
+	channelId: String
+	channelMode: String
 }
 
 input ChecklistUpdates {
@@ -150,6 +153,8 @@ type Playbook {
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
+	channelID: String!
+	channelMode: String!
 }
 
 type Checklist {
@@ -268,6 +273,8 @@ type TimelineEvent {
 }
 
 input RunUpdates {
+	name: String
+	summary: String
 	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean

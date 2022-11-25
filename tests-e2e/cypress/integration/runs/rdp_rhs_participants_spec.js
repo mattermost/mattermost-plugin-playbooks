@@ -55,7 +55,7 @@ describe('runs > run details page > rhs > participants', () => {
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPublicPlaybook.id,
-            playbookRunName: 'the run name',
+            playbookRunName: 'the-run-name' + Date.now(),
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             testRun = playbookRun;
@@ -122,25 +122,117 @@ describe('runs > run details page > rhs > participants', () => {
             cy.findByTestId(testUser2.id).should('not.exist');
         });
 
-        it('add participant', () => {
-            navigateToParticipantsList();
+        describe('add participant', () => {
+            it('join action enabled', () => {
+                navigateToParticipantsList();
 
-            // * Verify run owner
-            cy.findByTestId('run-owner').contains(testUser.username);
+                // * Verify run owner
+                cy.findByTestId('run-owner').contains(testUser.username);
 
-            // # show add participant modal
-            cy.findByRole('button', {name: 'Add'}).click();
+                // # show add participant modal
+                cy.findByRole('button', {name: 'Add'}).click();
 
-            // # Select two new participants
-            cy.get('#profile-autocomplete').click().type(testUser2.username + '{enter}', {delay: 300});
-            cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 300});
+                // # Select two new participants
+                cy.get('#profile-autocomplete').click().type(testUser2.username + '{enter}', {delay: 400});
+                cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 400});
 
-            // # Add selected participant
-            cy.findByTestId('modal-confirm-button').click();
+                // # Intercept all calls to telemetry
+                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 
-            // * Verify the users have been added
-            cy.findByTestId(testUser2.id).should('exist');
-            cy.findByTestId(testViewerUser.id).should('exist');
+                // # Add selected participant
+                cy.findByTestId('modal-confirm-button').click();
+
+                cy.wait('@telemetry').then((interception) => {
+                    expect(interception.request.body.name).to.eq('playbookrun_participate');
+                    expect(interception.request.body.type).to.eq('track');
+                    expect(interception.request.body.properties.from).to.eq('run_details');
+                    expect(interception.request.body.properties.trigger).to.eq('add_participant');
+                    expect(interception.request.body.properties.count).to.eq('2');
+                });
+
+                // * Verify modal message is correct
+                cy.findByText('Participants will also be added to the channel linked to this run').should('exist');
+
+                // * Verify the users have been added
+                cy.findByTestId(testUser2.id).should('exist');
+                cy.findByTestId(testViewerUser.id).should('exist');
+            });
+
+            it('join action disabled', () => {
+                cy.apiUpdateRun(testRun.id, {createChannelMemberOnNewParticipant: false});
+                navigateToParticipantsList();
+
+                // * Verify run owner
+                cy.findByTestId('run-owner').contains(testUser.username);
+
+                // # show add participant modal
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // # Select two new participants
+                cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 400});
+
+                // * Verify modal message is correct
+                cy.findByText('Also add people to the channel linked to this run').should('exist');
+
+                // # Add selected participant
+                cy.findByTestId('modal-confirm-button').click();
+
+                // * Verify the user has been added to the run
+                cy.findByTestId(testViewerUser.id).should('exist');
+
+                // # Intercept fetching channel members
+                cy.intercept('channels/members/me/view').as('members');
+
+                // # Navigate to the playbook run channel
+                cy.visit(`/${testTeam.name}/channels/${testRun.name}`);
+
+                // * Verify that no users were invited
+                cy.getFirstPostId().then((id) => {
+                    cy.get(`#postMessageText_${id}`).within(() => {
+                        // just to wait until the username is fetched
+                        cy.contains('Someone').should('not.exist');
+                        cy.contains('You were added to the channel by @playbooks.');
+                        cy.contains(`@${testViewerUser.username}`).should('not.exist');
+                    });
+                });
+            });
+
+            it('join action disabled, checkbox selected', () => {
+                cy.apiUpdateRun(testRun.id, {createChannelMemberOnNewParticipant: false});
+                navigateToParticipantsList();
+
+                // * Verify run owner
+                cy.findByTestId('run-owner').contains(testUser.username);
+
+                // # show add participant modal
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // # Select two new participants
+                cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 400});
+
+                // * Verify modal message is correct
+                cy.findByText('Also add people to the channel linked to this run').should('exist');
+
+                // # Select checkbox
+                cy.findByTestId('also-add-to-channel').click({force: true});
+
+                // # Add selected participant
+                cy.findByTestId('modal-confirm-button').click();
+
+                // * Verify the user has been added to the run
+                cy.findByTestId(testViewerUser.id).should('exist');
+
+                // # Navigate to the playbook run channel
+                cy.visit(`/${testTeam.name}/channels/${testRun.name}`);
+
+                // * Verify that the user was added to the channel
+                cy.getFirstPostId().then((id) => {
+                    cy.get(`#postMessageText_${id}`).within(() => {
+                        cy.contains('Someone').should('not.exist');
+                        cy.contains(`@${testViewerUser.username}`);
+                    });
+                });
+            });
         });
     });
 

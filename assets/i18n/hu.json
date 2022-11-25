@@ -108,5 +108,13 @@
     {
         "id": "app.user.run.joined_run_channel_private_participate",
         "translation": "@{{.Name}} csatlakozott a futáshoz. Nem kerültek automatikusan hozzádásra a privát csatornához, de a csatorna bármelyik tagja meghívhatja őket, hogy csatlakozzanak.\n"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{.Username}} engedélyezte az állapot frissítést ehhez a futáshoz"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Username}} letiltotta az állapot frissítést ehhez a futáshoz"
     }
 ]

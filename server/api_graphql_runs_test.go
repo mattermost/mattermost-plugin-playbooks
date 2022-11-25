@@ -52,6 +52,42 @@ func TestGraphQLRunList(t *testing.T) {
 		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
 		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
 	})
+
+	t.Run("list by channel", func(t *testing.T) {
+		var rResultTest struct {
+			Data struct {
+				Runs []struct {
+					ID         string
+					Name       string
+					IsFavorite bool
+				}
+			}
+			Errors []struct {
+				Message string
+				Path    string
+			}
+		}
+		testRunsQuery := `
+		query Runs($channelID: String!) {
+			runs(channelID: $channelID) {
+				id
+				name
+				isFavorite
+			}
+		}
+		`
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID},
+		}, &rResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, rResultTest.Data.Runs, 1)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
+		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+	})
 }
 
 func TestGraphQLChangeRunParticipants(t *testing.T) {
@@ -341,8 +377,8 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, meta.Followers[1])
 
 		member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, e.RegularUser2.Id)
-		require.Nil(t, member)
-		require.NotNil(t, err)
+		require.Nil(t, err)
+		assert.Equal(t, e.RegularUser2.Id, member.UserId)
 	})
 
 	t.Run("not participant tries to add other participant", func(t *testing.T) {
@@ -527,11 +563,11 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 
 }
 
-func TestUpdateRunActions(t *testing.T) {
+func TestUpdateRun(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("update run actions", func(t *testing.T) {
+	createRun := func() *client.PlaybookRun {
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run with private channel",
 			OwnerUserID: e.RegularUser.Id,
@@ -539,6 +575,47 @@ func TestUpdateRunActions(t *testing.T) {
 			PlaybookID:  e.BasicPlaybook.ID,
 		})
 		require.NoError(t, err)
+		return run
+	}
+
+	t.Run("update run summary", func(t *testing.T) {
+		run := createRun()
+		require.Equal(t, "", run.Summary)
+		oldSummaryModifiedAt := run.SummaryModifiedAt
+
+		updates := map[string]interface{}{
+			"summary": "The updated summary",
+		}
+		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the summary is updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, updates["summary"], editedRun.Summary)
+		require.Greater(t, editedRun.SummaryModifiedAt, oldSummaryModifiedAt)
+	})
+
+	t.Run("update run name", func(t *testing.T) {
+		run := createRun()
+		require.Equal(t, "Run with private channel", run.Name)
+
+		updates := map[string]interface{}{
+			"name": "The updated name",
+		}
+		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the name is updated
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, updates["name"], editedRun.Name)
+	})
+
+	t.Run("update run actions", func(t *testing.T) {
+		run := createRun()
 
 		// data previous to update
 		prevRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
@@ -575,13 +652,7 @@ func TestUpdateRunActions(t *testing.T) {
 	})
 
 	t.Run("update fails due to lack of permissions", func(t *testing.T) {
-		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run with private channel",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  e.BasicPlaybook.ID,
-		})
-		require.NoError(t, err)
+		run := createRun()
 
 		//update
 		updates := map[string]interface{}{
@@ -671,9 +742,9 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 // UpdateRun updates the run
 func updateRun(c *client.Client, playbookRunID string, updates map[string]interface{}) (graphql.Response, error) {
 	mutation := `
-	mutation UpdateRun($id: String!, $updates: RunUpdates!) {
-		updateRun(id: $id, updates: $updates)
-	}
+		mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+			updateRun(id: $id, updates: $updates)
+		}
 	`
 	var response graphql.Response
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{

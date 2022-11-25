@@ -15,14 +15,17 @@ import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/compone
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    RECEIVED_PLAYBOOK_RUNS,
+    ReceivedPlaybookRuns,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
-    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedTeamPlaybookRuns,
+    RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
     REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
@@ -67,6 +70,10 @@ import {
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
+    OPEN_BACKSTAGE_RHS,
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
+    OpenBackstageRHS,
     SetEveryChecklistCollapsedState,
     SET_EVERY_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
@@ -209,6 +216,13 @@ export function setRHSViewingList(): SetRHSState {
     };
 }
 
+export function setRHSViewingParticipants(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingPlaybookRunParticipants,
+    };
+}
+
 /**
  * Stores`showRHSPlugin` action returned by
  * registerRightHandSidebarComponent in plugin initialization.
@@ -263,6 +277,11 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
+});
+
+export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({
+    type: RECEIVED_PLAYBOOK_RUNS,
+    playbookRuns,
 });
 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
@@ -353,3 +372,13 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
 export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null, playbookRunId?: string) {
     return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions, playbookRunId));
 }
+
+export const closeBackstageRHS = (): CloseBackstageRHS => ({
+    type: CLOSE_BACKSTAGE_RHS,
+});
+
+export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
+    type: OPEN_BACKSTAGE_RHS,
+    section,
+    viewMode,
+});

@@ -11,13 +11,13 @@ import {UserProfile} from '@mattermost/types/users';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {
-    clientEditChecklistItem,
     clientAddChecklistItem,
-    setDueDate as clientSetDueDate,
-    setAssignee,
+    clientEditChecklistItem,
     clientSetChecklistItemCommand,
+    setAssignee,
     setChecklistItemState,
     clientSetChecklistItemTaskActions,
+    setDueDate as clientSetDueDate,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
 
@@ -29,7 +29,7 @@ import ChecklistItemDescription from './description';
 import ChecklistItemTitle from './title';
 import AssignTo from './assign_to';
 import Command from './command';
-import {CheckBoxButton, CancelSaveButtons} from './inputs';
+import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
 
 import TaskActions from './task_actions';
@@ -60,8 +60,9 @@ interface ChecklistItemProps {
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
-    disabled: boolean;
+    readOnly: boolean;
     collapsibleDescription: boolean;
+    descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
     cancelAddingItem?: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
@@ -69,11 +70,13 @@ interface ChecklistItemProps {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
+    participantUserIds: string[];
+    onViewerModeInteract?: () => void
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
-    const [showDescription, setShowDescription] = useState(true);
+    const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
@@ -86,14 +89,35 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
+    const isSkipped = () => {
+        return props.checklistItem.state === ChecklistItemState.Skip;
+    };
+
+    useUpdateEffect(() => {
+        setTitleValue(props.checklistItem.title);
+    }, [props.checklistItem.title]);
+
+    useUpdateEffect(() => {
+        setDescValue(props.checklistItem.description);
+    }, [props.checklistItem.description]);
+
+    useUpdateEffect(() => {
+        setCommand(props.checklistItem.command);
+    }, [props.checklistItem.command]);
+
     useUpdateEffect(() => {
         setAssigneeID(props.checklistItem.assignee_id);
-        setCommand(props.checklistItem.command);
-        setDueDate(props.checklistItem.due_date);
-        setTaskActions(props.checklistItem.task_actions);
-    }, [props.checklistItem]);
+    }, [props.checklistItem.assignee_id]);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+    useUpdateEffect(() => {
+        setDueDate(props.checklistItem.due_date);
+    }, [props.checklistItem.due_date]);
+
+    useUpdateEffect(() => {
+        setTaskActions(props.checklistItem.task_actions);
+    }, [props.checklistItem.task_actions]);
+
+    const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
         setAssigneeID(userId);
         if (props.newItem) {
@@ -182,17 +206,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 return true;
             }
             const notFinished = [ChecklistItemState.Open, ChecklistItemState.InProgress].includes(props.checklistItem.state as ChecklistItemState);
-            if (dueDate > 0 && notFinished) {
-                return true;
-            }
-            return false;
+            return dueDate > 0 && notFinished;
         };
 
         return (
             <AssignTo
-                channelId={props.channelId}
+                participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
-                editable={!props.disabled}
+                editable={isEditing || (!props.readOnly && !isSkipped())}
                 withoutName={shouldHideName()}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
@@ -209,7 +230,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 checklistNum={props.checklistNum}
                 command={command}
                 command_last_run={props.checklistItem.command_last_run}
-                disabled={props.disabled}
+                disabled={!isEditing && (props.readOnly || isSkipped())}
                 itemNum={props.itemNum}
                 playbookRunId={props.playbookRunId}
                 isEditing={isEditing}
@@ -219,7 +240,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderDueDate = (): null | React.ReactNode => {
-        const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || props.checklistItem.state === ChecklistItemState.Skip;
+        const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || isSkipped();
 
         if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
             return null;
@@ -227,7 +248,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         return (
             <DueDateButton
-                editable={!props.disabled}
+                editable={isEditing || (!props.readOnly && !isSkipped())}
                 date={dueDate}
                 ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
@@ -274,16 +295,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             data-testid='checkbox-item-container'
             editing={isEditing}
             hoverMenuItemOpen={isHoverMenuItemOpen}
-            $disabled={props.disabled}
+            $disabled={props.readOnly || isSkipped()}
         >
             <CheckboxContainer>
-                {!props.disabled && !props.dragging &&
+                {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
-                        channelId={props.channelId}
+                        participantUserIds={props.participantUserIds}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
-                        isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
+                        isSkipped={isSkipped()}
                         onEdit={() => setIsEditing(true)}
                         isEditing={isEditing}
                         onChange={props.onChange}
@@ -303,13 +324,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                     className={'icon icon-drag-vertical'}
                     {...props.draggableProvided?.dragHandleProps}
-                    isVisible={!props.disabled}
+                    isVisible={!props.readOnly}
                     isDragging={props.dragging}
                 />
                 <CheckBoxButton
-                    disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip || props.playbookRunId === undefined}
+                    readOnly={props.readOnly}
+                    disabled={isSkipped() || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                    onViewerModeInteract={props.onViewerModeInteract}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
@@ -318,7 +341,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         editingItem={isEditing}
                         onEdit={setTitleValue}
                         value={titleValue}
-                        skipped={props.checklistItem.state === ChecklistItemState.Skip}
+                        skipped={isSkipped()}
                         clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
                     />
                 </ChecklistItemTitleWrapper>
@@ -541,6 +564,17 @@ const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMen
 
     ${({editing}) => editing && css`
         background-color: var(--button-bg-08);
+    `}
+
+    ${({$disabled, editing}) => !editing && $disabled && css`
+        ${ChecklistItemTitleWrapper},
+        & > ${Row} {
+            opacity: 0.64;
+        }
+
+        ${HoverMenu} {
+            z-index: 1;
+        }
     `}
 
     ${({editing, $disabled}) => !editing && !$disabled && css`

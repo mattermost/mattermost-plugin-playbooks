@@ -4,6 +4,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
@@ -174,6 +175,11 @@ func (s *playbookService) GetAutoFollows(playbookID string) ([]string, error) {
 
 // Duplicate duplicates a playbook
 func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
+	logger := logrus.WithFields(logrus.Fields{
+		"original_playbook_id": playbook.ID,
+		"user_id":              userID,
+	})
+
 	newPlaybook := playbook.Clone()
 	newPlaybook.ID = ""
 	// Empty metric IDs if there are such. Otherwise, metrics will not be saved in the database.
@@ -182,7 +188,19 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	}
 	newPlaybook.Title = "Copy of " + playbook.Title
 
-	return s.Create(newPlaybook, userID)
+	// On duplicating, make the current user the administrator.
+	newPlaybook.Members = []PlaybookMember{{
+		UserID: userID,
+		Roles:  []string{PlaybookRoleMember, PlaybookRoleAdmin},
+	}}
+
+	playbookID, err := s.Create(newPlaybook, userID)
+	if err != nil {
+		return "", err
+	}
+
+	logger.WithField("playbook_id", playbookID).Debug("Duplicated playbook")
+	return playbookID, nil
 }
 
 // get top playbooks for teams
