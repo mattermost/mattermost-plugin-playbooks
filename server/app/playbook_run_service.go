@@ -3315,8 +3315,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 
 		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
-			runsInfo.WriteString(fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
-				run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID))
+			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID)))
 			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
@@ -3361,8 +3360,7 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_runsinprogress_clicked&telem_run_id=%s&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
+		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
 
 	return msg
@@ -3380,8 +3378,7 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
+		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
 
 	return msg
