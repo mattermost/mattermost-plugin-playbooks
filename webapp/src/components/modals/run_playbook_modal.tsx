@@ -87,8 +87,12 @@ const RunPlaybookModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
+    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     const onSubmit = () => {
+        if (!isFormValid) {
+            return;
+        }
         createPlaybookRun(
             playbookId,
             user.id,
@@ -184,8 +188,6 @@ const RunPlaybookModal = ({
             )}
         </Container>
     );
-
-    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     return (
         <StyledGenericModal
