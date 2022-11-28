@@ -33,7 +33,7 @@ import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
 
 import TaskActions from './task_actions';
-import { haveAtleastOneEnabledAction } from './task_actions_modal';
+import {haveAtleastOneEnabledAction} from './task_actions_modal';
 
 export enum ButtonsFormat {
 
@@ -261,8 +261,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderTaskActions = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
-        const enabledAction = haveAtleastOneEnabledAction(taskActions)
-        if (buttonsFormat !== ButtonsFormat.Long && (!isEditing && !(haveTaskActions && enabledAction) )) {
+        const enabledAction = haveAtleastOneEnabledAction(taskActions);
+        if (buttonsFormat !== ButtonsFormat.Long && (!isEditing && !(haveTaskActions && enabledAction))) {
             return null;
         }
 

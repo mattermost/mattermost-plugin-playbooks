@@ -219,16 +219,16 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
 
 export const haveAtleastOneEnabledAction = (taskActions: TaskActionType[] | null | undefined) => {
     if (taskActions) {
-        for (var i = 0; i < taskActions.length; i++) {
+        for (let i = 0; i < taskActions.length; i++) {
             if (taskActions[i].actions) {
-                for (var k = 0; k < taskActions[i].actions.length; k++) {
+                for (let k = 0; k < taskActions[i].actions.length; k++) {
                     const payload = taskActions[i].actions[k].payload ? JSON.parse(taskActions[i].actions[k].payload) : markAsDoneEmptyPayload;
-                        if (payload.enabled) {
-                            return true
-                        }
+                    if (payload.enabled) {
+                        return true;
+                    }
                 }
             }
         }
     }
-    return false
-}
+    return false;
+};
