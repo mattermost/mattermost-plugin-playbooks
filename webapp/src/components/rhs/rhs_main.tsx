@@ -103,7 +103,7 @@ const defaultListOptions : RunListOptions = {
 const RightHandSidebar = () => {
     useSetRHSState();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const [currentRun, setCurrentRun] = useState<string|undefined>();
+    const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
 
@@ -111,8 +111,8 @@ const RightHandSidebar = () => {
     useEffect(() => {
         if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
             const singleRunID = fetchedRuns.runsInProgress[0].id;
-            if (singleRunID !== currentRun) {
-                setCurrentRun(singleRunID);
+            if (singleRunID !== currentRunId) {
+                setCurrentRunId(singleRunID);
             }
         }
     }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
@@ -126,8 +126,8 @@ const RightHandSidebar = () => {
         return null;
     }
 
-    const clearCurrentRun = () => {
-        setCurrentRun(undefined);
+    const clearCurrentRunId = () => {
+        setCurrentRunId(undefined);
     };
 
     // No runs (ever) in this channel
@@ -136,11 +136,11 @@ const RightHandSidebar = () => {
     }
 
     // If we have a run selected and it's in the current channel show that
-    if (currentRun && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRun)) {
+    if (currentRunId && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId)) {
         return (
             <RHSRunDetails
-                runID={currentRun}
-                onBackClick={clearCurrentRun}
+                runID={currentRunId}
+                onBackClick={clearCurrentRunId}
             />
         );
     }
@@ -154,7 +154,7 @@ const RightHandSidebar = () => {
         <RHSRunList
             runs={runsList}
             onSelectRun={(runID: string) => {
-                setCurrentRun(runID);
+                setCurrentRunId(runID);
             }}
             options={listOptions}
             setOptions={setListOptions}
