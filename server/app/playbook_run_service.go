@@ -2988,11 +2988,12 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	// Ensure new participants are team members
 	for _, userID := range userIDs {
-		if _, err := s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID); err != nil {
+		member, err := s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
+		if err != nil || member.DeleteAt != 0 {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
-		} else {
-			usersToInvite = append(usersToInvite, userID)
+			continue
 		}
+		usersToInvite = append(usersToInvite, userID)
 	}
 
 	if err := s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
