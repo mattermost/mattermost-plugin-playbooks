@@ -116,17 +116,17 @@ const RHSRunList = (props: Props) => {
                         icon={<SortAscendingIcon/>}
                     >
                         <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'create_at'}))}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'create_at', direction: 'DESC'}))}
                         >
                             {formatMessage({defaultMessage: 'Recently created'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at'}))}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at', direction: 'DESC'}))}
                         >
                             {formatMessage({defaultMessage: 'Last status update'})}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name'}))}
+                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name', direction: 'ASC'}))}
                         >
                             {formatMessage({defaultMessage: 'Alphabetically'})}
                         </DropdownMenuItem>
