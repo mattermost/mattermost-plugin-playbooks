@@ -2595,7 +2595,10 @@ type RunWSOption func(options *RunWSOptions)
 
 func withAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
 	return func(options *RunWSOptions) {
-		options.AdditionalUserIDs = additionalUserIDs
+		if options.AdditionalUserIDs == nil {
+			options.AdditionalUserIDs = make([]string, 0)
+		}
+		options.AdditionalUserIDs = append(options.AdditionalUserIDs, additionalUserIDs...)
 	}
 }
 
@@ -3011,9 +3014,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	// ws send run
 	if len(usersToInvite) > 0 {
-		usersToNotify := usersToInvite
-		usersToNotify = append(usersToNotify, requesterUserID)
-		s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToNotify))
+		s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToInvite), withAdditionalUserIDs([]string{requesterUserID}))
 	}
 
 	return nil
