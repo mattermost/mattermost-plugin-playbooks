@@ -379,48 +379,23 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	usersFailedToInvite, err := s.AddParticipants(playbookRun, invitedUserIDs, s.configService.GetConfiguration().BotUserID, false)
+	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, s.configService.GetConfiguration().BotUserID, false)
 	if err != nil {
 		logrus.WithError(err).WithFields(map[string]any{
-			"playbookRunId":       playbookRun.ID,
-			"invitedUserIDs":      invitedUserIDs,
-			"usersFailedToInvite": usersFailedToInvite,
-		}).Error("failed to add invited users on playbook run creation")
+			"playbookRunId":  playbookRun.ID,
+			"invitedUserIDs": invitedUserIDs,
+		}).Warning("failed to add invited users on playbook run creation")
 	}
 
 	if len(invitedUserIDs) > 0 {
 		s.genericTelemetry.Track(
 			telemetryRunParticipate,
 			map[string]any{
-				"count":          len(invitedUserIDs) - len(usersFailedToInvite),
+				"count":          len(invitedUserIDs),
 				"trigger":        "invite_on_create",
 				"playbookrun_id": playbookRun.ID,
 			},
 		)
-	}
-
-	if len(usersFailedToInvite) != 0 {
-		usernames := make([]string, 0, len(usersFailedToInvite))
-		numDeletedUsers := 0
-		for _, userID := range usersFailedToInvite {
-			user, userErr := s.pluginAPI.User.Get(userID)
-			if userErr != nil {
-				// User does not exist anymore
-				numDeletedUsers++
-				continue
-			}
-
-			usernames = append(usernames, "@"+user.Username)
-		}
-
-		deletedUsersMsg := ""
-		if numDeletedUsers > 0 {
-			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
-		}
-
-		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
-			return nil, errors.Wrapf(err, "failed to post to channel")
-		}
 	}
 
 	var reporter *model.User
@@ -511,6 +486,35 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	return playbookRun, nil
+}
+
+func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []string, channel *model.Channel) error {
+	if len(usersFailedToInvite) == 0 {
+		return nil
+	}
+
+	usernames := make([]string, 0, len(usersFailedToInvite))
+	numDeletedUsers := 0
+	for _, userID := range usersFailedToInvite {
+		user, userErr := s.pluginAPI.User.Get(userID)
+		if userErr != nil {
+			// User does not exist anymore
+			numDeletedUsers++
+			continue
+		}
+
+		usernames = append(usernames, "@"+user.Username)
+	}
+
+	deletedUsersMsg := ""
+	if numDeletedUsers > 0 {
+		deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+	}
+
+	if _, err := s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
+		return errors.Wrapf(err, "failed to post to channel")
+	}
+	return nil
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
@@ -1359,7 +1363,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	_, err = s.AddParticipants(playbookRunToModify, []string{ownerID}, userID, false)
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -1537,7 +1541,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			}
 		}
 		if !isParticipant {
-			_, err := s.AddParticipants(playbookRunToModify, []string{assigneeID}, userID, false)
+			err := s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false)
 			if err != nil {
 				return errors.Wrapf(err, "failed to add assignee to run")
 			}
@@ -2360,7 +2364,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	_, err := s.AddParticipants(playbookRun, participants, playbookRun.ReporterUserID, false)
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -2969,12 +2973,17 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userIDs []string, requesterUserID string, forceAddToChannel bool) ([]string, error) {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
 	usersFailedToInvite := make([]string, 0)
 	usersToInvite := make([]string, 0)
 
 	if len(userIDs) == 0 {
-		return usersFailedToInvite, nil
+		return nil
+	}
+
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get run %s", playbookRunID)
 	}
 
 	// Ensure new participants are team members
@@ -2987,9 +2996,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 	}
 
 	if err := s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
-		usersFailedToInvite = userIDs
-		usersToInvite = make([]string, 0)
-		return usersFailedToInvite, errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", usersToInvite, playbookRun.ID)
+		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", usersToInvite, playbookRun.ID)
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -2997,9 +3004,11 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 		logrus.WithError(err).Errorf("failed to get channel, channelID '%s'", playbookRun.ChannelID)
 	}
 
+	s.failedInvitedUserActions(usersFailedToInvite, channel)
+
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
-		return usersFailedToInvite, errors.Wrap(err, "failed to get requester user")
+		return errors.Wrap(err, "failed to get requester user")
 	}
 
 	users := make([]*model.User, 0)
@@ -3008,16 +3017,23 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return usersFailedToInvite, errors.Wrapf(err, "failed to get user %s", userID)
+				return errors.Wrapf(err, "failed to get user %s", userID)
 			}
 		}
 		users = append(users, user)
+
+		// Configured actions
 		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
+
+		// Participate implies following the run
+		if err := s.Follow(playbookRunID, userID); err != nil {
+			return errors.Wrap(err, "failed to make participant to unfollow run")
+		}
 	}
 
 	err = s.changeParticipantsTimeline(playbookRun.ID, requesterUser, users, "joined")
 	if err != nil {
-		return usersFailedToInvite, err
+		return err
 	}
 
 	// ws send run
@@ -3027,7 +3043,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRun *PlaybookRun, userI
 		s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToNotify))
 	}
 
-	return usersFailedToInvite, nil
+	return nil
 }
 
 // changeParticipantsTimeline handles timeline event creation for run participation change triggers:
