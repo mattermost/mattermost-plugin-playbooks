@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -24,7 +25,8 @@ func (el *ErrorLoggerWrapper) Println(v ...interface{}) {
 func NewMetricsServer(address string, metricsService *Metrics) *Service {
 	return &Service{
 		&http.Server{
-			Addr: address,
+			ReadTimeout: 30 * time.Second,
+			Addr:        address,
 			Handler: promhttp.HandlerFor(metricsService.registry, promhttp.HandlerOpts{
 				ErrorLog: &ErrorLoggerWrapper{},
 			}),
