@@ -95,6 +95,13 @@ const defaultListOptions : RunListOptions = {
     filter: FilterType.InProgress,
 };
 
+// RightHandSidebar the sidebar for integration of playbooks into channels
+//
+// Rules for automatic display:
+// No Runs Ever -> RHS Home
+// Only Finished Runs -> Runs list blank state
+// Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
+// Multiple active runs -> Runs list
 const RightHandSidebar = () => {
     useSetRHSState();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
