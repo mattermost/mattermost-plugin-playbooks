@@ -488,9 +488,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	return playbookRun, nil
 }
 
-func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []string, channel *model.Channel) error {
+func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []string, channel *model.Channel) {
 	if len(usersFailedToInvite) == 0 {
-		return nil
+		return
 	}
 
 	usernames := make([]string, 0, len(usersFailedToInvite))
@@ -512,9 +512,8 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 	}
 
 	if _, err := s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
-		return errors.Wrapf(err, "failed to post to channel")
+		logrus.WithError(err).Error("failedInvitedUserActions: failed to post to channel")
 	}
-	return nil
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
