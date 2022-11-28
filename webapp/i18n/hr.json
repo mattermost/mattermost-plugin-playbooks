@@ -762,5 +762,10 @@
     "Gg/nch": "NE SUDJELUJE",
     "BJNrYQ": "Kao sudionik, moći ćeš aktualizirati sažetak rada, označiti zadatke, objaviti aktualiziranja stanja i urediti retrospektivu.",
     "36NwLv": "Upravljaj popisom sudionika izvođenja",
-    "2BCWLD": "Konfiguriraj kanal"
+    "2BCWLD": "Konfiguriraj kanal",
+    "ORJ0Hb": "{outstanding, plural, =1 {Postoji # neobavljen zadatak} few {Postoje # neobavljena zadatka} other {Postoji # neobavljenih zadataka}}. Stvarno želiš završiti izvođenje za sve sudionike?",
+    "a2r7Vb": "Privatni kanal",
+    "VA1Q/S": "Javni kanal",
+    "AG7PKJ": "Preimenuj izvođenje",
+    "0boT49": "Stvarno želiš završiti izvođenje za sve sudionike?"
 }
