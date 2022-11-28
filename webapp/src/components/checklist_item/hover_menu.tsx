@@ -56,7 +56,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            {props.playbookRunId !== undefined &&
+            {props.playbookRunId !== undefined && !props.isSkipped &&
                 <AssignTo
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
@@ -67,14 +67,16 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onOpenChange={props.onItemOpenChange}
                 />
             }
-            <DueDateHoverMenuButton
-                date={props.due_date}
-                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
-                onSelectedChange={props.onDueDateChange}
-                placement={'bottom-end'}
-                onOpenChange={props.onItemOpenChange}
-                editable={props.isEditing}
-            />
+            {!props.isSkipped &&
+                <DueDateHoverMenuButton
+                    date={props.due_date}
+                    mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
+                    onSelectedChange={props.onDueDateChange}
+                    placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
+                    editable={props.isEditing}
+                />
+            }
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
                 title={formatMessage({defaultMessage: 'Edit'})}

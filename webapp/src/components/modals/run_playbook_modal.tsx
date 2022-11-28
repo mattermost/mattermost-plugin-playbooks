@@ -17,7 +17,7 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {useLinkRunToExistingChannelEnabled, usePlaybook} from 'src/hooks';
 import {BaseInput} from 'src/components/assets/inputs';
-import GenericModal, {InlineLabel, Description} from 'src/components/widgets/generic_modal';
+import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {AutomationTitle} from '../backstage/playbook_edit/automation/styles';
@@ -87,8 +87,12 @@ const RunPlaybookModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
+    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     const onSubmit = () => {
+        if (!isFormValid) {
+            return;
+        }
         createPlaybookRun(
             playbookId,
             user.id,
@@ -185,8 +189,6 @@ const RunPlaybookModal = ({
         </Container>
     );
 
-    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
-
     return (
         <StyledGenericModal
             modalHeaderText={formatMessage({defaultMessage: 'Run Playbook'})}
@@ -240,14 +242,6 @@ const RunPlaybookModal = ({
                         }
                     }}
                 />
-                <Description
-                    css={`
-                        font-size: 12px;
-                        color: rgba(var(--center-channel-color-rgb), 0.56);
-                    `}
-                >
-                    {createNewChannel && formatMessage({defaultMessage: 'A channel will be created with this name'})}
-                </Description>
                 {linkRunToExistingChannelEnabled && channelConfigSection}
             </Body>
         </StyledGenericModal>
@@ -345,6 +339,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
+    margin-top: 12px;
 `;
 
 const StyledRadioInput = styled(RadioInput)`

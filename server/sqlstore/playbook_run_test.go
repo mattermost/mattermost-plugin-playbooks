@@ -777,13 +777,12 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string][]string{
-				channel01.Name: inc01TaskTitles,
-				channel02.Name: inc02TaskTitles,
+				inc01.Name: inc01TaskTitles,
+				inc02.Name: inc02TaskTitles,
 			}
-
 			for _, run := range runs {
 				for _, task := range run.Tasks {
-					require.Contains(t, expected[run.ChannelName], task.Title)
+					require.Contains(t, expected[run.Name], task.Title)
 				}
 			}
 		})
@@ -798,16 +797,16 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
-				channel01.Name: 1,
-				channel02.Name: 1,
-				channel03.Name: 1,
-				channel06.Name: 1,
+				inc01.Name: 1,
+				inc02.Name: 1,
+				inc03.Name: 1,
+				inc06.Name: 1,
 			}
 
 			actual := make(map[string]int)
 
 			for _, run := range runs {
-				actual[run.ChannelName]++
+				actual[run.Name]++
 			}
 
 			require.Equal(t, expected, actual)
@@ -823,14 +822,14 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
-				channel01.Name: 1,
-				channel02.Name: 1,
+				inc01.Name: 1,
+				inc02.Name: 1,
 			}
 
 			actual := make(map[string]int)
 
 			for _, run := range runs {
-				actual[run.ChannelName]++
+				actual[run.Name]++
 			}
 
 			require.Equal(t, expected, actual)

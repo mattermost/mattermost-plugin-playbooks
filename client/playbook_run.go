@@ -15,6 +15,7 @@ type PlaybookRun struct {
 	ID                                      string          `json:"id"`
 	Name                                    string          `json:"name"`
 	Summary                                 string          `json:"summary"`
+	SummaryModifiedAt                       int64           `json:"summary_modified_at"`
 	OwnerUserID                             string          `json:"owner_user_id"`
 	ReporterUserID                          string          `json:"reporter_user_id"`
 	TeamID                                  string          `json:"team_id"`

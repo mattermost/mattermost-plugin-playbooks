@@ -512,10 +512,8 @@ type DialogStateAddToTimeline struct {
 
 // RunLink represents the info needed to display and link to a run
 type RunLink struct {
-	PlaybookRunID      string
-	TeamName           string
-	ChannelName        string
-	ChannelDisplayName string
+	PlaybookRunID string
+	Name          string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
@@ -725,9 +723,6 @@ type PlaybookRunService interface {
 
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
-
-	// UpdateDescription updates the description of the specified playbook run.
-	UpdateDescription(playbookRunID, description string) error
 
 	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
