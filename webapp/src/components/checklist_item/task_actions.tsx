@@ -3,6 +3,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
+import {haveAtleastOneEnabledAction} from 'src/components/checklist_item/task_actions_modal'
 import {TaskAction as TaskActionType} from 'src/types/playbook';
 import {openTaskActionsModal} from 'src/actions';
 
@@ -16,16 +17,18 @@ const TaskActions = (props: TaskActionsProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const lenTasks = props.taskActions ? props.taskActions.length : 0;
+    const enabledAction = haveAtleastOneEnabledAction(props.taskActions)
+
     const placeholder = (
         <FormattedMessage
             defaultMessage='{actions, plural, =0 {Task Actions} one {# action} other {# actions}}'
-            values={{actions: lenTasks}}
+            values={{actions: enabledAction ? lenTasks : 0}}
         />
     );
 
     return (
         <TaskActionsContainer
-            isPlaceholder={lenTasks < 1}
+            isPlaceholder={!(lenTasks > 0 && enabledAction)}
             onClick={() => {
                 dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions, props.playbookRunId));
             }}

@@ -30,6 +30,9 @@ export const makeTaskActionsModalDefinition = (
     dialogProps: {taskActions, onTaskActionsChange, playbookRunId},
 });
 
+export const keywordsTriggerEmptyPayload = {keywords: [] as string[], user_ids: [] as string[]};
+export const markAsDoneEmptyPayload = {enabled: false};
+
 type Props = {
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void,
     taskActions?: TaskActionType[] | null,
@@ -40,9 +43,6 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
     const {formatMessage} = useIntl();
     const emptyTask = {} as TaskActionType;
     const taskAction = (taskActions && (taskActions.length > 0)) ? taskActions[0] : emptyTask;
-
-    const keywordsTriggerEmptyPayload = {keywords: [] as string[], user_ids: [] as string[]};
-    const markAsDoneEmptyPayload = {enabled: false};
 
     // we only have one kind of trigger
     const triggerType = taskAction.trigger?.type ? taskAction.trigger.type : KeywordsByUsersTriggerType;
@@ -217,3 +217,18 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     }),
 };
 
+export const haveAtleastOneEnabledAction = (taskActions: TaskActionType[] | null | undefined) => {
+    if (taskActions) {
+        for (var i = 0; i < taskActions.length; i++) {
+            if (taskActions[i].actions) {
+                for (var k = 0; k < taskActions[i].actions.length; k++) {
+                    const payload = taskActions[i].actions[k].payload ? JSON.parse(taskActions[i].actions[k].payload) : markAsDoneEmptyPayload;
+                        if (payload.enabled) {
+                            return true
+                        }
+                }
+            }
+        }
+    }
+    return false
+}
