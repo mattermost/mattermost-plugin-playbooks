@@ -1367,13 +1367,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
-	err = s.Follow(playbookRunID, ownerID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make owner follow run")
-	}
 
 	playbookRunToModify.OwnerUserID = ownerID
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -2368,15 +2363,6 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
-	err = s.Follow(playbookRun.ID, playbookRun.OwnerUserID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make owner follow run")
-	}
-	err = s.Follow(playbookRun.ID, playbookRun.ReporterUserID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make reporter follow run")
-	}
-
 	return nil
 }
 
