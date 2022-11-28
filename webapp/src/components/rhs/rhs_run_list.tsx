@@ -58,7 +58,6 @@ interface Props {
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
     numInProgress: number
     numFinished: number
-    filterMenuOpened: () => void
 }
 
 const RHSRunList = (props: Props) => {
@@ -80,11 +79,6 @@ const RHSRunList = (props: Props) => {
             <Container>
                 <Header>
                     <DotMenu
-                        onOpenChange={(open: boolean) => {
-                            if (open) {
-                                props.filterMenuOpened();
-                            }
-                        }}
                         dotMenuButton={TitleButton}
                         placement='bottom-start'
                         icon={

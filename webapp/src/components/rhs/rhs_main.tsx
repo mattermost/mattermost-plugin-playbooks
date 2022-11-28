@@ -61,7 +61,6 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     };
 
     const error = inProgressResult.error || finishedResult.error;
-    const fetchFinished = () => (true);
 
     return {
         runsInProgress,
@@ -72,7 +71,6 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
         getMoreFinished,
         hasMoreInProgress,
         hasMoreFinished,
-        fetchFinished,
         error,
     };
 };
@@ -162,7 +160,6 @@ const RightHandSidebar = () => {
             setOptions={setListOptions}
             getMore={getMoreRuns}
             hasMore={hasMore}
-            filterMenuOpened={fetchedRuns.fetchFinished}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
         />
