@@ -1551,22 +1551,9 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
-		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get channel")
-		}
-
-		var team *model.Team
-		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get team")
-		}
-
-		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
-			channel.DisplayName, team.Name, channel.Name, playbookRunID)
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
+			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
 		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in SetAssignee")
