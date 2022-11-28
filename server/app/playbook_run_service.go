@@ -227,10 +227,8 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
-
-	// TODO: forced until start-a-run modal can overwrite it
-	if pb != nil && pb.ChannelMode == PlaybookRunLinkExistingChannel {
-		playbookRun.ChannelID = pb.ChannelID
+	if pb != nil && pb.ChannelMode == PlaybookRunLinkExistingChannel && pb.ChannelID == "" {
+		return nil, errors.New("channel id not specified to link the run")
 	}
 
 	if playbookRun.DefaultOwnerID != "" {

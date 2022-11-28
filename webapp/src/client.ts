@@ -88,13 +88,23 @@ export async function fetchPlaybookRunStatusUpdates(id: string) {
     return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
-export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+export async function createPlaybookRun(
+    playbook_id: string,
+    owner_user_id: string,
+    team_id: string,
+    name: string,
+    description: string,
+    channel_id?: string,
+    create_public_run?: boolean
+) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
         team_id,
         name,
         description,
         playbook_id,
+        channel_id,
+        create_public_run,
     }));
     return run as PlaybookRun;
 }

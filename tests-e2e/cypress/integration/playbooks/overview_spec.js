@@ -15,11 +15,16 @@ describe('playbooks > overview', () => {
     let testPublicPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
+    let testSysadmin;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadmin = sysadmin;
+            });
 
             // Create another user in the same team
             cy.apiCreateUser().then(({user: user2}) => {
@@ -333,6 +338,115 @@ describe('playbooks > overview', () => {
                 // * Verify update fails
                 cy.apiUpdatePlaybook(playbook, 400);
             });
+        });
+    });
+
+    describe('start a run', () => {
+        let featureFlagPrevValue;
+        let testPlaybook;
+
+        before(() => {
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
+                    featureFlagPrevValue = prevValue;
+                });
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        after(() => {
+            if (!featureFlagPrevValue) {
+                cy.apiLogin(testSysadmin).then(() => {
+                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+                });
+            }
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        it('start a run, create a new channel', () => {
+            // # Visit playbook page
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click({force: true});
+
+            // * Verify that channel configuration matches playbook config
+            cy.findByTestId('link-existing-channel-radio').should('not.be.checked');
+            cy.get('#link-existing-channel-selector').should('not.exist');
+            cy.findByTestId('create-channel-radio').should('be.checked');
+            cy.findByTestId('create-private-channel-radio').should('be.checked');
+
+            // # Enter the run name
+            const runName = 'run' + Date.now();
+            cy.findByTestId('run-name-input').clear().type(runName);
+
+            // # Click start run button
+            cy.get('button[data-testid=modal-confirm-button]').click();
+
+            // * Verify the run is added to lhs
+            cy.findByTestId('Runs').findByTestId(runName).should('exist');
+
+            // * Verify the channel is created
+            cy.findByTestId('runinfo-channel-link').contains(runName);
+        });
+
+        it('start a run in existing channel', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Select the action section.
+            cy.get('#actions #link-existing-channel').within(() => {
+                // # Enable link to existing channel
+                cy.get('input[type=radio]').click();
+
+                // * Verify that the toggle is checked and input is enabled
+                cy.get('input[type=radio]').should('be.checked');
+                cy.get('input[type=text]').should('not.be.disabled');
+
+                // # Select channel
+                cy.findByText('Select a channel').click().type('Town{enter}');
+            });
+
+            // # Wait updated playbook to be fetched
+            cy.gqlInterceptQuery('Playbook');
+            cy.wait('@gqlPlaybook');
+
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click({force: true});
+
+            // # Enter the run name
+            const runName = 'run' + Date.now();
+            cy.findByTestId('run-name-input').clear().type(runName);
+
+            // * Verify that channel configuration matches playbook config
+            cy.findByTestId('link-existing-channel-radio').should('be.checked');
+            cy.get('#link-existing-channel-selector').get('input[type=text]').should('be.enabled');
+            cy.findByTestId('create-channel-radio').should('not.be.checked');
+            cy.findByTestId('create-private-channel-radio').should('not.exist');
+
+            // # Click start run button
+            cy.get('button[data-testid=modal-confirm-button]').click();
+
+            // * Verify the run is added to lhs
+            cy.findByTestId('Runs').findByTestId(runName).should('exist');
+
+            // * Verify the channel is created
+            cy.findByTestId('runinfo-channel-link').contains('Town');
         });
     });
 });

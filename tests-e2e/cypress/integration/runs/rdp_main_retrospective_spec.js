@@ -303,6 +303,7 @@ describe('runs > run details page', () => {
 
                     // # Click outside
                     cy.findByText('Retrospective').click({force: true});
+                    cy.wait(2000);
 
                     // * Validate if values persist
                     cy.get('input[type=text]').eq(0).should('have.value', '12:11:10');

@@ -165,7 +165,7 @@ const Container = styled.div`
     gap: 16px;
 `;
 
-const VerticalSplit = styled.div`
+export const VerticalSplit = styled.div`
     display: flex;
 `;
 
@@ -174,7 +174,7 @@ const HorizontalSplit = styled.div`
     text-align: left;
 `;
 
-const ButtonLabel = styled.label<{disabled: boolean}>`
+export const ButtonLabel = styled.label<{disabled: boolean}>`
     padding: 10px 16px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     background: ${({disabled}) => (disabled ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
@@ -204,7 +204,7 @@ const ChannelActionButton = styled(SecondaryButtonLarger)`
     height: 40px;
 `;
 
-const StyledChannelSelector = styled(ChannelSelector)`
+export const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
     .playbooks-rselect__control {
         padding: 4px 16px 4px 3.2rem;
