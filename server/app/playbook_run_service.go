@@ -2593,9 +2593,6 @@ type RunWSOption func(options *RunWSOptions)
 
 func withAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
 	return func(options *RunWSOptions) {
-		if options.AdditionalUserIDs == nil {
-			options.AdditionalUserIDs = make([]string, 0)
-		}
 		options.AdditionalUserIDs = append(options.AdditionalUserIDs, additionalUserIDs...)
 	}
 }
