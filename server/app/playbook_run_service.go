@@ -3000,7 +3000,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 		// Participate implies following the run
 		if err := s.Follow(playbookRunID, userID); err != nil {
-			return errors.Wrap(err, "failed to make participant to unfollow run")
+			return errors.Wrap(err, "failed to make participant to follow run")
 		}
 	}
 
