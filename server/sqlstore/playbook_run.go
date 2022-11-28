@@ -1074,14 +1074,10 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 		ChecklistsJSON json.RawMessage
 	}
 
-	query := s.store.builder.Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
-		"i.ChecklistsJSON AS ChecklistsJSON").
+	query := s.store.builder.Select("i.ID AS PlaybookRunID", "i.Name", "i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelID = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
@@ -1137,14 +1133,11 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 		Suffix(")")
 
 	query := s.store.builder.
-		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		Select("i.ID AS PlaybookRunID", "i.Name").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(membershipClause).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	var ret []app.RunLink
 	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
@@ -1168,17 +1161,14 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Suffix(")")
 
 	query := s.store.builder.
-		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		Select("i.ID AS PlaybookRunID", "i.Name").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
 		Where(sq.Eq{"i.CommanderUserId": userID}).
 		Where(sq.Eq{"i.StatusUpdateEnabled": true}).
 		Where(membershipClause).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))

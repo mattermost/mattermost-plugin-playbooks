@@ -302,3 +302,26 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
+
+Cypress.Commands.add('interceptTelemetry', () => {
+    cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+});
+
+Cypress.Commands.add('expectTelemetryToBe', (items) => {
+    // # assert telemetry data
+    cy.get('@telemetry.all').then((xhrs) => {
+        expect(xhrs.length).to.eq(items.length);
+        items.forEach((item, index) => {
+            // always valida name and type
+            expect(xhrs[index].request.body.name).to.eq(item.name);
+            expect(xhrs[index].request.body.type).to.eq(item.type);
+
+            // just validate properties if they are passed (and just the ones passed)
+            if (item.properties) {
+                for (const [key, value] of Object.entries(item.properties)) {
+                    expect(xhrs[index].request.body.properties[key]).to.eq(value);
+                }
+            }
+        });
+    });
+});
