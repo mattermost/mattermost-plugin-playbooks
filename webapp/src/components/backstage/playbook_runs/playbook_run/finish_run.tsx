@@ -22,10 +22,10 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
 
     return () => {
         const outstanding = outstandingTasks(playbookRun.checklists);
-        let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
+        let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run for all participants?'});
         if (outstanding > 0) {
             confirmationMessage = formatMessage(
-                {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?'},
+                {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run for all participants?'},
                 {outstanding}
             );
         }

@@ -179,7 +179,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
-		Select("i.ID", "c.DisplayName AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
@@ -189,8 +189,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
 		Column(participantsCol).
-		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+		From("IR_Incident AS i")
 
 	statusPostsSelect := sqlStore.builder.
 		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt").
@@ -261,7 +260,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
 		Where(teamLimitExpr)
 
@@ -325,13 +323,13 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "c.DisplayName"
+		column := "i.Name"
 		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
-			column = "LOWER(c.DisplayName)"
+			column = "LOWER(i.Name)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
 
@@ -420,6 +418,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
+		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
 	}, nil
@@ -525,7 +524,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                                    "",
+			"Name":                                    rawPlaybookRun.Name,
 			"Description":                             rawPlaybookRun.Summary,
 			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
@@ -1076,14 +1075,10 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 		ChecklistsJSON json.RawMessage
 	}
 
-	query := s.store.builder.Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
-		"i.ChecklistsJSON AS ChecklistsJSON").
+	query := s.store.builder.Select("i.ID AS PlaybookRunID", "i.Name", "i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelID = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
@@ -1139,14 +1134,11 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 		Suffix(")")
 
 	query := s.store.builder.
-		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		Select("i.ID AS PlaybookRunID", "i.Name").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(membershipClause).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	var ret []app.RunLink
 	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
@@ -1170,17 +1162,14 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Suffix(")")
 
 	query := s.store.builder.
-		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		Select("i.ID AS PlaybookRunID", "i.Name").
 		From("IR_Incident AS i").
-		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
 		Where(sq.Eq{"i.CommanderUserId": userID}).
 		Where(sq.Eq{"i.StatusUpdateEnabled": true}).
 		Where(membershipClause).
-		OrderBy("ChannelDisplayName")
+		OrderBy("i.Name")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
@@ -1431,6 +1420,10 @@ func (s *playbookRunStore) RemoveParticipants(playbookRunID string, userIDs []st
 }
 
 func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []string, isParticipating bool) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	query := sq.
 		Insert("IR_Run_Participants").
 		Columns("IncidentID", "UserID", "IsParticipant")

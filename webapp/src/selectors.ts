@@ -27,7 +27,6 @@ import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {RHSState} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
@@ -178,8 +177,6 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
     return myPlaybookRunsByTeam(state)[getCurrentTeamId(state)] || {};
 };
 
-export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
-
 export const lastUpdatedByPlaybookRunId = createSelector(
     'lastUpdatedByPlaybookRunId',
     getCurrentTeamId,
@@ -288,6 +285,7 @@ export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) 
 };
 
 export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+export const selectLinkRunToExistingChannelEnabled = (state: GlobalState) => Boolean(globalSettings(state)?.link_run_to_existing_channel_enabled);
 
 // Select tasks assigned to the current user, or unassigned but belonging to a run owned by the
 // current user.

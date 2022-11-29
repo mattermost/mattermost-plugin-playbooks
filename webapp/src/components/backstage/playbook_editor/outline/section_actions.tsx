@@ -40,6 +40,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
+            channelMode: update.channel_mode,
+            channelId: update.channel_id,
         });
     }, [updatePlaybook]));
 
@@ -119,7 +121,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
-                <Setting id={'create-channel'}>
+                <Setting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}

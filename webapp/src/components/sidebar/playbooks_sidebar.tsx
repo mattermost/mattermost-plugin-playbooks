@@ -34,7 +34,11 @@ const useLHSData = (teamID: string) => {
         return {groups: [], ready: false};
     }
 
-    const playbookItems = data.playbooks.map((pb) => {
+    // Extract from pagination
+    const runs = data.runs.edges.map((edge) => edge.node);
+    const playbooks = data.playbooks;
+
+    const playbookItems = playbooks.map((pb) => {
         const icon = pb.public ? 'icon-book-outline' : 'icon-book-lock-outline';
         const link = `/playbooks/playbooks/${pb.id}`;
 
@@ -59,10 +63,10 @@ const useLHSData = (teamID: string) => {
 
     const hasViewerAccessToPlaybook = (playbookId: string) => {
         // if the run's playbook is visible to the user, then they have permanent access to the run
-        return data.playbooks.find((pb) => pb.id === playbookId) !== undefined;
+        return playbooks.find((pb) => pb.id === playbookId) !== undefined;
     };
 
-    const runItems = data.runs.map((run) => {
+    const runItems = runs.map((run) => {
         const icon = 'icon-play-outline';
         const link = pluginUrl(`/runs/${run.id}?from=playbooks_lhs`);
 

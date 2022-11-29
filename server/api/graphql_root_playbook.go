@@ -14,6 +14,20 @@ import (
 type PlaybookRootResolver struct {
 }
 
+func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	playbook, err := c.playbookService.Get(playbookID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PlaybookResolver{playbook}, nil
+}
+
 func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	ID string
 }) (*PlaybookResolver, error) {
@@ -28,12 +42,7 @@ func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	playbook, err := c.playbookService.Get(playbookID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PlaybookResolver{playbook}, nil
+	return getGraphqlPlaybook(ctx, playbookID)
 }
 
 func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
@@ -122,6 +131,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		IsFavorite                              *bool
 		CreateChannelMemberOnNewParticipant     *bool
 		RemoveChannelMemberOnRemovedParticipant *bool
+		ChannelID                               *string
+		ChannelMode                             *string
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -229,6 +240,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RunSummaryTemplateEnabled", args.Updates.RunSummaryTemplateEnabled)
 	addToSetmap(setmap, "RunSummaryTemplate", args.Updates.RunSummaryTemplate)
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
+	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
+	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	if args.Updates.Checklists != nil {

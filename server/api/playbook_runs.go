@@ -87,7 +87,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
-	playbookRunRouterAuthorized.HandleFunc("/update-description", withContext(handler.updateDescription)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
@@ -173,6 +172,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 		},
 		userID,
+		playbookRunCreateOptions.CreatePublicRun,
 	)
 
 	if errors.Is(err, app.ErrNoPermissions) {
@@ -252,15 +252,23 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+		return
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
+			ChannelID:   playbook.GetRunChannelID(),
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
 		},
 		request.UserId,
+		nil,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -412,7 +420,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -454,6 +462,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	// Copy data from playbook if needed
 	public := true
+	if createPublicRun != nil {
+		public = *createPublicRun
+	}
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
 		pb, err := h.playbookService.Get(playbookRun.PlaybookID)
@@ -470,7 +481,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
-		public = pb.CreatePublicPlaybookRun
+		if createPublicRun == nil {
+			public = pb.CreatePublicPlaybookRun
+		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook)
@@ -1065,37 +1078,6 @@ func (h *PlaybookRunHandler) removeTimelineEvent(c *Context, w http.ResponseWrit
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *PlaybookRunHandler) updateDescription(c *Context, w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	var requestBody struct {
-		Description string `json:"description"`
-	}
-
-	if err2 := json.NewDecoder(r.Body).Decode(&requestBody); err2 != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook run description", err2)
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
-		return
-	}
-
-	if err := h.playbookRunService.UpdateDescription(playbookRunID, requestBody.Description); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to update description", err)
-		return
-	}
-
-	ReturnJSON(w, nil, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.ResponseWriter, r *http.Request) {

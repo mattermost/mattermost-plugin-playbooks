@@ -281,6 +281,101 @@ func TestRunCreation(t *testing.T) {
 	})
 }
 
+func TestCreateRunInExistingChannel(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// create playbook
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Public:      true,
+		Title:       "PB",
+		TeamID:      e.BasicTeam.Id,
+		ChannelMode: client.PlaybookRunLinkExistingChannel,
+		ChannelID:   e.BasicPublicChannel.Id,
+	})
+	assert.NoError(t, err)
+
+	t.Run("create a run", func(t *testing.T) {
+		// create a run, pass the channel id from the playbook configuration
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in existing channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   e.BasicPublicChannel.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+	})
+
+	t.Run("no access to the linked channel", func(t *testing.T) {
+		// create a run, pass the channel id from the playbook configuration
+		run, err := e.PlaybooksClient2.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in existing channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   e.BasicPublicChannel.Id,
+		})
+
+		// PlaybooksClient2 is not a channel member, so should not be able to start a run
+		assert.Error(t, err)
+		assert.Nil(t, run)
+	})
+
+	t.Run("create a run, pass a channel different from the playbook configs", func(t *testing.T) {
+		// create private channel
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+			DisplayName: "test_private",
+			Name:        "test_private",
+			Type:        model.ChannelTypePrivate,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(e.T, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(privateChannel.Id, e.RegularUser.Id)
+		require.NoError(e.T, err)
+
+		// create a run, pass the channel id different from the playbook configs
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in existing channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   privateChannel.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.Equal(t, privateChannel.Id, run.ChannelID)
+	})
+
+	t.Run("create a run using dialog requests", func(t *testing.T) {
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: e.BasicTeam.Id,
+			UserId: e.RegularUser.Id,
+			State:  "{}",
+			Submission: map[string]interface{}{
+				app.DialogFieldPlaybookIDKey: playbookID,
+				app.DialogFieldNameKey:       "run number 1",
+			},
+		}
+		dialogRequestBytes, err := json.Marshal(dialogRequest)
+		assert.NoError(t, err)
+
+		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
+
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusCreated, result.StatusCode)
+
+		url, err := result.Location()
+		assert.NoError(t, err)
+		runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+		assert.NoError(t, err)
+		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+	})
+}
+
 func TestCreateInvalidRuns(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1416,4 +1511,83 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
 	})
+}
+
+func TestGetOwners(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	ownerFromUser := func(u *model.User) client.OwnerInfo {
+		return client.OwnerInfo{
+			UserID:    u.Id,
+			Username:  u.Username,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Nickname:  u.Nickname,
+		}
+	}
+
+	_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	_, err = e.PlaybooksClient2.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser2.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	fullOwner1 := ownerFromUser(e.RegularUser)
+	fullOwner2 := ownerFromUser(e.RegularUser2)
+	partialOwner1 := fullOwner1
+	partialOwner1.FirstName = ""
+	partialOwner1.LastName = ""
+	partialOwner2 := fullOwner2
+	partialOwner2.FirstName = ""
+	partialOwner2.LastName = ""
+	for _, tc := range []struct {
+		Name         string
+		ShowFullName bool
+		Client       *client.Client
+		MustContain  []client.OwnerInfo
+	}{
+		{
+			Name:         "showfullname set to true",
+			ShowFullName: true,
+			Client:       e.PlaybooksClient,
+			MustContain:  []client.OwnerInfo{fullOwner1, fullOwner2},
+		},
+		{
+			Name:         "showfullname set to false",
+			ShowFullName: false,
+			Client:       e.PlaybooksClient,
+			MustContain:  []client.OwnerInfo{partialOwner1, partialOwner2},
+		},
+		{
+			Name:         "showfullname set to false and sysadmin",
+			ShowFullName: false,
+			Client:       e.PlaybooksAdminClient,
+			MustContain:  []client.OwnerInfo{fullOwner1, fullOwner2},
+		},
+	} {
+		t.Run(tc.Name, func(t *testing.T) {
+			cfg := e.Srv.Config()
+			cfg.PrivacySettings.ShowFullName = model.NewBool(tc.ShowFullName)
+			_, _, err = e.ServerAdminClient.UpdateConfig(cfg)
+			require.NoError(t, err)
+
+			owners, err := tc.Client.PlaybookRuns.GetOwners(context.Background())
+			require.NoError(t, err)
+			require.Len(t, owners, len(tc.MustContain))
+			for _, mc := range tc.MustContain {
+				require.Contains(t, owners, mc)
+			}
+		})
+	}
 }
