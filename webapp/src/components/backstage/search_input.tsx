@@ -47,7 +47,10 @@ export default function SearchInput(props: Props) {
                     <ClearButtonContainer>
                         <ClearButton
                             className='icon-close-circle'
-                            onClick={() => setTerm('')}
+                            onClick={() => {
+                                setTerm('');
+                                props.onSearch('');
+                            }}
                         />
                     </ClearButtonContainer>
                 </Tooltip>

@@ -16,6 +16,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     teamID: string;
+    searchTerm: string;
     onSelectPlaybook: (playbookId: string) => void;
 }
 
@@ -24,7 +25,7 @@ const PlaybooksSelector = (props: Props) => {
     const {data, error} = usePlaybooksModalQuery({
         variables: {
             teamID: props.teamID,
-            searchTerm: '',
+            searchTerm: props.searchTerm,
         },
         fetchPolicy: 'cache-and-network',
     });
@@ -80,7 +81,7 @@ const PlaybooksSelector = (props: Props) => {
                                             <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.activeRuns})}</span>
                                         </ItemSubTitle>
                                     </ItemCenter>
-                                    <ButtonWrappper>
+                                    <ButtonWrappper className='modal-list-cta'>
                                         <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
                                     </ButtonWrappper>
                                 </Item>
@@ -111,7 +112,7 @@ const Dot = styled.span`
 const Container = styled.div`
     display: flex;
     flex-direction: column;
-    height: 391px;
+    height: 350px;
 `;
 const GroupTitle = styled.div`
     font-size:  12px;
@@ -120,28 +121,25 @@ const GroupTitle = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     text-transform: uppercase;
 `;
-const Group = styled.ul`
+const Group = styled.div`
     display: flex;
     flex-direction: column;
     margin: 0 0 10px 0;
     padding: 0;
 `;
 
-const Item = styled.li`
+const Item = styled.div`
     display: flex;
     flex-direction: row;
     cursor: pointer;
     padding: 10px 0;
     border-radius: 4px;
-    :hover {
+    &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-    /* button {
-        &:hover {
-            display: inline-block;
+        .modal-list-cta {
+            display: block;
         }
-        display: none;
-    } */
+    }
 `;
 
 const ItemIcon = styled.div`
@@ -163,7 +161,7 @@ const ItemTitle = styled.div`
 `;
 const ItemSubTitle = styled.div`
     display: flex;
-    align-items: center;;
+    align-items: center;
     font-size:  12px;
     line-height: 16px;
     font-weight: 400;
@@ -171,6 +169,7 @@ const ItemSubTitle = styled.div`
 `;
 
 const ButtonWrappper = styled.div`
-    display: inline-block;
-    align-self: flex-end;
+    margin-left: auto;
+    margin-right: 10px;
+    display: none;
 `;

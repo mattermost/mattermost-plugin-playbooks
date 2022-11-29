@@ -1,8 +1,8 @@
 import React, {ComponentProps, useState, useEffect} from 'react';
 
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
@@ -17,7 +17,10 @@ import {ButtonLabel, StyledChannelSelector, VerticalSplit} from '../backstage/pl
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
-import PlaybooksSelector from '../playbooks_selector';
+import {displayPlaybookCreateModal} from 'src/actions';
+import PlaybooksSelector from 'src/components/playbooks_selector';
+import {SecondaryButton} from 'src/components/assets/buttons';
+import SearchInput from 'src/components/backstage/search_input';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -52,6 +55,7 @@ const RunPlaybookNewModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
 
     let userId = useSelector(getCurrentUserId);
     if (defaultOwnerId) {
@@ -67,6 +71,7 @@ const RunPlaybookNewModal = ({
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
     const [createPublicRun, setCreatePublicRun] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (playbook && playbook.channel_mode === 'create_new_channel') {
@@ -100,7 +105,12 @@ const RunPlaybookNewModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
+    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
+    const onCreatePlaybook = () => {
+        dispatch(displayPlaybookCreateModal({}));
+        modalProps.onHide?.();
+    }
     const onSubmit = () => {
         if (!playbook) {
             return;
@@ -200,75 +210,111 @@ const RunPlaybookNewModal = ({
         </ChannelContainer>
     );
 
-    const StepRunDetails = (
-        <Body>
-            <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
-            <BaseInput
-                data-testid={'run-name-input'}
-                autoFocus={true}
-                type={'text'}
-                value={runName}
-                onChange={(e) => setRunName(e.target.value)}
-            />
+    // Start a run tab
+    if (step === 'run-details') {
+        return (
+            <StyledGenericModal
+                cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+                showCancel={true}
+                isConfirmDisabled={!isFormValid}
+                handleConfirm={onSubmit}
+                id={ID}
+                modalHeaderText={(
+                    <ColContainer>
+                        <IconWrapper onClick={() => {
+                            setSearchTerm('');
+                            setStep('select-playbook');
+                        }}>
+                            <ArrowLeftIcon
+                                size={24}
+                                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                            />
+                        </IconWrapper>
+                        <HeaderTitle>
+                            <FormattedMessage defaultMessage='Start a run'/>
+                            <ModalSideheading>{playbook?.title}</ModalSideheading>
+                        </HeaderTitle>
+                    </ColContainer>
+                )}
+                {...modalProps}
+            >
+                <Body>
+                    <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
+                    <BaseInput
+                        data-testid={'run-name-input'}
+                        autoFocus={true}
+                        type={'text'}
+                        value={runName}
+                        onChange={(e) => setRunName(e.target.value)}
+                    />
 
-            <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
-            <BaseTextArea
-                data-testid={'run-summary-input'}
-                rows={5}
-                value={runSummary}
-                onChange={(e) => setRunSummary(e.target.value)}
-            />
-            {channelConfigSection}
-        </Body>
-    );
+                    <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
+                    <BaseTextArea
+                        data-testid={'run-summary-input'}
+                        rows={5}
+                        value={runSummary}
+                        onChange={(e) => setRunSummary(e.target.value)}
+                    />
+                    {channelConfigSection}
+                </Body>
+            </StyledGenericModal>
+        );
+    }
 
-    const StepSelectPlaybook = (
-        <Body>
-            <PlaybooksSelector
-                teamID={teamId}
-                onSelectPlaybook={(id) => {
-                    setSelectedPlaybookId(id);
-                    setStep('run-details');
-                }}
-            />
-        </Body>
-    );
-
-    const header = step === 'run-details' ? (
-        <Header>
-            <IconWrapper onClick={() => setStep('select-playbook')}>
-                <ArrowLeftIcon
-                    size={24}
-                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                />
-            </IconWrapper>
-            <HeaderTitle>
-                {formatMessage({defaultMessage: 'Start a run'})}
-                <ModalSideheading>{playbook?.title}</ModalSideheading>
-            </HeaderTitle>
-        </Header>
-    ) : formatMessage({defaultMessage: 'Select playbook'});
-
-    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
-
+    // Select a playbook tab
     return (
         <StyledGenericModal
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
-            showCancel={step === 'run-details'}
+            showCancel={false}
             isConfirmDisabled={!isFormValid}
-            handleConfirm={step === 'run-details' ? onSubmit : undefined}
             id={ID}
-            modalHeaderText={header}
+            modalHeaderText={(
+                <RowContainer>
+                    <ColContainer>
+                    <HeaderTitle>
+                        <FormattedMessage defaultMessage='Select a playbook'/>
+                    </HeaderTitle>
+                    <HeaderButtonWrapper>
+                        <CreatePlaybookButton onClick={onCreatePlaybook}>
+                            <FormattedMessage defaultMessage='Create new playbook'/>
+                        </CreatePlaybookButton>
+                    </HeaderButtonWrapper>
+                    </ColContainer>
+                    <SearchWrapper>
+                    <SearchInput
+                        testId={'search-filter'}
+                        default={''}
+                        onSearch={(term) => setSearchTerm(term)}
+                        placeholder={formatMessage({defaultMessage: 'Search playbooks'})}
+                        width={'100%'}
+                    />
+                    </SearchWrapper>
+                </RowContainer>
+            )}
             {...modalProps}
         >
-            {step === 'run-details' ? StepRunDetails : StepSelectPlaybook}
+            <Body>
+                <PlaybooksSelector
+                    teamID={teamId}
+                    searchTerm={searchTerm}
+                    onSelectPlaybook={(id) => {
+                        setSelectedPlaybookId(id);
+                        setStep('run-details');
+                    }}
+                />
+            </Body>
         </StyledGenericModal>
     );
 };
 
 const StyledGenericModal = styled(GenericModal)`
     &&& {
+        h1 {
+            width:100%;
+        }
+
         .modal-header {
             padding: 24px 31px;
             margin-bottom: 0;
@@ -287,9 +333,15 @@ const StyledGenericModal = styled(GenericModal)`
     }
 `;
 
-const Header = styled.div`
+const ColContainer = styled.div`
     display: flex;
     flex-direction: row;
+`;
+
+const RowContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 `;
 
 const HeaderTitle = styled.div`
@@ -359,6 +411,19 @@ const HorizontalSplit = styled.div`
     display: block;
     text-align: left;
     margin-left: 28px;
+`;
+
+const HeaderButtonWrapper = styled.div`
+    margin-left: auto;
+    margin-right: 30px;
+`;
+const CreatePlaybookButton = styled(SecondaryButton)`
+    font-family: 'Open Sans';
+    height: 32px;
+    padding: 0 10px;
+`;
+
+const SearchWrapper = styled.div`
 `;
 
 export default RunPlaybookNewModal;
