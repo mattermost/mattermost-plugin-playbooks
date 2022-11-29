@@ -377,55 +377,23 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	usersFailedToInvite := []string{}
-	for _, userID := range invitedUserIDs {
-		// Check if the user is a member of the team to which the playbook run belongs.
-		_, err = s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
-		if err != nil {
-			usersFailedToInvite = append(usersFailedToInvite, userID)
-			continue
-		}
-
-		err := s.AddParticipants(playbookRun.ID, []string{userID}, s.configService.GetConfiguration().BotUserID, false)
-		if err != nil {
-			usersFailedToInvite = append(usersFailedToInvite, userID)
-			continue
-		}
+	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, s.configService.GetConfiguration().BotUserID, false)
+	if err != nil {
+		logrus.WithError(err).WithFields(map[string]any{
+			"playbookRunId":  playbookRun.ID,
+			"invitedUserIDs": invitedUserIDs,
+		}).Warning("failed to add invited users on playbook run creation")
 	}
 
 	if len(invitedUserIDs) > 0 {
 		s.genericTelemetry.Track(
 			telemetryRunParticipate,
 			map[string]any{
-				"count":          len(invitedUserIDs) - len(usersFailedToInvite),
+				"count":          len(invitedUserIDs),
 				"trigger":        "invite_on_create",
 				"playbookrun_id": playbookRun.ID,
 			},
 		)
-	}
-
-	if len(usersFailedToInvite) != 0 {
-		usernames := make([]string, 0, len(usersFailedToInvite))
-		numDeletedUsers := 0
-		for _, userID := range usersFailedToInvite {
-			user, userErr := s.pluginAPI.User.Get(userID)
-			if userErr != nil {
-				// User does not exist anymore
-				numDeletedUsers++
-				continue
-			}
-
-			usernames = append(usernames, "@"+user.Username)
-		}
-
-		deletedUsersMsg := ""
-		if numDeletedUsers > 0 {
-			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
-		}
-
-		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
-			return nil, errors.Wrapf(err, "failed to post to channel")
-		}
 	}
 
 	var reporter *model.User
@@ -516,6 +484,34 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	return playbookRun, nil
+}
+
+func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []string, channel *model.Channel) {
+	if len(usersFailedToInvite) == 0 {
+		return
+	}
+
+	usernames := make([]string, 0, len(usersFailedToInvite))
+	numDeletedUsers := 0
+	for _, userID := range usersFailedToInvite {
+		user, userErr := s.pluginAPI.User.Get(userID)
+		if userErr != nil {
+			// User does not exist anymore
+			numDeletedUsers++
+			continue
+		}
+
+		usernames = append(usernames, "@"+user.Username)
+	}
+
+	deletedUsersMsg := ""
+	if numDeletedUsers > 0 {
+		deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+	}
+
+	if _, err := s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
+		logrus.WithError(err).Error("failedInvitedUserActions: failed to post to channel")
+	}
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
@@ -1368,13 +1364,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
-	err = s.Follow(playbookRunID, ownerID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make owner follow run")
-	}
 
 	playbookRunToModify.OwnerUserID = ownerID
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -1542,7 +1533,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			}
 		}
 		if !isParticipant {
-			err := s.AddParticipants(playbookRunToModify.ID, []string{assigneeID}, userID, false)
+			err := s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false)
 			if err != nil {
 				return errors.Wrapf(err, "failed to add assignee to run")
 			}
@@ -1557,22 +1548,9 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
-		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get channel")
-		}
-
-		var team *model.Team
-		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get team")
-		}
-
-		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
-			channel.DisplayName, team.Name, channel.Name, playbookRunID)
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
+			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
 		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in SetAssignee")
@@ -1619,7 +1597,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 
 	return nil
 }
@@ -1754,7 +1732,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1774,7 +1752,7 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1795,7 +1773,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
@@ -1817,7 +1795,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.RemoveChecklist(playbookRunID, userID, oldChecklist)
 
 	return nil
@@ -1857,7 +1835,7 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1881,7 +1859,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.RemoveTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1906,7 +1884,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.SkipChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1930,7 +1908,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.RestoreChecklist(playbookRunID, userID, checklist)
 
 	return nil
@@ -1953,7 +1931,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.SkipTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1975,7 +1953,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.RestoreTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -1998,7 +1976,7 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.RenameTask(playbookRunID, userID, checklistItem)
 
 	return nil
@@ -2031,7 +2009,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
 
 	return nil
@@ -2084,7 +2062,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithPlaybookRun(playbookRunToModify))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
 	s.telemetry.MoveTask(playbookRunID, userID, itemMoved)
 
 	return nil
@@ -2369,15 +2347,6 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
-	err = s.Follow(playbookRun.ID, playbookRun.OwnerUserID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make owner follow run")
-	}
-	err = s.Follow(playbookRun.ID, playbookRun.ReporterUserID)
-	if err != nil {
-		return errors.Wrap(err, "failed to make reporter follow run")
-	}
-
 	return nil
 }
 
@@ -2622,13 +2591,13 @@ type RunWSOptions struct {
 }
 type RunWSOption func(options *RunWSOptions)
 
-func WithAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
+func withAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
 	return func(options *RunWSOptions) {
-		options.AdditionalUserIDs = additionalUserIDs
+		options.AdditionalUserIDs = append(options.AdditionalUserIDs, additionalUserIDs...)
 	}
 }
 
-func WithPlaybookRun(playbookRun *PlaybookRun) RunWSOption {
+func withPlaybookRun(playbookRun *PlaybookRun) RunWSOption {
 	return func(options *RunWSOptions) {
 		options.PlaybookRun = playbookRun
 	}
@@ -2951,7 +2920,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 
 	// ws send run
 	userIDs = append(userIDs, requesterUserID)
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs(userIDs))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withAdditionalUserIDs(userIDs))
 
 	return nil
 }
@@ -2975,17 +2944,30 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 }
 
 func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
+	usersFailedToInvite := make([]string, 0)
+	usersToInvite := make([]string, 0)
+
 	if len(userIDs) == 0 {
 		return nil
 	}
 
-	if err := s.store.AddParticipants(playbookRunID, userIDs); err != nil {
-		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", userIDs, playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get run %s", playbookRunID)
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+	// Ensure new participants are team members
+	for _, userID := range userIDs {
+		member, err := s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
+		if err != nil || member.DeleteAt != 0 {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+		usersToInvite = append(usersToInvite, userID)
+	}
+
+	if err := s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
+		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", usersToInvite, playbookRun.ID)
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -2993,32 +2975,42 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		logrus.WithError(err).Errorf("failed to get channel, channelID '%s'", playbookRun.ChannelID)
 	}
 
+	s.failedInvitedUserActions(usersFailedToInvite, channel)
+
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
 	users := make([]*model.User, 0)
-	for _, userID := range userIDs {
+	for _, userID := range usersToInvite {
 		user := requesterUser
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return errors.Wrap(err, "failed to get user")
+				return errors.Wrapf(err, "failed to get user %s", userID)
 			}
 		}
 		users = append(users, user)
+
+		// Configured actions
 		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
+
+		// Participate implies following the run
+		if err := s.Follow(playbookRunID, userID); err != nil {
+			return errors.Wrap(err, "failed to make participant to follow run")
+		}
 	}
 
-	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "joined")
+	err = s.changeParticipantsTimeline(playbookRun.ID, requesterUser, users, "joined")
 	if err != nil {
 		return err
 	}
 
 	// ws send run
-	userIDs = append(userIDs, requesterUserID)
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs(userIDs))
+	if len(usersToInvite) > 0 {
+		s.sendPlaybookRunUpdatedWS(playbookRun.ID, withAdditionalUserIDs(usersToInvite), withAdditionalUserIDs([]string{requesterUserID}))
+	}
 
 	return nil
 }
@@ -3032,6 +3024,10 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 		Users     []string `json:"users,omitempty"`
 	}
 	var details Details
+	if len(users) == 0 {
+		return nil
+	}
+
 	now := model.GetMillis()
 
 	event := &TimelineEvent{
@@ -3125,7 +3121,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Follow(playbookRun, userID)
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs([]string{userID}))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withAdditionalUserIDs([]string{userID}))
 
 	return nil
 }
@@ -3142,7 +3138,7 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 	s.telemetry.Unfollow(playbookRun, userID)
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, WithAdditionalUserIDs([]string{userID}))
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withAdditionalUserIDs([]string{userID}))
 
 	return nil
 }
