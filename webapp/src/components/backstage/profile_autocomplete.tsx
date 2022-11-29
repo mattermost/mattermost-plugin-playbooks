@@ -75,7 +75,7 @@ interface Props {
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
     placeholder?: string;
     defaultValue?: UserProfile[]
-    disableAutoFocus?: boolean;
+    autoFocus?: boolean;
 }
 
 const ProfileAutocomplete = (props: Props) => {
@@ -145,7 +145,7 @@ const ProfileAutocomplete = (props: Props) => {
     return (
         <StyledAsyncSelect
             id={'profile-autocomplete'}
-            autoFocus={!props.disableAutoFocus && true}
+            autoFocus={props.autoFocus ?? true}
             isDisabled={props.isDisabled}
             isMulti={props.isMultiMode}
             controlShouldRenderValue={props.isMultiMode}

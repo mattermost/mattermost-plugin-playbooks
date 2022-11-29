@@ -70,7 +70,7 @@ const ActionsModal = (props: Props) => {
             confirmButtonClassName={props.isValid ? '' : 'disabled'}
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
-            autoCloseOnConfirmButton={props.autoCloseOnConfirmButton ? props.autoCloseOnConfirmButton : false}
+            autoCloseOnConfirmButton={props.autoCloseOnConfirmButton ?? false}
             enforceFocus={true}
             components={{
                 Header: ModalHeader,

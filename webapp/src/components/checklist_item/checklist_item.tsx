@@ -262,7 +262,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const renderTaskActions = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
         const enabledAction = haveAtleastOneEnabledAction(taskActions);
-        if (buttonsFormat !== ButtonsFormat.Long && (!isEditing && !(haveTaskActions && enabledAction))) {
+        if (
+            buttonsFormat !== ButtonsFormat.Long &&
+            !isEditing &&
+            !(haveTaskActions && enabledAction)
+        ) {
             return null;
         }
 
@@ -278,7 +282,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
-        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !haveTaskActions && !isEditing)) {
+        if (
+            buttonsFormat !== ButtonsFormat.Long &&
+            !assigneeID &&
+            !command &&
+            !dueDate &&
+            !haveTaskActions &&
+            !isEditing
+        ) {
             return null;
         }
         return (

@@ -134,7 +134,7 @@ export interface TaskAction {
     actions: Action[];
 }
 
-export interface Trigger{
+export interface Trigger {
     type: string;
     payload: string;
 }

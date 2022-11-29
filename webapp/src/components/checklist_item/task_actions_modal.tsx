@@ -30,8 +30,23 @@ export const makeTaskActionsModalDefinition = (
     dialogProps: {taskActions, onTaskActionsChange, playbookRunId},
 });
 
-export const keywordsTriggerEmptyPayload = {keywords: [] as string[], user_ids: [] as string[]};
-export const markAsDoneEmptyPayload = {enabled: false};
+type KeywordsTriggerPayload = {keywords: string[]; user_ids: string[];}
+export const keywordsTriggerEmptyPayload: KeywordsTriggerPayload = {keywords: [], user_ids: []};
+
+type MarkAsDonePayload = {enabled: boolean;};
+export const markAsDoneEmptyPayload: MarkAsDonePayload = {enabled: false};
+
+const keywordsTriggerPayloadFromTaskAction = (taskAction: TaskActionType): KeywordsTriggerPayload => {
+    // we only have one kind of trigger
+    const triggerPayload: KeywordsTriggerPayload = taskAction.trigger?.payload ? JSON.parse(taskAction.trigger.payload) : keywordsTriggerEmptyPayload;
+    return triggerPayload;
+};
+
+const markAsDonePayloadFromTaskAction = (taskAction: TaskActionType): MarkAsDonePayload => {
+    // we currently only support one action per trigger
+    const actionPayload: MarkAsDonePayload = (taskAction.actions?.length > 0 && taskAction.actions[0]?.payload) ? JSON.parse(taskAction.actions[0].payload) : markAsDoneEmptyPayload;
+    return actionPayload;
+};
 
 type Props = {
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void,
@@ -44,13 +59,8 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
     const emptyTask = {} as TaskActionType;
     const taskAction = (taskActions && (taskActions.length > 0)) ? taskActions[0] : emptyTask;
 
-    // we only have one kind of trigger
-    const triggerType = taskAction.trigger?.type ? taskAction.trigger.type : KeywordsByUsersTriggerType;
-    const triggerPayload = taskAction.trigger?.payload ? JSON.parse(taskAction.trigger.payload) : keywordsTriggerEmptyPayload;
-
-    // we currently only support one action per trigger
-    const actionType = (taskAction.actions?.length > 0 && taskAction.actions[0]?.type) ? taskAction.actions[0].type : MarkItemAsDoneActionType;
-    const actionPayload = (taskAction.actions?.length > 0 && taskAction.actions[0]?.payload) ? JSON.parse(taskAction.actions[0].payload) : markAsDoneEmptyPayload;
+    const triggerPayload = keywordsTriggerPayloadFromTaskAction(taskAction);
+    const actionPayload = markAsDonePayloadFromTaskAction(taskAction);
 
     const [show, setShow] = useState(true);
     const users = useSelector(getUsers);
@@ -75,19 +85,18 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
     };
 
     const onSave = () => {
-        const newTaskAction = {} as TaskActionType;
-        const newTriggerPayload = {keywords: newKeywords, user_ids: newUserIDs};
-        newTaskAction.trigger = {
-            type: KeywordsByUsersTriggerType,
-            payload: JSON.stringify(newTriggerPayload),
+        const newTaskAction: TaskActionType = {
+            trigger: {
+                type: KeywordsByUsersTriggerType,
+                payload: JSON.stringify({keywords: newKeywords, user_ids: newUserIDs}),
+            },
+            actions: [
+                {
+                    type: MarkItemAsDoneActionType,
+                    payload: JSON.stringify({enabled: newIsEnabled}),
+                },
+            ],
         };
-
-        const newActionPayload = {enabled: newIsEnabled};
-        newTaskAction.actions = [{
-            type: MarkItemAsDoneActionType,
-            payload: JSON.stringify(newActionPayload),
-        }];
-
         onTaskActionsChange([newTaskAction]);
     };
 
@@ -120,7 +129,7 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
                                 onUpdate={(updatedKeywords) => setNewKeywords(updatedKeywords)}
                             />
                             <ProfileAutocomplete
-                                disableAutoFocus={true}
+                                autoFocus={false}
                                 searchProfiles={searchUsers}
                                 userIds={[]}
                                 defaultValue={defaultUsers}
