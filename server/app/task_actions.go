@@ -112,7 +112,7 @@ type MarkItemAsDoneActionPayload struct {
 	Enabled bool `json:"enabled"`
 }
 
-func NewMarkIteamAsDoneAction(action Action) (*MarkItemAsDoneAction, error) {
+func NewMarkItemAsDoneAction(action Action) (*MarkItemAsDoneAction, error) {
 	if action.Type != MarkItemAsDoneActionType {
 		return nil, errors.Errorf("Unexpected trigger type: %s, expected: %s", action.Type, MarkItemAsDoneActionType)
 	}

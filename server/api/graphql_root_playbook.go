@@ -238,7 +238,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	if args.Updates.Checklists != nil {
 		cleanUpUpdateChecklist(*args.Updates.Checklists)
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
-			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
+			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
@@ -482,9 +482,9 @@ func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
 // validateUpdateTaskActions validates the taskactions in the given checklist
 // NOTE: Any changes to this function must be made to function 'validateTaskActions' for the REST endpoint.
 func validateUpdateTaskActions(checklists []UpdateChecklist) error {
-	for listIndex := range checklists {
-		for itemIndex := range checklists[listIndex].Items {
-			if taskActions := checklists[listIndex].Items[itemIndex].TaskActions; taskActions != nil {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if taskActions := item.TaskActions; taskActions != nil {
 				for _, ta := range *taskActions {
 					if err := app.ValidateTrigger(ta.Trigger); err != nil {
 						return err

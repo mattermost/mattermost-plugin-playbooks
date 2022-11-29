@@ -3517,13 +3517,20 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 				if ta.Trigger.Type == KeywordsByUsersTriggerType {
 					t, err := NewKeywordsByUsersTrigger(ta.Trigger)
 					if err != nil {
-						logrus.WithError(err).Error("unable to decode trigger")
+						logrus.WithError(err).WithFields(logrus.Fields{
+							"type":         ta.Trigger.Type,
+							"checklistNum": checklistNum,
+							"itemNum":      itemNum,
+						}).Error("unable to decode trigger")
 						return
 					}
-					if t.IsTriggered((post)) {
+					if t.IsTriggered(post) {
 						err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 						if err != nil {
-							logrus.WithError(err).Error("can't process task actions")
+							logrus.WithError(err).WithFields(logrus.Fields{
+								"checklistNum": checklistNum,
+								"itemNum":      itemNum,
+							}).Error("can't process task actions")
 							return
 						}
 					}
@@ -3536,14 +3543,14 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, userID string, ChecklistItemStateClosed string, checklistNum int, itemNum int) error {
 	for _, action := range taskActions {
 		if action.Type == MarkItemAsDoneActionType {
-			a, err := NewMarkIteamAsDoneAction(action)
+			a, err := NewMarkItemAsDoneAction(action)
 			if err != nil {
 				return errors.Wrapf(err, "unable to decode action")
 			}
 			if a.Payload.Enabled {
 				if err := s.ModifyCheckedState(runID, userID, ChecklistItemStateClosed, checklistNum, itemNum); err != nil {
 					if err != nil {
-						return errors.Wrapf(err, "can't mark iteam as done")
+						return errors.Wrapf(err, "can't mark item as done")
 					}
 				}
 			}
