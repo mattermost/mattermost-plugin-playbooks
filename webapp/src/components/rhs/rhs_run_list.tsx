@@ -236,6 +236,8 @@ interface RHSRunListCardProps extends RunToDisplay {
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
 
+    const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
+
     return (
         <CardContainer
             onClick={props.onClick}
@@ -245,7 +247,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 <OwnerProfileChip userId={props.ownerUserID}/>
                 <ParticipantsProfiles>
                     <UserList
-                        userIds={props.participantIDs}
+                        userIds={participatIDsWithoutOwner}
                         sizeInPx={20}
                     />
                 </ParticipantsProfiles>
