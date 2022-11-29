@@ -195,6 +195,7 @@ const RunsList = styled.div`
 `;
 
 const FilterMenuTitle = styled.div`
+    font-family: Metropolis;
     font-weight: 600;
     font-size: 16px;
     line-height: 24px;
