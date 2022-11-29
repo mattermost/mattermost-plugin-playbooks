@@ -59,8 +59,9 @@ const RunPlaybookNewModal = ({
     }
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
 
-    const [playbook] = usePlaybook(playbookId);
-    const [step, setStep] = useState(playbookId === '' ? 'select-playbook' : 'run-details');
+    const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
+    const [playbook] = usePlaybook(selectedPlaybookId);
+    const [step, setStep] = useState(selectedPlaybookId === '' ? 'select-playbook' : 'run-details');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -106,7 +107,7 @@ const RunPlaybookNewModal = ({
         }
 
         createPlaybookRun(
-            playbookId,
+            selectedPlaybookId,
             user.id,
             playbook.team_id,
             runName,
@@ -208,11 +209,6 @@ const RunPlaybookNewModal = ({
                 type={'text'}
                 value={runName}
                 onChange={(e) => setRunName(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                        onSubmit();
-                    }
-                }}
             />
 
             <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
@@ -228,7 +224,13 @@ const RunPlaybookNewModal = ({
 
     const StepSelectPlaybook = (
         <Body>
-            <PlaybooksSelector teamID={teamId}/>
+            <PlaybooksSelector
+                teamID={teamId}
+                onSelectPlaybook={(id) => {
+                    setSelectedPlaybookId(id);
+                    setStep('run-details');
+                }}
+            />
         </Body>
     );
 
@@ -251,12 +253,12 @@ const RunPlaybookNewModal = ({
 
     return (
         <StyledGenericModal
-            cancelButtonText={step === 'run-details' && formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={step === 'run-details' && formatMessage({defaultMessage: 'Start run'})}
+            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+            showCancel={step === 'run-details'}
             isConfirmDisabled={!isFormValid}
-            handleConfirm={step === 'run-details' ? onSubmit : () => null}
+            handleConfirm={step === 'run-details' ? onSubmit : undefined}
             id={ID}
-            handleCancel={() => true}
             modalHeaderText={header}
             {...modalProps}
         >
@@ -294,7 +296,7 @@ const HeaderTitle = styled.div`
     display: flex;
     flex-direction: row;
     height: 28px;
-    justify-content: center;
+    align-items: center;
 `;
 
 const IconWrapper = styled.div`

@@ -266,9 +266,10 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
 func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
-	if playbook.RunSummaryTemplateEnabled {
-		r.Summary = playbook.RunSummaryTemplate
-	}
+	// TODO: should be done sometimes?
+	// if playbook.RunSummaryTemplateEnabled {
+	// 	r.Summary = playbook.RunSummaryTemplate
+	// }
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
 	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
 	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
