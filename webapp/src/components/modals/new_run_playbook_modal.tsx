@@ -1,22 +1,23 @@
 import React, {ComponentProps, useState, useEffect} from 'react';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
-import Modal from 'react-bootstrap/Modal';
+import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 
 import {usePlaybook} from 'src/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
-import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {ButtonLabel, StyledChannelSelector, VerticalSplit} from '../backstage/playbook_edit/automation/channel_access';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
+import PlaybooksSelector from '../playbooks_selector';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -198,23 +199,6 @@ const RunPlaybookNewModal = ({
         </ChannelContainer>
     );
 
-    const HeaderDetails = () => (
-        <Modal.Header closeButton={true}>
-            <Modal.Title><FormattedMessage defaultMessage={'Start a run'}/></Modal.Title>
-        </Modal.Header>
-    );
-
-    // <ModalHeader
-    //     title={formatMessage({defaultMessage: 'Start a run'})}
-    //     onBack={() => setStep('select-playbook')}
-    //     sideTitle={playbook ? playbook.title : ''}
-    // />
-    const HeaderSelectPlaybook = () => (
-        <Modal.Header closeButton={true}>
-            <Modal.Title><FormattedMessage defaultMessage={'Select a playbook'}/></Modal.Title>
-        </Modal.Header>
-    );
-
     const StepRunDetails = (
         <Body>
             <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
@@ -244,23 +228,36 @@ const RunPlaybookNewModal = ({
 
     const StepSelectPlaybook = (
         <Body>
-            <span>Playbook list</span>
+            <PlaybooksSelector teamID={teamId}/>
         </Body>
     );
+
+    const header = step === 'run-details' ? (
+        <Header>
+            <IconWrapper onClick={() => setStep('select-playbook')}>
+                <ArrowLeftIcon
+                    size={24}
+                    color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                />
+            </IconWrapper>
+            <HeaderTitle>
+                {formatMessage({defaultMessage: 'Start a run'})}
+                <ModalSideheading>{playbook?.title}</ModalSideheading>
+            </HeaderTitle>
+        </Header>
+    ) : formatMessage({defaultMessage: 'Select playbook'});
 
     const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     return (
         <StyledGenericModal
-            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+            cancelButtonText={step === 'run-details' && formatMessage({defaultMessage: 'Cancel'})}
+            confirmButtonText={step === 'run-details' && formatMessage({defaultMessage: 'Start run'})}
             isConfirmDisabled={!isFormValid}
-            handleConfirm={onSubmit}
+            handleConfirm={step === 'run-details' ? onSubmit : () => null}
             id={ID}
             handleCancel={() => true}
-            components={{
-                Header: HeaderDetails,
-            }}
+            modalHeaderText={header}
             {...modalProps}
         >
             {step === 'run-details' ? StepRunDetails : StepSelectPlaybook}
@@ -288,25 +285,25 @@ const StyledGenericModal = styled(GenericModal)`
     }
 `;
 
-const ModalHeaderContainer = styled.div`
+const Header = styled.div`
     display: flex;
+    flex-direction: row;
+`;
+
+const HeaderTitle = styled.div`
+    display: flex;
+    flex-direction: row;
+    height: 28px;
+    justify-content: center;
+`;
+
+const IconWrapper = styled.div`
+    display: flex;
+    cursor: pointer;
     flex-direction: column;
-`;
-
-const ModalHeaderSide = styled.div`
-    font-size: 12px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding-left: 20px;
-    border-left: solid 1px rgba(var(--center-channel-color-rgb), 0.56);
-`;
-
-const ModalHeaderTitle = styled.div`
-    font-size: 22px;
-    color: var(--center-channel-color);
-    font-weight: 600;
-`;
-
-const ModalHeaderIcon = styled.div`
+    height: 28px;
+    justify-content: center;
+    margin-right: 8px;
 `;
 
 const Body = styled.div`

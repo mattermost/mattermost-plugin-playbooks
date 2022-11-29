@@ -87,6 +87,24 @@ query PlaybookLHS($userID: String!, $teamID: String!) {
 	}
 }
 
+fragment PlaybookModalFields on Playbook {
+	id
+	title
+	isFavorite
+	public
+	lastRunAt
+	activeRuns
+}
+
+query PlaybooksModal($teamID: String!, $searchTerm: String!) {
+	yourPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: true, searchTerm: $searchTerm) {
+		...PlaybookModalFields
+	}
+	allPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: false, searchTerm: $searchTerm) {
+		...PlaybookModalFields
+	}
+}
+
 mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
 	addPlaybookMember(playbookID: $playbookID, userID: $userID)
 }

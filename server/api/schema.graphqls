@@ -98,6 +98,9 @@ type Playbook {
 	teamID: String!
 	createPublicPlaybookRun: Boolean!
 	deleteAt: Float!
+	lastRunAt: Float!
+	numRuns: Int!
+	activeRuns: Int!
 	runSummaryTemplateEnabled: Boolean!
 	defaultPlaybookMemberRole: String!
 	public: Boolean!
