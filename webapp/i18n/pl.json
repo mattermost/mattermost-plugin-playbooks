@@ -767,5 +767,7 @@
     "lqceIp": "lub <ImportPlaybookButton>Importuj playbook</ImportPlaybookButton>",
     "ORJ0Hb": "Jest {outstanding, plural, =1 {# zaległe zadanie} other {# zaległych zadań}}. Czy na pewno chcesz zakończyć uruchomienie dla wszystkich uczestników?",
     "0boT49": "Czy na pewno chcesz zakończyć uruchomienie dla wszystkich uczestników?",
-    "AG7PKJ": "Zmiana nazwy uruchomienia"
+    "AG7PKJ": "Zmiana nazwy uruchomienia",
+    "a2r7Vb": "Kanał prywatny",
+    "VA1Q/S": "Kanał publiczny"
 }
