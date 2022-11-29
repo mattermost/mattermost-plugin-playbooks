@@ -762,5 +762,10 @@
     "9X3jwi": "{icon} Cost",
     "36NwLv": "Manage run participants list",
     "2BCWLD": "Configure channel",
-    "lqceIp": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>"
+    "lqceIp": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>",
+    "a2r7Vb": "Private channel",
+    "VA1Q/S": "Public channel",
+    "ORJ0Hb": "There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run for all participants?",
+    "AG7PKJ": "Rename run",
+    "0boT49": "Are you sure you want to finish the run for all participants?"
 }
