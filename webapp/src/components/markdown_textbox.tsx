@@ -7,7 +7,6 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 
 import classNames from 'classnames';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
@@ -192,14 +191,6 @@ function TextboxLinks({
                         {showPreview ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'Preview'})}
                     </button>
                 )}
-                <Link
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    to='/help/formatting'
-                    className='textbox-help-link'
-                >
-                    {formatMessage({defaultMessage: 'Help'})}
-                </Link>
             </NoWrap>
         </div>
     );
