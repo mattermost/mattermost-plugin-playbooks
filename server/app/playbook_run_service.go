@@ -126,16 +126,7 @@ func NewPlaybookRunService(
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't get playbook runs from the store")
-	}
-	return &GetPlaybookRunsResults{
-		TotalCount: results.TotalCount,
-		PageCount:  results.PageCount,
-		HasMore:    results.HasMore,
-		Items:      results.Items,
-	}, nil
+	return s.store.GetPlaybookRuns(requesterInfo, options)
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {

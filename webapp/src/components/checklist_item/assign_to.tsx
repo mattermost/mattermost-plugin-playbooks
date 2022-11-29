@@ -17,7 +17,7 @@ interface AssignedToProps {
     withoutName?: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
-    onSelectedChange: (user?: UserProfile) => void;
+    onSelectedChange?: (user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -27,7 +27,7 @@ const AssignTo = (props: AssignedToProps) => {
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
     const resetAssignee = () => {
-        props.onSelectedChange();
+        props.onSelectedChange?.();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
