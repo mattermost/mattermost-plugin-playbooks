@@ -144,13 +144,7 @@
         ]
       }
     ],
-    "indent": [
-      2,
-      4,
-      {
-        "SwitchCase": 0
-      }
-    ],
+    "indent": 0, // ts handles this
     "jsx-quotes": [
       2,
       "prefer-single"

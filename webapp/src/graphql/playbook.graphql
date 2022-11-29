@@ -71,13 +71,17 @@ mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 
 query PlaybookLHS($userID: String!, $teamID: String!) {
 	runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
-		id
-		name
-		isFavorite
-		playbookID
-		ownerUserID
-		participantIDs
-		metadata { followers }
+		edges {
+			node {
+				id
+				name
+				isFavorite
+				playbookID
+				ownerUserID
+				participantIDs
+				metadata { followers }
+			}
+		}
 	}
 	playbooks (teamID: $teamID, withMembershipOnly: true) {
 		id

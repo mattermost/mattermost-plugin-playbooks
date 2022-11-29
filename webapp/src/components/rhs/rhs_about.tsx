@@ -27,6 +27,7 @@ interface Props {
     playbookRun: PlaybookRun;
     readOnly?: boolean;
     onReadOnlyInteract?: () => void
+    setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RHSAbout = (props: Props) => {
@@ -136,6 +137,7 @@ const RHSAbout = (props: Props) => {
                                 <RHSParticipants
                                     userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
                                     onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
+                                    setShowParticipants={props.setShowParticipants}
                                 />
                             </ParticipantsSection>
                         </Row>

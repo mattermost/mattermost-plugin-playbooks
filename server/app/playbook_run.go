@@ -446,6 +446,7 @@ type TimelineEvent struct {
 type GetPlaybookRunsResults struct {
 	TotalCount int           `json:"total_count"`
 	PageCount  int           `json:"page_count"`
+	PerPage    int           `json:"per_page"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
 }

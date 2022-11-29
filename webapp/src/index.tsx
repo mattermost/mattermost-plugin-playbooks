@@ -17,7 +17,7 @@ import {General} from 'mattermost-redux/constants';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
-import {ApolloClient, InMemoryCache, ApolloProvider, NormalizedCacheObject, HttpLink} from '@apollo/client';
+import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -37,7 +37,6 @@ import {
     ChannelHeaderTooltip,
 } from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
-import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
@@ -65,7 +64,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getApiUrl, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -74,6 +73,8 @@ import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
+import {RHSTitlePlaceholder} from './rhs_title_remote_render';
+import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -88,14 +89,6 @@ const OldRoutesRedirect = () => {
         <Redirect
             to={'/playbooks' + redirPath}
         />
-    );
-};
-
-const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<NormalizedCacheObject>}) => {
-    return (
-        <ApolloProvider client={props.client}>
-            {props.component}
-        </ApolloProvider>
     );
 };
 
@@ -157,7 +150,7 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const BackstageWrapped = () => (
-            <ApolloWrapped
+            <ApolloWrapper
                 component={<Backstage/>}
                 client={graphqlClient}
             />
@@ -165,15 +158,15 @@ export default class Plugin {
 
         // eslint-disable-next-line react/require-optimization
         const RHSWrapped = () => (
-            <ApolloWrapped
+            <ApolloWrapper
                 component={<RightHandSidebar/>}
                 client={graphqlClient}
             />
         );
         // eslint-disable-next-line react/require-optimization
-        const RHSTitleWrapped = () => (
-            <ApolloWrapped
-                component={<RHSTitle/>}
+        const RHSTitlePlaceholderWrapped = () => (
+            <ApolloWrapper
+                component={<RHSTitlePlaceholder/>}
                 client={graphqlClient}
             />
         );
@@ -192,7 +185,7 @@ export default class Plugin {
         );
 
         // RHS Registration
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitleWrapped/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RHSWrapped, <RHSTitlePlaceholderWrapped/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
@@ -312,13 +305,7 @@ export default class Plugin {
         Client4.setUrl(siteUrl);
 
         // Setup our graphql client
-        const graphqlFetch = (_: RequestInfo, options: any) => {
-            return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
-        };
-        const graphqlClient = new ApolloClient({
-            link: new HttpLink({fetch: graphqlFetch}),
-            cache: new InMemoryCache(),
-        });
+        const graphqlClient = makeGraphqlClient();
 
         // Store graphql client for bad modals.
         setPlaybooksGraphQLClient(graphqlClient);
