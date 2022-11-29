@@ -1,7 +1,7 @@
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {haveAtleastOneEnabledAction} from 'src/components/checklist_item/task_actions_modal';
 import {TaskAction as TaskActionType} from 'src/types/playbook';
@@ -11,6 +11,7 @@ interface TaskActionsProps {
     taskActions?: TaskActionType[] | null
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void;
     playbookRunId?: string;
+    editable: boolean;
 }
 
 const TaskActions = (props: TaskActionsProps) => {
@@ -28,9 +29,12 @@ const TaskActions = (props: TaskActionsProps) => {
 
     return (
         <TaskActionsContainer
+            editable={props.editable}
             isPlaceholder={!(lenTasks > 0 && enabledAction)}
             onClick={() => {
-                dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions, props.playbookRunId));
+                if (props.editable) {
+                    dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions, props.playbookRunId));
+                }
             }}
         >
             <ActionIcon
@@ -46,7 +50,7 @@ const TaskActions = (props: TaskActionsProps) => {
 
 export default TaskActions;
 
-const TaskActionsContainer = styled.div<{isPlaceholder: boolean}>`
+const TaskActionsContainer = styled.div<{editable: boolean; isPlaceholder: boolean;}>`
     align-items: center;
     background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     border-radius: 13px;
@@ -58,14 +62,18 @@ const TaskActionsContainer = styled.div<{isPlaceholder: boolean}>`
     height: 24px;
     max-width: 100%;
     padding: 2px 4px;
-    &:hover {
-        cursor: pointer;
-    }
+    ${({editable}) => editable && css`
+        :hover {
+            cursor: pointer;
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+            color: var(--center-channel-color);
+        }
+    `}
 `;
 
 const ActionIcon = styled.i`
     align-items: center;
-    color: rgba(var(--center-channel-color-rgb),0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     display: flex;
     flex: table;
     height: 20px;
