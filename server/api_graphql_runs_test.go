@@ -94,7 +94,6 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// create a third user to test multiple add/remove
 	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
@@ -102,6 +101,13 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
+	require.NoError(t, err)
+
+	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(&model.User{
+		Email:    "notinteam@example.com",
+		Username: "notinteam",
+		Password: "Password123!",
+	})
 	require.NoError(t, err)
 
 	// if the test fits this testTable structure, add it here
@@ -163,6 +169,22 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
 			ExpectedChannelMembers:   []string{e.RegularUser.Id},
 			UnexpectedChannelMembers: []string{e.RegularUser2.Id, user3.Id},
+		},
+		{
+			Name: "Add 2 participants, actions OFF, one from another different team",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: false,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser.Id,
+			},
+			ParticipantsToBeAdded:    []string{e.RegularUser2.Id, userNotInTeam.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id},
 		},
 	}
 
