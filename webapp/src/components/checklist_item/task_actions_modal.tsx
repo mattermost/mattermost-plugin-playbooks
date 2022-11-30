@@ -93,7 +93,7 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
             actions: [
                 {
                     type: MarkItemAsDoneActionType,
-                    payload: JSON.stringify({enabled: newIsEnabled}),
+                    payload: JSON.stringify({enabled: newIsEnabled && newKeywords.length > 0}),
                 },
             ],
         };
