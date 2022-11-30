@@ -10,7 +10,8 @@
     "import",
     "formatjs",
     "@typescript-eslint",
-    "unused-imports"
+    "unused-imports",
+    "no-relative-import-paths"
   ],
   "env": {
     "browser": true,
@@ -625,7 +626,11 @@
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
     "formatjs/no-literal-string-in-jsx": 2,
-    "unused-imports/no-unused-imports": 2
+    "unused-imports/no-unused-imports": 2,
+    "no-relative-import-paths/no-relative-import-paths": [
+      "warn",
+      { "allowSameFolder": false }
+    ]
   },
   "overrides": [
     {
