@@ -16,10 +16,10 @@ import {
     clientSetChecklistItemCommand,
     setAssignee,
     setChecklistItemState,
-    clientSetChecklistItemTaskActions,
     setDueDate as clientSetDueDate,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
+import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from '../datetime_input';
@@ -87,6 +87,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
+    const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -177,7 +178,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return;
         }
         if (props.playbookRunId) {
-            clientSetChecklistItemTaskActions(props.playbookRunId, props.checklistNum, props.itemNum, newTaskActions);
+            updateRunTaskActions(props.checklistNum, props.itemNum, newTaskActions);
         } else {
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;

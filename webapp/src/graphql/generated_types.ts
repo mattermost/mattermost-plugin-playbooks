@@ -93,6 +93,7 @@ export type Mutation = {
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
+    updateRunTaskActions: Scalars['String'];
 };
 
 export type MutationAddMetricArgs = {
@@ -148,6 +149,13 @@ export type MutationUpdatePlaybookArgs = {
 export type MutationUpdateRunArgs = {
     id: Scalars['String'];
     updates: RunUpdates;
+};
+
+export type MutationUpdateRunTaskActionsArgs = {
+    checklistNum: Scalars['Float'];
+    itemNum: Scalars['Float'];
+    runID: Scalars['String'];
+    taskActions?: InputMaybe<Array<TaskActionUpdates>>;
 };
 
 export type Playbook = {
@@ -411,7 +419,7 @@ export type RunQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> }, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }> } | null };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -441,6 +449,15 @@ export type ChangeRunOwnerMutationVariables = Exact<{
 }>;
 
 export type ChangeRunOwnerMutation = { __typename?: 'Mutation', changeRunOwner: string };
+
+export type UpdateRunTaskActionsMutationVariables = Exact<{
+    runID: Scalars['String'];
+    checklistNum: Scalars['Float'];
+    itemNum: Scalars['Float'];
+    taskActions: Array<TaskActionUpdates> | TaskActionUpdates;
+}>;
+
+export type UpdateRunTaskActionsMutation = { __typename?: 'Mutation', updateRunTaskActions: string };
 
 export const PlaybookDocument = gql`
     query Playbook($id: String!) {
@@ -709,6 +726,20 @@ export const RunDocument = gql`
     metadata {
       followers
     }
+    checklists {
+      items {
+        task_actions: taskActions {
+          trigger: trigger {
+            type
+            payload
+          }
+          actions: actions {
+            type
+            payload
+          }
+        }
+      }
+    }
   }
 }
     `;
@@ -873,6 +904,45 @@ export function useChangeRunOwnerMutation(baseOptions?: Apollo.MutationHookOptio
 export type ChangeRunOwnerMutationHookResult = ReturnType<typeof useChangeRunOwnerMutation>;
 export type ChangeRunOwnerMutationResult = Apollo.MutationResult<ChangeRunOwnerMutation>;
 export type ChangeRunOwnerMutationOptions = Apollo.BaseMutationOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
+export const UpdateRunTaskActionsDocument = gql`
+    mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
+  updateRunTaskActions(
+    runID: $runID
+    checklistNum: $checklistNum
+    itemNum: $itemNum
+    taskActions: $taskActions
+  )
+}
+    `;
+export type UpdateRunTaskActionsMutationFn = Apollo.MutationFunction<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>;
+
+/**
+ * __useUpdateRunTaskActionsMutation__
+ *
+ * To run a mutation, you first call `useUpdateRunTaskActionsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateRunTaskActionsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateRunTaskActionsMutation, { data, loading, error }] = useUpdateRunTaskActionsMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      checklistNum: // value for 'checklistNum'
+ *      itemNum: // value for 'itemNum'
+ *      taskActions: // value for 'taskActions'
+ *   },
+ * });
+ */
+export function useUpdateRunTaskActionsMutation(baseOptions?: Apollo.MutationHookOptions<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>(UpdateRunTaskActionsDocument, options);
+}
+export type UpdateRunTaskActionsMutationHookResult = ReturnType<typeof useUpdateRunTaskActionsMutation>;
+export type UpdateRunTaskActionsMutationResult = Apollo.MutationResult<UpdateRunTaskActionsMutation>;
+export type UpdateRunTaskActionsMutationOptions = Apollo.BaseMutationOptions<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {

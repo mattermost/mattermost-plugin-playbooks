@@ -33,7 +33,6 @@ import {
     DraftPlaybookWithChecklist,
     Playbook,
     ChecklistItem,
-    TaskAction,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
@@ -405,14 +404,6 @@ export async function clientSetChecklistItemCommand(playbookRunID: string, check
         JSON.stringify({
             command,
         }));
-
-    return data;
-}
-
-export async function clientSetChecklistItemTaskActions(playbookRunID: string, checklistNum: number, itemNum: number, taskActions: TaskAction[]) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/taskactions`,
-        JSON.stringify(taskActions)
-    );
 
     return data;
 }

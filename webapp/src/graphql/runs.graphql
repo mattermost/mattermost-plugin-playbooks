@@ -5,6 +5,20 @@ query Run($id: String!) {
       ownerUserID
       participantIDs
       metadata { followers }
+	  checklists {
+	    items {
+		  task_actions: taskActions {
+		    trigger: trigger {
+		      type
+		      payload
+		    }
+		    actions: actions {
+		      type
+		      payload
+		    }
+		  }
+		}
+      }
     }
 }
 
@@ -22,5 +36,9 @@ mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
 
 mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
 	changeRunOwner(runID: $runID, ownerID: $ownerID)
+}
+
+mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
+	updateRunTaskActions(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, taskActions: $taskActions)
 }
 
