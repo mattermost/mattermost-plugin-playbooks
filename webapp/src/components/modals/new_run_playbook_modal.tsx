@@ -3,9 +3,7 @@ import React, {ComponentProps, useState, useEffect} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
-import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from '@mattermost/types/store';
-import {UserProfile} from '@mattermost/types/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 
 import {usePlaybook} from 'src/hooks';
@@ -25,31 +23,26 @@ import SearchInput from 'src/components/backstage/search_input';
 const ID = 'playbooks_run_playbook_dialog';
 
 export const makeModalDefinition = (
-    playbookId: string,
-    defaultOwnerId: string | null, // TO BE REMOVED
-    description: string, // TO BE REMOVED
-    teamId: string, // TO BE REMOVED
-    teamName: string, // TO BE REMOVED
+    playbookId: string | null,
+    triggerChannelId: string| null,
+    teamId: string,
     refreshLHS?: () => void
 ) => ({
     modalId: ID,
     dialogType: RunPlaybookNewModal,
-    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName, refreshLHS},
+    dialogProps: {playbookId, triggerChannelId, teamId, refreshLHS},
 });
 
 type Props = {
-    playbookId: string,
-    defaultOwnerId: string | null,
-    description: string,
+    playbookId: string | null,
+    triggerChannelId: string | null,
     teamId: string,
-    teamName: string
     refreshLHS?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookNewModal = ({
     playbookId,
-    defaultOwnerId,
-    description,
+    triggerChannelId,
     teamId,
     refreshLHS,
     ...modalProps
@@ -57,21 +50,21 @@ const RunPlaybookNewModal = ({
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
 
-    let userId = useSelector(getCurrentUserId);
-    if (defaultOwnerId) {
-        userId = defaultOwnerId;
-    }
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
-
+    const [step, setStep] = useState(playbookId === null ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
-    const [playbook] = usePlaybook(selectedPlaybookId);
-    const [step, setStep] = useState(selectedPlaybookId === '' ? 'select-playbook' : 'run-details');
+    const [playbook] = usePlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showsearch, setShowsearch] = useState(true);
+
+    let userId = useSelector(getCurrentUserId);
+    if (playbook?.default_owner_enabled) {
+        userId = playbook.default_owner_id;
+    }
 
     useEffect(() => {
         if (playbook && playbook.channel_mode === 'create_new_channel') {
@@ -110,15 +103,15 @@ const RunPlaybookNewModal = ({
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
         modalProps.onHide?.();
-    }
+    };
     const onSubmit = () => {
-        if (!playbook) {
+        if (!playbook || !selectedPlaybookId) {
             return;
         }
 
         createPlaybookRun(
             selectedPlaybookId,
-            user.id,
+            userId,
             playbook.team_id,
             runName,
             runSummary,
@@ -222,10 +215,12 @@ const RunPlaybookNewModal = ({
                 id={ID}
                 modalHeaderText={(
                     <ColContainer>
-                        <IconWrapper onClick={() => {
-                            setSearchTerm('');
-                            setStep('select-playbook');
-                        }}>
+                        <IconWrapper
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStep('select-playbook');
+                            }}
+                        >
                             <ArrowLeftIcon
                                 size={24}
                                 color={'rgba(var(--center-channel-color-rgb), 0.56)'}
@@ -273,31 +268,33 @@ const RunPlaybookNewModal = ({
             modalHeaderText={(
                 <RowContainer>
                     <ColContainer>
-                    <HeaderTitle>
-                        <FormattedMessage defaultMessage='Select a playbook'/>
-                    </HeaderTitle>
-                    <HeaderButtonWrapper>
-                        <CreatePlaybookButton onClick={onCreatePlaybook}>
-                            <FormattedMessage defaultMessage='Create new playbook'/>
-                        </CreatePlaybookButton>
-                    </HeaderButtonWrapper>
+                        <HeaderTitle>
+                            <FormattedMessage defaultMessage='Select a playbook'/>
+                        </HeaderTitle>
+                        <HeaderButtonWrapper>
+                            <CreatePlaybookButton onClick={onCreatePlaybook}>
+                                <FormattedMessage defaultMessage='Create new playbook'/>
+                            </CreatePlaybookButton>
+                        </HeaderButtonWrapper>
                     </ColContainer>
-                    <SearchWrapper>
-                    <SearchInput
-                        testId={'search-filter'}
-                        default={''}
-                        onSearch={(term) => setSearchTerm(term)}
-                        placeholder={formatMessage({defaultMessage: 'Search playbooks'})}
-                        width={'100%'}
-                    />
-                    </SearchWrapper>
+                    {showsearch && <SearchWrapper>
+                        <SearchInput
+                            testId={'search-filter'}
+                            default={''}
+                            onSearch={(term) => setSearchTerm(term)}
+                            placeholder={formatMessage({defaultMessage: 'Search playbooks'})}
+                            width={'100%'}
+                        />
+                    </SearchWrapper>}
                 </RowContainer>
             )}
             {...modalProps}
         >
             <Body>
                 <PlaybooksSelector
+                    onCreatePlaybook={onCreatePlaybook}
                     teamID={teamId}
+                    onZeroCaseNoPlaybooks={(isZeroNoShow: boolean) => setShowsearch(!isZeroNoShow)}
                     searchTerm={searchTerm}
                     onSelectPlaybook={(id) => {
                         setSelectedPlaybookId(id);

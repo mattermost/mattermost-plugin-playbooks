@@ -112,13 +112,11 @@ export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string 
     ));
 }
 
-export function openPlaybookRunNewModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
+export function openPlaybookRunNewModal(playbookId: string | null, triggerChannelId: string | null, teamId: string, refreshLHS?: () => void) {
     return modals.openModal(makePlaybookRunNewModalDefinition(
         playbookId,
-        defaultOwnerId,
-        description,
+        triggerChannelId,
         teamId,
-        teamName,
         refreshLHS
     ));
 }

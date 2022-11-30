@@ -130,15 +130,33 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
-            dispatch(actionModal(
-                props.playbook.id,
-                props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
-                props.playbook.description,
-                props.playbook.team_id,
-                team.name,
-                refreshLHS
-            ));
+            if (isLinkRunToExistingChannelEnabled) {
+                dispatch(openPlaybookRunNewModal(
+                    props.playbook.id,
+                    null,
+                    team.id,
+                    refreshLHS
+                ));
+            } else {
+                dispatch(openPlaybookRunModal(
+                    props.playbook.id,
+                    props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
+                    props.playbook.description,
+                    team.id,
+                    team.name,
+                    refreshLHS
+                ));
+            }
+
+            // const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
+            // dispatch(actionModal(
+            //     props.playbook.id,
+            //     props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
+            //     props.playbook.description,
+            //     props.playbook.team_id,
+            //     team.name,
+            //     refreshLHS
+            // ));
         }
     };
 

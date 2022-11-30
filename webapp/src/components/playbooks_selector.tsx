@@ -4,25 +4,33 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {ApolloProvider} from '@apollo/client';
-import {BookOutlineIcon, BookLockOutlineIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, BookLockOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {usePlaybooksModalQuery} from 'src/graphql/generated_types';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 import {PrimaryButton} from 'src/components/assets/buttons';
+import SearchSvg from 'src/components/assets/illustrations/search_svg';
+import ClipboardSvg from 'src/components/assets/illustrations/clipboard_svg';
 
 interface Props {
     teamID: string;
     searchTerm: string;
+
+    /**
+     * Callback that will trigger if the conditions for zero case no results are met.
+     */
+    onZeroCaseNoPlaybooks: (zerocase: boolean) => void;
+    onCreatePlaybook: () => void;
     onSelectPlaybook: (playbookId: string) => void;
 }
 
 const PlaybooksSelector = (props: Props) => {
     const {formatMessage} = useIntl();
-    const {data, error} = usePlaybooksModalQuery({
+    const {data, loading} = usePlaybooksModalQuery({
         variables: {
             teamID: props.teamID,
             searchTerm: props.searchTerm,
@@ -46,10 +54,37 @@ const PlaybooksSelector = (props: Props) => {
             list: data?.allPlaybooks.filter((playbook) => !data.yourPlaybooks.find((target) => target.id === playbook.id)),
         },
     ];
+
+    const hasResults = Boolean(data?.allPlaybooks && data?.allPlaybooks.length > 0);
+
+    // Invoke callback to notify parent if the zero case triggered
+    if (!loading) {
+        props.onZeroCaseNoPlaybooks(props.searchTerm === '' && !hasResults);
+    }
     const iconProps = {
         size: 18,
         color: 'rgba(var(--center-channel-color-rgb), 0.56)',
     };
+
+    if (!hasResults && !loading) {
+        return props.searchTerm === '' ? (
+            <ErrorContainer>
+                <ClipboardSvg/>
+                <ErrorTitle>{formatMessage({defaultMessage: 'Get started with Playbooks'}, {searchTerm: props.searchTerm})}</ErrorTitle>
+                <ErrorSubTitle>{formatMessage({defaultMessage: 'Playbooks are configurable checklists that define a repeatable process for teams to achieve specific and predictable outcomes'})}</ErrorSubTitle>
+                <PrimaryButton onClick={props.onCreatePlaybook}>
+                    <Plus size={16}/>
+                    <FormattedMessage defaultMessage='Create new playbook'/>
+                </PrimaryButton>
+            </ErrorContainer>
+        ) : (
+            <ErrorContainer>
+                <SearchSvg/>
+                <ErrorTitle>{formatMessage({defaultMessage: 'No results for "{searchTerm}"'}, {searchTerm: props.searchTerm})}</ErrorTitle>
+                <ErrorSubTitle>{formatMessage({defaultMessage: 'Please check spelling or try another search'})}</ErrorSubTitle>
+            </ErrorContainer>
+        );
+    }
 
     return (
         <Container>
@@ -172,4 +207,28 @@ const ButtonWrappper = styled.div`
     margin-left: auto;
     margin-right: 10px;
     display: none;
+`;
+
+const ErrorContainer = styled(Container)`
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    gap: 10px;
+    max-width: 450px;
+`;
+
+const ErrorTitle = styled.div`
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--center-channel-color);
+    text-align: center;
+`;
+
+const ErrorSubTitle = styled(ErrorTitle)`
+    font-size: 14px;
+    font-weight: 400;
+`;
+
+const Plus = styled(PlusIcon)`
+    margin-right: 5px;
 `;

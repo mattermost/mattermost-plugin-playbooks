@@ -256,15 +256,23 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                const actionModal = isLinkRunToExistingChannelEnabled ? openPlaybookRunNewModal : openPlaybookRunModal;
-                dispatch(actionModal(
-                    playbook.id,
-                    playbook.default_owner_enabled ? playbook.default_owner_id : null,
-                    playbook.description,
-                    team.id,
-                    team.name,
-                    refreshLHS
-                ));
+                if (isLinkRunToExistingChannelEnabled) {
+                    dispatch(openPlaybookRunNewModal(
+                        playbook.id,
+                        null,
+                        team.id,
+                        refreshLHS
+                    ));
+                } else {
+                    dispatch(openPlaybookRunModal(
+                        playbook.id,
+                        playbook.default_owner_enabled ? playbook.default_owner_id : null,
+                        playbook.description,
+                        team.id,
+                        team.name,
+                        refreshLHS
+                    ));
+                }
             }}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
