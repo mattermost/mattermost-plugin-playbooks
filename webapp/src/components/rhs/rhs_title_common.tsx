@@ -1,5 +1,5 @@
 import {Link} from 'react-router-dom';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 export const RHSTitleContainer = styled.div`
     display: flex;
@@ -10,31 +10,16 @@ export const RHSTitleContainer = styled.div`
     justify-content: flex-start;
 `;
 
-export const RHSTitleText = styled.div<{ clickable?: boolean }>`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px;
+export const RHSTitleText = styled.div`
+    font-family: Metropolis;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 32px;
 
+
+    padding: 0 4px 0 0;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    border-radius: 4px;
-
-    ${(props) => props.clickable && css`
-        &:hover {
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-            fill: rgba(var(--center-channel-color-rgb), 0.72);
-        }
-
-        &:active,
-        &--active,
-        &--active:hover {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
-        }
-    `}
 `;
 
 export const RHSTitleLink = styled(Link)`
