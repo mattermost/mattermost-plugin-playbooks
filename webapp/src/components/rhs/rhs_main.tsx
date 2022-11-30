@@ -66,6 +66,11 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
 
     const error = inProgressResult.error || finishedResult.error;
 
+    const refetch = () => {
+        inProgressResult.refetch();
+        finishedResult.refetch();
+    };
+
     return {
         runsInProgress,
         numRunsInProgress,
@@ -75,6 +80,7 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
         getMoreFinished,
         hasMoreInProgress,
         hasMoreFinished,
+        refetch,
         error,
     };
 };
@@ -131,6 +137,7 @@ const RightHandSidebar = () => {
     }
 
     const clearCurrentRunId = () => {
+        fetchedRuns.refetch();
         setCurrentRunId(undefined);
     };
 
