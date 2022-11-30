@@ -7,12 +7,16 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import styled from 'styled-components';
+
 import {setRHSOpen} from 'src/actions';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 import {ToastProvider} from '../backstage/toast_banner';
 
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
+
+import LoadingSpinner from '../assets/loading_spinner';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
@@ -45,7 +49,7 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     const hasMoreFinished = finishedResult.data?.runs.pageInfo.hasNextPage ?? false;
 
     const getMoreInProgress = () => {
-        inProgressResult.fetchMore({
+        return inProgressResult.fetchMore({
             variables: {
                 after: inProgressResult.data?.runs.pageInfo.endCursor,
             },
@@ -53,7 +57,7 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     };
 
     const getMoreFinished = () => {
-        finishedResult.fetchMore({
+        return finishedResult.fetchMore({
             variables: {
                 after: finishedResult.data?.runs.pageInfo.endCursor,
             },
@@ -123,7 +127,7 @@ const RightHandSidebar = () => {
     }, [currentChannelId]);
 
     if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
-        return null;
+        return <RHSLoading/>;
     }
 
     const clearCurrentRunId = () => {
@@ -165,6 +169,20 @@ const RightHandSidebar = () => {
         />
     );
 };
+
+const RHSLoading = () => (
+    <Centered>
+        <LoadingSpinner/>
+    </Centered>
+);
+
+const Centered = styled.div`
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+`;
 
 const RHSWrapped = () => {
     return (

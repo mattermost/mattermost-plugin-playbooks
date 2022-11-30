@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
@@ -9,6 +9,8 @@ import {BookOutlineIcon, SortAscendingIcon, CheckIcon} from '@mattermost/compass
 import Scrollbars from 'react-custom-scrollbars';
 
 import {DateTime} from 'luxon';
+
+import {debounce} from 'lodash';
 
 import Profile from 'src/components/profile/profile';
 
@@ -19,6 +21,8 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
+
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -50,7 +54,7 @@ export interface RunListOptions {
 interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void
-    getMore: () => void
+    getMore: () => Promise<any>
     hasMore: boolean
 
     options: RunListOptions
@@ -61,6 +65,13 @@ interface Props {
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
+    const [loadingMore, setLoadingMore] = useState(false);
+    const debouncedSetLoadingMore = debounce(setLoadingMore, 100);
+    const getMore = async () => {
+        debouncedSetLoadingMore(true);
+        await props.getMore();
+        debouncedSetLoadingMore(false);
+    };
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
 
@@ -158,12 +169,15 @@ const RHSRunList = (props: Props) => {
                                     {...run}
                                 />
                             ))}
-                            {props.hasMore &&
+                            {props.hasMore && !loadingMore &&
                                 <TertiaryButton
-                                    onClick={props.getMore}
+                                    onClick={getMore}
                                 >
                                     {formatMessage({defaultMessage: 'Show more'})}
                                 </TertiaryButton>
+                            }
+                            {loadingMore &&
+                                <StyledLoadingSpinner/>
                             }
                         </RunsList>
                     </Scrollbars>
@@ -203,6 +217,13 @@ const FilterMenuTitle = styled.div`
 
 const Spacer = styled.div`
     flex-grow: 1;
+`;
+
+const StyledLoadingSpinner = styled(LoadingSpinner)`
+    margin-top: 12px;
+    width: 20px;
+    height: 20px;
+    align-self: center;
 `;
 
 const StartRunButton = styled(SecondaryButton)`
