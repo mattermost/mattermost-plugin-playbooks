@@ -1,6 +1,8 @@
 package client
 
-import "gopkg.in/guregu/null.v4"
+import (
+	"gopkg.in/guregu/null.v4"
+)
 
 // Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
@@ -53,17 +55,30 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID               string `json:"id"`
-	Title            string `json:"title"`
-	State            string `json:"state"`
-	StateModified    int64  `json:"state_modified"`
-	AssigneeID       string `json:"assignee_id"`
-	AssigneeModified int64  `json:"assignee_modified"`
-	Command          string `json:"command"`
-	CommandLastRun   int64  `json:"command_last_run"`
-	Description      string `json:"description"`
-	LastSkipped      int64  `json:"delete_at"`
-	DueDate          int64  `json:"due_date"`
+	ID               string       `json:"id"`
+	Title            string       `json:"title"`
+	State            string       `json:"state"`
+	StateModified    int64        `json:"state_modified"`
+	AssigneeID       string       `json:"assignee_id"`
+	AssigneeModified int64        `json:"assignee_modified"`
+	Command          string       `json:"command"`
+	CommandLastRun   int64        `json:"command_last_run"`
+	Description      string       `json:"description"`
+	LastSkipped      int64        `json:"delete_at"`
+	DueDate          int64        `json:"due_date"`
+	TaskActions      []TaskAction `json:"task_actions"`
+}
+
+// TaskAction represents a task action in an item
+type TaskAction struct {
+	Trigger TriggerAction   `json:"trigger"`
+	Actions []TriggerAction `json:"actions"`
+}
+
+// TriggerAction represents a trigger or action in a Task Action
+type TriggerAction struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
