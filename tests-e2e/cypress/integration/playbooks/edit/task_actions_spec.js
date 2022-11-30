@@ -71,7 +71,7 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['']);
+                assert.deepEqual(trigger.keywords, []);
                 assert.isFalse(actions.enabled);
             });
         });
@@ -98,7 +98,7 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['keyword1']);
+                assert.deepEqual(trigger.keywords, ['keyword1']);
                 assert.isTrue(actions.enabled);
             });
         });
@@ -126,7 +126,7 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['keyword1', 'keyword2']);
+                assert.deepEqual(trigger.keywords, ['keyword1', 'keyword2']);
                 assert.isTrue(actions.enabled);
             });
         });
@@ -153,7 +153,7 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['a phrase with multiple words']);
+                assert.deepEqual(trigger.keywords, ['a phrase with multiple words']);
                 assert.isTrue(actions.enabled);
             });
         });
@@ -192,12 +192,11 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['keyword2']);
+                assert.deepEqual(trigger.keywords, ['keyword2']);
                 assert.isTrue(actions.enabled);
             });
         });
 
-        // TODO: This test actually fails, because the UI thinks there is still one action configured.
         it('disables when all keywords removed', () => {
             // Open the task actions modal
             editTask();
@@ -233,7 +232,7 @@ describe('playbooks > edit > task actions', () => {
                 const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
 
-                assert.isArray(trigger.keywords, ['']);
+                assert.deepEqual(trigger.keywords, []);
                 assert.isFalse(actions.enabled);
             });
         });
