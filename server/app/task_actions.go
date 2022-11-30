@@ -39,10 +39,6 @@ const (
 )
 
 var (
-	ValidTaskTriggerTypes = []TaskTriggerType{
-		KeywordsByUsersTriggerType,
-	}
-
 	ValidTaskActionTypes = []TaskActionType{
 		MarkItemAsDoneActionType,
 	}
@@ -73,9 +69,6 @@ func NewKeywordsByUsersTrigger(trigger Trigger) (*KeywordsByUsersTrigger, error)
 }
 
 func (t *KeywordsByUsersTrigger) IsValid() error {
-	if len(t.Payload.Keywords) == 0 {
-		return errors.Errorf("invalid payload: %s, missing 'keywords' for trigger type: %s", t.Payload, KeywordsByUsersTriggerType)
-	}
 	return nil
 }
 
@@ -125,6 +118,10 @@ func NewMarkItemAsDoneAction(action Action) (*MarkItemAsDoneAction, error) {
 	return &a, nil
 }
 
+func (a *MarkItemAsDoneAction) IsValid() error {
+	return nil
+}
+
 // Validators
 func ValidateTrigger(t Trigger) error {
 	switch t.Type {
@@ -140,14 +137,14 @@ func ValidateTrigger(t Trigger) error {
 }
 
 func ValidateAction(a Action) error {
-	var isValidType bool
-	for _, validType := range ValidTaskActionTypes {
-		if a.Type == validType {
-			isValidType = true
+	switch a.Type {
+	case MarkItemAsDoneActionType:
+		action, err := NewMarkItemAsDoneAction(a)
+		if err != nil {
+			return err
 		}
+		return action.IsValid()
+	default:
+		return errors.Errorf("Unknown task action type: %s", a.Type)
 	}
-	if isValidType {
-		return nil
-	}
-	return errors.Errorf("Unknown task action type: %s", a.Type)
 }
