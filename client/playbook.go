@@ -1,6 +1,8 @@
 package client
 
 import (
+	"fmt"
+
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -32,6 +34,8 @@ type Playbook struct {
 	Metrics                                 []PlaybookMetricConfig `json:"metrics"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
+	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
+	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 }
 
 type PlaybookMember struct {
@@ -103,6 +107,8 @@ type PlaybookCreateOptions struct {
 	Metrics                                 []PlaybookMetricConfig `json:"metrics"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
+	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
+	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 }
 
 type PlaybookMetricConfig struct {
@@ -147,4 +153,37 @@ type PlaybookStats struct {
 	MetricValueRange              [][]int64  `json:"metric_value_range"`
 	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
 	LastXRunNames                 []string   `json:"last_x_run_names"`
+}
+
+type ChannelPlaybookMode int
+
+const (
+	PlaybookRunCreateNewChannel ChannelPlaybookMode = iota
+	PlaybookRunLinkExistingChannel
+)
+
+var channelPlaybookTypes = [...]string{
+	PlaybookRunCreateNewChannel:    "create_new_channel",
+	PlaybookRunLinkExistingChannel: "link_existing_channel",
+}
+
+// String creates the string version of the TelemetryTrack
+func (cpm ChannelPlaybookMode) String() string {
+	return channelPlaybookTypes[cpm]
+}
+
+// MarshalText converts a ChannelPlaybookMode to a string for serializers (including JSON)
+func (cpm ChannelPlaybookMode) MarshalText() ([]byte, error) {
+	return []byte(channelPlaybookTypes[cpm]), nil
+}
+
+// UnmarshalText parses a ChannelPlaybookMode from text. For deserializers (including JSON)
+func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
+	for i, st := range channelPlaybookTypes {
+		if st == string(text) {
+			*cpm = ChannelPlaybookMode(i)
+			return nil
+		}
+	}
+	return fmt.Errorf("unknown ChannelPlaybookMode: %s", string(text))
 }

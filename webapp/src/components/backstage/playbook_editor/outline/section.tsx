@@ -14,6 +14,8 @@ interface Props {
     children?: React.ReactNode;
     headerRight?: React.ReactNode;
     hoverEffect?: boolean;
+    onHeaderClick?: () => void;
+    hasSubtitle?: boolean;
 }
 
 const Section = ({
@@ -22,15 +24,21 @@ const Section = ({
     headerRight,
     children,
     hoverEffect,
+    onHeaderClick,
+    hasSubtitle,
 }: Props) => {
     const {url} = useRouteMatch();
 
     return (
         <Wrapper
             id={id}
-            $hoverEffect={hoverEffect}
         >
-            <Header>
+            <Header
+                $clickable={Boolean(onHeaderClick)}
+                $hasSubtitle={hasSubtitle}
+                $hoverEffect={hoverEffect}
+                onClick={onHeaderClick}
+            >
                 <Title>
                     <CopyLink
                         id={`section-link-${id}`}
@@ -51,7 +59,14 @@ const Section = ({
     );
 };
 
-const Wrapper = styled.div<{$hoverEffect?: boolean; $hideHeaderRight?: boolean;}>`
+const Wrapper = styled.div`
+    padding: 0.5rem 3rem 2rem;
+`;
+
+const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hasSubtitle?: boolean; $hideHeaderRight?: boolean; }>`
+    ${({$clickable}) => $clickable && css`
+        cursor: pointer;
+    `}
     ${({$hoverEffect}) => $hoverEffect && css`
         ${HeaderRight} {
             opacity: 0
@@ -64,8 +79,13 @@ const Wrapper = styled.div<{$hoverEffect?: boolean; $hideHeaderRight?: boolean;}
             }
         }
     `}
-    padding: 0.5rem 3rem 2rem;
     border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    margin-bottom: ${({$hasSubtitle}) => ($hasSubtitle ? '2px' : '10px')};
+    padding: 4px 0 4px 8px;
 `;
 
 const HeaderRight = styled.div``;
@@ -76,22 +96,20 @@ const Title = styled.h3`
     font-weight: 600;
     line-height: 28px;
     white-space: nowrap;
+    margin: 0;
+    position: relative;
 
     ${CopyLink} {
         margin-left: -1.25em;
         opacity: 1;
         transition: opacity ease 0.15s;
+        position: absolute;
+        left: -10px;
     }
 
     &:not(:hover) ${CopyLink}:not(:hover) {
         opacity: 0;
     }
-`;
-
-const Header = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 `;
 
 export default Section;

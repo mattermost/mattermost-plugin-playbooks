@@ -194,6 +194,13 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+func (p Playbook) GetRunChannelID() string {
+	if p.ChannelMode == PlaybookRunLinkExistingChannel {
+		return p.ChannelID
+	}
+	return ""
+}
+
 // Checklist represents a checklist in a playbook.
 type Checklist struct {
 	// ID is the identifier of the checklist.

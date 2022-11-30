@@ -21,10 +21,15 @@ func TestGraphQLRunList(t *testing.T) {
 	t.Run("list by participantOrFollower", func(t *testing.T) {
 		var rResultTest struct {
 			Data struct {
-				Runs []struct {
-					ID         string
-					Name       string
-					IsFavorite bool
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
 				}
 			}
 			Errors []struct {
@@ -35,9 +40,14 @@ func TestGraphQLRunList(t *testing.T) {
 		testRunsQuery := `
 		query Runs($userID: String!) {
 			runs(participantOrFollowerID: $userID) {
-				id
-				name
-				isFavorite
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
 			}
 		}
 		`
@@ -48,19 +58,25 @@ func TestGraphQLRunList(t *testing.T) {
 		}, &rResultTest)
 		require.NoError(t, err)
 
-		assert.Len(t, rResultTest.Data.Runs, 1)
-		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
-		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
-		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 1, rResultTest.Data.Runs.TotalCount)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs.Edges[0].Node.ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs.Edges[0].Node.Name)
+		assert.False(t, rResultTest.Data.Runs.Edges[0].Node.IsFavorite)
 	})
 
 	t.Run("list by channel", func(t *testing.T) {
 		var rResultTest struct {
 			Data struct {
-				Runs []struct {
-					ID         string
-					Name       string
-					IsFavorite bool
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
 				}
 			}
 			Errors []struct {
@@ -71,9 +87,14 @@ func TestGraphQLRunList(t *testing.T) {
 		testRunsQuery := `
 		query Runs($channelID: String!) {
 			runs(channelID: $channelID) {
-				id
-				name
-				isFavorite
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
 			}
 		}
 		`
@@ -84,10 +105,97 @@ func TestGraphQLRunList(t *testing.T) {
 		}, &rResultTest)
 		require.NoError(t, err)
 
-		assert.Len(t, rResultTest.Data.Runs, 1)
-		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
-		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
-		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 1, rResultTest.Data.Runs.TotalCount)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs.Edges[0].Node.ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs.Edges[0].Node.Name)
+		assert.False(t, rResultTest.Data.Runs.Edges[0].Node.IsFavorite)
+	})
+
+	// Make more runs in the channel
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Basic create",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+		ChannelID:   e.BasicRun.ChannelID,
+	})
+	require.NoError(e.T, err)
+	require.NotNil(e.T, run)
+
+	run2, err2 := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Basic create",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+		ChannelID:   e.BasicRun.ChannelID,
+	})
+	require.NoError(e.T, err2)
+	require.NotNil(e.T, run2)
+
+	t.Run("paging", func(t *testing.T) {
+		var rResultTest struct {
+			Data struct {
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
+					PageInfo struct {
+						EndCursor   string
+						HasNextPage bool
+					}
+				}
+			}
+			Errors []struct {
+				Message string
+				Path    string
+			}
+		}
+		testRunsQuery := `
+		query Runs($channelID: String!, $first: Int, $after: String) {
+			runs(channelID: $channelID, first: $first, after: $after) {
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+		`
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2},
+		}, &rResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, rResultTest.Data.Runs.Edges, 2)
+		assert.Equal(t, 3, rResultTest.Data.Runs.TotalCount)
+		assert.True(t, rResultTest.Data.Runs.PageInfo.HasNextPage)
+		assert.Equal(t, "1", rResultTest.Data.Runs.PageInfo.EndCursor)
+
+		err2 := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2, "after": "1"},
+		}, &rResultTest)
+		require.NoError(t, err2)
+
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 3, rResultTest.Data.Runs.TotalCount)
+		assert.False(t, rResultTest.Data.Runs.PageInfo.HasNextPage)
 	})
 }
 
@@ -95,7 +203,6 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// create a third user to test multiple add/remove
 	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
@@ -103,6 +210,13 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
+	require.NoError(t, err)
+
+	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(&model.User{
+		Email:    "notinteam@example.com",
+		Username: "notinteam",
+		Password: "Password123!",
+	})
 	require.NoError(t, err)
 
 	// if the test fits this testTable structure, add it here
@@ -164,6 +278,22 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
 			ExpectedChannelMembers:   []string{e.RegularUser.Id},
 			UnexpectedChannelMembers: []string{e.RegularUser2.Id, user3.Id},
+		},
+		{
+			Name: "Add 2 participants, actions OFF, one from another different team",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: false,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser.Id,
+			},
+			ParticipantsToBeAdded:    []string{e.RegularUser2.Id, userNotInTeam.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id},
 		},
 	}
 

@@ -773,5 +773,11 @@
     "9X3jwi": "{icon} Kosten",
     "dK2JKl": "Mit einem bestehenden Kanal verknüpfen",
     "IdTL+v": "Einen Durchlauf-Kanal erstellen",
-    "2BCWLD": "Kanal konfigurieren"
+    "2BCWLD": "Kanal konfigurieren",
+    "lqceIp": "oder <ImportPlaybookButton>Playbook importieren</ImportPlaybookButton>",
+    "ORJ0Hb": "Es gibt {outstanding, plural, =1 {# ausstehende Aufgabe} other {# ausstehende Aufgaben}}. Bist du sicher, dass du den Lauf beenden willst?",
+    "0boT49": "Bist du sicher, dass du den Durchlauf für alle Teilnehmer beenden möchtest?",
+    "AG7PKJ": "Durchlauf umbenennen",
+    "a2r7Vb": "Privater Kanal",
+    "VA1Q/S": "Öffentlicher Kanal"
 }

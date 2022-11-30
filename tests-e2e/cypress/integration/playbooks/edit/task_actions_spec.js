@@ -5,29 +5,21 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
-import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('playbooks > edit > task actions', () => {
     let testTeam;
-    let testSysadmin;
     let testUser;
-    let featureFlagPrevValue;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
         });
     });
 
     beforeEach(() => {
         // # Login as testUser
         cy.apiLogin(testUser);
-
     });
 
     describe('modal', () => {
@@ -76,7 +68,11 @@ describe('playbooks > edit > task actions', () => {
             // Verify no actions are configured
             cy.findByText('Task Actions').should('exist');
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
-                expect(playbook.checklists[0].items[0].task_actions).to.be.null;
+                const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
+                const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
+
+                assert.isArray(trigger.keywords, ['']);
+                assert.isFalse(actions.enabled);
             });
         });
 
@@ -242,19 +238,19 @@ describe('playbooks > edit > task actions', () => {
             });
         });
 
-//         it('allows no user', () => {
-//         });
+        //         it('allows no user', () => {
+        //         });
 
-//         it('allows a single user', () => {
-//         });
+        //         it('allows a single user', () => {
+        //         });
 
-//         it('allows configuring multiple users', () => {
-//         });
+        //         it('allows configuring multiple users', () => {
+        //         });
 
-//         it('rejects unknown user', () => {
-//         });
+        //         it('rejects unknown user', () => {
+        //         });
 
-//         it('allows removing previously configured users', () => {
-//         });
+        //         it('allows removing previously configured users', () => {
+        //         });
     });
 });

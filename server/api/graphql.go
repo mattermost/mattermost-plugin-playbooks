@@ -62,7 +62,7 @@ func NewGraphQLHandler(
 
 	if !configService.IsConfiguredForDevelopmentAndTesting() {
 		opts = append(opts,
-			graphql.MaxDepth(6),
+			graphql.MaxDepth(8),
 			graphql.DisableIntrospection(),
 		)
 	}
