@@ -629,7 +629,7 @@
     "unused-imports/no-unused-imports": 2,
     "no-relative-import-paths/no-relative-import-paths": [
       "warn",
-      { "allowSameFolder": false }
+      { "allowSameFolder": true }
     ]
   },
   "overrides": [
