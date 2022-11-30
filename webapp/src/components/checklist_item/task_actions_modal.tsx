@@ -124,11 +124,13 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
                     triggerModifier={(
                         <>
                             <TriggerKeywords
+                                testId={'task-action-keywords'}
                                 editable={true}
                                 keywords={triggerPayload.keywords}
                                 onUpdate={(updatedKeywords) => setNewKeywords(updatedKeywords)}
                             />
                             <ProfileAutocomplete
+                                data-testid={'task-action-posted-by'}
                                 autoFocus={false}
                                 searchProfiles={searchUsers}
                                 userIds={[]}
