@@ -19,7 +19,7 @@ describe('playbooks > edit > task actions', () => {
             testUser = user;
 
             cy.apiCreateUser().then(({user: user2}) => {
-                testUser2 = user2
+                testUser2 = user2;
 
                 // # Add this new user to the team
                 cy.apiAddUserToTeam(team.id, testUser2.id);
@@ -230,7 +230,7 @@ describe('playbooks > edit > task actions', () => {
             cy.findByTestId('modal-confirm-button').click();
 
             // Re-open the dialog
-            cy.findByText('1 action').click()
+            cy.findByText('1 action').click();
 
             // Remove all trigger keywords
             cy.get('.modal-body').within(() => {
@@ -294,7 +294,6 @@ describe('playbooks > edit > task actions', () => {
                 cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             });
 
-
             // Add a user
             cy.get('.modal-body').within(() => {
                 cy.get('input').eq(1)
@@ -330,7 +329,6 @@ describe('playbooks > edit > task actions', () => {
             cy.get('.modal-body').within(() => {
                 cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             });
-
 
             // Add two users
             cy.get('.modal-body').within(() => {
@@ -410,7 +408,6 @@ describe('playbooks > edit > task actions', () => {
             cy.get('.modal-body').within(() => {
                 cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             });
-
 
             // Add two users
             cy.get('.modal-body').within(() => {
