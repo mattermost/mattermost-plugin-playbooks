@@ -76,6 +76,8 @@ import {
     OpenBackstageRHS,
     SetEveryChecklistCollapsedState,
     SET_EVERY_CHECKLIST_COLLAPSED_STATE,
+    PublishTemplates,
+    PUBLISH_TEMPLATES,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -86,6 +88,7 @@ import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbo
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
+import {PresetTemplate} from 'src/components/templates/template_data';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -376,4 +379,9 @@ export const openBackstageRHS = (section: BackstageRHSSection, viewMode: Backsta
     type: OPEN_BACKSTAGE_RHS,
     section,
     viewMode,
+});
+
+export const publishTemplates = (templates: PresetTemplate[]): PublishTemplates => ({
+    type: PUBLISH_TEMPLATES,
+    templates,
 });

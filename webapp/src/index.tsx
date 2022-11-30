@@ -42,7 +42,7 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal, publishTemplates,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -75,6 +75,7 @@ import {RetrospectivePost} from './components/retrospective_post';
 import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
+import PresetTemplates from './components/templates/template_data';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -326,6 +327,9 @@ export default class Plugin {
 
         // Listen for channel changes and open the RHS when appropriate.
         this.removeRHSListener = store.subscribe(makeRHSOpener(store));
+
+        // publish templates
+        store.dispatch(publishTemplates(PresetTemplates));
     }
 
     public uninitialize() {

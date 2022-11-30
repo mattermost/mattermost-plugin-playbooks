@@ -9,6 +9,7 @@ import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs
 import {pluginId} from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
+import {PresetTemplate} from 'src/components/templates/template_data';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -44,6 +45,8 @@ export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filte
 //       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
 export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
 export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
+
+export const PUBLISH_TEMPLATES = pluginId + '_publish_templates';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -197,4 +200,9 @@ export interface OpenBackstageRHS {
 
 export interface CloseBackstageRHS {
     type: typeof CLOSE_BACKSTAGE_RHS;
+}
+
+export interface PublishTemplates {
+    type: typeof PUBLISH_TEMPLATES;
+    templates: PresetTemplate[];
 }
