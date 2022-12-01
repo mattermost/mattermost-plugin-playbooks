@@ -77,6 +77,7 @@ export type Mutation = {
     deleteMetric: Scalars['String'];
     removePlaybookMember: Scalars['String'];
     removeRunParticipants: Scalars['String'];
+    setRunFavorite: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
@@ -118,6 +119,11 @@ export type MutationRemovePlaybookMemberArgs = {
 export type MutationRemoveRunParticipantsArgs = {
     runID: Scalars['String'];
     userIDs: Array<Scalars['String']>;
+};
+
+export type MutationSetRunFavoriteArgs = {
+    fav: Scalars['Boolean'];
+    id: Scalars['String'];
 };
 
 export type MutationUpdateMetricArgs = {
@@ -334,7 +340,6 @@ export type RunEdge = {
 export type RunUpdates = {
     broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
-    isFavorite?: InputMaybe<Scalars['Boolean']>;
     name?: InputMaybe<Scalars['String']>;
     removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
     statusUpdateBroadcastChannelsEnabled?: InputMaybe<Scalars['Boolean']>;
@@ -424,6 +429,13 @@ export type RhsFinishedRunsQueryVariables = Exact<{
 }>;
 
 export type RhsFinishedRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, lastUpdatedAt: number, playbook: { __typename?: 'Playbook', title: string } } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+
+export type SetRunFavoriteMutationVariables = Exact<{
+    id: Scalars['String'];
+    fav: Scalars['Boolean'];
+}>;
+
+export type SetRunFavoriteMutation = { __typename?: 'Mutation', setRunFavorite: string };
 
 export type UpdateRunMutationVariables = Exact<{
     id: Scalars['String'];
@@ -868,6 +880,38 @@ export function useRhsFinishedRunsLazyQuery(baseOptions?: Apollo.LazyQueryHookOp
 export type RhsFinishedRunsQueryHookResult = ReturnType<typeof useRhsFinishedRunsQuery>;
 export type RhsFinishedRunsLazyQueryHookResult = ReturnType<typeof useRhsFinishedRunsLazyQuery>;
 export type RhsFinishedRunsQueryResult = Apollo.QueryResult<RhsFinishedRunsQuery, RhsFinishedRunsQueryVariables>;
+export const SetRunFavoriteDocument = gql`
+    mutation SetRunFavorite($id: String!, $fav: Boolean!) {
+  setRunFavorite(id: $id, fav: $fav)
+}
+    `;
+export type SetRunFavoriteMutationFn = Apollo.MutationFunction<SetRunFavoriteMutation, SetRunFavoriteMutationVariables>;
+
+/**
+ * __useSetRunFavoriteMutation__
+ *
+ * To run a mutation, you first call `useSetRunFavoriteMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetRunFavoriteMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setRunFavoriteMutation, { data, loading, error }] = useSetRunFavoriteMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      fav: // value for 'fav'
+ *   },
+ * });
+ */
+export function useSetRunFavoriteMutation(baseOptions?: Apollo.MutationHookOptions<SetRunFavoriteMutation, SetRunFavoriteMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<SetRunFavoriteMutation, SetRunFavoriteMutationVariables>(SetRunFavoriteDocument, options);
+}
+export type SetRunFavoriteMutationHookResult = ReturnType<typeof useSetRunFavoriteMutation>;
+export type SetRunFavoriteMutationResult = Apollo.MutationResult<SetRunFavoriteMutation>;
+export type SetRunFavoriteMutationOptions = Apollo.BaseMutationOptions<SetRunFavoriteMutation, SetRunFavoriteMutationVariables>;
 export const UpdateRunDocument = gql`
     mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)

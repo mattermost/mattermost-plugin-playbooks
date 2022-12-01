@@ -32,6 +32,7 @@ type Mutation {
 	addPlaybookMember(playbookID: String!, userID: String!): String!
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
+	setRunFavorite(id: String!, fav: Boolean!): String!
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
@@ -266,7 +267,6 @@ type TimelineEvent {
 input RunUpdates {
 	name: String
 	summary: String
-	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
 	statusUpdateBroadcastChannelsEnabled: Boolean

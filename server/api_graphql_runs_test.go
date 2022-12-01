@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -693,6 +694,92 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 
 }
 
+func TestSetRunFavorite(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	t.Run("change favorite to true", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+	})
+
+	t.Run("from true to false returns false", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+
+		// now that we have this run favorite set to true, if we change it again,
+		// it should return false
+		response, err = setRunFavorite(e.PlaybooksClient, run.ID, false)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err = getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+	})
+
+	t.Run("if already true, should give error", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+
+		response, err = setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+	})
+
+	t.Run("if already false, should give error", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, false)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+	})
+
+	t.Run("if user is not from the team", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClientNotInTeam, run.ID, true)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+	})
+}
+
 func TestUpdateRun(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -867,6 +954,60 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 	}, &response)
 
 	return response, err
+}
+
+func setRunFavorite(c *client.Client, playbookRunID string, fav bool) (graphql.Response, error) {
+	mutation := `mutation SetRunFavorite($id: String!, $fav: Boolean!) {
+		setRunFavorite(id: $id, fav: $fav)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "SetRunFavorite",
+		Variables: map[string]interface{}{
+			"id":  playbookRunID,
+			"fav": fav,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func getRunFavorite(c *client.Client, playbookRunID string) (bool, error) {
+	query := `
+	query GetRunFavorite($id: String!) {
+		run(id: $id) {
+			isFavorite
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetRunFavorite",
+		Variables: map[string]interface{}{
+			"id": playbookRunID,
+		},
+	}, &response)
+
+	if err != nil {
+		return false, err
+	}
+	if len(response.Errors) > 0 {
+		return false, fmt.Errorf("error from query %v", response.Errors)
+	}
+
+	favoriteResponse := struct {
+		Run struct {
+			IsFavorite bool `json:"isFavorite"`
+		} `json:"run"`
+	}{}
+	err = json.Unmarshal(response.Data, &favoriteResponse)
+	if err != nil {
+		return false, err
+	}
+	return favoriteResponse.Run.IsFavorite, nil
 }
 
 // UpdateRun updates the run

@@ -93,10 +93,55 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	return &RunConnectionResolver{results: *runResults, page: page}, nil
 }
 
+func (r *RunRootResolver) SetRunFavorite(ctx context.Context, args struct {
+	ID  string
+	Fav bool
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
+		return "", err
+	}
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if args.Fav {
+		if err := c.categoryService.AddFavorite(
+			app.CategoryItem{
+				ItemID: playbookRun.ID,
+				Type:   app.RunItemType,
+			},
+			playbookRun.TeamID,
+			userID,
+		); err != nil {
+			return "", err
+		}
+	} else {
+		if err := c.categoryService.DeleteFavorite(
+			app.CategoryItem{
+				ItemID: playbookRun.ID,
+				Type:   app.RunItemType,
+			},
+			playbookRun.TeamID,
+			userID,
+		); err != nil {
+			return "", err
+		}
+	}
+
+	return playbookRun.ID, nil
+}
+
 type RunUpdates struct {
 	Name                                    *string
 	Summary                                 *string
-	IsFavorite                              *bool
 	CreateChannelMemberOnNewParticipant     *bool
 	RemoveChannelMemberOnRemovedParticipant *bool
 	StatusUpdateBroadcastChannelsEnabled    *bool
@@ -115,8 +160,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	// some updates require just view permission (like fav/unfav)
-	if err := c.permissions.RunView(userID, args.ID); err != nil {
+	if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
 		return "", err
 	}
 
@@ -154,42 +198,8 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
 
-	// Auth level required: runManageProperties if non empty
-	if len(setmap) > 0 {
-		if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
-			return "", err
-		}
-
-		if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
-			return "", err
-		}
-	}
-
-	// fav / unfav (auth level required: runView)
-	if args.Updates.IsFavorite != nil {
-		if *args.Updates.IsFavorite {
-			if err := c.categoryService.AddFavorite(
-				app.CategoryItem{
-					ItemID: playbookRun.ID,
-					Type:   app.RunItemType,
-				},
-				playbookRun.TeamID,
-				userID,
-			); err != nil {
-				return "", err
-			}
-		} else {
-			if err := c.categoryService.DeleteFavorite(
-				app.CategoryItem{
-					ItemID: playbookRun.ID,
-					Type:   app.RunItemType,
-				},
-				playbookRun.TeamID,
-				userID,
-			); err != nil {
-				return "", err
-			}
-		}
+	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+		return "", err
 	}
 
 	return playbookRun.ID, nil
