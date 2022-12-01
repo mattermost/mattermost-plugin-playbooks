@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import Svg from '../svg';
+import Svg from 'src/components/assets/svg';
 
 const LightBulb = (props: {className?: string}) => (
     <Svg

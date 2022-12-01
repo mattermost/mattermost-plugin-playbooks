@@ -24,13 +24,17 @@ import {
 } from 'src/components/datetime_input';
 
 import {usePost, useRun, useFormattedUsernames} from 'src/hooks';
-import MarkdownTextbox from '../markdown_textbox';
+
+import MarkdownTextbox from 'src/components/markdown_textbox';
+
 import {pluginUrl} from 'src/browser_routing';
 import {fetchPlaybookRunMetadata, postStatusUpdate} from 'src/client';
 import {Metadata, PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
-import WarningIcon from '../assets/icons/warning_icon';
+
+import WarningIcon from 'src/components/assets/icons/warning_icon';
+
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {modals, browserHistory} from 'src/webapp_globals';

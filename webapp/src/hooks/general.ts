@@ -54,12 +54,13 @@ import {
     fetchPlaybookRunMetadata,
 } from 'src/client';
 
-import {isCloud} from '../license';
+import {isCloud} from 'src/license';
 import {
     globalSettings,
     isCurrentUserAdmin,
     noopSelector,
-} from '../selectors';
+} from 'src/selectors';
+
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {

@@ -3,7 +3,7 @@
 
 import styled from 'styled-components';
 
-import {DotMenuButton, DropdownMenuItem} from '../dot_menu';
+import {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 
 export const DotMenuButtonStyled = styled(DotMenuButton)`
     flex-shrink: 0;
@@ -35,7 +35,7 @@ export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
 
             svg {
                 fill: var(--button-color);
-            }            
+            }
         }
     }
 `;

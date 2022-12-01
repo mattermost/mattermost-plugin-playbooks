@@ -25,7 +25,7 @@ import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal} from 'src/actions';
 
-import {DotMenuButton} from '../dot_menu';
+import {DotMenuButton} from 'src/components/dot_menu';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
