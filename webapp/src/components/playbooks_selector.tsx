@@ -8,10 +8,11 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {ApolloProvider} from '@apollo/client';
 import {BookOutlineIcon, BookLockOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
+import {DateTime} from 'luxon';
 
 import {usePlaybooksModalQuery} from 'src/graphql/generated_types';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
+
 import {PrimaryButton} from 'src/components/assets/buttons';
 import SearchSvg from 'src/components/assets/illustrations/search_svg';
 import ClipboardSvg from 'src/components/assets/illustrations/clipboard_svg';
@@ -92,9 +93,6 @@ const PlaybooksSelector = (props: Props) => {
                 autoHide={true}
                 autoHideTimeout={500}
                 autoHideDuration={500}
-                renderThumbVertical={renderThumbVertical}
-                renderView={renderView}
-                renderTrackHorizontal={renderTrackHorizontal}
             >
                 {groups.map((group) => (
                     <>
@@ -111,7 +109,7 @@ const PlaybooksSelector = (props: Props) => {
                                     <ItemCenter>
                                         <ItemTitle>{playbook.title}</ItemTitle>
                                         <ItemSubTitle>
-                                            <span>{formatMessage({defaultMessage: 'Last used'})}</span>
+                                            <span>{playbook.lastRunAt === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.lastRunAt).toRelative()})}</span>
                                             <Dot/>
                                             <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.activeRuns})}</span>
                                         </ItemSubTitle>
@@ -168,6 +166,7 @@ const Item = styled.div`
     flex-direction: row;
     cursor: pointer;
     padding: 10px 0;
+    margin-right: 10px;
     border-radius: 4px;
     &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
