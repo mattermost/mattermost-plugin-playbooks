@@ -135,7 +135,11 @@ func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
 }
 
 func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
-	return getGraphqlPlaybook(ctx, r.PlaybookID)
+	if val, err := getGraphqlPlaybook(ctx, r.PlaybookID); err != nil {
+		return nil, nil
+	} else {
+		return val, nil
+	}
 }
 
 func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {

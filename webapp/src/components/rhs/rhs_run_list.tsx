@@ -36,7 +36,7 @@ interface RunToDisplay {
     name: string
     participantIDs: string[]
     ownerUserID: string
-    playbook: PlaybookToDisplay
+    playbook?: Maybe<PlaybookToDisplay>
     lastUpdatedAt: number
 }
 
@@ -330,12 +330,14 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
                     )}
                 </LastUpdatedText>
-                <PlaybookChip>
-                    <StyledBookOutlineIcon
-                        size={11}
-                    />
-                    {props.playbook.title}
-                </PlaybookChip>
+                {props.playbook &&
+                    <PlaybookChip>
+                        <StyledBookOutlineIcon
+                            size={11}
+                        />
+                        {props.playbook.title}
+                    </PlaybookChip>
+                }
             </InfoRow>
         </CardContainer>
     );
