@@ -389,11 +389,12 @@ export type PlaybookLhsQuery = { __typename?: 'Query', runs: { __typename?: 'Run
 export type PlaybookModalFieldsFragment = { __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number };
 
 export type PlaybooksModalQueryVariables = Exact<{
+    channelID: Scalars['String'];
     teamID: Scalars['String'];
     searchTerm: Scalars['String'];
 }>;
 
-export type PlaybooksModalQuery = { __typename?: 'Query', yourPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }>, allPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }> };
+export type PlaybooksModalQuery = { __typename?: 'Query', channelPlaybooks: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', playbookID: string } }> }, yourPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }>, allPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -676,7 +677,14 @@ export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
 export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
 export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
 export const PlaybooksModalDocument = gql`
-    query PlaybooksModal($teamID: String!, $searchTerm: String!) {
+    query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {
+  channelPlaybooks: runs(channelID: $channelID, first: 1000) {
+    edges {
+      node {
+        playbookID
+      }
+    }
+  }
   yourPlaybooks: playbooks(
     teamID: $teamID
     withMembershipOnly: true
@@ -706,6 +714,7 @@ export const PlaybooksModalDocument = gql`
  * @example
  * const { data, loading, error } = usePlaybooksModalQuery({
  *   variables: {
+ *      channelID: // value for 'channelID'
  *      teamID: // value for 'teamID'
  *      searchTerm: // value for 'searchTerm'
  *   },

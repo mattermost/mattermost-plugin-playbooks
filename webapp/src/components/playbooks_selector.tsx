@@ -19,6 +19,7 @@ import ClipboardSvg from 'src/components/assets/illustrations/clipboard_svg';
 
 interface Props {
     teamID: string;
+    channelID: string;
     searchTerm: string;
 
     /**
@@ -35,27 +36,40 @@ const PlaybooksSelector = (props: Props) => {
         variables: {
             teamID: props.teamID,
             searchTerm: props.searchTerm,
+            channelID: props.channelID,
         },
         fetchPolicy: 'cache-and-network',
     });
 
-    const groups = [
+    // Groups are mutually exclusive
+    // -> 1) if channelid -> -unique- playbooks whose runs are in linked to this channel
+    // -> 2) playbooks I'm member of and are not contained in 1
+    // -> 3) playbooks I have access to and are not contained in 1 and 2
+    const getGroups = () => {
+        const groupUsed = props.channelID ? data?.allPlaybooks.filter((playbook) => data.channelPlaybooks.edges?.find((target) => target.node?.playbookID === playbook.id)) : [];
+        const groupYours = data?.yourPlaybooks.filter((playbook) => !groupUsed?.find((target) => target.id === playbook.id));
+        const groupOther = data?.allPlaybooks.filter((playbook) =>
+            !data.yourPlaybooks.find((target) => target.id === playbook.id) &&
+            !groupUsed?.find((target) => target.id === playbook.id)
+        );
 
-        // To be implemented
-        // {
-        //     title: formatMessage({defaultMessage: 'Used in this channel'}),
-        //     list: data?.allPlaybooks,
-        // },
-        {
-            title: formatMessage({defaultMessage: 'Your playbooks'}),
-            list: data?.yourPlaybooks,
-        },
-        {
-            title: formatMessage({defaultMessage: 'Other playbooks'}),
-            list: data?.allPlaybooks.filter((playbook) => !data.yourPlaybooks.find((target) => target.id === playbook.id)),
-        },
-    ];
+        return [
+            {
+                title: formatMessage({defaultMessage: 'Used in this channel'}),
+                list: groupUsed,
+            },
+            {
+                title: formatMessage({defaultMessage: 'Your playbooks'}),
+                list: groupYours,
+            },
+            {
+                title: formatMessage({defaultMessage: 'Other playbooks'}),
+                list: groupOther,
+            },
+        ];
+    };
 
+    const groups = getGroups();
     const hasResults = Boolean(data?.allPlaybooks && data?.allPlaybooks.length > 0);
 
     // Invoke callback to notify parent if the zero case triggered
