@@ -54,10 +54,6 @@ const GlobalHeaderRight = () => {
     const isExperimentationEnabled = useExperimentalFeaturesEnabled();
     const hasOverdueTasks = useSelector(selectHasOverdueTasks);
 
-    if (!isExperimentationEnabled) {
-        return null;
-    }
-
     const isTasksOpen = isOpen && section === BackstageRHSSection.TaskInbox;
 
     const onClick = () => {
@@ -77,27 +73,29 @@ const GlobalHeaderRight = () => {
     return (
         <>
             <GlobalHeaderGiveFeedbackButton/>
-            <OverlayTrigger
-                trigger={['hover', 'focus']}
-                delay={OVERLAY_DELAY}
-                placement='bottom'
-                overlay={tooltip}
-                aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
+            {isExperimentationEnabled === true ?
+                <OverlayTrigger
+                    trigger={['hover', 'focus']}
+                    delay={OVERLAY_DELAY}
+                    placement='bottom'
+                    overlay={tooltip}
+                    aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
 
-            >
-                <IconButtonWrapper
-                    data-testid='header-task-inbox-icon'
-                    onClick={onClick}
-                    toggled={isTasksOpen}
                 >
-                    {hasOverdueTasks ? <UnreadBadge toggled={isTasksOpen}/> : null}
-                    <CheckboxMultipleMarkedOutlineIcon
-                        size={18}
-                        color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
-                    />
-                </IconButtonWrapper>
+                    <IconButtonWrapper
+                        data-testid='header-task-inbox-icon'
+                        onClick={onClick}
+                        toggled={isTasksOpen}
+                    >
+                        {hasOverdueTasks ? <UnreadBadge toggled={isTasksOpen}/> : null}
+                        <CheckboxMultipleMarkedOutlineIcon
+                            size={18}
+                            color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
+                        />
+                    </IconButtonWrapper>
 
-            </OverlayTrigger>
+                </OverlayTrigger> :
+                null}
         </>
     );
 };
