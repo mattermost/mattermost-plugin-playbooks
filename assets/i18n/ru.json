@@ -102,5 +102,21 @@
     {
         "id": "app.user.digest.tasks.zero_assigned",
         "translation": "У вас нет назначенных задач."
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{.Username}} включил обновление статуса для этого запуска"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Username}} отключил обновление статуса для этого запуска"
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here - @{{.Name}} запросил обновление статуса. \n"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} является участником запуска и хочет присоединиться к этому каналу. Любой участник канала может пригласить его.\n"
     }
 ]

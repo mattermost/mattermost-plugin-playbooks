@@ -1,15 +1,17 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {BookOutlineIcon, FilterVariantIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, SortAscendingIcon, PlayOutlineIcon, CheckIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {debounce} from 'lodash';
 
 import {openPlaybookRunNewModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
@@ -18,6 +20,7 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -49,7 +52,7 @@ export interface RunListOptions {
 interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void
-    getMore: () => void
+    getMore: () => Promise<any>
     hasMore: boolean
 
     options: RunListOptions
@@ -64,8 +67,15 @@ const RHSRunList = (props: Props) => {
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentChannelId = useSelector(getCurrentChannelId);
     const refreshLHS = useLHSRefresh();
-    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+    const [loadingMore, setLoadingMore] = useState(false);
+    const debouncedSetLoadingMore = debounce(setLoadingMore, 100);
+    const getMore = async () => {
+        debouncedSetLoadingMore(true);
+        await props.getMore();
+        debouncedSetLoadingMore(false);
+    };
 
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
 
     return (
@@ -118,23 +128,30 @@ const RHSRunList = (props: Props) => {
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
-                        icon={<SortAscendingIcon/>}
+                        icon={<SortAscendingIcon size={18}/>}
                     >
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'create_at', direction: 'DESC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Recently created'})}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'last_status_update_at', direction: 'DESC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Last status update'})}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: 'name', direction: 'ASC'}))}
-                        >
-                            {formatMessage({defaultMessage: 'Alphabetically'})}
-                        </DropdownMenuItem>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Recently created'})}
+                            sortItem={'create_at'}
+                            sortDirection={'DESC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Last status update'})}
+                            sortItem={'last_status_update_at'}
+                            sortDirection={'DESC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
+                        <SortMenuItem
+                            label={formatMessage({defaultMessage: 'Alphabetically'})}
+                            sortItem={'name'}
+                            sortDirection={'ASC'}
+                            options={props.options}
+                            setOptions={props.setOptions}
+                        />
                     </DotMenu>
                 </Header>
                 {showNoRuns &&
@@ -157,12 +174,15 @@ const RHSRunList = (props: Props) => {
                                     {...run}
                                 />
                             ))}
-                            {props.hasMore &&
+                            {props.hasMore && !loadingMore &&
                                 <TertiaryButton
-                                    onClick={props.getMore}
+                                    onClick={getMore}
                                 >
                                     {formatMessage({defaultMessage: 'Show more'})}
                                 </TertiaryButton>
+                            }
+                            {loadingMore &&
+                                <StyledLoadingSpinner/>
                             }
                         </RunsList>
                     </Scrollbars>
@@ -171,6 +191,7 @@ const RHSRunList = (props: Props) => {
         </>
     );
 };
+
 const Container = styled.div`
     display: flex;
     flex-direction: column;
@@ -193,6 +214,7 @@ const RunsList = styled.div`
 `;
 
 const FilterMenuTitle = styled.div`
+    font-family: Metropolis;
     font-weight: 600;
     font-size: 16px;
     line-height: 24px;
@@ -200,6 +222,13 @@ const FilterMenuTitle = styled.div`
 
 const Spacer = styled.div`
     flex-grow: 1;
+`;
+
+const StyledLoadingSpinner = styled(LoadingSpinner)`
+    margin-top: 12px;
+    width: 20px;
+    height: 20px;
+    align-self: center;
 `;
 
 const StartRunButton = styled(SecondaryButton)`
@@ -221,6 +250,15 @@ const SortDotMenuButton = styled(DotMenuButton)`
     align-items: center;
 `;
 
+const SortMenuTitle = styled.div`
+    color: rgba(var(--center-channel-text-rgb), 0.56);
+    text-transform: uppercase;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    margin: 5px 18px;
+`;
+
 const FilterMenuItem = styled(DropdownMenuItem)`
     display: flex;
     flex-direction: row;
@@ -228,11 +266,44 @@ const FilterMenuItem = styled(DropdownMenuItem)`
     min-width: 182px;
 `;
 
+const StyledDropdownMenuSort = styled(DropdownMenuItem)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: 190px;
+    align-items: center;
+`;
+
+interface SortMenuItemProps {
+    label: string
+    sortItem: string
+    sortDirection: string
+    options: RunListOptions
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+}
+
+const SortMenuItem = (props: SortMenuItemProps) => {
+    return (
+        <StyledDropdownMenuSort
+            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, sort: props.sortItem, direction: props.sortDirection}))}
+        >
+            {props.label}
+            {props.sortItem === props.options.sort &&
+                <BlueCheckmark/>
+            }
+        </StyledDropdownMenuSort>
+    );
+};
+
 const FilterMenuNumericValue = styled.div`
     color: rgba(var(--center-channel-text-rgb), 0.56);
 `;
 
-const SortAscendingIcon = FilterVariantIcon;
+const BlueCheckmark = styled(CheckIcon)`
+    color: var(--button-bg);
+    width: 18px;
+    height: 18px;
+`;
 
 interface RHSRunListCardProps extends RunToDisplay {
     onClick: () => void
@@ -240,6 +311,8 @@ interface RHSRunListCardProps extends RunToDisplay {
 
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
+
+    const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
 
     return (
         <CardContainer
@@ -250,7 +323,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 <OwnerProfileChip userId={props.ownerUserID}/>
                 <ParticipantsProfiles>
                     <UserList
-                        userIds={props.participantIDs}
+                        userIds={participatIDsWithoutOwner}
                         sizeInPx={20}
                     />
                 </ParticipantsProfiles>
