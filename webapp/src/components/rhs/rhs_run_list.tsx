@@ -12,6 +12,12 @@ import {DateTime} from 'luxon';
 
 import {debounce} from 'lodash';
 
+import {useSelector} from 'react-redux';
+
+import {GlobalState} from '@mattermost/types/store';
+
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+
 import Profile from 'src/components/profile/profile';
 
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
@@ -23,6 +29,9 @@ import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {pluginId} from 'src/manifest';
+
+import {getSiteUrl} from 'src/client';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -63,6 +72,8 @@ interface Props {
     numFinished: number
 }
 
+const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state).display_name;
+
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const [loadingMore, setLoadingMore] = useState(false);
@@ -72,6 +83,7 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
+    const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
 
@@ -80,11 +92,18 @@ const RHSRunList = (props: Props) => {
     return (
         <>
             <RHSTitleRemoteRender>
-                <RHSTitleText>
-                    {/* product name; don't translate */}
-                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                    {'Playbooks'}
-                </RHSTitleText>
+                <TitleContainer>
+                    <ClipboardImage src={`${getSiteUrl()}/plugins/${pluginId}/public/app-bar-icon.png`}/>
+                    <RHSTitleText>
+                        {/* product name; don't translate */}
+                        {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                        {'Playbooks'}
+                    </RHSTitleText>
+                    <VerticalLine/>
+                    <ChannelNameText>
+                        {currentChannelName}
+                    </ChannelNameText>
+                </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
                 <Header>
@@ -224,6 +243,34 @@ const StyledLoadingSpinner = styled(LoadingSpinner)`
     width: 20px;
     height: 20px;
     align-self: center;
+`;
+
+const TitleContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+`;
+
+const VerticalLine = styled.div`
+    opacity: 0.16;
+    border: 1px solid var(--center-channel-color);
+    height: 24px;
+`;
+
+const ChannelNameText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const ClipboardImage = styled.img`
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
 `;
 
 const StartRunButton = styled(SecondaryButton)`
