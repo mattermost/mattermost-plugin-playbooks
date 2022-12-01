@@ -15,6 +15,7 @@ export const RHSTitleText = styled.div`
     font-weight: 600;
     font-size: 16px;
     line-height: 32px;
+    flex-shrink: 0;
 
 
     padding: 0 4px 0 0;
