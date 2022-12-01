@@ -37,32 +37,14 @@ describe('playbooks > feedback', () => {
         });
     });
 
-    const setExperimentalFeatureFlag = (enable) => {
-        // Disable experimental features flag
+    it('playbooks shows prompt in global header, with experimental feature flag', () => {
+        // # Enable experimental feature flag
         cy.apiAdminLogin().then(() => {
-            // Enable experimental features flag
-            cy.apiGetConfig().then(({config}) => {
-                const expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
-                if (expFeaturesFlag !== enable) {
-                    cy.apiUpdateConfig({
-                        PluginSettings: {
-                            Plugins: {
-                                playbooks: {
-                                    enableexperimentalfeatures: enable,
-                                }
-                            }
-                        },
-                    });
-                }
-            });
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', true);
 
             // # Login as testUser
             cy.apiLogin(testUser);
         });
-    };
-
-    it('playbooks shows prompt in global header, with experimental feature flag', () => {
-        setExperimentalFeatureFlag(true);
 
         // # Visit the playbooks product
         cy.visit('/playbooks');
@@ -75,7 +57,13 @@ describe('playbooks > feedback', () => {
     });
 
     it('playbooks shows prompt in global header, without experimental feature flag', () => {
-        setExperimentalFeatureFlag(false);
+        // # Disable experimental feature flag
+        cy.apiAdminLogin().then(() => {
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', false);
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
 
         // # Visit the playbooks product
         cy.visit('/playbooks');
