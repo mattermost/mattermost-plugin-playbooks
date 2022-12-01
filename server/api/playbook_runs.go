@@ -173,6 +173,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
+		app.RunSourcePost,
 	)
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
@@ -268,6 +269,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		},
 		request.UserId,
 		nil,
+		app.RunSourceDialog,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -419,7 +421,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -485,7 +487,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
-		playbookRun.SetConfigurationFromPlaybook(*playbook)
+		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,

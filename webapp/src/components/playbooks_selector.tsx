@@ -15,7 +15,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 import SearchSvg from 'src/components/assets/illustrations/search_svg';
-import ClipboardSvg from 'src/components/assets/illustrations/clipboard_svg';
+import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
 
 interface Props {
     teamID: string;
@@ -226,7 +226,7 @@ const ErrorContainer = styled(Container)`
     align-items: center;
     justify-content: center;
     align-self: center;
-    gap: 10px;
+    gap: 15px;
     max-width: 450px;
 `;
 
@@ -244,4 +244,9 @@ const ErrorSubTitle = styled(ErrorTitle)`
 
 const Plus = styled(PlusIcon)`
     margin-right: 5px;
+`;
+
+const ClipboardSvg = styled(ClipboardChecklistSvg)`
+    height:150px;
+    width:150px;
 `;

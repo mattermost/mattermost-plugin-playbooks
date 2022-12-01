@@ -23,6 +23,11 @@ const (
 	RunRoleAdmin  = "run_admin"
 )
 
+const (
+	RunSourcePost   = "post"
+	RunSourceDialog = "dialog"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -265,11 +270,12 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
-func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
-	// TODO: should be done sometimes?
-	// if playbook.RunSummaryTemplateEnabled {
-	// 	r.Summary = playbook.RunSummaryTemplate
-	// }
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
+	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
+	// Runs created though new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
+		r.Summary = playbook.RunSummaryTemplate
+	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
 	r.StatusUpdateEnabled = playbook.StatusUpdateEnabled
 	r.PreviousReminder = time.Duration(playbook.ReminderTimerDefaultSeconds) * time.Second
