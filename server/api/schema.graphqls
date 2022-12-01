@@ -191,7 +191,7 @@ type PlaybookMetricConfig {
 type Run {
 	id: String!
 	playbookID: String!
-	playbook: Playbook!
+	playbook: Playbook
 	name: String!
 	ownerUserID: String!
 	channelID: String!
