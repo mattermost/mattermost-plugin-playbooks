@@ -32,19 +32,23 @@ import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ClientError} from '@mattermost/client';
-
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
-
 import {useUpdateEffect} from 'react-use';
-
 import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures, getRun, selectLinkRunToExistingChannelEnabled} from 'src/selectors';
+import {getProfileSetForChannel,
+    selectExperimentalFeatures,
+    getRun,
+    selectLinkRunToExistingChannelEnabled,
+    globalSettings,
+    isCurrentUserAdmin,
+    noopSelector,
+} from 'src/selectors';
 import {
     fetchPlaybookRuns,
     clientFetchPlaybook,
@@ -53,14 +57,7 @@ import {
     fetchPlaybookStats,
     fetchPlaybookRunMetadata,
 } from 'src/client';
-
 import {isCloud} from 'src/license';
-import {
-    globalSettings,
-    isCurrentUserAdmin,
-    noopSelector,
-} from 'src/selectors';
-
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {

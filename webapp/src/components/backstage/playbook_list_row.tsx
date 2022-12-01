@@ -15,7 +15,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling, DotMenuButton} from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
@@ -24,8 +24,6 @@ import {navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal} from 'src/actions';
-
-import {DotMenuButton} from 'src/components/dot_menu';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
