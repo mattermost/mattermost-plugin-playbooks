@@ -293,7 +293,7 @@ const SortDotMenuButton = styled(DotMenuButton)`
 `;
 
 const SortMenuTitle = styled.div`
-    color: rgba(var(--center-channel-text-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     text-transform: uppercase;
     font-size: 12px;
     line-height: 16px;
@@ -338,7 +338,7 @@ const SortMenuItem = (props: SortMenuItemProps) => {
 };
 
 const FilterMenuNumericValue = styled.div`
-    color: rgba(var(--center-channel-text-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const BlueCheckmark = styled(CheckIcon)`
@@ -392,7 +392,7 @@ const CardContainer = styled.div`
     display: flex;
     flex-direction: column;
     padding: 16px 20px 20px;
-    border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     gap: 8px;
@@ -429,7 +429,7 @@ const LastUpdatedText = styled.div`
     font-size: 11px;
     font-weight: 400;
     line-height: 16px;
-    color: rgba(var(--center-channel-text-rgb), 0.64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 const PlaybookChip = styled.div`
     display: flex;
@@ -441,13 +441,13 @@ const PlaybookChip = styled.div`
     font-size: 10px;
     font-weight: 600;
     line-height: 16px;
-    color: rgba(var(--center-channel-text-rgb), 0.72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 40%;
 
-    background: rgba(var(--center-channel-text-rgb), 0.08);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
 `;
 const OwnerProfileChip = styled(Profile)`
@@ -457,7 +457,7 @@ const OwnerProfileChip = styled(Profile)`
     font-size: 11px;
     line-height: 15px;
     padding: 2px 10px 2px 2px;
-    background: rgba(var(--center-channel-text-rgb), 0.08);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 12px;
 
     > .image {
