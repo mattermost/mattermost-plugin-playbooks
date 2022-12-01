@@ -259,7 +259,7 @@ const Container = styled.div`
 `;
 
 const ParticipantsNumber = styled.div`
-    color: var(--center-channel-text);
+    color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
@@ -324,7 +324,7 @@ const HeaderSection = styled.div`
     display: flex;
     flex-direction: row;
     padding: 20px 20px 0 20px;
-    color: var(--center-channel-text);
+    color: var(--center-channel-color);
     align-items: center;
 `;
 
