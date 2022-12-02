@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {HALF_SEC} from '../../../fixtures/timeouts';
+import {HALF_SEC, ONE_SEC} from '../../../fixtures/timeouts';
 
 describe('channels > rhs > checklist', () => {
     let testTeam;
@@ -452,6 +452,9 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
         // # Click the set due date button
         cy.get('.icon-calendar-outline').click();
     });
+
+    // # Wait for react select to finish rendering.
+    cy.wait(ONE_SEC);
 
     // # Enter due date query
     cy.get('.playbook-react-select').within(() => {
