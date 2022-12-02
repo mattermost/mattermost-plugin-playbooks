@@ -10,6 +10,7 @@ import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makeUpdateRunModalDefinition} from 'src/components/modals/run_update';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -100,6 +101,13 @@ export function startPlaybookRun(teamId: string, postId?: string) {
 
         await clientExecuteCommand(dispatch, getState, command, teamId);
     };
+}
+
+export function openUpdateRunModal(playbookRunId: string, field: 'name' | 'channel_id') {
+    return modals.openModal(makeUpdateRunModalDefinition(
+        playbookRunId,
+        field
+    ));
 }
 
 export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
