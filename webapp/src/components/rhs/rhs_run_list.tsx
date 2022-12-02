@@ -2,27 +2,22 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
-
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
-
 import {DateTime} from 'luxon';
-
 import {debounce} from 'lodash';
 
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Profile from 'src/components/profile/profile';
-
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
-
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -37,6 +32,7 @@ interface RunToDisplay {
     participantIDs: string[]
     ownerUserID: string
     playbook: PlaybookToDisplay
+    playbookID: string
     lastUpdatedAt: number
 }
 
@@ -308,12 +304,33 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
 
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
-
+    const overviewURL = `/runs/${props.id}?from=channel_rhs_dotmenu`;
+    const playbookURL = `/playbooks/${props.playbookID}`;
     return (
         <CardContainer
             onClick={props.onClick}
         >
-            <TitleRow>{props.name}</TitleRow>
+            <TitleContainer>
+                <TitleRow>{props.name}</TitleRow>
+                <DotMenu
+                    dotMenuButton={StyledDotMenuButton}
+                    placement='bottom-start'
+                    icon={<ThreeDotsIcon/>}
+                >
+                    <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
+                        <IconWrapper>
+                            <PlayOutlineIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Go to run overview'/>
+                    </StyledDropdownMenuItem>
+                    <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                        <IconWrapper>
+                            <BookOutlineIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Go to playbook'/>
+                    </StyledDropdownMenuItem>
+                </DotMenu>
+            </TitleContainer>
             <PeopleRow>
                 <OwnerProfileChip userId={props.ownerUserID}/>
                 <ParticipantsProfiles>
@@ -359,6 +376,12 @@ const CardContainer = styled.div`
     &:active {
         box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
     }
+`;
+const TitleContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
 `;
 const TitleRow = styled.div`
     font-size: 14px;
@@ -423,8 +446,36 @@ const ParticipantsProfiles = styled.div`
     flex-direction: row;
 `;
 
+const ThreeDotsIcon = styled(HamburgerButton)`
+    font-size: 18px;
+    margin-left: 1px;
+`;
+
 const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
+`;
+
+const StyledDotMenuButton = styled(DotMenuButton)`
+    width: 28px;
+    height: 28px;
+`;
+
+const StyledDropdownMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    align-content: center;
+`;
+
+const Separator = styled.hr`
+    display: flex;
+    align-content: center;
+    border-top: 1px solid var(--center-channel-color-08);
+    margin: 5px auto;
+    width: 100%;
+`;
+
+const IconWrapper = styled.div`
+    margin-right: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 interface NoRunsProps {
