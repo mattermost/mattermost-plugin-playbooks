@@ -3513,6 +3513,13 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 						return
 					}
 					if t.IsTriggered(post) {
+						s.genericTelemetry.Track(
+							telemetryTaskActionsTriggered,
+							map[string]any{
+								"trigger":        ta.Trigger.Type,
+								"playbookrun_id": runID,
+							},
+						)
 						err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 						if err != nil {
 							logrus.WithError(err).WithFields(logrus.Fields{
@@ -3543,6 +3550,13 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 				}
 			}
 		}
+		s.genericTelemetry.Track(
+			telemetryTaskActionsActionExecuted,
+			map[string]any{
+				"action":         action.Type,
+				"playbookrun_id": runID,
+			},
+		)
 	}
 	return nil
 }

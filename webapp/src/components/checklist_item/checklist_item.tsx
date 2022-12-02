@@ -17,8 +17,10 @@ import {
     setAssignee,
     setChecklistItemState,
     setDueDate as clientSetDueDate,
+    telemetryEvent,
 } from 'src/client';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
+import {TaskActionsEventTarget} from 'src/types/telemetry';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
@@ -57,6 +59,7 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
+    playbookId?: string;
     channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
@@ -179,7 +182,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         if (props.playbookRunId) {
             updateRunTaskActions(props.checklistNum, props.itemNum, newTaskActions);
+            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
+                playbookrun_id: props.playbookRunId,
+            });
         } else {
+            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
+                playbook_id: props.playbookId || '',
+            });
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;
             props.onUpdateChecklistItem?.(newItem);
@@ -390,7 +399,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 command_last_run: 0,
                                 due_date: dueDate,
                                 assignee_id: assigneeID,
-                                task_actions: [],
+                                task_actions: taskActions,
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);

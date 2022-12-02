@@ -106,6 +106,9 @@ describe('runs > task actions', () => {
             // # Enable the trigger
             cy.findByText('Mark the task as done').click();
 
+            // # intercepts telemetry
+            cy.interceptTelemetry();
+
             // # Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
@@ -119,6 +122,10 @@ describe('runs > task actions', () => {
                 assert.deepEqual(trigger.user_ids, []);
                 assert.isTrue(actions.enabled);
             });
+
+            // # assert telemetry data
+            cy.wait('@telemetry');
+            cy.expectTelemetryToBe([{name: 'taskactions_updated', type: 'track', playbookrun_id: testPlaybookRun.id}]);
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);

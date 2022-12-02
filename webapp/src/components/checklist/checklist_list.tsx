@@ -353,6 +353,7 @@ const ChecklistList = ({
                                                 <GenericChecklist
                                                     id={playbookRun?.id || ''}
                                                     playbookRun={playbookRun}
+                                                    playbookId={playbook?.id || playbookRun?.playbook_id || ''}
                                                     readOnly={readOnly}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
