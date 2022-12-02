@@ -77,7 +77,7 @@ describe('Task Inbox >', () => {
     after(() => {
         if (!expFeaturesFlag) {
             cy.apiLogin(testAdmin).then(() => {
-                cy.apiEnsureFeatureFlag('enableexperimentalfeatures', expFeaturesFlag)
+                cy.apiEnsureFeatureFlag('enableexperimentalfeatures', expFeaturesFlag);
             });
         }
     });
