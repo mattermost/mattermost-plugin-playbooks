@@ -199,7 +199,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             title={formatMessage({defaultMessage: 'Tasks'})}
             id={id || ''}
         />
-    ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
+    ) : <>{formatMessage({defaultMessage: 'Tasks'})}</>;
 
     const itemButtonsFormat = () => {
         if (parentContainer === ChecklistParent.RHS) {

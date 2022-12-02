@@ -140,6 +140,14 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
+        describe('header', () => {
+            it('has title', () => {
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Tasks').should('exist');
+                });
+            });
+        });
+
         it('shows an ephemeral error when running an invalid slash command', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
