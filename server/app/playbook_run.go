@@ -609,9 +609,9 @@ type PlaybookRunService interface {
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error)
 
-	// GetPlaybookRunIDForChannel get the playbookRunID associated with this channel. Returns ErrNotFound
-	// if there is no playbook run associated with this channel.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunIDsForChannel get the playbookRunIDs list associated with this channel. Returns ErrNotFound
+	// if there is no playbook run associated with this channel. If userID is not null, returns only runs that the user has access.
+	GetPlaybookRunIDsForChannel(channelID string, userID *string) ([]string, error)
 
 	// GetOwners returns all the owners of playbook runs selected
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -676,11 +676,11 @@ type PlaybookRunService interface {
 	// MoveChecklistItem moves a checklist item from one position to another.
 	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
-	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
-	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunIDs to be used in autocomplete
+	GetChecklistItemAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error)
 
-	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
-	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistAutocomplete returns the list of checklists for playbookRunIDs to be used in autocomplete
+	GetChecklistAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error)
 
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
@@ -818,8 +818,8 @@ type PlaybookRunStore interface {
 	// GetPlaybookRun gets a playbook run by ID.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
-	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunIDsForChannel gets a playbook runs list associated with the given channel id.
+	GetPlaybookRunIDsForChannel(channelID string) ([]string, error)
 
 	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the

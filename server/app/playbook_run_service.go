@@ -1280,14 +1280,26 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 	}, nil
 }
 
-// GetPlaybookRunIDForChannel get the playbookRunID associated with this channel. Returns ErrNotFound
-// if there is no playbook run associated with this channel.
-func (s *PlaybookRunServiceImpl) GetPlaybookRunIDForChannel(channelID string) (string, error) {
-	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
+// GetPlaybookRunIDsForChannel get the playbookRunIDs list associated with this channel. Returns ErrNotFound
+// if there is no playbook run associated with this channel. If userID is not null, returns only runs that the user has access.
+func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForChannel(channelID string, userID *string) ([]string, error) {
+	playbookRunIDs, err := s.store.GetPlaybookRunIDsForChannel(channelID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return playbookRunID, nil
+
+	if userID == nil {
+		return playbookRunIDs, nil
+	}
+
+	runIDsUserHasAccess := make([]string, 0)
+	for _, id := range playbookRunIDs {
+		if err := s.permissions.RunView(*userID, id); err == nil {
+			runIDsUserHasAccess = append(runIDsUserHasAccess, id)
+		}
+	}
+
+	return runIDsUserHasAccess, nil
 }
 
 // GetOwners returns all the owners of the playbook runs selected by options
@@ -2063,39 +2075,59 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 }
 
 // GetChecklistAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
-func (s *PlaybookRunServiceImpl) GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error) {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
-	}
-
+func (s *PlaybookRunServiceImpl) GetChecklistAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error) {
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range playbookRun.Checklists {
-		ret = append(ret, model.AutocompleteListItem{
-			Item: fmt.Sprintf("%d", i),
-			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
-		})
+	for j, id := range playbookRunIDs {
+		playbookRun, err := s.store.GetPlaybookRun(id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve playbook run")
+		}
+
+		runIndex := ""
+		runName := ""
+		// include run number and name only if there are multiple runs
+		if len(playbookRunIDs) > 1 {
+			runIndex = fmt.Sprintf("%d ", j)
+			runName = fmt.Sprintf("\"%s\" - ", playbookRun.Name)
+		}
+
+		for i, checklist := range playbookRun.Checklists {
+			ret = append(ret, model.AutocompleteListItem{
+				Item: fmt.Sprintf("%s%d", runIndex, i),
+				Hint: fmt.Sprintf("%s\"%s\"", runName, stripmd.Strip(checklist.Title)),
+			})
+		}
 	}
 
 	return ret, nil
 }
 
-// GetChecklistAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
-func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error) {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
-	}
-
+// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunIDs to be used in autocomplete
+func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error) {
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range playbookRun.Checklists {
-		for j, item := range checklist.Items {
-			ret = append(ret, model.AutocompleteListItem{
-				Item: fmt.Sprintf("%d %d", i, j),
-				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-			})
+	for k, id := range playbookRunIDs {
+		playbookRun, err := s.store.GetPlaybookRun(id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve playbook run")
+		}
+
+		runIndex := ""
+		runName := ""
+		// include run number and name only if there are multiple runs
+		if len(playbookRunIDs) > 1 {
+			runIndex = fmt.Sprintf("%d ", k)
+			runName = fmt.Sprintf("\"%s\" - ", playbookRun.Name)
+		}
+
+		for i, checklist := range playbookRun.Checklists {
+			for j, item := range checklist.Items {
+				ret = append(ret, model.AutocompleteListItem{
+					Item: fmt.Sprintf("%s%d %d", runIndex, i, j),
+					Hint: fmt.Sprintf("%s\"%s\"", runName, stripmd.Strip(item.Title)),
+				})
+			}
 		}
 	}
 
@@ -2547,9 +2579,14 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 		}
 	}
 
-	defaultPlaybookRunID, err := s.GetPlaybookRunIDForChannel(post.ChannelId)
+	defaultPlaybookRunIDs, err := s.GetPlaybookRunIDsForChannel(post.ChannelId, nil)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, errors.Wrapf(err, "failed to get playbookRunID for channel")
+	}
+
+	defaultRunID := ""
+	if len(defaultPlaybookRunIDs) == 1 {
+		defaultRunID = defaultPlaybookRunIDs[0]
 	}
 
 	return &model.Dialog{
@@ -2560,7 +2597,7 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 				Name:        DialogFieldPlaybookRunKey,
 				Type:        "select",
 				Options:     options,
-				Default:     defaultPlaybookRunID,
+				Default:     defaultRunID,
 			},
 			{
 				DisplayName: "Summary",

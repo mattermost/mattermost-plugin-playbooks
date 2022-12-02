@@ -328,24 +328,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 }
 
 func (r *Runner) actionCheck(args []string) {
-	if len(args) != 2 {
-		r.postCommandResponse(helpText)
-		return
-	}
-
-	checklist, err := strconv.Atoi(args[0])
-	if err != nil {
-		r.postCommandResponse("Error parsing the first argument. Must be a number.")
-		return
-	}
-
-	item, err := strconv.Atoi(args[1])
-	if err != nil {
-		r.postCommandResponse("Error parsing the second argument. Must be a number.")
-		return
-	}
-
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -355,25 +338,58 @@ func (r *Runner) actionCheck(args []string) {
 		return
 	}
 
-	err = r.playbookRunService.ToggleCheckedState(playbookRunID, r.args.UserId, checklist, item)
+	multipleRuns := len(playbookRunIDs) > 1
+
+	if !multipleRuns && len(args) != 2 {
+		r.postCommandResponse("Command expects two arguments: the checklist number and the item number.")
+		return
+	}
+
+	if multipleRuns && len(args) != 3 {
+		r.postCommandResponse("Command expects three arguments: the run number, the checklist number and the item number.")
+		return
+	}
+
+	run := 0
+	index := 0
+	if multipleRuns {
+		if run, err = strconv.Atoi(args[index]); err != nil {
+			r.postCommandResponse("Error parsing the first argument. Must be a number.")
+			return
+		}
+		if run < 0 || run > len(playbookRunIDs) {
+			r.postCommandResponse("Invalid run index")
+			return
+		}
+		index++
+	}
+
+	checklist, err := strconv.Atoi(args[index])
+	index++
+	if err != nil {
+		r.postCommandResponse("Error parsing the argument. Must be a number.")
+		return
+	}
+
+	item, err := strconv.Atoi(args[index])
+	if err != nil {
+		r.postCommandResponse("Error parsing the argument. Must be a number.")
+		return
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[run]); err != nil {
+		r.postCommandResponse("Become a participant to interact with this run.")
+		return
+	}
+
+	err = r.playbookRunService.ToggleCheckedState(playbookRunIDs[run], r.args.UserId, checklist, item)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
 	}
 }
 
 func (r *Runner) actionAddChecklistItem(args []string) {
-	if len(args) < 1 {
-		r.postCommandResponse("Need to provide arguments")
-		return
-	}
-
-	checklist, err := strconv.Atoi(args[0])
-	if err != nil {
-		r.postCommandResponse("Error parsing the first argument. Must be a number.")
-		return
-	}
-
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -383,44 +399,64 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 		return
 	}
 
+	multipleRuns := len(playbookRunIDs) > 1
+
+	if !multipleRuns && len(args) < 1 {
+		r.postCommandResponse("Command expects one arguments: the checklist number.")
+		return
+	}
+
+	if multipleRuns && len(args) < 2 {
+		r.postCommandResponse("Command expects two arguments: the run number and the checklist number.")
+		return
+	}
+
+	run := 0
+	index := 0
+	if multipleRuns {
+		if run, err = strconv.Atoi(args[index]); err != nil {
+			r.postCommandResponse("Error parsing the first argument. Must be a number.")
+			return
+		}
+		if run < 0 || run > len(playbookRunIDs) {
+			r.postCommandResponse("Invalid run index")
+			return
+		}
+		index++
+	}
+
+	checklist, err := strconv.Atoi(args[index])
+	index++
+	if err != nil {
+		r.postCommandResponse("Error parsing the argument. Must be a number.")
+		return
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[run]); err != nil {
+		r.postCommandResponse("Become a participant to interact with this run.")
+		return
+	}
+
 	// If we didn't get the item's text, then use the interactive dialog
-	if len(args) == 1 {
-		if err := r.playbookRunService.OpenAddChecklistItemDialog(r.args.TriggerId, playbookRunID, checklist); err != nil {
+	if len(args) == index {
+		if err := r.playbookRunService.OpenAddChecklistItemDialog(r.args.TriggerId, playbookRunIDs[run], checklist); err != nil {
 			r.warnUserAndLogErrorf("Error: %v", err)
 			return
 		}
 		return
 	}
 
-	combineargs := strings.Join(args[1:], " ")
-	if err := r.playbookRunService.AddChecklistItem(playbookRunID, r.args.UserId, checklist, app.ChecklistItem{
+	combineargs := strings.Join(args[index:], " ")
+	if err := r.playbookRunService.AddChecklistItem(playbookRunIDs[run], r.args.UserId, checklist, app.ChecklistItem{
 		Title: combineargs,
 	}); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
-
 }
 
 func (r *Runner) actionRemoveChecklistItem(args []string) {
-	if len(args) != 2 {
-		r.postCommandResponse("Command expects two arguments: the checklist number and the item number.")
-		return
-	}
-
-	checklist, err := strconv.Atoi(args[0])
-	if err != nil {
-		r.postCommandResponse("Error parsing the first argument. Must be a number.")
-		return
-	}
-
-	item, err := strconv.Atoi(args[1])
-	if err != nil {
-		r.postCommandResponse("Error parsing the second argument. Must be a number.")
-		return
-	}
-
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -430,7 +466,51 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 		return
 	}
 
-	err = r.playbookRunService.RemoveChecklistItem(playbookRunID, r.args.UserId, checklist, item)
+	multipleRuns := len(playbookRunIDs) > 1
+
+	if !multipleRuns && len(args) != 2 {
+		r.postCommandResponse("Command expects two arguments: the checklist number and the item number.")
+		return
+	}
+
+	if multipleRuns && len(args) != 3 {
+		r.postCommandResponse("Command expects three arguments: the run number, the checklist number and the item number.")
+		return
+	}
+
+	run := 0
+	index := 0
+	if multipleRuns {
+		if run, err = strconv.Atoi(args[index]); err != nil {
+			r.postCommandResponse("Error parsing the first argument. Must be a number.")
+			return
+		}
+		if run < 0 || run > len(playbookRunIDs) {
+			r.postCommandResponse("Invalid run index")
+			return
+		}
+		index++
+	}
+
+	checklist, err := strconv.Atoi(args[index])
+	index++
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	item, err := strconv.Atoi(args[index])
+	if err != nil {
+		r.postCommandResponse("Error parsing the second argument. Must be a number.")
+		return
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[run]); err != nil {
+		r.postCommandResponse("Become a participant to interact with this run.")
+		return
+	}
+
+	err = r.playbookRunService.RemoveChecklistItem(playbookRunIDs[run], r.args.UserId, checklist, item)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error removing item: %v", err)
 	}
@@ -448,7 +528,7 @@ func (r *Runner) actionOwner(args []string) {
 }
 
 func (r *Runner) actionShowOwner([]string) {
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("This command only works when run from a playbook run channel.")
 		return
@@ -457,7 +537,12 @@ func (r *Runner) actionShowOwner([]string) {
 		return
 	}
 
-	currentPlaybookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunID)
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	currentPlaybookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunIDs[0])
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
@@ -475,7 +560,7 @@ func (r *Runner) actionShowOwner([]string) {
 func (r *Runner) actionChangeOwner(args []string) {
 	targetOwnerUsername := strings.TrimLeft(args[0], "@")
 
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("This command only works when run from a playbook run channel.")
 		return
@@ -484,7 +569,12 @@ func (r *Runner) actionChangeOwner(args []string) {
 		return
 	}
 
-	currentPlaybookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunID)
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	currentPlaybookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunIDs[0])
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
@@ -599,7 +689,7 @@ func (r *Runner) actionList() {
 }
 
 func (r *Runner) actionInfo() {
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("This command only works when run from a playbook run channel.")
 		return
@@ -620,7 +710,12 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	playbookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunID)
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	playbookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunIDs[0])
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
@@ -663,7 +758,7 @@ func (r *Runner) actionInfo() {
 }
 
 func (r *Runner) actionFinish() {
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -673,7 +768,12 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -682,7 +782,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunID, r.args.TriggerId)
+	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunIDs[0], r.args.TriggerId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return
@@ -690,7 +790,7 @@ func (r *Runner) actionFinish() {
 }
 
 func (r *Runner) actionUpdate() {
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -700,7 +800,12 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -709,7 +814,7 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId)
+	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunIDs[0], r.args.TriggerId)
 	switch {
 	case errors.Is(err, app.ErrPlaybookRunNotActive):
 		r.postCommandResponse("This playbook run has already been closed.")
@@ -745,7 +850,7 @@ func (r *Runner) actionAdd(args []string) {
 }
 
 func (r *Runner) actionTimeline() {
-	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("This command only works when run from a playbook run channel.")
@@ -755,7 +860,12 @@ func (r *Runner) actionTimeline() {
 		return
 	}
 
-	playbookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunID)
+	if len(playbookRunIDs) > 1 {
+		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+		return
+	}
+
+	playbookRun, err := r.playbookRunService.GetPlaybookRun(playbookRunIDs[0])
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
