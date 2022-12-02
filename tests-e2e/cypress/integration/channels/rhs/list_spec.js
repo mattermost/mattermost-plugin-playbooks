@@ -24,7 +24,7 @@ describe('channels > rhs > runlist', () => {
             // # Create a playbook
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
-                title: 'Playbook',
+                title: 'The playbook name',
                 userId: testUser.id,
             }).then((playbook) => {
                 testPlaybook = playbook;
@@ -73,8 +73,8 @@ describe('channels > rhs > runlist', () => {
         // # Navigate directly to the application and the playbook run channel
         cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
-        // # Wait because cypress
-        cy.wait(1000);
+        // # Wait the RHS to load
+        cy.findByText('Runs in progress').should('be.visible');
     });
 
     it('can filter', () => {
@@ -92,11 +92,54 @@ describe('channels > rhs > runlist', () => {
         cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns);
     });
 
+    it('can show more (pagination)', () => {
+        // * Verify we have the first page
+        cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 8);
+
+        // # CLick in the show-more button
+        cy.get('[data-testid="rhs-runs-list"] > button').click();
+
+        // * Verify we have loaded the second page
+        cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 10);
+    });
+
+    it('card has the basic info', () => {
+        // # Click the first run
+        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').within(() => {
+            cy.findByText('playbook-run-9').should('be.visible');
+            cy.findByText('The playbook name').should('be.visible');
+            cy.findByText(testUser.username).should('be.visible');
+        });
+    });
+
+    it('card dotmenu can navigate to RDP', () => {
+        // # Click the first run's dotmenu
+        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+
+        // # Click on go to run
+        cy.findByText('Go to run overview').click();
+
+        // * Assert we are in the run details page
+        cy.url().should('include', '/playbooks/runs/');
+        cy.url().should('include', '?from=channel_rhs_dotmenu');
+    });
+
+    it('card dotmenu can navigate to PBE', () => {
+        // # Click the first run's dotmenu
+        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+
+        // # Click on go to polaybook
+        cy.findByText('Go to playbook').click();
+
+        // * Assert we are in the PBE page
+        cy.url().should('include', `/playbooks/${testPlaybook.id}`);
+    });
+
     it('can click though', () => {
         // # Click the first run
         cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').click();
 
-        // * Verify we made it to the run details
+        // * Verify we made it to the run details at Channels RHS
         cy.get('#rhsContainer').contains('playbook-run-9');
         cy.get('#rhsContainer').contains('Checklists');
     });
