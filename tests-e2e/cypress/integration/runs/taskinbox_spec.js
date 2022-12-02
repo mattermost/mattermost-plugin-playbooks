@@ -29,15 +29,7 @@ describe('Task Inbox >', () => {
             cy.apiGetConfig().then(({config}) => {
                 expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
                 if (!expFeaturesFlag) {
-                    cy.apiUpdateConfig({
-                        PluginSettings: {
-                            Plugins: {
-                                playbooks: {
-                                    enableexperimentalfeatures: true,
-                                }
-                            }
-                        },
-                    });
+                    cy.apiEnsureFeatureFlag('enableexperimentalfeatures', true);
                 }
             });
 
@@ -85,15 +77,7 @@ describe('Task Inbox >', () => {
     after(() => {
         if (!expFeaturesFlag) {
             cy.apiLogin(testAdmin).then(() => {
-                cy.apiUpdateConfig({
-                    PluginSettings: {
-                        Plugins: {
-                            playbooks: {
-                                enableexperimentalfeatures: expFeaturesFlag,
-                            }
-                        }
-                    },
-                });
+                cy.apiEnsureFeatureFlag('enableexperimentalfeatures', expFeaturesFlag)
             });
         }
     });
@@ -132,7 +116,7 @@ describe('Task Inbox >', () => {
         // * assert zero case
         getRHS().within(() => {
             cy.getStyledComponent('HeaderTitle').contains('Your tasks');
-            cy.getStyledComponent('Body').contains('No assigned tasks');
+            cy.getStyledComponent('Body').contains('1 assigned');
         });
 
         // # Click on global header icon to close
