@@ -69,6 +69,9 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 	finish := model.NewAutocompleteData("finish", "",
 		"Finishes the playbook run associated with the current channel")
+	finish.AddDynamicListArgument(
+		"List of channel runs is loading",
+		"api/v0/runs/runs-autocomplete", true)
 	command.AddCommand(finish)
 
 	update := model.NewAutocompleteData("update", "",
@@ -358,7 +361,7 @@ func (r *Runner) actionCheck(args []string) {
 			return
 		}
 		if run < 0 || run > len(playbookRunIDs) {
-			r.postCommandResponse("Invalid run index")
+			r.postCommandResponse("Invalid run number")
 			return
 		}
 		index++
@@ -402,7 +405,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 	multipleRuns := len(playbookRunIDs) > 1
 
 	if !multipleRuns && len(args) < 1 {
-		r.postCommandResponse("Command expects one arguments: the checklist number.")
+		r.postCommandResponse("Command expects one argument: the checklist number.")
 		return
 	}
 
@@ -419,7 +422,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 			return
 		}
 		if run < 0 || run > len(playbookRunIDs) {
-			r.postCommandResponse("Invalid run index")
+			r.postCommandResponse("Invalid run number")
 			return
 		}
 		index++
@@ -486,7 +489,7 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 			return
 		}
 		if run < 0 || run > len(playbookRunIDs) {
-			r.postCommandResponse("Invalid run index")
+			r.postCommandResponse("Invalid run number")
 			return
 		}
 		index++
@@ -757,7 +760,7 @@ func (r *Runner) actionInfo() {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
-func (r *Runner) actionFinish() {
+func (r *Runner) actionFinish(args []string) {
 	playbookRunIDs, err := r.playbookRunService.GetPlaybookRunIDsForChannel(r.args.ChannelId, &r.args.UserId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -768,12 +771,26 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	if len(playbookRunIDs) > 1 {
-		r.postCommandResponse("This command only works when run from a channel with a single active run.")
+	multipleRuns := len(playbookRunIDs) > 1
+
+	if multipleRuns && len(args) == 0 {
+		r.postCommandResponse("Command expects one argument: the run number.")
 		return
 	}
 
-	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[0]); err != nil {
+	run := 0
+	if multipleRuns {
+		if run, err = strconv.Atoi(args[0]); err != nil {
+			r.postCommandResponse("Error parsing the first argument. Must be a number.")
+			return
+		}
+		if run < 0 || run > len(playbookRunIDs) {
+			r.postCommandResponse("Invalid run number")
+			return
+		}
+	}
+
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[run]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -782,7 +799,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunIDs[0], r.args.TriggerId)
+	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunIDs[run], r.args.TriggerId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return
@@ -2012,7 +2029,7 @@ func (r *Runner) Execute() error {
 	case "run-playbook":
 		r.actionRunPlaybook(parameters)
 	case "finish":
-		r.actionFinish()
+		r.actionFinish(parameters)
 	case "update":
 		r.actionUpdate()
 	case "check":

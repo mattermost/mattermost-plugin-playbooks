@@ -2134,6 +2134,28 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunIDs []s
 	return ret, nil
 }
 
+// GetRunsAutocomplete returns the list of runs to be used in autocomplete
+func (s *PlaybookRunServiceImpl) GetRunsAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error) {
+	if len(playbookRunIDs) == 1 {
+		return nil, nil
+	}
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, id := range playbookRunIDs {
+		playbookRun, err := s.store.GetPlaybookRun(id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve playbook run")
+		}
+
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", playbookRun.Name),
+		})
+	}
+
+	return ret, nil
+}
+
 type TodoDigestMessageItems struct {
 	overdueRuns    []RunLink
 	assignedRuns   []AssignedRun

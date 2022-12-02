@@ -682,6 +682,9 @@ type PlaybookRunService interface {
 	// GetChecklistAutocomplete returns the list of checklists for playbookRunIDs to be used in autocomplete
 	GetChecklistAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error)
 
+	// GetRunsAutocomplete returns the list of runs to be used in autocomplete
+	GetRunsAutocomplete(playbookRunIDs []string) ([]model.AutocompleteListItem, error)
+
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
 
