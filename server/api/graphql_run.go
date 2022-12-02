@@ -25,7 +25,7 @@ func (r *RunResolver) Progress() float64 {
 	if total == 0 {
 		return 1
 	}
-	return float64(closed / total)
+	return closed / total
 }
 
 func (r *RunResolver) CreateAt() float64 {
