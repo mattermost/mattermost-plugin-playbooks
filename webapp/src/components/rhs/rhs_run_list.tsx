@@ -492,29 +492,6 @@ const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
 `;
 
-const ProgressBackground = styled.div`
-    position: relative;
-
-    &:after {
-        border-bottom: 2px solid rgba(var(--center-channel-color-rgb), 0.08);
-        content: '';
-        display: block;
-        width: 100%;
-    }
-`;
-
-const ProgressLine = styled.div<{width: number}>`
-    position: absolute;
-    width: 100%;
-
-    &:after {
-        border-bottom: 2px solid var(--online-indicator);
-        content: '';
-        display: block;
-        width: ${(props) => props.width}%;
-    }
-`;
-
 interface NoRunsProps {
     active: boolean
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
