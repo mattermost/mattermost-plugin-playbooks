@@ -233,6 +233,8 @@ type Run {
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!
+
+	progress: Float!
 }
 
 type RunConnection {

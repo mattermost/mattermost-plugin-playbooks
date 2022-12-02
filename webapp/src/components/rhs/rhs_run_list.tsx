@@ -46,6 +46,7 @@ interface RunToDisplay {
     participantIDs: string[]
     ownerUserID: string
     playbook?: Maybe<PlaybookToDisplay>
+    progress: number;
     lastUpdatedAt: number
 }
 
@@ -357,38 +358,53 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
 
     return (
-        <CardContainer
-            onClick={props.onClick}
-        >
-            <TitleRow>{props.name}</TitleRow>
-            <PeopleRow>
-                <OwnerProfileChip userId={props.ownerUserID}/>
-                <ParticipantsProfiles>
-                    <UserList
-                        userIds={participatIDsWithoutOwner}
-                        sizeInPx={20}
-                    />
-                </ParticipantsProfiles>
-            </PeopleRow>
-            <InfoRow>
-                <LastUpdatedText>
-                    {formatMessage(
-                        {defaultMessage: 'Last updated {time}'},
-                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                    )}
-                </LastUpdatedText>
-                {props.playbook &&
+        <CardWrapper progress={props.progress * 100}>
+            <CardContainer
+                onClick={props.onClick}
+            >
+                <TitleRow>{props.name}</TitleRow>
+                <PeopleRow>
+                    <OwnerProfileChip userId={props.ownerUserID}/>
+                    <ParticipantsProfiles>
+                        <UserList
+                            userIds={participatIDsWithoutOwner}
+                            sizeInPx={20}
+                        />
+                    </ParticipantsProfiles>
+                </PeopleRow>
+                <InfoRow>
+                    <LastUpdatedText>
+                        {formatMessage(
+                            {defaultMessage: 'Last updated {time}'},
+                            {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                        )}
+                    </LastUpdatedText>
+                    {props.playbook &&
                     <PlaybookChip>
                         <StyledBookOutlineIcon
                             size={11}
                         />
                         {props.playbook.title}
                     </PlaybookChip>
-                }
-            </InfoRow>
-        </CardContainer>
+                    }
+                </InfoRow>
+            </CardContainer>
+        </CardWrapper>
     );
 };
+const CardWrapper = styled.div<{progress: number}>`
+    margin: 0;
+    padding:0;
+    border-radius: 4px;
+    &:after {
+        border-bottom: 2px solid var(--online-indicator);
+        content: '';
+        display: block;
+        // sad hack to make the progress bar work with border-radius
+        margin: 0 5px;
+        width: ${({progress}) => (progress > 98 ? 98 : progress)}%;
+    }
+`;
 
 const CardContainer = styled.div`
     display: flex;
@@ -474,6 +490,29 @@ const ParticipantsProfiles = styled.div`
 
 const StyledBookOutlineIcon = styled(BookOutlineIcon)`
     flex-shrink: 0;
+`;
+
+const ProgressBackground = styled.div`
+    position: relative;
+
+    &:after {
+        border-bottom: 2px solid rgba(var(--center-channel-color-rgb), 0.08);
+        content: '';
+        display: block;
+        width: 100%;
+    }
+`;
+
+const ProgressLine = styled.div<{width: number}>`
+    position: absolute;
+    width: 100%;
+
+    &:after {
+        border-bottom: 2px solid var(--online-indicator);
+        content: '';
+        display: block;
+        width: ${(props) => props.width}%;
+    }
 `;
 
 interface NoRunsProps {

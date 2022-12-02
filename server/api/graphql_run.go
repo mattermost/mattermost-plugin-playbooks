@@ -12,6 +12,22 @@ type RunResolver struct {
 	app.PlaybookRun
 }
 
+func (r *RunResolver) Progress() float64 {
+	var total, closed float64
+	for _, checklist := range r.PlaybookRun.Checklists {
+		total += float64(len(checklist.Items))
+		for _, item := range checklist.Items {
+			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
+				closed++
+			}
+		}
+	}
+	if total == 0 {
+		return 1
+	}
+	return float64(closed / total)
+}
+
 func (r *RunResolver) CreateAt() float64 {
 	return float64(r.PlaybookRun.CreateAt)
 }
