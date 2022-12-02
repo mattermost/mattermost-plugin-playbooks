@@ -19,6 +19,11 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	if err != nil {
 		return nil, err
 	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
+		return nil, err
+	}
 
 	playbook, err := c.playbookService.Get(playbookID)
 	if err != nil {
@@ -31,17 +36,7 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	ID string
 }) (*PlaybookResolver, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return nil, err
-	}
 	playbookID := args.ID
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
-		return nil, err
-	}
-
 	return getGraphqlPlaybook(ctx, playbookID)
 }
 

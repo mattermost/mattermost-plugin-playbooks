@@ -1197,6 +1197,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 // GraphqlUpdate updates fields based on a setmap
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if len(setmap) == 0 {
+		return nil
+	}
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
 		return err
 	}
