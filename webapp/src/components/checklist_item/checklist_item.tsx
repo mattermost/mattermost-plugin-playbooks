@@ -21,7 +21,8 @@ import {
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
-import {Mode} from '../datetime_input';
+
+import {Mode} from 'src/components/datetime_input';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';

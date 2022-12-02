@@ -9,8 +9,9 @@ import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 
 import {pluginUrl} from 'src/browser_routing';
-import {LHSPlaybookDotMenu} from '../backstage/lhs_playbook_dot_menu';
-import {LHSRunDotMenu} from '../backstage/lhs_run_dot_menu';
+
+import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
+import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';

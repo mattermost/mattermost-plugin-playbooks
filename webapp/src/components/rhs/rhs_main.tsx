@@ -12,11 +12,11 @@ import styled from 'styled-components';
 import {setRHSOpen} from 'src/actions';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
-import {ToastProvider} from '../backstage/toast_banner';
+import {ToastProvider} from 'src/components/backstage/toast_banner';
 
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
 
-import LoadingSpinner from '../assets/loading_spinner';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';

@@ -2,7 +2,9 @@ import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Banner} from 'src/components/backstage/styles';
-import ConfirmModal from '../widgets/confirmation_modal';
+
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+
 import {Playbook} from 'src/types/playbook';
 
 import {useLHSRefresh} from './lhs_navigation';

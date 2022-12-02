@@ -40,7 +40,9 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
-import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
+
+import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
+
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';

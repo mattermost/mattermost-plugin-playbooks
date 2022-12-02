@@ -3,7 +3,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Banner} from 'src/components/backstage/styles';
 import {Playbook} from 'src/types/playbook';
-import ConfirmModal from '../widgets/confirmation_modal';
+
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import {useLHSRefresh} from './lhs_navigation';
 

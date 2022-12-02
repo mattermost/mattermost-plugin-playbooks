@@ -5,8 +5,9 @@ import React, {useEffect, useState} from 'react';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {FilterButton} from '../../backstage/styles';
-import {Playbook} from '../../../types/playbook';
+import {FilterButton} from 'src/components/backstage/styles';
+import {Playbook} from 'src/types/playbook';
+
 import {SelectedButton} from 'src/components/team/team_selector';
 import Dropdown from 'src/components/dropdown';
 
