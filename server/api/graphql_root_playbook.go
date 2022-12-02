@@ -236,12 +236,18 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	if args.Updates.Checklists != nil {
-		cleanUpUpdateChecklist(*args.Updates.Checklists)
+		app.CleanUpChecklists(*args.Updates.Checklists)
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 		}
 		setmap["ChecklistsJSON"] = checklistsJSON
+	}
+
+	if args.Updates.Checklists != nil || args.Updates.InvitedUserIDs != nil || args.Updates.InviteUsersEnabled != nil {
+		if err := validatePreAssignmentUpdate(currentPlaybook, args.Updates.Checklists, args.Updates.InvitedUserIDs, args.Updates.InviteUsersEnabled); err != nil {
+			return "", errors.Wrapf(err, "invalid user pre-assignment for playbook id: '%s'", args.ID)
+		}
 	}
 
 	if len(setmap) > 0 {
@@ -462,16 +468,21 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	return args.ID, nil
 }
 
-// cleanUpUpdateChecklist sets empty values for playbooks checklist fields that are not editable
-// NOTE: Any changes to this function must be made to function 'cleanUpChecklist' for the REST endpoint.
-func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
-	for listIndex := range checklists {
-		for itemIndex := range checklists[listIndex].Items {
-			checklists[listIndex].Items[itemIndex].AssigneeID = ""
-			checklists[listIndex].Items[itemIndex].AssigneeModified = 0
-			checklists[listIndex].Items[itemIndex].State = ""
-			checklists[listIndex].Items[itemIndex].StateModified = 0
-			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
-		}
+func validatePreAssignmentUpdate[T app.ChecklistCommon](pb app.Playbook, newChecklists *[]T, newInvitedUsers *[]string, newInviteUsersEnabled *bool) error {
+	assignees := app.GetDistinctAssignees(pb.Checklists)
+	if newChecklists != nil {
+		assignees = app.GetDistinctAssignees(*newChecklists)
 	}
+
+	invitedUsers := pb.InvitedUserIDs
+	if newInvitedUsers != nil {
+		invitedUsers = *newInvitedUsers
+	}
+
+	inviteUsersEnabled := pb.InviteUsersEnabled
+	if newInviteUsersEnabled != nil {
+		inviteUsersEnabled = *newInviteUsersEnabled
+	}
+
+	return app.ValidatePreAssignment(assignees, invitedUsers, inviteUsersEnabled)
 }

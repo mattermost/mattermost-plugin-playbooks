@@ -201,6 +201,11 @@ func (p Playbook) GetRunChannelID() string {
 	return ""
 }
 
+// ChecklistCommon allows access on common fields of Checklist and api.UpdateChecklist
+type ChecklistCommon interface {
+	GetItems() []ChecklistItemCommon
+}
+
 // Checklist represents a checklist in a playbook.
 type Checklist struct {
 	// ID is the identifier of the checklist.
@@ -213,10 +218,28 @@ type Checklist struct {
 	Items []ChecklistItem `json:"items" export:"-"`
 }
 
+func (c Checklist) GetItems() []ChecklistItemCommon {
+	items := make([]ChecklistItemCommon, len(c.Items))
+	for i := range c.Items {
+		items[i] = &c.Items[i]
+	}
+	return items
+}
+
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
 	return newChecklist
+}
+
+// ChecklistItemCommon allows access on common fields of ChecklistItem and api.UpdateChecklistItem
+type ChecklistItemCommon interface {
+	GetAssigneeID() string
+
+	SetAssigneeModified(modified int64)
+	SetState(state string)
+	SetStateModified(modified int64)
+	SetCommandLastRun(lastRun int64)
 }
 
 // ChecklistItem represents an item in a checklist.
@@ -260,6 +283,26 @@ type ChecklistItem struct {
 	// of the checklist item. 0 if not set.
 	// Playbook can have only relative timstamp, run can have only absolute timestamp.
 	DueDate int64 `json:"due_date" export:"due_date"`
+}
+
+func (ci *ChecklistItem) GetAssigneeID() string {
+	return ci.AssigneeID
+}
+
+func (ci *ChecklistItem) SetAssigneeModified(modified int64) {
+	ci.AssigneeModified = modified
+}
+
+func (ci *ChecklistItem) SetState(state string) {
+	ci.State = state
+}
+
+func (ci *ChecklistItem) SetStateModified(modified int64) {
+	ci.StateModified = modified
+}
+
+func (ci *ChecklistItem) SetCommandLastRun(lastRun int64) {
+	ci.CommandLastRun = lastRun
 }
 
 type GetPlaybooksResults struct {
@@ -513,13 +556,13 @@ func ValidateWebhookURLs(urls []string) error {
 	}
 
 	for _, webhook := range urls {
-		url, err := url.ParseRequestURI(webhook)
+		reqURL, err := url.ParseRequestURI(webhook)
 		if err != nil {
 			return errors.Wrapf(err, "unable to parse webhook: %v", webhook)
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			return fmt.Errorf("protocol in webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+		if reqURL.Scheme != "http" && reqURL.Scheme != "https" {
+			return fmt.Errorf("protocol in webhook URL is %s; only HTTP and HTTPS are accepted", reqURL.Scheme)
 		}
 	}
 
@@ -533,6 +576,62 @@ func ValidateCategoryName(categoryName string) error {
 		return errors.Errorf(msg)
 	}
 	return nil
+}
+
+// CleanUpChecklists sets empty values for checklist fields that are not editable
+func CleanUpChecklists[T ChecklistCommon](checklists []T) {
+	for listIndex := range checklists {
+		items := checklists[listIndex].GetItems()
+		for itemIndex := range items {
+			items[itemIndex].SetAssigneeModified(0)
+			items[itemIndex].SetState("")
+			items[itemIndex].SetStateModified(0)
+			items[itemIndex].SetCommandLastRun(0)
+		}
+	}
+}
+
+// ValidatePreAssignment checks if invitations are enabled and if all assignees are also invited
+func ValidatePreAssignment(assignees []string, invitedUsers []string, inviteUsersEnabled bool) error {
+	if len(assignees) > 0 && !inviteUsersEnabled {
+		return errors.New("invitations are disabled")
+	}
+	if !assigneesAreInvited(assignees, invitedUsers) {
+		return errors.New("users missing in invite user list")
+	}
+	return nil
+}
+
+// GetDistinctAssignees returns a list of distinct user ids that are assignees in the given checklists
+func GetDistinctAssignees[T ChecklistCommon](checklists []T) []string {
+	uMap := make(map[string]bool)
+	for _, cl := range checklists {
+		for _, ci := range cl.GetItems() {
+			if id := ci.GetAssigneeID(); id != "" && !uMap[id] {
+				uMap[id] = true
+			}
+		}
+	}
+	uIds := make([]string, 0, len(uMap))
+	for k := range uMap {
+		uIds = append(uIds, k)
+	}
+	return uIds
+}
+
+func assigneesAreInvited(assignees []string, invited []string) bool {
+	for _, assignee := range assignees {
+		found := false
+		for _, user := range invited {
+			if user == assignee {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func removeDuplicates(a []string) []string {

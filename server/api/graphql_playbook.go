@@ -118,6 +118,14 @@ type UpdateChecklist struct {
 	Items []UpdateChecklistItem `json:"items"`
 }
 
+func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
+	items := make([]app.ChecklistItemCommon, len(c.Items))
+	for i := range c.Items {
+		items[i] = &c.Items[i]
+	}
+	return items
+}
+
 type UpdateChecklistItem struct {
 	Title            string  `json:"title"`
 	State            string  `json:"state"`
@@ -129,4 +137,24 @@ type UpdateChecklistItem struct {
 	Description      string  `json:"description"`
 	LastSkipped      float64 `json:"delete_at"`
 	DueDate          float64 `json:"due_date"`
+}
+
+func (ci *UpdateChecklistItem) GetAssigneeID() string {
+	return ci.AssigneeID
+}
+
+func (ci *UpdateChecklistItem) SetAssigneeModified(modified int64) {
+	ci.AssigneeModified = float64(modified)
+}
+
+func (ci *UpdateChecklistItem) SetState(state string) {
+	ci.State = state
+}
+
+func (ci *UpdateChecklistItem) SetStateModified(modified int64) {
+	ci.StateModified = float64(modified)
+}
+
+func (ci *UpdateChecklistItem) SetCommandLastRun(lastRun int64) {
+	ci.CommandLastRun = float64(lastRun)
 }

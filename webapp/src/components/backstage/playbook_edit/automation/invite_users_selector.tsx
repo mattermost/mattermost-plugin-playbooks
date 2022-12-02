@@ -22,7 +22,7 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 interface Props {
     userIds: string[];
     onAddUser: (userid: string) => void;
-    onRemoveUser: (userid: string) => void;
+    onRemoveUser: (userid: string, username: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     isDisabled: boolean;
@@ -106,7 +106,7 @@ const InviteUsersSelector = (props: Props) => {
             getOptionValue={(user: UserProfile) => user.id}
             formatOptionLabel={(option: UserProfile) => (
                 <UserLabel
-                    onRemove={() => props.onRemoveUser(option.id)}
+                    onRemove={() => props.onRemoveUser(option.id, option.username)}
                     id={option.id}
                     invitedUsers={(options.length > 0 && isGroup(options[0])) ? options[0].options : []}
                 />

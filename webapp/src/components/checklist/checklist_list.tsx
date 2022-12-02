@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
-    DropResult,
-    Droppable,
-    DroppableProvided,
     Draggable,
     DraggableProvided,
     DraggableStateSnapshot,
+    Droppable,
+    DroppableProvided,
+    DropResult,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -20,23 +20,16 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {
-    playbookRunUpdated,
-} from 'src/actions';
-import {
-    Checklist,
-    ChecklistItem,
-} from 'src/types/playbook';
-import {
-    clientMoveChecklist,
-    clientMoveChecklistItem,
-    clientAddChecklist,
-} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
+import {PlaybookUpdates} from 'src/graphql/generated_types';
+import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
@@ -76,26 +69,38 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
-        const updated = updatedPlaybook?.checklists.map((cl) => {
-            return {
-                ...cl,
-                items: cl.items.map((ci) => {
-                    return {
-                        title: ci.title,
-                        description: ci.description,
-                        state: ci.state,
-                        stateModified: ci.state_modified || 0,
-                        assigneeID: ci.assignee_id || '',
-                        assigneeModified: ci.assignee_modified || 0,
-                        command: ci.command,
-                        commandLastRun: ci.command_last_run,
-                        dueDate: ci.due_date,
-                    };
-                }),
-            };
-        });
+        const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: ci.assignee_id || '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+            })),
+        }));
+        const updates: PlaybookUpdates = {
+            checklists: updatedChecklists,
+        };
 
-        updatePlaybook({checklists: updated});
+        if (updatedPlaybook) {
+            // Append all assignees found in the updated checklists and clear duplicates
+            const invitedUsers = new Set([...updatedPlaybook.invited_user_ids, ...getDistinctAssignees(updatedPlaybook.checklists)]);
+            if (invitedUsers.size && !updatedPlaybook.invite_users_enabled) {
+                updates.inviteUsersEnabled = true;
+            }
+
+            // Only update the userIds when new assignees were added
+            if (invitedUsers.size > updatedPlaybook.invited_user_ids.length) {
+                updates.invitedUserIDs = [...invitedUsers];
+            }
+        }
+
+        updatePlaybook(updates);
     }, [updatePlaybook]), 0);
     const checklists = playbookRun?.checklists || playbook?.checklists || [];
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
