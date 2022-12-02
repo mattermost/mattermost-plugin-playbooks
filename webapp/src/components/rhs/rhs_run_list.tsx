@@ -354,7 +354,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
         <CardContainer
             onClick={props.onClick}
         >
-            <TitleContainer>
+            <CardTitleContainer>
                 <TitleRow>{props.name}</TitleRow>
                 <DotMenu
                     dotMenuButton={StyledDotMenuButton}
@@ -374,7 +374,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         <FormattedMessage defaultMessage='Go to playbook'/>
                     </StyledDropdownMenuItem>
                 </DotMenu>
-            </TitleContainer>
+            </CardTitleContainer>
             <PeopleRow>
                 <OwnerProfileChip userId={props.ownerUserID}/>
                 <ParticipantsProfiles>
@@ -423,7 +423,7 @@ const CardContainer = styled.div`
         box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
     }
 `;
-const TitleContainer = styled.div`
+const CardTitleContainer = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
