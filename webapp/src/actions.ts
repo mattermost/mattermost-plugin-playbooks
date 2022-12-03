@@ -164,9 +164,9 @@ export function displayRhsRunDetailsTourDialog(props: Parameters<typeof makeRhsR
     };
 }
 
-export function finishRun(teamId: string) {
+export function finishRun(teamId: string, playbookRunId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook finish', teamId);
+        await clientExecuteCommand(dispatch, getState, `/playbook finish-by-id ${playbookRunId}`, teamId);
     };
 }
 

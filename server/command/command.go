@@ -840,7 +840,16 @@ func (r *Runner) actionFinish(args []string) {
 		}
 	}
 
-	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunIDs[run]); err != nil {
+	r.actionFinishByID([]string{playbookRunIDs[run]})
+}
+
+func (r *Runner) actionFinishByID(args []string) {
+	if len(args) == 0 {
+		r.postCommandResponse("Command expects one argument: the run ID.")
+		return
+	}
+
+	if err := r.permissions.RunManageProperties(r.args.UserId, args[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -849,7 +858,7 @@ func (r *Runner) actionFinish(args []string) {
 		return
 	}
 
-	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunIDs[run], r.args.TriggerId)
+	err := r.playbookRunService.OpenFinishPlaybookRunDialog(args[0], r.args.TriggerId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return
@@ -2108,6 +2117,8 @@ func (r *Runner) Execute() error {
 		r.actionRunPlaybook(parameters)
 	case "finish":
 		r.actionFinish(parameters)
+	case "finish-by-id":
+		r.actionFinishByID(parameters)
 	case "update":
 		r.actionUpdate(parameters)
 	case "check":
