@@ -588,7 +588,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 		return errors.Wrap(err, "Error retrieving the playbook runs: %v")
 	}
 
-	dialog, err := s.newAddToTimelineDialog(result.Items, postID)
+	dialog, err := s.newAddToTimelineDialog(result.Items, postID, requesterInfo.UserID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create add to timeline dialog")
 	}
@@ -2572,7 +2572,7 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookRun, postID string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookRun, postID, userID string) (*model.Dialog, error) {
 	var options []*model.PostActionOptions
 	for _, i := range playbookRuns {
 		options = append(options, &model.PostActionOptions{
@@ -2601,7 +2601,7 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 		}
 	}
 
-	defaultPlaybookRunIDs, err := s.GetPlaybookRunIDsForChannel(post.ChannelId, nil)
+	defaultPlaybookRunIDs, err := s.GetPlaybookRunIDsForChannel(post.ChannelId, &userID)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, errors.Wrapf(err, "failed to get playbookRunID for channel")
 	}
