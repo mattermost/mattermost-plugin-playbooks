@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {isKeyPressed, KeyCodes} from 'src/utils';
 
-import Tooltip from '../widgets/tooltip';
+import Tooltip from 'src/components/widgets/tooltip';
 
 interface Props {
     label?: string;

@@ -5,7 +5,8 @@ import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
 import Tooltip from 'src/components/widgets/tooltip';
-import {DotMenuButton} from '../dot_menu';
+
+import {DotMenuButton} from 'src/components/dot_menu';
 
 interface ItemProps {
     icon: string;
@@ -128,7 +129,7 @@ export const StyledNavLink = styled(NavLink)`
             ${DotMenuButton} {
                 opacity: 1;
             }
-        }        
+        }
     }
 `;
 

@@ -45,7 +45,7 @@ apply:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules check-golangci
+check-style: apply webapp/node_modules tests-e2e/node_modules check-golangci
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -109,6 +109,13 @@ webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && node skip_integrity_check.js
 	cd webapp && $(NPM) install
+	touch $@
+endif
+
+## Ensures NPM dependencies are installed without having to run this all the time.
+tests-e2e/node_modules: $(wildcard tests-e2e/package.json)
+ifneq ($(HAS_WEBAPP),)
+	cd tests-e2e && $(NPM) install
 	touch $@
 endif
 
