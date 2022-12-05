@@ -21,6 +21,7 @@ interface Props {
     onSave: () => void;
     children: React.ReactNode;
     isValid: boolean;
+    autoCloseOnConfirmButton?: boolean;
 }
 
 const ActionsModal = (props: Props) => {
@@ -69,7 +70,7 @@ const ActionsModal = (props: Props) => {
             confirmButtonClassName={props.isValid ? '' : 'disabled'}
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
-            autoCloseOnConfirmButton={false}
+            autoCloseOnConfirmButton={props.autoCloseOnConfirmButton ?? false}
             enforceFocus={true}
             components={{
                 Header: ModalHeader,
