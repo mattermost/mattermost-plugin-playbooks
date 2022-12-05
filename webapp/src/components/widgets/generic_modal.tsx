@@ -14,6 +14,8 @@ type Props = {
     onHide: () => void;
     onExited?: () => void;
     modalHeaderText?: React.ReactNode;
+    modalHeaderSideText?: React.ReactNode;
+    modalHeaderIcon?: React.ReactNode;
     show?: boolean;
     showCancel?: boolean;
     handleCancel?: (() => void) | null;
@@ -118,6 +120,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 
         const Header = this.props.components?.Header || Modal.Header;
         const FooterContainer = this.props.components?.FooterContainer || DefaultFooterContainer;
+        const showFooter = Boolean(confirmButton || cancelButton || this.props.footer !== undefined);
 
         return (
             <StyledModal
@@ -142,15 +145,17 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 </Header>
                 <>
                     <Modal.Body>{this.props.children}</Modal.Body>
-                    <Modal.Footer>
-                        <FooterContainer>
-                            <Buttons>
-                                {cancelButton}
-                                {confirmButton}
-                            </Buttons>
-                            {this.props.footer}
-                        </FooterContainer>
-                    </Modal.Footer>
+                    {showFooter ? (
+                        <Modal.Footer>
+                            <FooterContainer>
+                                <Buttons>
+                                    {cancelButton}
+                                    {confirmButton}
+                                </Buttons>
+                                {this.props.footer}
+                            </FooterContainer>
+                        </Modal.Footer>
+                    ) : null}
                 </>
             </StyledModal>
         );
@@ -216,6 +221,15 @@ export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
+`;
+
+export const ModalSideheading = styled.h6`
+    font-size: 12px;
+    line-height: 20px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    padding-left: 8px;
+    margin: 0 0 0 8px;
+    border-left: solid 1px rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const ModalSubheading = styled.h6`

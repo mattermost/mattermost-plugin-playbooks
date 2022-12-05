@@ -43,6 +43,18 @@ func (r *PlaybookResolver) DeleteAt() float64 {
 	return float64(r.Playbook.DeleteAt)
 }
 
+func (r *PlaybookResolver) LastRunAt() float64 {
+	return float64(r.Playbook.LastRunAt)
+}
+
+func (r *PlaybookResolver) NumRuns() int32 {
+	return int32(r.Playbook.NumRuns)
+}
+
+func (r *PlaybookResolver) ActiveRuns() int32 {
+	return int32(r.Playbook.ActiveRuns)
+}
+
 func (r *PlaybookResolver) RetrospectiveReminderIntervalSeconds() float64 {
 	return float64(r.Playbook.RetrospectiveReminderIntervalSeconds)
 }
