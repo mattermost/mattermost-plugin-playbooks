@@ -41,7 +41,6 @@ func TestTaskActionTriggers(t *testing.T) {
 
 		t.Run("triggering", func(t *testing.T) {
 			t.Run("simple", func(t *testing.T) {
-				// simple
 				trigger, err := NewKeywordsByUsersTrigger(Trigger{
 					Type:    KeywordsByUsersTriggerType,
 					Payload: "{\"keywords\":[\"one\", \"two\"], \"user_ids\":[]}",
@@ -49,6 +48,26 @@ func TestTaskActionTriggers(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, trigger.IsValid())
 				require.True(t, trigger.IsTriggered(&model.Post{Message: "one is a trigger word"}))
+			})
+
+			t.Run("trigger words with with formatting matches, backticks", func(t *testing.T) {
+				trigger, err := NewKeywordsByUsersTrigger(Trigger{
+					Type:    KeywordsByUsersTriggerType,
+					Payload: "{\"keywords\":[\"phrase with `backticks`\", \"two\"], \"user_ids\":[]}",
+				})
+				require.NoError(t, err)
+				require.NoError(t, trigger.IsValid())
+				require.True(t, trigger.IsTriggered(&model.Post{Message: "post with a phrase with `backticks`"}))
+			})
+
+			t.Run("trigger words with with formatting matches, asterisks", func(t *testing.T) {
+				trigger, err := NewKeywordsByUsersTrigger(Trigger{
+					Type:    KeywordsByUsersTriggerType,
+					Payload: "{\"keywords\":[\"phrase with *asterisks*\", \"two\"], \"user_ids\":[]}",
+				})
+				require.NoError(t, err)
+				require.NoError(t, trigger.IsValid())
+				require.True(t, trigger.IsTriggered(&model.Post{Message: "post with a phrase with *asterisks*"}))
 			})
 
 			t.Run("simple, post does not contain trigger word", func(t *testing.T) {
