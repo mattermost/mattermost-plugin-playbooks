@@ -142,7 +142,7 @@ const RightHandSidebar = () => {
     };
 
     // Not a channel
-    if (!Boolean(currentChannelId)) {
+    if (!currentChannelId) {
         return <RHSHome/>;
     }
 
