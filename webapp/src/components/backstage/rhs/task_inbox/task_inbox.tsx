@@ -66,7 +66,7 @@ const TaskInbox = () => {
     const currentUserId = useSelector(getCurrentUserId);
     const myTasks = useSelector(selectMyTasks);
 
-    useViewTelemetry(GeneralViewTarget.TaskInbbox, currentUserId, {});
+    useViewTelemetry(GeneralViewTarget.TaskInbox, currentUserId, {});
 
     useEffect(() => {
         const options = {

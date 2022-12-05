@@ -292,3 +292,29 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 
 	return "", nil
 }
+
+func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct {
+	RunID        string
+	ChecklistNum float64
+	ItemNum      float64
+	TaskActions  *[]app.TaskAction
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	if args.TaskActions == nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := validateTaskActions(*args.TaskActions); err != nil {
+		return "", err
+	}
+
+	if err := c.playbookRunService.SetTaskActionsToChecklistItem(args.RunID, userID, int(args.ChecklistNum), int(args.ItemNum), *args.TaskActions); err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
