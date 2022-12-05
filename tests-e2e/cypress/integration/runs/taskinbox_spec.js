@@ -10,11 +10,9 @@ describe('Task Inbox >', () => {
     let testTeam;
     let testUser;
 
-    let testAdmin;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
-    let expFeaturesFlag;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -22,7 +20,6 @@ describe('Task Inbox >', () => {
             testUser = user;
 
             cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
-                testAdmin = adminUser;
                 cy.apiAddUserToTeam(testTeam.id, adminUser.id);
             });
 
