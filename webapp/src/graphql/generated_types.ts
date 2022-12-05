@@ -173,6 +173,7 @@ export type PageInfo = {
 
 export type Playbook = {
     __typename?: 'Playbook';
+    activeRuns: Scalars['Int'];
     broadcastChannelIDs: Array<Scalars['String']>;
     broadcastEnabled: Scalars['Boolean'];
     categorizeChannelEnabled: Scalars['Boolean'];
@@ -196,10 +197,12 @@ export type Playbook = {
     invitedGroupIDs: Array<Scalars['String']>;
     invitedUserIDs: Array<Scalars['String']>;
     isFavorite: Scalars['Boolean'];
+    lastRunAt: Scalars['Float'];
     members: Array<Member>;
     messageOnJoin: Scalars['String'];
     messageOnJoinEnabled: Scalars['Boolean'];
     metrics: Array<PlaybookMetricConfig>;
+    numRuns: Scalars['Int'];
     public: Scalars['Boolean'];
     reminderMessageTemplate: Scalars['String'];
     reminderTimerDefaultSeconds: Scalars['Float'];
@@ -431,6 +434,16 @@ export type PlaybookLhsQueryVariables = Exact<{
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } }> }, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
+export type PlaybookModalFieldsFragment = { __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number };
+
+export type PlaybooksModalQueryVariables = Exact<{
+    channelID: Scalars['String'];
+    teamID: Scalars['String'];
+    searchTerm: Scalars['String'];
+}>;
+
+export type PlaybooksModalQuery = { __typename?: 'Query', channelPlaybooks: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', playbookID: string } }> }, yourPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }>, allPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }> };
+
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
     userID: Scalars['String'];
@@ -518,6 +531,16 @@ export type UpdateRunTaskActionsMutationVariables = Exact<{
 
 export type UpdateRunTaskActionsMutation = { __typename?: 'Mutation', updateRunTaskActions: string };
 
+export const PlaybookModalFieldsFragmentDoc = gql`
+    fragment PlaybookModalFields on Playbook {
+  id
+  title
+  isFavorite
+  public
+  lastRunAt
+  activeRuns
+}
+    `;
 export const RhsRunFieldsFragmentDoc = gql`
     fragment RHSRunFields on Run {
   id
@@ -727,6 +750,61 @@ export function usePlaybookLhsLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type PlaybookLhsQueryHookResult = ReturnType<typeof usePlaybookLhsQuery>;
 export type PlaybookLhsLazyQueryHookResult = ReturnType<typeof usePlaybookLhsLazyQuery>;
 export type PlaybookLhsQueryResult = Apollo.QueryResult<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
+export const PlaybooksModalDocument = gql`
+    query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {
+  channelPlaybooks: runs(channelID: $channelID, first: 1000) {
+    edges {
+      node {
+        playbookID
+      }
+    }
+  }
+  yourPlaybooks: playbooks(
+    teamID: $teamID
+    withMembershipOnly: true
+    searchTerm: $searchTerm
+  ) {
+    ...PlaybookModalFields
+  }
+  allPlaybooks: playbooks(
+    teamID: $teamID
+    withMembershipOnly: false
+    searchTerm: $searchTerm
+  ) {
+    ...PlaybookModalFields
+  }
+}
+    ${PlaybookModalFieldsFragmentDoc}`;
+
+/**
+ * __usePlaybooksModalQuery__
+ *
+ * To run a query within a React component, call `usePlaybooksModalQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePlaybooksModalQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePlaybooksModalQuery({
+ *   variables: {
+ *      channelID: // value for 'channelID'
+ *      teamID: // value for 'teamID'
+ *      searchTerm: // value for 'searchTerm'
+ *   },
+ * });
+ */
+export function usePlaybooksModalQuery(baseOptions: Apollo.QueryHookOptions<PlaybooksModalQuery, PlaybooksModalQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<PlaybooksModalQuery, PlaybooksModalQueryVariables>(PlaybooksModalDocument, options);
+}
+export function usePlaybooksModalLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PlaybooksModalQuery, PlaybooksModalQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<PlaybooksModalQuery, PlaybooksModalQueryVariables>(PlaybooksModalDocument, options);
+}
+export type PlaybooksModalQueryHookResult = ReturnType<typeof usePlaybooksModalQuery>;
+export type PlaybooksModalLazyQueryHookResult = ReturnType<typeof usePlaybooksModalLazyQuery>;
+export type PlaybooksModalQueryResult = Apollo.QueryResult<PlaybooksModalQuery, PlaybooksModalQueryVariables>;
 export const AddPlaybookMemberDocument = gql`
     mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
   addPlaybookMember(playbookID: $playbookID, userID: $userID)
