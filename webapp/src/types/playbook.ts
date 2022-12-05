@@ -229,7 +229,7 @@ export function emptyChecklistItem(): ChecklistItem {
         description: '',
         command_last_run: 0,
         due_date: 0,
-        task_actions: [],
+        task_actions: [] as TaskAction[],
     };
 }
 
@@ -240,7 +240,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     command_last_run: 0,
     state,
     due_date: 0,
-    task_actions: [],
+    task_actions: [] as TaskAction[],
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

@@ -119,7 +119,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.due_date]);
 
     useUpdateEffect(() => {
-        setTaskActions(props.checklistItem.task_actions);
+        setTaskActions(taskActions);
     }, [props.checklistItem.task_actions]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
@@ -417,6 +417,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             newItem.title = titleValue;
                             newItem.command = command;
                             newItem.description = descValue;
+                            newItem.task_actions = taskActions;
                             props.onUpdateChecklistItem?.(newItem);
                         }
                     }}
