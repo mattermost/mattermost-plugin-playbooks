@@ -141,6 +141,11 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
+    // Not a channel
+    if (!Boolean(currentChannelId)) {
+        return <RHSHome/>;
+    }
+
     // No runs (ever) in this channel
     if (fetchedRuns.numRunsInProgress + fetchedRuns.numRunsFinished === 0) {
         return <RHSHome/>;
