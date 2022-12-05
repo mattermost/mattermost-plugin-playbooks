@@ -3,19 +3,15 @@
 
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-
 import styled from 'styled-components';
 
 import {setRHSOpen} from 'src/actions';
+import {useEnsureSettings} from 'src/hooks/general';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
-
 import {ToastProvider} from 'src/components/backstage/toast_banner';
-
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
-
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
@@ -106,12 +102,15 @@ const defaultListOptions : RunListOptions = {
 // RightHandSidebar the sidebar for integration of playbooks into channels
 //
 // Rules for automatic display:
-// No Runs Ever -> RHS Home
-// Only Finished Runs -> Runs list blank state
-// Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
-// Multiple active runs -> Runs list
+// * No Runs Ever -> RHS Home
+// * Only Finished Runs -> Runs list blank state
+// * Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
+// * Multiple active runs -> Runs list
 const RightHandSidebar = () => {
     useSetRHSState();
+
+    // ensure settings are loaded if user just logged in
+    useEnsureSettings();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
