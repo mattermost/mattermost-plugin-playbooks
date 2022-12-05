@@ -129,12 +129,11 @@ const PlaybookListRow = (props: Props) => {
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
             if (isLinkRunToExistingChannelEnabled) {
-                dispatch(openPlaybookRunNewModal(
-                    props.playbook.id,
-                    null,
-                    team.id,
-                    refreshLHS
-                ));
+                dispatch(openPlaybookRunNewModal({
+                    refreshLHS,
+                    playbookId: props.playbook.id,
+                    teamId: team.id,
+                }));
             } else {
                 dispatch(openPlaybookRunModal(
                     props.playbook.id,

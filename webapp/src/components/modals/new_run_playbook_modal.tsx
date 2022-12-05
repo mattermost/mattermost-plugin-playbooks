@@ -5,8 +5,10 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
+import {ApolloProvider} from '@apollo/client';
 
-import {usePlaybook} from 'src/hooks';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
+import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -23,19 +25,19 @@ import SearchInput from 'src/components/backstage/search_input';
 const ID = 'playbooks_run_playbook_dialog';
 
 export const makeModalDefinition = (
-    playbookId: string | null,
-    triggerChannelId: string| null,
+    playbookId: string | undefined,
+    triggerChannelId: string | undefined,
     teamId: string,
     refreshLHS?: () => void
 ) => ({
     modalId: ID,
-    dialogType: RunPlaybookNewModal,
+    dialogType: ApolloWrappedModal,
     dialogProps: {playbookId, triggerChannelId, teamId, refreshLHS},
 });
 
 type Props = {
-    playbookId: string | null,
-    triggerChannelId: string | null,
+    playbookId?: string,
+    triggerChannelId?: string,
     teamId: string,
     refreshLHS?: () => void
 } & Partial<ComponentProps<typeof GenericModal>>;
@@ -50,7 +52,7 @@ const RunPlaybookNewModal = ({
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
 
-    const [step, setStep] = useState(playbookId === null ? 'select-playbook' : 'run-details');
+    const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
@@ -424,4 +426,7 @@ const CreatePlaybookButton = styled(SecondaryButton)`
 const SearchWrapper = styled.div`
 `;
 
-export default RunPlaybookNewModal;
+const ApolloWrappedModal = (props: Props) => {
+    const client = getPlaybooksGraphQLClient();
+    return <ApolloProvider client={client}><RunPlaybookNewModal {...props}/></ApolloProvider>;
+};

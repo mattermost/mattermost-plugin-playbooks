@@ -132,7 +132,11 @@ const RHSRunList = (props: Props) => {
                     <Spacer/>
                     <StartRunButton
                         onClick={() => {
-                            dispatch(openPlaybookRunNewModal(null, currentChannelId, currentTeamId, refreshLHS));
+                            dispatch(openPlaybookRunNewModal({
+                                refreshLHS,
+                                triggerChannelId: currentChannelId,
+                                teamId: currentTeamId,
+                            }));
                         }}
                     >
                         <PlayOutlineIcon size={14}/>

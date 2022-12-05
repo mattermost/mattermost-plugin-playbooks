@@ -265,12 +265,11 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
         <PrimaryButtonLarger
             onClick={() => {
                 if (isLinkRunToExistingChannelEnabled) {
-                    dispatch(openPlaybookRunNewModal(
-                        playbook.id,
-                        null,
-                        team.id,
-                        refreshLHS
-                    ));
+                    dispatch(openPlaybookRunNewModal({
+                        refreshLHS,
+                        playbookId: playbook.id,
+                        teamId: team.id,
+                    }));
                 } else {
                     dispatch(openPlaybookRunModal(
                         playbook.id,

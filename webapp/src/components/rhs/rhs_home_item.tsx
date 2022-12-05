@@ -245,11 +245,10 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                 data-testid={'run-playbook'}
                 onClick={() => {
                     if (isLinkRunToExistingChannelEnabled) {
-                        dispatch(openPlaybookRunNewModal(
-                            id,
-                            null,
+                        dispatch(openPlaybookRunNewModal({
                             teamId,
-                        ));
+                            playbookId: id,
+                        }));
                     } else {
                         dispatch(openPlaybookRunModal(
                             id,
