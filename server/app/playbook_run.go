@@ -23,6 +23,11 @@ const (
 	RunRoleAdmin  = "run_admin"
 )
 
+const (
+	RunSourcePost   = "post"
+	RunSourceDialog = "dialog"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -265,8 +270,10 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
-func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
-	if playbook.RunSummaryTemplateEnabled {
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
+	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
+	// Runs created though new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
 		r.Summary = playbook.RunSummaryTemplate
 	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
@@ -640,6 +647,9 @@ type PlaybookRunService interface {
 	// SetDueDate sets absolute due date timestamp for the specified checklist item
 	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
 
+	// SetTaskActionsToChecklistItem sets Task Actions to checklist item
+	SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error
+
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
 
@@ -781,6 +791,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

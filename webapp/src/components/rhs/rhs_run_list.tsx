@@ -3,31 +3,23 @@
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
+import {GlobalState} from '@mattermost/types/store';
 import styled from 'styled-components';
-
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, SortAscendingIcon, PlayOutlineIcon, CheckIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
-
 import {DateTime} from 'luxon';
-
+import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {debounce} from 'lodash';
 
-import {useSelector} from 'react-redux';
-
-import {GlobalState} from '@mattermost/types/store';
-
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-
+import {openPlaybookRunNewModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
-
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
-
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
 
@@ -77,6 +69,10 @@ const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state).d
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentChannelId = useSelector(getCurrentChannelId);
+    const refreshLHS = useLHSRefresh();
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = debounce(setLoadingMore, 100);
     const getMore = async () => {
@@ -87,7 +83,6 @@ const RHSRunList = (props: Props) => {
     const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
-
     const showNoRuns = props.runs.length === 0;
 
     return (
@@ -136,10 +131,18 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    {/*<StartRunButton>
+                    <StartRunButton
+                        onClick={() => {
+                            dispatch(openPlaybookRunNewModal({
+                                refreshLHS,
+                                triggerChannelId: currentChannelId,
+                                teamId: currentTeamId,
+                            }));
+                        }}
+                    >
                         <PlayOutlineIcon size={14}/>
                         {formatMessage({defaultMessage: 'Start run'})}
-                    </StartRunButton>*/}
+                    </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'

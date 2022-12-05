@@ -10,8 +10,10 @@ import {
     RHSContainer,
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {Participants} from '../backstage/playbook_runs/playbook_run/rhs_participants';
-import {Role} from '../backstage/playbook_runs/shared';
+
+import {Participants} from 'src/components/backstage/playbook_runs/playbook_run/rhs_participants';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {

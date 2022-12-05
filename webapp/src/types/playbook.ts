@@ -126,6 +126,22 @@ export interface ChecklistItem {
     command: string;
     command_last_run: number;
     due_date: number;
+    task_actions: TaskAction[];
+}
+
+export interface TaskAction {
+    trigger: Trigger;
+    actions: Action[];
+}
+
+export interface Trigger {
+    type: string;
+    payload: string;
+}
+
+export interface Action {
+    type: string;
+    payload: string;
 }
 
 export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 'id'> {
@@ -213,6 +229,7 @@ export function emptyChecklistItem(): ChecklistItem {
         description: '',
         command_last_run: 0,
         due_date: 0,
+        task_actions: [] as TaskAction[],
     };
 }
 
@@ -223,6 +240,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     command_last_run: 0,
     state,
     due_date: 0,
+    task_actions: [] as TaskAction[],
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

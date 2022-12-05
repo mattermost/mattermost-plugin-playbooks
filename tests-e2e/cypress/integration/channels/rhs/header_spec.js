@@ -110,7 +110,14 @@ describe('channels > rhs > header', () => {
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
+
+            // * reload the page
+            cy.reload();
+
+            // * make sure the updated summary is still there
+            cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
         });
+
         it('by clicking on dot menu item', () => {
             // # Run the playbook
             const now = Date.now();
