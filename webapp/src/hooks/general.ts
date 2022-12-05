@@ -292,11 +292,19 @@ export function useLinkRunToExistingChannelEnabled() {
     return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
+let isFetchingSettings = false;
 export async function useEnsureSettings() {
     const dispatch = useDispatch();
     const hasGlobalSettings = useSelector((state: GlobalState) => Boolean(globalSettings(state)));
-    if (!hasGlobalSettings) {
-        dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
+    if (!hasGlobalSettings && !isFetchingSettings) {
+        isFetchingSettings = true;
+        try {
+            dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
+            isFetchingSettings = false;
+        } catch (e) {
+            isFetchingSettings = false;
+            throw e;
+        }
     }
 }
 
