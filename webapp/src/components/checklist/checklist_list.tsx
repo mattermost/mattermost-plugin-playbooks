@@ -39,6 +39,7 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useProxyState} from 'src/hooks';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
+
 import GenericChecklist, {generateKeys} from './generic_checklist';
 
 // disable all react-beautiful-dnd development warnings
@@ -90,6 +91,7 @@ const ChecklistList = ({
                         command: ci.command,
                         commandLastRun: ci.command_last_run,
                         dueDate: ci.due_date,
+                        taskActions: ci.task_actions,
                     };
                 }),
             };
@@ -351,6 +353,7 @@ const ChecklistList = ({
                                                 <GenericChecklist
                                                     id={playbookRun?.id || ''}
                                                     playbookRun={playbookRun}
+                                                    playbookId={playbook?.id || playbookRun?.playbook_id || ''}
                                                     readOnly={readOnly}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}

@@ -48,8 +48,18 @@ query Playbook($id: String!) {
 				command
 				command_last_run: commandLastRun
 				due_date: dueDate
+				task_actions: taskActions {
+					trigger: trigger {
+						type
+						payload
+					}
+					actions: actions {
+						type
+						payload
+					}
+				}
 			}
-        }
+        	}
 		members {
 			user_id: userID
 			roles

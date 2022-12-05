@@ -18,6 +18,17 @@ export type Scalars = {
     Float: number;
 };
 
+export type Action = {
+    __typename?: 'Action';
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
+export type ActionUpdates = {
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
 export type Checklist = {
     __typename?: 'Checklist';
     items: Array<ChecklistItem>;
@@ -34,6 +45,7 @@ export type ChecklistItem = {
     dueDate: Scalars['Float'];
     state: Scalars['String'];
     stateModified: Scalars['Float'];
+    taskActions: Array<TaskAction>;
     title: Scalars['String'];
 };
 
@@ -46,6 +58,7 @@ export type ChecklistItemUpdates = {
     dueDate: Scalars['Float'];
     state: Scalars['String'];
     stateModified: Scalars['Float'];
+    taskActions?: InputMaybe<Array<TaskActionUpdates>>;
     title: Scalars['String'];
 };
 
@@ -81,6 +94,7 @@ export type Mutation = {
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
     updateRun: Scalars['String'];
+    updateRunTaskActions: Scalars['String'];
 };
 
 export type MutationAddMetricArgs = {
@@ -141,6 +155,13 @@ export type MutationUpdatePlaybookArgs = {
 export type MutationUpdateRunArgs = {
     id: Scalars['String'];
     updates: RunUpdates;
+};
+
+export type MutationUpdateRunTaskActionsArgs = {
+    checklistNum: Scalars['Float'];
+    itemNum: Scalars['Float'];
+    runID: Scalars['String'];
+    taskActions?: InputMaybe<Array<TaskActionUpdates>>;
 };
 
 export type PageInfo = {
@@ -358,6 +379,17 @@ export type StatusPost = {
     id: Scalars['String'];
 };
 
+export type TaskAction = {
+    __typename?: 'TaskAction';
+    actions: Array<Action>;
+    trigger: Trigger;
+};
+
+export type TaskActionUpdates = {
+    actions: Array<ActionUpdates>;
+    trigger: TriggerUpdates;
+};
+
 export type TimelineEvent = {
     __typename?: 'TimelineEvent';
     createAt: Scalars['Float'];
@@ -371,11 +403,22 @@ export type TimelineEvent = {
     summary: Scalars['String'];
 };
 
+export type Trigger = {
+    __typename?: 'Trigger';
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
+export type TriggerUpdates = {
+    payload: Scalars['String'];
+    type: Scalars['String'];
+};
+
 export type PlaybookQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, channel_id: string, channel_mode: string, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
+export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, channel_id: string, channel_mode: string, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number, task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
 
 export type UpdatePlaybookMutationVariables = Exact<{
     id: Scalars['String'];
@@ -419,7 +462,7 @@ export type RunQueryVariables = Exact<{
     id: Scalars['String'];
 }>;
 
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } | null };
+export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> }, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }> } | null };
 
 export type RhsRunFieldsFragment = { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null };
 
@@ -478,6 +521,15 @@ export type ChangeRunOwnerMutationVariables = Exact<{
 }>;
 
 export type ChangeRunOwnerMutation = { __typename?: 'Mutation', changeRunOwner: string };
+
+export type UpdateRunTaskActionsMutationVariables = Exact<{
+    runID: Scalars['String'];
+    checklistNum: Scalars['Float'];
+    itemNum: Scalars['Float'];
+    taskActions: Array<TaskActionUpdates> | TaskActionUpdates;
+}>;
+
+export type UpdateRunTaskActionsMutation = { __typename?: 'Mutation', updateRunTaskActions: string };
 
 export const PlaybookModalFieldsFragmentDoc = gql`
     fragment PlaybookModalFields on Playbook {
@@ -552,6 +604,16 @@ export const PlaybookDocument = gql`
         command
         command_last_run: commandLastRun
         due_date: dueDate
+        task_actions: taskActions {
+          trigger: trigger {
+            type
+            payload
+          }
+          actions: actions {
+            type
+            payload
+          }
+        }
       }
     }
     members {
@@ -816,6 +878,20 @@ export const RunDocument = gql`
     participantIDs
     metadata {
       followers
+    }
+    checklists {
+      items {
+        task_actions: taskActions {
+          trigger: trigger {
+            type
+            payload
+          }
+          actions: actions {
+            type
+            payload
+          }
+        }
+      }
     }
   }
 }
@@ -1123,6 +1199,45 @@ export function useChangeRunOwnerMutation(baseOptions?: Apollo.MutationHookOptio
 export type ChangeRunOwnerMutationHookResult = ReturnType<typeof useChangeRunOwnerMutation>;
 export type ChangeRunOwnerMutationResult = Apollo.MutationResult<ChangeRunOwnerMutation>;
 export type ChangeRunOwnerMutationOptions = Apollo.BaseMutationOptions<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
+export const UpdateRunTaskActionsDocument = gql`
+    mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
+  updateRunTaskActions(
+    runID: $runID
+    checklistNum: $checklistNum
+    itemNum: $itemNum
+    taskActions: $taskActions
+  )
+}
+    `;
+export type UpdateRunTaskActionsMutationFn = Apollo.MutationFunction<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>;
+
+/**
+ * __useUpdateRunTaskActionsMutation__
+ *
+ * To run a mutation, you first call `useUpdateRunTaskActionsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateRunTaskActionsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateRunTaskActionsMutation, { data, loading, error }] = useUpdateRunTaskActionsMutation({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *      checklistNum: // value for 'checklistNum'
+ *      itemNum: // value for 'itemNum'
+ *      taskActions: // value for 'taskActions'
+ *   },
+ * });
+ */
+export function useUpdateRunTaskActionsMutation(baseOptions?: Apollo.MutationHookOptions<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>(UpdateRunTaskActionsDocument, options);
+}
+export type UpdateRunTaskActionsMutationHookResult = ReturnType<typeof useUpdateRunTaskActionsMutation>;
+export type UpdateRunTaskActionsMutationResult = Apollo.MutationResult<UpdateRunTaskActionsMutation>;
+export type UpdateRunTaskActionsMutationOptions = Apollo.BaseMutationOptions<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>;
 
 export interface PossibleTypesResultData {
     possibleTypes: {
