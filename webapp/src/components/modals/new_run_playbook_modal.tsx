@@ -129,82 +129,6 @@ const RunPlaybookNewModal = ({
             });
     };
 
-    const channelConfigSection = (
-        <ChannelContainer>
-            <ChannelBlock>
-                <StyledRadioInput
-                    data-testid={'link-existing-channel-radio'}
-                    type='radio'
-                    checked={linkExistingChannel}
-                    onChange={() => setChannelMode('link_existing_channel')}
-                />
-                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
-            </ChannelBlock>
-            {linkExistingChannel && (
-                <SelectorWrapper>
-                    <StyledChannelSelector
-                        id={'link-existing-channel-selector'}
-                        onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
-                        channelIds={channelId ? [channelId] : []}
-                        isClearable={true}
-                        selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={false}
-                        captureMenuScroll={false}
-                        shouldRenderValue={true}
-                        teamId={teamId}
-                        isMulti={false}
-                    />
-                </SelectorWrapper>
-            )}
-
-            <ChannelBlock >
-                <StyledRadioInput
-                    data-testid={'create-channel-radio'}
-                    type='radio'
-                    checked={createNewChannel}
-                    onChange={() => setChannelMode('create_new_channel')}
-                />
-                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
-            </ChannelBlock>
-
-            {createNewChannel && (
-                <HorizontalSplit>
-                    <VerticalSplit>
-                        <ButtonLabel disabled={false}>
-                            <RadioInput
-                                data-testid={'create-public-channel-radio'}
-                                type='radio'
-                                checked={createPublicRun}
-                                onChange={() => setCreatePublicRun(true)}
-                            />
-                            <Icon
-                                disabled={false}
-                                active={createPublicRun}
-                                className={'icon-globe'}
-                            />
-                            <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
-                        </ButtonLabel>
-                        <HorizontalSpacer size={8}/>
-                        <ButtonLabel disabled={false}>
-                            <RadioInput
-                                data-testid={'create-private-channel-radio'}
-                                type='radio'
-                                checked={!createPublicRun}
-                                onChange={() => setCreatePublicRun(false)}
-                            />
-                            <Icon
-                                disabled={false}
-                                active={!createPublicRun}
-                                className={'icon-lock-outline'}
-                            />
-                            <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
-                        </ButtonLabel>
-                    </VerticalSplit>
-                </HorizontalSplit>
-            )}
-        </ChannelContainer>
-    );
-
     // Start a run tab
     if (step === 'run-details') {
         return (
@@ -253,7 +177,15 @@ const RunPlaybookNewModal = ({
                         value={runSummary}
                         onChange={(e) => setRunSummary(e.target.value)}
                     />
-                    {channelConfigSection}
+                    <ConfigChannelSection
+                        teamId={teamId}
+                        channelId={channelId}
+                        channelMode={channelMode}
+                        createPublicRun={createPublicRun}
+                        onSetCreatePublicRun={setCreatePublicRun}
+                        onSetChannelMode={setChannelMode}
+                        onSetChannelId={setChannelId}
+                    />
                 </Body>
             </StyledGenericModal>
         );
@@ -262,8 +194,6 @@ const RunPlaybookNewModal = ({
     // Select a playbook tab
     return (
         <StyledGenericModal
-            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
             showCancel={false}
             isConfirmDisabled={!isFormValid}
             id={ID}
@@ -306,6 +236,98 @@ const RunPlaybookNewModal = ({
                 />
             </Body>
         </StyledGenericModal>
+    );
+};
+
+type channelProps = {
+    teamId: string;
+    channelMode: string;
+    channelId: string;
+    createPublicRun: boolean;
+    onSetCreatePublicRun: (val: boolean) => void;
+    onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
+    onSetChannelId: (channelId: string) => void;
+};
+
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+    const {formatMessage} = useIntl();
+    const createNewChannel = channelMode === 'create_new_channel';
+    const linkExistingChannel = channelMode === 'link_existing_channel';
+
+    return (
+        <ChannelContainer>
+            <ChannelBlock>
+                <StyledRadioInput
+                    data-testid={'link-existing-channel-radio'}
+                    type='radio'
+                    checked={linkExistingChannel}
+                    onChange={() => onSetChannelMode('link_existing_channel')}
+                />
+                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+            </ChannelBlock>
+            {linkExistingChannel && (
+                <SelectorWrapper>
+                    <StyledChannelSelector
+                        id={'link-existing-channel-selector'}
+                        onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
+                        channelIds={channelId ? [channelId] : []}
+                        isClearable={true}
+                        selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                        isDisabled={false}
+                        captureMenuScroll={false}
+                        shouldRenderValue={true}
+                        teamId={teamId}
+                        isMulti={false}
+                    />
+                </SelectorWrapper>
+            )}
+
+            <ChannelBlock >
+                <StyledRadioInput
+                    data-testid={'create-channel-radio'}
+                    type='radio'
+                    checked={createNewChannel}
+                    onChange={() => onSetChannelMode('create_new_channel')}
+                />
+                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+            </ChannelBlock>
+
+            {createNewChannel && (
+                <HorizontalSplit>
+                    <VerticalSplit>
+                        <ButtonLabel disabled={false}>
+                            <RadioInput
+                                data-testid={'create-public-channel-radio'}
+                                type='radio'
+                                checked={createPublicRun}
+                                onChange={() => onSetCreatePublicRun(true)}
+                            />
+                            <Icon
+                                disabled={false}
+                                active={createPublicRun}
+                                className={'icon-globe'}
+                            />
+                            <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
+                        </ButtonLabel>
+                        <HorizontalSpacer size={8}/>
+                        <ButtonLabel disabled={false}>
+                            <RadioInput
+                                data-testid={'create-private-channel-radio'}
+                                type='radio'
+                                checked={!createPublicRun}
+                                onChange={() => onSetCreatePublicRun(false)}
+                            />
+                            <Icon
+                                disabled={false}
+                                active={!createPublicRun}
+                                className={'icon-lock-outline'}
+                            />
+                            <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
+                        </ButtonLabel>
+                    </VerticalSplit>
+                </HorizontalSplit>
+            )}
+        </ChannelContainer>
     );
 };
 
@@ -430,3 +452,4 @@ const ApolloWrappedModal = (props: Props) => {
     const client = getPlaybooksGraphQLClient();
     return <ApolloProvider client={client}><RunPlaybookNewModal {...props}/></ApolloProvider>;
 };
+
