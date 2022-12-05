@@ -10,13 +10,17 @@ import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import GenericModal from 'src/components/widgets/generic_modal';
-import CheckboxInput from '../../runs_list/checkbox_input';
+
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useChannel} from 'src/hooks';
 import {isCurrentUserChannelMember} from 'src/selectors';
 import {useManageRunMembership} from 'src/graphql/hooks';
-import {useToaster} from '../../toast_banner';
-import {ToastStyle} from '../../toast';
+
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
+
 import {requestJoinChannel, telemetryEvent} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 

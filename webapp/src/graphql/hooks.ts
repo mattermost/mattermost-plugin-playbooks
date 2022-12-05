@@ -18,6 +18,7 @@ import {
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -59,6 +60,21 @@ export const useUpdateRun = (id?: string) => {
 
     return useCallback((updates: RunUpdates) => {
         return innerUpdateRun({variables: {id: id || '', updates}});
+    }, [id, innerUpdateRun]);
+};
+
+export const useSetRunFavorite = (id: string|undefined) => {
+    const [innerUpdateRun] = useSetRunFavoriteMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((fav: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdateRun({variables: {id, fav}});
     }, [id, innerUpdateRun]);
 };
 

@@ -15,7 +15,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import DotMenu, {DotMenuButton, DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling, DotMenuButton} from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';

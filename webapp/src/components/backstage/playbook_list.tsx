@@ -30,7 +30,7 @@ import PresetTemplates from 'src/components/templates/template_data';
 import {RegularHeading} from 'src/styles/headings';
 import {pluginUrl} from 'src/browser_routing';
 
-import Header from '../widgets/header';
+import Header from 'src/components/widgets/header';
 
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';

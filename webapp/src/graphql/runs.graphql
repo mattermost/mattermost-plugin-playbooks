@@ -75,6 +75,10 @@ query RHSFinishedRuns(
 	}
 }
 
+mutation SetRunFavorite($id: String!, $fav: Boolean!) {
+  setRunFavorite(id: $id, fav: $fav)
+}
+
 mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }

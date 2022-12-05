@@ -11,9 +11,10 @@ import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
-import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
-import {labelFrom, Mode, ms, Option, useMakeOption} from '../datetime_input';
-import {ChecklistHoverMenuButton} from '../rhs/rhs_shared';
+import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
+import {labelFrom, Mode, ms, Option, useMakeOption} from 'src/components/datetime_input';
+import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
+
 import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
