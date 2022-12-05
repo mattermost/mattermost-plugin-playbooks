@@ -34,7 +34,7 @@ const Action = (props: Props) => {
                     onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
                 />
             </Container>
-            {props.enabled &&
+            {props.enabled && props.children &&
                 <ChildrenContainer>{props.children}</ChildrenContainer>
             }
         </Wrapper>

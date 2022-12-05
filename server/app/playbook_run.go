@@ -640,6 +640,9 @@ type PlaybookRunService interface {
 	// SetDueDate sets absolute due date timestamp for the specified checklist item
 	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
 
+	// SetTaskActionsToChecklistItem sets Task Actions to checklist item
+	SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error
+
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
 
@@ -781,6 +784,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

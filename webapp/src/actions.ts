@@ -79,13 +79,14 @@ import {
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter} from 'src/types/playbook';
+import {ChecklistItemsFilter, TaskAction as TaskActionType} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
 import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
+import {makeTaskActionsModalDefinition} from 'src/components/checklist_item/task_actions_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -367,6 +368,10 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
     key,
     nextState,
 });
+
+export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null, playbookRunId?: string) {
+    return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions, playbookRunId));
+}
 
 export const closeBackstageRHS = (): CloseBackstageRHS => ({
     type: CLOSE_BACKSTAGE_RHS,
