@@ -103,11 +103,12 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openUpdateRunModal(playbookRunId: string, field: 'name' | 'channel_id') {
-    return modals.openModal(makeUpdateRunModalDefinition(
+export function openUpdateRunModal(playbookRunId: string, teamId: string, field: 'name' | 'channel_id') {
+    return modals.openModal(makeUpdateRunModalDefinition({
         playbookRunId,
-        field
-    ));
+        teamId,
+        field,
+    }));
 }
 
 export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {

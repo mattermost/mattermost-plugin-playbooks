@@ -3,12 +3,13 @@
 
 import React, {useState} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon, PencilOutlineIcon, LinkVariantIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
-import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -20,9 +21,8 @@ import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
-
 import {getSiteUrl} from 'src/client';
-
+import {openUpdateRunModal} from 'src/actions';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {UserList} from './rhs_participants';
@@ -346,6 +346,8 @@ interface RHSRunListCardProps extends RunToDisplay {
 
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
+    const teamId = useSelector(getCurrentTeamId);
 
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
     const overviewURL = `/runs/${props.id}?from=channel_rhs_dotmenu`;
@@ -361,6 +363,19 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     placement='bottom-start'
                     icon={<ThreeDotsIcon/>}
                 >
+                    <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.id, teamId, 'channel_id'))}>
+                        <IconWrapper>
+                            <LinkVariantIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Link run to a different channel'/>
+                    </StyledDropdownMenuItem>
+                    <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.id, teamId, 'name'))}>
+                        <IconWrapper>
+                            <PencilOutlineIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Rename run'/>
+                    </StyledDropdownMenuItem>
+                    <Separator/>
                     <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                         <IconWrapper>
                             <PlayOutlineIcon size={22}/>

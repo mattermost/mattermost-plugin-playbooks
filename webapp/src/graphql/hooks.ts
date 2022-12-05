@@ -8,6 +8,8 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RhsActiveRunsDocument,
+    RhsFinishedRunsDocument,
     RunDocument,
     RunUpdates,
     useAddPlaybookMemberMutation,
@@ -55,6 +57,8 @@ export const useUpdateRun = (id?: string) => {
     const [innerUpdateRun] = useUpdateRunMutation({
         refetchQueries: [
             PlaybookLhsDocument,
+            RhsActiveRunsDocument,
+            RhsFinishedRunsDocument,
         ],
     });
 

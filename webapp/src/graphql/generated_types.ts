@@ -339,6 +339,7 @@ export type RunEdge = {
 
 export type RunUpdates = {
     broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
+    channelID?: InputMaybe<Scalars['String']>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
     name?: InputMaybe<Scalars['String']>;
     removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
