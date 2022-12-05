@@ -117,7 +117,7 @@ type newRunModalProps = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    refreshLHS?: () => void
+    onRunCreated: (runId: string) => void,
 };
 
 export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
@@ -125,7 +125,7 @@ export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
         dialogProps.playbookId,
         dialogProps.triggerChannelId,
         dialogProps.teamId,
-        dialogProps.refreshLHS
+        dialogProps.onRunCreated,
     ));
 }
 

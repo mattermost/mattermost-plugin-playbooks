@@ -20,7 +20,7 @@ import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import {navigateToUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
@@ -130,7 +130,10 @@ const PlaybookListRow = (props: Props) => {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
             if (isLinkRunToExistingChannelEnabled) {
                 dispatch(openPlaybookRunNewModal({
-                    refreshLHS,
+                    onRunCreated: (runId) => {
+                        navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                        refreshLHS();
+                    },
                     playbookId: props.playbook.id,
                     teamId: team.id,
                 }));

@@ -133,7 +133,9 @@ const RHSRunList = (props: Props) => {
                     <StartRunButton
                         onClick={() => {
                             dispatch(openPlaybookRunNewModal({
-                                refreshLHS,
+                                onRunCreated: (runID) => {
+                                    props.onSelectRun(runID);
+                                },
                                 triggerChannelId: currentChannelId,
                                 teamId: currentTeamId,
                             }));

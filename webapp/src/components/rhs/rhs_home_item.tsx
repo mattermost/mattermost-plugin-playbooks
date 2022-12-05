@@ -248,6 +248,11 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                         dispatch(openPlaybookRunNewModal({
                             teamId,
                             playbookId: id,
+                            onRunCreated: (runId) => {
+                                //TODO open tab
+                                // navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                                // refreshLHS();
+                            },
                         }));
                     } else {
                         dispatch(openPlaybookRunModal(
