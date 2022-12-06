@@ -466,6 +466,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	if createPublicRun != nil {
 		public = *createPublicRun
 	}
+
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
 		pb, err := h.playbookService.Get(playbookRun.PlaybookID)
