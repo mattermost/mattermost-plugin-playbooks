@@ -372,7 +372,7 @@ func (r *Runner) actionCheck(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -433,7 +433,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -500,7 +500,7 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -568,7 +568,7 @@ func (r *Runner) actionShowOwner(args []string, playbookRunIDs []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -599,7 +599,7 @@ func (r *Runner) actionChangeOwner(args []string, playbookRunIDs []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -762,7 +762,7 @@ func (r *Runner) actionInfo(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -834,7 +834,7 @@ func (r *Runner) actionFinish(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -889,7 +889,7 @@ func (r *Runner) actionUpdate(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}
@@ -963,7 +963,7 @@ func (r *Runner) actionTimeline(args []string) {
 			r.postCommandResponse("Error parsing the first argument. Must be a number.")
 			return
 		}
-		if run < 0 || run > len(playbookRunIDs) {
+		if run < 0 || run >= len(playbookRunIDs) {
 			r.postCommandResponse("Invalid run number")
 			return
 		}

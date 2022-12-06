@@ -260,6 +260,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         signalAnyKeywordsEnabled,
         channelNameTemplate,
         metrics,
+        channelMode = 'create_new_channel',
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -298,6 +299,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             signal_any_keywords_enabled: signalAnyKeywordsEnabled,
             channel_name_template: channelNameTemplate,
             metrics,
+            channel_mode: channelMode,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

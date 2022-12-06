@@ -362,6 +362,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     return (
         <CardContainer
             onClick={props.onClick}
+            data-testid='run-list-card'
         >
             <TitleRow>{props.name}</TitleRow>
             <PeopleRow>
