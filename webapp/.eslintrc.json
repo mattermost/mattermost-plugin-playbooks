@@ -628,7 +628,7 @@
     "formatjs/no-literal-string-in-jsx": 2,
     "unused-imports/no-unused-imports": 2,
     "no-relative-import-paths/no-relative-import-paths": [
-      "warn",
+      "error",
       { "allowSameFolder": true }
     ]
   },

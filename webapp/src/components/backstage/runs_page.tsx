@@ -21,7 +21,7 @@ import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
 
-import Header from '../widgets/header';
+import Header from 'src/components/widgets/header';
 
 import RunList from './runs_list/runs_list';
 import NoContentPage from './runs_page_no_content';

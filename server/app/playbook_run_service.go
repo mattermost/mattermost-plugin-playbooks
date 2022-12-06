@@ -1608,6 +1608,27 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 	return nil
 }
 
+func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].TaskActions = taskActions
+
+	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.sendPlaybookRunUpdatedWS(playbookRunID, withPlaybookRun(playbookRunToModify))
+
+	return nil
+}
+
 // SetDueDate sets absolute due date timestamp for the specified checklist item
 func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
@@ -3513,6 +3534,93 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 			logger.WithError(err).WithField("user_id", user).Warn("failed to broadcast post to the user")
 		}
 	}
+}
+
+func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *model.Post) {
+	// get playbook from post
+	runIDs, err := s.GetPlaybookRunIDsForChannel(post.ChannelId, nil)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return
+		}
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"post_id":    post.Id,
+			"channel_id": post.ChannelId,
+		}).Error("unable retrieve run ID from post")
+		return
+	}
+
+	for _, runID := range runIDs {
+		// Get run
+		run, err := s.GetPlaybookRun(runID)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"run_id": runID,
+			}).Error("unable retrieve run from ID")
+			return
+		}
+
+		for checklistNum, checklist := range run.Checklists {
+			for itemNum, item := range checklist.Items {
+				for _, ta := range item.TaskActions {
+					if ta.Trigger.Type == KeywordsByUsersTriggerType {
+						t, err := NewKeywordsByUsersTrigger(ta.Trigger)
+						if err != nil {
+							logrus.WithError(err).WithFields(logrus.Fields{
+								"type":         ta.Trigger.Type,
+								"checklistNum": checklistNum,
+								"itemNum":      itemNum,
+							}).Error("unable to decode trigger")
+							return
+						}
+						if t.IsTriggered(post) {
+							s.genericTelemetry.Track(
+								telemetryTaskActionsTriggered,
+								map[string]any{
+									"trigger":        ta.Trigger.Type,
+									"playbookrun_id": runID,
+								},
+							)
+							err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
+							if err != nil {
+								logrus.WithError(err).WithFields(logrus.Fields{
+									"checklistNum": checklistNum,
+									"itemNum":      itemNum,
+								}).Error("can't process task actions")
+								return
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, userID string, ChecklistItemStateClosed string, checklistNum int, itemNum int) error {
+	for _, action := range taskActions {
+		if action.Type == MarkItemAsDoneActionType {
+			a, err := NewMarkItemAsDoneAction(action)
+			if err != nil {
+				return errors.Wrapf(err, "unable to decode action")
+			}
+			if a.Payload.Enabled {
+				if err := s.ModifyCheckedState(runID, userID, ChecklistItemStateClosed, checklistNum, itemNum); err != nil {
+					if err != nil {
+						return errors.Wrapf(err, "can't mark item as done")
+					}
+				}
+			}
+		}
+		s.genericTelemetry.Track(
+			telemetryTaskActionsActionExecuted,
+			map[string]any{
+				"action":         action.Type,
+				"playbookrun_id": runID,
+			},
+		)
+	}
+	return nil
 }
 
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following

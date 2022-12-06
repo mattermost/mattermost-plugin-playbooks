@@ -111,6 +111,14 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 			}
 		}
 	}
+	for listIndex := range playbook.Checklists {
+		for itemIndex := range playbook.Checklists[listIndex].Items {
+			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid task actions", err)
+				return false
+			}
+		}
+	}
 
 	return true
 }
@@ -250,6 +258,22 @@ func cleanUpChecklist(checklists []app.Checklist) {
 			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
 		}
 	}
+}
+
+// validateTaskActions validates the taskactions in the given checklist
+// NOTE: Any changes to this function must be made to function 'validateUpdateTaskActions' for the GraphQL endpoint.
+func validateTaskActions(taskActions []app.TaskAction) error {
+	for _, ta := range taskActions {
+		if err := app.ValidateTrigger(ta.Trigger); err != nil {
+			return err
+		}
+		for _, a := range ta.Actions {
+			if err := app.ValidateAction(a); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (h *PlaybookHandler) archivePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {

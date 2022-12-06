@@ -212,34 +212,65 @@ describe('playbooks > overview', () => {
         cy.findByTestId('playbook-members').should('contain', '1');
     });
 
-    it('shows checklists', () => {
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Playbook',
-            description: 'Cypress Playbook',
-            memberIDs: [],
-            checklists: [
-                {
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1'},
-                        {title: 'Step 2'},
+    describe('checklists', () => {
+        describe('header', () => {
+            beforeEach(() => {
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook',
+                    description: 'Cypress Playbook',
+                    memberIDs: [],
+                    checklists: [
+                        {
+                            title: 'Stage 1',
+                            items: [
+                                {title: 'Step 1'},
+                                {title: 'Step 2'},
+                            ],
+                        },
                     ],
-                },
-            ],
-            retrospectiveTemplate: 'Cypress test template'
-        }).then((playbook) => {
-            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+                    retrospectiveTemplate: 'Cypress test template'
+                }).then((playbook) => {
+                    cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+                });
+            });
+
+            it('has title', () => {
+                cy.get('#checklists').within(() => {
+                    cy.findByText('Tasks').should('exist');
+                });
+            });
         });
 
-        // # Switch to Outline section
-        cy.findByText('Outline').click();
+        it('shows checklists', () => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                description: 'Cypress Playbook',
+                memberIDs: [],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                retrospectiveTemplate: 'Cypress test template'
+            }).then((playbook) => {
+                cy.visit(`/playbooks/playbooks/${playbook.id}`);
+            });
 
-        // * Verify checklist and associated steps
-        cy.get('#checklists').within(() => {
-            cy.findByText('Stage 1').should('exist');
-            cy.findByText('Step 1').should('exist');
-            cy.findByText('Step 2').should('exist');
+            // # Switch to Outline section
+            cy.findByText('Outline').click();
+
+            // * Verify checklist and associated steps
+            cy.get('#checklists').within(() => {
+                cy.findByText('Stage 1').should('exist');
+                cy.findByText('Step 1').should('exist');
+                cy.findByText('Step 2').should('exist');
+            });
         });
     });
 

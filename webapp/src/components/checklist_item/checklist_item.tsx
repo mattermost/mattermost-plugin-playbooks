@@ -17,11 +17,15 @@ import {
     setAssignee,
     setChecklistItemState,
     setDueDate as clientSetDueDate,
+    telemetryEvent,
 } from 'src/client';
-import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
+import {TaskActionsEventTarget} from 'src/types/telemetry';
+import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
-import {Mode} from '../datetime_input';
+
+import {Mode} from 'src/components/datetime_input';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -30,6 +34,9 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
+
+import TaskActions from './task_actions';
+import {haveAtleastOneEnabledAction} from './task_actions_modal';
 
 export enum ButtonsFormat {
 
@@ -53,6 +60,7 @@ interface ChecklistItemProps {
     checklistNum: number;
     itemNum: number;
     playbookRunId?: string;
+    playbookId?: string;
     channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
@@ -79,9 +87,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
+    const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
+    const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -108,6 +118,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     useUpdateEffect(() => {
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem.due_date]);
+
+    useUpdateEffect(() => {
+        setTaskActions(taskActions);
+    }, [props.checklistItem.task_actions]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
@@ -158,6 +172,26 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             const newItem = {...props.checklistItem};
             newItem.command = newCommand;
+            props.onUpdateChecklistItem?.(newItem);
+        }
+    };
+
+    const onTaskActionsChange = async (newTaskActions: TaskActionType[]) => {
+        setTaskActions(newTaskActions);
+        if (props.newItem) {
+            return;
+        }
+        if (props.playbookRunId) {
+            updateRunTaskActions(props.checklistNum, props.itemNum, newTaskActions);
+            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
+                playbookrun_id: props.playbookRunId,
+            });
+        } else {
+            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
+                playbook_id: props.playbookId || '',
+            });
+            const newItem = {...props.checklistItem};
+            newItem.task_actions = newTaskActions;
             props.onUpdateChecklistItem?.(newItem);
         }
     };
@@ -236,8 +270,37 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const renderTaskActions = (): null | React.ReactNode => {
+        const haveTaskActions = taskActions?.length > 0;
+        const enabledAction = haveAtleastOneEnabledAction(taskActions);
+        if (
+            buttonsFormat !== ButtonsFormat.Long &&
+            !isEditing &&
+            !(haveTaskActions && enabledAction)
+        ) {
+            return null;
+        }
+
+        return (
+            <TaskActions
+                editable={isEditing || (!props.readOnly && !isSkipped())}
+                taskActions={taskActions}
+                playbookRunId={props.playbookRunId}
+                onTaskActionsChange={onTaskActionsChange}
+            />
+        );
+    };
+
     const renderRow = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !command && !dueDate && !isEditing)) {
+        const haveTaskActions = taskActions?.length > 0;
+        if (
+            buttonsFormat !== ButtonsFormat.Long &&
+            !assigneeID &&
+            !command &&
+            !dueDate &&
+            !haveTaskActions &&
+            !isEditing
+        ) {
             return null;
         }
         return (
@@ -245,6 +308,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 {renderAssignTo()}
                 {renderCommand()}
                 {renderDueDate()}
+                {renderTaskActions()}
             </Row>
         );
     };
@@ -336,6 +400,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 command_last_run: 0,
                                 due_date: dueDate,
                                 assignee_id: assigneeID,
+                                task_actions: taskActions,
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
@@ -353,6 +418,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             newItem.title = titleValue;
                             newItem.command = command;
                             newItem.description = descValue;
+                            newItem.task_actions = taskActions;
                             props.onUpdateChecklistItem?.(newItem);
                         }
                     }}

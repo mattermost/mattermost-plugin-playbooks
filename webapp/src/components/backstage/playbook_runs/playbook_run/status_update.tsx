@@ -26,9 +26,9 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Tooltip from 'src/components/widgets/tooltip';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
-import {useToaster} from '../../toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 
-import {ToastStyle} from '../../toast';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';

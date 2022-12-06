@@ -14,11 +14,15 @@ import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/se
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
-import SearchInput from '../../search_input';
+
+import SearchInput from 'src/components/backstage/search_input';
+
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {useManageRunMembership} from 'src/graphql/hooks';
-import {Role} from '../shared';
+
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {telemetryEvent} from 'src/client';
@@ -259,7 +263,7 @@ const Container = styled.div`
 `;
 
 const ParticipantsNumber = styled.div`
-    color: var(--center-channel-text);
+    color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
@@ -324,7 +328,7 @@ const HeaderSection = styled.div`
     display: flex;
     flex-direction: row;
     padding: 20px 20px 0 20px;
-    color: var(--center-channel-text);
+    color: var(--center-channel-color);
     align-items: center;
 `;
 
