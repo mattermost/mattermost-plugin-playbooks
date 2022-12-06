@@ -633,15 +633,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRunIDs []string) {
 		return
 	}
 
-	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetOwnerUser.Id)
-	if errors.Is(err, pluginapi.ErrNotFound) {
-		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them owner.", targetOwnerUsername))
-		return
-	} else if err != nil {
-		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetOwnerUsername, err)
-		return
-	}
-
 	err = r.playbookRunService.ChangeOwner(currentPlaybookRun.ID, r.args.UserId, targetOwnerUser.Id)
 	if err != nil {
 		r.warnUserAndLogErrorf("Failed to change owner to @%s: %v", targetOwnerUsername, err)

@@ -14,6 +14,8 @@ describe('channels > slash command > owner', () => {
     let testUser2;
     let testPlaybook;
     let testSysadmin;
+    let playbookRunName;
+    let playbookRunChannelName;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -53,12 +55,18 @@ describe('channels > slash command > owner', () => {
                 memberIDs: [testUser.id],
             }).then((playbook) => {
                 testPlaybook = playbook;
+                const now = Date.now();
+                playbookRunName = `Playbook Run (${now})`;
+                playbookRunChannelName = `playbook-run-${now}`;
 
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
-                    playbookRunName: 'Playbook Run',
+                    playbookRunName,
                     ownerUserId: testUser.id,
+                }).then(() => {
+                    // # Navigate directly to the application and the playbook run channel
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
                 });
             });
         });
@@ -70,6 +78,78 @@ describe('channels > slash command > owner', () => {
 
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
+    });
+
+    describe('single run channel', () => {
+        it('check', () => {
+            // # Type a command
+            cy.findByTestId('post_textbox').clear().type('/playbook check ');
+
+            // * Verify suggestions number: a single run with 4 tasks + 1 title
+            cy.get('.slash-command').should('have.length', 5);
+
+            // # Clear input
+            cy.findByTestId('post_textbox').clear();
+
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook check 1 1');
+
+            // * Verify the task is checked
+            cy.get('[data-rbd-droppable-id="1"]').find('.checkbox').eq(1).should('be.checked');
+        });
+
+        it('check add', () => {
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook checkadd 1 new-task');
+
+            // * Verify the task was added
+            cy.get('[data-rbd-droppable-id="1"]').contains('new-task');
+        });
+
+        it('check remove', () => {
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook checkremove 1 1');
+
+            // * Verify the task was added
+            cy.get('[data-rbd-droppable-id="1"]').contains('Step 2').should('not.exist');
+        });
+
+        it('owner', () => {
+            // # Run a slash command
+            cy.executeSlashCommand('/playbook owner');
+
+            // * Verify the message.
+            cy.verifyEphemeralMessage(`@${testUser.username} is the current owner for this playbook run.`);
+
+            // # Run a slash command
+            cy.executeSlashCommand(`/playbook owner @${testUser2.username}`);
+
+            // * Verify that the owner was set.
+            cy.executeSlashCommand('/playbook owner');
+            cy.verifyEphemeralMessage(`@${testUser2.username} is the current owner for this playbook run.`);
+        });
+
+        it('timeline', () => {
+            // # Run a slash command on a run with view access
+            cy.executeSlashCommand('/playbook timeline');
+
+            // * Verify the message.
+            cy.verifyEphemeralMessage(`Timeline for ${playbookRunName}`);
+        });
+
+        it('finish', () => {
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook finish');
+
+            // * Verify confirm modal is visible.
+            cy.get('#interactiveDialogModalLabel').should('exist');
+
+            // # Confirm finish
+            cy.get('#interactiveDialogSubmit').click();
+
+            // * Verify that the run is finished.
+            cy.get('#rhsContainer').findByTestId('badge').contains('Finished');
+        });
     });
 
     describe('multiple runs in the channel', () => {
