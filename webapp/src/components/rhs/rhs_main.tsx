@@ -109,11 +109,7 @@ const defaultListOptions : RunListOptions = {
 // * Multiple active runs -> Runs list
 const RightHandSidebar = () => {
     useSetRHSState();
-<<<<<<< HEAD
     const currentTeam = useSelector(getCurrentTeam);
-=======
-
->>>>>>> master
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
