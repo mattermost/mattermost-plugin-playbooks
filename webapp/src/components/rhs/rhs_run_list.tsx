@@ -64,7 +64,7 @@ interface Props {
     numFinished: number
 }
 
-const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state).display_name;
+const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
