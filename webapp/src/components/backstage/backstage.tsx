@@ -6,8 +6,7 @@ import {useLocation, useRouteMatch, matchPath} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {GlobalState} from '@mattermost/types/store';
-import {Theme} from 'mattermost-redux/types/themes';
-import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getTheme, Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
