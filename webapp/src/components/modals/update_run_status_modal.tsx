@@ -207,7 +207,7 @@ const UpdateRunStatusModal = ({
         }
 
         return formatMessage({
-            defaultMessage: 'This update will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
+            defaultMessage: 'This update for the run <i>{runName}</i> will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
         }, {
             OverviewLink,
             ChannelsTooltip: (...chunks) => (
@@ -226,6 +226,8 @@ const UpdateRunStatusModal = ({
                     <TooltipContent tabIndex={1}>{chunks}</TooltipContent>
                 </Tooltip>
             ),
+            i: (x: React.ReactNode) => <i>{x}</i>,
+            runName: run?.name || '',
             hasFollowersAndChannels: Boolean(broadcastChannelCount && followersChannelCount).toString(),
             hasChannels: Boolean(broadcastChannelCount).toString(),
             hasFollowers: Boolean(followersChannelCount).toString(),
