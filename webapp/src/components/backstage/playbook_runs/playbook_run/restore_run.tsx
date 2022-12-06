@@ -8,7 +8,8 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {restoreRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {useLHSRefresh} from '../../lhs_navigation';
+
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 export const useOnRestoreRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();

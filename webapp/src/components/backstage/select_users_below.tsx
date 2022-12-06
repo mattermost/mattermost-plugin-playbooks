@@ -13,11 +13,11 @@ import {getTeammateNameDisplaySetting} from 'mattermost-webapp/packages/mattermo
 
 import {displayUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
 
-import Profile from '../profile/profile';
+import Profile from 'src/components/profile/profile';
 
 import {Playbook, PlaybookMember} from 'src/types/playbook';
 
-import DotMenu, {DropdownMenuItem} from '../dot_menu';
+import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 
 import {useHasPlaybookPermission, useHasSystemPermission} from 'src/hooks';
 

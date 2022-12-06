@@ -9,6 +9,7 @@
 describe('playbooks > feedback', () => {
     let testTeam;
     let testUser;
+    let testPlaybook;
 
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
@@ -27,6 +28,8 @@ describe('playbooks > feedback', () => {
                 teamId: testTeam.id,
                 title: 'Test Playbook',
                 memberIDs: [],
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
 
             // # Login as the newly created testUser
@@ -34,27 +37,63 @@ describe('playbooks > feedback', () => {
         });
     });
 
-    // https://mattermost.atlassian.net/browse/MM-45738
-    it.skip('runs prompts to give feedback', () => {
-        // # Visit the runs list
-        cy.visit('/playbooks/runs');
+    it('playbooks shows prompt in global header, with experimental feature flag', () => {
+        // # Enable experimental feature flag
+        cy.apiAdminLogin().then(() => {
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', true);
 
-        // # Click on "Give Feedback"
-        cy.findByTestId('giveFeedbackButton').click();
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
 
-        // # Verify that we arrive on the feedbackbot with a prompt for feedback.
-        cy.findByText('Have feedback about Playbooks?').should('exist');
+        // # Visit the playbooks product
+        cy.visit('/playbooks');
+
+        // # Verify Give Feedback link is configured to open in a new tab.
+        cy.findByText('Give feedback').invoke('attr', 'target').should('eq', '_blank');
+
+        // # Verify Give Feedback link href
+        cy.findByText('Give feedback').invoke('attr', 'href').should('match', /playbooks-feedback/);
     });
 
-    // https://mattermost.atlassian.net/browse/MM-45738
-    it.skip('playbooks prompts to give feedback', () => {
-        // # Visit the playbooks list
-        cy.visit('/playbooks/playbooks');
+    it('playbooks shows prompt in global header, without experimental feature flag', () => {
+        // # Disable experimental feature flag
+        cy.apiAdminLogin().then(() => {
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', false);
 
-        // # Click on "Give Feedback"
-        cy.findByTestId('giveFeedbackButton').click();
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
 
-        // # Verify that we arrive on the feedbackbot with a prompt for feedback.
-        cy.findByText('Have feedback about Playbooks?').should('exist');
+        // # Visit the playbooks product
+        cy.visit('/playbooks');
+
+        // # Verify Give Feedback link is configured to open in a new tab.
+        cy.findByText('Give feedback').invoke('attr', 'target').should('eq', '_blank');
+
+        // # Verify Give Feedback link href
+        cy.findByText('Give feedback').invoke('attr', 'href').should('match', /playbooks-feedback/);
+    });
+
+    it('playbooks shows prompt in rhs header', () => {
+        // # Run the playbook
+        const now = Date.now();
+        const playbookRunName = 'Playbook Run (' + now + ')';
+        const playbookRunChannelName = 'playbook-run-' + now;
+        cy.apiRunPlaybook({
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
+            playbookRunName,
+            ownerUserId: testUser.id,
+        });
+
+        // # Navigate directly to the application and the playbook run channel
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+        // # Verify Give Feedback link is configured to open in a new tab.
+        cy.findByText('Give feedback').invoke('attr', 'target').should('eq', '_blank');
+
+        // # Verify Give Feedback link href
+        cy.findByText('Give feedback').invoke('attr', 'href').should('match', /playbooks-feedback/);
     });
 });

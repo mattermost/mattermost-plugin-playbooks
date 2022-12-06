@@ -3,7 +3,8 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {PlaybookLhsDocument} from 'src/graphql/generated_types';
-import PlaybooksSidebar from '../sidebar/playbooks_sidebar';
+
+import PlaybooksSidebar from 'src/components/sidebar/playbooks_sidebar';
 
 const LHSContainer = styled.div`
     width: 240px;

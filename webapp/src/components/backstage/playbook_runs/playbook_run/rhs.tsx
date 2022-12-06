@@ -6,7 +6,8 @@ import React, {ReactNode} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 
-import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
+import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
+
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 
 export enum RHSContent {
