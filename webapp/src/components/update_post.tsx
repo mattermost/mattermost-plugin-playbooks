@@ -14,10 +14,10 @@ import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
-import {currentPlaybookRun} from 'src/selectors';
+import {currentPlaybookRun, playbookRunsInCurrentChannel} from 'src/selectors';
 import {useViewTelemetry} from 'src/hooks/telemetry';
 
 interface Props {
@@ -28,6 +28,7 @@ export const UpdatePost = (props: Props) => {
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
+    const runsInChannel = useSelector(playbookRunsInCurrentChannel);
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
 
@@ -68,7 +69,7 @@ export const UpdatePost = (props: Props) => {
                 text={formatMessage({defaultMessage: '{withRunName, select, true {@{authorUsername} posted an update for [{runName}]({overviewURL})} other {@{authorUsername} posted an update}}'}, {
                     runName,
                     overviewURL,
-                    withRunName: currentRun?.id === playbookRunId ? 'false' : 'true', // show run name/link when not in run channel (e.g. a Broadcast channel)
+                    withRunName: runsInChannel.length > 1 || currentRun?.id !== playbookRunId ? 'true' : 'false', // show run name/link when not in run channel (e.g. a Broadcast channel) or there are multiple runs
                     authorUsername,
                 })}
                 team={team}
