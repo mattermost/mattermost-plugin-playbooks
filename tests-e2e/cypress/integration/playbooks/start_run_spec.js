@@ -52,6 +52,7 @@ describe('playbooks > start a run', () => {
         });
     });
 
+    // This data is intentionally changed here instead of via api
     const fillPBE = ({name, summary, channelMode, channelNameToLink}) => {
         // # fill channel name temaplte
         if (name) {
