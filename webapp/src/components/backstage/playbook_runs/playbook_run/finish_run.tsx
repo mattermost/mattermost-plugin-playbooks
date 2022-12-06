@@ -11,7 +11,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
-import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
+import {useFinishRunConfirmationMessage} from 'src/components/modals/update_run_status_modal';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
@@ -20,17 +20,9 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
+    const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
 
     return () => {
-        const outstanding = outstandingTasks(playbookRun.checklists);
-        let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run for all participants?'});
-        if (outstanding > 0) {
-            confirmationMessage = formatMessage(
-                {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run for all participants?'},
-                {outstanding}
-            );
-        }
-
         const onConfirm = async () => {
             await finishRun(playbookRun.id);
             refreshLHS();

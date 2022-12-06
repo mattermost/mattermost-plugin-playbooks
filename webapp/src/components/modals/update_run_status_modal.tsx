@@ -15,15 +15,9 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
-import {
-    useDateTimeInput,
-    useMakeOption,
-    ms,
-    Mode,
-    Option,
-} from 'src/components/datetime_input';
+import {Mode, ms, Option, useDateTimeInput, useMakeOption} from 'src/components/datetime_input';
 
-import {usePost, useRun, useFormattedUsernames} from 'src/hooks';
+import {useFormattedUsernames, usePost, useRun} from 'src/hooks';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
@@ -37,7 +31,7 @@ import WarningIcon from 'src/components/assets/icons/warning_icon';
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {modals, browserHistory} from 'src/webapp_globals';
+import {browserHistory, modals} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal, showRunActionsModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
@@ -80,6 +74,8 @@ const UpdateRunStatusModal = ({
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
+
+    const confirmationMessage = useFinishRunConfirmationMessage(run);
 
     const [showModal, setShowModal] = useState(true);
     const [showUnsaved, setShowUnsaved] = useState(false);
@@ -127,14 +123,6 @@ const UpdateRunStatusModal = ({
             rest: total - names.length,
         }) : '';
     };
-
-    const outstanding = outstandingTasks(run?.checklists || []);
-    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run for all participants?'});
-    if (outstanding > 0) {
-        confirmationMessage = formatMessage(
-            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run for all participants?'},
-            {outstanding});
-    }
 
     const pendingChanges = !(providedMessage === message || message === defaultMessage || message === '');
 
@@ -420,7 +408,7 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
     return {input, reminder};
 };
 
-export const outstandingTasks = (checklists: Checklist[]) => {
+const outstandingTasks = (checklists: Checklist[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
@@ -430,6 +418,22 @@ export const outstandingTasks = (checklists: Checklist[]) => {
         }
     }
     return count;
+};
+export const useFinishRunConfirmationMessage = (run: PlaybookRun | null | undefined) => {
+    const {formatMessage} = useIntl();
+    const outstanding = outstandingTasks(run?.checklists || []);
+    const values = {
+        i: (x: React.ReactNode) => <i>{x}</i>,
+        runName: run?.name || '',
+    };
+    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run <i>{runName}</i> for all participants?'}, values);
+    if (outstanding > 0) {
+        confirmationMessage = formatMessage(
+            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run <i>{runName}</i> for all participants?'},
+            {...values, outstanding}
+        );
+    }
+    return confirmationMessage;
 };
 
 const FormContainer = styled.div`
