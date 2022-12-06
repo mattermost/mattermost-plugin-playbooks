@@ -8,7 +8,6 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import styled from 'styled-components';
 
 import {setRHSOpen} from 'src/actions';
-import {useEnsureSettings} from 'src/hooks/general';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
@@ -109,8 +108,6 @@ const defaultListOptions : RunListOptions = {
 const RightHandSidebar = () => {
     useSetRHSState();
 
-    // ensure settings are loaded if user just logged in
-    useEnsureSettings();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);

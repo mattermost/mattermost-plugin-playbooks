@@ -9,7 +9,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {useForceDocumentTitle, useEnsureSettings} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
@@ -28,8 +28,6 @@ const BackstageContainer = styled.div`
 const Backstage = () => {
     const {pathname} = useLocation();
 
-    // ensure settings are loaded if user just logged in
-    useEnsureSettings();
     const {url} = useRouteMatch();
     const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
         path: [`${url}/runs/:playbookRunId`],

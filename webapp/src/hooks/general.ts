@@ -51,7 +51,6 @@ import {getProfileSetForChannel,
 } from 'src/selectors';
 import {
     fetchPlaybookRuns,
-    fetchGlobalSettings,
     clientFetchPlaybook,
     fetchPlaybookRunStatusUpdates,
     fetchPlaybookRun,
@@ -60,7 +59,6 @@ import {
 } from 'src/client';
 import {isCloud} from 'src/license';
 import {resolve} from 'src/utils';
-import {actionSetGlobalSettings} from 'src/actions';
 
 export type FetchMetadata = {
     isFetching: boolean;
@@ -290,22 +288,6 @@ export function useExperimentalFeaturesEnabled() {
 
 export function useLinkRunToExistingChannelEnabled() {
     return useSelector(selectLinkRunToExistingChannelEnabled);
-}
-
-let isFetchingSettings = false;
-export async function useEnsureSettings() {
-    const dispatch = useDispatch();
-    const hasGlobalSettings = useSelector((state: GlobalState) => Boolean(globalSettings(state)));
-    if (!hasGlobalSettings && !isFetchingSettings) {
-        isFetchingSettings = true;
-        try {
-            dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
-            isFetchingSettings = false;
-        } catch (e) {
-            isFetchingSettings = false;
-            throw e;
-        }
-    }
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been

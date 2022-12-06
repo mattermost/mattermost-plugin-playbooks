@@ -23,7 +23,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
-
+import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {
@@ -42,7 +42,7 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
+    setToggleRHSAction, showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -64,7 +64,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -199,6 +199,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
+        registry.registerRootComponent(LoginHook);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
@@ -287,10 +288,6 @@ export default class Plugin {
             lastActivityTime = now;
         };
         document.addEventListener('click', this.activityFunc);
-
-        // We have user activity right now because the plugin is loading
-        // so fire the first connect event.
-        notifyConnect();
     }
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -311,12 +308,6 @@ export default class Plugin {
         setPlaybooksGraphQLClient(graphqlClient);
 
         this.doRegistrations(registry, store, graphqlClient);
-
-        // Grab global settings
-        const getGlobalSettings = async () => {
-            store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
-        };
-        getGlobalSettings();
 
         // Grab roles
         //@ts-ignore
