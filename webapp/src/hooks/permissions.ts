@@ -6,7 +6,7 @@ import {
 } from 'mattermost-redux/selectors/entities/roles';
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
-import {GlobalState} from 'mattermost-webapp/types/store';
+import {GlobalState} from '@mattermost/types/store';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {makeGeneralPermissionSpecific, PlaybookPermissionGeneral} from 'src/types/permissions';

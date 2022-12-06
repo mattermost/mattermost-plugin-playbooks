@@ -6,8 +6,6 @@ import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-//@ts-ignore Webapp imports don't work properly
-import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
@@ -136,7 +134,7 @@ export default class Plugin {
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -290,7 +288,7 @@ export default class Plugin {
         document.addEventListener('click', this.activityFunc);
     }
 
-    public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
+    public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);

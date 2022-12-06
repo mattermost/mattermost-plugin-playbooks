@@ -4,7 +4,6 @@
 import {createSelector} from 'reselect';
 import General from 'mattermost-redux/constants/general';
 import {GlobalState} from '@mattermost/types/store';
-import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -54,7 +53,7 @@ export const backstageRHS = {
     viewMode: (state: GlobalState) => pluginState(state).backstageRHS.viewMode,
 };
 
-export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
+export const getIsRhsExpanded = (state: any): boolean => state.views.rhs.isSidebarExpanded;
 
 export const getAdminAnalytics = (state: GlobalState): Record<string, number> => state.entities.admin.analytics as Record<string, number>;
 
