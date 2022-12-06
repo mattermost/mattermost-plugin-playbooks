@@ -103,13 +103,17 @@ const defaultListOptions : RunListOptions = {
 // RightHandSidebar the sidebar for integration of playbooks into channels
 //
 // Rules for automatic display:
-// No Runs Ever -> RHS Home
-// Only Finished Runs -> Runs list blank state
-// Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
-// Multiple active runs -> Runs list
+// * No Runs Ever -> RHS Home
+// * Only Finished Runs -> Runs list blank state
+// * Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
+// * Multiple active runs -> Runs list
 const RightHandSidebar = () => {
     useSetRHSState();
+<<<<<<< HEAD
     const currentTeam = useSelector(getCurrentTeam);
+=======
+
+>>>>>>> master
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
