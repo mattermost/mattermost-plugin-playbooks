@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, {ComponentType, ComponentProps} from 'react';
+import styled, {css} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
@@ -12,6 +12,8 @@ import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
 import {pluginUrl} from 'src/browser_routing';
 import {LHSPlaybookDotMenu} from '../backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from '../backstage/lhs_run_dot_menu';
+
+import {useThreadsLinkMeta} from 'src/webapp_globals';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -156,6 +158,19 @@ const ViewAllPlaybooks = () => {
 const ViewThreads = () => {
     const {formatMessage} = useIntl();
     const {url} = useRouteMatch();
+
+    const {
+        isCrtEnabled,
+        counts,
+        someUnreadThreads,
+        threads,
+        threadsCount,
+    } = useThreadsLinkMeta();
+
+    if (!isCrtEnabled) {
+        return null;
+    }
+
     return (
         <ItemContainer key={'sidebarItem_view_threads'}>
             <ThreadsNavLink
@@ -163,8 +178,16 @@ const ViewThreads = () => {
                 aria-label={formatMessage({defaultMessage: 'View all playbooks'})}
                 data-testid={'playbooksLHSButton'}
                 to={`${url}/threads`}
+                someUnreadThreads={someUnreadThreads}
             >
                 {formatMessage({defaultMessage: 'Threads'})}
+                {Boolean(counts?.total_unread_mentions) && (
+                    <UnreadBadge
+                        hasUrgent={Boolean(counts?.total_unread_urgent_mentions)}
+                    >
+                        {counts?.total_unread_mentions}
+                    </UnreadBadge>
+                )}
             </ThreadsNavLink>
         </ItemContainer>
     );
@@ -191,7 +214,7 @@ const PlaybooksSidebar = () => {
     return (
         <Sidebar
             groups={groups}
-            fixed={(
+            static={(
                 <>
                     <ViewThreads/>
                 </>
@@ -214,12 +237,44 @@ const ViewAllNavLink = styled(StyledNavLink)`
     }
 `;
 
-const ThreadsNavLink = styled(StyledNavLink)`
+const ThreadsNavLink = styled<ComponentType<ComponentProps<typeof StyledNavLink> & {someUnreadThreads: boolean;}>>(StyledNavLink)`
     &&& {
-        &:not(.active) {
-            color: rgba(var(--sidebar-text-rgb), 0.56);
-        }
-
         padding-left: 23px;
+        &:hover {
+            padding-right: 16px;
+        }
+        justify-content: space-between;
+
+        ${({someUnreadThreads}) => (someUnreadThreads ? css`
+            font-weight: 600;
+            color: var(--sidebar-unread-text);
+        ` : css`
+            &:not(.active) {
+                color: rgba(var(--sidebar-text-rgb), 0.56);
+            }
+        `)}
     }
+`;
+
+const UnreadBadge = styled.span<{hasUrgent: boolean;}>`
+    display: inline-block;
+    flex-shrink: 0;
+    margin: 0 4px;
+    min-width: 20px;
+    height: auto;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 16px;
+    text-align: center;
+    background: var(--mention-bg);
+    color: var(--mention-color);
+    ${({hasUrgent}) => hasUrgent && css`
+        background-color: var(--dnd-indicator);
+        color: #fff;
+    `}
 `;

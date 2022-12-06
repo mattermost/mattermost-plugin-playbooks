@@ -26,8 +26,10 @@ export const {
 
 export const {
     GlobalThreads,
+    useThreadsLinkMeta,
 }: {
     GlobalThreads: React.ComponentType<{className?: string; path: string; teamName?: string}>;
+    useThreadsLinkMeta: () => {},
 
     // @ts-ignore
 } = global.ProductApi ?? {};
