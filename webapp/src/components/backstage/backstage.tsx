@@ -5,7 +5,6 @@ import React, {useEffect} from 'react';
 import {useLocation, useRouteMatch, matchPath} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-
 import {GlobalState} from '@mattermost/types/store';
 import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
@@ -28,6 +27,7 @@ const BackstageContainer = styled.div`
 
 const Backstage = () => {
     const {pathname} = useLocation();
+
     const {url} = useRouteMatch();
     const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
         path: [`${url}/runs/:playbookRunId`],
