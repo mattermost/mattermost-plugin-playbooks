@@ -42,7 +42,7 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, showChannelActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -64,7 +64,7 @@ import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
-import {fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -308,6 +308,14 @@ export default class Plugin {
         setPlaybooksGraphQLClient(graphqlClient);
 
         this.doRegistrations(registry, store, graphqlClient);
+
+        // https://mattermost.atlassian.net/browse/MM-48872
+        // This is handled by LoginHook, but it doesn't seem compatible with e2e tests.
+        // Grab global settings
+        const getGlobalSettings = async () => {
+            store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
+        };
+        getGlobalSettings();
 
         // Grab roles
         //@ts-ignore
