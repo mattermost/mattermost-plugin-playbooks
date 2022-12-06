@@ -158,9 +158,10 @@ const TIME_SPEC = {
 
 type RHSHomePlaybookProps = {
     playbook: Playbook;
+    onRunCreated: (runId: string, channelId: string) => void;
 }
 
-export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
+export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {view} = usePlaybooksRouting({urlOnly: true});
@@ -247,12 +248,8 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
                     if (isLinkRunToExistingChannelEnabled) {
                         dispatch(openPlaybookRunNewModal({
                             teamId,
+                            onRunCreated,
                             playbookId: id,
-                            onRunCreated: (runId) => {
-                                //TODO open tab
-                                // navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
-                                // refreshLHS();
-                            },
                         }));
                     } else {
                         dispatch(openPlaybookRunModal(

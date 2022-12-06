@@ -266,7 +266,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             onClick={() => {
                 if (isLinkRunToExistingChannelEnabled) {
                     dispatch(openPlaybookRunNewModal({
-                        onRunCreated: (runId) => {
+                        onRunCreated: (runId, channelId) => {
                             navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                             refreshLHS();
                         },

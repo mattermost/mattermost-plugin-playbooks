@@ -27,7 +27,7 @@ export const makeModalDefinition = (
     playbookId: string | undefined,
     triggerChannelId: string | undefined,
     teamId: string,
-    onRunCreated: (runId: string) => void,
+    onRunCreated: (runId: string, channelId: string) => void,
 ) => ({
     modalId: ID,
     dialogType: ApolloWrappedModal,
@@ -38,7 +38,7 @@ type Props = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    onRunCreated: (runId: string) => void,
+    onRunCreated: (runId: string, channelId: string) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookNewModal = ({
@@ -121,7 +121,7 @@ const RunPlaybookNewModal = ({
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                onRunCreated(newPlaybookRun.id);
+                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id);
             }).catch(() => {
             // show error
             });

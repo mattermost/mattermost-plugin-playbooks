@@ -189,7 +189,11 @@ const ListSection = styled.div`
     }
 `;
 
-const RHSHome = () => {
+interface Props {
+    onRunCreated: (runId: string, channelId: string) => void;
+}
+
+const RHSHome = ({onRunCreated}: Props) => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
@@ -327,6 +331,7 @@ const RHSHome = () => {
                                         <RHSHomePlaybook
                                             key={p.id}
                                             playbook={p}
+                                            onRunCreated={onRunCreated}
                                         />
                                     ))}
                                 </ListSection>
