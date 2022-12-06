@@ -126,7 +126,7 @@ const MainBody = () => {
             <Route path={`${match.url}/threads/:threadIdentifier?`}>
                 {currentTeam && (
                     <GlobalThreadsStyled
-                        pathDef={`${match.url}/threads/:threadIdentifier?`}
+                        path={`${match.url}/threads/:threadIdentifier?`}
                         teamName={currentTeam?.name}
                     />
                 )}

@@ -27,7 +27,7 @@ export const {
 export const {
     GlobalThreads,
 }: {
-    GlobalThreads: React.ComponentType<{className?: string; pathDef: string; teamName?: string}>;
+    GlobalThreads: React.ComponentType<{className?: string; path: string; teamName?: string}>;
 
     // @ts-ignore
 } = global.ProductApi ?? {};
