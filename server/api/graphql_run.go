@@ -135,7 +135,20 @@ func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
 }
 
 func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
-	return getGraphqlPlaybook(ctx, r.PlaybookID)
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := getGraphqlPlaybook(ctx, r.PlaybookID)
+	if err != nil {
+		if !errors.Is(err, app.ErrNoPermissions) {
+			c.logger.WithError(err).Error("error retrieving playbook of run")
+		}
+		return nil, nil
+	}
+
+	return val, nil
 }
 
 func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {

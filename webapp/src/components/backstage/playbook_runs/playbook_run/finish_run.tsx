@@ -13,7 +13,8 @@ import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {outstandingTasks} from 'src/components/modals/update_run_status_modal';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {useLHSRefresh} from '../../lhs_navigation';
+
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();

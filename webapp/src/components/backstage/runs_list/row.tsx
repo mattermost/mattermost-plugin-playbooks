@@ -26,9 +26,10 @@ import {
     unfollowPlaybookRun,
     followPlaybookRun,
 } from 'src/client';
-import {InfoLine} from '../styles';
-import {useToaster} from '../toast_banner';
-import {ToastStyle} from '../toast';
+
+import {InfoLine} from 'src/components/backstage/styles';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
     font-weight: 400;

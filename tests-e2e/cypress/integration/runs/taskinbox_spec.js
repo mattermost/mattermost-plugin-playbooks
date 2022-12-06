@@ -10,11 +10,9 @@ describe('Task Inbox >', () => {
     let testTeam;
     let testUser;
 
-    let testAdmin;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
-    let expFeaturesFlag;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -22,23 +20,7 @@ describe('Task Inbox >', () => {
             testUser = user;
 
             cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
-                testAdmin = adminUser;
                 cy.apiAddUserToTeam(testTeam.id, adminUser.id);
-            });
-
-            cy.apiGetConfig().then(({config}) => {
-                expFeaturesFlag = config.PluginSettings.Plugins.playbooks.enableexperimentalfeatures;
-                if (!expFeaturesFlag) {
-                    cy.apiUpdateConfig({
-                        PluginSettings: {
-                            Plugins: {
-                                playbooks: {
-                                    enableexperimentalfeatures: true,
-                                }
-                            }
-                        },
-                    });
-                }
             });
 
             // Create another user in the same team
@@ -82,22 +64,6 @@ describe('Task Inbox >', () => {
         });
     });
 
-    after(() => {
-        if (!expFeaturesFlag) {
-            cy.apiLogin(testAdmin).then(() => {
-                cy.apiUpdateConfig({
-                    PluginSettings: {
-                        Plugins: {
-                            playbooks: {
-                                enableexperimentalfeatures: expFeaturesFlag,
-                            }
-                        }
-                    },
-                });
-            });
-        }
-    });
-
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
@@ -112,6 +78,38 @@ describe('Task Inbox >', () => {
     });
 
     const getRHS = () => cy.get('#playbooks-backstage-sidebar-right');
+
+    it('icon in global header, with experimental feature flag', () => {
+        // # Enable experimental feature flag
+        cy.apiAdminLogin().then(() => {
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', true);
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        // # Visit the playbooks product
+        cy.visit('/playbooks');
+
+        // # Verify icon present in global header icon to open
+        cy.findByTestId('header-task-inbox-icon').click();
+    });
+
+    it('icon in global header, without experimental feature flag', () => {
+        // # Disable experimental feature flag
+        cy.apiAdminLogin().then(() => {
+            cy.apiEnsureFeatureFlag('enableexperimentalfeatures', false);
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        // # Visit the playbooks product
+        cy.visit('/playbooks');
+
+        // # Verify icon present in global header icon to open
+        cy.findByTestId('header-task-inbox-icon').click();
+    });
 
     it('icon toggles taskinbox view', () => {
         // # Intercept all calls to telemetry
@@ -132,7 +130,7 @@ describe('Task Inbox >', () => {
         // * assert zero case
         getRHS().within(() => {
             cy.getStyledComponent('HeaderTitle').contains('Your tasks');
-            cy.getStyledComponent('Body').contains('No assigned tasks');
+            cy.getStyledComponent('Body').contains('1 assigned');
         });
 
         // # Click on global header icon to close

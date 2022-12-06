@@ -35,7 +35,7 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
-import {useLHSRefresh} from '../../lhs_navigation';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 import {FollowState} from './rhs_info';
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
@@ -896,6 +897,99 @@ func TestUpdateRun(t *testing.T) {
 	})
 }
 
+func TestUpdateRunTaskActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("task actions mutation create and update", func(t *testing.T) {
+		createNewRunWithNoChecklists := func(t *testing.T) *client.PlaybookRun {
+			t.Helper()
+
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+				PlaybookID:  e.BasicPlaybook.ID,
+			})
+			require.NoError(t, err)
+			require.Len(t, run.Checklists, 0)
+
+			return run
+		}
+		run := createNewRunWithNoChecklists(t)
+		// Create a valid, empty checklist
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "First Checklist",
+			Items: []client.ChecklistItem{{
+				Title: "First item",
+			}},
+		})
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 1)
+		require.Len(t, run.Checklists[0].Items, 1)
+
+		// create a new task action
+		triggerPayload := "{\"keywords\":[\"one\", \"two\"], \"user_ids\":[\"abc\"]}"
+		actionPayload := "{\"enabled\":false}"
+		response, err := UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: triggerPayload,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: actionPayload,
+				}},
+			},
+		})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the taskaction is created
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, editedRun.Checklists, 1)
+		require.Len(t, editedRun.Checklists[0].Items, 1)
+		require.Len(t, editedRun.Checklists[0].Items[0].TaskActions, 1)
+		require.Equal(t, string(app.KeywordsByUsersTriggerType), editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Type)
+		require.Equal(t, triggerPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
+
+		// Edit the task action
+		newTriggerPayload := "{\"keywords\":[\"one\", \"two\", \"edited\"], \"user_ids\":[\"abc\"]}"
+		response, err = UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: newTriggerPayload,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: actionPayload,
+				}},
+			},
+		})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the taskaction is updated
+		editedRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, editedRun.Checklists, 1)
+		require.Len(t, editedRun.Checklists[0].Items, 1)
+		require.Len(t, editedRun.Checklists[0].Items[0].TaskActions, 1)
+		require.Equal(t, string(app.KeywordsByUsersTriggerType), editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Type)
+		require.Equal(t, newTriggerPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
+	})
+}
+
 // AddParticipants adds participants to the run
 func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
 	mutation := `
@@ -1024,6 +1118,27 @@ func updateRun(c *client.Client, playbookRunID string, updates map[string]interf
 		Variables: map[string]interface{}{
 			"id":      playbookRunID,
 			"updates": updates,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum float64, itemNum float64, taskActions *[]app.TaskAction) (graphql.Response, error) {
+	mutation := `
+		mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
+			updateRunTaskActions(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, taskActions: $taskActions)
+		}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdateRunTaskActions",
+		Variables: map[string]interface{}{
+			"runID":        playbookRunID,
+			"checklistNum": checklistNum,
+			"itemNum":      itemNum,
+			"taskActions":  taskActions,
 		},
 	}, &response)
 

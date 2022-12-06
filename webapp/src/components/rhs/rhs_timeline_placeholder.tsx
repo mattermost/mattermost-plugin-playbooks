@@ -9,7 +9,8 @@ import {useIntl} from 'react-intl';
 
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
-import UpgradeTimelineBackgroundSvg from '../assets/upgrade_timeline_background_svg';
+
+import UpgradeTimelineBackgroundSvg from 'src/components/assets/upgrade_timeline_background_svg';
 
 const Container = styled.div`
     margin: 18px 15px;
