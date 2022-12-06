@@ -131,6 +131,7 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                     <Spacer/>
                     <StartRunButton
+                        data-testid='rhs-runlist-start-run'
                         onClick={() => {
                             dispatch(openPlaybookRunNewModal({
                                 onRunCreated: props.onRunCreated,
