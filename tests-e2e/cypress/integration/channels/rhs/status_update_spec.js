@@ -236,9 +236,7 @@ describe('channels > rhs > status update', () => {
             });
 
             // * Verify the run was finished.
-            cy.getLastPost().within(() => {
-                cy.findByText(`marked ${testRun.name} as finished.`).should('exist');
-            });
+            cy.getLastPost().contains(`@${testUser.username} marked ${testRun.name} as finished.`);
         });
 
         describe('prevents user from losing changes', () => {
