@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Client4} from 'mattermost-redux/client';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -26,11 +25,9 @@ export const navigateToPluginUrl = (urlPath: string) => {
 
 /**
  * Navigate to channel given a channelId and teamName
- * Note that channel will be retrieved from the server to get the name.
  */
 export const navigateToChannel = async (teamName: string, channelId: string) => {
-    const channel = await Client4.getChannel(channelId);
-    navigateToUrl(`/${teamName}/channels/${channel.name}`);
+    navigateToUrl(`/${teamName}/channels/${channelId}`);
 };
 
 export const pluginErrorUrl = (type: string) => {
