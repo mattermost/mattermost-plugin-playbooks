@@ -32,10 +32,10 @@ import WarningIcon from 'src/components/assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {browserHistory, modals} from 'src/webapp_globals';
-import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal, showRunActionsModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -406,34 +406,6 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
     }
 
     return {input, reminder};
-};
-
-const outstandingTasks = (checklists: Checklist[]) => {
-    let count = 0;
-    for (const list of checklists) {
-        for (const item of list.items) {
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
-                count++;
-            }
-        }
-    }
-    return count;
-};
-export const useFinishRunConfirmationMessage = (run: PlaybookRun | null | undefined) => {
-    const {formatMessage} = useIntl();
-    const outstanding = outstandingTasks(run?.checklists || []);
-    const values = {
-        i: (x: React.ReactNode) => <i>{x}</i>,
-        runName: run?.name || '',
-    };
-    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run <i>{runName}</i> for all participants?'}, values);
-    if (outstanding > 0) {
-        confirmationMessage = formatMessage(
-            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run <i>{runName}</i> for all participants?'},
-            {...values, outstanding}
-        );
-    }
-    return confirmationMessage;
 };
 
 const FormContainer = styled.div`

@@ -11,11 +11,38 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
-import {useFinishRunConfirmationMessage} from 'src/components/modals/update_run_status_modal';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
+const outstandingTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
+                count++;
+            }
+        }
+    }
+    return count;
+};
+export const useFinishRunConfirmationMessage = (run: PlaybookRun | null | undefined) => {
+    const {formatMessage} = useIntl();
+    const outstanding = outstandingTasks(run?.checklists || []);
+    const values = {
+        i: (x: React.ReactNode) => <i>{x}</i>,
+        runName: run?.name || '',
+    };
+    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run <i>{runName}</i> for all participants?'}, values);
+    if (outstanding > 0) {
+        confirmationMessage = formatMessage(
+            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run <i>{runName}</i> for all participants?'},
+            {...values, outstanding}
+        );
+    }
+    return confirmationMessage;
+};
 export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
