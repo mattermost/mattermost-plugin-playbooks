@@ -22,7 +22,6 @@ import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_ch
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
-
 import {getSiteUrl} from 'src/client';
 
 import {UserList} from './rhs_participants';
@@ -55,14 +54,15 @@ export interface RunListOptions {
 
 interface Props {
     runs: RunToDisplay[];
-    onSelectRun: (runID: string) => void
-    getMore: () => Promise<any>
-    hasMore: boolean
+    onSelectRun: (runID: string) => void;
+    onRunCreated: (runID: string, channelId: string) => void;
+    getMore: () => Promise<any>;
+    hasMore: boolean;
 
-    options: RunListOptions
-    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
-    numInProgress: number
-    numFinished: number
+    options: RunListOptions;
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>;
+    numInProgress: number;
+    numFinished: number;
 }
 
 const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
@@ -132,9 +132,10 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                     <Spacer/>
                     <StartRunButton
+                        data-testid='rhs-runlist-start-run'
                         onClick={() => {
                             dispatch(openPlaybookRunNewModal({
-                                refreshLHS,
+                                onRunCreated: props.onRunCreated,
                                 triggerChannelId: currentChannelId,
                                 teamId: currentTeamId,
                             }));
