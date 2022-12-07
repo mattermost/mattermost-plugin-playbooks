@@ -621,7 +621,7 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 		app.PlaybookRunFilterOptions{
 			ChannelID: channelID,
 			Page:      0,
-			PerPage:   1000,
+			PerPage:   2,
 		},
 	)
 

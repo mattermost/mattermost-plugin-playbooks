@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -522,44 +521,6 @@ func newPost(deleted bool) *model.Post {
 		Id:       model.NewId(),
 		CreateAt: createAt,
 		DeleteAt: deleteAt,
-	}
-}
-
-func TestGetPlaybookRunIDForChannel(t *testing.T) {
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		store := setupSQLStore(t, db)
-		playbookRunStore := setupPlaybookRunStore(t, db)
-		setupChannelsTable(t, db)
-
-		t.Run("retrieve existing playbookRunID", func(t *testing.T) {
-			playbookRun1 := NewBuilder(t).ToPlaybookRun()
-			playbookRun2 := NewBuilder(t).ToPlaybookRun()
-
-			returned1, err := playbookRunStore.CreatePlaybookRun(playbookRun1)
-			require.NoError(t, err)
-			createPlaybookRunChannel(t, store, playbookRun1)
-
-			returned2, err := playbookRunStore.CreatePlaybookRun(playbookRun2)
-			require.NoError(t, err)
-			createPlaybookRunChannel(t, store, playbookRun2)
-
-			ids1, err := playbookRunStore.GetPlaybookRunIDsForChannel(playbookRun1.ChannelID)
-			require.NoError(t, err)
-			require.Len(t, ids1, 1)
-			require.Equal(t, returned1.ID, ids1[0])
-			ids2, err := playbookRunStore.GetPlaybookRunIDsForChannel(playbookRun2.ChannelID)
-			require.NoError(t, err)
-			require.Len(t, ids2, 1)
-			require.Equal(t, returned2.ID, ids2[0])
-		})
-		t.Run("fail to retrieve non-existing playbookRunID", func(t *testing.T) {
-			ids1, err := playbookRunStore.GetPlaybookRunIDsForChannel("nonexistingid")
-			require.Error(t, err)
-			require.Len(t, ids1, 0)
-			require.True(t, strings.HasPrefix(err.Error(),
-				"channel with id (nonexistingid) does not have a playbook run"))
-		})
 	}
 }
 

@@ -833,9 +833,6 @@ type PlaybookRunStore interface {
 	// GetPlaybookRun gets a playbook run by ID.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
-	// GetPlaybookRunIDsForChannel gets a playbook runs list associated with the given channel id.
-	GetPlaybookRunIDsForChannel(channelID string) ([]string, error)
-
 	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the
 	// playbook run, excluding bots.
