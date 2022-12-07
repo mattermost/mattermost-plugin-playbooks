@@ -883,7 +883,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
 			s.configService.GetManifest().Id,
 			playbookRunID),
-		Dialog:    *s.newFinishPlaybookRunDialog(numOutstanding),
+		Dialog:    *s.newFinishPlaybookRunDialog(currentPlaybookRun, numOutstanding),
 		TriggerId: triggerID,
 	}
 
@@ -2376,12 +2376,13 @@ func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel
 	return model.ChannelGuestRoleId, model.ChannelUserRoleId, model.ChannelAdminRoleId
 }
 
-func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {
-	message := "Are you sure you want to finish the run for all participants?"
+func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *PlaybookRun, outstanding int) *model.Dialog {
+	suffix := fmt.Sprintf("Are you sure you want to finish the run *%s* for all participants?", playbookRun.Name)
+	message := suffix
 	if outstanding == 1 {
-		message = "There is **1 outstanding task**. Are you sure you want to finish the run for all participants?"
+		message = "There is **1 outstanding task**. " + suffix
 	} else if outstanding > 1 {
-		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. Are you sure you want to finish the run for all participants?"
+		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. " + suffix
 	}
 
 	return &model.Dialog{
