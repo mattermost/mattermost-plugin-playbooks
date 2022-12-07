@@ -72,7 +72,7 @@ describe('channels > rhs > status update', () => {
             // # Get dialog modal.
             cy.getStatusUpdateDialog().within(() => {
                 // * Check description
-                cy.findByTestId('update_run_status_description').contains(`This update for the run ${name} will be broadcasted to one channel and one direct message.`);
+                cy.findByTestId('update_run_status_description').contains(`This update for the run ${testRun.name} will be broadcasted to one channel and one direct message.`);
             });
         });
         it('description link navigates to run overview', () => {
