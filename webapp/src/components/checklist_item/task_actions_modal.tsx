@@ -13,7 +13,6 @@ import Action from 'src/components/actions_modal_action';
 import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
 import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
 import GenericModal from 'src/components/widgets/generic_modal';
-import {getRun} from 'src/selectors';
 import {TaskAction as TaskActionType} from 'src/types/playbook';
 
 const ID = 'playbooks_task_actions_modal';
@@ -70,18 +69,10 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
     const [newUserIDs, setNewUserIDs] = useState(triggerPayload.user_ids);
     const [newIsEnabled, setNewEnabled] = useState(actionPayload.enabled);
 
-    const runID = playbookRunId || '';
-    const run = useSelector(getRun(runID));
     const teamID = useSelector(getCurrentTeamId);
-    let searchOpts = {} as any;
-    if (playbookRunId) {
-        searchOpts = {in_channel_id: run?.channel_id};
-    } else {
-        searchOpts = {team_id: teamID};
-    }
     const dispatch = useDispatch();
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, searchOpts));
+        return dispatch(searchProfiles(term, {team_id: teamID}));
     };
 
     const onSave = () => {
