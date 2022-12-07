@@ -7,7 +7,11 @@ import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getUsers, getMyCurrentChannelMembership, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/common';
+import {
+    getMyChannelMemberships,
+    getMyCurrentChannelMembership,
+    getUsers,
+} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from '@mattermost/types/utilities';
@@ -25,14 +29,14 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {playbookRunIsActive, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun, playbookRunIsActive, PlaybookRunStatus} from 'src/types/playbook_run';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
     ChecklistItem,
-    ChecklistItemState,
     ChecklistItemsFilter,
     ChecklistItemsFilterDefault,
+    ChecklistItemState,
 } from 'src/types/playbook';
 import {PlaybooksPluginState} from 'src/reducer';
 
@@ -279,7 +283,7 @@ export const currentRHSAboutCollapsedState = createSelector(
 export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) => {
     return getMyTeams(state).filter((team: Team) => (
         haveITeamPermission(state, team.id, 'playbook_public_create') ||
-		haveITeamPermission(state, team.id, 'playbook_private_create')
+        haveITeamPermission(state, team.id, 'playbook_private_create')
     ));
 };
 
