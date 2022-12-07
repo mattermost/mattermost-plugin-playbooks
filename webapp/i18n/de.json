@@ -810,5 +810,7 @@
     "7KMbBa": "Nie benutzt",
     "3sXVwy": "Aufgaben-Aktionen...",
     "3Yvt4d": "Playbooks sind konfigurierbare Checklisten, die einen wiederholbaren Prozess für Teams definieren, um bestimmte und vorhersehbare Ergebnisse zu erzielen",
-    "0CeyUV": "Keine Ergebnisse für \"{searchTerm}\""
+    "0CeyUV": "Keine Ergebnisse für \"{searchTerm}\"",
+    "zscc/+": "Es gibt {outstanding, plural, =1 {# ausstehende Aufgabe} other {# ausstehende Aufgaben}}. Bist du sicher, dass du den Durchlauf <i>{runName}</i> beenden willst?",
+    "LKu0ex": "Bist du sicher, dass du den Durchlauf <i>{runName}</i> für alle Teilnehmer beenden möchtest?"
 }
