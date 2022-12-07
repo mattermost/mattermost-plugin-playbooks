@@ -30,6 +30,7 @@ fragment RHSRunFields on Run {
 	playbook {
 		title
 	}
+	progress
 	lastUpdatedAt
 }
 

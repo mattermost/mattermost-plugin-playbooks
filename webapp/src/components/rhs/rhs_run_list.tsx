@@ -38,6 +38,7 @@ interface RunToDisplay {
     participantIDs: string[]
     ownerUserID: string
     playbook?: Maybe<PlaybookToDisplay>
+    progress: number;
     lastUpdatedAt: number
 }
 
@@ -360,38 +361,58 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
 
     return (
-        <CardContainer
-            onClick={props.onClick}
-        >
-            <TitleRow>{props.name}</TitleRow>
-            <PeopleRow>
-                <OwnerProfileChip userId={props.ownerUserID}/>
-                <ParticipantsProfiles>
-                    <UserList
-                        userIds={participatIDsWithoutOwner}
-                        sizeInPx={20}
-                    />
-                </ParticipantsProfiles>
-            </PeopleRow>
-            <InfoRow>
-                <LastUpdatedText>
-                    {formatMessage(
-                        {defaultMessage: 'Last updated {time}'},
-                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                    )}
-                </LastUpdatedText>
-                {props.playbook &&
+        <CardWrapper progress={props.progress * 100}>
+            <CardContainer
+                onClick={props.onClick}
+            >
+                <TitleRow>{props.name}</TitleRow>
+                <PeopleRow>
+                    <OwnerProfileChip userId={props.ownerUserID}/>
+                    <ParticipantsProfiles>
+                        <UserList
+                            userIds={participatIDsWithoutOwner}
+                            sizeInPx={20}
+                        />
+                    </ParticipantsProfiles>
+                </PeopleRow>
+                <InfoRow>
+                    <LastUpdatedText>
+                        {formatMessage(
+                            {defaultMessage: 'Last updated {time}'},
+                            {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                        )}
+                    </LastUpdatedText>
+                    {props.playbook &&
                     <PlaybookChip>
                         <StyledBookOutlineIcon
                             size={11}
                         />
                         {props.playbook.title}
                     </PlaybookChip>
-                }
-            </InfoRow>
-        </CardContainer>
+                    }
+                </InfoRow>
+            </CardContainer>
+        </CardWrapper>
     );
 };
+const CardWrapper = styled.div<{progress: number}>`
+    margin: 0;
+    padding:0;
+    border-radius: 4px;
+    position: relative;
+
+    &:after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: calc(${({progress}) => 100 - progress}% + 1px);
+        bottom: 1px;
+        left: 1px;
+        border-bottom: 2px solid var(--online-indicator);
+        border-bottom-left-radius: inherit;
+        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
+    }
+`;
 
 const CardContainer = styled.div`
     display: flex;
