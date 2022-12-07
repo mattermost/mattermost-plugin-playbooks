@@ -306,7 +306,6 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
-            channel_mode: channelMode,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
