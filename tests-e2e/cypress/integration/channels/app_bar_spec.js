@@ -80,33 +80,17 @@ describe('channels > App Bar', () => {
             cy.getPlaybooksAppBarIcon().should('exist');
         });
 
-        describe('tooltip text', () => {
-            it('should show "Toggle Playbook List" outside a playbook run channel', () => {
-                onlyOn(appBarEnabled);
+        it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
+            onlyOn(appBarEnabled);
 
-                // # Navigate directly to a non-playbook run channel
-                cy.visit(`/${testTeam.name}/channels/town-square`);
+            // # Navigate directly to a non-playbook run channel
+            cy.visit(`/${testTeam.name}/channels/town-square`);
 
-                // # Hover over the channel header icon
-                cy.getPlaybooksAppBarIcon().trigger('mouseover');
+            // # Hover over the channel header icon
+            cy.getPlaybooksAppBarIcon().trigger('mouseover');
 
-                // * Verify tooltip text
-                cy.findByRole('tooltip', {name: 'Toggle Playbook List'}).should('be.visible');
-            });
-
-            it('should show "Toggle Run Details" inside a playbook run channel', () => {
-                onlyOn(appBarEnabled);
-
-                // # Navigate directly to a playbook run channel
-                cy.visit(`/${testTeam.name}/channels/playbook-run`);
-
-                // # Hover over the channel header icon
-                cy.getPlaybooksAppBarIcon().trigger('mouseover');
-                cy.wait(TIMEOUTS.HALF_SEC);
-
-                // * Verify tooltip text
-                cy.findByRole('tooltip', {name: 'Toggle Run Details'}).should('be.visible');
-            });
+            // * Verify tooltip text
+            cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
         });
     });
 });
