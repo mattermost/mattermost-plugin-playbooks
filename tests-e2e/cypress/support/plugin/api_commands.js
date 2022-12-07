@@ -264,7 +264,6 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
-        channelMode = 'create_new_channel',
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
