@@ -83,7 +83,7 @@ describe('channels > channel header', () => {
             });
         });
 
-        it('tooltip text should shown "Playbooks" for Playbook channel header button', () => {
+        it('tooltip text should show "Playbooks" for Playbook channel header button', () => {
             onlyOn(!appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
