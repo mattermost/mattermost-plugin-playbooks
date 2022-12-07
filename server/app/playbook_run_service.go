@@ -1066,6 +1066,8 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	}
 
 	data := map[string]interface{}{
+		"RunName":  playbookRunToModify.Name,
+		"RunURL":   GetRunDetailsRelativeURL(playbookRunID),
 		"Username": user.Username,
 	}
 
@@ -2858,7 +2860,9 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 
 	T := i18n.GetUserTranslations(requesterUser.Locale)
 	data := map[string]interface{}{
-		"Name": requesterUser.Username,
+		"RunName": playbookRun.Name,
+		"RunURL":  GetRunDetailsRelativeURL(playbookRunID),
+		"Name":    requesterUser.Username,
 	}
 
 	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
@@ -2875,7 +2879,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		PostID:        post.Id,
 		SubjectUserID: requesterID,
 		CreatorUserID: requesterID,
-		Summary:       fmt.Sprintf("@%s requested a status update for [%s](%s)", requesterUser.Username, playbookRun.Name, GetRunDetailsRelativeURL(playbookRunID)),
+		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
