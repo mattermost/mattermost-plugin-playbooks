@@ -172,7 +172,7 @@ describe('runs > run details page > status update', () => {
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Assert that message has been sent
-                cy.getLastPost().contains(`${testUser.username} requested a status update for ${testPublicPlaybook.name}.`);
+                cy.getLastPost().contains(`${testUser.username} requested a status update for ${testRun.name}.`);
             });
 
             it('requests and cancel', () => {
@@ -192,7 +192,7 @@ describe('runs > run details page > status update', () => {
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Assert that message has not been sent
-                cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testPublicPlaybook.name}.`);
+                cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testRun.name}.`);
             });
         });
     });
