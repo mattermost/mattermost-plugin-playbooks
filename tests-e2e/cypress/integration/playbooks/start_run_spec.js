@@ -87,31 +87,31 @@ describe('playbooks > start a run', () => {
                 // Fill default values
                 fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
-                    // # Assert template name is filled
+                    // * Assert template name is filled
                     cy.findByTestId('run-name-input').should('have.value', 'Channel template');
 
-                    // # Assert template summary is filled
+                    // * Assert template summary is filled
                     cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Channel template');
 
-                // # verify run summary
+                // * Verify run summary
                 cy.findByTestId('run-summary-section').contains('run summary template');
             });
 
@@ -119,17 +119,17 @@ describe('playbooks > start a run', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values
+                // # Fill default values
                 fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
-                    // # Assert template are filled (and force wait to them)
+                    // * Assert template are filled (and force wait to them)
                     cy.findByTestId('run-name-input').should('have.value', 'Channel template');
                     cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
@@ -139,18 +139,18 @@ describe('playbooks > start a run', () => {
                     // # Fill run summary
                     cy.findByTestId('run-summary-input').clear().type('Test Run Summary');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Test Run Name');
 
-                // # verify run summary
+                // * Verify run summary
                 cy.findByTestId('run-summary-section').contains('Test Run Summary');
             });
 
@@ -158,43 +158,43 @@ describe('playbooks > start a run', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values
+                // # Fill default values
                 fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
-                    // * Change to link to existing channel
+                    // # Change to link to existing channel
                     cy.findByTestId('link-existing-channel-radio').click();
 
                     // # Fill run name
                     cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                    // # assert cta is disabled
+                    // * Assert cta is disabled
                     cy.findByTestId('modal-confirm-button').should('be.disabled');
 
-                    // * fill Town square as the channel to be linked
+                    // # Fill Town square as the channel to be linked
                     cy.findByText('Select a channel').click().type('Town{enter}');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Test Run Name');
 
-                // * click channel link
+                // # Click channel link
                 cy.findByTestId('runinfo-channel-link').click();
 
-                // # verify we are on town square
+                // * Verify we are on town square
                 cy.url().should('include', `/${testTeam.name}/channels/town-square`);
             });
         });
@@ -204,46 +204,46 @@ describe('playbooks > start a run', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values
+                // # Fill default values
                 fillPBE({summary: 'run summary template', channelMode: 'link_to_existing_channel', channelNameToLink: 'Town'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
-                    // # Assert template name is empty
+                    // * Assert template name is empty
                     cy.findByTestId('run-name-input').should('be.empty');
 
-                    // # Assert template summary is filled
+                    // * Assert template summary is filled
                     cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                    // # assert button is still disabled
+                    // * Assert button is still disabled
                     cy.findByTestId('modal-confirm-button').should('be.disabled');
 
-                    // * Fill run name
+                    // # Fill run name
                     cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Test Run Name');
 
-                // # verify run summary
+                // * Verify run summary
                 cy.findByTestId('run-summary-section').contains('run summary template');
 
-                // * click channel link
+                // # Click channel link
                 cy.findByTestId('runinfo-channel-link').click();
 
-                // # verify we are on town square
+                // * Verify we are on town square
                 cy.url().should('include', `/${testTeam.name}/channels/town-square`);
             });
 
@@ -251,49 +251,49 @@ describe('playbooks > start a run', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values
+                // # Fill default values
                 fillPBE({summary: 'run summary template', channelMode: 'link_to_existing_channel'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
-                    // # Assert template name is empty
+                    // * Assert template name is empty
                     cy.findByTestId('run-name-input').should('be.empty');
 
-                    // # Assert template summary is filled
+                    // * Assert template summary is filled
                     cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                    // * Fill run name
+                    // # Fill run name
                     cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                    // # assert button is still disabled
+                    // * Assert button is still disabled
                     cy.findByTestId('modal-confirm-button').should('be.disabled');
 
-                    // * fill Town square as the channel to be linked
+                    // # Fill Town square as the channel to be linked
                     cy.findByText('Select a channel').click().type('Town{enter}');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Test Run Name');
 
-                // # verify run summary
+                // * Verify run summary
                 cy.findByTestId('run-summary-section').contains('run summary template');
 
-                // * click channel link
+                // # Click channel link
                 cy.findByTestId('runinfo-channel-link').click();
 
-                // # verify we are on town square
+                // * Verify we are on town square
                 cy.url().should('include', `/${testTeam.name}/channels/town-square`);
             });
 
@@ -304,11 +304,11 @@ describe('playbooks > start a run', () => {
                 // Fill default values
                 fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'link_to_existing_channel', channelNameToLink: 'Town'});
 
-                // * Click start a run button
+                // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # wait the modal to render
+                    // # Wait the modal to render
                     cy.wait(500);
 
                     // * Change to create new channel
@@ -317,21 +317,21 @@ describe('playbooks > start a run', () => {
                     // # Fill run name
                     cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                    // * Click start button
+                    // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // # verify we are on RDP
+                // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
 
-                // # verify run name
+                // * Verify run name
                 cy.get('h1').contains('Test Run Name');
 
-                // * click channel link
+                // # Click channel link
                 cy.findByTestId('runinfo-channel-link').click();
 
-                // # verify we are on channel Test Run Name
+                // * Verify we are on channel Test Run Name
                 cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
             });
         });

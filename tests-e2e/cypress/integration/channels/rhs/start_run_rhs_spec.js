@@ -68,7 +68,7 @@ describe('channels rhs > start a run', () => {
     describe('From RHS home  > ', () => {
         describe('playbook configured as create new channel', () => {
             it('defaults', () => {
-                // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -80,30 +80,30 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // # Assert template name is filled
+                        // * Assert template name is filled
                         cy.findByTestId('run-name-input').should('have.value', 'Channel template');
 
-                        // # Assert summary template is filled
+                        // * Assert summary template is filled
                         cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the channel just created
+                    // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains('Beginning of Channel template');
 
-                    // # verify run RHS
+                    // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.contains('Channel template');
                         cy.contains('run summary template');
@@ -112,7 +112,7 @@ describe('channels rhs > start a run', () => {
             });
 
             it('change title/summary', () => {
-                // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -124,17 +124,17 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // # Assert template are filled (and force wait to them)
+                        // * Assert template are filled (and force wait to them)
                         cy.findByTestId('run-name-input').should('have.value', 'Channel template');
 
-                        // # Assert summary template is filled
+                        // * Assert summary template is filled
                         cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
                         // # Fill run name
@@ -143,17 +143,17 @@ describe('channels rhs > start a run', () => {
                         // # Fill run summary
                         cy.findByTestId('run-summary-input').clear().type('Test Run Summary');
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the channel just created
+                    // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains('Beginning of Test Run Name');
 
-                    // # verify run RHS
+                    // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.contains('Test Run Name');
                         cy.contains('Test Run Summary');
@@ -162,7 +162,7 @@ describe('channels rhs > start a run', () => {
             });
 
             it('change to link to existing channel', () => {
-                // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -174,33 +174,33 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // * Change to link to existing channel
+                        // # Change to link to existing channel
                         cy.findByTestId('link-existing-channel-radio').click();
 
                         // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // * fill Town square as the channel to be linked
+                        // # Fill Town square as the channel to be linked
                         cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the existing channel
+                    // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
 
-                    // # verify run RHS
+                    // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.contains('Test Run Name');
                         cy.contains('run summary template');
@@ -211,7 +211,7 @@ describe('channels rhs > start a run', () => {
 
         describe('playbook configured as linked to existing channel', () => {
             it('defaults', () => {
-                // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -224,34 +224,34 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // # Assert template name is empty
+                        // * Assert template name is empty
                         cy.findByTestId('run-name-input').should('be.empty');
 
-                        // # Assert template summary is filled
+                        // * Assert template summary is filled
                         cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                        // * Fill run name
+                        // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the existing channel
+                    // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
-                        // # verify run RHS
+                        // * Verify run RHS
                         cy.contains('Test Run Name');
                         cy.contains('run summary template');
                     });
@@ -259,7 +259,7 @@ describe('channels rhs > start a run', () => {
             });
 
             it('fill initially empty channel', () => {
-                // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -271,37 +271,37 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // # Assert template name is empty
+                        // * Assert template name is empty
                         cy.findByTestId('run-name-input').should('be.empty');
 
-                        // # Assert template summary is filled
+                        // * Assert template summary is filled
                         cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                        // * Fill run name
+                        // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // * fill Town square as the channel to be linked
+                        // # Fill Town square as the channel to be linked
                         cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the existing channel
+                    // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
-                        // # verify run RHS
+                        // * Verify run RHS
                         cy.contains('Test Run Name');
                         cy.contains('run summary template');
                     });
@@ -309,7 +309,7 @@ describe('channels rhs > start a run', () => {
             });
 
             it('change to create new channel', () => {
-            // Fill default values
+                // # Fill default values
                 createPlaybook({
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
@@ -322,31 +322,31 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // * Click start a run button
+                    // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
                     cy.get('#root-portal.modal-open').within(() => {
-                        // # wait the modal to render
+                        // # Wait the modal to render
                         cy.wait(500);
 
-                        // * Change to create new channel
+                        // # Change to create new channel
                         cy.findByTestId('create-channel-radio').click();
 
                         // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // * Click start button
+                        // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // # verify we are on the channel just created
+                    // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
 
-                    // # verify channel name
+                    // * Verify channel name
                     cy.get('h2').contains('Beginning of Test Run Name');
 
                     cy.get('#rhsContainer').should('exist').within(() => {
-                        // # verify run RHS
+                        // * Verify run RHS
                         cy.contains('Test Run Name');
                         cy.contains('run summary template');
                     });
@@ -382,36 +382,36 @@ describe('channels rhs > start a run', () => {
             // # Click back to go to run list
             cy.findByTestId('back-button').should('be.visible').click();
 
-            // // * Click start a run button
+            // # Click start a run button
             cy.findByTestId('rhs-runlist-start-run').click();
 
             cy.get('#root-portal.modal-open').within(() => {
-                // # wait the modal to render
+                // # Wait the modal to render
                 cy.wait(500);
 
-                // # Assert we are at playbooks tab
+                // * Assert we are at playbooks tab
                 cy.findByText('Select a playbook').should('be.visible');
 
-                // # click on the playbook
+                // # Click on the playbook
                 cy.findAllByText(`Playbook title ${now}`).eq(0).click();
 
-                // # Assert we are at start run tab
+                // * Assert we are at start run tab
                 cy.findByText('Start a run').should('be.visible');
 
-                // # Assert summary template is filled
+                // * Assert summary template is filled
                 cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                // * Click start button
+                // # Click start button
                 cy.findByTestId('modal-confirm-button').click();
             });
 
-            // # verify we are on the channel just created
+            // * Verify we are on the channel just created
             cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
 
-            // # verify channel name
+            // * Verify channel name
             cy.get('h2').contains('Beginning of Channel template');
 
-            // # verify run RHS
+            // * Verify run RHS
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.contains('Channel template');
                 cy.contains('run summary template');
@@ -425,48 +425,48 @@ describe('channels rhs > start a run', () => {
             // # Click back to go to run list
             cy.findByTestId('back-button').should('be.visible').click();
 
-            // // * Click start a run button
+            // # Click start a run button
             cy.findByTestId('rhs-runlist-start-run').click();
 
             cy.get('#root-portal.modal-open').within(() => {
-                // # wait the modal to render
+                // # Wait the modal to render
                 cy.wait(500);
 
-                // # Assert we are at playbooks tab
+                // * Assert we are at playbooks tab
                 cy.findByText('Select a playbook').should('be.visible');
 
-                // # click on the playbook
+                // # Click on the playbook
                 cy.findAllByText(`Playbook title ${now}`).eq(0).click();
 
-                // # Assert we are at start run tab
+                // * Assert we are at start run tab
                 cy.findByText('Start a run').should('be.visible');
 
-                // # give time to load
+                // # Give time to load
                 cy.wait(500);
 
-                // * Change to link to existing channel
+                // # Change to link to existing channel
                 cy.findByTestId('link-existing-channel-radio').click();
 
                 // # Fill run name
                 cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                // * fill Town square as the channel to be linked
+                // # Fill Town square as the channel to be linked
                 cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
 
-                // # Assert summary template is filled
+                // * Assert summary template is filled
                 cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
-                // * Click start button
+                // # Click start button
                 cy.findByTestId('modal-confirm-button').click();
             });
 
-            // # verify we are on the same channel
+            // * Verify we are on the same channel
             cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
-            // # verify channel name
+            // * Verify channel name
             cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
 
-            // # verify run RHS is opened on the new run
+            // * Verify run RHS is opened on the new run
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.contains('Test Run Name');
                 cy.contains('run summary template');
