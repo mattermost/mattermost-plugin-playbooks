@@ -319,7 +319,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # Click Run Playbook
-        cy.findByTestId('run-playbook').click({force: true});
+        cy.findByTestId('run-playbook').click();
 
         // # Enter the run name
         cy.findByTestId('run-name-input').clear().type('run1234567');
