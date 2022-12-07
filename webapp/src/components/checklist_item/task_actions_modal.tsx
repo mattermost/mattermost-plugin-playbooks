@@ -6,7 +6,6 @@ import styled from 'styled-components';
 
 import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import ActionsModal from 'src/components/actions_modal';
 import Action from 'src/components/actions_modal_action';
@@ -69,10 +68,9 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, playbookRunId, ...m
     const [newUserIDs, setNewUserIDs] = useState(triggerPayload.user_ids);
     const [newIsEnabled, setNewEnabled] = useState(actionPayload.enabled);
 
-    const teamID = useSelector(getCurrentTeamId);
     const dispatch = useDispatch();
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: teamID}));
+        return dispatch(searchProfiles(term));
     };
 
     const onSave = () => {
