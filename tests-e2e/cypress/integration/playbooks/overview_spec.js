@@ -414,7 +414,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify that channel configuration matches playbook config
             cy.findByTestId('link-existing-channel-radio').should('not.be.checked');
