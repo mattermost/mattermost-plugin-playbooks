@@ -13,7 +13,6 @@ describe('playbooks > edit', () => {
     let testUser;
     let testUser2;
     let testUser3;
-    let featureFlagPrevValue;
 
     const openCategorySelector = () => {
         cy.get('.channel-selector__control input').click({force: true});
@@ -31,10 +30,6 @@ describe('playbooks > edit', () => {
                 testSysadmin = sysadmin;
             });
 
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', false).then(({prevValue}) => {
-                featureFlagPrevValue = prevValue;
-            });
-
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
                 testUser2 = payload.user;
@@ -50,14 +45,6 @@ describe('playbooks > edit', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
         });
-    });
-
-    after(() => {
-        if (featureFlagPrevValue) {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-            });
-        }
     });
 
     beforeEach(() => {
@@ -150,7 +137,12 @@ describe('playbooks > edit', () => {
         });
     });
 
-    const commonActionTests = () => {
+    describe('actions toggled', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
         describe('when a playbook run starts', () => {
             let testPlaybook;
             beforeEach(() => {
@@ -749,106 +741,59 @@ describe('playbooks > edit', () => {
                         });
                 });
             });
-        });
-    };
 
-    describe('actions toggled linkruntoexistingchannelenabled=OFF', () => {
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-        commonActionTests();
-    });
+            describe('link to an existing channel setting', () => {
+                it('can be checked', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
-        let testPlaybook;
+                    // # select the action section.
+                    cy.get('#actions #link-existing-channel').within(() => {
+                        // * Verify that the toggle is unchecked and input is disabled
+                        cy.get('input[type=radio]').should('not.be.checked');
+                        cy.get('input[type=text]').should('be.disabled');
 
-        before(() => {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                    featureFlagPrevValue = prevValue;
-                });
-            });
+                        // # click radio
+                        cy.get('input[type=radio]').click();
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-
-        after(() => {
-            if (!featureFlagPrevValue) {
-                cy.apiLogin(testSysadmin).then(() => {
-                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-                });
-            }
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-
-        beforeEach(() => {
-            // # Create a playbook
-            cy.apiCreateTestPlaybook({
-                teamId: testTeam.id,
-                title: 'Playbook (' + Date.now() + ')',
-                userId: testUser.id,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-            });
-        });
-
-        commonActionTests();
-
-        describe('link to an existing channel setting', () => {
-            it('can be checked', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-
-                // # select the action section.
-                cy.get('#actions #link-existing-channel').within(() => {
-                    // * Verify that the toggle is unchecked and input is disabled
-                    cy.get('input[type=radio]').should('not.be.checked');
-                    cy.get('input[type=text]').should('be.disabled');
-
-                    // # click radio
-                    cy.get('input[type=radio]').click();
-
-                    // * Verify that the toggle is checked and input is enabled
-                    cy.get('input[type=radio]').should('be.checked');
-                    cy.get('input[type=text]').should('not.be.disabled');
-                });
-            });
-
-            it('create channel choices are disabled when is checked', () => {
-                // # select the action section.
-                cy.get('#actions #create-new-channel').within(() => {
-                    // * Verify that the toggle is unchecked and inputs are disabled
-                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
-                    cy.get('label input[type=radio]').should('be.disabled');
-                    cy.get('button').should('be.disabled');
-                });
-            });
-
-            it.skip('can fill a channel and is persisted', () => {
-                cy.get('#actions #link-existing-channel').within(() => {
-                    cy.findByText('Select a channel').click().type('Town{enter}');
+                        // * Verify that the toggle is checked and input is enabled
+                        cy.get('input[type=radio]').should('be.checked');
+                        cy.get('input[type=text]').should('not.be.disabled');
+                    });
                 });
 
-                cy.reload();
-
-                // * wait for page to load
-                cy.get('h1').should('be.visible');
-
-                cy.get('#actions #create-new-channel').within(() => {
-                    // * Verify that the toggle is unchecked and inputs are disabled
-                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
-                    cy.get('label input[type=radio]').should('be.disabled');
-                    cy.get('button').should('be.disabled');
+                it('create channel choices are disabled when is checked', () => {
+                    // # select the action section.
+                    cy.get('#actions #create-new-channel').within(() => {
+                        // * Verify that the toggle is unchecked and inputs are disabled
+                        cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                        cy.get('label input[type=radio]').should('be.disabled');
+                        cy.get('button').should('be.disabled');
+                    });
                 });
-                cy.get('#actions #link-existing-channel').within(() => {
-                    // * Verify that the toggle is checked and input is enabled
-                    cy.get('input[type=radio]').should('be.checked');
-                    cy.get('input[type=text]').should('not.be.disabled');
-                    cy.findByText('Town Square').should('exist');
+
+                it.skip('can fill a channel and is persisted', () => {
+                    cy.get('#actions #link-existing-channel').within(() => {
+                        cy.findByText('Select a channel').click().type('Town{enter}');
+                    });
+
+                    cy.reload();
+
+                    // * wait for page to load
+                    cy.get('h1').should('be.visible');
+
+                    cy.get('#actions #create-new-channel').within(() => {
+                        // * Verify that the toggle is unchecked and inputs are disabled
+                        cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                        cy.get('label input[type=radio]').should('be.disabled');
+                        cy.get('button').should('be.disabled');
+                    });
+                    cy.get('#actions #link-existing-channel').within(() => {
+                        // * Verify that the toggle is checked and input is enabled
+                        cy.get('input[type=radio]').should('be.checked');
+                        cy.get('input[type=text]').should('not.be.disabled');
+                        cy.findByText('Town Square').should('exist');
+                    });
                 });
             });
         });

@@ -44,7 +44,6 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel,
     selectExperimentalFeatures,
     getRun,
-    selectLinkRunToExistingChannelEnabled,
     globalSettings,
     isCurrentUserAdmin,
     noopSelector,
@@ -284,10 +283,6 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
-}
-
-export function useLinkRunToExistingChannelEnabled() {
-    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been

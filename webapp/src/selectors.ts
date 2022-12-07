@@ -284,7 +284,6 @@ export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) 
 };
 
 export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
-export const selectLinkRunToExistingChannelEnabled = (state: GlobalState) => Boolean(globalSettings(state)?.link_run_to_existing_channel_enabled);
 
 // Select tasks assigned to the current user, or unassigned but belonging to a run owned by the
 // current user.

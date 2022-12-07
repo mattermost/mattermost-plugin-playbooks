@@ -34,7 +34,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {
@@ -53,7 +53,7 @@ import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
-import {displayEditPlaybookAccessModal, openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunNewModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 
@@ -260,29 +260,17 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
     const refreshLHS = useLHSRefresh();
-    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                if (isLinkRunToExistingChannelEnabled) {
-                    dispatch(openPlaybookRunNewModal({
-                        onRunCreated: (runId, channelId) => {
-                            navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
-                            refreshLHS();
-                        },
-                        playbookId: playbook.id,
-                        teamId: team.id,
-                    }));
-                } else {
-                    dispatch(openPlaybookRunModal(
-                        playbook.id,
-                        playbook.default_owner_enabled ? playbook.default_owner_id : null,
-                        playbook.description,
-                        team.id,
-                        team.name,
-                        refreshLHS
-                    ));
-                }
+                dispatch(openPlaybookRunNewModal({
+                    onRunCreated: (runId, channelId) => {
+                        navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                        refreshLHS();
+                    },
+                    playbookId: playbook.id,
+                    teamId: team.id,
+                }));
             }}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}

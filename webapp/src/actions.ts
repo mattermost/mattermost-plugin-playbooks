@@ -9,7 +9,6 @@ import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
-import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
@@ -100,17 +99,6 @@ export function startPlaybookRun(teamId: string, postId?: string) {
 
         await clientExecuteCommand(dispatch, getState, command, teamId);
     };
-}
-
-export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
-    return modals.openModal(makePlaybookRunModalDefinition(
-        playbookId,
-        defaultOwnerId,
-        description,
-        teamId,
-        teamName,
-        refreshLHS
-    ));
 }
 
 type newRunModalProps = {

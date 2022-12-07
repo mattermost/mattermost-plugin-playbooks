@@ -13,7 +13,6 @@ import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 import {showPlaybookActionsModal} from 'src/actions';
-import {useLinkRunToExistingChannelEnabled} from 'src/hooks/general';
 import {SecondaryButtonLarger} from 'src/components/backstage/playbook_editor/controls';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
@@ -32,7 +31,6 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
     const dispatch = useDispatch();
     const teamId = useSelector(getCurrentTeamId);
     const archived = playbook.delete_at !== 0;
-    const linkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -67,7 +65,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
 
     return (
         <Container>
-            {linkRunToExistingChannelEnabled && <AutomationHeader id={'link-existing-channel'}>
+            <AutomationHeader id={'link-existing-channel'}>
                 <AutomationTitle
                     css={{alignSelf: 'flex-start'}}
                 >
@@ -93,7 +91,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         isMulti={false}
                     />
                 </SelectorWrapper>
-            </AutomationHeader>}
+            </AutomationHeader>
             <AutomationHeader id={'create-new-channel'}>
                 <AutomationTitle css={{alignSelf: 'flex-start'}} >
                     <ChannelModeRadio
