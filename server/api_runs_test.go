@@ -19,6 +19,19 @@ func TestRunCreation(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
+	incompletePlaybookId, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "TestPlaybook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		ChannelMode: client.PlaybookRunLinkExistingChannel,
+		ChannelID:   "",
+	})
+	require.NoError(t, err)
+
 	t.Run("dialog requests", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			dialogRequest   model.SubmitDialogRequest
@@ -137,6 +150,21 @@ func TestRunCreation(t *testing.T) {
 					Submission: map[string]interface{}{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "bad userid",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.Error(t, err)
+					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+				},
+			},
+			"invalid: missing channelid": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: incompletePlaybookId,
+						app.DialogFieldNameKey:       "run number 1",
 					},
 				},
 				expected: func(t *testing.T, result *http.Response, err error) {

@@ -483,6 +483,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
+		if source == "dialog" && playbook.ChannelMode == app.PlaybookRunLinkExistingChannel && playbookRun.ChannelID == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is configured to be linked to existing channel but no channel is configured. Run can not be created from dialog")
+		}
+
 		if createPublicRun == nil {
 			public = pb.CreatePublicPlaybookRun
 		}
