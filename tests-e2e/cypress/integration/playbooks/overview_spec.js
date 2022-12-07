@@ -157,7 +157,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
