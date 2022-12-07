@@ -19,7 +19,7 @@ func TestRunCreation(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	incompletePlaybookId, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	incompletePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "TestPlaybook",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -163,7 +163,7 @@ func TestRunCreation(t *testing.T) {
 					UserId: e.RegularUser.Id,
 					State:  "{}",
 					Submission: map[string]interface{}{
-						app.DialogFieldPlaybookIDKey: incompletePlaybookId,
+						app.DialogFieldPlaybookIDKey: incompletePlaybookID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
 				},
