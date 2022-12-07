@@ -647,7 +647,7 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 		return
 	}
 
-	ReturnJSON(w, playbookRun, http.StatusOK)
+	ReturnJSON(w, &playbookRun, http.StatusOK)
 }
 
 // getOwners handles the /runs/owners api endpoint.
