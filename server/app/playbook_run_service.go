@@ -3525,21 +3525,7 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 }
 
 func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *model.Post) {
-	// get channel runs
-	runsResult, err := s.store.GetPlaybookRuns(
-		RequesterInfo{
-			UserID:  "system",
-			IsAdmin: true,
-		},
-
-		PlaybookRunFilterOptions{
-			ChannelID: post.ChannelId,
-			Statuses:  []string{StatusInProgress},
-			Page:      0,
-			PerPage:   1000,
-		},
-	)
-
+	runIDs, err := s.store.GetPlaybookRunIDsForChannel(post.ChannelId)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return
@@ -3551,7 +3537,16 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 		return
 	}
 
-	for _, run := range runsResult.Items {
+	for _, runID := range runIDs {
+		// Get run
+		run, err := s.GetPlaybookRun(runID)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"run_id": runID,
+			}).Error("unable retrieve run from ID")
+			return
+		}
+
 		for checklistNum, checklist := range run.Checklists {
 			for itemNum, item := range checklist.Items {
 				for _, ta := range item.TaskActions {
@@ -3570,10 +3565,10 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 								telemetryTaskActionsTriggered,
 								map[string]any{
 									"trigger":        ta.Trigger.Type,
-									"playbookrun_id": run.ID,
+									"playbookrun_id": runID,
 								},
 							)
-							err := s.doActions(ta.Actions, run.ID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
+							err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 							if err != nil {
 								logrus.WithError(err).WithFields(logrus.Fields{
 									"checklistNum": checklistNum,
