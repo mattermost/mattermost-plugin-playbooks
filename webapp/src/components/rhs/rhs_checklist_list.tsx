@@ -11,7 +11,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
-import {GlobalState} from 'mattermost-webapp/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {

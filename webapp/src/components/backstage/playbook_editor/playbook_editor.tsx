@@ -9,7 +9,7 @@ import {useIntl} from 'react-intl';
 
 import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
-import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {fetchMyChannelsAndMembersREST} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch, useSelector} from 'react-redux';
 import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
@@ -61,7 +61,7 @@ const PlaybookEditor = () => {
         }
 
         dispatch(selectTeam(teamId));
-        dispatch(fetchMyChannelsAndMembers(teamId));
+        dispatch(fetchMyChannelsAndMembersREST(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id, playbookId]);
 

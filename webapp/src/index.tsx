@@ -6,8 +6,6 @@ import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-//@ts-ignore Webapp imports don't work properly
-import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
@@ -23,7 +21,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
-
+import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {
@@ -136,7 +134,7 @@ export default class Plugin {
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -199,6 +197,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
+        registry.registerRootComponent(LoginHook);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
@@ -287,13 +286,9 @@ export default class Plugin {
             lastActivityTime = now;
         };
         document.addEventListener('click', this.activityFunc);
-
-        // We have user activity right now because the plugin is loading
-        // so fire the first connect event.
-        notifyConnect();
     }
 
-    public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
+    public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);
@@ -312,6 +307,8 @@ export default class Plugin {
 
         this.doRegistrations(registry, store, graphqlClient);
 
+        // https://mattermost.atlassian.net/browse/MM-48872
+        // This is handled by LoginHook, but it doesn't seem compatible with e2e tests.
         // Grab global settings
         const getGlobalSettings = async () => {
             store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
