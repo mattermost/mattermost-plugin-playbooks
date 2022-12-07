@@ -172,7 +172,7 @@ describe('runs > run details page > status update', () => {
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Assert that message has been sent
-                cy.getLastPost().contains(testUser.username + ' requested a status update.');
+                cy.getLastPost().contains(`${testUser.username} requested a status update for ${testPublicPlaybook.name}.`);
             });
 
             it('requests and cancel', () => {
@@ -191,8 +191,8 @@ describe('runs > run details page > status update', () => {
                 // # Go to channel
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
-                // * Assert that message has been sent
-                cy.getLastPost().should('not.contain', testUser.username + ' requested a status update.');
+                // * Assert that message has not been sent
+                cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testPublicPlaybook.name}.`);
             });
         });
     });
@@ -280,7 +280,7 @@ describe('runs > run details page > status update', () => {
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Assert that message has been sent
-                cy.getLastPost().contains(testViewerUser.username + ' requested a status update.');
+                cy.getLastPost().contains(`${testUser.username} requested a status update for ${testPublicPlaybook.name}.`);
             });
         });
 
@@ -298,7 +298,7 @@ describe('runs > run details page > status update', () => {
                 cy.visit(`${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Assert that message has been sent
-                cy.getLastPost().should('not.contain', testViewerUser.username + ' requested a status update.');
+                cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testPublicPlaybook.name}].`);
             });
         });
     });

@@ -961,7 +961,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s marked this run as finished.", user.Username)
+	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
@@ -1150,7 +1150,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s changed this run's status from Finished to In Progress.", user.Username)
+	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
@@ -2764,7 +2764,7 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 	}
 
 	return &model.Post{
-		Message:   fmt.Sprintf("@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n", publisherUser.Username, retrospectiveURL),
+		Message:   fmt.Sprintf("@channel Retrospective for [%s](%s) has been published by @%s\n[See the full retrospective](%s)\n", playbookRunToPublish.Name, GetRunDetailsRelativeURL(playbookRunToPublish.ID), publisherUser.Username, retrospectiveURL),
 		Type:      "custom_retro",
 		ChannelId: playbookRunToPublish.ChannelID,
 		Props:     props,
@@ -2794,7 +2794,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to get canceler user")
 	}
 
-	if _, err = s.poster.PostMessage(playbookRunToCancel.ChannelID, "@channel Retrospective has been canceled by @%s\n", cancelerUser.Username); err != nil {
+	if _, err = s.poster.PostMessage(playbookRunToCancel.ChannelID, "@channel Retrospective for [%s](%s) has been canceled by @%s\n", playbookRunToCancel.Name, GetRunDetailsRelativeURL(playbookRunID), cancelerUser.Username); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
@@ -2875,7 +2875,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		PostID:        post.Id,
 		SubjectUserID: requesterID,
 		CreatorUserID: requesterID,
-		Summary:       fmt.Sprintf("@%s requested a status update", requesterUser.Username),
+		Summary:       fmt.Sprintf("@%s requested a status update for [%s](%s)", requesterUser.Username, playbookRun.Name, GetRunDetailsRelativeURL(playbookRunID)),
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
