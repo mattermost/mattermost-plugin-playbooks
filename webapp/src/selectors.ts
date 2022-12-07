@@ -130,15 +130,6 @@ export const currentPlaybookRun = createSelector(
 
 const emptyChecklistState = {} as Record<number, boolean>;
 
-export const playbookRunsInCurrentChannel = createSelector(
-    'playbookRunsInCurrentChannel',
-    myPlaybookRuns,
-    getCurrentChannelId,
-    (playbookRuns, channelId) => Object
-        .values(playbookRuns)
-        .filter((playbookRun) => playbookRun.channel_id === channelId)
-);
-
 export const currentChecklistCollapsedState = (stateKey: string) => createSelector(
     'currentChecklistCollapsedState',
     pluginState,
