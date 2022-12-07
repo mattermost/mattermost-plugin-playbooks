@@ -157,7 +157,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
@@ -319,7 +319,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # Click Run Playbook
-        cy.findByTestId('run-playbook').click({force: true});
+        cy.findByTestId('run-playbook').click();
 
         // # Enter the run name
         cy.findByTestId('run-name-input').clear().type('run1234567');
@@ -414,7 +414,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify that channel configuration matches playbook config
             cy.findByTestId('link-existing-channel-radio').should('not.be.checked');
