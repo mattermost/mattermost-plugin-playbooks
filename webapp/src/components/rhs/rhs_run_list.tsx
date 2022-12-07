@@ -413,7 +413,6 @@ const CardWrapper = styled.div<{progress: number}>`
         border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
     }
 `;
-`;
 
 const CardContainer = styled.div`
     display: flex;

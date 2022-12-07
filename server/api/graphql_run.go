@@ -12,10 +12,16 @@ type RunResolver struct {
 	app.PlaybookRun
 }
 
+// Progress is a computed atrtibute (not stored in database) which
+// returns the % of tasks that are closed (checked or skipped) from the total:
+// - 0 -> no tasks closed
+// - 0.3 -> 30% of tasks closed
+// - 1 -> all tasks closed
 func (r *RunResolver) Progress() float64 {
-	var total, closed float64
+	var closed float64
+	var total int
 	for _, checklist := range r.PlaybookRun.Checklists {
-		total += float64(len(checklist.Items))
+		total += len(checklist.Items)
 		for _, item := range checklist.Items {
 			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
 				closed++
@@ -25,7 +31,7 @@ func (r *RunResolver) Progress() float64 {
 	if total == 0 {
 		return 1
 	}
-	return closed / total
+	return closed / float64(total)
 }
 
 func (r *RunResolver) CreateAt() float64 {
