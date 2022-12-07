@@ -12,7 +12,6 @@ import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
 
-import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
@@ -67,7 +66,6 @@ import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
-import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
@@ -314,10 +312,6 @@ export default class Plugin {
             store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
         };
         getGlobalSettings();
-
-        // Grab roles
-        //@ts-ignore
-        store.dispatch(loadRolesIfNeeded([PlaybookRole.Member, PlaybookRole.Admin]));
 
         this.userActivityWatch();
 
