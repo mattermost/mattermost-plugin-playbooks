@@ -68,7 +68,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command.AddCommand(run)
 
 	finish := model.NewAutocompleteData("finish", "",
-		"Finishes the playbook run associated with the current channel")
+		"Finishes a playbook run associated with the current channel")
 	finish.AddDynamicListArgument(
 		"List of channel runs is loading",
 		"api/v0/runs/runs-autocomplete", true)
