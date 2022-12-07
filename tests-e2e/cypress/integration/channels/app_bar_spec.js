@@ -8,8 +8,6 @@
 
 import {onlyOn} from '@cypress/skip-test';
 
-import * as TIMEOUTS from '../../fixtures/timeouts';
-
 describe('channels > App Bar', () => {
     let testTeam;
     let testUser;
