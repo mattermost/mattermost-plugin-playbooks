@@ -399,14 +399,20 @@ const CardWrapper = styled.div<{progress: number}>`
     margin: 0;
     padding:0;
     border-radius: 4px;
+    position: relative;
+
     &:after {
-        border-bottom: 2px solid var(--online-indicator);
         content: '';
         display: block;
-        // sad hack to make the progress bar work with border-radius
-        margin: 0 5px;
-        width: ${({progress}) => (progress > 98 ? 98 : progress)}%;
+        position: absolute;
+        right: calc(${({progress}) => 100 - progress}% + 1px);
+        bottom: 1px;
+        left: 1px;
+        border-bottom: 2px solid var(--online-indicator);
+        border-bottom-left-radius: inherit;
+        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
     }
+`;
 `;
 
 const CardContainer = styled.div`
