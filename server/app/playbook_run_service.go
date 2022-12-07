@@ -218,10 +218,6 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
-	if pb != nil && pb.ChannelMode == PlaybookRunLinkExistingChannel && playbookRun.ChannelID == "" {
-		return nil, errors.New("channel id not specified to link the run")
-	}
-
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -887,7 +883,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
 			s.configService.GetManifest().Id,
 			playbookRunID),
-		Dialog:    *s.newFinishPlaybookRunDialog(numOutstanding),
+		Dialog:    *s.newFinishPlaybookRunDialog(currentPlaybookRun, numOutstanding),
 		TriggerId: triggerID,
 	}
 
@@ -2422,12 +2418,13 @@ func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel
 	return model.ChannelGuestRoleId, model.ChannelUserRoleId, model.ChannelAdminRoleId
 }
 
-func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {
-	message := "Are you sure you want to finish the run for all participants?"
+func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *PlaybookRun, outstanding int) *model.Dialog {
+	suffix := fmt.Sprintf("Are you sure you want to finish the run *%s* for all participants?", playbookRun.Name)
+	message := suffix
 	if outstanding == 1 {
-		message = "There is **1 outstanding task**. Are you sure you want to finish the run for all participants?"
+		message = "There is **1 outstanding task**. " + suffix
 	} else if outstanding > 1 {
-		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. Are you sure you want to finish the run for all participants?"
+		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. " + suffix
 	}
 
 	return &model.Dialog{
