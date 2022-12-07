@@ -5,12 +5,14 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import styled from 'styled-components';
 
 import {setRHSOpen} from 'src/actions';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
+import {navigateToChannel} from 'src/browser_routing';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
@@ -107,7 +109,7 @@ const defaultListOptions : RunListOptions = {
 // * Multiple active runs -> Runs list
 const RightHandSidebar = () => {
     useSetRHSState();
-
+    const currentTeam = useSelector(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
@@ -137,14 +139,23 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
+    const handleOnCreateRun = (runId: string, channelId: string) => {
+        if (channelId === currentChannelId) {
+            fetchedRuns.refetch();
+            setCurrentRunId(runId);
+            return;
+        }
+        navigateToChannel(currentTeam.name, channelId);
+    };
+
     // Not a channel
     if (!currentChannelId) {
-        return <RHSHome/>;
+        return <RHSHome onRunCreated={handleOnCreateRun}/>;
     }
 
     // No runs (ever) in this channel
     if (fetchedRuns.numRunsInProgress + fetchedRuns.numRunsFinished === 0) {
-        return <RHSHome/>;
+        return <RHSHome onRunCreated={handleOnCreateRun}/>;
     }
 
     // If we have a run selected and it's in the current channel show that
@@ -170,6 +181,7 @@ const RightHandSidebar = () => {
             }}
             options={listOptions}
             setOptions={setListOptions}
+            onRunCreated={handleOnCreateRun}
             getMore={getMoreRuns}
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}

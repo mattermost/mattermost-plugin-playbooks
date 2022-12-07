@@ -68,8 +68,6 @@ endif
 check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
-
-	@# Keep the version in sync with the command in .circleci/config.yml
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
 endif
 
@@ -108,7 +106,7 @@ endif
 webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && node skip_integrity_check.js
-	cd webapp && $(NPM) install
+	cd webapp && $(NPM) install --ignore-scripts --legacy-peer-deps
 	touch $@
 endif
 
