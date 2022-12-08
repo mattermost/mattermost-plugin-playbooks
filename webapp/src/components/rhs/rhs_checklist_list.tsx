@@ -285,7 +285,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                         if (viewerMode && onViewerModeInteract) {
                             onViewerModeInteract();
                         } else {
-                            dispatch(finishRun(playbookRun?.team_id || ''));
+                            dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
                         }
                     }}
                 >

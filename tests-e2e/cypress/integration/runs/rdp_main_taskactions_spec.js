@@ -610,4 +610,90 @@ describe('runs > task actions', () => {
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
     });
+
+    describe('keywords trigger - mark task as done, multiple runs in a channel', () => {
+        let testChannel;
+        let testPlaybookRun1;
+        let testPlaybookRun2;
+
+        const configureTaskAction = (run) => {
+            // # Visit the playbook run
+            cy.visit(`/playbooks/runs/${run.id}`);
+
+            // # Open the task actions modal
+            cy.findByText('Task Actions').click();
+
+            // # Add a keyword
+            cy.get('.modal-body').within(() => {
+                cy.get('input').eq(0).type('keyword1{enter}', {force: true});
+            });
+
+            // # Enable the trigger
+            cy.findByText('Mark the task as done').click();
+
+            // # Save the dialog
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * Verify configured actions
+            cy.findByText('1 action');
+            cy.apiGetPlaybookRun(run.id).then(({body: playbookRun}) => {
+                const trigger = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].trigger.payload);
+                const actions = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].actions[0].payload);
+
+                assert.deepEqual(trigger.keywords, ['keyword1']);
+                assert.deepEqual(trigger.user_ids, []);
+                assert.isTrue(actions.enabled);
+            });
+        };
+
+        beforeEach(() => {
+            cy.apiCreateChannel(testTeam.id, 'channel', 'Channel').then(({channel}) => {
+                testChannel = channel;
+
+                // # Run #1
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: `the run name ${Date.now()}`,
+                    ownerUserId: testUser.id,
+                    channelId: testChannel.id,
+                }).then((playbookRun) => {
+                    testPlaybookRun1 = playbookRun;
+                    configureTaskAction(testPlaybookRun1);
+                });
+
+                // # Run #2
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: `the run name ${Date.now()}`,
+                    ownerUserId: testUser.id,
+                    channelId: testChannel.id,
+                }).then((playbookRun) => {
+                    testPlaybookRun2 = playbookRun;
+                    configureTaskAction(testPlaybookRun2);
+                });
+            });
+        });
+
+        it('triggers', () => {
+            // # Attempt to activate trigger
+            cy.apiAddUserToChannel(testChannel.id, testUser2.id);
+            cy.postMessageAs({
+                sender: testUser2,
+                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                channelId: testChannel.id,
+            });
+
+            // * Verify action activated ion testPlaybookRun1
+            cy.apiGetPlaybookRun(testPlaybookRun1.id).then(({body: playbookRun}) => {
+                assert.equal(playbookRun.checklists[0].items[0].state, 'closed');
+            });
+
+            // * Verify action activated in testPlaybookRun2
+            cy.apiGetPlaybookRun(testPlaybookRun2.id).then(({body: playbookRun}) => {
+                assert.equal(playbookRun.checklists[0].items[0].state, 'closed');
+            });
+        });
+    });
 });

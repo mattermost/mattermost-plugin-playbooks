@@ -14,7 +14,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -67,6 +66,7 @@ func NewPlaybookRunHandler(
 	playbookRunsRouter.HandleFunc("/channels", withContext(handler.getChannels)).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete", withContext(handler.getChecklistAutocomplete)).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete-item", withContext(handler.getChecklistAutocompleteItem)).Methods(http.MethodGet)
+	playbookRunsRouter.HandleFunc("/runs-autocomplete", withContext(handler.getChannelRunsAutocomplete)).Methods(http.MethodGet)
 
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
@@ -617,36 +617,42 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
-				errors.Errorf("playbook run for channel id %s not found", channelID))
+	// get playbook runs for the specific channel and user
+	playbookRunsResult, err := h.playbookRunService.GetPlaybookRuns(
+		app.RequesterInfo{
+			UserID: userID,
+		},
 
-			return
-		}
+		app.PlaybookRunFilterOptions{
+			ChannelID: channelID,
+			Page:      0,
+			PerPage:   2,
+		},
+	)
+
+	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
-		c.logger.WithFields(logrus.Fields{
-			"user_id":         userID,
-			"playbook_run_id": playbookRunID,
-			"channel_id":      channelID,
-		}).Warn("User does not have permissions to get playbook run for channel")
+	playbookRuns := playbookRunsResult.Items
+	if len(playbookRuns) == 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
 			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
-	playbookRunToGet, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if len(playbookRuns) > 1 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "multiple runs in the channel", nil)
+		return
+	}
+
+	playbookRun := playbookRuns[0]
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	ReturnJSON(w, playbookRunToGet, http.StatusOK)
+	ReturnJSON(w, &playbookRun, http.StatusOK)
 }
 
 // getOwners handles the /runs/owners api endpoint.
@@ -984,6 +990,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 // reminderButtonUpdate handles the POST /runs/{id}/reminder/button-update endpoint, called when a
 // user clicks on the reminder interactive button
 func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
 	var requestData *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil || requestData == nil {
@@ -991,7 +998,6 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 		return
 	}
 
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(requestData.ChannelId)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "error getting playbook run",
 			errors.Wrapf(err, "reminderButtonUpdate failed to find playbookRunID for channelID: %s", requestData.ChannelId))
@@ -1091,17 +1097,18 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.Res
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunViewByChannel(userID, channelID)) {
-		return
-	}
-
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
+	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
+			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+	}
+	if len(playbookRuns) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
-	data, err := h.playbookRunService.GetChecklistItemAutocomplete(playbookRunID)
+	data, err := h.playbookRunService.GetChecklistItemAutocomplete(playbookRuns)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -1115,17 +1122,43 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(c *Context, w http.Respons
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunViewByChannel(userID, channelID)) {
+	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
+			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+	}
+	if len(playbookRuns) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
 		return
 	}
 
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
+	data, err := h.playbookRunService.GetChecklistAutocomplete(playbookRuns)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	data, err := h.playbookRunService.GetChecklistAutocomplete(playbookRunID)
+	ReturnJSON(w, data, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getChannelRunsAutocomplete(c *Context, w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	channelID := query.Get("channel_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
+			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+	}
+	if len(playbookRuns) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
+		return
+	}
+
+	data, err := h.playbookRunService.GetRunsAutocomplete(playbookRuns)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return

@@ -365,6 +365,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
         <CardWrapper progress={props.progress * 100}>
             <CardContainer
                 onClick={props.onClick}
+                data-testid='run-list-card'
             >
                 <TitleRow>{props.name}</TitleRow>
                 <PeopleRow>
