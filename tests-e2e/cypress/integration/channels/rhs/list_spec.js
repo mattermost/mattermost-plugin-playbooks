@@ -89,7 +89,7 @@ describe('channels > rhs > runlist', () => {
         cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
 
         // * Verify displayed options
-        cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns);
+        cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns + 1);
     });
 
     it('can click though', () => {

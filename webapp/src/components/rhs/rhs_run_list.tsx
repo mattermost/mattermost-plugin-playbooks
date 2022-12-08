@@ -204,7 +204,7 @@ const RHSRunList = (props: Props) => {
                             {loadingMore &&
                                 <StyledLoadingSpinner/>
                             }
-                            <StyledGiveFeedbackButton/>
+                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
                         </RunsList>
                     </Scrollbars>
                 }
@@ -230,7 +230,7 @@ const Header = styled.div`
 const RunsList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 0px 16px;
+    padding: 0px 16px 20px 16px;
     gap: 12px;
 `;
 
