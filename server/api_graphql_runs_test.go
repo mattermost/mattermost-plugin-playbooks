@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
@@ -20,10 +22,15 @@ func TestGraphQLRunList(t *testing.T) {
 	t.Run("list by participantOrFollower", func(t *testing.T) {
 		var rResultTest struct {
 			Data struct {
-				Runs []struct {
-					ID         string
-					Name       string
-					IsFavorite bool
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
 				}
 			}
 			Errors []struct {
@@ -34,9 +41,14 @@ func TestGraphQLRunList(t *testing.T) {
 		testRunsQuery := `
 		query Runs($userID: String!) {
 			runs(participantOrFollowerID: $userID) {
-				id
-				name
-				isFavorite
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
 			}
 		}
 		`
@@ -47,19 +59,25 @@ func TestGraphQLRunList(t *testing.T) {
 		}, &rResultTest)
 		require.NoError(t, err)
 
-		assert.Len(t, rResultTest.Data.Runs, 1)
-		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
-		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
-		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 1, rResultTest.Data.Runs.TotalCount)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs.Edges[0].Node.ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs.Edges[0].Node.Name)
+		assert.False(t, rResultTest.Data.Runs.Edges[0].Node.IsFavorite)
 	})
 
 	t.Run("list by channel", func(t *testing.T) {
 		var rResultTest struct {
 			Data struct {
-				Runs []struct {
-					ID         string
-					Name       string
-					IsFavorite bool
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
 				}
 			}
 			Errors []struct {
@@ -70,9 +88,14 @@ func TestGraphQLRunList(t *testing.T) {
 		testRunsQuery := `
 		query Runs($channelID: String!) {
 			runs(channelID: $channelID) {
-				id
-				name
-				isFavorite
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
 			}
 		}
 		`
@@ -83,10 +106,97 @@ func TestGraphQLRunList(t *testing.T) {
 		}, &rResultTest)
 		require.NoError(t, err)
 
-		assert.Len(t, rResultTest.Data.Runs, 1)
-		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs[0].ID)
-		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs[0].Name)
-		assert.False(t, rResultTest.Data.Runs[0].IsFavorite)
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 1, rResultTest.Data.Runs.TotalCount)
+		assert.Equal(t, e.BasicRun.ID, rResultTest.Data.Runs.Edges[0].Node.ID)
+		assert.Equal(t, e.BasicRun.Name, rResultTest.Data.Runs.Edges[0].Node.Name)
+		assert.False(t, rResultTest.Data.Runs.Edges[0].Node.IsFavorite)
+	})
+
+	// Make more runs in the channel
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Basic create",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+		ChannelID:   e.BasicRun.ChannelID,
+	})
+	require.NoError(e.T, err)
+	require.NotNil(e.T, run)
+
+	run2, err2 := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Basic create",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+		ChannelID:   e.BasicRun.ChannelID,
+	})
+	require.NoError(e.T, err2)
+	require.NotNil(e.T, run2)
+
+	t.Run("paging", func(t *testing.T) {
+		var rResultTest struct {
+			Data struct {
+				Runs struct {
+					TotalCount int
+					Edges      []struct {
+						Node struct {
+							ID         string
+							Name       string
+							IsFavorite bool
+						}
+					}
+					PageInfo struct {
+						EndCursor   string
+						HasNextPage bool
+					}
+				}
+			}
+			Errors []struct {
+				Message string
+				Path    string
+			}
+		}
+		testRunsQuery := `
+		query Runs($channelID: String!, $first: Int, $after: String) {
+			runs(channelID: $channelID, first: $first, after: $after) {
+				totalCount
+				edges {
+					node {
+						id
+						name
+						isFavorite
+					}
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+		`
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2},
+		}, &rResultTest)
+		require.NoError(t, err)
+
+		assert.Len(t, rResultTest.Data.Runs.Edges, 2)
+		assert.Equal(t, 3, rResultTest.Data.Runs.TotalCount)
+		assert.True(t, rResultTest.Data.Runs.PageInfo.HasNextPage)
+		assert.Equal(t, "1", rResultTest.Data.Runs.PageInfo.EndCursor)
+
+		err2 := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testRunsQuery,
+			OperationName: "Runs",
+			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2, "after": "1"},
+		}, &rResultTest)
+		require.NoError(t, err2)
+
+		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
+		assert.Equal(t, 3, rResultTest.Data.Runs.TotalCount)
+		assert.False(t, rResultTest.Data.Runs.PageInfo.HasNextPage)
 	})
 }
 
@@ -94,7 +204,6 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// create a third user to test multiple add/remove
 	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
@@ -102,6 +211,13 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
+	require.NoError(t, err)
+
+	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(&model.User{
+		Email:    "notinteam@example.com",
+		Username: "notinteam",
+		Password: "Password123!",
+	})
 	require.NoError(t, err)
 
 	// if the test fits this testTable structure, add it here
@@ -163,6 +279,22 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
 			ExpectedChannelMembers:   []string{e.RegularUser.Id},
 			UnexpectedChannelMembers: []string{e.RegularUser2.Id, user3.Id},
+		},
+		{
+			Name: "Add 2 participants, actions OFF, one from another different team",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Public:                              true,
+				CreatePublicPlaybookRun:             true,
+				CreateChannelMemberOnNewParticipant: false,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				OwnerUserID: e.RegularUser.Id,
+			},
+			ParticipantsToBeAdded:    []string{e.RegularUser2.Id, userNotInTeam.Id},
+			ExpectedRunParticipants:  []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedRunFollowers:     []string{e.RegularUser.Id, e.RegularUser2.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id},
 		},
 	}
 
@@ -563,6 +695,92 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 
 }
 
+func TestSetRunFavorite(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	t.Run("change favorite to true", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+	})
+
+	t.Run("from true to false returns false", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+
+		// now that we have this run favorite set to true, if we change it again,
+		// it should return false
+		response, err = setRunFavorite(e.PlaybooksClient, run.ID, false)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err = getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+	})
+
+	t.Run("if already true, should give error", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.Empty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+
+		response, err = setRunFavorite(e.PlaybooksClient, run.ID, true)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+	})
+
+	t.Run("if already false, should give error", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClient, run.ID, false)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+	})
+
+	t.Run("if user is not from the team", func(t *testing.T) {
+		run := createRun()
+
+		response, err := setRunFavorite(e.PlaybooksClientNotInTeam, run.ID, true)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+
+		isFavorite, err := getRunFavorite(e.PlaybooksClient, run.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+	})
+}
+
 func TestUpdateRun(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -679,6 +897,99 @@ func TestUpdateRun(t *testing.T) {
 	})
 }
 
+func TestUpdateRunTaskActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("task actions mutation create and update", func(t *testing.T) {
+		createNewRunWithNoChecklists := func(t *testing.T) *client.PlaybookRun {
+			t.Helper()
+
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+				PlaybookID:  e.BasicPlaybook.ID,
+			})
+			require.NoError(t, err)
+			require.Len(t, run.Checklists, 0)
+
+			return run
+		}
+		run := createNewRunWithNoChecklists(t)
+		// Create a valid, empty checklist
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "First Checklist",
+			Items: []client.ChecklistItem{{
+				Title: "First item",
+			}},
+		})
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 1)
+		require.Len(t, run.Checklists[0].Items, 1)
+
+		// create a new task action
+		triggerPayload := "{\"keywords\":[\"one\", \"two\"], \"user_ids\":[\"abc\"]}"
+		actionPayload := "{\"enabled\":false}"
+		response, err := UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: triggerPayload,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: actionPayload,
+				}},
+			},
+		})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the taskaction is created
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, editedRun.Checklists, 1)
+		require.Len(t, editedRun.Checklists[0].Items, 1)
+		require.Len(t, editedRun.Checklists[0].Items[0].TaskActions, 1)
+		require.Equal(t, string(app.KeywordsByUsersTriggerType), editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Type)
+		require.Equal(t, triggerPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
+
+		// Edit the task action
+		newTriggerPayload := "{\"keywords\":[\"one\", \"two\", \"edited\"], \"user_ids\":[\"abc\"]}"
+		response, err = UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: newTriggerPayload,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: actionPayload,
+				}},
+			},
+		})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Make sure the taskaction is updated
+		editedRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, editedRun.Checklists, 1)
+		require.Len(t, editedRun.Checklists[0].Items, 1)
+		require.Len(t, editedRun.Checklists[0].Items[0].TaskActions, 1)
+		require.Equal(t, string(app.KeywordsByUsersTriggerType), editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Type)
+		require.Equal(t, newTriggerPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, editedRun.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
+	})
+}
+
 // AddParticipants adds participants to the run
 func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
 	mutation := `
@@ -739,6 +1050,60 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 	return response, err
 }
 
+func setRunFavorite(c *client.Client, playbookRunID string, fav bool) (graphql.Response, error) {
+	mutation := `mutation SetRunFavorite($id: String!, $fav: Boolean!) {
+		setRunFavorite(id: $id, fav: $fav)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "SetRunFavorite",
+		Variables: map[string]interface{}{
+			"id":  playbookRunID,
+			"fav": fav,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func getRunFavorite(c *client.Client, playbookRunID string) (bool, error) {
+	query := `
+	query GetRunFavorite($id: String!) {
+		run(id: $id) {
+			isFavorite
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetRunFavorite",
+		Variables: map[string]interface{}{
+			"id": playbookRunID,
+		},
+	}, &response)
+
+	if err != nil {
+		return false, err
+	}
+	if len(response.Errors) > 0 {
+		return false, fmt.Errorf("error from query %v", response.Errors)
+	}
+
+	favoriteResponse := struct {
+		Run struct {
+			IsFavorite bool `json:"isFavorite"`
+		} `json:"run"`
+	}{}
+	err = json.Unmarshal(response.Data, &favoriteResponse)
+	if err != nil {
+		return false, err
+	}
+	return favoriteResponse.Run.IsFavorite, nil
+}
+
 // UpdateRun updates the run
 func updateRun(c *client.Client, playbookRunID string, updates map[string]interface{}) (graphql.Response, error) {
 	mutation := `
@@ -753,6 +1118,27 @@ func updateRun(c *client.Client, playbookRunID string, updates map[string]interf
 		Variables: map[string]interface{}{
 			"id":      playbookRunID,
 			"updates": updates,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum float64, itemNum float64, taskActions *[]app.TaskAction) (graphql.Response, error) {
+	mutation := `
+		mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
+			updateRunTaskActions(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, taskActions: $taskActions)
+		}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdateRunTaskActions",
+		Variables: map[string]interface{}{
+			"runID":        playbookRunID,
+			"checklistNum": checklistNum,
+			"itemNum":      itemNum,
+			"taskActions":  taskActions,
 		},
 	}, &response)
 

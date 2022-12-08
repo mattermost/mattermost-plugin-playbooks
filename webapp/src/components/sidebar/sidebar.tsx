@@ -9,7 +9,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {OVERLAY_DELAY} from 'src/constants';
 
-import {renderThumbVertical, renderTrackHorizontal, renderView} from '../rhs/rhs_shared';
+import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import Group from './group';
 

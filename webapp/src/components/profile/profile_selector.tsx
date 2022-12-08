@@ -18,7 +18,9 @@ import styled from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {FilterButton} from '../backstage/styles';
+
+import {FilterButton} from 'src/components/backstage/styles';
+
 import Dropdown from 'src/components/dropdown';
 
 export interface Option {

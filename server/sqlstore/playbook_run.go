@@ -418,6 +418,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
+		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
 	}, nil
@@ -1419,6 +1420,10 @@ func (s *playbookRunStore) RemoveParticipants(playbookRunID string, userIDs []st
 }
 
 func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []string, isParticipating bool) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	query := sq.
 		Insert("IR_Run_Participants").
 		Columns("IncidentID", "UserID", "IsParticipant")

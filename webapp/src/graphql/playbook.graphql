@@ -48,8 +48,18 @@ query Playbook($id: String!) {
 				command
 				command_last_run: commandLastRun
 				due_date: dueDate
+				task_actions: taskActions {
+					trigger: trigger {
+						type
+						payload
+					}
+					actions: actions {
+						type
+						payload
+					}
+				}
 			}
-        }
+        	}
 		members {
 			user_id: userID
 			roles
@@ -71,19 +81,51 @@ mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 
 query PlaybookLHS($userID: String!, $teamID: String!) {
 	runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
-		id
-		name
-		isFavorite
-		playbookID
-		ownerUserID
-		participantIDs
-		metadata { followers }
+		edges {
+			node {
+				id
+				name
+				isFavorite
+				playbookID
+				ownerUserID
+				participantIDs
+				metadata { followers }
+			}
+		}
 	}
 	playbooks (teamID: $teamID, withMembershipOnly: true) {
 		id
 		title
 		isFavorite
 		public
+	}
+}
+
+fragment PlaybookModalFields on Playbook {
+	id
+	title
+	isFavorite
+	public
+	lastRunAt
+	activeRuns
+}
+
+query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {
+	channelPlaybooks: 	runs(
+		channelID: $channelID,
+		first: 1000,
+	) {
+		edges {
+			node {
+				playbookID
+			}
+		}
+	}
+	yourPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: true, searchTerm: $searchTerm) {
+		...PlaybookModalFields
+	}
+	allPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: false, searchTerm: $searchTerm) {
+		...PlaybookModalFields
 	}
 }
 

@@ -5,7 +5,7 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from '@mattermost/types/posts';
-import {WebSocketMessage} from 'mattermost-redux/types/websocket';
+import {WebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 

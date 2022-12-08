@@ -9,14 +9,14 @@ import {useUpdateEffect} from 'react-use';
 import {
     isFavoriteItem,
 } from 'src/client';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useSetRunFavorite} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
-    const updateRun = useUpdateRun(runID);
+    const setRunFavorite = useSetRunFavorite(runID);
 
     useEffect(() => {
         isFavoriteItem(teamID, runID, CategoryItemType.RunItemType)
@@ -25,13 +25,8 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     }, [teamID, runID]);
 
     const toggleFavorite = () => {
-        if (isFavoriteRun) {
-            updateRun({isFavorite: false});
-            setIsFavoriteRun(false);
-            return;
-        }
-        updateRun({isFavorite: true});
-        setIsFavoriteRun(true);
+        setRunFavorite(!isFavoriteRun);
+        setIsFavoriteRun(!isFavoriteRun);
     };
     return [isFavoriteRun, toggleFavorite];
 };

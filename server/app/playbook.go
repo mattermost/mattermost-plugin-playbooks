@@ -194,6 +194,13 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+func (p Playbook) GetRunChannelID() string {
+	if p.ChannelMode == PlaybookRunLinkExistingChannel {
+		return p.ChannelID
+	}
+	return ""
+}
+
 // Checklist represents a checklist in a playbook.
 type Checklist struct {
 	// ID is the identifier of the checklist.
@@ -253,6 +260,9 @@ type ChecklistItem struct {
 	// of the checklist item. 0 if not set.
 	// Playbook can have only relative timstamp, run can have only absolute timestamp.
 	DueDate int64 `json:"due_date" export:"due_date"`
+
+	// TaskActions is an array of all the task actions associated with this task.
+	TaskActions []TaskAction `json:"task_actions" export:"-"`
 }
 
 type GetPlaybooksResults struct {

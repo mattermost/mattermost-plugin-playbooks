@@ -31,6 +31,20 @@ interface Props {
     trigger: 'run_details'|'playbooks_lhs'|'channel_rhs'
 }
 
+const FollowButton = styled(TertiaryButton)`
+    font-family: 'Open Sans';
+    font-size: 12px;
+    height: 24px;
+    padding: 0 10px;
+`;
+
+const UnfollowButton = styled(SecondaryButton)`
+    font-family: 'Open Sans';
+    font-size: 12px;
+    height: 24px;
+    padding: 0 10px;
+`;
+
 export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
@@ -41,20 +55,6 @@ export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {
         return null;
     }
     const {isFollowing, followers, setFollowers} = followState;
-
-    const FollowButton = styled(TertiaryButton)`
-        font-family: 'Open Sans';
-        font-size: 12px;
-        height: 24px;
-        padding: 0 10px;
-    `;
-
-    const UnfollowButton = styled(SecondaryButton)`
-        font-family: 'Open Sans';
-        font-size: 12px;
-        height: 24px;
-        padding: 0 10px;
-    `;
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;

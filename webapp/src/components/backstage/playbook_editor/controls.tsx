@@ -34,8 +34,8 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
-import {useToaster} from '../toast_banner';
+import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {
     duplicatePlaybook as clientDuplicatePlaybook,
@@ -50,19 +50,27 @@ import {
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import CheckboxInput from '../runs_list/checkbox_input';
 
-import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
+
+import {displayEditPlaybookAccessModal, openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
-import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
+
+import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
+
 import CopyLink from 'src/components/widgets/copy_link';
-import useConfirmPlaybookRestoreModal from '../restore_playbook_modal';
+
+import useConfirmPlaybookRestoreModal from 'src/components/backstage/restore_playbook_modal';
+
 import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
-import {StyledDropdownMenuItem} from '../shared';
+
+import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
+
 import {copyToClipboard} from 'src/utils';
-import {useLHSRefresh} from '../lhs_navigation';
-import useConfirmPlaybookConvertPrivateModal from '../convert_private_playbook_modal';
+
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import useConfirmPlaybookConvertPrivateModal from 'src/components/backstage/convert_private_playbook_modal';
 
 type ControlProps = {
     playbook: {
@@ -252,18 +260,29 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
     const refreshLHS = useLHSRefresh();
-
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                dispatch(openPlaybookRunModal(
-                    playbook.id,
-                    playbook.default_owner_enabled ? playbook.default_owner_id : null,
-                    playbook.description,
-                    team.id,
-                    team.name,
-                    refreshLHS
-                ));
+                if (isLinkRunToExistingChannelEnabled) {
+                    dispatch(openPlaybookRunNewModal({
+                        onRunCreated: (runId, channelId) => {
+                            navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                            refreshLHS();
+                        },
+                        playbookId: playbook.id,
+                        teamId: team.id,
+                    }));
+                } else {
+                    dispatch(openPlaybookRunModal(
+                        playbook.id,
+                        playbook.default_owner_enabled ? playbook.default_owner_id : null,
+                        playbook.description,
+                        team.id,
+                        team.name,
+                        refreshLHS
+                    ));
+                }
             }}
             disabled={!enableRunPlaybook}
             title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}

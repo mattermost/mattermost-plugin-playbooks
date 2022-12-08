@@ -185,9 +185,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
-                        cy.get('#invite-users label input').should(
-                            'not.be.checked'
-                        );
+                        cy.get('#invite-users label input').should('not.be.checked');
                     });
                 });
 
@@ -1107,7 +1105,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it('allows selecting a category when enabled', () => {
+                it.skip('allows selecting a category when enabled', () => {
                     cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');

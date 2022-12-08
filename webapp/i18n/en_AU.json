@@ -761,5 +761,21 @@
     "BJNrYQ": "As a participant, you’ll be able to update the run summary, tick off tasks, post status updates and edit the retrospective.",
     "9X3jwi": "{icon} Cost",
     "36NwLv": "Manage run participants list",
-    "2BCWLD": "Configure channel"
+    "2BCWLD": "Configure channel",
+    "lqceIp": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>",
+    "a2r7Vb": "Private channel",
+    "VA1Q/S": "Public channel",
+    "ORJ0Hb": "There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run for all participants?",
+    "AG7PKJ": "Rename run",
+    "0boT49": "Are you sure you want to finish the run for all participants?",
+    "zxj2Gh": "Last updated {time}",
+    "yP3Ud4": "There are no runs in progress linked to this channel",
+    "tqAmbk": "Runs in progress",
+    "Z1sgPO": "View finished runs",
+    "RgQwWr": "Sort runs by",
+    "NNksk4": "",
+    "RC6rA2": "Recently created",
+    "Q/t0//": "Finished runs",
+    "AoNLta": "There are no finished runs linked to this channel",
+    "2NDgJq": "Last status update"
 }

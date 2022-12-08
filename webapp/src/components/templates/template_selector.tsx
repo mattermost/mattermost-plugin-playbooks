@@ -12,7 +12,8 @@ import {telemetryEventForTemplate, savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {setPlaybookDefaults} from 'src/types/playbook';
 import {usePlaybooksRouting} from 'src/hooks';
-import {useLHSRefresh} from '../backstage/lhs_navigation';
+
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';

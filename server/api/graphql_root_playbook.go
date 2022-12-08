@@ -14,14 +14,11 @@ import (
 type PlaybookRootResolver struct {
 }
 
-func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
-	ID string
-}) (*PlaybookResolver, error) {
+func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	playbookID := args.ID
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
@@ -34,6 +31,13 @@ func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	}
 
 	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
+	ID string
+}) (*PlaybookResolver, error) {
+	playbookID := args.ID
+	return getGraphqlPlaybook(ctx, playbookID)
 }
 
 func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
@@ -237,6 +241,9 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	if args.Updates.Checklists != nil {
 		cleanUpUpdateChecklist(*args.Updates.Checklists)
+		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
+		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
@@ -474,4 +481,26 @@ func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
 			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
 		}
 	}
+}
+
+// validateUpdateTaskActions validates the taskactions in the given checklist
+// NOTE: Any changes to this function must be made to function 'validateTaskActions' for the REST endpoint.
+func validateUpdateTaskActions(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if taskActions := item.TaskActions; taskActions != nil {
+				for _, ta := range *taskActions {
+					if err := app.ValidateTrigger(ta.Trigger); err != nil {
+						return err
+					}
+					for _, a := range ta.Actions {
+						if err := app.ValidateAction(a); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

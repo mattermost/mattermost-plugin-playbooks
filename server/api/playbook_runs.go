@@ -172,8 +172,9 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 		},
 		userID,
+		playbookRunCreateOptions.CreatePublicRun,
+		app.RunSourcePost,
 	)
-
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
 		return
@@ -251,15 +252,24 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+		return
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
+			ChannelID:   playbook.GetRunChannelID(),
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
 		},
 		request.UserId,
+		nil,
+		app.RunSourceDialog,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -411,7 +421,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -453,6 +463,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	// Copy data from playbook if needed
 	public := true
+	if createPublicRun != nil {
+		public = *createPublicRun
+	}
+
 	var playbook *app.Playbook
 	if playbookRun.PlaybookID != "" {
 		pb, err := h.playbookService.Get(playbookRun.PlaybookID)
@@ -469,10 +483,16 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, err
 		}
 
-		public = pb.CreatePublicPlaybookRun
+		if source == "dialog" && playbook.ChannelMode == app.PlaybookRunLinkExistingChannel && playbookRun.ChannelID == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is configured to be linked to existing channel but no channel is configured. Run can not be created from dialog")
+		}
+
+		if createPublicRun == nil {
+			public = pb.CreatePublicPlaybookRun
+		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
-		playbookRun.SetConfigurationFromPlaybook(*playbook)
+		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,

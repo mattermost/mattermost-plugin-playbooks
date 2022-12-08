@@ -12,7 +12,7 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {showRunActionsModal} from 'src/actions';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
-import DotMenu from 'src/components/dot_menu';
+import DotMenu, {TitleButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useManageRunMembership} from 'src/graphql/hooks';
@@ -146,7 +146,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
             show={showLeaveRunConfirm}
             title={formatMessage({defaultMessage: 'Confirm leave{isFollowing, select, true { and unfollow} other {}}'}, {isFollowing})}
             message={formatMessage({defaultMessage: 'When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'}, {isFollowing})}
-            confirmButtonText={formatMessage({defaultMessage: 'Leave and unfollow'})}
+            confirmButtonText={isFollowing ? formatMessage({defaultMessage: 'Leave and unfollow'}) : formatMessage({defaultMessage: 'Leave'})}
             onConfirm={() => {
                 onLeaveRun();
                 setLeaveRunConfirm(false);
@@ -182,16 +182,3 @@ const Title = styled.h1`
     white-space: nowrap;
 `;
 
-export const TitleButton = styled.div<{isActive: boolean}>`
-    padding: 2px 2px 2px 6px;
-    display: inline-flex;
-    border-radius: 4px;
-    color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
-    background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
-
-    min-width: 0;
-
-    &:hover {
-        background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    }
-`;

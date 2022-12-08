@@ -37,11 +37,13 @@ interface TriggerKeywordsProps {
     editable: boolean;
     keywords: string[];
     onUpdate: (newKeywords: string[]) => void;
+    testId?: string;
 }
 
-export const TriggerKeywords = ({editable, keywords, onUpdate}: TriggerKeywordsProps) => {
+export const TriggerKeywords = ({editable, keywords, onUpdate, testId}: TriggerKeywordsProps) => {
     return (
         <StyledKeywordsSelector
+            testId={testId}
             enabled={editable}
             placeholderText={'Type a keyword or phrase, then press Enter on your keyboard'}
             keywords={keywords}

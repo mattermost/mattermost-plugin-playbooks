@@ -23,6 +23,13 @@ export const navigateToPluginUrl = (urlPath: string) => {
     WebappUtils.browserHistory.push(pluginUrl(urlPath));
 };
 
+/**
+ * Navigate to channel given a channelId and teamName
+ */
+export const navigateToChannel = async (teamName: string, channelId: string) => {
+    navigateToUrl(`/${teamName}/channels/${channelId}`);
+};
+
 export const pluginErrorUrl = (type: string) => {
     return pluginUrl(`/error?type=${type}`);
 };

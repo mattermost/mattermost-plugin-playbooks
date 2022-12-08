@@ -11,22 +11,21 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
-import {setRHSViewingParticipants} from 'src/actions';
 
 interface Props {
     userIds: string[];
     onParticipate?: () => void;
+    setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RHSParticipants = (props: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
     const openMembersModal = useOpenMembersModalIfPresent();
 
-    const onShowParticipants = () => {
-        dispatch(setRHSViewingParticipants());
-        return false;
+    const showParticipants = () => {
+        props.setShowParticipants(true);
     };
+
     const becomeParticipant = (
         <Tooltip
             id={'rhs-participate'}
@@ -53,7 +52,7 @@ const RHSParticipants = (props: Props) => {
                     {props.onParticipate ? null : (
                         <LinkAddParticipants
                             to={'#'}
-                            onClick={onShowParticipants}
+                            onClick={showParticipants}
                         >
                             {formatMessage({defaultMessage: 'Add participant'})}
                             <OpenInNewIcon size={11}/>
@@ -72,7 +71,7 @@ const RHSParticipants = (props: Props) => {
             <UserRow
                 tabIndex={0}
                 role={'button'}
-                onClick={onShowParticipants}
+                onClick={showParticipants}
                 onKeyDown={(e) => {
                     // Handle Enter and Space as clicking on the button
                     if (e.keyCode === 13 || e.keyCode === 32) {
