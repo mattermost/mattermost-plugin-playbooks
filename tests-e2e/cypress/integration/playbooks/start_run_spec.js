@@ -53,7 +53,7 @@ describe('playbooks > start a run', () => {
     });
 
     // This data is intentionally changed here instead of via api
-    const fillPBE = ({name, summary, channelMode, channelNameToLink}) => {
+    const fillPBE = ({name, summary, channelMode, channelNameToLink, defaultOwnerEnabled}) => {
         // # fill channel name temaplte
         if (name) {
             cy.get('#create-new-channel input[type="text"]').clear().type('Channel template');
@@ -76,6 +76,19 @@ describe('playbooks > start a run', () => {
                 cy.findByText('Select a channel').click().type(`${channelNameToLink}{enter}`);
             });
         }
+
+        if (defaultOwnerEnabled) {
+            cy.get('#assign-owner').within(() => {
+                // * Verify that the toggle is unchecked
+                cy.get('label input').should('not.be.checked');
+
+                // # Click on the toggle to enable the setting
+                cy.get('label input').click({force: true});
+
+                // * Verify that the toggle is checked
+                cy.get('label input').should('be.checked');
+            });
+        }
     };
 
     describe('from playbook editor', () => {
@@ -85,7 +98,7 @@ describe('playbooks > start a run', () => {
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                 // Fill default values
-                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
+                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel', defaultOwnerEnabled: true});
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
@@ -159,7 +172,7 @@ describe('playbooks > start a run', () => {
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                 // # Fill default values
-                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
+                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel', defaultOwnerEnabled: true});
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
