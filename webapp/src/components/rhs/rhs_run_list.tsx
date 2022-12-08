@@ -23,6 +23,7 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
+import GiveFeedbackButton from 'src/components/give_feedback_button';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -203,6 +204,7 @@ const RHSRunList = (props: Props) => {
                             {loadingMore &&
                                 <StyledLoadingSpinner/>
                             }
+                            <StyledGiveFeedbackButton/>
                         </RunsList>
                     </Scrollbars>
                 }
@@ -319,6 +321,13 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     justify-content: space-between;
     min-width: 190px;
     align-items: center;
+`;
+
+const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
+    &&& {
+        font-size: 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
 `;
 
 interface SortMenuItemProps {
