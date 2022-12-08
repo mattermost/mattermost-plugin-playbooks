@@ -324,10 +324,16 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
 `;
 
 const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
-    &&& {
+    && {
         font-size: 12px;
-        color: rgba(var(--center-channel-color-rgb), 0.72);
+        color: var(--center-channel-color-64);
     }
+
+    &&:hover:not([disabled]) {
+        color: var(--center-channel-color-72);
+        background-color: var(--center-channel-color-08);
+    }
+
 `;
 
 interface SortMenuItemProps {
