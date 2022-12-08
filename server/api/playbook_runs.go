@@ -647,11 +647,6 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	}
 
 	playbookRun := playbookRuns[0]
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
 	ReturnJSON(w, &playbookRun, http.StatusOK)
 }
 
@@ -995,12 +990,6 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil || requestData == nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "missing request data", nil)
-		return
-	}
-
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "error getting playbook run",
-			errors.Wrapf(err, "reminderButtonUpdate failed to find playbookRunID for channelID: %s", requestData.ChannelId))
 		return
 	}
 
