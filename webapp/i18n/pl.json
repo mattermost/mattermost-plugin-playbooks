@@ -800,5 +800,10 @@
     "7KMbBa": "Nigdy nie używany",
     "3sXVwy": "Działania w zakresie zadań...",
     "3Yvt4d": "Playbooki to konfigurowalne listy kontrolne, które definiują powtarzalny proces dla zespołów w celu osiągnięcia określonych i przewidywalnych rezultatów",
-    "0CeyUV": "Brak wyników dla \"{searchTerm}\""
+    "0CeyUV": "Brak wyników dla \"{searchTerm}\"",
+    "Bgt0C8": "Ta aktualizacja dla uruchomienia <i>{runName}</i> zostanie rozesłana do {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednego kanału} other {{broadcastChannelCount, number} kanałów}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {jednej bezpośredniej wiadomości} other {{followersChannelCount, number} bezpośrednich wiadomości}}</FollowersTooltip>}other {}}.",
+    "zscc/+": "Jest {outstanding, plural, =1 {# zaległe zadanie} other {# zaległych zadań}}. Czy na pewno chcesz zakończyć uruchomienie <i>{runName}</i> dla wszystkich uczestników?",
+    "bEoDyV": "@{authorUsername} zamieścił aktualizację dla [{runName}]({overviewURL})",
+    "ZSa3cf": "@{targetUsername}, proszę podać aktualizację statusu dla [{runName}]({playbookURL}).",
+    "LKu0ex": "Czy na pewno chcesz zakończyć uruchomienie <i>{runName}</i> dla wszystkich uczestników?"
 }
