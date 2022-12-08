@@ -63,7 +63,7 @@ const RunPlaybookNewModal = ({
     const [showsearch, setShowsearch] = useState(true);
 
     let userId = useSelector(getCurrentUserId);
-    if (playbook?.default_owner_enabled) {
+    if (playbook?.default_owner_enabled && playbook.default_owner_id) {
         userId = playbook.default_owner_id;
     }
 
