@@ -87,7 +87,7 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} hat eine Statusaktualisierung angefordert. \n"
+        "translation": "@here — @{{.Name}} hat eine Statusaktualisierung für [{{.RunName}}]({{.RunURL}}) angefordert. \n"
     },
     {
         "id": "app.user.run.request_get_involved",
@@ -111,10 +111,10 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für diesen Durchlauf aktiviert"
+        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) aktiviert"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für diesen Durchlauf deaktiviert"
+        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) deaktiviert"
     }
 ]
