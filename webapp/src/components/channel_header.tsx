@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 
 import PlaybooksProductIcon, {Ref as PlaybookRunIconRef} from 'src/components/assets/icons/playbooks_product_icon';
 
-import {isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
+import {isPlaybookRunRHSOpen} from 'src/selectors';
 
 export const ChannelHeaderButton = () => {
     const myRef = useRef<PlaybookRunIconRef>(null);
@@ -32,12 +32,7 @@ export const ChannelHeaderButton = () => {
 };
 
 export const ChannelHeaderText = () => {
-    const currentChannelIsPlaybookRun = useSelector(inPlaybookRunChannel);
-    if (currentChannelIsPlaybookRun) {
-        return <FormattedMessage defaultMessage='Toggle Run Details'/>;
-    }
-
-    return <FormattedMessage defaultMessage='Toggle Playbook List'/>;
+    return <FormattedMessage defaultMessage='Playbooks'/>;
 };
 
 export const ChannelHeaderTooltip = ChannelHeaderText;

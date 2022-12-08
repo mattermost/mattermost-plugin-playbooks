@@ -23,7 +23,6 @@ import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_ch
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
-
 import {getSiteUrl} from 'src/client';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -42,6 +41,7 @@ interface RunToDisplay {
     ownerUserID: string
     playbookID: string
     playbook?: Maybe<PlaybookToDisplay>
+    progress: number;
     lastUpdatedAt: number
 }
 
@@ -58,17 +58,18 @@ export interface RunListOptions {
 
 interface Props {
     runs: RunToDisplay[];
-    onSelectRun: (runID: string) => void
-    getMore: () => Promise<any>
-    hasMore: boolean
+    onSelectRun: (runID: string) => void;
+    onRunCreated: (runID: string, channelId: string) => void;
+    getMore: () => Promise<any>;
+    hasMore: boolean;
 
-    options: RunListOptions
-    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
-    numInProgress: number
-    numFinished: number
+    options: RunListOptions;
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>;
+    numInProgress: number;
+    numFinished: number;
 }
 
-const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state).display_name;
+const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
@@ -135,9 +136,10 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                     <Spacer/>
                     <StartRunButton
+                        data-testid='rhs-runlist-start-run'
                         onClick={() => {
                             dispatch(openPlaybookRunNewModal({
-                                refreshLHS,
+                                onRunCreated: props.onRunCreated,
                                 triggerChannelId: currentChannelId,
                                 teamId: currentTeamId,
                             }));
@@ -365,58 +367,79 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const overviewURL = `/runs/${props.id}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookID}`;
     return (
-        <CardContainer
-            onClick={props.onClick}
-        >
-            <CardTitleContainer>
-                <TitleRow>{props.name}</TitleRow>
-                <DotMenu
-                    dotMenuButton={StyledDotMenuButton}
-                    placement='bottom-start'
-                    icon={<ThreeDotsIcon/>}
-                >
-                    <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
-                        <IconWrapper>
-                            <PlayOutlineIcon size={22}/>
-                        </IconWrapper>
-                        <FormattedMessage defaultMessage='Go to run overview'/>
-                    </StyledDropdownMenuItem>
-                    <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
-                        <IconWrapper>
-                            <BookOutlineIcon size={22}/>
-                        </IconWrapper>
-                        <FormattedMessage defaultMessage='Go to playbook'/>
-                    </StyledDropdownMenuItem>
-                </DotMenu>
-            </CardTitleContainer>
-            <PeopleRow>
-                <OwnerProfileChip userId={props.ownerUserID}/>
-                <ParticipantsProfiles>
-                    <UserList
-                        userIds={participatIDsWithoutOwner}
-                        sizeInPx={20}
-                    />
-                </ParticipantsProfiles>
-            </PeopleRow>
-            <InfoRow>
-                <LastUpdatedText>
-                    {formatMessage(
-                        {defaultMessage: 'Last updated {time}'},
-                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                    )}
-                </LastUpdatedText>
-                {props.playbook &&
+        <CardWrapper progress={props.progress * 100}>
+            <CardContainer
+                onClick={props.onClick}
+                data-testid='run-list-card'
+            >
+                <CardTitleContainer>
+                    <TitleRow>{props.name}</TitleRow>
+                    <DotMenu
+                        dotMenuButton={StyledDotMenuButton}
+                        placement='bottom-start'
+                        icon={<ThreeDotsIcon/>}
+                    >
+                        <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
+                            <IconWrapper>
+                                <PlayOutlineIcon size={22}/>
+                            </IconWrapper>
+                            <FormattedMessage defaultMessage='Go to run overview'/>
+                        </StyledDropdownMenuItem>
+                        <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                            <IconWrapper>
+                                <BookOutlineIcon size={22}/>
+                            </IconWrapper>
+                            <FormattedMessage defaultMessage='Go to playbook'/>
+                        </StyledDropdownMenuItem>
+                    </DotMenu>
+                </CardTitleContainer>
+                <PeopleRow>
+                    <OwnerProfileChip userId={props.ownerUserID}/>
+                    <ParticipantsProfiles>
+                        <UserList
+                            userIds={participatIDsWithoutOwner}
+                            sizeInPx={20}
+                        />
+                    </ParticipantsProfiles>
+                </PeopleRow>
+                <InfoRow>
+                    <LastUpdatedText>
+                        {formatMessage(
+                            {defaultMessage: 'Last updated {time}'},
+                            {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                        )}
+                    </LastUpdatedText>
+                    {props.playbook &&
                     <PlaybookChip>
                         <StyledBookOutlineIcon
                             size={11}
                         />
                         {props.playbook.title}
                     </PlaybookChip>
-                }
-            </InfoRow>
-        </CardContainer>
+                    }
+                </InfoRow>
+            </CardContainer>
+        </CardWrapper>
     );
 };
+const CardWrapper = styled.div<{progress: number}>`
+    margin: 0;
+    padding:0;
+    border-radius: 4px;
+    position: relative;
+
+    &:after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: calc(${({progress}) => 100 - progress}% + 1px);
+        bottom: 1px;
+        left: 1px;
+        border-bottom: 2px solid var(--online-indicator);
+        border-bottom-left-radius: inherit;
+        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
+    }
+`;
 
 const CardContainer = styled.div`
     display: flex;

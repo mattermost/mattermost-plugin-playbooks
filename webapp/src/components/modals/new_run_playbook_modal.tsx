@@ -12,7 +12,6 @@ import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
-import {navigateToPluginUrl} from 'src/browser_routing';
 import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
@@ -28,25 +27,25 @@ export const makeModalDefinition = (
     playbookId: string | undefined,
     triggerChannelId: string | undefined,
     teamId: string,
-    refreshLHS?: () => void
+    onRunCreated: (runId: string, channelId: string) => void,
 ) => ({
     modalId: ID,
     dialogType: ApolloWrappedModal,
-    dialogProps: {playbookId, triggerChannelId, teamId, refreshLHS},
+    dialogProps: {playbookId, triggerChannelId, teamId, onRunCreated},
 });
 
 type Props = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    refreshLHS?: () => void
+    onRunCreated: (runId: string, channelId: string) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookNewModal = ({
     playbookId,
     triggerChannelId,
     teamId,
-    refreshLHS,
+    onRunCreated,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -64,7 +63,7 @@ const RunPlaybookNewModal = ({
     const [showsearch, setShowsearch] = useState(true);
 
     let userId = useSelector(getCurrentUserId);
-    if (playbook?.default_owner_enabled) {
+    if (playbook?.default_owner_enabled && playbook.default_owner_id) {
         userId = playbook.default_owner_id;
     }
 
@@ -122,8 +121,7 @@ const RunPlaybookNewModal = ({
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
-                refreshLHS?.();
+                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id);
             }).catch(() => {
             // show error
             });

@@ -72,7 +72,7 @@ describe('channels > rhs > status update', () => {
             // # Get dialog modal.
             cy.getStatusUpdateDialog().within(() => {
                 // * Check description
-                cy.findByTestId('update_run_status_description').contains('This update will be broadcasted to one channel and one direct message.');
+                cy.findByTestId('update_run_status_description').contains(`This update for the run ${testRun.name} will be broadcasted to one channel and one direct message.`);
             });
         });
         it('description link navigates to run overview', () => {
@@ -236,9 +236,7 @@ describe('channels > rhs > status update', () => {
             });
 
             // * Verify the run was finished.
-            cy.getLastPost().within(() => {
-                cy.findByText('marked this run as finished.').should('exist');
-            });
+            cy.getLastPost().contains(`@${testUser.username} marked ${testRun.name} as finished.`);
         });
 
         describe('prevents user from losing changes', () => {

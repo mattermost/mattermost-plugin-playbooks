@@ -185,9 +185,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
-                        cy.get('#invite-users label input').should(
-                            'not.be.checked'
-                        );
+                        cy.get('#invite-users label input').should('not.be.checked');
                     });
                 });
 

@@ -14,10 +14,9 @@ import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
-import {currentPlaybookRun} from 'src/selectors';
 import {useViewTelemetry} from 'src/hooks/telemetry';
 
 interface Props {
@@ -29,7 +28,6 @@ export const UpdatePost = (props: Props) => {
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const currentRun = useSelector(currentPlaybookRun);
 
     const markdownOptions = {
         singleline: false,
@@ -65,10 +63,9 @@ export const UpdatePost = (props: Props) => {
     return (
         <>
             <StyledPostText
-                text={formatMessage({defaultMessage: '{withRunName, select, true {@{authorUsername} posted an update for [{runName}]({overviewURL})} other {@{authorUsername} posted an update}}'}, {
+                text={formatMessage({defaultMessage: '@{authorUsername} posted an update for [{runName}]({overviewURL})'}, {
                     runName,
                     overviewURL,
-                    withRunName: currentRun?.id === playbookRunId ? 'false' : 'true', // show run name/link when not in run channel (e.g. a Broadcast channel)
                     authorUsername,
                 })}
                 team={team}

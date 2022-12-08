@@ -423,15 +423,6 @@ func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, r
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage run `%s`", userID, run.ID)
 }
 
-func (p *PermissionsService) RunManagePropertiesByChannel(userID, channelID string) error {
-	runID, err := p.runService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to get playbookRunID to determine permissions, channel id `%s`", channelID)
-	}
-
-	return p.RunManageProperties(userID, runID)
-}
-
 func (p *PermissionsService) RunView(userID, runID string) error {
 	run, err := p.runService.GetPlaybookRun(runID)
 	if err != nil {
@@ -452,15 +443,6 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 
 	// Or has view access to the playbook that created it
 	return p.PlaybookView(userID, run.PlaybookID)
-}
-
-func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
-	runID, err := p.runService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to get playbookRunID to determine permissions, channel id `%s`", channelID)
-	}
-
-	return p.RunView(userID, runID)
 }
 
 func (p *PermissionsService) RunUpdateStatus(userID string, playbookRun *PlaybookRun) error {
