@@ -77,7 +77,7 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
-        const updated = updatedPlaybook?.checklists.map((cl) => {
+        const updated = updatedPlaybook?.checklists.map((cl: Checklist) => {
             return {
                 ...cl,
                 items: cl.items.map((ci) => {
