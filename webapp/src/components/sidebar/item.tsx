@@ -65,7 +65,7 @@ export const ItemDisplayLabel = styled.span`
 
 export const Icon = styled.i`
     font-size: 18px;
-    margin: 0 6px 0 -2px
+    margin: 0 6px 0 -2px;
 `;
 
 export const ItemContainer = styled.li<{isCollapsed?: boolean}>`
@@ -142,7 +142,7 @@ const HoverMenu = styled.div`
     right: 8px;
 `;
 
-const NameIconContainer = styled.div`
+export const NameIconContainer = styled.div`
     display: flex;
     align-items: center;
     overflow: hidden;

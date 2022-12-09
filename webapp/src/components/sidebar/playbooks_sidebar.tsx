@@ -5,6 +5,8 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
 
+import {MessageTextOutlineIcon} from '@mattermost/compass-icons/components';
+
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
 import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
@@ -18,7 +20,7 @@ import {useThreadsLinkMeta} from 'src/webapp_globals';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
-import {ItemContainer, StyledNavLink} from './item';
+import {NameIconContainer, ItemContainer, ItemDisplayLabel, StyledNavLink} from './item';
 
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
@@ -168,8 +170,6 @@ const ViewThreads = () => {
         isCrtEnabled,
         counts,
         someUnreadThreads,
-        threads,
-        threadsCount,
     } = useThreadsLinkMeta();
 
     if (!isCrtEnabled) {
@@ -185,7 +185,21 @@ const ViewThreads = () => {
                 to={`${url}/threads`}
                 someUnreadThreads={someUnreadThreads}
             >
-                {formatMessage({defaultMessage: 'Threads'})}
+                <NameIconContainer
+                    id={'sidebarItem_threads'}
+                    css={`
+                        gap: 8px;
+                        svg {
+                            position: relative;
+                            top: 1px;
+                        }
+                    `}
+                >
+                    <MessageTextOutlineIcon size={16}/>
+                    <ItemDisplayLabel>
+                        {formatMessage({defaultMessage: 'Threads'})}
+                    </ItemDisplayLabel>
+                </NameIconContainer>
                 {Boolean(counts?.total_unread_mentions) && (
                     <UnreadBadge
                         hasUrgent={Boolean(counts?.total_unread_urgent_mentions)}
