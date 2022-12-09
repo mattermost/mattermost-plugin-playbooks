@@ -25,7 +25,7 @@ import {AutomationLabel, AutomationTitle} from 'src/components/backstage/playboo
 import {
     ButtonLabel,
     StyledChannelSelector,
-    VerticalSplit
+    VerticalSplit,
 } from 'src/components/backstage/playbook_edit/automation/channel_access';
 
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
