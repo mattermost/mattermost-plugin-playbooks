@@ -2,14 +2,15 @@ import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector, useDispatch} from 'react-redux';
 import {createSelector} from 'reselect';
+import styled from 'styled-components';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
 import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from '@mattermost/types/utilities';
+import {GlobeIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
-
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
-import {fetchMyChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
+import {fetchMyChannelsAndMembersREST, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
 
@@ -17,7 +18,8 @@ import {StyledSelect} from './styles';
 
 export interface Props {
     id?: string;
-    onChannelsSelected: (channelIds: string[]) => void;
+    onChannelsSelected?: (channelIds: string[]) => void; // if isMulti=true
+    onChannelSelected?: (channelId: string) => void; // if isMulti=false
     channelIds: string[];
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel, boolean>;
@@ -26,6 +28,7 @@ export interface Props {
     shouldRenderValue: boolean;
     placeholder?: string;
     teamId: string;
+    isMulti: boolean;
 }
 
 const getAllPublicChannelsInTeam = (teamId: string) => createSelector(
@@ -93,7 +96,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
 
     useEffect(() => {
         if (props.teamId !== '' && selectableChannels.length === 0) {
-            dispatch(fetchMyChannelsAndMembers(props.teamId));
+            dispatch(fetchMyChannelsAndMembersREST(props.teamId));
         }
     }, [props.teamId]);
 
@@ -110,12 +113,11 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         });
     }, []);
 
-    const onChange = (channels: Channel[], {action}: {action: string}) => {
-        if (action === 'clear') {
-            props.onChannelsSelected([]);
-        } else {
-            props.onChannelsSelected(channels.map((c) => c.id));
-        }
+    const onChangeMulti = (channels: Channel[], {action}: {action: string}) => {
+        props.onChannelsSelected?.(action === 'clear' ? [] : channels.map((c) => c.id));
+    };
+    const onChange = (channel: Channel | Channel, {action}: {action: string}) => {
+        props.onChannelSelected?.(action === 'clear' ? '' : channel.id);
     };
 
     const getOptionValue = (channel: Channel) => {
@@ -123,10 +125,16 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     };
 
     const formatOptionLabel = (channel: Channel) => {
+        if (channel.display_name === '') {
+            return formatMessage({defaultMessage: 'Unknown Channel'});
+        }
         return (
-            <React.Fragment>
-                {channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}
-            </React.Fragment>
+            <ChannelContainer>
+                <ChanneIcon>
+                    {channel.type === 'O' ? <GlobeIcon size={16}/> : <LockOutlineIcon size={16}/>}
+                </ChanneIcon>
+                <ChannelDisplay>{channel.display_name}</ChannelDisplay>
+            </ChannelContainer>
         );
     };
 
@@ -150,11 +158,11 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         <StyledSelect
             className={props.className}
             id={props.id}
-            isMulti={true}
+            isMulti={props.isMulti}
             controlShouldRenderValue={props.shouldRenderValue}
             options={selectableChannels}
             filterOption={filterOption}
-            onChange={onChange}
+            onChange={props.isMulti ? onChangeMulti : onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}
             defaultMenuIsOpen={false}
@@ -170,3 +178,22 @@ const ChannelSelector = (props: Props & {className?: string}) => {
 };
 
 export default ChannelSelector;
+
+const ChannelContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+
+`;
+const ChanneIcon = styled.div`
+    display: flex;
+    align-self: center;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+const ChannelDisplay = styled.div`
+    margin-left: 10px;
+    font-size: 14px;
+    color: var(--center-channel-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;

@@ -11,14 +11,26 @@ describe('playbooks > overview', () => {
     let testTeam;
     let testOtherTeam;
     let testUser;
+    let testUser2;
     let testPublicPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
+    let testSysadmin;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadmin = sysadmin;
+            });
+
+            // Create another user in the same team
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
             // # Create another team
             cy.apiCreateTeam('second-team', 'Second Team').then(({team: createdTeam}) => {
@@ -145,7 +157,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
@@ -177,6 +189,9 @@ describe('playbooks > overview', () => {
     });
 
     it('should duplicate playbook', () => {
+        // # Login as testUser2
+        cy.apiLogin(testUser2);
+
         // # Navigate directly to the playbook
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
@@ -188,36 +203,74 @@ describe('playbooks > overview', () => {
 
         // * Verify that playbook got duplicated
         cy.findByTestId('playbook-editor-title').should('contain', `Copy of ${testPublicPlaybook.title}`);
+
+        // * Verify that the current user is a member and can run the playbook.
+        cy.findByTestId('run-playbook').should('exist');
+        cy.findByTestId('join-playbook').should('not.exist');
+
+        // * Verify that the current user is the only member.
+        cy.findByTestId('playbook-members').should('contain', '1');
     });
 
-    it('shows checklists', () => {
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Playbook',
-            description: 'Cypress Playbook',
-            memberIDs: [],
-            checklists: [
-                {
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1'},
-                        {title: 'Step 2'},
+    describe('checklists', () => {
+        describe('header', () => {
+            beforeEach(() => {
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook',
+                    description: 'Cypress Playbook',
+                    memberIDs: [],
+                    checklists: [
+                        {
+                            title: 'Stage 1',
+                            items: [
+                                {title: 'Step 1'},
+                                {title: 'Step 2'},
+                            ],
+                        },
                     ],
-                },
-            ],
-            retrospectiveTemplate: 'Cypress test template'
-        }).then((playbook) => {
-            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+                    retrospectiveTemplate: 'Cypress test template'
+                }).then((playbook) => {
+                    cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+                });
+            });
+
+            it('has title', () => {
+                cy.get('#checklists').within(() => {
+                    cy.findByText('Tasks').should('exist');
+                });
+            });
         });
 
-        // # Switch to Outline section
-        cy.findByText('Outline').click();
+        it('shows checklists', () => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                description: 'Cypress Playbook',
+                memberIDs: [],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                retrospectiveTemplate: 'Cypress test template'
+            }).then((playbook) => {
+                cy.visit(`/playbooks/playbooks/${playbook.id}`);
+            });
 
-        // * Verify checklist and associated steps
-        cy.get('#checklists').within(() => {
-            cy.findByText('Stage 1').should('exist');
-            cy.findByText('Step 1').should('exist');
-            cy.findByText('Step 2').should('exist');
+            // # Switch to Outline section
+            cy.findByText('Outline').click();
+
+            // * Verify checklist and associated steps
+            cy.get('#checklists').within(() => {
+                cy.findByText('Stage 1').should('exist');
+                cy.findByText('Step 1').should('exist');
+                cy.findByText('Step 2').should('exist');
+            });
         });
     });
 
@@ -266,7 +319,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # Click Run Playbook
-        cy.findByTestId('run-playbook').click({force: true});
+        cy.findByTestId('run-playbook').click();
 
         // # Enter the run name
         cy.findByTestId('run-name-input').clear().type('run1234567');
@@ -316,6 +369,115 @@ describe('playbooks > overview', () => {
                 // * Verify update fails
                 cy.apiUpdatePlaybook(playbook, 400);
             });
+        });
+    });
+
+    describe('start a run', () => {
+        let featureFlagPrevValue;
+        let testPlaybook;
+
+        before(() => {
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
+                    featureFlagPrevValue = prevValue;
+                });
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        after(() => {
+            if (!featureFlagPrevValue) {
+                cy.apiLogin(testSysadmin).then(() => {
+                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+                });
+            }
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        it('start a run, create a new channel', () => {
+            // # Visit playbook page
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click();
+
+            // * Verify that channel configuration matches playbook config
+            cy.findByTestId('link-existing-channel-radio').should('not.be.checked');
+            cy.get('#link-existing-channel-selector').should('not.exist');
+            cy.findByTestId('create-channel-radio').should('be.checked');
+            cy.findByTestId('create-private-channel-radio').should('be.checked');
+
+            // # Enter the run name
+            const runName = 'run' + Date.now();
+            cy.findByTestId('run-name-input').clear().type(runName);
+
+            // # Click start run button
+            cy.get('button[data-testid=modal-confirm-button]').click();
+
+            // * Verify the run is added to lhs
+            cy.findByTestId('Runs').findByTestId(runName).should('exist');
+
+            // * Verify the channel is created
+            cy.findByTestId('runinfo-channel-link').contains(runName);
+        });
+
+        it('start a run in existing channel', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Select the action section.
+            cy.get('#actions #link-existing-channel').within(() => {
+                // # Enable link to existing channel
+                cy.get('input[type=radio]').click();
+
+                // * Verify that the toggle is checked and input is enabled
+                cy.get('input[type=radio]').should('be.checked');
+                cy.get('input[type=text]').should('not.be.disabled');
+
+                // # Select channel
+                cy.findByText('Select a channel').click().type('Town{enter}');
+            });
+
+            // # Wait updated playbook to be fetched
+            cy.gqlInterceptQuery('Playbook');
+            cy.wait('@gqlPlaybook');
+
+            // # Click Run Playbook
+            cy.findByTestId('run-playbook').click({force: true});
+
+            // # Enter the run name
+            const runName = 'run' + Date.now();
+            cy.findByTestId('run-name-input').clear().type(runName);
+
+            // * Verify that channel configuration matches playbook config
+            cy.findByTestId('link-existing-channel-radio').should('be.checked');
+            cy.get('#link-existing-channel-selector').get('input[type=text]').should('be.enabled');
+            cy.findByTestId('create-channel-radio').should('not.be.checked');
+            cy.findByTestId('create-private-channel-radio').should('not.exist');
+
+            // # Click start run button
+            cy.get('button[data-testid=modal-confirm-button]').click();
+
+            // * Verify the run is added to lhs
+            cy.findByTestId('Runs').findByTestId(runName).should('exist');
+
+            // * Verify the channel is created
+            cy.findByTestId('runinfo-channel-link').contains('Town');
         });
     });
 });

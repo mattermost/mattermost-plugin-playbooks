@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import Svg from '../svg';
+import Svg from 'src/components/assets/svg';
 
 const ClipboardChecklist = (props: {className?: string}) => (
     <Svg
@@ -11,6 +11,7 @@ const ClipboardChecklist = (props: {className?: string}) => (
         height='68'
         viewBox='0 0 68 68'
         fill='none'
+        className={props.className}
     >
         <path
             d='M37.6957 65.3809C36.2766 67.5528 33.0722 67.866 30.5805 66.1071L2.44639 46.2931C1.52832 45.6736 0.884857 44.7235 0.650258 43.6411C0.415659 42.5587 0.608032 41.4275 1.18724 40.4835L25.937 2.67429C26.6198 1.74458 27.5992 1.07552 28.7136 0.777548C29.8279 0.479575 31.0105 0.570509 32.0662 1.03534L64.0044 15.0864C66.8291 16.3322 68.0016 19.0838 66.5959 21.2891L37.6957 65.3809Z'

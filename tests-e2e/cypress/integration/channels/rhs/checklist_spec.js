@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {HALF_SEC} from '../../../fixtures/timeouts';
+import {HALF_SEC, ONE_SEC} from '../../../fixtures/timeouts';
 
 describe('channels > rhs > checklist', () => {
     let testTeam;
@@ -31,7 +31,7 @@ describe('channels > rhs > checklist', () => {
                         items: [
                             {title: 'Step 1', command: '/invalid'},
                             {title: 'Step 2', command: '/echo VALID'},
-                            {title: 'Step 3'},
+                            {title: 'Step 3', command: '/playbook check 0 0'},
                             {title: 'Step 4'},
                             {title: 'Step 5'},
                             {title: 'Step 6'},
@@ -140,6 +140,14 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
+        describe('header', () => {
+            it('has title', () => {
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Tasks').should('exist');
+                });
+            });
+        });
+
         it('shows an ephemeral error when running an invalid slash command', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
@@ -196,6 +204,39 @@ describe('channels > rhs > checklist', () => {
 
                 // * Verify the valid command has been run.
                 cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
+            });
+        });
+
+        it('runs /playbook slash commands', () => {
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the `/playbook check 0 0` command has not yet been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Run');
+
+                // * Run the slash command
+                cy.findAllByTestId('run').eq(2).click();
+
+                // * Verify the command has now been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Rerun');
+
+                // * Verify the first checklist item is checked
+                cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                    // # Check the overdue task
+                    cy.get('input').should('be.checked');
+                });
+            });
+
+            // # Reload the page
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the command has still been run.
+                cy.findAllByTestId('run').eq(2).should('have.text', 'Rerun');
+
+                // * Verify the first checklist item is still checked
+                cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                    // # Check the overdue task
+                    cy.get('input').should('be.checked');
+                });
             });
         });
 
@@ -294,7 +335,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('due-date-info-button').eq(0).click();
 
             // # Enter due date in 3 days
-            cy.get('.playbook-run-user-select__value-container').type('in 3 days')
+            cy.get('.playbook-react-select__value-container').type('in 3 days')
                 .wait(HALF_SEC)
                 .trigger('keydown', {
                     key: 'Enter',
@@ -400,7 +441,7 @@ describe('channels > rhs > checklist', () => {
             });
 
             // * Verify if date selector is visible
-            cy.get('.playbook-run-user-select').should('be.visible');
+            cy.get('.playbook-react-select').should('be.visible');
         });
     });
 });
@@ -412,8 +453,11 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
         cy.get('.icon-calendar-outline').click();
     });
 
+    // # Wait for react select to finish rendering.
+    cy.wait(ONE_SEC);
+
     // # Enter due date query
-    cy.get('.playbook-run-user-select').within(() => {
+    cy.get('.playbook-react-select').within(() => {
         cy.get('input').type(dateQuery, {force: true})
             .wait(HALF_SEC)
             .trigger('keydown', {

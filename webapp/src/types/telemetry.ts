@@ -6,7 +6,7 @@
 // Event/Telemetry inventory available at https://docs.google.com/spreadsheets/d/15VBD2i-v7JX11H80beJj64wU8lqyMAm1UrDIjKjx63o/edit#gid=374475626
 
 export enum GeneralViewTarget {
-    TaskInbbox = 'task_inbox',
+    TaskInbox = 'task_inbox',
 }
 
 export enum PlaybookViewTarget {
@@ -37,5 +37,11 @@ export enum PlaybookRunEventTarget {
     UpdateActions = 'playbookrun_update_actions',
 }
 
+export enum TaskActionsEventTarget {
+    UpdateActions = 'taskactions_updated',
+    Triggered = 'taskactions_triggered',
+    ActionExecuted = 'taskactions_action_executed',
+}
+
 export type TelemetryViewTarget = GeneralViewTarget | PlaybookViewTarget | PlaybookRunViewTarget;
-export type TelemetryEventTarget = PlaybookRunEventTarget;
+export type TelemetryEventTarget = PlaybookRunEventTarget | TaskActionsEventTarget;

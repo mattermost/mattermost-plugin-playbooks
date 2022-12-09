@@ -11,7 +11,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
 
 aliases:
   - &restore_go_cache
@@ -45,7 +45,7 @@ commands:
           name: Getting JavaScript dependencies
           command: |
             cd webapp
-            NODE_ENV=development npm install --ignore-scripts --no-save
+            NODE_ENV=development npm install --ignore-scripts --no-save --legacy-peer-deps
       - save_cache:
           name: Save npm cache
           key: v3-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
@@ -184,11 +184,6 @@ jobs:
       - *restore_go_cache
       - npm-dependencies
       - npm-e2e-dependencies
-      # Base image already bundle a golanci-lint but it's not updated enough (staticcheck linter needed)
-      - run:
-          name: install golangci-lint 1.46.2
-          command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin v1.46.2
       - run:
           name: Checking code style
           command: |
@@ -290,7 +285,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
       - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
@@ -308,7 +303,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
       - image: cimg/postgres:11.13
         environment:
           POSTGRES_USER: mmuser
@@ -326,7 +321,7 @@ jobs:
 
   test-MariaDB10-Postgres12:
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
       - image: cimg/postgres:12.9
         environment:
           POSTGRES_USER: mmuser
@@ -345,7 +340,7 @@ jobs:
   # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
       - image: cimg/postgres:14.1
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -365,7 +360,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -439,7 +434,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: cimg/go:1.18.1-node
+      - image: cimg/go:1.18.6-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17

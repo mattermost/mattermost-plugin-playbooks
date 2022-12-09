@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -66,6 +67,14 @@ type Playbook struct {
 	ActiveRuns                              int64                  `json:"active_runs" export:"-"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
+
+	// ChannelID is the identifier of the channel that would be -potentially- linked
+	// to any new run of this playbook
+	ChannelID string `json:"channel_id" export:"channel_id"`
+
+	// ChannelMode is the playbook>run>channel flow used
+	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -185,6 +194,13 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
+func (p Playbook) GetRunChannelID() string {
+	if p.ChannelMode == PlaybookRunLinkExistingChannel {
+		return p.ChannelID
+	}
+	return ""
+}
+
 // Checklist represents a checklist in a playbook.
 type Checklist struct {
 	// ID is the identifier of the checklist.
@@ -244,6 +260,9 @@ type ChecklistItem struct {
 	// of the checklist item. 0 if not set.
 	// Playbook can have only relative timstamp, run can have only absolute timestamp.
 	DueDate int64 `json:"due_date" export:"due_date"`
+
+	// TaskActions is an array of all the task actions associated with this task.
+	TaskActions []TaskAction `json:"task_actions" export:"-"`
 }
 
 type GetPlaybooksResults struct {
@@ -563,4 +582,57 @@ type PlaybookInsight struct {
 	// Time the playbook was last run.
 	// required: false
 	LastRunAt int64 `json:"last_run_at"`
+}
+
+// ChannelPlaybookMode is a type alias to hold all possible
+// modes for playbook > run > channel relation
+type ChannelPlaybookMode int
+
+const (
+	PlaybookRunCreateNewChannel ChannelPlaybookMode = iota
+	PlaybookRunLinkExistingChannel
+)
+
+var channelPlaybookTypes = [...]string{
+	PlaybookRunCreateNewChannel:    "create_new_channel",
+	PlaybookRunLinkExistingChannel: "link_existing_channel",
+}
+
+// String creates the string version of the TelemetryTrack
+func (cpm ChannelPlaybookMode) String() string {
+	return channelPlaybookTypes[cpm]
+}
+
+// MarshalText converts a ChannelPlaybookMode to a string for serializers (including JSON)
+func (cpm ChannelPlaybookMode) MarshalText() ([]byte, error) {
+	return []byte(channelPlaybookTypes[cpm]), nil
+}
+
+// UnmarshalText parses a ChannelPlaybookMode from text. For deserializers (including JSON)
+func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
+	for i, st := range channelPlaybookTypes {
+		if st == string(text) {
+			*cpm = ChannelPlaybookMode(i)
+			return nil
+		}
+	}
+	return fmt.Errorf("unknown ChannelPlaybookMode: %s", string(text))
+}
+
+// Scan parses a ChannelPlaybookMode back from the DB
+func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
+	txt, ok := src.([]byte) // mysql
+	if !ok {
+		txt, ok := src.(string) //postgres
+		if !ok {
+			return fmt.Errorf("could not cast to string: %v", src)
+		}
+		return cpm.UnmarshalText([]byte(txt))
+	}
+	return cpm.UnmarshalText(txt)
+}
+
+// Value represents a ChannelPlaybookMode as a type writable into the DB
+func (cpm ChannelPlaybookMode) Value() (driver.Value, error) {
+	return cpm.MarshalText()
 }

@@ -26,9 +26,9 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Tooltip from 'src/components/widgets/tooltip';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
-import {useToaster} from '../../toast_banner';
+import {useToaster} from 'src/components/backstage/toast_banner';
 
-import {ToastStyle} from '../../toast';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import StatusUpdateCard from './update_card';
 import {RHSContent} from './rhs';
@@ -127,7 +127,6 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
-    const {UpgradeLicenseModal, RequestUpdateButton} = useRequestUpdateUpgrade();
 
     if (!playbookRun.status_update_enabled) {
         return null;
@@ -191,7 +190,6 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                 {openRHSText}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
-            {UpgradeLicenseModal}
         </Container>
     );
 };
@@ -206,7 +204,6 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
-    const {UpgradeLicenseModal, RequestUpdateButton} = useRequestUpdateUpgrade();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -279,7 +276,6 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
-            {UpgradeLicenseModal}
         </Container>
     );
 };
@@ -380,7 +376,7 @@ const PostUpdateButton = styled(TertiaryButton)`
     padding: 0 48px;
 `;
 
-const useRequestUpdateUpgrade = () => {
+const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
     const {formatMessage} = useIntl();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const requestUpdateAllowed = useAllowRequestUpdate();
@@ -397,6 +393,23 @@ const useRequestUpdateUpgrade = () => {
         children: formatMessage({defaultMessage: 'Request update...'}),
     };
 
+    if (requestUpdateAllowed) {
+        return type === 'dotmenu' ? (
+            <DropdownItem
+                disabled={disabled}
+                onClick={onClick}
+            >
+                {formatMessage({defaultMessage: 'Request update...'})}
+            </DropdownItem>
+        ) : (
+            <TertiaryButton
+                css={commonCss}
+                onClick={onClick}
+                {...commonProps}
+            />
+        );
+    }
+
     const UpgradeLicenseModal = (
         <UpgradeModal
             messageType={AdminNotificationType.REQUEST_UPDATE}
@@ -405,61 +418,39 @@ const useRequestUpdateUpgrade = () => {
         />
     );
 
-    if (requestUpdateAllowed) {
-        const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
-            return type === 'dotmenu' ? (
-                <DropdownItem
+    return (<>
+        <Tooltip
+            id={'request-update-button-tooltip'}
+            placement={'bottom'}
+            content={formatMessage(
+                {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
+                {
+                    title: (el) => <div>{el}</div>,
+                    body: (el) => <span style={{opacity: 0.56}}>{el}</span>,
+                }
+            )}
+        >
+            {type === 'dotmenu' ? (
+                <DotMenuItem
                     disabled={disabled}
-                    onClick={onClick}
+                    onClick={() => setShowUpgradeModal(true)}
                 >
                     {formatMessage({defaultMessage: 'Request update...'})}
-                </DropdownItem>
+                    <KeyVariantCircleIcon
+                        color={'var(--online-indicator)'}
+                        size={20}
+                    />
+                </DotMenuItem>
             ) : (
-                <TertiaryButton
+                <UpgradeTertiaryButton
                     css={commonCss}
-                    onClick={onClick}
+                    onClick={() => setShowUpgradeModal(true)}
                     {...commonProps}
                 />
-            );
-        };
-        return {UpgradeLicenseModal, RequestUpdateButton};
-    }
-
-    const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
-        return (<>
-            <Tooltip
-                id={'request-update-button-tooltip'}
-                placement={'bottom'}
-                content={formatMessage(
-                    {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
-                    {
-                        title: (el) => <div>{el}</div>,
-                        body: (el) => <span style={{opacity: 0.56}}>{el}</span>,
-                    }
-                )}
-            >
-                {type === 'dotmenu' ? (
-                    <DotMenuItem
-                        disabled={disabled}
-                        onClick={() => setShowUpgradeModal(true)}
-                    >
-                        {formatMessage({defaultMessage: 'Request update...'})}
-                        <KeyVariantCircleIcon
-                            color={'var(--online-indicator)'}
-                            size={20}
-                        />
-                    </DotMenuItem>
-                ) : (
-                    <UpgradeTertiaryButton
-                        css={commonCss}
-                        onClick={() => setShowUpgradeModal(true)}
-                        {...commonProps}
-                    />
-                )}
-            </Tooltip>
-        </>);
-    };
-    return {UpgradeLicenseModal, RequestUpdateButton};
+            )}
+        </Tooltip>
+        {UpgradeLicenseModal}
+    </>);
 };
 
 const ViewAllUpdates = styled.div`

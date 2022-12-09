@@ -2,13 +2,19 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type PlaybookResolver struct {
 	app.Playbook
+}
+
+func (r *PlaybookResolver) ChannelMode(ctx context.Context) string {
+	return fmt.Sprint(r.Playbook.ChannelMode)
 }
 
 func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
@@ -35,6 +41,18 @@ func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
 
 func (r *PlaybookResolver) DeleteAt() float64 {
 	return float64(r.Playbook.DeleteAt)
+}
+
+func (r *PlaybookResolver) LastRunAt() float64 {
+	return float64(r.Playbook.LastRunAt)
+}
+
+func (r *PlaybookResolver) NumRuns() int32 {
+	return int32(r.Playbook.NumRuns)
+}
+
+func (r *PlaybookResolver) ActiveRuns() int32 {
+	return int32(r.Playbook.ActiveRuns)
 }
 
 func (r *PlaybookResolver) RetrospectiveReminderIntervalSeconds() float64 {
@@ -108,20 +126,86 @@ func (r *ChecklistItemResolver) DueDate() float64 {
 	return float64(r.ChecklistItem.DueDate)
 }
 
+func (r *ChecklistItemResolver) TaskActions() []*TaskActionResolver {
+	taskActionsResolvers := make([]*TaskActionResolver, 0, len(r.ChecklistItem.TaskActions))
+	for _, taskAction := range r.ChecklistItem.TaskActions {
+		taskActionsResolvers = append(taskActionsResolvers, &TaskActionResolver{taskAction})
+	}
+
+	return taskActionsResolvers
+}
+
+type TaskActionResolver struct {
+	app.TaskAction
+}
+
+func (r *TaskActionResolver) Trigger() *TriggerResolver {
+	return &TriggerResolver{r.TaskAction.Trigger}
+}
+
+func (r *TaskActionResolver) Actions() []*ActionResolver {
+	actionsResolvers := make([]*ActionResolver, 0, len(r.TaskAction.Actions))
+	for _, action := range r.TaskAction.Actions {
+		actionsResolvers = append(actionsResolvers, &ActionResolver{action})
+	}
+	return actionsResolvers
+}
+
+type ActionResolver struct {
+	app.Action
+}
+
+func (r *ActionResolver) Type() string {
+	return string(r.Action.Type)
+}
+
+func (r *ActionResolver) Payload() string {
+	var payload string
+	switch r.Action.Type {
+	case app.MarkItemAsDoneActionType:
+		payload = r.Action.Payload
+	default:
+		logrus.WithField("task_action_type", r.Action.Type).Error("Unknown trigger type")
+		payload = ""
+	}
+	return payload
+}
+
+type TriggerResolver struct {
+	app.Trigger
+}
+
+func (r *TriggerResolver) Type() string {
+	return string(r.Trigger.Type)
+}
+
+func (r *TriggerResolver) Payload() string {
+	var payload string
+	switch r.Trigger.Type {
+	case app.KeywordsByUsersTriggerType:
+		payload = r.Trigger.Payload
+	default:
+		logrus.WithField("task_trigger_type", r.Trigger.Type).Error("Unknown trigger type")
+		payload = ""
+	}
+	return payload
+}
+
 type UpdateChecklist struct {
 	Title string                `json:"title"`
 	Items []UpdateChecklistItem `json:"items"`
 }
 
 type UpdateChecklistItem struct {
-	Title            string  `json:"title"`
-	State            string  `json:"state"`
-	StateModified    float64 `json:"state_modified"`
-	AssigneeID       string  `json:"assignee_id"`
-	AssigneeModified float64 `json:"assignee_modified"`
-	Command          string  `json:"command"`
-	CommandLastRun   float64 `json:"command_last_run"`
-	Description      string  `json:"description"`
-	LastSkipped      float64 `json:"delete_at"`
-	DueDate          float64 `json:"due_date"`
+	Title            string            `json:"title"`
+	State            string            `json:"state"`
+	StateModified    float64           `json:"state_modified"`
+	AssigneeID       string            `json:"assignee_id"`
+	AssigneeModified float64           `json:"assignee_modified"`
+	Command          string            `json:"command"`
+	CommandLastRun   float64           `json:"command_last_run"`
+	Description      string            `json:"description"`
+	LastSkipped      float64           `json:"delete_at"`
+	DueDate          float64           `json:"due_date"`
+	TaskActions      *[]app.TaskAction `json:"task_actions"`
 }

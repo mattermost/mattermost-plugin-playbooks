@@ -12,20 +12,18 @@ import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 
-import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling, DotMenuButton} from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import {navigateToUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
-import {openPlaybookRunModal} from 'src/actions';
-
-import {DotMenuButton} from '../dot_menu';
+import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -115,6 +113,7 @@ const PlaybookListRow = (props: Props) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
     const enableRunPlaybook = props.playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const run = async () => {
         if (props.playbook && isTutorialPlaybook) {
@@ -129,14 +128,25 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            dispatch(openPlaybookRunModal(
-                props.playbook.id,
-                props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
-                props.playbook.description,
-                props.playbook.team_id,
-                team.name,
-                refreshLHS
-            ));
+            if (isLinkRunToExistingChannelEnabled) {
+                dispatch(openPlaybookRunNewModal({
+                    onRunCreated: (runId, channelId) => {
+                        navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                        refreshLHS();
+                    },
+                    playbookId: props.playbook.id,
+                    teamId: team.id,
+                }));
+            } else {
+                dispatch(openPlaybookRunModal(
+                    props.playbook.id,
+                    props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
+                    props.playbook.description,
+                    team.id,
+                    team.name,
+                    refreshLHS
+                ));
+            }
         }
     };
 
@@ -158,6 +168,7 @@ const PlaybookListRow = (props: Props) => {
         <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
+            data-testid='playbook-item'
         >
             <PlaybookItemTitle data-testid='playbook-title'>
                 <TextWithTooltip

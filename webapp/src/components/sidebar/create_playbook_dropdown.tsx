@@ -10,10 +10,10 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
-import Menu from '../widgets/menu/menu';
-import MenuItem from '../widgets/menu/menu_item';
-import MenuGroup from '../widgets/menu/menu_group';
-import MenuWrapper from '../widgets/menu/menu_wrapper';
+import Menu from 'src/components/widgets/menu/menu';
+import MenuItem from 'src/components/widgets/menu/menu_item';
+import MenuGroup from 'src/components/widgets/menu/menu_group';
+import MenuWrapper from 'src/components/widgets/menu/menu_wrapper';
 
 import {OVERLAY_DELAY} from 'src/constants';
 import {useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';

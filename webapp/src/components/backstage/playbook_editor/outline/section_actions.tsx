@@ -19,8 +19,10 @@ import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {Toggle} from '../../playbook_edit/automation/toggle';
-import {AutomationTitle} from '../../playbook_edit/automation/styles';
+
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+
 import {useProxyState} from 'src/hooks';
 
 interface Props {
@@ -40,6 +42,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
+            channelMode: update.channel_mode,
+            channelId: update.channel_id,
         });
     }, [updatePlaybook]));
 
@@ -119,7 +123,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
-                <Setting id={'create-channel'}>
+                <Setting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}

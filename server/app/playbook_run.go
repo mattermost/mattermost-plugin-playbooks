@@ -23,6 +23,11 @@ const (
 	RunRoleAdmin  = "run_admin"
 )
 
+const (
+	RunSourcePost   = "post"
+	RunSourceDialog = "dialog"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -265,8 +270,10 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
-func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
-	if playbook.RunSummaryTemplateEnabled {
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
+	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
+	// Runs created though new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
 		r.Summary = playbook.RunSummaryTemplate
 	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
@@ -445,6 +452,7 @@ type TimelineEvent struct {
 type GetPlaybookRunsResults struct {
 	TotalCount int           `json:"total_count"`
 	PageCount  int           `json:"page_count"`
+	PerPage    int           `json:"per_page"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
 }
@@ -512,10 +520,8 @@ type DialogStateAddToTimeline struct {
 
 // RunLink represents the info needed to display and link to a run
 type RunLink struct {
-	PlaybookRunID      string
-	TeamName           string
-	ChannelName        string
-	ChannelDisplayName string
+	PlaybookRunID string
+	Name          string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
@@ -545,6 +551,18 @@ type RunAction struct {
 
 	CreateChannelMemberOnNewParticipant     bool `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant"`
+}
+
+type RunMetadata struct {
+	ID     string
+	Name   string
+	TeamID string
+}
+
+type TopicMetadata struct {
+	ID     string
+	RunID  string
+	TeamID string
 }
 
 const (
@@ -598,9 +616,8 @@ type PlaybookRunService interface {
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error)
 
-	// GetPlaybookRunIDForChannel get the playbookRunID associated with this channel. Returns ErrNotFound
-	// if there is no playbook run associated with this channel.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunsForChannelByUser get the playbookRuns associated with this channel and user.
+	GetPlaybookRunsForChannelByUser(channelID string, userID string) ([]PlaybookRun, error)
 
 	// GetOwners returns all the owners of playbook runs selected
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -628,6 +645,9 @@ type PlaybookRunService interface {
 
 	// SetDueDate sets absolute due date timestamp for the specified checklist item
 	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
+
+	// SetTaskActionsToChecklistItem sets Task Actions to checklist item
+	SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
@@ -665,11 +685,14 @@ type PlaybookRunService interface {
 	// MoveChecklistItem moves a checklist item from one position to another.
 	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
-	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
-	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRuns to be used in autocomplete
+	GetChecklistItemAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
 
-	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
-	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistAutocomplete returns the list of checklists for playbookRuns to be used in autocomplete
+	GetChecklistAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
+
+	// GetRunsAutocomplete returns the list of runs to be used in autocomplete
+	GetRunsAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
 
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
@@ -714,16 +737,13 @@ type PlaybookRunService interface {
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
 
-	// UpdateDescription updates the description of the specified playbook run.
-	UpdateDescription(playbookRunID, description string) error
-
 	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
-	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error
+	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool, includeRunsInProgress bool) error
 
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
-	DMTodoDigestToUser(userID string, force bool) error
+	DMTodoDigestToUser(userID string, force bool, includeRunsInProgress bool) error
 
 	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
 	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
@@ -758,8 +778,24 @@ type PlaybookRunService interface {
 	// AddParticipants adds users to the participants list
 	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error
 
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
+
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -797,8 +833,8 @@ type PlaybookRunStore interface {
 	// GetPlaybookRun gets a playbook run by ID.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
-	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunIDsForChannel gets a playbook runs list associated with the given channel id.
+	GetPlaybookRunIDsForChannel(channelID string) ([]string, error)
 
 	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the
@@ -869,6 +905,19 @@ type PlaybookRunStore interface {
 
 	// GetSchemeRolesForTeam scheme role ids for the team
 	GetSchemeRolesForTeam(teamID string) (string, string, string, error)
+
+	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
+	GetPlaybookRunIDsForUser(userID string) ([]string, error)
+
+	// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
+	// Notice that order of passed ids and returned runs might not coincide
+	GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error)
+
+	// GetTaskAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
+	GetTaskAsTopicMetadataByIDs(taskIDs []string) ([]TopicMetadata, error)
+
+	// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
+	GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -1029,6 +1078,9 @@ type PlaybookRunFilterOptions struct {
 	// StartedLT filters playbook runs that were started before the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
+
+	// ChannelID filters to playbook runs that are associated with the given channel ID
+	ChannelID string `url:"channel_id,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -1107,6 +1159,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
+	}
+
+	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
 	}
 
 	for _, s := range options.Statuses {

@@ -6,7 +6,8 @@ import React, {ReactNode} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 
-import {renderThumbVertical, renderTrackHorizontal, renderView} from '../../../rhs/rhs_shared';
+import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
+
 import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 
 export enum RHSContent {
@@ -124,7 +125,7 @@ const HeaderTitle = styled.div`
     }
 `;
 
-const HeaderVerticalDivider = styled.div`
+export const HeaderVerticalDivider = styled.div`
     height: 2.4rem;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     margin: 0 8px;
@@ -132,7 +133,7 @@ const HeaderVerticalDivider = styled.div`
     align-self: center;
 `;
 
-const HeaderSubtitle = styled.div`
+export const HeaderSubtitle = styled.div`
     overflow: hidden;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;

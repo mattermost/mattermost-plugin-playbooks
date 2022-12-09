@@ -30,7 +30,7 @@ import PresetTemplates from 'src/components/templates/template_data';
 import {RegularHeading} from 'src/styles/headings';
 import {pluginUrl} from 'src/browser_routing';
 
-import Header from '../widgets/header';
+import Header from 'src/components/widgets/header';
 
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
@@ -99,6 +99,18 @@ const TitleActions = styled.div`
     display: flex;
 `;
 
+const ImportSub = styled(Sub)`
+    margin-top: 8px;
+    margin-bottom: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: inherit;
+`;
+
+const ImportLink = styled.a`
+    font-weight: 600;
+`;
+
 const PlaybooksListFilters = styled.div`
     display: flex;
     padding: 16px;
@@ -134,6 +146,12 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         selectorRef.current?.scrollIntoView({behavior: 'smooth'});
     };
 
+    const handleImportClick = () => {
+        if (fileInputRef && fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
     let listBody: JSX.Element | JSX.Element[] | null = null;
     if (!hasPlaybooks && isFiltering) {
         listBody = (
@@ -164,6 +182,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         canCreatePlaybooks={canCreatePlaybooks}
                         scrollToNext={scrollToTemplates}
                     />
+                    {inputImportPlaybook}
                 </>
             );
         }
@@ -180,11 +199,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                             {canCreatePlaybooks && (
                                 <>
                                     <ImportButton
-                                        onClick={() => {
-                                            if (fileInputRef && fileInputRef.current) {
-                                                fileInputRef.current.click();
-                                            }
-                                        }}
+                                        onClick={handleImportClick}
                                     />
                                     <HorizontalSpacer size={12}/>
                                     <PlaybookModalButton/>
@@ -281,6 +296,17 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                 <AltHeading>
                                     {formatMessage({defaultMessage: 'Choose a template'})}
                                 </AltHeading>
+                                <ImportSub>
+                                    {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
+                                        ImportPlaybookButton: (chunks) => (
+                                            <ImportLinkButton
+                                                onClick={handleImportClick}
+                                            >
+                                                {chunks}
+                                            </ImportLinkButton>
+                                        ),
+                                    })}
+                                </ImportSub>
                                 <AltSub>
                                     {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
                                 </AltSub>
@@ -318,6 +344,14 @@ const ImportButton = (props: {onClick?: () => void}) => {
         >
             <FormattedMessage defaultMessage='Import'/>
         </TertiaryButton>
+    );
+};
+
+const ImportLinkButton = (props: {children: React.ReactNode | React.ReactNode[]; onClick?: () => void}) => {
+    return (
+        <ImportLink onClick={props.onClick}>
+            {props.children}
+        </ImportLink>
     );
 };
 

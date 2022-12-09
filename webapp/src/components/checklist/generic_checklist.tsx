@@ -25,12 +25,14 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 interface Props {
     id: string
     playbookRun?: PlaybookRun
-    disabled: boolean;
+    playbookId?: string,
+    readOnly: boolean;
     checklist: Checklist;
     checklistIndex: number;
     onUpdateChecklist: (newChecklist: Checklist) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -74,6 +76,7 @@ const GenericChecklist = (props: Props) => {
     const keys = generateKeys(props.checklist.items.map((item) => props.id + item.title));
 
     return (
+
         <Droppable
             droppableId={props.checklistIndex.toString()}
             direction='vertical'
@@ -96,7 +99,8 @@ const GenericChecklist = (props: Props) => {
                                 <DraggableChecklistItem
                                     key={keys[index]}
                                     playbookRun={props.playbookRun}
-                                    disabled={props.disabled}
+                                    playbookId={props.playbookId}
+                                    readOnly={props.readOnly}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
                                     itemIndex={index}
@@ -108,6 +112,7 @@ const GenericChecklist = (props: Props) => {
                                     onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                     itemButtonsFormat={props.itemButtonsFormat}
+                                    onViewerModeInteract={props.onViewerModeInteract}
                                 />
                             );
                         })}
@@ -115,7 +120,8 @@ const GenericChecklist = (props: Props) => {
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}
                                 playbookRun={props.playbookRun}
-                                disabled={props.disabled}
+                                playbookId={props.playbookId}
+                                readOnly={props.readOnly}
                                 checklistIndex={props.checklistIndex}
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
@@ -125,24 +131,25 @@ const GenericChecklist = (props: Props) => {
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
                                 itemButtonsFormat={props.itemButtonsFormat}
+                                onViewerModeInteract={props.onViewerModeInteract}
                             />
                         }
                         {droppableProvided.placeholder}
+                        {props.readOnly ? null : (
+                            <AddTaskLink
+                                disabled={props.readOnly}
+                                onClick={() => {
+                                    setAddingItem(true);
+                                }}
+                                data-testid={`add-new-task-${props.checklistIndex}`}
+                            >
+                                <IconWrapper>
+                                    <i className='icon icon-plus'/>
+                                </IconWrapper>
+                                {formatMessage({defaultMessage: 'Add a task'})}
+                            </AddTaskLink>
+                        )}
                     </div>
-                    {props.disabled ? null : (
-                        <AddTaskLink
-                            disabled={props.disabled}
-                            onClick={() => {
-                                setAddingItem(true);
-                            }}
-                            data-testid={`add-new-task-${props.checklistIndex}`}
-                        >
-                            <IconWrapper>
-                                <i className='icon icon-plus'/>
-                            </IconWrapper>
-                            {formatMessage({defaultMessage: 'Add a task'})}
-                        </AddTaskLink>
-                    )}
                 </ChecklistContainer>
             )}
         </Droppable>

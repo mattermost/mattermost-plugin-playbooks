@@ -10,6 +10,7 @@ import {
     PlaybookUpdates,
     RunDocument,
     RunUpdates,
+    TaskActionUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
     useChangeRunOwnerMutation,
@@ -18,6 +19,8 @@ import {
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    useUpdateRunTaskActionsMutation,
+    useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -62,6 +65,21 @@ export const useUpdateRun = (id?: string) => {
     }, [id, innerUpdateRun]);
 };
 
+export const useSetRunFavorite = (id: string|undefined) => {
+    const [innerUpdateRun] = useSetRunFavoriteMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((fav: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdateRun({variables: {id, fav}});
+    }, [id, innerUpdateRun]);
+};
+
 export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     const [joinPlaybook] = useAddPlaybookMemberMutation({
         refetchQueries: [
@@ -101,53 +119,18 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useRunMembership = (runID?: string, userIDs?: string[]) => {
-    const [add] = useAddRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const [remove] = useRemoveRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const addToRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await add();
-    }, [runID, JSON.stringify(userIDs), add]);
-
-    const removeFromRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await remove();
-    }, [runID, JSON.stringify(userIDs), remove]);
-    return {addToRun, removeFromRun};
-};
-
 export const useManageRunMembership = (runID?: string) => {
     const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
@@ -179,4 +162,21 @@ export const useManageRunMembership = (runID?: string) => {
     }, [runID, changeOwner]);
 
     return {addToRun, removeFromRun, changeRunOwner};
+};
+
+export const useUpdateRunItemTaskActions = (runID?: string) => {
+    const [updateTaskActions] = useUpdateRunTaskActionsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskActionUpdates[]) => {
+        if (!runID) {
+            return;
+        }
+        await updateTaskActions({variables: {runID, checklistNum, itemNum, taskActions}});
+    }, [runID, updateTaskActions]);
+
+    return {updateRunTaskActions};
 };

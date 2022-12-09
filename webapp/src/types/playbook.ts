@@ -60,6 +60,9 @@ export interface PlaybookWithChecklist extends Playbook {
     create_channel_member_on_new_participant: boolean;
     remove_channel_member_on_removed_participant: boolean;
 
+    channel_mode: string;
+    channel_id: string;
+
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
@@ -123,6 +126,22 @@ export interface ChecklistItem {
     command: string;
     command_last_run: number;
     due_date: number;
+    task_actions: TaskAction[];
+}
+
+export interface TaskAction {
+    trigger: Trigger;
+    actions: Action[];
+}
+
+export interface Trigger {
+    type: string;
+    payload: string;
+}
+
+export interface Action {
+    type: string;
+    payload: string;
 }
 
 export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 'id'> {
@@ -190,6 +209,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         active_runs: 0,
         create_channel_member_on_new_participant: true,
         remove_channel_member_on_removed_participant: true,
+        channel_id: '',
+        channel_mode: 'create_new_channel',
     };
 }
 
@@ -208,6 +229,7 @@ export function emptyChecklistItem(): ChecklistItem {
         description: '',
         command_last_run: 0,
         due_date: 0,
+        task_actions: [] as TaskAction[],
     };
 }
 
@@ -218,6 +240,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     command_last_run: 0,
     state,
     due_date: 0,
+    task_actions: [] as TaskAction[],
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

@@ -133,7 +133,7 @@ describe('runs > run details page > checklist', () => {
 
         it('click does not work', () => {
             // # Click first task
-            getChecklistTasks().eq(taskIndex).find('.checkbox').should('be.disabled');
+            getChecklistTasks().eq(taskIndex).find('.checkbox').should('have.attr', 'readonly');
         });
 
         it('has not hover menu', () => {

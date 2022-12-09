@@ -20,7 +20,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
 import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
-import {useMakeOption, Mode, ms, Option} from 'src/components/datetime_input';
+import {Mode, ms, Option, useMakeOption} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
@@ -91,10 +91,12 @@ export const UpdateRequestPost = (props: Props) => {
         );
     };
 
+    const playbookURL = `/playbooks/runs/${playbookRun.id}`;
+
     return (
         <>
             <StyledPostText
-                text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update.'}, {targetUsername})}
+                text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update for [{runName}]({playbookURL}).'}, {runName: playbookRun.name, targetUsername, playbookURL})}
                 team={team}
             />
             <Container ref={ref}>

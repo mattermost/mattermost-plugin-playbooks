@@ -11,7 +11,8 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
-import {Placeholder} from '../section_status_updates';
+
+import {Placeholder} from 'src/components/backstage/playbook_editor/outline/section_status_updates';
 
 interface Props {
     seconds: number;

@@ -35,7 +35,7 @@ import {PlaybookRun, Metadata} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
-import {useLHSRefresh} from '../../lhs_navigation';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 import {FollowState} from './rhs_info';
 
@@ -126,8 +126,8 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
         }
     };
 
-    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
-        if (!user || !userType) {
+    const onOwnerChange = async (user?: UserProfile) => {
+        if (!user) {
             return;
         }
         setOwner(user.id);
@@ -152,7 +152,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     assignee_id={run.owner_user_id}
                     editable={editable}
                     onSelectedChange={onOwnerChange}
-                    channelId={run.channel_id}
+                    participantUserIds={run.participant_ids}
                     placement={'bottom-end'}
                 />
             </Item>

@@ -632,7 +632,7 @@ describe('channels > actions', () => {
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // * Verify that playbook run finished message was posted
-            cy.findAllByTestId('postView').contains('marked this run as finished');
+            cy.findAllByTestId('postView').contains(`marked ${playbookName} as finished`);
 
             // * Verify that retrospective dialog was not posted
             cy.findAllByTestId('retrospective-reminder').should('not.exist');
