@@ -79,7 +79,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify no actions are configured
             cy.findByText('Task Actions').should('exist');
@@ -110,7 +112,9 @@ describe('runs > task actions', () => {
             cy.interceptTelemetry();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions
             cy.findByText('1 action');
@@ -154,7 +158,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions
             cy.findByText('1 action');
@@ -193,7 +199,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions
             cy.findByText('1 action');
@@ -233,7 +241,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // # Re-open the dialog
             cy.findByText('1 action').click();
@@ -244,7 +254,9 @@ describe('runs > task actions', () => {
             });
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions
             cy.findByText('1 action');
@@ -295,7 +307,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // # Re-open the dialog
             cy.findByText('1 action').click();
@@ -307,7 +321,9 @@ describe('runs > task actions', () => {
             });
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions
             cy.findByText('Task Actions');
@@ -348,7 +364,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify no actions are configured
             cy.findByText('Task Actions');
@@ -383,7 +401,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions and user
             cy.findByText('1 action');
@@ -445,7 +465,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions and user
             cy.findByText('1 action');
@@ -511,7 +533,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // * Verify configured actions and user
             cy.findByText('1 action');
@@ -562,7 +586,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // # Re-open the dialog
             cy.findByText('1 action').click();
@@ -573,7 +599,9 @@ describe('runs > task actions', () => {
             });
 
             // Save the dialog
+            cy.intercept('**/query').as('query');
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait('@query');
 
             // Verify configured actions
             cy.findByText('1 action');
@@ -632,7 +660,9 @@ describe('runs > task actions', () => {
             cy.findByText('Mark the task as done').click();
 
             // # Save the dialog
+            cy.intercept('**/query').as(`query${run.id}`);
             cy.findByTestId('modal-confirm-button').click();
+            cy.wait(`@query${run.id}`);
 
             // * Verify configured actions
             cy.findByText('1 action');
