@@ -11,9 +11,10 @@ import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
-import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
-import {useToaster} from '../../toast_banner';
-import {Role, Separator} from '../shared';
+
+import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 

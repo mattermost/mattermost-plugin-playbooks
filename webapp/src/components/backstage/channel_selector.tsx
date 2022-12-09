@@ -10,7 +10,7 @@ import {GlobeIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
-import {fetchMyChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
+import {fetchMyChannelsAndMembersREST, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
 
@@ -96,7 +96,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
 
     useEffect(() => {
         if (props.teamId !== '' && selectableChannels.length === 0) {
-            dispatch(fetchMyChannelsAndMembers(props.teamId));
+            dispatch(fetchMyChannelsAndMembersREST(props.teamId));
         }
     }, [props.teamId]);
 

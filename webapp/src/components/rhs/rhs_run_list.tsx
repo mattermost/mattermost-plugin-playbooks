@@ -3,26 +3,26 @@
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
+import {GlobalState} from '@mattermost/types/store';
 import styled from 'styled-components';
-
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, SortAscendingIcon, PlayOutlineIcon, CheckIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
-
 import {DateTime} from 'luxon';
-
+import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {debounce} from 'lodash';
 
+import {openPlaybookRunNewModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
-
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
-
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {pluginId} from 'src/manifest';
+import {getSiteUrl} from 'src/client';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -36,7 +36,8 @@ interface RunToDisplay {
     name: string
     participantIDs: string[]
     ownerUserID: string
-    playbook: PlaybookToDisplay
+    playbook?: Maybe<PlaybookToDisplay>
+    progress: number;
     lastUpdatedAt: number
 }
 
@@ -53,18 +54,25 @@ export interface RunListOptions {
 
 interface Props {
     runs: RunToDisplay[];
-    onSelectRun: (runID: string) => void
-    getMore: () => Promise<any>
-    hasMore: boolean
+    onSelectRun: (runID: string) => void;
+    onRunCreated: (runID: string, channelId: string) => void;
+    getMore: () => Promise<any>;
+    hasMore: boolean;
 
-    options: RunListOptions
-    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
-    numInProgress: number
-    numFinished: number
+    options: RunListOptions;
+    setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>;
+    numInProgress: number;
+    numFinished: number;
 }
+
+const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentChannelId = useSelector(getCurrentChannelId);
+    const refreshLHS = useLHSRefresh();
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = debounce(setLoadingMore, 100);
     const getMore = async () => {
@@ -72,19 +80,26 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
+    const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
 
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
-
     const showNoRuns = props.runs.length === 0;
 
     return (
         <>
             <RHSTitleRemoteRender>
-                <RHSTitleText>
-                    {/* product name; don't translate */}
-                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                    {'Playbooks'}
-                </RHSTitleText>
+                <TitleContainer>
+                    <ClipboardImage src={`${getSiteUrl()}/plugins/${pluginId}/public/app-bar-icon.png`}/>
+                    <RHSTitleText>
+                        {/* product name; don't translate */}
+                        {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                        {'Playbooks'}
+                    </RHSTitleText>
+                    <VerticalLine/>
+                    <ChannelNameText>
+                        {currentChannelName}
+                    </ChannelNameText>
+                </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
                 <Header>
@@ -116,10 +131,19 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    {/*<StartRunButton>
+                    <StartRunButton
+                        data-testid='rhs-runlist-start-run'
+                        onClick={() => {
+                            dispatch(openPlaybookRunNewModal({
+                                onRunCreated: props.onRunCreated,
+                                triggerChannelId: currentChannelId,
+                                teamId: currentTeamId,
+                            }));
+                        }}
+                    >
                         <PlayOutlineIcon size={14}/>
                         {formatMessage({defaultMessage: 'Start run'})}
-                    </StartRunButton>*/}
+                    </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
@@ -226,6 +250,34 @@ const StyledLoadingSpinner = styled(LoadingSpinner)`
     align-self: center;
 `;
 
+const TitleContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+`;
+
+const VerticalLine = styled.div`
+    opacity: 0.16;
+    border: 1px solid var(--center-channel-color);
+    height: 24px;
+`;
+
+const ChannelNameText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const ClipboardImage = styled.img`
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+`;
+
 const StartRunButton = styled(SecondaryButton)`
     display: flex;
     flex-direction: row;
@@ -246,7 +298,7 @@ const SortDotMenuButton = styled(DotMenuButton)`
 `;
 
 const SortMenuTitle = styled.div`
-    color: rgba(var(--center-channel-text-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     text-transform: uppercase;
     font-size: 12px;
     line-height: 16px;
@@ -291,7 +343,7 @@ const SortMenuItem = (props: SortMenuItemProps) => {
 };
 
 const FilterMenuNumericValue = styled.div`
-    color: rgba(var(--center-channel-text-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const BlueCheckmark = styled(CheckIcon)`
@@ -310,42 +362,65 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
 
     return (
-        <CardContainer
-            onClick={props.onClick}
-        >
-            <TitleRow>{props.name}</TitleRow>
-            <PeopleRow>
-                <OwnerProfileChip userId={props.ownerUserID}/>
-                <ParticipantsProfiles>
-                    <UserList
-                        userIds={participatIDsWithoutOwner}
-                        sizeInPx={20}
-                    />
-                </ParticipantsProfiles>
-            </PeopleRow>
-            <InfoRow>
-                <LastUpdatedText>
-                    {formatMessage(
-                        {defaultMessage: 'Last updated {time}'},
-                        {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                    )}
-                </LastUpdatedText>
-                <PlaybookChip>
-                    <StyledBookOutlineIcon
-                        size={11}
-                    />
-                    {props.playbook.title}
-                </PlaybookChip>
-            </InfoRow>
-        </CardContainer>
+        <CardWrapper progress={props.progress * 100}>
+            <CardContainer
+                onClick={props.onClick}
+                data-testid='run-list-card'
+            >
+                <TitleRow>{props.name}</TitleRow>
+                <PeopleRow>
+                    <OwnerProfileChip userId={props.ownerUserID}/>
+                    <ParticipantsProfiles>
+                        <UserList
+                            userIds={participatIDsWithoutOwner}
+                            sizeInPx={20}
+                        />
+                    </ParticipantsProfiles>
+                </PeopleRow>
+                <InfoRow>
+                    <LastUpdatedText>
+                        {formatMessage(
+                            {defaultMessage: 'Last updated {time}'},
+                            {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
+                        )}
+                    </LastUpdatedText>
+                    {props.playbook &&
+                    <PlaybookChip>
+                        <StyledBookOutlineIcon
+                            size={11}
+                        />
+                        {props.playbook.title}
+                    </PlaybookChip>
+                    }
+                </InfoRow>
+            </CardContainer>
+        </CardWrapper>
     );
 };
+const CardWrapper = styled.div<{progress: number}>`
+    margin: 0;
+    padding:0;
+    border-radius: 4px;
+    position: relative;
+
+    &:after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: calc(${({progress}) => 100 - progress}% + 1px);
+        bottom: 1px;
+        left: 1px;
+        border-bottom: 2px solid var(--online-indicator);
+        border-bottom-left-radius: inherit;
+        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
+    }
+`;
 
 const CardContainer = styled.div`
     display: flex;
     flex-direction: column;
     padding: 16px 20px 20px;
-    border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     gap: 8px;
@@ -382,7 +457,7 @@ const LastUpdatedText = styled.div`
     font-size: 11px;
     font-weight: 400;
     line-height: 16px;
-    color: rgba(var(--center-channel-text-rgb), 0.64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 const PlaybookChip = styled.div`
     display: flex;
@@ -394,13 +469,13 @@ const PlaybookChip = styled.div`
     font-size: 10px;
     font-weight: 600;
     line-height: 16px;
-    color: rgba(var(--center-channel-text-rgb), 0.72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 40%;
 
-    background: rgba(var(--center-channel-text-rgb), 0.08);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
 `;
 const OwnerProfileChip = styled(Profile)`
@@ -410,7 +485,7 @@ const OwnerProfileChip = styled(Profile)`
     font-size: 11px;
     line-height: 15px;
     padding: 2px 10px 2px 2px;
-    background: rgba(var(--center-channel-text-rgb), 0.08);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 12px;
 
     > .image {

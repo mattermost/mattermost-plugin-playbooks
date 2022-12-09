@@ -38,6 +38,8 @@ export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checkl
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
+export const SHOW_TASK_ACTIONS_MODAL = pluginId + '_show_task_actions_modal';
+export const HIDE_TASK_ACTIONS_MODAL = pluginId + '_hide_task_actions_modal';
 
 // Backstage RHS related action types
 // Note That this is not the same as channel RHS management
@@ -148,6 +150,14 @@ export interface ShowPlaybookActionsModal {
 
 export interface HidePlaybookActionsModal {
     type: typeof HIDE_PLAYBOOK_ACTIONS_MODAL;
+}
+
+export interface ShowTaskActionsModal {
+    type: typeof SHOW_TASK_ACTIONS_MODAL;
+}
+
+export interface HideTaskActionsModal {
+    type: typeof HIDE_TASK_ACTIONS_MODAL;
 }
 
 export interface SetHasViewedChannel {

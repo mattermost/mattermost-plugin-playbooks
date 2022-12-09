@@ -32,10 +32,12 @@ type Mutation {
 	addPlaybookMember(playbookID: String!, userID: String!): String!
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
+	setRunFavorite(id: String!, fav: Boolean!): String!
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
+	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String!
 }
 
 type PageInfo {
@@ -98,6 +100,22 @@ input ChecklistItemUpdates {
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
+	taskActions: [TaskActionUpdates!]
+}
+
+input TaskActionUpdates {
+	trigger: TriggerUpdates!
+	actions: [ActionUpdates!]!
+}
+
+input TriggerUpdates {
+	type: String!
+	payload: String!
+}
+
+input ActionUpdates {
+	type: String!
+	payload: String!
 }
 
 type Playbook {
@@ -107,6 +125,9 @@ type Playbook {
 	teamID: String!
 	createPublicPlaybookRun: Boolean!
 	deleteAt: Float!
+	lastRunAt: Float!
+	numRuns: Int!
+	activeRuns: Int!
 	runSummaryTemplateEnabled: Boolean!
 	defaultPlaybookMemberRole: String!
 	public: Boolean!
@@ -171,6 +192,22 @@ type ChecklistItem {
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
+	taskActions: [TaskAction!]!
+}
+
+type TaskAction {
+	trigger: Trigger!
+	actions: [Action!]!
+}
+
+type Trigger {
+	type: String!
+	payload: String!
+}
+
+type Action {
+	type: String!
+	payload: String!
 }
 
 enum MetricType {
@@ -190,7 +227,7 @@ type PlaybookMetricConfig {
 type Run {
 	id: String!
 	playbookID: String!
-	playbook: Playbook!
+	playbook: Playbook
 	name: String!
 	ownerUserID: String!
 	channelID: String!
@@ -232,6 +269,8 @@ type Run {
 
 	timelineEvents: [TimelineEvent!]!
 	metadata: Metadata!
+
+	progress: Float!
 }
 
 type RunConnection {
@@ -266,7 +305,6 @@ type TimelineEvent {
 input RunUpdates {
 	name: String
 	summary: String
-	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
 	statusUpdateBroadcastChannelsEnabled: Boolean

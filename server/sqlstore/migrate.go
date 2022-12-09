@@ -85,23 +85,14 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 
 func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
 	driverName := sqlStore.db.DriverName()
-	config := drivers.Config{
-		StatementTimeoutInSecs: 100000,
-		MigrationsTable:        "IR_db_migrations",
-	}
 
 	var driver drivers.Driver
 	var err error
 	switch driverName {
 	case model.DatabaseDriverMysql:
-		driver, err = ms.WithInstance(sqlStore.db.DB, &ms.Config{
-			Config: config,
-		})
-
+		driver, err = ms.WithInstance(sqlStore.db.DB)
 	case model.DatabaseDriverPostgres:
-		driver, err = ps.WithInstance(sqlStore.db.DB, &ps.Config{
-			Config: config,
-		})
+		driver, err = ps.WithInstance(sqlStore.db.DB)
 	default:
 		err = fmt.Errorf("unsupported database type %s for migration", driverName)
 	}
@@ -143,6 +134,8 @@ func (sqlStore *SQLStore) createMorphEngine() (*morph.Morph, error) {
 
 	opts := []morph.EngineOption{
 		morph.WithLock("mm-playbooks-lock-key"),
+		morph.SetMigrationTableName("IR_db_migrations"),
+		morph.SetStatementTimeoutInSeconds(100000),
 	}
 	engine, err := morph.New(context.Background(), driver, src, opts...)
 

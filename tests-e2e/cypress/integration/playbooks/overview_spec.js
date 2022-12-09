@@ -157,7 +157,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybookOnTeamForSwitching.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
@@ -212,34 +212,65 @@ describe('playbooks > overview', () => {
         cy.findByTestId('playbook-members').should('contain', '1');
     });
 
-    it('shows checklists', () => {
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Playbook',
-            description: 'Cypress Playbook',
-            memberIDs: [],
-            checklists: [
-                {
-                    title: 'Stage 1',
-                    items: [
-                        {title: 'Step 1'},
-                        {title: 'Step 2'},
+    describe('checklists', () => {
+        describe('header', () => {
+            beforeEach(() => {
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook',
+                    description: 'Cypress Playbook',
+                    memberIDs: [],
+                    checklists: [
+                        {
+                            title: 'Stage 1',
+                            items: [
+                                {title: 'Step 1'},
+                                {title: 'Step 2'},
+                            ],
+                        },
                     ],
-                },
-            ],
-            retrospectiveTemplate: 'Cypress test template'
-        }).then((playbook) => {
-            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+                    retrospectiveTemplate: 'Cypress test template'
+                }).then((playbook) => {
+                    cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+                });
+            });
+
+            it('has title', () => {
+                cy.get('#checklists').within(() => {
+                    cy.findByText('Tasks').should('exist');
+                });
+            });
         });
 
-        // # Switch to Outline section
-        cy.findByText('Outline').click();
+        it('shows checklists', () => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                description: 'Cypress Playbook',
+                memberIDs: [],
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                retrospectiveTemplate: 'Cypress test template'
+            }).then((playbook) => {
+                cy.visit(`/playbooks/playbooks/${playbook.id}`);
+            });
 
-        // * Verify checklist and associated steps
-        cy.get('#checklists').within(() => {
-            cy.findByText('Stage 1').should('exist');
-            cy.findByText('Step 1').should('exist');
-            cy.findByText('Step 2').should('exist');
+            // # Switch to Outline section
+            cy.findByText('Outline').click();
+
+            // * Verify checklist and associated steps
+            cy.get('#checklists').within(() => {
+                cy.findByText('Stage 1').should('exist');
+                cy.findByText('Step 1').should('exist');
+                cy.findByText('Step 2').should('exist');
+            });
         });
     });
 
@@ -288,7 +319,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # Click Run Playbook
-        cy.findByTestId('run-playbook').click({force: true});
+        cy.findByTestId('run-playbook').click();
 
         // # Enter the run name
         cy.findByTestId('run-name-input').clear().type('run1234567');
@@ -383,7 +414,7 @@ describe('playbooks > overview', () => {
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 
             // # Click Run Playbook
-            cy.findByTestId('run-playbook').click({force: true});
+            cy.findByTestId('run-playbook').click();
 
             // * Verify that channel configuration matches playbook config
             cy.findByTestId('link-existing-channel-radio').should('not.be.checked');

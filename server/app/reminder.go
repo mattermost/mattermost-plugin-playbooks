@@ -90,7 +90,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	}
 
 	post := &model.Post{
-		Message:   fmt.Sprintf("@%s, please provide a status update.", owner.Username),
+		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID)),
 		ChannelId: playbookRunToModify.ChannelID,
 		Type:      "custom_update_status",
 		Props: map[string]interface{}{
