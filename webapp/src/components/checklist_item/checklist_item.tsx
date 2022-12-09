@@ -395,13 +395,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
-                        setIsEditing(false);
+                        // reset values while in edit mode to prevent re-save of old/current values
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
                         setAssigneeID(props.checklistItem.assignee_id ?? '');
                         setDueDate(props.checklistItem.due_date);
                         setCommand(props.checklistItem.command);
                         setTaskActions(props.checklistItem.task_actions);
+
+                        // exit edit mode
+                        setIsEditing(false);
                         props.cancelAddingItem?.();
                     }}
                     onSave={() => {
