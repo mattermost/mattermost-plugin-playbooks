@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -77,7 +77,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         checked={playbook.channel_mode === 'link_existing_channel'}
                         onChange={() => handleChannelModeChange('link_existing_channel')}
                     />
-                    <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                    <FormattedMessage defaultMessage='Link to an existing channel'/>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <StyledChannelSelector
@@ -102,7 +102,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         checked={playbook.channel_mode === 'create_new_channel'}
                         onChange={() => handleChannelModeChange('create_new_channel')}
                     />
-                    <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                    <FormattedMessage defaultMessage='Create a run channel'/>
                 </AutomationTitle>
                 <HorizontalSplit>
                     <VerticalSplit>

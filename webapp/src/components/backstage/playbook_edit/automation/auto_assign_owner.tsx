@@ -34,7 +34,7 @@ export const AutoAssignOwner = (props: Props) => {
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <div><FormattedMessage defaultMessage='Assign the owner role'/></div>
+                <FormattedMessage defaultMessage='Assign the owner role'/>
             </AutomationTitle>
             <SelectorWrapper>
                 <AssignOwnerSelector

@@ -34,7 +34,7 @@ export const WebhookSetting = (props: Props) => {
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <div>{props.textOnToggle}</div>
+                <span>{props.textOnToggle}</span>
             </AutomationTitle>
             <SelectorWrapper>
                 <PatternedTextArea

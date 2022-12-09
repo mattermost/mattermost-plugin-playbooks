@@ -31,7 +31,7 @@ export const CategorizePlaybookRun = (props: Props) => {
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
+                <FormattedMessage defaultMessage='Add the channel to a sidebar category'/>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledCategorySelector

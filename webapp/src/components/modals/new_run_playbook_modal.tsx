@@ -261,7 +261,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={linkExistingChannel}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -287,7 +287,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                <FormattedMessage defaultMessage={'Create a run channel'}/>
             </ChannelBlock>
 
             {createNewChannel && (
@@ -401,7 +401,7 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-const ChannelBlock = styled.div`
+const ChannelBlock = styled.label`
     display: flex;
     flex-direction: row;
     width: 350px;

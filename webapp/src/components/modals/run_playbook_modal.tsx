@@ -1,6 +1,6 @@
 import React, {ComponentProps, useState, useEffect} from 'react';
 
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
@@ -125,7 +125,7 @@ const RunPlaybookModal = ({
                     checked={linkExistingChannel}
                     onChange={() => setChannelMode('link_existing_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
             </AutomationTitle>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -151,7 +151,7 @@ const RunPlaybookModal = ({
                     checked={createNewChannel}
                     onChange={() => setChannelMode('create_new_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                <FormattedMessage defaultMessage='Create a run channel'/>
             </AutomationTitle>
 
             {createNewChannel && (

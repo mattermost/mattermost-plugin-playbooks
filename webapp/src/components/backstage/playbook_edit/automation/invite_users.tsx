@@ -35,7 +35,7 @@ export const InviteUsers = (props: Props) => {
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <div><FormattedMessage defaultMessage='Invite participants'/></div>
+                <FormattedMessage defaultMessage='Invite participants'/>
             </AutomationTitle>
             <SelectorWrapper>
                 <InviteUsersSelector

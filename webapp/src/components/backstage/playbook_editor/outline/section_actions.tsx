@@ -188,7 +188,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         />
-                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
+                        <FormattedMessage defaultMessage='Add them to the run channel'/>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
@@ -209,7 +209,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         />
-                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                        <FormattedMessage defaultMessage='Remove them from the run channel'/>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>

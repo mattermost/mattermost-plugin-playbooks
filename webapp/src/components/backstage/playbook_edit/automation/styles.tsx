@@ -10,7 +10,7 @@ export const AutomationHeader = styled.div`
     width: 100%;
 `;
 
-export const AutomationTitle = styled.div`
+export const AutomationTitle = styled.label`
     display: flex;
     flex-direction: row;
     width: 350px;
