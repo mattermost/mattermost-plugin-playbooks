@@ -16,6 +16,8 @@ export const AutomationTitle = styled.label`
     width: 350px;
     align-items: center;
     column-gap: 12px;
+    font-weight: inherit;
+    margin-bottom: 0;
 `;
 
 export const SelectorWrapper = styled.div`
