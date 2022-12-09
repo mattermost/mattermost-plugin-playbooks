@@ -1,13 +1,13 @@
-import React, {ComponentProps, useState, useEffect} from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Client4} from 'mattermost-redux/client';
 
-import {NotebookOutlineIcon, AccountOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, NotebookOutlineIcon} from '@mattermost/compass-icons/components';
 import {GlobalState} from '@mattermost/types/store';
 
 import {displayUsername, getFullName} from 'mattermost-redux/utils/user_utils';
@@ -21,8 +21,12 @@ import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
-import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
-import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
+import {AutomationLabel, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    ButtonLabel,
+    StyledChannelSelector,
+    VerticalSplit
+} from 'src/components/backstage/playbook_edit/automation/channel_access';
 
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 
@@ -120,12 +124,15 @@ const RunPlaybookModal = ({
                 css={{alignSelf: 'flex-start'}}
             >
                 <StyledRadioInput
+                    id={'link-existing-channel-radio'}
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
                     onChange={() => setChannelMode('link_existing_channel')}
                 />
-                <FormattedMessage defaultMessage='Link to an existing channel'/>
+                <AutomationLabel htmlFor={'link-existing-channel-radio'}>
+                    {formatMessage({defaultMessage: 'Link to an existing channel'})}
+                </AutomationLabel>
             </AutomationTitle>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -146,12 +153,15 @@ const RunPlaybookModal = ({
 
             <AutomationTitle css={{alignSelf: 'flex-start'}} >
                 <StyledRadioInput
+                    id={'create-channel-radio'}
                     data-testid={'create-channel-radio'}
                     type='radio'
                     checked={createNewChannel}
                     onChange={() => setChannelMode('create_new_channel')}
                 />
-                <FormattedMessage defaultMessage='Create a run channel'/>
+                <AutomationLabel htmlFor={'create-channel-radio'}>
+                    {formatMessage({defaultMessage: 'Create a run channel'})}
+                </AutomationLabel>
             </AutomationTitle>
 
             {createNewChannel && (

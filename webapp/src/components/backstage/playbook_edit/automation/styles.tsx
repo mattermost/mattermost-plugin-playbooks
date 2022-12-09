@@ -10,12 +10,15 @@ export const AutomationHeader = styled.div`
     width: 100%;
 `;
 
-export const AutomationTitle = styled.label`
+export const AutomationTitle = styled.div`
     display: flex;
     flex-direction: row;
     width: 350px;
     align-items: center;
     column-gap: 12px;
+`;
+
+export const AutomationLabel = styled.label`
     font-weight: inherit;
     margin-bottom: 0;
 `;

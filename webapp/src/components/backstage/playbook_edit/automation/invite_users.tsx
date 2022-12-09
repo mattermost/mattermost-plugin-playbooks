@@ -9,6 +9,7 @@ import {FormattedMessage} from 'react-intl';
 
 import {
     AutomationHeader,
+    AutomationLabel,
     AutomationTitle,
     SelectorWrapper,
 } from 'src/components/backstage/playbook_edit/automation/styles';
@@ -31,11 +32,14 @@ export const InviteUsers = (props: Props) => {
         <AutomationHeader>
             <AutomationTitle>
                 <Toggle
+                    inputId={'invite-users-toggle'}
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <FormattedMessage defaultMessage='Invite participants'/>
+                <AutomationLabel htmlFor={'invite-users-toggle'}>
+                    <FormattedMessage defaultMessage='Invite participants'/>
+                </AutomationLabel>
             </AutomationTitle>
             <SelectorWrapper>
                 <InviteUsersSelector

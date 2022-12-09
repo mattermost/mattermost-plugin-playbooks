@@ -1,4 +1,4 @@
-import React, {ComponentProps, useState, useEffect} from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -12,7 +12,11 @@ import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
-import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
+import {
+    ButtonLabel,
+    StyledChannelSelector,
+    VerticalSplit,
+} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
@@ -256,12 +260,15 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
         <ChannelContainer>
             <ChannelBlock>
                 <StyledRadioInput
+                    id={'link-existing-channel-radio'}
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
-                <FormattedMessage defaultMessage='Link to an existing channel'/>
+                <ChannelBlockLabel htmlFor={'link-existing-channel-radio'}>
+                    {formatMessage({defaultMessage: 'Link to an existing channel'})}
+                </ChannelBlockLabel>
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -282,12 +289,13 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
 
             <ChannelBlock >
                 <StyledRadioInput
+                    id={'create-channel-radio'}
                     data-testid={'create-channel-radio'}
                     type='radio'
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <FormattedMessage defaultMessage={'Create a run channel'}/>
+                <ChannelBlockLabel htmlFor={'create-channel-radio'}>{formatMessage({defaultMessage: 'Create a run channel'})}</ChannelBlockLabel>
             </ChannelBlock>
 
             {createNewChannel && (
@@ -401,15 +409,18 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-const ChannelBlock = styled.label`
+const ChannelBlock = styled.div`
     display: flex;
     flex-direction: row;
     width: 350px;
     align-items: center;
     column-gap: 12px;
+    align-self: 'flex-start';
+`;
+
+const ChannelBlockLabel = styled.label`
     font-weight: inherit;
     margin-bottom: 0;
-    align-self: 'flex-start';
 `;
 
 const SelectorWrapper = styled.div`

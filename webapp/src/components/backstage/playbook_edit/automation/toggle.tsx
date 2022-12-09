@@ -6,6 +6,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 interface ToggleProps {
+    inputId?: string;
     isChecked: boolean;
     disabled?: boolean;
     onChange: () => void;
@@ -18,6 +19,7 @@ export const Toggle = (props: ToggleProps) => {
             tabIndex={0}
         >
             <InvisibleInput
+                id={props.inputId}
                 type='checkbox'
                 onChange={props.onChange}
                 checked={props.isChecked}

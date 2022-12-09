@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, ComponentProps} from 'react';
+import React, {ComponentProps, useCallback} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -9,7 +9,7 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {PlayIcon, AccountPlusOutlineIcon, AccountMinusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -21,7 +21,7 @@ import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+import {AutomationLabel, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 
 import {useProxyState} from 'src/hooks';
 
@@ -180,6 +180,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
+                            inputId={'participant-joins-run-toggle'}
                             disabled={archived}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
@@ -188,7 +189,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         />
-                        <FormattedMessage defaultMessage='Add them to the run channel'/>
+                        <AutomationLabel htmlFor={'participant-joins-run-toggle'}>
+                            <FormattedMessage defaultMessage='Add them to the run channel'/>
+                        </AutomationLabel>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
@@ -201,6 +204,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
+                            inputId={'participant-leaves-run-toggle'}
                             disabled={archived}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
@@ -209,7 +213,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         />
-                        <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                        <AutomationLabel htmlFor={'participant-leaves-run-toggle'}>
+                            <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                        </AutomationLabel>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>

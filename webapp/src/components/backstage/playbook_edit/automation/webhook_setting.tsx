@@ -3,7 +3,12 @@
 
 import React from 'react';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    AutomationHeader,
+    AutomationLabel,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PatternedTextArea from 'src/components/patterned_text_area';
 
@@ -30,11 +35,14 @@ export const WebhookSetting = (props: Props) => {
         <AutomationHeader>
             <AutomationTitle>
                 <Toggle
+                    inputId={'webhook-setting-radio'}
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
                 />
-                <span>{props.textOnToggle}</span>
+                <AutomationLabel htmlFor={'webhook-setting-radio'}>
+                    {props.textOnToggle}
+                </AutomationLabel>
             </AutomationTitle>
             <SelectorWrapper>
                 <PatternedTextArea
