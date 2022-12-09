@@ -48,7 +48,9 @@ export const HIDE_TASK_ACTIONS_MODAL = pluginId + '_hide_task_actions_modal';
 export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
 export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
 
-export const PUBLISH_TEMPLATES = pluginId + '_publish_templates';
+// This action is meant to be used by mattermost-webapp
+// so we respect their naming convention (all caps)
+export const PUBLISH_TEMPLATES = (pluginId + '_PUBLISH_TEMPLATES').toUpperCase();
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
