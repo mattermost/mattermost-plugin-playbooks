@@ -75,6 +75,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Verify no actions are configured
             cy.findByText('Task Actions').should('exist');
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
@@ -105,6 +111,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions
             cy.findByText('1 action');
@@ -139,6 +151,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Verify configured actions
             cy.findByText('1 action');
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
@@ -166,6 +184,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions
             cy.findByText('1 action');
@@ -196,6 +220,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Re-open the dialog
             cy.findByText('1 action').click();
 
@@ -206,6 +236,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions
             cy.findByText('1 action');
@@ -236,6 +272,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Re-open the dialog
             cy.findByText('1 action').click();
 
@@ -247,6 +289,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions
             cy.findByText('Task Actions');
@@ -278,6 +326,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify no actions are configured
             cy.findByText('Task Actions').should('exist');
@@ -314,6 +368,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions and user
             cy.findByText('1 action');
@@ -355,6 +415,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Verify configured actions and user
             cy.findByText('1 action');
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
@@ -393,6 +459,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions and user
             cy.findByText('1 action');
@@ -434,6 +506,12 @@ describe('playbooks > edit > task actions', () => {
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
+
             // Re-open the dialog
             cy.findByText('1 action').click();
 
@@ -444,6 +522,12 @@ describe('playbooks > edit > task actions', () => {
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
+
+            // Save the edit to trigger remote update
+            cy.findByTestId('checklist-item-save-button').click();
+
+            // Edit again
+            editTask();
 
             // Verify configured actions
             cy.findByText('1 action');
