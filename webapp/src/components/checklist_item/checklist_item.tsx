@@ -22,9 +22,8 @@ import {
 import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
 import {TaskActionsEventTarget} from 'src/types/telemetry';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
-
+import {useProxyState} from 'src/hooks';
 import {DateTimeOption} from 'src/components/datetime_selector';
-
 import {Mode} from 'src/components/datetime_input';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
@@ -84,12 +83,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
-    const [titleValue, setTitleValue] = useState(props.checklistItem.title);
-    const [descValue, setDescValue] = useState(props.checklistItem.description);
-    const [command, setCommand] = useState(props.checklistItem.command);
-    const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
-    const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
-    const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
@@ -99,40 +92,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         return props.checklistItem.state === ChecklistItemState.Skip;
     };
 
-    useUpdateEffect(() => {
-        setTitleValue(props.checklistItem.title);
-    }, [props.checklistItem.title]);
+    // title, desc state management
+    const [titleValue, setTitleValue] = useProxyState(props.checklistItem.title);
+    const [descValue, setDescValue] = useProxyState(props.checklistItem.description);
 
-    useUpdateEffect(() => {
-        setDescValue(props.checklistItem.description);
-    }, [props.checklistItem.description]);
-
-    useUpdateEffect(() => {
-        setCommand(props.checklistItem.command);
-    }, [props.checklistItem.command]);
-
-    useUpdateEffect(() => {
-        setAssigneeID(props.checklistItem.assignee_id);
-    }, [props.checklistItem.assignee_id]);
-
-    useUpdateEffect(() => {
-        setDueDate(props.checklistItem.due_date);
-    }, [props.checklistItem.due_date]);
-
-    useUpdateEffect(() => {
-        setTaskActions(taskActions);
-    }, [props.checklistItem.task_actions]);
-
-    const onAssigneeChange = async (user?: UserProfile) => {
-        const userId = user?.id || '';
-        setAssigneeID(userId);
-        if (props.newItem) {
-            return;
-        }
+    // assignee state management
+    const saveAssignee = async (userId = '') => {
         if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
             if (response.error) {
-                console.log(response.error); // eslint-disable-line no-console
+                console.error(response.error); // eslint-disable-line no-console
             }
         } else {
             const newItem = {...props.checklistItem};
@@ -141,19 +110,21 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
-    const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
-        let timestamp = 0;
-        if (value?.value) {
-            timestamp = value?.value.toMillis();
-        }
-        setDueDate(timestamp);
-        if (props.newItem) {
+    const [assigneeID, setAssigneeID] = useProxyState(props.checklistItem.assignee_id ?? '', (userId: string) => {
+        if (props.newItem || isEditing) {
             return;
         }
+        saveAssignee(userId);
+    }, 0);
+
+    const onAssigneeChange = (user?: UserProfile) => setAssigneeID(user?.id ?? '');
+
+    // due date state management
+    const saveDueDate = async (timestamp: number) => {
         if (props.playbookRunId) {
             const response = await clientSetDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
             if (response.error) {
-                console.log(response.error); // eslint-disable-line no-console
+                console.error(response.error); // eslint-disable-line no-console
             }
         } else {
             const newItem = {...props.checklistItem};
@@ -162,8 +133,28 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
-    const onCommandChange = async (newCommand: string) => {
-        setCommand(newCommand);
+    const [dueDate, setDueDate] = useProxyState(props.checklistItem.due_date, (value: number) => {
+        if (props.newItem || isEditing) {
+            return;
+        }
+        saveDueDate(value);
+    }, 0);
+
+    const onDueDateChange = async (timestamp: number) => setDueDate(timestamp);
+
+    // command state management
+    const [command, setCommand] = useProxyState(props.checklistItem.command, (cmd: string) => {
+        if (props.newItem || isEditing) {
+            return;
+        }
+        saveCommand(cmd);
+    }, 0);
+
+    useUpdateEffect(() => {
+        setTaskActions(taskActions);
+    }, [props.checklistItem.task_actions]);
+
+    const saveCommand = async (newCommand: string) => {
         if (props.newItem) {
             return;
         }
@@ -175,12 +166,20 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             props.onUpdateChecklistItem?.(newItem);
         }
     };
+    const onCommandChange = (cmd: string) => setCommand(cmd);
 
-    const onTaskActionsChange = async (newTaskActions: TaskActionType[]) => {
-        setTaskActions(newTaskActions);
+    // task actions state management
+    const [taskActions, setTaskActions] = useProxyState(props.checklistItem.task_actions, (actions) => {
+        if (props.newItem || isEditing) {
+            return;
+        }
+        saveTaskActions(actions);
+    });
+    const saveTaskActions = async (newTaskActions: TaskActionType[]) => {
         if (props.newItem) {
             return;
         }
+
         if (props.playbookRunId) {
             updateRunTaskActions(props.checklistNum, props.itemNum, newTaskActions);
             telemetryEvent(TaskActionsEventTarget.UpdateActions, {
@@ -195,6 +194,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             props.onUpdateChecklistItem?.(newItem);
         }
     };
+    const onTaskActionsChange = (actions: TaskActionType[]) => setTaskActions(actions);
 
     const renderAssignTo = (): null | React.ReactNode => {
         if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !isEditing)) {
@@ -264,7 +264,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 date={dueDate}
                 ignoreOverdue={isTaskFinishedOrSkipped}
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
-                onSelectedChange={onDueDateChange}
+                onSelectedChange={(value?: DateTimeOption | undefined | null) => {
+                    let timestamp = 0;
+                    if (value?.value) {
+                        timestamp = value?.value.toMillis();
+                    }
+                    onDueDateChange(timestamp);
+                }}
                 placement={'bottom-start'}
             />
         );
@@ -339,7 +345,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         assignee_id={assigneeID || ''}
                         onAssigneeChange={onAssigneeChange}
                         due_date={props.checklistItem.due_date}
-                        onDueDateChange={onDueDateChange}
+                        onDueDateChange={(value?: DateTimeOption | undefined | null) => {
+                            let timestamp = 0;
+                            if (value?.value) {
+                                timestamp = value?.value.toMillis();
+                            }
+                            onDueDateChange(timestamp);
+                        }}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
                         onItemOpenChange={setIsHoverMenuItemOpen}
@@ -386,6 +398,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
+                        setAssigneeID(props.checklistItem.assignee_id ?? '');
+                        setDueDate(props.checklistItem.due_date);
+                        setCommand(props.checklistItem.command);
+                        setTaskActions(props.checklistItem.task_actions);
                         props.cancelAddingItem?.();
                     }}
                     onSave={() => {
@@ -413,6 +429,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 command,
                                 description: descValue,
                             });
+                            saveAssignee(assigneeID);
+                            saveDueDate(dueDate);
+                            saveTaskActions(taskActions);
                         } else {
                             const newItem = {...props.checklistItem};
                             newItem.title = titleValue;
