@@ -87,7 +87,7 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} bir durum güncellemesi istedi. \n"
+        "translation": "@here — @{{.Name}}, [{{.RunName}}]({{.RunURL}}) için bir durum güncellemesi istedi. \n"
     },
     {
         "id": "app.user.run.request_get_involved",
@@ -111,10 +111,10 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Username}} bu oyun için durum güncellemelerini etkinleştirdi"
+        "translation": "@{{.Username}}, [{{.RunName}}]({{.RunURL}}) için durum güncellemelerini etkinleştirdi"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Username}} bu oyun için durum güncellemelerini devre dışı bıraktı"
+        "translation": "@{{.Username}}, [{{.RunName}}]({{.RunURL}}) için durum güncellemelerini devre dışı bıraktı"
     }
 ]
