@@ -6,7 +6,7 @@ package mock_app
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	cluster "github.com/mattermost/mattermost-plugin-api/cluster"
+	cluster 	"github.com/mattermost/mattermost-plugin-playbooks/product/pluginapi/cluster"
 	reflect "reflect"
 	time "time"
 )

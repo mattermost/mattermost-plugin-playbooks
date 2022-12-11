@@ -34,6 +34,10 @@ type ServicesAPI interface {
 	GetChannelByID(channelID string) (*mm_model.Channel, error)
 	GetChannelMember(channelID string, userID string) (*mm_model.ChannelMember, error)
 	GetChannelsForTeamForUser(teamID string, userID string, includeDeleted bool) (mm_model.ChannelList, error)
+	GetChannelSidebarCategories(userID, teamID string) (*mm_model.OrderedSidebarCategories, error)
+	GetChannelMembers(channelID string, page, perPage int) (mm_model.ChannelMembers, error)
+	CreateChannelSidebarCategory(userID, teamID string, newCategory *mm_model.SidebarCategoryWithChannels) (*mm_model.SidebarCategoryWithChannels, error)
+	UpdateChannelSidebarCategories(userID, teamID string, categories []*mm_model.SidebarCategoryWithChannels) ([]*mm_model.SidebarCategoryWithChannels, error)
 
 	// Post service
 	CreatePost(post *mm_model.Post) (*mm_model.Post, error)
@@ -77,10 +81,14 @@ type ServicesAPI interface {
 
 	// Logger service
 	GetLogger() mlog.LoggerIFace
+	LogError(msg string, keyValuePairs ...interface{})
 
 	// KVStore service
 	KVSetWithOptions(key string, value []byte, options mm_model.PluginKVSetOptions) (bool, error)
 	Get(key string, o interface{}) error
+	KVGet(key string) ([]byte, error)
+	KVDelete(key string) error
+	KVList(page, count int) ([]string, error)
 
 	// Store service
 	GetMasterDB() (*sql.DB, error)
@@ -96,4 +104,7 @@ type ServicesAPI interface {
 	GetPreferencesForUser(userID string) (mm_model.Preferences, error)
 	UpdatePreferencesForUser(userID string, preferences mm_model.Preferences) error
 	DeletePreferencesForUser(userID string, preferences mm_model.Preferences) error
+
+	//TODO: Should we add this method to product api?
+	GetSession(sessionID string) (*mm_model.Session, error)
 }

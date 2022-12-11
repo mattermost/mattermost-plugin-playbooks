@@ -11,10 +11,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -23,7 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
 const (
@@ -157,130 +154,130 @@ func (p *Plugin) OnActivate() error {
 
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
+	/*
+		apiClient := sqlstore.NewClient(nil) //sqlstore.NewClient(pluginAPIClient)
+		// p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
+		scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	apiClient := sqlstore.NewClient(nil) //sqlstore.NewClient(pluginAPIClient)
-	// p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
-	scheduler := cluster.GetJobOnceScheduler(p.API)
+		sqlStore, err := sqlstore.New(apiClient, scheduler)
+		if err != nil {
+			return errors.Wrapf(err, "failed creating the SQL store")
+		}
 
-	sqlStore, err := sqlstore.New(apiClient, scheduler)
-	if err != nil {
-		return errors.Wrapf(err, "failed creating the SQL store")
-	}
+		playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+		playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
+		statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
+		p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
+		channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
+		categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 
-	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
-	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
-	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
-	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
-	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
-	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
+		p.handler = api.NewHandler(p.config)
 
-	p.handler = api.NewHandler(p.config)
+		p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
+		keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+		p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
+		p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
 
-	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
-	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
+		p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
-	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
+		p.playbookRunService = app.NewPlaybookRunService(
+			pluginAPIClient,
+			playbookRunStore,
+			p.bot,
+			p.config,
+			scheduler,
+			p.telemetryClient,
+			p.API,
+			p.playbookService,
+			p.channelActionService,
+			p.licenseChecker,
+			p.metricsService,
+		)
 
-	p.playbookRunService = app.NewPlaybookRunService(
-		pluginAPIClient,
-		playbookRunStore,
-		p.bot,
-		p.config,
-		scheduler,
-		p.telemetryClient,
-		p.API,
-		p.playbookService,
-		p.channelActionService,
-		p.licenseChecker,
-		p.metricsService,
-	)
+		if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
+			logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
+		}
+		if err = scheduler.Start(); err != nil {
+			logrus.WithError(err).Error("JobOnceScheduler could not start")
+		}
 
-	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
-		logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
-	}
-	if err = scheduler.Start(); err != nil {
-		logrus.WithError(err).Error("JobOnceScheduler could not start")
-	}
-
-	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
-	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
-	if err != nil {
-		return errors.Wrapf(err, "failed creating cluster mutex")
-	}
-	mutex.Lock()
-	if err = sqlStore.RunMigrations(); err != nil {
+		// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
+		mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+		if err != nil {
+			return errors.Wrapf(err, "failed creating cluster mutex")
+		}
+		mutex.Lock()
+		if err = sqlStore.RunMigrations(); err != nil {
+			mutex.Unlock()
+			return errors.Wrapf(err, "failed to run migrations")
+		}
 		mutex.Unlock()
-		return errors.Wrapf(err, "failed to run migrations")
-	}
-	mutex.Unlock()
 
-	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
+		p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
-	api.NewGraphQLHandler(
-		p.handler.APIRouter,
-		p.playbookService,
-		p.playbookRunService,
-		p.categoryService,
-		pluginAPIClient,
-		p.config,
-		p.permissions,
-		playbookStore,
-		p.licenseChecker,
-	)
-	api.NewPlaybookHandler(
-		p.handler.APIRouter,
-		p.playbookService,
-		pluginAPIClient,
-		p.config,
-		p.permissions,
-	)
-	api.NewPlaybookRunHandler(
-		p.handler.APIRouter,
-		p.playbookRunService,
-		p.playbookService,
-		p.permissions,
-		p.licenseChecker,
-		pluginAPIClient,
-		p.bot,
-		p.config,
-	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
-	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.telemetryClient, p.permissions)
-	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
-	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
-	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
-	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
+		api.NewGraphQLHandler(
+			p.handler.APIRouter,
+			p.playbookService,
+			p.playbookRunService,
+			p.categoryService,
+			pluginAPIClient,
+			p.config,
+			p.permissions,
+			playbookStore,
+			p.licenseChecker,
+		)
+		api.NewPlaybookHandler(
+			p.handler.APIRouter,
+			p.playbookService,
+			pluginAPIClient,
+			p.config,
+			p.permissions,
+		)
+		api.NewPlaybookRunHandler(
+			p.handler.APIRouter,
+			p.playbookRunService,
+			p.playbookService,
+			p.permissions,
+			p.licenseChecker,
+			pluginAPIClient,
+			p.bot,
+			p.config,
+		)
+		api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
+		api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
+		api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.telemetryClient, p.permissions)
+		api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+		api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
+		api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
+		api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
 
-	isTestingEnabled := false
-	flag := p.API.GetConfig().ServiceSettings.EnableTesting
-	if flag != nil {
-		isTestingEnabled = *flag
-	}
-	if err = command.RegisterCommands(p.API.RegisterCommand, isTestingEnabled); err != nil {
-		return errors.Wrapf(err, "failed register commands")
-	}
+		isTestingEnabled := false
+		flag := p.API.GetConfig().ServiceSettings.EnableTesting
+		if flag != nil {
+			isTestingEnabled = *flag
+		}
+		if err = command.RegisterCommands(p.API.RegisterCommand, isTestingEnabled); err != nil {
+			return errors.Wrapf(err, "failed register commands")
+		}
 
-	enableMetrics := p.API.GetConfig().MetricsSettings.Enable
-	if enableMetrics != nil && *enableMetrics {
-		// run metrics server to expose data
-		p.runMetricsServer()
-		// run metrics updater recurring task
-		p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
-		// set error counter middleware handler
-		p.handler.APIRouter.Use(p.getErrorCounterHandler())
-	}
+		enableMetrics := p.API.GetConfig().MetricsSettings.Enable
+		if enableMetrics != nil && *enableMetrics {
+			// run metrics server to expose data
+			p.runMetricsServer()
+			// run metrics updater recurring task
+			p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+			// set error counter middleware handler
+			p.handler.APIRouter.Use(p.getErrorCounterHandler())
+		}
 
-	// prevent a recursive OnConfigurationChange
-	go func() {
-		// Remove the prepackaged old versions of the plugin
-		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
-		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
-	}()
-
+		// prevent a recursive OnConfigurationChange
+		go func() {
+			// Remove the prepackaged old versions of the plugin
+			_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
+			_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
+		}()
+	*/
 	return nil
 }
 

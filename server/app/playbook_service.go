@@ -1,12 +1,12 @@
 package app
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 )
 
 const (
@@ -19,12 +19,12 @@ type playbookService struct {
 	store          PlaybookStore
 	poster         bot.Poster
 	telemetry      PlaybookTelemetry
-	api            *pluginapi.Client
+	api            playbooks.ServicesAPI
 	metricsService *metrics.Metrics
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api playbooks.ServicesAPI, metricsService *metrics.Metrics) PlaybookService {
 	return &playbookService{
 		store:          store,
 		poster:         poster,
@@ -214,11 +214,11 @@ func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *mo
 func licenseAndGuestCheck(s *playbookService, userID string) (bool, error) {
 	licenseError := errors.New("invalid license/authorization to use insights API")
 	guestError := errors.New("Guests aren't authorized to use insights API")
-	lic := s.api.System.GetLicense()
+	lic := s.api.GetLicense()
 	if lic == nil {
 		return false, licenseError
 	}
-	user, err := s.api.User.Get(userID)
+	user, err := s.api.GetUserByID(userID)
 	if err != nil {
 		return false, err
 	}

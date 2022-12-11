@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/product/adapters"
+	"github.com/mattermost/mattermost-plugin-playbooks/product/pluginapi/cluster"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	mmapp "github.com/mattermost/mattermost-server/v6/app"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -137,7 +140,7 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 	logger := logrus.StandardLogger()
 	ConfigureLogrus(logger, playbooks.logger)
 
-	serviceAdapter := newServiceAPIAdapter(playbooks)
+	serviceAdapter := newServiceAPIAdapter(playbooks, server)
 	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, playbooks.configService, manifest)
 	botID, err := serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
@@ -191,8 +194,31 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 	toggleTelemetry()
 	playbooks.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	// apiClient := sqlstore.NewClient(serviceAdapter)
+	apiClient := sqlstore.NewClient(serviceAdapter)
 	playbooks.bot = bot.New(serviceAdapter, playbooks.config.GetConfiguration().BotUserID, playbooks.config, playbooks.telemetryClient)
+	scheduler := cluster.GetJobOnceScheduler(serviceAdapter)
+
+	sqlStore, err := sqlstore.New(apiClient, scheduler)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed creating the SQL store")
+	}
+
+	// playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
+	// statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
+	playbooks.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
+	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
+	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
+
+	playbooks.handler = api.NewHandler(playbooks.config)
+
+	playbooks.playbookService = app.NewPlaybookService(playbookStore, playbooks.bot, playbooks.telemetryClient, serviceAdapter, playbooks.metricsService)
+
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	playbooks.channelActionService = app.NewChannelActionsService(serviceAdapter, playbooks.bot, playbooks.config, channelActionStore, playbooks.playbookService, keywordsThreadIgnorer, playbooks.telemetryClient)
+	playbooks.categoryService = app.NewCategoryService(categoryStore, serviceAdapter, playbooks.telemetryClient)
+
+	playbooks.licenseChecker = enterprise.NewLicenseChecker(serviceAdapter)
 
 	return playbooks, nil
 }

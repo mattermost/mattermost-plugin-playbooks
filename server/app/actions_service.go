@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -23,13 +23,13 @@ type channelActionServiceImpl struct {
 	poster                bot.Poster
 	configService         config.Service
 	store                 ChannelActionStore
-	api                   *pluginapi.Client
+	api                   playbooks.ServicesAPI
 	playbookGetter        PlaybookGetter
 	keywordsThreadIgnorer KeywordsThreadIgnorer
 	telemetry             ChannelActionTelemetry
 }
 
-func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
+func NewChannelActionsService(api playbooks.ServicesAPI, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
 	return &channelActionServiceImpl{
 		poster:                poster,
 		configService:         configService,
@@ -52,7 +52,7 @@ func (a *channelActionServiceImpl) setViewedChannelForEveryMember(channelID stri
 	var goroutineErr error
 
 	for {
-		members, err := a.api.Channel.ListMembers(channelID, page, perPage)
+		members, err := a.api.GetChannelMembers(channelID, page, perPage)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve members of channel with ID %q", channelID)
 		}
@@ -201,13 +201,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID st
 // UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
 // was invited by actorID.
 func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
-	user, err := a.api.User.Get(userID)
+	user, err := a.api.GetUserByID(userID)
 	if err != nil {
 		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
 		return
 	}
 
-	channel, err := a.api.Channel.Get(channelID)
+	channel, err := a.api.GetChannelByID(channelID)
 	if err != nil {
 		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
 		return
@@ -274,7 +274,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
 func (a *channelActionServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
-	sidebar, err := a.api.Channel.GetSidebarCategories(userID, teamID)
+	sidebar, err := a.api.GetChannelSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func (a *channelActionServiceImpl) createOrUpdatePlaybookRunSidebarCategory(user
 	}
 
 	if categoryID == "" {
-		err = a.api.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
+		_, err = a.api.CreateChannelSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
 			SidebarCategory: model.SidebarCategory{
 				UserId:      userID,
 				TeamId:      teamID,
@@ -320,7 +320,7 @@ func (a *channelActionServiceImpl) createOrUpdatePlaybookRunSidebarCategory(user
 		}
 	}
 
-	err = a.api.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
+	_, err = a.api.UpdateChannelSidebarCategories(userID, teamID, sidebar.Categories)
 	if err != nil {
 		return err
 	}
@@ -404,7 +404,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		return
 	}
 
-	session, err := a.api.Session.Get(sessionID)
+	session, err := a.api.GetSession(sessionID)
 	if err != nil {
 		logrus.WithError(err).WithField("session_id", sessionID).Error("can't get session")
 		return

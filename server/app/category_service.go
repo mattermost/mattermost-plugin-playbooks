@@ -3,19 +3,19 @@ package app
 import (
 	"database/sql"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
 type categoryService struct {
 	store     CategoryStore
-	api       *pluginapi.Client
+	api       playbooks.ServicesAPI
 	telemetry CategoryTelemetry
 }
 
 // NewPlaybookService returns a new playbook service
-func NewCategoryService(store CategoryStore, api *pluginapi.Client, categoryTelemetry CategoryTelemetry) CategoryService {
+func NewCategoryService(store CategoryStore, api playbooks.ServicesAPI, categoryTelemetry CategoryTelemetry) CategoryService {
 	return &categoryService{
 		store:     store,
 		api:       api,

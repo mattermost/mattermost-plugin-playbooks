@@ -12,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
+	mmapp "github.com/mattermost/mattermost-server/v6/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
+	"github.com/mattermost/mattermost-server/v6/model"
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
@@ -39,14 +41,16 @@ func normalizeAppErr(appErr *mm_model.AppError) error {
 // Note: when supporting a plugin build is no longer needed this adapter may be removed as the Boards app
 // can be modified to use the services in modular fashion.
 type serviceAPIAdapter struct {
-	api *playbooksProduct
-	ctx *request.Context
+	api    *playbooksProduct
+	ctx    *request.Context
+	server *mmapp.Server
 }
 
-func newServiceAPIAdapter(api *playbooksProduct) *serviceAPIAdapter {
+func newServiceAPIAdapter(api *playbooksProduct, server *mmapp.Server) *serviceAPIAdapter {
 	return &serviceAPIAdapter{
-		api: api,
-		ctx: request.EmptyContext(api.logger),
+		api:    api,
+		ctx:    request.EmptyContext(api.logger),
+		server: server,
 	}
 }
 
@@ -74,6 +78,26 @@ func (a *serviceAPIAdapter) GetChannelsForTeamForUser(teamID string, userID stri
 		IncludeDeleted: includeDeleted,
 	}
 	channels, appErr := a.api.channelService.GetChannelsForTeamForUser(teamID, userID, opts)
+	return channels, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetChannelSidebarCategories(userID, teamID string) (*mm_model.OrderedSidebarCategories, error) {
+	categories, appErr := a.api.channelService.GetChannelSidebarCategories(userID, teamID)
+	return categories, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetChannelMembers(channelID string, page, perPage int) (mm_model.ChannelMembers, error) {
+	channelMembers, appErr := a.api.channelService.GetChannelMembers(channelID, page, perPage)
+	return channelMembers, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) CreateChannelSidebarCategory(userID, teamID string, newCategory *model.SidebarCategoryWithChannels) (*model.SidebarCategoryWithChannels, error) {
+	channels, appErr := a.api.channelService.CreateChannelSidebarCategory(userID, teamID, newCategory)
+	return channels, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) UpdateChannelSidebarCategories(userID, teamID string, categories []*model.SidebarCategoryWithChannels) ([]*model.SidebarCategoryWithChannels, error) {
+	channels, appErr := a.api.channelService.UpdateChannelSidebarCategories(userID, teamID, categories)
 	return channels, normalizeAppErr(appErr)
 }
 
@@ -215,6 +239,10 @@ func (a *serviceAPIAdapter) GetLogger() mlog.LoggerIFace {
 	return a.api.logger
 }
 
+func (a *serviceAPIAdapter) LogError(msg string, keyValuePairs ...interface{}) {
+
+}
+
 //
 // KVStore service.
 //
@@ -222,6 +250,20 @@ func (a *serviceAPIAdapter) GetLogger() mlog.LoggerIFace {
 func (a *serviceAPIAdapter) KVSetWithOptions(key string, value []byte, options mm_model.PluginKVSetOptions) (bool, error) {
 	b, appErr := a.api.kvStoreService.SetPluginKeyWithOptions(playbooksProductID, key, value, options)
 	return b, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) KVGet(key string) ([]byte, error) {
+	data, appErr := a.api.kvStoreService.KVGet(playbooksProductID, key)
+	return data, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) KVDelete(key string) error {
+	appErr := a.api.kvStoreService.KVDelete(playbooksProductID, key)
+	return normalizeAppErr(appErr)
+}
+func (a *serviceAPIAdapter) KVList(page, perPage int) ([]string, error) {
+	data, appErr := a.api.kvStoreService.KVList(playbooksProductID, page, perPage)
+	return data, normalizeAppErr(appErr)
 }
 
 // Get gets the value for the given key into the given interface.
@@ -298,6 +340,11 @@ func (a *serviceAPIAdapter) UpdatePreferencesForUser(userID string, preferences 
 func (a *serviceAPIAdapter) DeletePreferencesForUser(userID string, preferences mm_model.Preferences) error {
 	appErr := a.api.preferencesService.DeletePreferencesForUser(userID, preferences)
 	return normalizeAppErr(appErr)
+}
+
+//TODO: Should we add thi method to product api?
+func (a *serviceAPIAdapter) GetSession(sessionID string) (*mm_model.Session, error) {
+	return a.server.Platform().GetSessionByID(sessionID)
 }
 
 // Ensure the adapter implements ServicesAPI.
