@@ -787,5 +787,20 @@
     "AoNLta": "Nema dovršenih izvođenja povezanih s ovim kanalom",
     "95v+5O": "{actions, plural, =0 {Radnje za zadatak} one {# radnja} few {# radnje} other {# radnji}}",
     "3sXVwy": "Radnje za zadatak …",
-    "2NDgJq": "Zadnje aktualiziranje stanja"
+    "2NDgJq": "Zadnje aktualiziranje stanja",
+    "3Yvt4d": "Priručnici su konfigurabilni popisi koji definiraju ponovljiv proces za timove kako bi postigli specifične i predvidljive rezultate",
+    "Wy3sw+": "{count, plural, =1{1 izvođenje u tijeku} =0 {Nema izvođenje u tijeku} few {# izvođenja u tijeku} other {# izvođenja u tijeku}}",
+    "zscc/+": "{outstanding, plural, =1 {Postoji # neobavljen zadatak} few {Postoje # neobavljena zadatka} other {Postoji # neobavljenih zadataka}}. Stvarno želiš završiti izvođenje <i>{runName}</i> za sve sudionike?",
+    "bEoDyV": "@{authorUsername} je objavio/la aktualiziranje za [{runName}]({overviewURL})",
+    "ZSa3cf": "@{targetUsername}, aktualiziraj stanje za [{runName}]({playbookURL}).",
+    "W1EKh5": "Stvori novi priručnik",
+    "SRbTcY": "Drugi priručnici",
+    "LKu0ex": "Stvarno želiš završiti izvođenje <i>{runName}</i> za sve sudionike?",
+    "L1tFef": "Provjeri pravopis ili pokušaj jednu drugu pretragu",
+    "KQunC7": "Korišteno u ovom kanalu",
+    "HfjhwE": "Traži priručnike",
+    "EVSn9A": "Pokreni izvođenje",
+    "9AQ5FE": "Sažetak izvođenja",
+    "7KMbBa": "Nikada korišteno",
+    "0CeyUV": "Nema rezultata za „{searchTerm}”"
 }
