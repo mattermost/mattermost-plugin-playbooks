@@ -105,7 +105,7 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here – @{{.Name}} je zatražio/la aktualiziranje stanja. \n"
+        "translation": "@here – @{{.Name}} je zatražio/la aktualiziranje stanja za [{{.RunName}}]({{.RunURL}}). \n"
     },
     {
         "id": "app.user.run.request_get_involved",
@@ -125,10 +125,10 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Username}} je aktivirao/la aktualiziranja stanja za ovo izvođenje"
+        "translation": "@{{.Username}} je aktivirao/la aktualiziranja stanja za [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Username}} je deaktivirao/la aktualiziranja stanja za ovo izvođenje"
+        "translation": "@{{.Username}} je deaktivirao/la aktualiziranja stanja za [{{.RunName}}]({{.RunURL}})"
     }
 ]
