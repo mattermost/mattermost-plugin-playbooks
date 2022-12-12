@@ -1,6 +1,6 @@
 import React, {ComponentProps, useEffect, useState} from 'react';
 
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
@@ -123,15 +123,14 @@ const RunPlaybookModal = ({
             <AutomationTitle
                 css={{alignSelf: 'flex-start'}}
             >
-                <StyledRadioInput
-                    id={'link-existing-channel-radio'}
-                    data-testid={'link-existing-channel-radio'}
-                    type='radio'
-                    checked={linkExistingChannel}
-                    onChange={() => setChannelMode('link_existing_channel')}
-                />
-                <AutomationLabel htmlFor={'link-existing-channel-radio'}>
-                    {formatMessage({defaultMessage: 'Link to an existing channel'})}
+                <AutomationLabel>
+                    <StyledRadioInput
+                        data-testid={'link-existing-channel-radio'}
+                        type='radio'
+                        checked={linkExistingChannel}
+                        onChange={() => setChannelMode('link_existing_channel')}
+                    />
+                    <FormattedMessage defaultMessage='Link to an existing channel'/>
                 </AutomationLabel>
             </AutomationTitle>
             {linkExistingChannel && (
@@ -152,15 +151,14 @@ const RunPlaybookModal = ({
             )}
 
             <AutomationTitle css={{alignSelf: 'flex-start'}} >
-                <StyledRadioInput
-                    id={'create-channel-radio'}
-                    data-testid={'create-channel-radio'}
-                    type='radio'
-                    checked={createNewChannel}
-                    onChange={() => setChannelMode('create_new_channel')}
-                />
-                <AutomationLabel htmlFor={'create-channel-radio'}>
-                    {formatMessage({defaultMessage: 'Create a run channel'})}
+                <AutomationLabel>
+                    <StyledRadioInput
+                        data-testid={'create-channel-radio'}
+                        type='radio'
+                        checked={createNewChannel}
+                        onChange={() => setChannelMode('create_new_channel')}
+                    />
+                    <FormattedMessage defaultMessage='Create a run channel'/>
                 </AutomationLabel>
             </AutomationTitle>
 

@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -76,15 +76,14 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 <AutomationTitle
                     css={{alignSelf: 'flex-start'}}
                 >
-                    <ChannelModeRadio
-                        id={'link_existing_channel_radio'}
-                        type='radio'
-                        disabled={archived}
-                        checked={playbook.channel_mode === 'link_existing_channel'}
-                        onChange={() => handleChannelModeChange('link_existing_channel')}
-                    />
-                    <AutomationLabel htmlFor={'link_existing_channel_radio'}>
-                        {formatMessage({defaultMessage: 'Link to an existing channel'})}
+                    <AutomationLabel disabled={archived}>
+                        <ChannelModeRadio
+                            type='radio'
+                            disabled={archived}
+                            checked={playbook.channel_mode === 'link_existing_channel'}
+                            onChange={() => handleChannelModeChange('link_existing_channel')}
+                        />
+                        <FormattedMessage defaultMessage='Link to an existing channel'/>
                     </AutomationLabel>
                 </AutomationTitle>
                 <SelectorWrapper>
@@ -104,15 +103,14 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationHeader>}
             <AutomationHeader id={'create-new-channel'}>
                 <AutomationTitle css={{alignSelf: 'flex-start'}} >
-                    <ChannelModeRadio
-                        id={'create_new_channel_radio'}
-                        type='radio'
-                        disabled={archived}
-                        checked={playbook.channel_mode === 'create_new_channel'}
-                        onChange={() => handleChannelModeChange('create_new_channel')}
-                    />
-                    <AutomationLabel htmlFor={'create_new_channel_radio'}>
-                        {formatMessage({defaultMessage: 'Create a run channel'})}
+                    <AutomationLabel disabled={archived}>
+                        <ChannelModeRadio
+                            type='radio'
+                            disabled={archived}
+                            checked={playbook.channel_mode === 'create_new_channel'}
+                            onChange={() => handleChannelModeChange('create_new_channel')}
+                        />
+                        <FormattedMessage defaultMessage='Create a run channel'/>
                     </AutomationLabel>
                 </AutomationTitle>
                 <HorizontalSplit>

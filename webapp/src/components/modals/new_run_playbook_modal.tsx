@@ -260,15 +260,12 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
         <ChannelContainer>
             <ChannelBlock>
                 <StyledRadioInput
-                    id={'link-existing-channel-radio'}
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
-                <ChannelBlockLabel htmlFor={'link-existing-channel-radio'}>
-                    {formatMessage({defaultMessage: 'Link to an existing channel'})}
-                </ChannelBlockLabel>
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -289,13 +286,12 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
 
             <ChannelBlock >
                 <StyledRadioInput
-                    id={'create-channel-radio'}
                     data-testid={'create-channel-radio'}
                     type='radio'
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <ChannelBlockLabel htmlFor={'create-channel-radio'}>{formatMessage({defaultMessage: 'Create a run channel'})}</ChannelBlockLabel>
+                <FormattedMessage defaultMessage='Create a run channel'/>
             </ChannelBlock>
 
             {createNewChannel && (
@@ -409,18 +405,16 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-const ChannelBlock = styled.div`
+const ChannelBlock = styled.label`
     display: flex;
     flex-direction: row;
     width: 350px;
     align-items: center;
     column-gap: 12px;
     align-self: 'flex-start';
-`;
-
-const ChannelBlockLabel = styled.label`
     font-weight: inherit;
     margin-bottom: 0;
+    cursor: pointer;
 `;
 
 const SelectorWrapper = styled.div`

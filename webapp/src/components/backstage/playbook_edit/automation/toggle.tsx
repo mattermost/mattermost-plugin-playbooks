@@ -6,7 +6,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 interface ToggleProps {
-    inputId?: string;
+    children?: React.ReactNode
     isChecked: boolean;
     disabled?: boolean;
     onChange: () => void;
@@ -19,13 +19,13 @@ export const Toggle = (props: ToggleProps) => {
             tabIndex={0}
         >
             <InvisibleInput
-                id={props.inputId}
                 type='checkbox'
                 onChange={props.onChange}
                 checked={props.isChecked}
                 disabled={props.disabled}
             />
             <RoundSwitch disabled={props.disabled}/>
+            {props.children}
         </Label>
     );
 };
@@ -80,6 +80,10 @@ const InvisibleInput = styled.input`
 `;
 
 const Label = styled.label<DisabledProps>`
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+    font-weight: inherit;
     line-height: 0;
     cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
     margin-bottom: 0;

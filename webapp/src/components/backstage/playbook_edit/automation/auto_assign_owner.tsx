@@ -9,7 +9,6 @@ import {FormattedMessage} from 'react-intl';
 
 import {
     AutomationHeader,
-    AutomationLabel,
     AutomationTitle,
     SelectorWrapper,
 } from 'src/components/backstage/playbook_edit/automation/styles';
@@ -31,14 +30,12 @@ export const AutoAssignOwner = (props: Props) => {
         <AutomationHeader>
             <AutomationTitle>
                 <Toggle
-                    inputId={'auto-assign-owner-toggle'}
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
-                />
-                <AutomationLabel htmlFor={'auto-assign-owner-toggle'}>
+                >
                     <FormattedMessage defaultMessage='Assign the owner role'/>
-                </AutomationLabel>
+                </Toggle>
             </AutomationTitle>
             <SelectorWrapper>
                 <AssignOwnerSelector

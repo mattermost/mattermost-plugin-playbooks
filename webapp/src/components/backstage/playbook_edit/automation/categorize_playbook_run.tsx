@@ -8,7 +8,6 @@ import styled from 'styled-components';
 
 import {
     AutomationHeader,
-    AutomationLabel,
     AutomationTitle,
     SelectorWrapper,
 } from 'src/components/backstage/playbook_edit/automation/styles';
@@ -32,14 +31,12 @@ export const CategorizePlaybookRun = (props: Props) => {
         <AutomationHeader>
             <AutomationTitle>
                 <Toggle
-                    inputId={'categorize-playbook-run-toggle'}
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
-                />
-                <AutomationLabel htmlFor={'categorize-playbook-run-toggle'}>
+                >
                     <FormattedMessage defaultMessage='Add the channel to a sidebar category'/>
-                </AutomationLabel>
+                </Toggle>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledCategorySelector
