@@ -19,8 +19,10 @@ import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {Toggle} from '../../playbook_edit/automation/toggle';
-import {AutomationTitle} from '../../playbook_edit/automation/styles';
+
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
 

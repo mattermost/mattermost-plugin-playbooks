@@ -454,9 +454,6 @@ const assertRunIsVisible = (run, user) => {
     // # Open Runs
     cy.visit('/playbooks/runs');
 
-    // # Filter to all runs
-    cy.findByTestId('my-runs-only').click();
-
     // # Find the playbook run and click to open details view
     cy.get('#playbookRunList').within(() => {
         cy.findByText(run.name).click();
@@ -485,9 +482,6 @@ const assertRunIsNotVisible = (run, user) => {
 const assertRunIsNotVisibleInList = (run) => {
     // # Open Runs
     cy.visit('/playbooks/runs');
-
-    // # Filter to all runs
-    cy.findByTestId('my-runs-only').click();
 
     // * Verify the playbook run is not visible
     cy.get('#playbookRunList').within(() => {

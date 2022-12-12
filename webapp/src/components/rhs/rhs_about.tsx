@@ -11,7 +11,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
+import {setOwner, changeChannelName} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInTeam, useParticipateInRun, useEnsureProfiles} from 'src/hooks';
@@ -22,11 +22,13 @@ import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
+import {useUpdateRun} from 'src/graphql/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
     readOnly?: boolean;
     onReadOnlyInteract?: () => void
+    setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RHSAbout = (props: Props) => {
@@ -35,6 +37,7 @@ const RHSAbout = (props: Props) => {
     const collapsed = useSelector(currentRHSAboutCollapsedState);
     const channel = useSelector(getCurrentChannel);
     const profilesInTeam = useProfilesInTeam();
+    const updateRun = useUpdateRun(props.playbookRun.id);
 
     const myUserId = useSelector(getCurrentUserId);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
@@ -67,7 +70,7 @@ const RHSAbout = (props: Props) => {
     };
 
     const onDescriptionEdit = (value: string) => {
-        updatePlaybookRunDescription(props.playbookRun.id, value);
+        updateRun({summary: value});
     };
 
     const [editingSummary, setEditingSummary] = useState(false);
@@ -136,6 +139,7 @@ const RHSAbout = (props: Props) => {
                                 <RHSParticipants
                                     userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
                                     onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
+                                    setShowParticipants={props.setShowParticipants}
                                 />
                             </ParticipantsSection>
                         </Row>

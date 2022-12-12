@@ -418,6 +418,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
+		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
 	}, nil
@@ -810,22 +811,25 @@ func (s *playbookRunStore) GetTimelineEvent(playbookRunID, eventID string) (*app
 	return &event, nil
 }
 
-// GetPlaybookRunIDForChannel gets the playbook run ID associated with the given channel ID.
-func (s *playbookRunStore) GetPlaybookRunIDForChannel(channelID string) (string, error) {
+// GetPlaybookRunIDsForChannel gets the playbook run IDs list associated with the given channel ID.
+func (s *playbookRunStore) GetPlaybookRunIDsForChannel(channelID string) ([]string, error) {
 	query := s.queryBuilder.
 		Select("i.ID").
 		From("IR_Incident i").
-		Where(sq.Eq{"i.ChannelID": channelID})
+		Where(sq.Eq{"i.ChannelID": channelID}).
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		OrderBy("i.CreateAt DESC").
+		OrderBy("i.ID")
 
-	var id string
-	err := s.store.getBuilder(s.store.db, &id, query)
-	if err == sql.ErrNoRows {
-		return "", errors.Wrapf(app.ErrNotFound, "channel with id (%s) does not have a playbook run", channelID)
+	var ids []string
+	err := s.store.selectBuilder(s.store.db, &ids, query)
+	if err == sql.ErrNoRows || len(ids) == 0 {
+		return nil, errors.Wrapf(app.ErrNotFound, "channel with id (%s) does not have a playbook run", channelID)
 	} else if err != nil {
-		return "", errors.Wrapf(err, "failed to get playbook run by channelID '%s'", channelID)
+		return nil, errors.Wrapf(err, "failed to get playbook run by channelID '%s'", channelID)
 	}
 
-	return id, nil
+	return ids, nil
 }
 
 // GetHistoricalPlaybookRunParticipantsCount returns the count of all members of a playbook run's channel
@@ -1419,6 +1423,10 @@ func (s *playbookRunStore) RemoveParticipants(playbookRunID string, userIDs []st
 }
 
 func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []string, isParticipating bool) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	query := sq.
 		Insert("IR_Run_Participants").
 		Columns("IncidentID", "UserID", "IsParticipant")

@@ -10,6 +10,7 @@ import {
     PlaybookUpdates,
     RunDocument,
     RunUpdates,
+    TaskActionUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
     useChangeRunOwnerMutation,
@@ -18,6 +19,8 @@ import {
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    useUpdateRunTaskActionsMutation,
+    useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -59,6 +62,21 @@ export const useUpdateRun = (id?: string) => {
 
     return useCallback((updates: RunUpdates) => {
         return innerUpdateRun({variables: {id: id || '', updates}});
+    }, [id, innerUpdateRun]);
+};
+
+export const useSetRunFavorite = (id: string|undefined) => {
+    const [innerUpdateRun] = useSetRunFavoriteMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((fav: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdateRun({variables: {id, fav}});
     }, [id, innerUpdateRun]);
 };
 
@@ -144,4 +162,21 @@ export const useManageRunMembership = (runID?: string) => {
     }, [runID, changeOwner]);
 
     return {addToRun, removeFromRun, changeRunOwner};
+};
+
+export const useUpdateRunItemTaskActions = (runID?: string) => {
+    const [updateTaskActions] = useUpdateRunTaskActionsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskActionUpdates[]) => {
+        if (!runID) {
+            return;
+        }
+        await updateTaskActions({variables: {runID, checklistNum, itemNum, taskActions}});
+    }, [runID, updateTaskActions]);
+
+    return {updateRunTaskActions};
 };

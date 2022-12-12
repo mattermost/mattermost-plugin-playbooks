@@ -10,27 +10,32 @@ import {
     RHSContainer,
     RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {currentPlaybookRun} from 'src/selectors';
-import {Participants} from '../backstage/playbook_runs/playbook_run/rhs_participants';
-import {Role} from '../backstage/playbook_runs/shared';
 
-const RHSRunParticipants = () => {
+import {Participants} from 'src/components/backstage/playbook_runs/playbook_run/rhs_participants';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+
+import {PlaybookRun} from 'src/types/playbook_run';
+
+interface Props {
+    playbookRun: PlaybookRun
+}
+
+const RHSRunParticipants = (props: Props) => {
     const currentUserId = useSelector(getCurrentUserId);
 
-    const playbookRun = useSelector(currentPlaybookRun);
     const team = useSelector(getCurrentTeam);
 
-    if (!playbookRun) {
+    if (!props.playbookRun) {
         return null;
     }
 
-    const role = playbookRun?.participant_ids.includes(currentUserId) || playbookRun?.owner_user_id === currentUserId ? Role.Participant : Role.Viewer;
+    const role = props.playbookRun?.participant_ids.includes(currentUserId) || props.playbookRun?.owner_user_id === currentUserId ? Role.Participant : Role.Viewer;
 
     return (
         <RHSContainer>
             <RHSContent>
                 <Participants
-                    playbookRun={playbookRun}
+                    playbookRun={props.playbookRun}
                     role={role}
                     teamName={team.name}
                 />

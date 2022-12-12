@@ -37,10 +37,13 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	TeamID                  string
 	Sort                    string
+	Direction               string
 	Statuses                []string
 	ParticipantOrFollowerID string
 	ChannelID               string
-}) ([]*RunResolver, error) {
+	First                   *int32
+	After                   *string
+}) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
@@ -57,15 +60,29 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		args.ParticipantOrFollowerID = userID
 	}
 
+	perPage := 10000 // If paging not specified, get "everything"
+	if args.First != nil {
+		perPage = int(*args.First)
+	}
+
+	page := 0
+	if args.After != nil {
+		page, err = decodeRunConnectionCursor(*args.After)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	filterOptions := app.PlaybookRunFilterOptions{
 		Sort:                    app.SortField(args.Sort),
+		Direction:               app.SortDirection(args.Direction),
 		TeamID:                  args.TeamID,
 		Statuses:                args.Statuses,
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
 		ChannelID:               args.ChannelID,
 		IncludeFavorites:        true,
-		Page:                    0,
-		PerPage:                 10000,
+		Page:                    page,
+		PerPage:                 perPage,
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
@@ -73,18 +90,58 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	ret := make([]*RunResolver, 0, len(runResults.Items))
-	for _, run := range runResults.Items {
-		ret = append(ret, &RunResolver{run})
+	return &RunConnectionResolver{results: *runResults, page: page}, nil
+}
+
+func (r *RunRootResolver) SetRunFavorite(ctx context.Context, args struct {
+	ID  string
+	Fav bool
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunView(userID, args.ID); err != nil {
+		return "", err
 	}
 
-	return ret, nil
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if args.Fav {
+		if err := c.categoryService.AddFavorite(
+			app.CategoryItem{
+				ItemID: playbookRun.ID,
+				Type:   app.RunItemType,
+			},
+			playbookRun.TeamID,
+			userID,
+		); err != nil {
+			return "", err
+		}
+	} else {
+		if err := c.categoryService.DeleteFavorite(
+			app.CategoryItem{
+				ItemID: playbookRun.ID,
+				Type:   app.RunItemType,
+			},
+			playbookRun.TeamID,
+			userID,
+		); err != nil {
+			return "", err
+		}
+	}
+
+	return playbookRun.ID, nil
 }
 
 type RunUpdates struct {
 	Name                                    *string
 	Summary                                 *string
-	IsFavorite                              *bool
 	CreateChannelMemberOnNewParticipant     *bool
 	RemoveChannelMemberOnRemovedParticipant *bool
 	StatusUpdateBroadcastChannelsEnabled    *bool
@@ -103,8 +160,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	// some updates require just view permission (like fav/unfav)
-	if err := c.permissions.RunView(userID, args.ID); err != nil {
+	if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
 		return "", err
 	}
 
@@ -142,42 +198,8 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
 
-	// Auth level required: runManageProperties if non empty
-	if len(setmap) > 0 {
-		if err := c.permissions.RunManageProperties(userID, args.ID); err != nil {
-			return "", err
-		}
-
-		if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
-			return "", err
-		}
-	}
-
-	// fav / unfav (auth level required: runView)
-	if args.Updates.IsFavorite != nil {
-		if *args.Updates.IsFavorite {
-			if err := c.categoryService.AddFavorite(
-				app.CategoryItem{
-					ItemID: playbookRun.ID,
-					Type:   app.RunItemType,
-				},
-				playbookRun.TeamID,
-				userID,
-			); err != nil {
-				return "", err
-			}
-		} else {
-			if err := c.categoryService.DeleteFavorite(
-				app.CategoryItem{
-					ItemID: playbookRun.ID,
-					Type:   app.RunItemType,
-				},
-				playbookRun.TeamID,
-				userID,
-			); err != nil {
-				return "", err
-			}
-		}
+	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+		return "", err
 	}
 
 	return playbookRun.ID, nil
@@ -207,12 +229,6 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 
 	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
-	}
-
-	for _, userID := range args.UserIDs {
-		if err := c.playbookRunService.Follow(args.RunID, userID); err != nil {
-			return "", errors.Wrap(err, "failed to make participant to unfollow run")
-		}
 	}
 
 	return "", nil
@@ -272,6 +288,32 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
 		return "", errors.Wrap(err, "failed to change the run owner")
+	}
+
+	return "", nil
+}
+
+func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct {
+	RunID        string
+	ChecklistNum float64
+	ItemNum      float64
+	TaskActions  *[]app.TaskAction
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	if args.TaskActions == nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := validateTaskActions(*args.TaskActions); err != nil {
+		return "", err
+	}
+
+	if err := c.playbookRunService.SetTaskActionsToChecklistItem(args.RunID, userID, int(args.ChecklistNum), int(args.ItemNum), *args.TaskActions); err != nil {
+		return "", err
 	}
 
 	return "", nil

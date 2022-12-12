@@ -101,9 +101,14 @@ const baseUnits = (() => {
 })();
 
 const getUnits = (unit: string, value: number, locale: string) => {
-    return ['narrow', 'short', 'long']
-        .map((unitDisplay) => new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay})
-            .formatToParts(value).find(({type}) => type === 'unit')?.value);
+    return [
+        new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay: 'narrow'})
+            .formatToParts(value).find(({type}) => type === 'unit')?.value,
+        new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay: 'short'})
+            .formatToParts(value).find(({type}) => type === 'unit')?.value,
+        new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay: 'long'})
+            .formatToParts(value).find(({type}) => type === 'unit')?.value,
+    ];
 };
 
 type Ratios = {[unit: string]: number};

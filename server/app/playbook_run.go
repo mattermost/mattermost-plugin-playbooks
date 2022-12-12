@@ -23,6 +23,11 @@ const (
 	RunRoleAdmin  = "run_admin"
 )
 
+const (
+	RunSourcePost   = "post"
+	RunSourceDialog = "dialog"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -265,8 +270,10 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
-func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook) {
-	if playbook.RunSummaryTemplateEnabled {
+func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
+	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
+	// Runs created though new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
 		r.Summary = playbook.RunSummaryTemplate
 	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
@@ -445,6 +452,7 @@ type TimelineEvent struct {
 type GetPlaybookRunsResults struct {
 	TotalCount int           `json:"total_count"`
 	PageCount  int           `json:"page_count"`
+	PerPage    int           `json:"per_page"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
 }
@@ -608,9 +616,8 @@ type PlaybookRunService interface {
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error)
 
-	// GetPlaybookRunIDForChannel get the playbookRunID associated with this channel. Returns ErrNotFound
-	// if there is no playbook run associated with this channel.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunsForChannelByUser get the playbookRuns associated with this channel and user.
+	GetPlaybookRunsForChannelByUser(channelID string, userID string) ([]PlaybookRun, error)
 
 	// GetOwners returns all the owners of playbook runs selected
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -638,6 +645,9 @@ type PlaybookRunService interface {
 
 	// SetDueDate sets absolute due date timestamp for the specified checklist item
 	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
+
+	// SetTaskActionsToChecklistItem sets Task Actions to checklist item
+	SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
@@ -675,11 +685,14 @@ type PlaybookRunService interface {
 	// MoveChecklistItem moves a checklist item from one position to another.
 	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
-	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
-	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRuns to be used in autocomplete
+	GetChecklistItemAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
 
-	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
-	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
+	// GetChecklistAutocomplete returns the list of checklists for playbookRuns to be used in autocomplete
+	GetChecklistAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
+
+	// GetRunsAutocomplete returns the list of runs to be used in autocomplete
+	GetRunsAutocomplete(playbookRuns []PlaybookRun) ([]model.AutocompleteListItem, error)
 
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
@@ -780,6 +793,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -817,8 +833,8 @@ type PlaybookRunStore interface {
 	// GetPlaybookRun gets a playbook run by ID.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
-	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
-	GetPlaybookRunIDForChannel(channelID string) (string, error)
+	// GetPlaybookRunIDsForChannel gets a playbook runs list associated with the given channel id.
+	GetPlaybookRunIDsForChannel(channelID string) ([]string, error)
 
 	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the

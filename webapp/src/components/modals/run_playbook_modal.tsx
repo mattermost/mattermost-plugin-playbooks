@@ -20,11 +20,14 @@ import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {AutomationTitle} from '../backstage/playbook_edit/automation/styles';
-import {ButtonLabel, StyledChannelSelector, VerticalSplit} from '../backstage/playbook_edit/automation/channel_access';
+
+import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
+
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
-import MenuList from '../backstage/playbook_edit/automation/menu_list';
-import {HorizontalSpacer, RadioInput} from '../backstage/styles';
+
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
+import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
 const ID = 'playbooks_run_playbook_dialog';
 
