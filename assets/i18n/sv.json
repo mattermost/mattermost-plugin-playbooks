@@ -87,7 +87,7 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here - @{{.Name}} begärde en statusuppdatering. \n"
+        "translation": "@here - @{{.Name}} begärde en statusuppdatering för [{{.RunName}}]({{.RunURL}}). \n"
     },
     {
         "id": "app.user.run.request_get_involved",
@@ -103,11 +103,11 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Username}} aktiverade statusuppdateringar för den här körningen"
+        "translation": "@{{.Username}} aktiverade statusuppdateringar för [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Användarnamn}} inaktiverade statusuppdateringarna för den här körningen"
+        "translation": "@{{.Användarnamn}} inaktiverade statusuppdateringarna för [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.request_join_channel",
