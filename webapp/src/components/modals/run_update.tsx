@@ -21,6 +21,7 @@ type Props = {
     playbookRunId: string;
     teamId: string;
     field: 'name' | 'channel_id';
+    addToast: (message: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -33,10 +34,12 @@ const UpdateRunModal = ({
     playbookRunId,
     teamId,
     field,
+    addToast,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
     const [channelId, setChannelId] = useState('');
+    const [channelName, setChannelName] = useState('');
     const [name, setName] = useState('');
     const [run] = useRun(playbookRunId);
     const updateRun = useUpdateRun(playbookRunId);
@@ -57,8 +60,10 @@ const UpdateRunModal = ({
         if (field === 'name') {
             updateRun({name});
         }
-
-        updateRun({channelID: channelId});
+        if (field === 'channel_id') {
+            updateRun({channelID: channelId});
+            addToast(formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: channelName}));
+        }
     };
 
     const isFormValid = () => {
@@ -96,7 +101,10 @@ const UpdateRunModal = ({
                     <InlineLabel>{formatMessage({defaultMessage: 'Select channel'})}</InlineLabel>
                     <StyledChannelSelector
                         id={'link_existing_channel_selector'}
-                        onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
+                        onChannelSelected={(channel_id: string, channel_name: string) => {
+                            setChannelId(channel_id);
+                            setChannelName(channel_name);
+                        }}
                         channelIds={[channelId]}
                         isClearable={false}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
