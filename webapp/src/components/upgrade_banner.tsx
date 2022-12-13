@@ -10,11 +10,11 @@ import General from 'mattermost-redux/constants/general';
 
 import {FormattedMessage} from 'react-intl';
 
-import Spinner from 'src/components/assets/icons/spinner';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {getAdminAnalytics, isTeamEdition} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
 import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
-import {requestTrialLicense, postMessageToAdmins} from 'src/client';
+import {postMessageToAdmins, requestTrialLicense} from 'src/client';
 import {AdminNotificationType} from 'src/constants';
 import {isCloud} from 'src/license';
 import {useOpenCloudModal} from 'src/hooks';
@@ -245,7 +245,7 @@ interface ButtonProps {
 
 const Button = (props: ButtonProps) => {
     if (props.actionState === ActionState.Loading) {
-        return <Spinner/>;
+        return <LoadingSpinner/>;
     }
 
     if (props.actionState === ActionState.Success) {
