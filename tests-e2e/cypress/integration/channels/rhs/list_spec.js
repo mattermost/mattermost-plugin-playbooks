@@ -89,7 +89,7 @@ describe('channels > rhs > runlist', () => {
         cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
 
         // * Verify displayed options
-        cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns + 1);
+        cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns);
     });
 
     it('can show more (pagination)', () => {
@@ -146,7 +146,7 @@ describe('channels > rhs > runlist', () => {
 
     it('can see give feedback button', () => {
         // * Verify give feedback button exists and has the right URL
-        cy.findByTestId('rhs-runs-list').findByText('Give feedback')
+        cy.get('#rhsContainer').findByText('Give feedback')
             .should('exist')
             .and('have.attr', 'href')
             .and('include', 'https://mattermost.com/pl/playbooks-feedback');
