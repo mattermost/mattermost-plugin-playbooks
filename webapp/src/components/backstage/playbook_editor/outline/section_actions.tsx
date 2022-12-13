@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useCallback} from 'react';
+import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -47,6 +47,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             channelId: update.channel_id,
         });
     }, [updatePlaybook]));
+
+    const preAssignees = useMemo(() => {
+        return getDistinctAssignees(playbook.checklists);
+    }, [playbook.checklists]);
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
@@ -183,7 +187,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
-                        preAssignedUserIds={getDistinctAssignees(playbook.checklists)}
+                        preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
