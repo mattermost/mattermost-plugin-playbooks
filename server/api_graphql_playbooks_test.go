@@ -243,6 +243,7 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"title": "A",
 				"items": items,
 			},
+			"invitedUserIDs": []string{e.RegularUser.Id},
 		})
 		require.Error(t, err)
 	})

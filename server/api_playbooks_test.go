@@ -282,6 +282,7 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 					},
 				},
 			},
+			InvitedUserIDs: []string{e.RegularUser.Id},
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 		assert.Empty(t, id)
@@ -405,13 +406,14 @@ func TestPlaybookUpdate(t *testing.T) {
 	})
 
 	t.Run("fails if pre-assigned task is added but invitations are disabled", func(t *testing.T) {
+		e.BasicPlaybook.InvitedUserIDs = []string{e.RegularUser2.Id}
 		e.BasicPlaybook.Checklists = []client.Checklist{
 			{
 				Title: "A",
 				Items: []client.ChecklistItem{
 					{
 						Title:      "Do this1",
-						AssigneeID: e.RegularUser.Id,
+						AssigneeID: e.RegularUser2.Id,
 					},
 				},
 			},
