@@ -17,7 +17,7 @@ import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal, openUpdateRunModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
@@ -25,6 +25,8 @@ import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -88,6 +90,14 @@ const RHSRunList = (props: Props) => {
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
 
+    const handleStartRun = () => {
+        dispatch(openPlaybookRunNewModal({
+            onRunCreated: props.onRunCreated,
+            triggerChannelId: currentChannelId,
+            teamId: currentTeamId,
+        }));
+    };
+
     return (
         <>
             <RHSTitleRemoteRender>
@@ -136,13 +146,7 @@ const RHSRunList = (props: Props) => {
                     <Spacer/>
                     <StartRunButton
                         data-testid='rhs-runlist-start-run'
-                        onClick={() => {
-                            dispatch(openPlaybookRunNewModal({
-                                onRunCreated: props.onRunCreated,
-                                triggerChannelId: currentChannelId,
-                                teamId: currentTeamId,
-                            }));
-                        }}
+                        onClick={handleStartRun}
                     >
                         <PlayOutlineIcon size={14}/>
                         {formatMessage({defaultMessage: 'Start run'})}
@@ -179,7 +183,10 @@ const RHSRunList = (props: Props) => {
                 {showNoRuns &&
                     <NoRuns
                         active={props.options.filter === FilterType.InProgress}
+                        numInProgress={props.numInProgress}
+                        numFinished={props.numFinished}
                         setOptions={props.setOptions}
+                        onStartRunClicked={handleStartRun}
                     />
                 }
                 {!showNoRuns &&
@@ -551,6 +558,9 @@ const IconWrapper = styled.div`
 
 interface NoRunsProps {
     active: boolean
+    numInProgress: number;
+    numFinished: number;
+    onStartRunClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
 }
 
@@ -568,12 +578,23 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            {props.active &&
-                <ViewFinishedRunsButton
+            <PrimaryButton onClick={props.onStartRunClicked}>
+                <PlayOutlineIcon size={18}/>
+                <FormattedMessage defaultMessage={'Start a run'}/>
+            </PrimaryButton>
+            {props.active && props.numFinished > 0 &&
+                <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                 >
                     {formatMessage({defaultMessage: 'View finished runs'})}
-                </ViewFinishedRunsButton>
+                </ViewOtherRunsButton>
+            }
+            {!props.active && props.numInProgress > 0 &&
+                <ViewOtherRunsButton
+                    onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
+                >
+                    {formatMessage({defaultMessage: 'View in progress runs'})}
+                </ViewOtherRunsButton>
             }
         </NoActiveRunsContainer>
     );
@@ -594,7 +615,7 @@ const NoRunsText = styled.div`
     line-height: 28px;
     text-align: center;
 `;
-const ViewFinishedRunsButton = styled(TertiaryButton)`
+const ViewOtherRunsButton = styled(TertiaryButton)`
     background: none;
 `;
 const StyledClipboardChecklist = styled(ClipboardChecklist)`
@@ -612,19 +633,26 @@ const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookID}`;
+    const {add: addToastMessage} = useToaster();
+
+    const addToast = (message: string) => addToastMessage({
+        content: message,
+        toastStyle: ToastStyle.Success,
+    });
+
     return (
         <DotMenu
             dotMenuButton={StyledDotMenuButton}
             placement='bottom-start'
             icon={<ThreeDotsIcon/>}
         >
-            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id'))}>
+            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', addToast))}>
                 <IconWrapper>
                     <LinkVariantIcon size={22}/>
                 </IconWrapper>
                 <FormattedMessage defaultMessage='Link run to a different channel'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name'))}>
+            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name', addToast))}>
                 <IconWrapper>
                     <PencilOutlineIcon size={22}/>
                 </IconWrapper>

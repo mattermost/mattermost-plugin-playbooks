@@ -19,7 +19,7 @@ import {StyledSelect} from './styles';
 export interface Props {
     id?: string;
     onChannelsSelected?: (channelIds: string[]) => void; // if isMulti=true
-    onChannelSelected?: (channelId: string) => void; // if isMulti=false
+    onChannelSelected?: (channelId: string, channelName: string) => void; // if isMulti=false
     channelIds: string[];
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel, boolean>;
@@ -117,7 +117,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         props.onChannelsSelected?.(action === 'clear' ? [] : channels.map((c) => c.id));
     };
     const onChange = (channel: Channel | Channel, {action}: {action: string}) => {
-        props.onChannelSelected?.(action === 'clear' ? '' : channel.id);
+        props.onChannelSelected?.(action === 'clear' ? '' : channel.id, action === 'clear' ? '' : channel.display_name);
     };
 
     const getOptionValue = (channel: Channel) => {

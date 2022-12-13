@@ -106,11 +106,12 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openUpdateRunModal(playbookRunId: string, teamId: string, field: 'name' | 'channel_id') {
+export function openUpdateRunModal(playbookRunId: string, teamId: string, field: 'name' | 'channel_id', addToast: (message: string) => void) {
     return modals.openModal(makeUpdateRunModalDefinition({
         playbookRunId,
         teamId,
         field,
+        addToast,
     }));
 }
 
