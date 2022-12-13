@@ -101,11 +101,9 @@ export const InviteUsers = (props: Props) => {
                 )}
                 confirmButtonText={formatMessage({defaultMessage: 'Remove user'})}
                 onConfirm={() => {
-                    if (!userToRemove?.userId || !userToRemove?.username) {
-                        setUserToRemove(null);
-                        return;
+                    if (userToRemove) {
+                        props.onRemovePreAssignedUser(userToRemove.userId);
                     }
-                    props.onRemovePreAssignedUser(userToRemove.userId);
                     setUserToRemove(null);
                 }}
                 onCancel={() => setUserToRemove(null)}
