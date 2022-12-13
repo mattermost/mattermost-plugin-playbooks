@@ -11,7 +11,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {setOwner, changeChannelName} from 'src/client';
+import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInTeam, useParticipateInRun, useEnsureProfiles} from 'src/hooks';
@@ -66,7 +66,7 @@ const RHSAbout = (props: Props) => {
     };
 
     const onTitleEdit = (value: string) => {
-        changeChannelName(props.playbookRun.channel_id, value);
+        updateRun({name: value});
     };
 
     const onDescriptionEdit = (value: string) => {
