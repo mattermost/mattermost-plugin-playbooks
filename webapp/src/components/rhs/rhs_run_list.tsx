@@ -208,10 +208,10 @@ const RHSRunList = (props: Props) => {
                             {loadingMore &&
                                 <StyledLoadingSpinner/>
                             }
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
                         </RunsList>
                     </Scrollbars>
                 }
+                <StyledGiveFeedbackButton tooltipPlacement='top'/>
             </Container>
         </>
     );
@@ -221,6 +221,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     height: 100%;
+    justify-content: space-between;
 `;
 
 const Header = styled.div`
@@ -234,7 +235,7 @@ const Header = styled.div`
 const RunsList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 0px 16px 20px 16px;
+    padding: 0px 16px;
     gap: 12px;
 `;
 
@@ -331,6 +332,7 @@ const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
     && {
         font-size: 12px;
         color: var(--center-channel-color-64);
+        margin: 16px;
     }
 
     &&:hover:not([disabled]) {
