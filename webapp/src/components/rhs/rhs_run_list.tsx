@@ -2,17 +2,18 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+import {useIntl, FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
-import {BookOutlineIcon, SortAscendingIcon, PlayOutlineIcon, CheckIcon} from '@mattermost/compass-icons/components';
+import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
+import {debounce} from 'lodash';
+import {GlobalState} from '@mattermost/types/store';
+import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {debounce} from 'lodash';
 
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
@@ -24,6 +25,8 @@ import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
+
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -37,6 +40,7 @@ interface RunToDisplay {
     name: string
     participantIDs: string[]
     ownerUserID: string
+    playbookID: string
     playbook?: Maybe<PlaybookToDisplay>
     progress: number;
     lastUpdatedAt: number
@@ -382,7 +386,14 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 onClick={props.onClick}
                 data-testid='run-list-card'
             >
-                <TitleRow>{props.name}</TitleRow>
+                <CardTitleContainer>
+                    <TitleRow>{props.name}</TitleRow>
+                    <ContextMenu
+                        playbookID={props.playbookID}
+                        playbookTitle={props.playbook?.title || ''}
+                        playbookRunID={props.id}
+                    />
+                </CardTitleContainer>
                 <PeopleRow>
                     <OwnerProfileChip userId={props.ownerUserID}/>
                     <ParticipantsProfiles>
@@ -404,7 +415,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         <StyledBookOutlineIcon
                             size={11}
                         />
-                        {props.playbook.title}
+                        <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
                     </PlaybookChip>
                     }
                 </InfoRow>
@@ -450,6 +461,12 @@ const CardContainer = styled.div`
         box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
     }
 `;
+const CardTitleContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+`;
 const TitleRow = styled.div`
     font-size: 14px;
     font-weight: 600;
@@ -480,7 +497,12 @@ const PlaybookChip = styled.div`
     align-items: center;
     padding: 0px 4px;
     gap: 4px;
+    max-width: 40%;
 
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+`;
+const PlaybookChipText = styled.span`
     font-size: 10px;
     font-weight: 600;
     line-height: 16px;
@@ -488,11 +510,8 @@ const PlaybookChip = styled.div`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 40%;
-
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
 `;
+
 const OwnerProfileChip = styled(Profile)`
     flex-grow: 0;
 
@@ -511,10 +530,6 @@ const OwnerProfileChip = styled(Profile)`
 const ParticipantsProfiles = styled.div`
     display: flex;
     flex-direction: row;
-`;
-
-const StyledBookOutlineIcon = styled(BookOutlineIcon)`
-    flex-shrink: 0;
 `;
 
 interface NoRunsProps {
@@ -568,6 +583,93 @@ const ViewFinishedRunsButton = styled(TertiaryButton)`
 const StyledClipboardChecklist = styled(ClipboardChecklist)`
     width: 98px;
     height: 98px;
+`;
+
+interface ContextMenuProps {
+    playbookID: string;
+    playbookRunID: string;
+    playbookTitle: string;
+}
+const ContextMenu = (props: ContextMenuProps) => {
+    const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
+    const playbookURL = `/playbooks/${props.playbookID}`;
+    return (
+        <DotMenu
+            dotMenuButton={StyledDotMenuButton}
+            placement='bottom-start'
+            icon={<ThreeDotsIcon/>}
+        >
+            <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
+                <IconWrapper>
+                    <PlayOutlineIcon size={22}/>
+                </IconWrapper>
+                <FormattedMessage defaultMessage='Go to run overview'/>
+            </StyledDropdownMenuItem>
+            <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                <RowContainer>
+                    <ColContainer>
+                        <IconWrapper>
+                            <BookOutlineIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Go to playbook'/>
+                    </ColContainer>
+                    <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
+                </RowContainer>
+            </StyledDropdownMenuItem>
+        </DotMenu>
+    );
+};
+
+const ColContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
+const RowContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const ThreeDotsIcon = styled(HamburgerButton)`
+    font-size: 18px;
+    margin-left: 1px;
+`;
+
+const StyledBookOutlineIcon = styled(BookOutlineIcon)`
+    flex-shrink: 0;
+`;
+
+const StyledDotMenuButton = styled(DotMenuButton)`
+    width: 28px;
+    height: 28px;
+`;
+
+const StyledDropdownMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    align-content: center;
+`;
+
+const MenuItemSubTitle = styled.div`
+    margin-left: 33px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    // don't let the playbook title make context menu grow too wide
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const Separator = styled.hr`
+    display: flex;
+    align-content: center;
+    border-top: 1px solid var(--center-channel-color-08);
+    margin: 5px auto;
+    width: 100%;
+`;
+
+const IconWrapper = styled.div`
+    margin-right: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export default RHSRunList;

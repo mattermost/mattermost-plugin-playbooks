@@ -128,9 +128,6 @@ describe('runs > list', () => {
             cy.visit('/playbooks/runs');
 
             cy.get('#playbookRunList').within(() => {
-                // # Filter to all runs
-                cy.findByTestId('my-runs-only').click();
-
                 // # Make sure both runs are visible by default
                 cy.findByText('testUsers Run').should('be.visible');
                 cy.findByText('testAnotherUsers Run').should('be.visible');
@@ -153,9 +150,6 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks');
             cy.get('#playbookRunList').within(() => {
-                // # Filter to all runs
-                cy.findByTestId('my-runs-only').click();
-
                 // Make sure both runs are visible by default
                 cy.findByText('testUsers Run').should('be.visible');
                 cy.findByText('testAnotherUsers Run').should('be.visible');
@@ -196,9 +190,6 @@ describe('runs > list', () => {
             cy.visit('/playbooks');
 
             cy.get('#playbookRunList').within(() => {
-                // # Filter to all runs
-                cy.findByTestId('my-runs-only').click();
-
                 // # Make sure runs are visible by default, and finished is not
                 cy.findByText('testUsers Run').should('be.visible');
                 cy.findByText('testAnotherUsers Run').should('be.visible');
