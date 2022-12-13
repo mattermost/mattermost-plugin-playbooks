@@ -90,13 +90,14 @@ const ChecklistList = ({
         };
 
         if (updatedPlaybook) {
-            // Append all assignees found in the updated checklists and clear duplicates
-            const invitedUsers = new Set([...updatedPlaybook.invited_user_ids, ...getDistinctAssignees(updatedPlaybook.checklists)]);
-            if (invitedUsers.size && !updatedPlaybook.invite_users_enabled) {
+            const preAssignees = getDistinctAssignees(updatedPlaybook.checklists);
+            if (preAssignees.length && !updatedPlaybook.invite_users_enabled) {
                 updates.inviteUsersEnabled = true;
             }
 
-            // Only update the userIds when new assignees were added
+            // Append all assignees found in the updated checklists and clear duplicates
+            // Only update the invited users when new assignees were added
+            const invitedUsers = new Set([...updatedPlaybook.invited_user_ids, ...preAssignees]);
             if (invitedUsers.size > updatedPlaybook.invited_user_ids.length) {
                 updates.invitedUserIDs = [...invitedUsers];
             }
