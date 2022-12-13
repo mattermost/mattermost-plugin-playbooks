@@ -27,6 +27,7 @@ fragment RHSRunFields on Run {
 	name
 	participantIDs
 	ownerUserID
+	playbookID
 	playbook {
 		title
 	}

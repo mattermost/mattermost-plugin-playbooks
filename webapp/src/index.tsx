@@ -12,7 +12,6 @@ import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
 
-import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
@@ -40,7 +39,7 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal, publishTemplates,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -67,12 +66,12 @@ import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
-import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
+import PresetTemplates from './components/templates/template_data';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -315,14 +314,13 @@ export default class Plugin {
         };
         getGlobalSettings();
 
-        // Grab roles
-        //@ts-ignore
-        store.dispatch(loadRolesIfNeeded([PlaybookRole.Member, PlaybookRole.Admin]));
-
         this.userActivityWatch();
 
         // Listen for channel changes and open the RHS when appropriate.
         this.removeRHSListener = store.subscribe(makeRHSOpener(store));
+
+        // publish templates
+        store.dispatch(publishTemplates(PresetTemplates));
     }
 
     public uninitialize() {

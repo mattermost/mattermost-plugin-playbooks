@@ -480,7 +480,7 @@ func TestRunRetrieval(t *testing.T) {
 	t.Run("checklist autocomplete", func(t *testing.T) {
 		resp, err := e.ServerClient.DoAPIRequest("GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", "")
 		assert.Error(t, err)
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("can't get cross team", func(t *testing.T) {

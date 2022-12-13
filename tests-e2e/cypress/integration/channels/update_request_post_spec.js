@@ -65,7 +65,7 @@ describe('channels > run dialog', () => {
 
             cy.getLastPost().then((element) => {
                 // # Verify the expected message text
-                cy.get(element).contains(`@${testUser.username}, please provide a status update.`);
+                cy.get(element).contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
 
                 // # Verify interactive message button to post an update
                 cy.get(element).find('button').contains('Post update');
@@ -98,13 +98,13 @@ describe('channels > run dialog', () => {
                 cy.get('#sidebarItem_threads').click();
 
                 // # Verify the expected text in the list view
-                cy.get('.ThreadItem').first().contains(`@${testUser.username}, please provide a status update.`);
+                cy.get('.ThreadItem').first().contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
 
                 // # Click to open details
                 cy.get('.ThreadItem').first().click();
 
                 // # Verify post still rendered
-                cy.get(`#rhsPost_${lastPostId}`).contains(`@${testUser.username}, please provide a status update.`);
+                cy.get(`#rhsPost_${lastPostId}`).contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
 
                 // # Verify interactive message button to post an update
                 cy.get(`#rhsPost_${lastPostId}`).find('button').contains('Post update');

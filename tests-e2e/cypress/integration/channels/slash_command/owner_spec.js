@@ -130,7 +130,7 @@ describe('channels > slash command > owner', () => {
             });
         });
 
-        describe('should show an error when the user is not in the channel', () => {
+        describe('should not show an error when the user is not in the channel', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the playbook run channel
                 cy.visit(`/${testTeam.name}/channels/playbook-run`);
@@ -143,16 +143,16 @@ describe('channels > slash command > owner', () => {
                 // # Run a slash command to change the current owner
                 cy.executeSlashCommand(`/playbook owner ${testUser2.username}`);
 
-                // * Verify the expected error message.
-                cy.verifyEphemeralMessage(`User @${testUser2.username} must be part of this channel to make them owner.`);
+                // * Verify the owner has changed.
+                cy.findByTestId('owner-profile-selector').contains(testUser2.username);
             });
 
             it('when the username has an @-prefix', () => {
                 // # Run a slash command to change the current owner
                 cy.executeSlashCommand(`/playbook owner @${testUser2.username}`);
 
-                // * Verify the expected error message.
-                cy.verifyEphemeralMessage(`User @${testUser2.username} must be part of this channel to make them owner.`);
+                // * Verify the owner has changed.
+                cy.findByTestId('owner-profile-selector').contains(testUser2.username);
             });
         });
 
