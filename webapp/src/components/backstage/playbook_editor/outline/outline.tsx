@@ -111,7 +111,7 @@ const Outline = ({playbook, refetch}: Props) => {
             </Section>
             <Section
                 id={'checklists'}
-                title={formatMessage({defaultMessage: 'Checklists'})}
+                title={formatMessage({defaultMessage: 'Tasks'})}
             >
                 <ChecklistList
                     playbook={playbook}

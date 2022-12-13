@@ -141,6 +141,6 @@ describe('channels > rhs > runlist', () => {
 
         // * Verify we made it to the run details at Channels RHS
         cy.get('#rhsContainer').contains('playbook-run-9');
-        cy.get('#rhsContainer').contains('Checklists');
+        cy.get('#rhsContainer').contains('Tasks');
     });
 });

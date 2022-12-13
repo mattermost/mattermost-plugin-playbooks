@@ -6,15 +6,12 @@ import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-//@ts-ignore Webapp imports don't work properly
-import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
 
-import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 import {FormattedMessage} from 'react-intl';
 
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
@@ -23,7 +20,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
-
+import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {
@@ -42,7 +39,7 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal,
+    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal, publishTemplates,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -69,12 +66,12 @@ import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
-import {PlaybookRole} from './types/permissions';
 import {RetrospectivePost} from './components/retrospective_post';
 
 import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
+import PresetTemplates from './components/templates/template_data';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -136,7 +133,7 @@ export default class Plugin {
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -199,6 +196,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
+        registry.registerRootComponent(LoginHook);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
@@ -287,13 +285,9 @@ export default class Plugin {
             lastActivityTime = now;
         };
         document.addEventListener('click', this.activityFunc);
-
-        // We have user activity right now because the plugin is loading
-        // so fire the first connect event.
-        notifyConnect();
     }
 
-    public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
+    public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);
@@ -312,20 +306,21 @@ export default class Plugin {
 
         this.doRegistrations(registry, store, graphqlClient);
 
+        // https://mattermost.atlassian.net/browse/MM-48872
+        // This is handled by LoginHook, but it doesn't seem compatible with e2e tests.
         // Grab global settings
         const getGlobalSettings = async () => {
             store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
         };
         getGlobalSettings();
 
-        // Grab roles
-        //@ts-ignore
-        store.dispatch(loadRolesIfNeeded([PlaybookRole.Member, PlaybookRole.Admin]));
-
         this.userActivityWatch();
 
         // Listen for channel changes and open the RHS when appropriate.
         this.removeRHSListener = store.subscribe(makeRHSOpener(store));
+
+        // publish templates
+        store.dispatch(publishTemplates(PresetTemplates));
     }
 
     public uninitialize() {

@@ -282,7 +282,7 @@ describe('playbooks > edit_metrics', () => {
         });
 
         describe('delete metric', () => {
-            it('verifies when clicking delete button; saved metrics have different confirmation text; deleted metrics are deleted', () => {
+            it.skip('verifies when clicking delete button; saved metrics have different confirmation text; deleted metrics are deleted', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
 

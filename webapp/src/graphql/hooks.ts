@@ -12,6 +12,7 @@ import {
     RhsFinishedRunsDocument,
     RunDocument,
     RunUpdates,
+    TaskActionUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
     useChangeRunOwnerMutation,
@@ -20,6 +21,7 @@ import {
     useRemoveRunParticipantsMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    useUpdateRunTaskActionsMutation,
     useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
@@ -164,4 +166,21 @@ export const useManageRunMembership = (runID?: string) => {
     }, [runID, changeOwner]);
 
     return {addToRun, removeFromRun, changeRunOwner};
+};
+
+export const useUpdateRunItemTaskActions = (runID?: string) => {
+    const [updateTaskActions] = useUpdateRunTaskActionsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskActionUpdates[]) => {
+        if (!runID) {
+            return;
+        }
+        await updateTaskActions({variables: {runID, checklistNum, itemNum, taskActions}});
+    }, [runID, updateTaskActions]);
+
+    return {updateRunTaskActions};
 };

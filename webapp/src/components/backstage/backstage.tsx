@@ -5,10 +5,8 @@ import React, {useEffect} from 'react';
 import {useLocation, useRouteMatch, matchPath} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-
 import {GlobalState} from '@mattermost/types/store';
-import {Theme} from 'mattermost-redux/types/themes';
-import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getTheme, Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
@@ -28,6 +26,7 @@ const BackstageContainer = styled.div`
 
 const Backstage = () => {
     const {pathname} = useLocation();
+
     const {url} = useRouteMatch();
     const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
         path: [`${url}/runs/:playbookRunId`],

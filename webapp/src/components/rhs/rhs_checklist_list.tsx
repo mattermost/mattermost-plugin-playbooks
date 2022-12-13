@@ -11,7 +11,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
-import {GlobalState} from 'mattermost-webapp/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
@@ -199,7 +199,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             title={formatMessage({defaultMessage: 'Tasks'})}
             id={id || ''}
         />
-    ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
+    ) : <>{formatMessage({defaultMessage: 'Tasks'})}</>;
 
     const itemButtonsFormat = () => {
         if (parentContainer === ChecklistParent.RHS) {
@@ -285,7 +285,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                         if (viewerMode && onViewerModeInteract) {
                             onViewerModeInteract();
                         } else {
-                            dispatch(finishRun(playbookRun?.team_id || ''));
+                            dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
                         }
                     }}
                 >

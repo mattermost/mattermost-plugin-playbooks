@@ -12,6 +12,7 @@ interface Props {
     keywords: string[];
     onKeywordsChange: (keywords: string[]) => void;
     className?: string;
+    testId?: string;
 }
 
 const KeywordsSelector = (props: Props) => {
@@ -58,6 +59,7 @@ const KeywordsSelector = (props: Props) => {
 
     return (
         <CreatableSelect
+            id={props.testId}
             className={props.className}
             components={selectComponents}
             isDisabled={!props.enabled}
