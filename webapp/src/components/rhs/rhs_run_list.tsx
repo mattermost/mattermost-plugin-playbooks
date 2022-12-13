@@ -179,10 +179,17 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                 </Header>
                 {showNoRuns &&
-                    <NoRuns
-                        active={props.options.filter === FilterType.InProgress}
-                        setOptions={props.setOptions}
-                    />
+                <>
+                    <NoRunsWrapper>
+                        <NoRuns
+                            active={props.options.filter === FilterType.InProgress}
+                            setOptions={props.setOptions}
+                        />
+                    </NoRunsWrapper>
+                    <FeedbackWrapper>
+                        <StyledGiveFeedbackButton tooltipPlacement='top'/>
+                    </FeedbackWrapper>
+                </>
                 }
                 {!showNoRuns &&
                     <Scrollbars
@@ -209,19 +216,27 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
+                        <FeedbackWrapper>
+                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
+                        </FeedbackWrapper>
                     </Scrollbars>
                 }
-                <StyledGiveFeedbackButton tooltipPlacement='top'/>
             </Container>
         </>
     );
 };
 
+const FeedbackWrapper = styled.div`
+    padding: 0px 16px;
+    text-align: center;
+    margin-bottom: 30px;
+    margin-top: 10px;
+`;
+
 const Container = styled.div`
     display: flex;
     flex-direction: column;
     height: 100%;
-    justify-content: space-between;
 `;
 
 const Header = styled.div`
@@ -237,6 +252,11 @@ const RunsList = styled.div`
     flex-direction: column;
     padding: 0px 16px;
     gap: 12px;
+    min-height: calc(100% - 65px);
+`;
+const NoRunsWrapper = styled.div`
+    min-height: calc(100% - 123px);
+    display: flex;
 `;
 
 const FilterMenuTitle = styled.div`
@@ -332,7 +352,7 @@ const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
     && {
         font-size: 12px;
         color: var(--center-channel-color-64);
-        margin: 16px;
+        width: 100%;
     }
 
     &&:hover:not([disabled]) {
@@ -571,7 +591,7 @@ const NoActiveRunsContainer = styled.div`
     align-self: center;
     gap: 24px;
     max-width: 325px;
-    margin-top: 82px;
+    margin: auto;
 `;
 const NoRunsText = styled.div`
     font-weight: 600;
