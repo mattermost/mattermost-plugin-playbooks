@@ -127,7 +127,7 @@ describe('playbooks > edit', () => {
 
                 cy.get('#actions').within(() => {
                     cy.get('#invite-users').within(() => {
-                        // #*Verify invitations are enabled and a single user is invited
+                        // * Verify invitations are enabled and a single user is invited
                         cy.get('label input').should('be.checked');
                         cy.get('.invite-users-selector__control')
                             .after('content')
