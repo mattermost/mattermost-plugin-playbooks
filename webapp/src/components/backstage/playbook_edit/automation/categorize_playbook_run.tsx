@@ -6,7 +6,11 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    AutomationHeader,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
@@ -30,8 +34,9 @@ export const CategorizePlaybookRun = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
-                />
-                <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
+                >
+                    <FormattedMessage defaultMessage='Add the channel to a sidebar category'/>
+                </Toggle>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledCategorySelector

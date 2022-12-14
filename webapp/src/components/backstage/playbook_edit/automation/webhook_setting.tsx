@@ -3,7 +3,11 @@
 
 import React from 'react';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    AutomationHeader,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PatternedTextArea from 'src/components/patterned_text_area';
 
@@ -33,8 +37,9 @@ export const WebhookSetting = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                     disabled={props.disabled}
-                />
-                <div>{props.textOnToggle}</div>
+                >
+                    {props.textOnToggle}
+                </Toggle>
             </AutomationTitle>
             <SelectorWrapper>
                 <PatternedTextArea
