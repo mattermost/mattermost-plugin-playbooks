@@ -24,6 +24,7 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
+import GiveFeedbackButton from 'src/components/give_feedback_button';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
 
@@ -178,10 +179,17 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                 </Header>
                 {showNoRuns &&
-                    <NoRuns
-                        active={props.options.filter === FilterType.InProgress}
-                        setOptions={props.setOptions}
-                    />
+                <>
+                    <NoRunsWrapper>
+                        <NoRuns
+                            active={props.options.filter === FilterType.InProgress}
+                            setOptions={props.setOptions}
+                        />
+                    </NoRunsWrapper>
+                    <FeedbackWrapper>
+                        <StyledGiveFeedbackButton tooltipPlacement='top'/>
+                    </FeedbackWrapper>
+                </>
                 }
                 {!showNoRuns &&
                     <Scrollbars
@@ -208,12 +216,22 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
+                        <FeedbackWrapper>
+                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
+                        </FeedbackWrapper>
                     </Scrollbars>
                 }
             </Container>
         </>
     );
 };
+
+const FeedbackWrapper = styled.div`
+    padding: 0px 16px;
+    text-align: center;
+    margin-bottom: 30px;
+    margin-top: 10px;
+`;
 
 const Container = styled.div`
     display: flex;
@@ -234,6 +252,11 @@ const RunsList = styled.div`
     flex-direction: column;
     padding: 0px 16px;
     gap: 12px;
+    min-height: calc(100% - 65px);
+`;
+const NoRunsWrapper = styled.div`
+    min-height: calc(100% - 123px);
+    display: flex;
 `;
 
 const FilterMenuTitle = styled.div`
@@ -323,6 +346,20 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     justify-content: space-between;
     min-width: 190px;
     align-items: center;
+`;
+
+const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
+    && {
+        font-size: 12px;
+        color: var(--center-channel-color-64);
+        width: 100%;
+    }
+
+    &&:hover:not([disabled]) {
+        color: var(--center-channel-color-72);
+        background-color: var(--center-channel-color-08);
+    }
+
 `;
 
 interface SortMenuItemProps {
@@ -554,7 +591,7 @@ const NoActiveRunsContainer = styled.div`
     align-self: center;
     gap: 24px;
     max-width: 325px;
-    margin-top: 82px;
+    margin: auto;
 `;
 const NoRunsText = styled.div`
     font-weight: 600;

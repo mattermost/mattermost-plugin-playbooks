@@ -5,7 +5,7 @@ import React from 'react';
 import {useSelector} from 'react-redux';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-
+import {Placement} from '@floating-ui/react-dom-interactions';
 import {GlobalState} from '@mattermost/types/store';
 
 import {OVERLAY_DELAY} from 'src/constants';
@@ -13,9 +13,10 @@ import {InvertedTertiaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     className?: string;
+    tooltipPlacement?: Placement;
 }
 
-const GiveFeedbackButton = ({className}: Props) => {
+const GiveFeedbackButton = ({className, tooltipPlacement}: Props) => {
     const serverVersion = useSelector((state: GlobalState) => state.entities.general.serverVersion);
     const {formatMessage} = useIntl();
 
@@ -37,7 +38,7 @@ const GiveFeedbackButton = ({className}: Props) => {
         <OverlayTrigger
             trigger={['hover', 'focus']}
             delay={OVERLAY_DELAY}
-            placement='bottom'
+            placement={tooltipPlacement || 'bottom'}
             overlay={tooltip}
             aria-label={formatMessage({defaultMessage: 'Give feedback about Playbooks.'})}
 
