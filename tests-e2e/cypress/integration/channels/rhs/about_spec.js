@@ -76,6 +76,21 @@ describe('channels > rhs > header', () => {
         });
     });
 
+    describe('edit run name', () => {
+        it('by clicking on name', () => {
+            cy.get('#rhsContainer').findByTestId('rendered-run-name').should('be.visible').click();
+
+            // # type text in textarea
+            cy.get('#rhsContainer').findByTestId('textarea-run-name').should('be.visible').clear().type('new run name{ctrl+enter}');
+
+            // * make sure the updated name is here
+            cy.get('#rhsContainer').findByTestId('rendered-run-name').should('be.visible').contains('new run name');
+
+            // * make sure the channel name remains unchanged
+            cy.get('#channelHeaderInfo').findByRole('heading').contains(playbookRunName);
+        });
+    });
+
     describe('edit summary', () => {
         it('by clicking on placeholder', () => {
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();
