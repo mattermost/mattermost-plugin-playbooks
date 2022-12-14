@@ -203,7 +203,7 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 		return nil, errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	// playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
 	// statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	playbooks.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
@@ -219,6 +219,19 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 	playbooks.categoryService = app.NewCategoryService(categoryStore, serviceAdapter, playbooks.telemetryClient)
 
 	playbooks.licenseChecker = enterprise.NewLicenseChecker(serviceAdapter)
+
+	playbooks.playbookRunService = app.NewPlaybookRunService(
+		playbookRunStore,
+		playbooks.bot,
+		playbooks.config,
+		scheduler,
+		playbooks.telemetryClient,
+		serviceAdapter,
+		playbooks.playbookService,
+		playbooks.channelActionService,
+		playbooks.licenseChecker,
+		playbooks.metricsService,
+	)
 
 	return playbooks, nil
 }

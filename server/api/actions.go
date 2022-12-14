@@ -7,24 +7,24 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type ActionsHandler struct {
 	*ErrorHandler
 	channelActionsService app.ChannelActionService
-	pluginAPI             *pluginapi.Client
+	api                   playbooks.ServicesAPI
 	permissions           *app.PermissionsService
 }
 
-func NewActionsHandler(router *mux.Router, channelActionsService app.ChannelActionService, pluginAPI *pluginapi.Client, permissions *app.PermissionsService) *ActionsHandler {
+func NewActionsHandler(router *mux.Router, channelActionsService app.ChannelActionService, api playbooks.ServicesAPI, permissions *app.PermissionsService) *ActionsHandler {
 	handler := &ActionsHandler{
 		ErrorHandler:          &ErrorHandler{},
 		channelActionsService: channelActionsService,
-		pluginAPI:             pluginAPI,
+		api:                   api,
 		permissions:           permissions,
 	}
 
@@ -82,7 +82,7 @@ func (a *ActionsHandler) createChannelAction(c *Context, w http.ResponseWriter, 
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", makeAPIURL(a.pluginAPI, "actions/channel/%s/%s", channelAction.ChannelID, id))
+	w.Header().Add("Location", makeAPIURL(a.api, "actions/channel/%s/%s", channelAction.ChannelID, id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
 }

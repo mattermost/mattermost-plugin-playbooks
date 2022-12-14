@@ -67,7 +67,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		return
 	}
 
-	owner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
+	owner, err := s.api.GetUserByID(playbookRunToModify.OwnerUserID)
 	if err != nil {
 		logger.WithError(err).WithField("user_id", playbookRunToModify.OwnerUserID).Error("HandleReminder failed to get owner")
 		return
@@ -122,12 +122,12 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		return "", errors.Wrapf(err, "can't get channel - %s", playbookRun.ChannelID)
 	}
 
-	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	team, err := s.api.GetTeam(channel.TeamId)
 	if err != nil {
 		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 	}
@@ -231,7 +231,7 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 }
 
 func (s *PlaybookRunServiceImpl) removePost(postID string) error {
-	post, err := s.pluginAPI.Post.GetPost(postID)
+	post, err := s.api.GetPost(postID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve reminder post")
 	}
@@ -240,7 +240,7 @@ func (s *PlaybookRunServiceImpl) removePost(postID string) error {
 		return nil
 	}
 
-	if err = s.pluginAPI.Post.DeletePost(postID); err != nil {
+	if _, err = s.api.DeletePost(postID); err != nil {
 		return errors.Wrapf(err, "failed to delete reminder post")
 	}
 

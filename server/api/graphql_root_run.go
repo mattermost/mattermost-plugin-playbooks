@@ -48,7 +48,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  args.TeamID,
-		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, c.api),
 	}
 
 	if args.ParticipantOrFollowerID == client.Me {

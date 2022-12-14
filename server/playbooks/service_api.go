@@ -38,11 +38,20 @@ type ServicesAPI interface {
 	GetChannelMembers(channelID string, page, perPage int) (mm_model.ChannelMembers, error)
 	CreateChannelSidebarCategory(userID, teamID string, newCategory *mm_model.SidebarCategoryWithChannels) (*mm_model.SidebarCategoryWithChannels, error)
 	UpdateChannelSidebarCategories(userID, teamID string, categories []*mm_model.SidebarCategoryWithChannels) ([]*mm_model.SidebarCategoryWithChannels, error)
+	CreateChannel(channel *mm_model.Channel) (*mm_model.Channel, error)
+	AddMemberToChannel(channelID, userID string) (*mm_model.ChannelMember, error)
+	AddUserToChannel(channelID, userID, asUserID string) (*mm_model.ChannelMember, error)
+	UpdateChannelMemberRoles(channelID, userID, newRoles string) (*mm_model.ChannelMember, error)
+	DeleteChannelMember(channelId, userID string) error
+	AddChannelMember(channelId, userID string) (*mm_model.ChannelMember, error)
 
 	// Post service
 	CreatePost(post *mm_model.Post) (*mm_model.Post, error)
 	GetPostsByIds(postIDs []string) ([]*mm_model.Post, error)
 	SendEphemeralPost(userID string, post *mm_model.Post)
+	GetPost(postID string) (*mm_model.Post, error)
+	DeletePost(postId string) (*mm_model.Post, error)
+	UpdatePost(post *mm_model.Post) (*mm_model.Post, error)
 
 	// User service
 	GetUserByID(userID string) (*mm_model.User, error)
@@ -54,11 +63,15 @@ type ServicesAPI interface {
 	// Team service
 	GetTeamMember(teamID string, userID string) (*mm_model.TeamMember, error)
 	CreateMember(teamID string, userID string) (*mm_model.TeamMember, error)
+	GetGroup(groupId string) (*mm_model.Group, error)
+	GetTeam(teamID string) (*mm_model.Team, error)
+	GetGroupMemberUsers(groupID string, page, perPage int) ([]*mm_model.User, error)
 
 	// Permissions service
 	HasPermissionTo(userID string, permission *mm_model.Permission) bool
 	HasPermissionToTeam(userID, teamID string, permission *mm_model.Permission) bool
 	HasPermissionToChannel(askingUserID string, channelID string, permission *mm_model.Permission) bool
+	RolesGrantPermission(roleNames []string, permissionId string) bool
 
 	// Bot service
 	EnsureBot(bot *mm_model.Bot) (string, error)
@@ -107,4 +120,8 @@ type ServicesAPI interface {
 
 	//TODO: Should we add this method to product api?
 	GetSession(sessionID string) (*mm_model.Session, error)
+
+	//TODO:
+	OpenInteractiveDialog(dialog mm_model.OpenDialogRequest) error
+	Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error)
 }

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -28,7 +28,7 @@ type LicenseChecker interface {
 type PermissionsService struct {
 	playbookService PlaybookService
 	runService      PlaybookRunService
-	pluginAPI       *pluginapi.Client
+	api             playbooks.ServicesAPI
 	configService   config.Service
 	licenseChecker  LicenseChecker
 }
@@ -36,14 +36,14 @@ type PermissionsService struct {
 func NewPermissionsService(
 	playbookService PlaybookService,
 	runService PlaybookRunService,
-	pluginAPI *pluginapi.Client,
+	api playbooks.ServicesAPI,
 	configService config.Service,
 	licenseChecker LicenseChecker,
 ) *PermissionsService {
 	return &PermissionsService{
 		playbookService,
 		runService,
-		pluginAPI,
+		api,
 		configService,
 		licenseChecker,
 	}
@@ -73,12 +73,12 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
-	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
+	if p.api.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
 		return true
 	}
 
 	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
+	return p.api.HasPermissionToTeam(userID, playbook.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
@@ -86,7 +86,7 @@ func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 		return false
 	}
 
-	return p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
+	return p.api.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
@@ -96,14 +96,14 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 
 	// Check the user has permissions over all broadcast channels
 	for _, channelID := range playbook.BroadcastChannelIDs {
-		if !p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+		if !p.api.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
 			return errors.Errorf("user `%s` does not have permission to create posts in channel `%s`", userID, channelID)
 		}
 	}
 
 	// Check all invited users have permissions to the team.
 	for _, userID := range playbook.InvitedUserIDs {
-		if !p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
+		if !p.api.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
 			return errors.Errorf(
 				"invited user `%s` does not have permission to playbook's team `%s`",
 				userID,
@@ -114,7 +114,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 
 	// Respect setting for not allowing mentions of a group.
 	for _, groupID := range playbook.InvitedGroupIDs {
-		group, err := p.pluginAPI.Group.Get(groupID)
+		group, err := p.api.GetGroup(groupID)
 		if err != nil {
 			return errors.Wrap(err, "invalid group")
 		}
@@ -133,7 +133,7 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 		permission = model.PermissionPublicPlaybookCreate
 	}
 
-	if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
+	if p.api.HasPermissionToTeam(userID, playbook.TeamID, permission) {
 		return nil
 	}
 
@@ -174,7 +174,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	playbook.InvitedGroupIDs = filteredGroups
 
 	if playbook.DefaultOwnerID != "" {
-		if !p.pluginAPI.User.HasPermissionToTeam(playbook.DefaultOwnerID, playbook.TeamID, model.PermissionViewTeam) {
+		if !p.api.HasPermissionToTeam(playbook.DefaultOwnerID, playbook.TeamID, model.PermissionViewTeam) {
 			logrus.WithFields(logrus.Fields{
 				"team_id": playbook.TeamID,
 				"user_id": playbook.DefaultOwnerID,
@@ -232,7 +232,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 func (p *PermissionsService) FilterInvitedUserIDs(invitedUserIDs []string, teamID string) []string {
 	filteredUsers := []string{}
 	for _, userID := range invitedUserIDs {
-		if !p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+		if !p.api.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
 			logrus.WithFields(logrus.Fields{
 				"team_id": teamID,
 				"user_id": userID,
@@ -248,7 +248,7 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 	filteredGroups := []string{}
 	for _, groupID := range invitedGroupIDs {
 		var group *model.Group
-		group, err := p.pluginAPI.Group.Get(groupID)
+		group, err := p.api.GetGroup(groupID)
 		if err != nil {
 			logrus.WithField("group_id", groupID).Error("failed to query group")
 			continue
@@ -276,7 +276,7 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 
 	for _, channelID := range broadcastChannelIDs {
 		if !oldChannelsSet[channelID] &&
-			!p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+			!p.api.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
 			return errors.Wrapf(
 				ErrNoPermissions,
 				"user `%s` does not have permission to create posts in channel `%s`",
@@ -398,7 +398,7 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 		}
 	}
 
-	if IsSystemAdmin(userID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.api) {
 		return nil
 	}
 
@@ -446,7 +446,7 @@ func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
 }
 
 func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {
-	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.api) || CanManageChannelProperties(userID, channelID, p.api) {
 		return nil
 	}
 
@@ -454,7 +454,7 @@ func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error
 }
 
 func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
-	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+	if p.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
 		return nil
 	}
 
@@ -462,7 +462,7 @@ func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
 }
 
 func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error {
-	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.api) || CanManageChannelProperties(userID, channelID, p.api) {
 		return nil
 	}
 
@@ -470,13 +470,13 @@ func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error
 }
 
 // IsSystemAdmin returns true if the userID is a system admin
-func IsSystemAdmin(userID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
+func IsSystemAdmin(userID string, api playbooks.ServicesAPI) bool {
+	return api.HasPermissionTo(userID, model.PermissionManageSystem)
 }
 
 // CanManageChannelProperties returns true if the userID is allowed to manage the properties of channelID
-func CanManageChannelProperties(userID, channelID string, pluginAPI *pluginapi.Client) bool {
-	channel, err := pluginAPI.Channel.Get(channelID)
+func CanManageChannelProperties(userID, channelID string, api playbooks.ServicesAPI) bool {
+	channel, err := api.GetChannelByID(channelID)
 	if err != nil {
 		return false
 	}
@@ -486,15 +486,15 @@ func CanManageChannelProperties(userID, channelID string, pluginAPI *pluginapi.C
 		permission = model.PermissionManagePrivateChannelProperties
 	}
 
-	return pluginAPI.User.HasPermissionToChannel(userID, channelID, permission)
+	return api.HasPermissionToChannel(userID, channelID, permission)
 }
 
-func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost)
+func CanPostToChannel(userID, channelID string, api playbooks.ServicesAPI) bool {
+	return api.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost)
 }
 
-func IsMemberOfTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
-	teamMember, err := pluginAPI.Team.GetMember(teamID, userID)
+func IsMemberOfTeam(userID, teamID string, api playbooks.ServicesAPI) bool {
+	teamMember, err := api.GetTeamMember(teamID, userID)
 	if err != nil {
 		return false
 	}
@@ -512,8 +512,8 @@ type RequesterInfo struct {
 }
 
 // IsGuest returns true if the userID is a system guest
-func IsGuest(userID string, pluginAPI *pluginapi.Client) (bool, error) {
-	user, err := pluginAPI.User.Get(userID)
+func IsGuest(userID string, api playbooks.ServicesAPI) (bool, error) {
+	user, err := api.GetUserByID(userID)
 	if err != nil {
 		return false, errors.Wrapf(err, "Unable to get user to determine permissions, user id `%s`", userID)
 	}
@@ -521,10 +521,10 @@ func IsGuest(userID string, pluginAPI *pluginapi.Client) (bool, error) {
 	return user.IsGuest(), nil
 }
 
-func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo, error) {
-	isAdmin := IsSystemAdmin(userID, pluginAPI)
+func GetRequesterInfo(userID string, api playbooks.ServicesAPI) (RequesterInfo, error) {
+	isAdmin := IsSystemAdmin(userID, api)
 
-	isGuest, err := IsGuest(userID, pluginAPI)
+	isGuest, err := IsGuest(userID, api)
 	if err != nil {
 		return RequesterInfo{}, err
 	}

@@ -12,19 +12,18 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
-	pluginAPI       *pluginapi.Client
+	api             playbooks.ServicesAPI
 	config          config.Service
 	permissions     *app.PermissionsService
 }
@@ -33,11 +32,11 @@ const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api playbooks.ServicesAPI, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
-		pluginAPI:       api,
+		api:             api,
 		config:          configService,
 		permissions:     permissions,
 	}
@@ -99,7 +98,7 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	if playbook.BroadcastEnabled { //nolint
 		for _, channelID := range playbook.BroadcastChannelIDs {
-			channel, err := h.pluginAPI.Channel.Get(channelID)
+			channel, err := h.api.GetChannelByID(channelID)
 			if err != nil {
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
 				return false
@@ -169,7 +168,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
+	w.Header().Add("Location", makeAPIURL(h.api, "playbooks/%s", id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
 }
@@ -317,7 +316,7 @@ func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *htt
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: app.IsSystemAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, h.api),
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -341,7 +340,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWr
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: app.IsSystemAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, h.api),
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
@@ -442,7 +441,7 @@ func (h *PlaybookHandler) autoFollow(c *Context, w http.ResponseWriter, r *http.
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.api) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
@@ -464,7 +463,7 @@ func (h *PlaybookHandler) autoUnfollow(c *Context, w http.ResponseWriter, r *htt
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.api) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
@@ -615,7 +614,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
+	w.Header().Add("Location", makeAPIURL(h.api, "playbooks/%s", id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
 }
@@ -661,7 +660,7 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 	}
 
 	// setting startTime as per user's location
-	user, err := h.pluginAPI.User.Get(userID)
+	user, err := h.api.GetUserByID(userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
@@ -718,7 +717,7 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 	}
 
 	// setting startTime as per user's location
-	user, err := h.pluginAPI.User.Get(userID)
+	user, err := h.api.GetUserByID(userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return

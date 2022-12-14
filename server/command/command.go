@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
@@ -162,7 +163,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 type Runner struct {
 	context            *plugin.Context
 	args               *model.CommandArgs
-	pluginAPI          *pluginapi.Client
+	api                playbooks.ServicesAPI
 	poster             bot.Poster
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
@@ -175,7 +176,7 @@ type Runner struct {
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context,
 	args *model.CommandArgs,
-	api *pluginapi.Client,
+	api playbooks.ServicesAPI,
 	poster bot.Poster,
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
@@ -187,7 +188,7 @@ func NewCommandRunner(ctx *plugin.Context,
 	return &Runner{
 		context:            ctx,
 		args:               args,
-		pluginAPI:          api,
+		api:                api,
 		poster:             poster,
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
@@ -199,7 +200,7 @@ func NewCommandRunner(ctx *plugin.Context,
 }
 
 func (r *Runner) isValid() error {
-	if r.context == nil || r.args == nil || r.pluginAPI == nil {
+	if r.context == nil || r.args == nil || r.api == nil {
 		return errors.New("invalid arguments to command.Runner")
 	}
 	return nil
@@ -233,7 +234,7 @@ func (r *Runner) actionRun(args []string) {
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.api),
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
@@ -248,7 +249,7 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	session, err := r.api.GetSession(r.context.SessionId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
 		return
@@ -274,7 +275,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.api),
 	}
 
 	// Using the GetPlaybooksForTeam so that requesterInfo and the expected security restrictions
@@ -303,7 +304,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	session, err := r.api.GetSession(r.context.SessionId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
 		return
@@ -451,7 +452,7 @@ func (r *Runner) actionShowOwner([]string) {
 		return
 	}
 
-	ownerUser, err := r.pluginAPI.User.Get(currentPlaybookRun.OwnerUserID)
+	ownerUser, err := r.api.GetUserByID(currentPlaybookRun.OwnerUserID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
@@ -478,7 +479,7 @@ func (r *Runner) actionChangeOwner(args []string) {
 		return
 	}
 
-	targetOwnerUser, err := r.pluginAPI.User.GetByUsername(targetOwnerUsername)
+	targetOwnerUser, err := r.api.GetUserByUsername(targetOwnerUsername)
 	if errors.Is(err, pluginapi.ErrNotFound) {
 		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetOwnerUsername))
 		return
@@ -492,7 +493,7 @@ func (r *Runner) actionChangeOwner(args []string) {
 		return
 	}
 
-	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetOwnerUser.Id)
+	_, err = r.api.GetChannelMember(r.args.ChannelId, targetOwnerUser.Id)
 	if errors.Is(err, pluginapi.ErrNotFound) {
 		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them owner.", targetOwnerUsername))
 		return
@@ -509,13 +510,13 @@ func (r *Runner) actionChangeOwner(args []string) {
 }
 
 func (r *Runner) actionList() {
-	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	team, err := r.api.GetTeam(r.args.TeamId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving current team: %v", err)
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	session, err := r.api.GetSession(r.context.SessionId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
 		return
@@ -527,7 +528,7 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.api)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
 		return
@@ -556,13 +557,13 @@ func (r *Runner) actionList() {
 	now := time.Now()
 	attachments := make([]*model.SlackAttachment, len(result.Items))
 	for i, playbookRun := range result.Items {
-		owner, err := r.pluginAPI.User.Get(playbookRun.OwnerUserID)
+		owner, err := r.api.GetUserByID(playbookRun.OwnerUserID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieving owner of playbook run '%s': %v", playbookRun.Name, err)
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		channel, err := r.api.GetChannelByID(playbookRun.ChannelID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieving channel of playbook run '%s': %v", playbookRun.Name, err)
 			return
@@ -596,7 +597,7 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	session, err := r.api.GetSession(r.context.SessionId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
 		return
@@ -614,7 +615,7 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	owner, err := r.pluginAPI.User.Get(playbookRun.OwnerUserID)
+	owner, err := r.api.GetUserByID(playbookRun.OwnerUserID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
@@ -720,7 +721,7 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.api)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
@@ -754,7 +755,7 @@ func (r *Runner) actionTimeline() {
 		return
 	}
 
-	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	team, err := r.api.GetTeam(r.args.TeamId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving team: %v", err)
 		return
@@ -791,7 +792,7 @@ func (r *Runner) actionTimeline() {
 
 func (r *Runner) summaryMessage(event app.TimelineEvent) string {
 	var username string
-	user, err := r.pluginAPI.User.Get(event.SubjectUserID)
+	user, err := r.api.GetUserByID(event.SubjectUserID)
 	if err == nil {
 		username = user.Username
 	}
@@ -899,13 +900,13 @@ func (r *Runner) displayCurrentSettings() {
 }
 
 func (r *Runner) actionTestSelf(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
+	if r.api.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.api.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
+	if !r.api.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Running the self-test is restricted to system administrators.")
 		return
 	}
@@ -1126,13 +1127,13 @@ And... yes, of course, we have emojis
 }
 
 func (r *Runner) actionTest(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
+	if r.api.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.api.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse("Setting `EnableTesting` must be set to `true` to run the test command.")
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
+	if !r.api.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Running the test command is restricted to system administrators.")
 		return
 	}
@@ -1261,7 +1262,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		return
 	}
 
-	channel, err := r.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := r.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to retrieve information of playbook run's channel: %v", err)
 		return
@@ -1712,7 +1713,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.api),
 	}
 
 	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookFilterOptions{
@@ -1800,7 +1801,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		channel, err := r.api.GetChannelByID(playbookRun.ChannelID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieveing playbook run's channel: %v", err)
 			return
@@ -1827,13 +1828,13 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 }
 
 func (r *Runner) actionNukeDB(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
+	if r.api.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.api.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
+	if !r.api.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Nuking the database is restricted to system administrators.")
 		return
 	}

@@ -8,9 +8,9 @@ import (
 
 	"github.com/gorilla/mux"
 	graphql "github.com/graph-gophers/graphql-go"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +20,7 @@ type GraphQLHandler struct {
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
 	categoryService    app.CategoryService
-	pluginAPI          *pluginapi.Client
+	api                playbooks.ServicesAPI
 	config             config.Service
 	permissions        *app.PermissionsService
 	playbookStore      app.PlaybookStore
@@ -37,7 +37,7 @@ func NewGraphQLHandler(
 	playbookService app.PlaybookService,
 	playbookRunService app.PlaybookRunService,
 	categoryService app.CategoryService,
-	api *pluginapi.Client,
+	api playbooks.ServicesAPI,
 	configService config.Service,
 	permissions *app.PermissionsService,
 	playbookStore app.PlaybookStore,
@@ -48,7 +48,7 @@ func NewGraphQLHandler(
 		playbookService:    playbookService,
 		playbookRunService: playbookRunService,
 		categoryService:    categoryService,
-		pluginAPI:          api,
+		api:                api,
 		config:             configService,
 		permissions:        permissions,
 		playbookStore:      playbookStore,
@@ -89,7 +89,7 @@ type GraphQLContext struct {
 	playbookRunService app.PlaybookRunService
 	playbookStore      app.PlaybookStore
 	categoryService    app.CategoryService
-	pluginAPI          *pluginapi.Client
+	api                playbooks.ServicesAPI
 	logger             logrus.FieldLogger
 	config             config.Service
 	permissions        *app.PermissionsService
@@ -123,7 +123,7 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		playbookService:    h.playbookService,
 		playbookRunService: h.playbookRunService,
 		categoryService:    h.categoryService,
-		pluginAPI:          h.pluginAPI,
+		api:                h.api,
 		logger:             c.logger,
 		config:             h.config,
 		permissions:        h.permissions,

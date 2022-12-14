@@ -7,13 +7,13 @@ import (
 	"time"
 	"unicode"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/services/httpservice"
 )
 
-func MakeClient(pluginAPI *pluginapi.Client) *http.Client {
+func MakeClient(api playbooks.ServicesAPI) *http.Client {
 	return &http.Client{
-		Transport: MakeTransport(pluginAPI),
+		Transport: MakeTransport(api),
 		Timeout:   30 * time.Second,
 	}
 }
@@ -24,14 +24,14 @@ func splitFields(c rune) bool {
 
 // Copy paste with adaptations from sercvices/httpservice/httpservice.go in the future that package will be adapted
 // to be used by the suite and this should be replaced.
-func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport {
-	insecure := pluginAPI.Configuration.GetConfig().ServiceSettings.EnableInsecureOutgoingConnections != nil && *pluginAPI.Configuration.GetConfig().ServiceSettings.EnableInsecureOutgoingConnections
+func MakeTransport(api playbooks.ServicesAPI) *httpservice.MattermostTransport {
+	insecure := api.GetConfig().ServiceSettings.EnableInsecureOutgoingConnections != nil && *api.GetConfig().ServiceSettings.EnableInsecureOutgoingConnections
 
 	allowHost := func(host string) bool {
-		if pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
+		if api.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
 			return false
 		}
-		for _, allowed := range strings.FieldsFunc(*pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections, splitFields) {
+		for _, allowed := range strings.FieldsFunc(*api.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections, splitFields) {
 			if host == allowed {
 				return true
 			}
@@ -53,12 +53,12 @@ func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport
 			return true
 		}
 
-		if pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
+		if api.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
 			return false
 		}
 
 		// In the case it's the self-assigned IP, enforce that it needs to be explicitly added to the AllowedUntrustedInternalConnections
-		for _, allowed := range strings.FieldsFunc(*pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections, splitFields) {
+		for _, allowed := range strings.FieldsFunc(*api.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections, splitFields) {
 			if _, ipRange, err := net.ParseCIDR(allowed); err == nil && ipRange.Contains(ip) {
 				return true
 			}

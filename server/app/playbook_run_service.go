@@ -18,9 +18,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -37,14 +37,13 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI       *pluginapi.Client
 	httpClient      *http.Client
 	configService   config.Service
 	store           PlaybookRunStore
 	poster          bot.Poster
 	scheduler       JobOnceScheduler
 	telemetry       PlaybookRunTelemetry
-	api             plugin.API
+	api             playbooks.ServicesAPI
 	playbookService PlaybookService
 	actionService   ChannelActionService
 	permissions     *PermissionsService
@@ -89,26 +88,24 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(
-	pluginAPI *pluginapi.Client,
 	store PlaybookRunStore,
 	poster bot.Poster,
 	configService config.Service,
 	scheduler JobOnceScheduler,
 	telemetry PlaybookRunTelemetry,
-	api plugin.API,
+	api playbooks.ServicesAPI,
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
 	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:       pluginAPI,
 		store:           store,
 		poster:          poster,
 		configService:   configService,
 		scheduler:       scheduler,
 		telemetry:       telemetry,
-		httpClient:      httptools.MakeClient(pluginAPI),
+		httpClient:      httptools.MakeClient(api),
 		api:             api,
 		playbookService: playbookService,
 		actionService:   channelActionService,
@@ -116,7 +113,7 @@ func NewPlaybookRunService(
 		metricsService:  metricsService,
 	}
 
-	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
+	service.permissions = NewPermissionsService(service.playbookService, service, api, service.configService, service.licenseChecker)
 
 	return service
 }
@@ -178,19 +175,19 @@ type PlaybookRunWebhookEvent struct {
 // sendWebhooksOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
 func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun) {
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	siteURL := s.api.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		logrus.Error("cannot send webhook on creation, please set siteURL")
 		return
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+	team, err := s.api.GetTeam(playbookRun.TeamID)
 	if err != nil {
 		logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.TeamID")
 		return
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.ChannelID")
 		return
@@ -226,7 +223,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
-		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
+		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.api) {
 			logrus.WithFields(logrus.Fields{
 				"user_id": playbookRun.DefaultOwnerID,
 				"team_id": playbookRun.TeamID,
@@ -271,7 +268,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
 		}
 
-		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		channel, err = s.api.GetChannelByID(playbookRun.ChannelID)
 		if err != nil {
 			return nil, err
 		}
@@ -349,7 +346,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		groupLogger := logger.WithField("group_id", groupID)
 
 		var group *model.Group
-		group, err = s.pluginAPI.Group.Get(groupID)
+		group, err = s.api.GetGroup(groupID)
 		if err != nil {
 			groupLogger.WithError(err).Error("failed to query group")
 			continue
@@ -363,7 +360,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		perPage := 1000
 		for page := 0; ; page++ {
 			var users []*model.User
-			users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+			users, err = s.api.GetGroupMemberUsers(groupID, page, perPage)
 			if err != nil {
 				groupLogger.WithError(err).Error("failed to query group")
 				break
@@ -381,7 +378,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	usersFailedToInvite := []string{}
 	for _, userID := range invitedUserIDs {
 		// Check if the user is a member of the team to which the playbook run belongs.
-		_, err = s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
+		_, err = s.api.GetTeamMember(playbookRun.TeamID, userID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -398,7 +395,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		usernames := make([]string, 0, len(usersFailedToInvite))
 		numDeletedUsers := 0
 		for _, userID := range usersFailedToInvite {
-			user, userErr := s.pluginAPI.User.Get(userID)
+			user, userErr := s.api.GetUserByID(userID)
 			if userErr != nil {
 				// User does not exist anymore
 				numDeletedUsers++
@@ -419,7 +416,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	var reporter *model.User
-	reporter, err = s.pluginAPI.User.Get(playbookRun.ReporterUserID)
+	reporter, err = s.api.GetUserByID(playbookRun.ReporterUserID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
 	}
@@ -492,7 +489,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	// Post the content and link of the original post
-	post, err := s.pluginAPI.Post.GetPost(playbookRun.PostID)
+	post, err := s.api.GetPost(playbookRun.PostID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get original post")
 	}
@@ -530,7 +527,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		TriggerId: triggerID,
 	}
 
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+	if err := s.api.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrapf(err, "failed to open new playbook run dialog")
 	}
 
@@ -547,7 +544,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 	newestPostID := findNewestNonDeletedPostID(currentPlaybookRun.StatusPosts)
 	if newestPostID != "" {
 		var post *model.Post
-		post, err = s.pluginAPI.Post.GetPost(newestPostID)
+		post, err = s.api.GetPost(newestPostID)
 		if err != nil {
 			return errors.Wrap(err, "failed to find newest post")
 		}
@@ -569,7 +566,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 		TriggerId: triggerID,
 	}
 
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+	if err := s.api.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
 	}
 
@@ -603,7 +600,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 		TriggerId: triggerID,
 	}
 
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+	if err := s.api.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
 	}
 
@@ -640,7 +637,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookR
 		TriggerId: triggerID,
 	}
 
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+	if err := s.api.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
 	}
 
@@ -648,7 +645,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookR
 }
 
 func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID, summary string) error {
-	post, err := s.pluginAPI.Post.GetPost(postID)
+	post, err := s.api.GetPost(postID)
 	if err != nil {
 		return errors.Wrap(err, "failed to find post")
 	}
@@ -716,7 +713,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
 	}
 
-	authorUser, err := s.pluginAPI.User.Get(authorID)
+	authorUser, err := s.api.GetUserByID(authorID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error when trying to get the author user with ID '%s'", authorID)
 	}
@@ -757,19 +754,19 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 		return
 	}
 
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	siteURL := s.api.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		logger.Error("cannot send webhook on update, please set siteURL")
 		return
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+	team, err := s.api.GetTeam(playbookRun.TeamID)
 	if err != nil {
 		logger.WithField("team_id", playbookRun.TeamID).Error("cannot send webhook on update, not able to get playbookRun.TeamID")
 		return
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		logger.WithField("channel_id", playbookRun.ChannelID).Error("cannot send webhook on update, not able to get playbookRun.ChannelID")
 		return
@@ -903,7 +900,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 		TriggerId: triggerID,
 	}
 
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+	if err := s.api.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open finish run dialog")
 	}
 
@@ -968,7 +965,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return err
 	}
 
-	user, err := s.pluginAPI.User.Get(userID)
+	user, err := s.api.GetUserByID(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
@@ -1067,7 +1064,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		return err
 	}
 
-	user, err := s.pluginAPI.User.Get(userID)
+	user, err := s.api.GetUserByID(userID)
 	T := i18n.GetUserTranslations(user.Locale)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
@@ -1162,7 +1159,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return err
 	}
 
-	user, err := s.pluginAPI.User.Get(userID)
+	user, err := s.api.GetUserByID(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
@@ -1275,11 +1272,11 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 	}
 
 	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s'", playbookRun.ChannelID)
 	}
-	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	team, err := s.api.GetTeam(channel.TeamId)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
@@ -1344,15 +1341,15 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return nil
 	}
 
-	oldOwner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
+	oldOwner, err := s.api.GetUserByID(playbookRunToModify.OwnerUserID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", playbookRunToModify.OwnerUserID)
 	}
-	newOwner, err := s.pluginAPI.User.Get(ownerID)
+	newOwner, err := s.api.GetUserByID(ownerID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", ownerID)
 	}
-	subjectUser, err := s.pluginAPI.User.Get(userID)
+	subjectUser, err := s.api.GetUserByID(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
@@ -1503,7 +1500,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	newAssigneeUserAtMention := noAssigneeName
 	if assigneeID != "" {
 		var newUser *model.User
-		newUser, err = s.pluginAPI.User.Get(assigneeID)
+		newUser, err = s.api.GetUserByID(assigneeID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
@@ -1513,7 +1510,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	oldAssigneeUserAtMention := noAssigneeName
 	if itemToCheck.AssigneeID != "" {
 		var oldUser *model.User
-		oldUser, err = s.pluginAPI.User.Get(itemToCheck.AssigneeID)
+		oldUser, err = s.api.GetUserByID(itemToCheck.AssigneeID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
@@ -1531,19 +1528,19 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	// Do we send a DM to the new assignee?
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
 		var subjectUser *model.User
-		subjectUser, err = s.pluginAPI.User.Get(userID)
+		subjectUser, err = s.api.GetUserByID(userID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
 		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+		channel, err = s.api.GetChannelByID(playbookRunToModify.ChannelID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get channel")
 		}
 
 		var team *model.Team
-		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
+		team, err = s.api.GetTeam(playbookRunToModify.TeamID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get team")
 		}
@@ -1662,7 +1659,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		command = strings.ReplaceAll(command, v, varsAndVals[v])
 	}
 
-	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+	cmdResponse, err := s.api.Execute(&model.CommandArgs{
 		Command:   command,
 		UserId:    userID,
 		TeamId:    playbookRun.TeamID,
@@ -2105,7 +2102,7 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	user, err := s.pluginAPI.User.Get(userID)
+	user, err := s.api.GetUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -2254,7 +2251,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 
 func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
 	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
+	return s.api.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
@@ -2277,7 +2274,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 
 	// Prefer the channel name the user chose. But if it already exists, add some random bits
 	// and try exactly once more.
-	err := s.pluginAPI.Channel.Create(channel)
+	_, err := s.api.CreateChannel(channel)
 	if err != nil {
 		if appErr, ok := err.(*model.AppError); ok {
 			// Let the user correct display name errors:
@@ -2289,7 +2286,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 			// We can fix channel Name errors:
 			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
 				channel.Name = addRandomBits(channel.Name)
-				err = s.pluginAPI.Channel.Create(channel)
+				_, err = s.api.CreateChannel(channel)
 			}
 		}
 
@@ -2303,27 +2300,27 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 
 // addPlaybookRunInitialMemberships creates the memberships in run and channels for the most core users: playbooksbot, reporter and owner
 func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *PlaybookRun, channel *model.Channel) error {
-	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.api.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the team")
 	}
 
 	// channel related
-	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.api.AddMemberToChannel(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.api.AddUserToChannel(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
-		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+		if _, err := s.api.AddUserToChannel(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 			return errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
 	_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
+	if _, err := s.api.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"channel_id":    channel.Id,
 			"owner_user_id": playbookRun.OwnerUserID,
@@ -2383,7 +2380,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *mo
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
-	user, err := s.pluginAPI.User.Get(ownerID)
+	user, err := s.api.GetUserByID(ownerID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
@@ -2541,7 +2538,7 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
 
-	post, err := s.pluginAPI.Post.GetPost(postID)
+	post, err := s.api.GetPost(postID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
@@ -2644,7 +2641,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	publisherUser, err := s.pluginAPI.User.Get(publisherID)
+	publisherUser, err := s.api.GetUserByID(publisherID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get publisher user")
 	}
@@ -2737,7 +2734,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to update playbook run")
 	}
 
-	cancelerUser, err := s.pluginAPI.User.Get(cancelerID)
+	cancelerUser, err := s.api.GetUserByID(cancelerID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get canceler user")
 	}
@@ -2773,11 +2770,11 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 	}
 
 	// avoid sending request if user is already a member of the channel
-	if s.pluginAPI.User.HasPermissionToChannel(requesterID, playbookRun.ChannelID, model.PermissionReadChannel) {
+	if s.api.HasPermissionToChannel(requesterID, playbookRun.ChannelID, model.PermissionReadChannel) {
 		return fmt.Errorf("user %s is already a member of the channel %s", requesterID, playbookRunID)
 	}
 
-	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	requesterUser, err := s.api.GetUserByID(requesterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get requester user")
 	}
@@ -2803,7 +2800,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	requesterUser, err := s.pluginAPI.User.Get(requesterID)
+	requesterUser, err := s.api.GetUserByID(requesterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get requester user")
 	}
@@ -2878,7 +2875,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 
 	// Don't do anything if the user not a channel member
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+	member, _ := s.api.GetChannelMember(playbookRun.ChannelID, userID)
 	if member == nil {
 		return
 	}
@@ -2899,12 +2896,12 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		logrus.WithError(err).Errorf("failed to get channel, channelID '%s'", playbookRun.ChannelID)
 	}
 
-	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
+	requesterUser, err := s.api.GetUserByID(requesterUserID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get requester user")
 	}
@@ -2912,7 +2909,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	for _, userID := range userIDs {
 		user := requesterUser
 		if userID != requesterUserID {
-			user, err = s.pluginAPI.User.Get(userID)
+			user, err = s.api.GetUserByID(userID)
 			if err != nil {
 				return errors.Wrap(err, "failed to get requester user")
 			}
@@ -2934,7 +2931,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, ch
 	}
 
 	// Don't do anything if the user is a channel member
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
+	member, _ := s.api.GetChannelMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
 		return
 	}
@@ -3290,7 +3287,7 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessageToChannels(channelID
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(broadcastChannelID string, post *model.Post, mType messageType, playbookRun *PlaybookRun) error {
 	post.ChannelId = broadcastChannelID
-	if err := IsChannelActiveInTeam(post.ChannelId, playbookRun.TeamID, s.pluginAPI); err != nil {
+	if err := IsChannelActiveInTeam(post.ChannelId, playbookRun.TeamID, s.api); err != nil {
 		return errors.Wrap(err, "announcement channel is not active")
 	}
 

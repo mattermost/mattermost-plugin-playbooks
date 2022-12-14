@@ -5,19 +5,18 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const defaultBaseAPIURL = "plugins/playbooks/api/v0"
 
-func getAPIBaseURL(pluginAPI *pluginapi.Client) (string, error) {
+func getAPIBaseURL(api playbooks.ServicesAPI) (string, error) {
 	siteURL := model.ServiceSettingsDefaultSiteURL
-	if pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if api.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *api.GetConfig().ServiceSettings.SiteURL
 	}
 
 	parsedSiteURL, err := url.Parse(siteURL)
@@ -28,8 +27,8 @@ func getAPIBaseURL(pluginAPI *pluginapi.Client) (string, error) {
 	return path.Join(parsedSiteURL.Path, defaultBaseAPIURL), nil
 }
 
-func makeAPIURL(pluginAPI *pluginapi.Client, apiPath string, args ...interface{}) string {
-	apiBaseURL, err := getAPIBaseURL(pluginAPI)
+func makeAPIURL(api playbooks.ServicesAPI, apiPath string, args ...interface{}) string {
+	apiBaseURL, err := getAPIBaseURL(api)
 	if err != nil {
 		logrus.WithError(err).Error("failed to build api base url")
 		apiBaseURL = defaultBaseAPIURL

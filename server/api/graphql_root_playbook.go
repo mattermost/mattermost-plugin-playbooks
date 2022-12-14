@@ -59,7 +59,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  args.TeamID,
-		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, c.api),
 	}
 
 	opts := app.PlaybookFilterOptions{
@@ -180,7 +180,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
-		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
+		if !c.api.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
 			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
 		}
 		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)

@@ -101,6 +101,35 @@ func (a *serviceAPIAdapter) UpdateChannelSidebarCategories(userID, teamID string
 	return channels, normalizeAppErr(appErr)
 }
 
+func (a *serviceAPIAdapter) CreateChannel(channel *mm_model.Channel) (*mm_model.Channel, error) {
+	channel, appErr := a.api.channelService.CreateChannel(channel)
+	return channel, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) AddMemberToChannel(channelID, userID string) (*mm_model.ChannelMember, error) {
+	channelMember, appErr := a.api.channelService.AddChannelMember(channelID, userID)
+	return channelMember, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) AddUserToChannel(channelID, userID, asUserID string) (*mm_model.ChannelMember, error) {
+	channel, appErr := a.api.channelService.AddUserToChannel(channelID, userID, asUserID)
+	return channel, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) UpdateChannelMemberRoles(channelID, userID, newRoles string) (*mm_model.ChannelMember, error) {
+	channelMember, appErr := a.api.channelService.UpdateChannelMemberRoles(channelID, userID, newRoles)
+	return channelMember, normalizeAppErr(appErr)
+}
+func (a *serviceAPIAdapter) DeleteChannelMember(channelID, userID string) error {
+	appErr := a.api.channelService.DeleteChannelMember(channelID, userID)
+	return normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) AddChannelMember(channelID, userID string) (*mm_model.ChannelMember, error) {
+	channelMember, appErr := a.api.channelService.AddChannelMember(channelID, userID)
+	return channelMember, normalizeAppErr(appErr)
+}
+
 //
 // Post service.
 //
@@ -117,6 +146,21 @@ func (a *serviceAPIAdapter) GetPostsByIds(postIDs []string) ([]*mm_model.Post, e
 
 func (a *serviceAPIAdapter) SendEphemeralPost(userID string, post *mm_model.Post) {
 	*post = *a.api.postService.SendEphemeralPost(a.ctx, userID, post)
+}
+
+func (a *serviceAPIAdapter) GetPost(postID string) (*mm_model.Post, error) {
+	post, appErr := a.api.postService.GetPost(postID)
+	return post, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) DeletePost(postID string) (*mm_model.Post, error) {
+	post, appErr := a.api.postService.DeletePost(a.ctx, postID, playbooksProductID)
+	return post, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) UpdatePost(post *mm_model.Post) (*mm_model.Post, error) {
+	post, appErr := a.api.postService.UpdatePost(a.ctx, post, false)
+	return post, normalizeAppErr(appErr)
 }
 
 //
@@ -162,6 +206,21 @@ func (a *serviceAPIAdapter) CreateMember(teamID string, userID string) (*mm_mode
 	return member, normalizeAppErr(appErr)
 }
 
+func (a *serviceAPIAdapter) GetGroup(groupID string) (*model.Group, error) {
+	group, appErr := a.api.teamService.GetGroup(groupID)
+	return group, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetTeam(teamID string) (*mm_model.Team, error) {
+	team, appErr := a.api.teamService.GetTeam(teamID)
+	return team, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetGroupMemberUsers(groupID string, page, perPage int) ([]*mm_model.User, error) {
+	users, appErr := a.api.teamService.GetGroupMemberUsers(groupID, page, perPage)
+	return users, normalizeAppErr(appErr)
+}
+
 //
 // Permissions service.
 //
@@ -176,6 +235,10 @@ func (a *serviceAPIAdapter) HasPermissionToTeam(userID, teamID string, permissio
 
 func (a *serviceAPIAdapter) HasPermissionToChannel(askingUserID string, channelID string, permission *mm_model.Permission) bool {
 	return a.api.permissionsService.HasPermissionToChannel(askingUserID, channelID, permission)
+}
+
+func (a *serviceAPIAdapter) RolesGrantPermission(roleNames []string, permissionID string) bool {
+	return a.api.permissionsService.RolesGrantPermission(roleNames, permissionID)
 }
 
 //
@@ -240,7 +303,7 @@ func (a *serviceAPIAdapter) GetLogger() mlog.LoggerIFace {
 }
 
 func (a *serviceAPIAdapter) LogError(msg string, keyValuePairs ...interface{}) {
-
+	// TODO: Do we need this method? We can instead use logrus
 }
 
 //
@@ -342,9 +405,25 @@ func (a *serviceAPIAdapter) DeletePreferencesForUser(userID string, preferences 
 	return normalizeAppErr(appErr)
 }
 
-//TODO: Should we add thi method to product api?
+//
+// Unknown service api
+//
+
+//TODO: Should we add this method to product api?
 func (a *serviceAPIAdapter) GetSession(sessionID string) (*mm_model.Session, error) {
 	return a.server.Platform().GetSessionByID(sessionID)
+}
+
+func (a *serviceAPIAdapter) OpenInteractiveDialog(dialog model.OpenDialogRequest) error {
+	//TODO: add implementation
+	// pluginAPI.Frontend.OpenInteractiveDialog
+	return nil
+}
+
+func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error) {
+	//TODO: add implementation
+	// pluginAPI.SlashCommand.Execute
+	return nil, nil
 }
 
 // Ensure the adapter implements ServicesAPI.

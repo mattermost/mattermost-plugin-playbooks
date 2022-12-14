@@ -1,7 +1,7 @@
 package app
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/pkg/errors"
 )
 
@@ -11,8 +11,8 @@ var (
 	ErrChannelNotInExpectedTeam = errors.Errorf("channel in different team")
 )
 
-func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *pluginapi.Client) error {
-	channel, err := pluginAPI.Channel.Get(channelID)
+func IsChannelActiveInTeam(channelID string, expectedTeamID string, api playbooks.ServicesAPI) error {
+	channel, err := api.GetChannelByID(channelID)
 	if err != nil {
 		return errors.Wrapf(ErrChannelNotFound, "channel with ID %s does not exist", channelID)
 	}

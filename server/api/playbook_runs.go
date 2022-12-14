@@ -16,11 +16,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 )
 
 // PlaybookRunHandler is the API handler.
@@ -31,7 +30,7 @@ type PlaybookRunHandler struct {
 	playbookService    app.PlaybookService
 	permissions        *app.PermissionsService
 	licenseChecker     app.LicenseChecker
-	pluginAPI          *pluginapi.Client
+	api                playbooks.ServicesAPI
 	poster             bot.Poster
 }
 
@@ -42,7 +41,7 @@ func NewPlaybookRunHandler(
 	playbookService app.PlaybookService,
 	permissions *app.PermissionsService,
 	licenseChecker app.LicenseChecker,
-	api *pluginapi.Client,
+	api playbooks.ServicesAPI,
 	poster bot.Poster,
 	configService config.Service,
 ) *PlaybookRunHandler {
@@ -50,7 +49,7 @@ func NewPlaybookRunHandler(
 		ErrorHandler:       &ErrorHandler{},
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
-		pluginAPI:          api,
+		api:                api,
 		poster:             poster,
 		config:             configService,
 		permissions:        permissions,
@@ -302,7 +301,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		}
 	}
 
-	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := h.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get new channel", err)
 		return
@@ -331,7 +330,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 }
 
 func (h *PlaybookRunHandler) editPromptPost(promptPostID string, playbookID string, runID string, userID string, runName string) error {
-	post, err := h.pluginAPI.Post.GetPost(promptPostID)
+	post, err := h.api.GetPost(promptPostID)
 	if err != nil {
 		return errors.Wrapf(err, "unable to retrieve the post with ID %q", promptPostID)
 	}
@@ -341,7 +340,7 @@ func (h *PlaybookRunHandler) editPromptPost(promptPostID string, playbookID stri
 		return errors.Wrapf(err, "unable to retrieve the playbook with ID %q", playbookID)
 	}
 
-	user, err := h.pluginAPI.User.Get(userID)
+	user, err := h.api.GetUserByID(userID)
 	if err != nil {
 		return errors.Wrapf(err, "unable to retrieve the user with ID %q", userID)
 	}
@@ -350,7 +349,7 @@ func (h *PlaybookRunHandler) editPromptPost(promptPostID string, playbookID stri
 	post.Message = fmt.Sprintf("@%s started the run [%s](%s) using the [%s](%s) playbook.",
 		user.Username, runName, app.GetRunDetailsRelativeURL(runID), playbook.Title, app.GetPlaybookDetailsRelativeURL(playbookID))
 	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
-	if err := h.pluginAPI.Post.UpdatePost(post); err != nil {
+	if _, err := h.api.UpdatePost(post); err != nil {
 		return errors.Wrapf(err, "unable to update the post with ID %q", post.Id)
 	}
 
@@ -440,7 +439,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	var channel *model.Channel
 	var err error
 	if playbookRun.ChannelID != "" {
-		channel, err = h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		channel, err = h.api.GetChannelByID(playbookRun.ChannelID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get channel")
 		}
@@ -485,7 +484,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			permission = model.PermissionCreatePublicChannel
 			permissionMessage = "You are not able to create a public channel"
 		}
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
+		if !h.api.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 	} else {
@@ -499,18 +498,18 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			permissionMessage = "You do not have access to this channel"
 		}
 
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
+		if !h.api.HasPermissionToChannel(userID, channel.Id, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 	}
 
 	// Check the permissions on the provided post: the user must have access to the post's channel
 	if playbookRun.PostID != "" {
-		post, err := h.pluginAPI.Post.GetPost(playbookRun.PostID)
+		post, err := h.api.GetPost(playbookRun.PostID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook run original post")
 		}
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
+		if !h.api.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
 			return nil, errors.New("user does not have access to the channel containing the playbook run's original post")
 		}
 	}
@@ -526,7 +525,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 }
 
 func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
-	return app.GetRequesterInfo(userID, h.pluginAPI)
+	return app.GetRequesterInfo(userID, h.api)
 }
 
 // getPlaybookRuns handles the GET /runs endpoint.
@@ -719,7 +718,7 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.pluginAPI) {
+	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.api) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRunToModify.ChannelID))
 		return
 	}
@@ -805,7 +804,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(c *Context, w http.ResponseWriter,
 
 	posts := make([]*app.StatusPostComplete, 0)
 	for _, p := range playbookRun.StatusPosts {
-		post, err := h.pluginAPI.Post.GetPost(p.ID)
+		post, err := h.api.GetPost(p.ID)
 		if err != nil {
 			c.logger.WithError(err).WithField("post_id", p.ID).Error("statusUpdates: can not retrieve post")
 			continue
@@ -929,7 +928,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 		return
 	}
 
-	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.pluginAPI) {
+	if !app.CanPostToChannel(userID, playbookRunToModify.ChannelID, h.api) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRunToModify.ChannelID))
 		return
 	}
@@ -1698,7 +1697,7 @@ func (h *PlaybookRunHandler) moveChecklistItem(c *Context, w http.ResponseWriter
 }
 
 func (h *PlaybookRunHandler) postPlaybookRunCreatedMessage(playbookRun *app.PlaybookRun, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	channel, err := h.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
 		return err
 	}

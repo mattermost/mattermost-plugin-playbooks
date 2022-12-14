@@ -9,7 +9,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
@@ -292,13 +291,14 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
-		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
+	/*
+		runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
+			p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
-	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
-	}
-
+		if err := runner.Execute(); err != nil {
+			return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	*/
 	return &model.CommandResponse{}, nil
 }
 
