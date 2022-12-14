@@ -89,6 +89,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
+                taskActions: ci.task_actions,
             })),
         }));
         const idx = playbook.invited_user_ids.indexOf(userId);
@@ -112,6 +113,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
+                taskActions: ci.task_actions,
             })),
         }));
         updatePlaybook({
