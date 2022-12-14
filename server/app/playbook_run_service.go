@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -530,10 +529,15 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID string) error {
+func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error {
 	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := ""
@@ -549,7 +553,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, len(currentPlaybookRun.BroadcastChannelIDs), currentPlaybookRun.PreviousReminder)
+	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, len(currentPlaybookRun.BroadcastChannelIDs), currentPlaybookRun.PreviousReminder, user.Locale)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -603,18 +607,25 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookRunID string, checklist int) error {
+func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error {
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	T := i18n.GetUserTranslations(user.Locale)
+
 	dialog := &model.Dialog{
-		Title: "Add new task",
+		Title: T("app.user.run.add_checklist_item.title"),
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Name",
+				DisplayName: T("app.user.run.add_checklist_item.name"),
 				Name:        DialogFieldItemNameKey,
 				Type:        "text",
 				Default:     "",
 			},
 			{
-				DisplayName: "Description",
+				DisplayName: T("app.user.run.add_checklist_item.description"),
 				Name:        DialogFieldItemDescriptionKey,
 				Type:        "textarea",
 				Default:     "",
@@ -622,7 +633,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, playbookR
 				MaxLength:   checklistItemDescriptionCharLimit,
 			},
 		},
-		SubmitLabel:    "Add task",
+		SubmitLabel:    T("app.user.run.add_checklist_item.submit_label"),
 		NotifyOnCancel: false,
 	}
 
@@ -864,10 +875,15 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, triggerID string) error {
+func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, userID, triggerID string) error {
 	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	numOutstanding := 0
@@ -883,7 +899,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
 			s.configService.GetManifest().Id,
 			playbookRunID),
-		Dialog:    *s.newFinishPlaybookRunDialog(currentPlaybookRun, numOutstanding),
+		Dialog:    *s.newFinishPlaybookRunDialog(currentPlaybookRun, numOutstanding, user.Locale),
 		TriggerId: triggerID,
 	}
 
@@ -2420,28 +2436,36 @@ func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel
 	return model.ChannelGuestRoleId, model.ChannelUserRoleId, model.ChannelAdminRoleId
 }
 
-func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *PlaybookRun, outstanding int) *model.Dialog {
-	suffix := fmt.Sprintf("Are you sure you want to finish the run *%s* for all participants?", playbookRun.Name)
-	message := suffix
+func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *PlaybookRun, outstanding int, locale string) *model.Dialog {
+	T := i18n.GetUserTranslations(locale)
+
+	data := map[string]interface{}{
+		"RunName": playbookRun.Name,
+		"Count":   outstanding,
+	}
+
+	message := T("app.user.run.confirm_finish.question", data)
 	if outstanding == 1 {
-		message = "There is **1 outstanding task**. " + suffix
+		message = T("app.user.run.confirm_finish.one_outstanding") + " " + message
 	} else if outstanding > 1 {
-		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. " + suffix
+		message = T("app.user.run.confirm_finish.num_outstanding", data) + " " + message
 	}
 
 	return &model.Dialog{
-		Title:            "Confirm finish run",
+		Title:            T("app.user.run.confirm_finish.title"),
 		IntroductionText: message,
-		SubmitLabel:      "Finish run",
+		SubmitLabel:      T("app.user.run.confirm_finish.submit_label"),
 		NotifyOnCancel:   false,
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
-	user, err := s.pluginAPI.User.Get(ownerID)
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
+
+	T := i18n.GetUserTranslations(user.Locale)
 
 	state, err := json.Marshal(DialogState{
 		PostID:       postID,
@@ -2462,11 +2486,16 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 
 	newPlaybookMarkdown := ""
 	if !isMobileApp {
-		url := getPlaybooksNewRelativeURL()
-		newPlaybookMarkdown = fmt.Sprintf("[Click here](%s) to create your own playbook.", url)
+		data := map[string]interface{}{
+			"RunURL": getPlaybooksNewRelativeURL(),
+		}
+		newPlaybookMarkdown = T("app.user.new_run.new_playbook", data)
 	}
 
-	introText := fmt.Sprintf("**Owner:** %v\n\n%s", getUserDisplayName(user), newPlaybookMarkdown)
+	data := map[string]interface{}{
+		"Username": getUserDisplayName(user),
+	}
+	introText := T("app.user.new_run.intro", data) + "\n\n" + newPlaybookMarkdown
 
 	defaultPlaybookID := ""
 	defaultChannelNameTemplate := ""
@@ -2476,18 +2505,18 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}
 
 	return &model.Dialog{
-		Title:            "Run playbook",
+		Title:            T("app.user.new_run.title"),
 		IntroductionText: introText,
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Playbook",
+				DisplayName: T("app.user.new_run.playbook"),
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
 				Default:     defaultPlaybookID,
 			},
 			{
-				DisplayName: "Run name",
+				DisplayName: T("app.user.new_run.run_name"),
 				Name:        DialogFieldNameKey,
 				Type:        "text",
 				MinLength:   1,
@@ -2495,22 +2524,24 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Default:     defaultChannelNameTemplate,
 			},
 		},
-		SubmitLabel:    "Start run",
+		SubmitLabel:    T("app.user.new_run.submit_label"),
 		NotifyOnCancel: false,
 		State:          string(state),
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelNum int, reminderTimer time.Duration) (*model.Dialog, error) {
-	introductionText := "Provide an update to the stakeholders."
+func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelNum int, reminderTimer time.Duration, locale string) (*model.Dialog, error) {
+	T := i18n.GetUserTranslations(locale)
 
-	if broadcastChannelNum > 0 {
-		plural := ""
-		if broadcastChannelNum > 1 {
-			plural = "s"
+	introductionText := T("app.user.run.update_status.intro") + " "
+
+	if broadcastChannelNum == 1 {
+		introductionText += T("app.user.run.update_status.one_channel")
+	} else {
+		data := map[string]interface{}{
+			"Count": broadcastChannelNum,
 		}
-
-		introductionText += fmt.Sprintf(" This post will be broadcasted to %d channel%s.", broadcastChannelNum, plural)
+		introductionText += T("app.user.run.update_status.num_channel", data)
 	}
 
 	reminderOptions := []*model.PostActionOptions{
@@ -2550,17 +2581,17 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 	}
 
 	return &model.Dialog{
-		Title:            "Status update",
+		Title:            T("app.user.run.update_status.title"),
 		IntroductionText: introductionText,
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Change since last update",
+				DisplayName: T("app.user.run.update_status.change_since_last_update"),
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
 				Default:     message,
 			},
 			{
-				DisplayName: "Reminder for next update",
+				DisplayName: T("app.user.run.update_status.reminder_for_next_update"),
 				Name:        DialogFieldReminderInSecondsKey,
 				Type:        "select",
 				Options:     reminderOptions,
@@ -2568,19 +2599,26 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Default:     fmt.Sprintf("%d", reminderTimer/time.Second),
 			},
 			{
-				DisplayName: "Finish run",
+				DisplayName: T("app.user.run.update_status.finish_run"),
 				Name:        DialogFieldFinishRun,
-				Placeholder: "Also mark the run as finished",
+				Placeholder: T("app.user.run.update_status.finish_run.placeholder"),
 				Type:        "bool",
 				Optional:    true,
 			},
 		},
-		SubmitLabel:    "Update status",
+		SubmitLabel:    T("app.user.run.update_status.submit_label"),
 		NotifyOnCancel: false,
 	}, nil
 }
 
 func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookRun, postID, userID string) (*model.Dialog, error) {
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	T := i18n.GetUserTranslations(user.Locale)
+
 	var options []*model.PostActionOptions
 	for _, i := range playbookRuns {
 		options = append(options, &model.PostActionOptions{
@@ -2620,26 +2658,26 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 	}
 
 	return &model.Dialog{
-		Title: "Add to run timeline",
+		Title: T("app.user.run.add_to_timeline.title"),
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Playbook Run",
+				DisplayName: T("app.user.run.add_to_timeline.playbook_run"),
 				Name:        DialogFieldPlaybookRunKey,
 				Type:        "select",
 				Options:     options,
 				Default:     defaultRunID,
 			},
 			{
-				DisplayName: "Summary",
+				DisplayName: T("app.user.run.add_to_timeline.summary"),
 				Name:        DialogFieldSummary,
 				Type:        "text",
 				MaxLength:   64,
-				Placeholder: "Short summary shown in the timeline",
+				Placeholder: T("app.user.run.add_to_timeline.summary.placeholder"),
 				Default:     defaultSummary,
-				HelpText:    "Max 64 chars",
+				HelpText:    T("app.user.run.add_to_timeline.summary.help"),
 			},
 		},
-		SubmitLabel:    "Add to run timeline",
+		SubmitLabel:    T("app.user.run.add_to_timeline.submit_label"),
 		NotifyOnCancel: false,
 		State:          string(state),
 	}, nil

@@ -584,13 +584,13 @@ type PlaybookRunService interface {
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
-	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
+	OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
 
 	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
-	OpenAddChecklistItemDialog(triggerID, playbookRunID string, checklist int) error
+	OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
 	AddPostToTimeline(playbookRunID, userID, postID, summary string) error
@@ -602,7 +602,7 @@ type PlaybookRunService interface {
 	UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error
 
 	// OpenFinishPlaybookRunDialog opens the dialog to confirm the run should be finished.
-	OpenFinishPlaybookRunDialog(playbookRunID, triggerID string) error
+	OpenFinishPlaybookRunDialog(playbookRunID, userID, triggerID string) error
 
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
