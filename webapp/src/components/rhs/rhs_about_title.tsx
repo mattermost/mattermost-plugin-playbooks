@@ -77,7 +77,10 @@ const RHSAboutTitle = (props: Props) => {
 
         return (
             <TitleWrapper>
-                <RenderedTitle onClick={onRenderedTitleClick}>
+                <RenderedTitle
+                    onClick={onRenderedTitleClick}
+                    data-testid='rendered-run-name'
+                >
                     {editedValue}
                 </RenderedTitle>
                 {props.status === PlaybookRunStatus.Finished &&
@@ -90,6 +93,7 @@ const RHSAboutTitle = (props: Props) => {
     return (
         <>
             <TitleInput
+                data-testid='textarea-run-name'
                 type={'text'}
                 ref={inputRef}
                 onChange={(e) => setEditedValue(e.target.value)}
