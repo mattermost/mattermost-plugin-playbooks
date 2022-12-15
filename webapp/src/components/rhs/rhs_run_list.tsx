@@ -28,10 +28,6 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
-import {useHasTeamPermission} from 'src/hooks';
-
-import {PlaybookPermissionGeneral} from 'src/types/permissions';
-
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
 
@@ -89,7 +85,6 @@ const RHSRunList = (props: Props) => {
         debouncedSetLoadingMore(false);
     };
     const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
-    const canStartRuns = useHasTeamPermission(currentTeamId, PlaybookPermissionGeneral.RunCreate);
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
 
@@ -147,15 +142,13 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    {canStartRuns && (
-                        <StartRunButton
-                            data-testid='rhs-runlist-start-run'
-                            onClick={handleStartRun}
-                        >
-                            <PlayOutlineIcon size={14}/>
-                            {formatMessage({defaultMessage: 'Start run'})}
-                        </StartRunButton>
-                    )}
+                    <StartRunButton
+                        data-testid='rhs-runlist-start-run'
+                        onClick={handleStartRun}
+                    >
+                        <PlayOutlineIcon size={14}/>
+                        {formatMessage({defaultMessage: 'Start run'})}
+                    </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
@@ -193,7 +186,7 @@ const RHSRunList = (props: Props) => {
                             numInProgress={props.numInProgress}
                             numFinished={props.numFinished}
                             setOptions={props.setOptions}
-                            onStartRunClicked={canStartRuns ? handleStartRun : undefined}
+                            onStartRunClicked={handleStartRun}
                         />
                     </NoRunsWrapper>
                     <FeedbackWrapper>
@@ -601,7 +594,7 @@ interface NoRunsProps {
     active: boolean
     numInProgress: number;
     numFinished: number;
-    onStartRunClicked?: () => void;
+    onStartRunClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
 }
 
@@ -619,12 +612,10 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            {props.onStartRunClicked && (
-                <PrimaryButton onClick={props.onStartRunClicked}>
-                    <PlayOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage={'Start a run'}/>
-                </PrimaryButton>
-            )}
+            <PrimaryButton onClick={props.onStartRunClicked}>
+                <PlayOutlineIcon size={18}/>
+                <FormattedMessage defaultMessage={'Start a run'}/>
+            </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}

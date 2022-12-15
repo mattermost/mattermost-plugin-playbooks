@@ -104,10 +104,16 @@ query PlaybookLHS($userID: String!, $teamID: String!) {
 fragment PlaybookModalFields on Playbook {
 	id
 	title
-	isFavorite
+	is_favorite: isFavorite
 	public
-	lastRunAt
-	activeRuns
+	team_id: teamID
+	members {
+		user_id: userID
+		scheme_roles: schemeRoles
+	}
+	default_playbook_member_role: defaultPlaybookMemberRole
+	last_run_at: lastRunAt
+	active_runs: activeRuns
 }
 
 query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {

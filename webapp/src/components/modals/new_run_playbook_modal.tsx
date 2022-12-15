@@ -255,7 +255,6 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
-
     return (
         <ChannelContainer>
             <ChannelBlock>
