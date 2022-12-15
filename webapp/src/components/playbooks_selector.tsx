@@ -158,7 +158,7 @@ const PlaybookRow = ({playbook, onSelectPlaybook}: PlaybookRowProps) => {
                 {hasPermission ? (
                     <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
                 ) : (
-                    <SecondaryButton >{formatMessage({defaultMessage: 'Select NOOOO'})}</SecondaryButton>
+                    <SecondaryButton >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
                 )}
             </ButtonWrappper>
         </PlaybookItem>
