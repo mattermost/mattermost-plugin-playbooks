@@ -6,7 +6,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ApolloProvider} from '@apollo/client';
-import {BookOutlineIcon, BookLockOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
@@ -16,6 +16,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import SearchSvg from 'src/components/assets/illustrations/search_svg';
 import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 interface Props {
     teamID: string;
@@ -99,6 +100,10 @@ const PlaybooksSelector = (props: Props) => {
                 <ErrorSubTitle>{formatMessage({defaultMessage: 'Please check spelling or try another search'})}</ErrorSubTitle>
             </ErrorContainer>
         );
+    }
+
+    if (loading) {
+        return <LoadingContainer><LoadingSpinner/></LoadingContainer>;
     }
 
     return (
@@ -249,4 +254,9 @@ const Plus = styled(PlusIcon)`
 const ClipboardSvg = styled(ClipboardChecklistSvg)`
     height:150px;
     width:150px;
+`;
+
+const LoadingContainer = styled(Container)`
+    padding-top: 10px;
+    align-items: center;
 `;
