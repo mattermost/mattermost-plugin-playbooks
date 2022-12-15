@@ -12,14 +12,29 @@ REMEMBER TO:
 
 ## Summary
 <!--
-A description of what this pull request does
+A short description of what this pull request does
+-->
+
+<!-- 
+Describe changes in more detail when additional clarity is needed. Consider adding screenshots or describing each commit.
+## Details
+
+- d77ea0dd3491882e8ba3d25bea6017232a87385b: adds a thing
+- d77ea0dd3491882e8ba3d25bea6017232a87385b: changes this other thing
+  - crucial piece of information
+  can be multi-line for longer text
+  - additional detail
+
+| change | before | after |
+|---|---|---|
+| description | <img width="400" src="URL">  |  <img width="400" src="URL"> |
 -->
 
 ## Ticket Link
 <!--
 If this pull request addresses a Help Wanted ticket, please link the relevant GitHub issue, e.g.:
 
-  Fixes: https://github.com/mattermost/mattermost-server/issues/XXXXX
+- Fixes: https://github.com/mattermost/mattermost-server/issues/XXXXX
 
 Otherwise, link the Jira ticket.
 -->
