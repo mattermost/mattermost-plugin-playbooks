@@ -330,7 +330,10 @@ export const RHSHomeTemplate = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => onUse(template)}>
+            <RunButton
+                data-testid={'use-playbook'}
+                onClick={() => onUse(template)}
+            >
                 <OpenInNewIcon color={'var(--button-bg)'}/>
                 {formatMessage({defaultMessage: 'Use'})}
             </RunButton>
