@@ -169,13 +169,14 @@ const WrappedUpdateRunModal = (props: Props) => {
 };
 
 export const StyledChannelSelector = styled(ChannelSelector)`
+
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
     .playbooks-rselect__control {
         padding: 4px 16px 4px 3.2rem;
-
+        height: 48px;
         &:before {
             left: 16px;
-            top: 8px;
+            top: 13px;
             position: absolute;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
