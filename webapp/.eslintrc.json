@@ -569,7 +569,12 @@
         "after": true
       }
     ],
-    "sort-imports": 0,
+    "sort-imports": [
+      2,
+      {
+        "ignoreDeclarationSort": true
+      }
+    ],
     "sort-keys": 0,
     "space-before-blocks": [
       2,
