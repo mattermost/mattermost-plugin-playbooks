@@ -257,6 +257,6 @@ const ClipboardSvg = styled(ClipboardChecklistSvg)`
 `;
 
 const LoadingContainer = styled(Container)`
-    padding-top: 10px;
+    justify-content: center;
     align-items: center;
 `;
