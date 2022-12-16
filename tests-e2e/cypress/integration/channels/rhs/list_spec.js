@@ -112,29 +112,6 @@ describe('channels > rhs > runlist', () => {
         });
     });
 
-    it('card dotmenu can navigate to RDP', () => {
-        // # Click the first run's dotmenu
-        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
-
-        // # Click on go to run
-        cy.findByText('Go to run overview').click();
-
-        // * Assert we are in the run details page
-        cy.url().should('include', '/playbooks/runs/');
-        cy.url().should('include', '?from=channel_rhs_dotmenu');
-    });
-
-    it('card dotmenu can navigate to PBE', () => {
-        // # Click the first run's dotmenu
-        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
-
-        // # Click on go to polaybook
-        cy.findByText('Go to playbook').click();
-
-        // * Assert we are in the PBE page
-        cy.url().should('include', `/playbooks/${testPlaybook.id}`);
-    });
-
     it('can click though', () => {
         // # Click the first run
         cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').click();
@@ -150,5 +127,70 @@ describe('channels > rhs > runlist', () => {
             .should('exist')
             .and('have.attr', 'href')
             .and('include', 'https://mattermost.com/pl/playbooks-feedback');
+    });
+
+    describe('dotmenu', () => {
+        it('can navigate to RDP', () => {
+            // # Click the first run's dotmenu
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+
+            // # Click on go to run
+            cy.findByText('Go to run overview').click();
+
+            // * Assert we are in the run details page
+            cy.url().should('include', '/playbooks/runs/');
+            cy.url().should('include', '?from=channel_rhs_dotmenu');
+        });
+
+        it('can navigate to PBE', () => {
+            // # Click the first run's dotmenu
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+
+            // # Click on go to polaybook
+            cy.findByText('Go to playbook').click();
+
+            // * Assert we are in the PBE page
+            cy.url().should('include', `/playbooks/${testPlaybook.id}`);
+        });
+
+        it('can change run name', () => {
+            // # Click on the kebab menu
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
+
+            // # Click on the rename run option
+            cy.findByText('Rename run').click();
+
+            // # type new name
+            cy.findByTestId('run-name-input').clear().type('My cool new run name');
+
+            // # click save
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * Verify the name has changed
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').contains('My cool new run name');
+        });
+
+        it('can change linked channel', () => {
+            // # Click on the kebab menu
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
+
+            // # Click on the rename run option
+            cy.findByText('Link run to a different channel').click();
+
+            // # type new name
+            cy.get('.modal-body').within(() => {
+                // # select town square
+                cy.findByText(testChannel.display_name).click().type('Town Square{enter}');
+            });
+
+            // # click save
+            cy.findByTestId('modal-confirm-button').click();
+
+            // # CLick in the show-more button
+            cy.get('[data-testid="rhs-runs-list"] > button').click();
+
+            // * Verify the name has changed
+            cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 9);
+        });
     });
 });

@@ -13,6 +13,8 @@ import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal, openUpdateRunModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
@@ -403,8 +405,10 @@ interface RHSRunListCardProps extends RunToDisplay {
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
     const teamId = useSelector(getCurrentTeamId);
-
+    const currentUserId = useSelector(getCurrentUserId);
+    const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
+
     return (
         <CardWrapper progress={props.progress * 100}>
             <CardContainer
@@ -418,6 +422,8 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         playbookTitle={props.playbook?.title || ''}
                         playbookRunID={props.id}
                         teamID={teamId}
+                        canSeePlaybook={Boolean(props.playbook?.title)}
+                        canEditRun={canEditRun}
                     />
                 </CardTitleContainer>
                 <PeopleRow>
@@ -662,9 +668,12 @@ interface ContextMenuProps {
     teamID: string;
     playbookRunID: string;
     playbookTitle: string;
+    canSeePlaybook: boolean;
+    canEditRun: boolean;
 }
 const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookID}`;
     const {add: addToastMessage} = useToaster();
@@ -680,13 +689,21 @@ const ContextMenu = (props: ContextMenuProps) => {
             placement='bottom-start'
             icon={<ThreeDotsIcon/>}
         >
-            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', addToast))}>
+            <StyledDropdownMenuItem
+                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', addToast))}
+                disabled={!props.canEditRun}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+            >
                 <IconWrapper>
                     <LinkVariantIcon size={22}/>
                 </IconWrapper>
                 <FormattedMessage defaultMessage='Link run to a different channel'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name', addToast))}>
+            <StyledDropdownMenuItem
+                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name', addToast))}
+                disabled={!props.canEditRun}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+            >
                 <IconWrapper>
                     <PencilOutlineIcon size={22}/>
                 </IconWrapper>
@@ -699,7 +716,11 @@ const ContextMenu = (props: ContextMenuProps) => {
                 </IconWrapper>
                 <FormattedMessage defaultMessage='Go to run overview'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+            <StyledDropdownMenuItem
+                disabled={!props.canSeePlaybook}
+                onClick={() => navigateToPluginUrl(playbookURL)}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to see this playbook'})}
+            >
                 <RowContainer>
                     <ColContainer>
                         <IconWrapper>
