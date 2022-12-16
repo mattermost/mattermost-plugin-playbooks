@@ -111,10 +111,10 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) aktiviert"
+        "translation": "@{{.Username}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) aktiviert"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Benutzername}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) deaktiviert"
+        "translation": "@{{.Username}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) deaktiviert"
     }
 ]
