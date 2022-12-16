@@ -4,7 +4,6 @@
 import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
 import {ApolloProvider} from '@apollo/client';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
@@ -15,7 +14,6 @@ import {useUpdateRun} from 'src/graphql/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
-import { getCurrentChannel } from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/channels';
 
 const ID = 'playbook_run_update';
 
@@ -44,7 +42,6 @@ const UpdateRunModal = ({
     const [channelName, setChannelName] = useState('');
     const [name, setName] = useState('');
     const [run] = useRun(playbookRunId);
-    const currentChannel = useSelector(getCurrentChannel)
     const updateRun = useUpdateRun(playbookRunId);
 
     useEffect(() => {
@@ -80,7 +77,7 @@ const UpdateRunModal = ({
         <Header>
             {field === 'name' ? formatMessage({defaultMessage: 'Rename run'}) : formatMessage({defaultMessage: 'Link run to a different channel'})}
             <ModalSubheading>
-                {currentChannel.display_name}
+                {run?.name}
             </ModalSubheading>
         </Header>
     );
