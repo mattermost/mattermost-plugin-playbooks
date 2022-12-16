@@ -433,7 +433,10 @@ const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boole
             {type === 'dotmenu' ? (
                 <DotMenuItem
                     disabled={disabled}
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowUpgradeModal(true);
+                    }}
                 >
                     {formatMessage({defaultMessage: 'Request update...'})}
                     <KeyVariantCircleIcon
