@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, ComponentProps} from 'react';
+import React, {ComponentProps, useCallback} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -9,7 +9,7 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {PlayIcon, AccountPlusOutlineIcon, AccountMinusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -187,8 +187,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Add them to the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
@@ -208,8 +209,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>

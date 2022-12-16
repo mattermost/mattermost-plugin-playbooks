@@ -1,4 +1,4 @@
-import React, {ComponentProps, useState, useEffect} from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -12,7 +12,11 @@ import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
-import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
+import {
+    ButtonLabel,
+    StyledChannelSelector,
+    VerticalSplit,
+} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
@@ -264,7 +268,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={linkExistingChannel}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -290,7 +294,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                <FormattedMessage defaultMessage='Create a run channel'/>
             </ChannelBlock>
 
             {createNewChannel && (
@@ -404,13 +408,16 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-const ChannelBlock = styled.div`
+const ChannelBlock = styled.label`
     display: flex;
     flex-direction: row;
     width: 350px;
     align-items: center;
     column-gap: 12px;
     align-self: 'flex-start';
+    font-weight: inherit;
+    margin-bottom: 0;
+    cursor: pointer;
 `;
 
 const SelectorWrapper = styled.div`

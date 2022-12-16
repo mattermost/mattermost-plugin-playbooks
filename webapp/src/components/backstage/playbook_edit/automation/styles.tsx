@@ -18,6 +18,16 @@ export const AutomationTitle = styled.div`
     column-gap: 12px;
 `;
 
+export const AutomationLabel = styled.label<{disabled?: boolean}>`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 12px;
+    font-weight: inherit;
+    margin-bottom: 0;
+    cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
+`;
+
 export const SelectorWrapper = styled.div`
     margin: 0;
     width: 300px;
