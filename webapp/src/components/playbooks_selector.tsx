@@ -6,7 +6,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ApolloProvider} from '@apollo/client';
-import {BookOutlineIcon, BookLockOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 

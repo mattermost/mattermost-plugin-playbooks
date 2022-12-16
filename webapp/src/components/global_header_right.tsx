@@ -4,12 +4,12 @@
 import React from 'react';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
 
 import GiveFeedbackButton from 'src/components/give_feedback_button';
-import {openBackstageRHS, closeBackstageRHS} from 'src/actions';
+import {closeBackstageRHS, openBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS, selectHasOverdueTasks} from 'src/selectors';

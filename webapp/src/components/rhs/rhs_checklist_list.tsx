@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -15,17 +15,17 @@ import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    finishRun,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     setEveryChecklistCollapsedStateChange,
-    finishRun,
 } from 'src/actions';
 import {
     Checklist,
     ChecklistItem,
-    ChecklistItemsFilter,
     ChecklistItemState,
+    ChecklistItemsFilter,
 } from 'src/types/playbook';
 import {
     telemetryEventForPlaybookRun,

@@ -29,14 +29,14 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {PlaybookRun, playbookRunIsActive, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus, playbookRunIsActive} from 'src/types/playbook_run';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
     ChecklistItem,
+    ChecklistItemState,
     ChecklistItemsFilter,
     ChecklistItemsFilterDefault,
-    ChecklistItemState,
 } from 'src/types/playbook';
 import {PlaybooksPluginState} from 'src/reducer';
 

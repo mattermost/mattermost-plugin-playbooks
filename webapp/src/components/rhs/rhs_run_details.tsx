@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -12,10 +12,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {debounce} from 'lodash';
 
 import {
-    renderThumbHorizontal,
-    renderThumbVertical, renderView,
     RHSContainer,
-    RHSContent,
+    RHSContent, renderThumbHorizontal,
+    renderThumbVertical,
+    renderView,
 } from 'src/components/rhs/rhs_shared';
 import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';

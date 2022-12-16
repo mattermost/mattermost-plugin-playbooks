@@ -11,11 +11,11 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {TimelineEvent, TimelineEventType, ParticipantsChangedDetails, UserJoinedLeftDetails} from 'src/types/rhs';
+import {ParticipantsChangedDetails, TimelineEvent, TimelineEventType, UserJoinedLeftDetails} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {messageHtmlToComponent, formatText, browserHistory} from 'src/webapp_globals';
+import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';

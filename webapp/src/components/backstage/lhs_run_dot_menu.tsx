@@ -7,7 +7,7 @@ import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
-import {followPlaybookRun, unfollowPlaybookRun, telemetryEvent} from 'src/client';
+import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';

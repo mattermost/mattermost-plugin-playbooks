@@ -6,7 +6,7 @@ import AsyncSelect from 'react-select/async';
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
-import {OptionsType, ControlProps, OptionTypeBase, StylesConfig} from 'react-select';
+import {ControlProps, OptionTypeBase, OptionsType, StylesConfig} from 'react-select';
 
 import Profile, {ProfileImage, ProfileName} from 'src/components/profile/profile';
 

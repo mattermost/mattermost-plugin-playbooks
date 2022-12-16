@@ -9,7 +9,7 @@ import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {PlaybookRun, PlaybookRunStatus, Metadata} from 'src/types/playbook_run';
+import {Metadata, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 interface Props {
     run: PlaybookRun;

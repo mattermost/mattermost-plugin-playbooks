@@ -1,8 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {
-    GroupType,
     ControlProps,
+    GroupType,
     OptionsType,
 } from 'react-select';
 

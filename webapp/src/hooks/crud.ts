@@ -8,12 +8,12 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {
     archivePlaybook as clientArchivePlaybook,
-    restorePlaybook as clientRestorePlaybook,
     duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybook,
     clientFetchPlaybooks,
-    savePlaybook,
+    restorePlaybook as clientRestorePlaybook,
     fetchMyCategories,
+    savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';

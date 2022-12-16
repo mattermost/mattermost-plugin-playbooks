@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import {CheckAllIcon, SyncIcon, OpenInNewIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {CheckAllIcon, OpenInNewIcon, PlayOutlineIcon, SyncIcon} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
@@ -15,8 +15,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
-import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useHasPlaybookPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
+import {useHasPlaybookPermission, useLinkRunToExistingChannelEnabled, usePlaybooksRouting} from 'src/hooks';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';

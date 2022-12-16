@@ -25,15 +25,15 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {telemetryEvent} from 'src/client';
 
 import {
-    RenameRunItem,
     CopyRunLinkMenuItem,
-    ToggleRunStatusUpdateMenuItem,
     ExportChannelLogsMenuItem,
     FavoriteRunMenuItem,
     FinishRunMenuItem,
     LeaveRunMenuItem,
+    RenameRunItem,
     RestoreRunMenuItem,
     RunActionsMenuItem,
+    ToggleRunStatusUpdateMenuItem,
 } from './controls';
 
 interface Props {

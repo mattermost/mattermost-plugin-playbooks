@@ -13,7 +13,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
-import {Timestamp, messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {Timestamp, formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 import {useEnsureProfile} from 'src/hooks';
 import {StatusPostComplete} from 'src/types/playbook_run';

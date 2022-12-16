@@ -10,8 +10,8 @@ import {DateTime} from 'luxon';
 
 import {
     DefaultFetchPlaybookRunsParamsTime,
-    fetchParamsTimeEqual,
     FetchPlaybookRunsParams,
+    fetchParamsTimeEqual,
 } from 'src/types/playbook_run';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import Profiles from 'src/components/assets/icons/profiles';

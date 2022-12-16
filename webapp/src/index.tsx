@@ -39,27 +39,27 @@ import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal, publishTemplates,
+    actionSetGlobalSettings, publishTemplates, setToggleRHSAction, showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
     handleReconnect,
-    handleWebsocketPlaybookRunUpdated,
-    handleWebsocketPlaybookRunCreated,
-    handleWebsocketPlaybookCreated,
+    handleWebsocketChannelUpdated,
+    handleWebsocketChannelViewed,
     handleWebsocketPlaybookArchived,
+    handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookRestored,
-    handleWebsocketUserAdded,
-    handleWebsocketUserRemoved,
+    handleWebsocketPlaybookRunCreated,
+    handleWebsocketPlaybookRunUpdated,
     handleWebsocketPostEditedOrDeleted,
-    handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
+    handleWebsocketUserAdded, handleWebsocketUserRemoved,
 } from 'src/websocket_events';
 import {
-    WEBSOCKET_PLAYBOOK_RUN_UPDATED,
-    WEBSOCKET_PLAYBOOK_RUN_CREATED,
-    WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_ARCHIVED,
+    WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_RESTORED,
+    WEBSOCKET_PLAYBOOK_RUN_CREATED,
+    WEBSOCKET_PLAYBOOK_RUN_UPDATED,
 } from 'src/types/websocket_events';
 import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';

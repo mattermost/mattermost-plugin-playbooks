@@ -5,7 +5,7 @@ import React, {CSSProperties, useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {components, ContainerProps} from 'react-select';
+import {ContainerProps, components} from 'react-select';
 
 import {Post} from '@mattermost/types/posts';
 import {GlobalState} from '@mattermost/types/store';
@@ -20,7 +20,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
 import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
-import {Mode, ms, Option, useMakeOption} from 'src/components/datetime_input';
+import {Mode, Option, ms, useMakeOption} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
