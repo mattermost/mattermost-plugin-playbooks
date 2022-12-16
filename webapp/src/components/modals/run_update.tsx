@@ -4,16 +4,18 @@
 import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import {ApolloProvider} from '@apollo/client';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
 import {BaseInput} from 'src/components/assets/inputs';
 import {useRun} from 'src/hooks';
 import {useUpdateRun} from 'src/graphql/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
+import { getCurrentChannel } from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/channels';
 
 const ID = 'playbook_run_update';
 
@@ -42,6 +44,7 @@ const UpdateRunModal = ({
     const [channelName, setChannelName] = useState('');
     const [name, setName] = useState('');
     const [run] = useRun(playbookRunId);
+    const currentChannel = useSelector(getCurrentChannel)
     const updateRun = useUpdateRun(playbookRunId);
 
     useEffect(() => {
@@ -73,6 +76,15 @@ const UpdateRunModal = ({
         return channelId !== '' && channelId !== run?.channel_id;
     };
 
+    const header = (
+        <Header>
+            {field === 'name' ? formatMessage({defaultMessage: 'Rename run'}) : formatMessage({defaultMessage: 'Link run to a different channel'})}
+            <ModalSubheading>
+                {currentChannel.display_name}
+            </ModalSubheading>
+        </Header>
+    );
+
     return (
         <StyledGenericModal
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
@@ -81,7 +93,7 @@ const UpdateRunModal = ({
             isConfirmDisabled={!isFormValid()}
             handleConfirm={onSubmit}
             id={ID}
-            modalHeaderText={field === 'name' ? formatMessage({defaultMessage: 'Rename run'}) : formatMessage({defaultMessage: 'Link run to a different channel'})}
+            modalHeaderText={header}
             {...modalProps}
         >
             {field === 'name' && (
@@ -126,21 +138,24 @@ const StyledGenericModal = styled(GenericModal)`
             width:100%;
         }
         .modal-header {
-            padding: 24px 31px;
+            padding: 24px 31px 5px 31px;
             margin-bottom: 0;
-            box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
         }
         .modal-content {
             padding: 0px;
         }
         .modal-body {
-            padding: 24px 31px;
+            padding: 10px 31px;
         }
         .modal-footer {
-           box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
            padding: 0 31px 28px 31px;
         }
     }
+`;
+
+const Header = styled.div`
+    display: flex;
+    flex-direction: column;
 `;
 
 const Body = styled.div`
