@@ -106,7 +106,7 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openUpdateRunModal(playbookRunId: string, teamId: string, field: 'name' | 'channel_id', onSubmitStart?: () => void, onSubmitEnd?: (successMessage: string) => void) {
+export function openUpdateRunModal(playbookRunId: string, teamId: string, field: 'name' | 'channel_id', onSubmitStart?: () => void, onSubmitEnd?: (successMessage?: string) => void) {
     return modals.openModal(makeUpdateRunModalDefinition({
         playbookRunId,
         teamId,

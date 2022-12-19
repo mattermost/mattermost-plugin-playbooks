@@ -742,7 +742,9 @@ const ContextMenu = (props: ContextMenuProps) => {
             <StyledDropdownMenuItem
                 onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', props.onLinkRunToChannelStart, (message) => {
                     props.onLinkRunToChannelEnd();
-                    addToast(message);
+                    if (message) {
+                        addToast(message);
+                    }
                 }))}
                 disabled={!props.canEditRun}
                 disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}

@@ -22,7 +22,7 @@ type Props = {
     teamId: string;
     field: 'name' | 'channel_id';
     onSubmitStart?: () => void;
-    onSubmitEnd?: (successMessage: string) => void;
+    onSubmitEnd?: (successMessage?: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -62,7 +62,7 @@ const UpdateRunModal = ({
         onSubmitStart?.();
         if (field === 'name') {
             updateRun({name});
-            onSubmitEnd?.('');
+            onSubmitEnd?.();
         }
 
         if (field === 'channel_id') {
