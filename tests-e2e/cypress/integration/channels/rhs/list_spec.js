@@ -143,4 +143,12 @@ describe('channels > rhs > runlist', () => {
         cy.get('#rhsContainer').contains('playbook-run-9');
         cy.get('#rhsContainer').contains('Tasks');
     });
+
+    it('can see give feedback button', () => {
+        // * Verify give feedback button exists and has the right URL
+        cy.get('#rhsContainer').findByText('Give feedback')
+            .should('exist')
+            .and('have.attr', 'href')
+            .and('include', 'https://mattermost.com/pl/playbooks-feedback');
+    });
 });
