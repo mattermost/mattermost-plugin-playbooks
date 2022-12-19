@@ -46,9 +46,6 @@ describe('playbooks > edit', () => {
                 testUser3 = payload.user;
                 cy.apiAddUserToTeam(testTeam.id, payload.user.id);
             });
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
     });
 
@@ -799,10 +796,12 @@ describe('playbooks > edit', () => {
         commonActionTests();
 
         describe('link to an existing channel setting', () => {
-            it('can be checked', () => {
+            beforeEach(() => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            });
 
+            it('can be checked', () => {
                 // # select the action section.
                 cy.get('#actions #link-existing-channel').within(() => {
                     // * Verify that the toggle is unchecked and input is disabled
@@ -820,6 +819,12 @@ describe('playbooks > edit', () => {
 
             it('create channel choices are disabled when is checked', () => {
                 // # select the action section.
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+                });
+
+                // # select the action section.
                 cy.get('#actions #create-new-channel').within(() => {
                     // * Verify that the toggle is unchecked and inputs are disabled
                     cy.get('input[type=radio]').eq(0).should('not.be.checked');
@@ -830,6 +835,9 @@ describe('playbooks > edit', () => {
 
             it.skip('can fill a channel and is persisted', () => {
                 cy.get('#actions #link-existing-channel').within(() => {
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+
                     cy.findByText('Select a channel').click().type('Town{enter}');
                 });
 
@@ -844,6 +852,7 @@ describe('playbooks > edit', () => {
                     cy.get('label input[type=radio]').should('be.disabled');
                     cy.get('button').should('be.disabled');
                 });
+
                 cy.get('#actions #link-existing-channel').within(() => {
                     // * Verify that the toggle is checked and input is enabled
                     cy.get('input[type=radio]').should('be.checked');

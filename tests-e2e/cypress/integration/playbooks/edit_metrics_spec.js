@@ -21,6 +21,9 @@ describe('playbooks > edit_metrics', () => {
         let testPlaybook;
 
         beforeEach(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
             // # Create a playbook
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
@@ -528,7 +531,7 @@ const addMetric = (type, title, target, description) => {
 
 const verifyViewMetric = (index, title, target, description) => {
     cy.getStyledComponent('ViewContainer').should('have.length.of.at.least', index + 1).eq(index).within(() => {
-        cy.getStyledComponent('Title').should('have.text', title);
+        cy.getStyledComponent('Title-').should('have.text', title);
 
         if (target) {
             cy.getStyledComponent('Detail').eq(0).contains(target);

@@ -153,6 +153,7 @@ describe('runs > run details page', () => {
                 getRetro().getStyledComponent('InputContainer').should('not.exist');
             });
         };
+
         describe('as participant', () => {
             beforeEach(() => {
                 cy.apiRunPlaybook({
@@ -190,6 +191,10 @@ describe('runs > run details page', () => {
 
         describe('as viewer', () => {
             before(() => {
+                // # Login as testUser
+                cy.apiLogin(testUser);
+
+                // # Create test playbook run
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPublicPlaybook.id,
@@ -197,15 +202,15 @@ describe('runs > run details page', () => {
                     ownerUserId: testUser.id,
                 }).then((playbookRun) => {
                     testRun = playbookRun;
-
-                    // # Visit the playbook run
-                    cy.visit(`/playbooks/runs/${playbookRun.id}`);
                 });
             });
+
             beforeEach(() => {
-                cy.apiLogin(testViewerUser).then(() => {
-                    cy.visit(`/playbooks/runs/${testRun.id}`);
-                });
+                // Login as the test viewer
+                cy.apiLogin(testViewerUser);
+
+                // # Visit the playbook run
+                cy.visit(`/playbooks/runs/${testRun.id}`);
             });
 
             commonTests();

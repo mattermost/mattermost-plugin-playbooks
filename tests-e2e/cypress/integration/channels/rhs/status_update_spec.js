@@ -75,6 +75,7 @@ describe('channels > rhs > status update', () => {
                 cy.findByTestId('update_run_status_description').contains(`This update for the run ${testRun.name} will be broadcasted to one channel and one direct message.`);
             });
         });
+
         it('description link navigates to run overview', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
@@ -463,6 +464,9 @@ describe('channels > rhs > status update', () => {
 
     describe('playbook with disabled status updates', () => {
         before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
             // # Create a public playbook
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,

@@ -14,6 +14,8 @@ describe('channels > general actions', () => {
     let testChannel;
 
     beforeEach(() => {
+        cy.apiAdminLogin();
+
         cy.apiInitSetup({promoteNewUserAsAdmin: true}).then(({team, user}) => {
             testTeam = team;
             testSysadmin = user;
@@ -21,7 +23,17 @@ describe('channels > general actions', () => {
             cy.apiCreateUser().then((resp) => {
                 testUser = resp.user;
                 cy.apiAddUserToTeam(team.id, resp.user.id);
+
+                cy.apiLogin(testUser);
+
+                // TODO: Make this work with CRT enabled.
+                cy.apiSaveCRTPreference(testUser.id, 'off');
             });
+
+            cy.apiLogin(testSysadmin);
+
+            // TODO: Make this work with CRT enabled.
+            cy.apiSaveCRTPreference(testSysadmin.id, 'off');
 
             cy.apiCreateChannel(
                 testTeam.id,
@@ -32,11 +44,6 @@ describe('channels > general actions', () => {
                 testChannel = channel;
             });
         });
-    });
-
-    afterEach(() => {
-        // # Ensure apiInitSetup() can run again
-        cy.apiLogin(testSysadmin);
     });
 
     describe('on join trigger', () => {

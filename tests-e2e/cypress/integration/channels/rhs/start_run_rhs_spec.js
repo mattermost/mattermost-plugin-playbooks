@@ -25,9 +25,6 @@ describe('channels rhs > start a run', () => {
             cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
                 featureFlagPrevValue = prevValue;
             });
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
     });
 
@@ -40,6 +37,9 @@ describe('channels rhs > start a run', () => {
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         cy.apiCreateChannel(testTeam.id, 'existing-channel', 'Existing Channel').then(({channel}) => {
             testChannel = channel;
         });

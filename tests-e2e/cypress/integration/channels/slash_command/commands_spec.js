@@ -64,9 +64,6 @@ describe('channels > slash command > owner', () => {
                     playbookId: testPlaybook.id,
                     playbookRunName,
                     ownerUserId: testUser.id,
-                }).then(() => {
-                    // # Navigate directly to the application and the playbook run channel
-                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
                 });
             });
         });
@@ -78,6 +75,9 @@ describe('channels > slash command > owner', () => {
 
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
+
+        // # Navigate directly to the application and the playbook run channel
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
     });
 
     describe('single run channel', () => {
