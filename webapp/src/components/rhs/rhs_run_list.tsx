@@ -19,6 +19,7 @@ import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal, openUpdateRunModal} from 'src/actions';
@@ -37,7 +38,6 @@ import {ToastStyle} from 'src/components/backstage/toast';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
-import { getCurrentUserId } from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 interface PlaybookToDisplay {
     title: string
