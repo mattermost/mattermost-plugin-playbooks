@@ -7,6 +7,8 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {matchPath} from 'react-router-dom';
+
 import {fetchPlaybookRuns, telemetryEventForPlaybookRun} from 'src/client';
 import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
@@ -24,12 +26,14 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         const currentChannel = getCurrentChannel(state);
         const currentTeam = getCurrentTeam(state);
         const playbookRun = currentPlaybookRun(state);
+        const url = new URL(window.location.href);
+        const isInChannel = matchPath(url.pathname, {path: '/:team/:path(channels|messages)/:identifier/:postid?'});
 
         //@ts-ignore Views not in global state
         const mmRhsOpen = state.views.rhs.isSidebarOpen;
 
         // Wait for a valid team and channel before doing anything.
-        if (!currentChannel || !currentTeam) {
+        if (!isInChannel || !currentChannel || !currentTeam) {
             return;
         }
 
@@ -47,11 +51,10 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }
 
-        // Record and remove telemetry
-        const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.searchParams);
 
         if (searchParams.has('telem_action') && searchParams.has('telem_run_id')) {
+            // Record and remove telemetry
             const action = searchParams.get('telem_action') || '';
             const runId = searchParams.get('telem_run_id') || '';
             telemetryEventForPlaybookRun(runId, action);

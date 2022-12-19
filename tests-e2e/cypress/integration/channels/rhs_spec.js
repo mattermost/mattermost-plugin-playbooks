@@ -195,6 +195,44 @@ describe('channels > rhs', () => {
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
         });
+
+        it('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
+            // # Create a new channel
+            const channelName = 'playbook-test-' + Date.now();
+            cy.apiCreateChannel(testTeam.id, channelName, channelName, 'O').then(({channel}) => {
+                // # Navigate to the new channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+
+                // # Open RHS
+                cy.getPlaybooksAppBarIcon().click();
+
+                // # Wait a bit
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # Create a new playbook
+                cy.findAllByTestId('use-playbook').first().click();
+                cy.findByTestId('modal-confirm-button').click();
+
+                // * Verify we're in the playbook edit screen
+                cy.findByTestId('playbook-members');
+
+                // # Run the playbook
+                cy.findByTestId('run-playbook').click();
+                cy.findByTestId('run-name-input').type('Playbook Run');
+
+                // # Link to the new channel
+                cy.findByTestId('link-existing-channel-radio').click();
+                cy.get('#link-existing-channel-selector input').type(`${channel.name}{enter}`, {force: true});
+
+                cy.findByTestId('modal-confirm-button').click();
+
+                // # Wait a bit
+                cy.wait(TIMEOUTS.FIVE_SEC);
+
+                // * Verify the playbook run RHS is not open.
+                cy.get('#rhsContainer').should('not.exist');
+            });
+        });
     });
 
     describe('opens', () => {
