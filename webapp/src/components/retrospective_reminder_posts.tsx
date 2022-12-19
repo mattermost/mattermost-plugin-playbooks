@@ -16,7 +16,12 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {noRetrospective} from 'src/client';
 
-import {CustomPostButtonRow, CustomPostContainer, CustomPostContent, CustomPostHeader} from 'src/components/custom_post_styles';
+import {
+    CustomPostButtonRow,
+    CustomPostContainer,
+    CustomPostContent,
+    CustomPostHeader,
+} from 'src/components/custom_post_styles';
 
 import {Timestamp} from 'src/webapp_globals';
 

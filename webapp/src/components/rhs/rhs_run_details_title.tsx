@@ -13,7 +13,12 @@ import ExternalLink from 'src/components/assets/icons/external_link';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
 
-import {RHSTitleButton, RHSTitleContainer, RHSTitleLink, RHSTitleStyledButtonIcon} from './rhs_title_common';
+import {
+    RHSTitleButton,
+    RHSTitleContainer,
+    RHSTitleLink,
+    RHSTitleStyledButtonIcon,
+} from './rhs_title_common';
 
 interface Props {
     onBackClick: () => void;

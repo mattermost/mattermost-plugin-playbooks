@@ -6,9 +6,7 @@ import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {useUpdateEffect} from 'react-use';
 
-import {
-    isFavoriteItem,
-} from 'src/client';
+import {isFavoriteItem} from 'src/client';
 import {useSetRunFavorite} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';

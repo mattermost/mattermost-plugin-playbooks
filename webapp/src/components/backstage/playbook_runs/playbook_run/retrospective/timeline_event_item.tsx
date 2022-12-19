@@ -11,7 +11,12 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {ParticipantsChangedDetails, TimelineEvent, TimelineEventType, UserJoinedLeftDetails} from 'src/types/rhs';
+import {
+    ParticipantsChangedDetails,
+    TimelineEvent,
+    TimelineEventType,
+    UserJoinedLeftDetails,
+} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';

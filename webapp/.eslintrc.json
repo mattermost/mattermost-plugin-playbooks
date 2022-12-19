@@ -11,7 +11,8 @@
     "formatjs",
     "@typescript-eslint",
     "unused-imports",
-    "no-relative-import-paths"
+    "no-relative-import-paths",
+    "import-newlines"
   ],
   "env": {
     "browser": true,
@@ -144,6 +145,10 @@
           "index"
         ]
       }
+    ],
+    "import-newlines/enforce": [
+        2,
+        3
     ],
     "indent": 0, // ts handles this
     "jsx-quotes": [

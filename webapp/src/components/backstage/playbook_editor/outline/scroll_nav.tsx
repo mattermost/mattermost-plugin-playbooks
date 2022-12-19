@@ -2,7 +2,13 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {HTMLAttributes, memo, useCallback, useEffect, useState} from 'react';
+import React, {
+    HTMLAttributes,
+    memo,
+    useCallback,
+    useEffect,
+    useState,
+} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import {useLocation} from 'react-router-dom';

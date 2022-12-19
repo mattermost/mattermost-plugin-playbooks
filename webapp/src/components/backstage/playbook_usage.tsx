@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {HTMLAttributes, ReactNode, useEffect, useState} from 'react';
+import React, {
+    HTMLAttributes,
+    ReactNode,
+    useEffect,
+    useState,
+} from 'react';
 
 import StatsView from 'src/components/backstage/stats_view';
 

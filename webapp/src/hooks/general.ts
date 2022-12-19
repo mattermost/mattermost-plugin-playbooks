@@ -15,15 +15,8 @@ import {DateTime} from 'luxon';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
-import {
-    getCurrentUserId,
-    getProfilesInCurrentTeam,
-    getUser,
-} from 'mattermost-redux/selectors/entities/users';
-import {
-    getChannel as getChannelFromState,
-    getCurrentChannelId,
-} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId, getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getChannel as getChannelFromState, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -41,7 +34,8 @@ import {debounce, isEqual} from 'lodash';
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel,
+import {
+    getProfileSetForChannel,
     getRun,
     globalSettings,
     isCurrentUserAdmin,

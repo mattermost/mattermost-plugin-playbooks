@@ -7,11 +7,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage} from 'react-intl';
 
-import {
-    AutomationHeader,
-    AutomationTitle,
-    SelectorWrapper,
-} from 'src/components/backstage/playbook_edit/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import InviteUsersSelector from 'src/components/backstage/playbook_edit/automation/invite_users_selector';
 

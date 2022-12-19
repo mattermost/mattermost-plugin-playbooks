@@ -1,10 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {
-    ControlProps,
-    GroupType,
-    OptionsType,
-} from 'react-select';
+import ReactSelect, {ControlProps, GroupType, OptionsType} from 'react-select';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';

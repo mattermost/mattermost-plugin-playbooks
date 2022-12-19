@@ -7,7 +7,18 @@ import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {AccountPlusOutlineIcon, ArchiveOutlineIcon, CloseIcon, ContentCopyIcon, DotsVerticalIcon, ExportVariantIcon, EyeOutlineIcon, PencilOutlineIcon, PlayOutlineIcon, RestoreIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountPlusOutlineIcon,
+    ArchiveOutlineIcon,
+    CloseIcon,
+    ContentCopyIcon,
+    DotsVerticalIcon,
+    ExportVariantIcon,
+    EyeOutlineIcon,
+    PencilOutlineIcon,
+    PlayOutlineIcon,
+    RestoreIcon,
+} from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
@@ -15,7 +26,12 @@ import {GlobalState} from '@mattermost/types/store';
 import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import DotMenu, {DotMenuButton, DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
+import DotMenu, {
+    DotMenuButton,
+    DropdownMenuItem as DropdownMenuItemBase,
+    DropdownMenuItemStyled,
+    iconSplitStyling,
+} from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';

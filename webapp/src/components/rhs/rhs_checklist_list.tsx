@@ -27,15 +27,9 @@ import {
     ChecklistItemState,
     ChecklistItemsFilter,
 } from 'src/types/playbook';
-import {
-    telemetryEventForPlaybookRun,
-} from 'src/client';
+import {telemetryEventForPlaybookRun} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {
-    currentChecklistAllCollapsed,
-    currentChecklistCollapsedState,
-    currentChecklistItemsFilter,
-} from 'src/selectors';
+import {currentChecklistAllCollapsed, currentChecklistCollapsedState, currentChecklistItemsFilter} from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';

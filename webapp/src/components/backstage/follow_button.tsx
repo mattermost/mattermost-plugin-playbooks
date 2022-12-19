@@ -8,11 +8,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import styled from 'styled-components';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {
-    followPlaybookRun,
-    telemetryEvent,
-    unfollowPlaybookRun,
-} from 'src/client';
+import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';

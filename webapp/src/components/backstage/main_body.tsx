@@ -1,5 +1,13 @@
 import React from 'react';
-import {Redirect, Route, Switch, matchPath, useHistory, useLocation, useRouteMatch} from 'react-router-dom';
+import {
+    Redirect,
+    Route,
+    Switch,
+    matchPath,
+    useHistory,
+    useLocation,
+    useRouteMatch,
+} from 'react-router-dom';
 
 import {useDispatch, useSelector} from 'react-redux';
 

@@ -23,7 +23,12 @@ import {
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
-import {PlaybookRunEventTarget, PlaybookRunViewTarget, TelemetryEventTarget, TelemetryViewTarget} from 'src/types/telemetry';
+import {
+    PlaybookRunEventTarget,
+    PlaybookRunViewTarget,
+    TelemetryEventTarget,
+    TelemetryViewTarget,
+} from 'src/types/telemetry';
 import {
     Checklist,
     ChecklistItem,
@@ -36,7 +41,12 @@ import {
 } from 'src/types/playbook';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, SiteStats, Stats} from 'src/types/stats';
+import {
+    EmptyPlaybookStats,
+    PlaybookStats,
+    SiteStats,
+    Stats,
+} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';

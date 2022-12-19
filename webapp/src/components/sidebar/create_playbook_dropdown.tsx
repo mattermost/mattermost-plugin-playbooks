@@ -4,7 +4,12 @@ import {useDispatch, useSelector} from 'react-redux';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {GlobeIcon, ImportIcon, PlayBoxMultipleOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {
+    GlobeIcon,
+    ImportIcon,
+    PlayBoxMultipleOutlineIcon,
+    PlusIcon,
+} from '@mattermost/compass-icons/components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';

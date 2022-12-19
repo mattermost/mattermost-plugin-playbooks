@@ -1,12 +1,23 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, ReactNode, useEffect, useMemo, useState} from 'react';
+import React, {
+    ComponentProps,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';
 
-import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
+import {
+    DateObjectUnits,
+    DateTime,
+    Duration,
+    DurationLikeObject,
+} from 'luxon';
 
 import {useIntl} from 'react-intl';
 

@@ -8,11 +8,7 @@ import {FormattedNumber, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
-import {
-    DefaultFetchPlaybookRunsParamsTime,
-    FetchPlaybookRunsParams,
-    fetchParamsTimeEqual,
-} from 'src/types/playbook_run';
+import {DefaultFetchPlaybookRunsParamsTime, FetchPlaybookRunsParams, fetchParamsTimeEqual} from 'src/types/playbook_run';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import Profiles from 'src/components/assets/icons/profiles';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';

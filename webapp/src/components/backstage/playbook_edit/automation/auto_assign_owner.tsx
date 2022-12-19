@@ -7,11 +7,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage} from 'react-intl';
 
-import {
-    AutomationHeader,
-    AutomationTitle,
-    SelectorWrapper,
-} from 'src/components/backstage/playbook_edit/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import AssignOwnerSelector from 'src/components/backstage/playbook_edit/automation/assign_owner_selector';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 

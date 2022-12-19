@@ -3,7 +3,13 @@
 
 import styled, {css} from 'styled-components';
 import React, {useEffect, useMemo, useRef} from 'react';
-import {NavLink, Redirect, Route, Switch, useRouteMatch} from 'react-router-dom';
+import {
+    NavLink,
+    Redirect,
+    Route,
+    Switch,
+    useRouteMatch,
+} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
@@ -16,10 +22,7 @@ import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
-import {
-    useForceDocumentTitle,
-    useStats,
-} from 'src/hooks';
+import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
