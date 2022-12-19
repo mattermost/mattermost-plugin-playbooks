@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {MutableRefObject, useMemo, useRef, useState, useEffect} from 'react';
+import React, {MutableRefObject, useEffect, useMemo, useRef, useState} from 'react';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {debounce} from 'debounce';
 

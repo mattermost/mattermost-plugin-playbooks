@@ -6,15 +6,15 @@ import {generateId} from 'mattermost-redux/utils/helpers';
 import {Store} from 'src/types/store';
 
 import {
-    toggleRHS,
-    setClientId,
     promptUpdateStatus,
+    setClientId,
+    toggleRHS,
 } from 'src/actions';
 
 import {
+    currentPlaybookRun,
     inPlaybookRunChannel,
     isPlaybookRunRHSOpen,
-    currentPlaybookRun,
 } from 'src/selectors';
 
 type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};

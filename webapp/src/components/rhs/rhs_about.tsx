@@ -14,7 +14,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInTeam, useParticipateInRun, useEnsureProfiles} from 'src/hooks';
+import {useEnsureProfiles, useParticipateInRun, useProfilesInTeam} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';

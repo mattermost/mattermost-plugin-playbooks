@@ -10,8 +10,8 @@ import styled from 'styled-components';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {
     followPlaybookRun,
-    unfollowPlaybookRun,
     telemetryEvent,
+    unfollowPlaybookRun,
 } from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';

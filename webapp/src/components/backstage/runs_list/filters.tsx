@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import debounce from 'debounce';
-import {components, ControlProps} from 'react-select';
+import {ControlProps, components} from 'react-select';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -15,7 +15,7 @@ import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import {Option as TeamOption} from 'src/components/team/team_selector';
-import {fetchOwnersInTeam, clientFetchPlaybooks} from 'src/client';
+import {clientFetchPlaybooks, fetchOwnersInTeam} from 'src/client';
 import {Playbook} from 'src/types/playbook';
 import SearchInput from 'src/components/backstage/search_input';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';

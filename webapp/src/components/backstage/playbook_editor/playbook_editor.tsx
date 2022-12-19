@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useRef, useEffect, useMemo} from 'react';
-import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
+import React, {useEffect, useMemo, useRef} from 'react';
+import {NavLink, Redirect, Route, Switch, useRouteMatch} from 'react-router-dom';
 
 import {useIntl} from 'react-intl';
 
@@ -12,7 +12,7 @@ import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembersREST} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch, useSelector} from 'react-redux';
-import {StarOutlineIcon, StarIcon} from '@mattermost/compass-icons/components';
+import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -35,7 +35,7 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
-import Outline, {Sections, ScrollNav} from './outline/outline';
+import Outline, {ScrollNav, Sections} from './outline/outline';
 import * as Controls from './controls';
 
 const PlaybookEditor = () => {

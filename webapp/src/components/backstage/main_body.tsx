@@ -1,11 +1,11 @@
 import React from 'react';
-import {Switch, Route, useRouteMatch, Redirect, useLocation, matchPath, useHistory} from 'react-router-dom';
+import {Redirect, Route, Switch, matchPath, useHistory, useLocation, useRouteMatch} from 'react-router-dom';
 
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
-import {useUpdateEffect, useEffectOnce, useLocalStorage} from 'react-use';
+import {useEffectOnce, useLocalStorage, useUpdateEffect} from 'react-use';
 
 import {selectTeam} from 'mattermost-redux/actions/teams';
 

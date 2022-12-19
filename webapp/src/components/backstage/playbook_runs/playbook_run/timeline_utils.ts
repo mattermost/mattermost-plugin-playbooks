@@ -13,7 +13,7 @@ import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {TimelineEvent, TimelineEventsFilter, TimelineEventType, TimelineEventsFilterDefault} from 'src/types/rhs';
+import {TimelineEvent, TimelineEventType, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 

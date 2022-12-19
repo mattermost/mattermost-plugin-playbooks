@@ -1,5 +1,5 @@
 import {GlobalState} from '@mattermost/types/store';
-import {getLicense, getConfig} from 'mattermost-redux/selectors/entities/general';
+import {getConfig, getLicense} from 'mattermost-redux/selectors/entities/general';
 
 const e10 = 'E10';
 const e20 = 'E20';

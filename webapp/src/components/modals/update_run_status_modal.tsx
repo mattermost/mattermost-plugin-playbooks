@@ -15,7 +15,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
-import {Mode, ms, Option, useDateTimeInput, useMakeOption} from 'src/components/datetime_input';
+import {Mode, Option, ms, useDateTimeInput, useMakeOption} from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost, useRun} from 'src/hooks';
 

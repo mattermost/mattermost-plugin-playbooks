@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -7,12 +7,12 @@ import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';
 import InfiniteScroll from 'react-infinite-scroller';
 
-import DotMenu, {DropdownMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 
 import {fetchPlaybookRuns} from 'src/client';
-import {PlaybookRunStatus, PlaybookRunChecklistItem} from 'src/types/playbook_run';
+import {PlaybookRunChecklistItem, PlaybookRunStatus} from 'src/types/playbook_run';
 import {ChecklistItemState} from 'src/types/playbook';
-import {selectMyTasks, isTaskOverdue} from 'src/selectors';
+import {isTaskOverdue, selectMyTasks} from 'src/selectors';
 import {receivedPlaybookRuns} from 'src/actions';
 import {GeneralViewTarget} from 'src/types/telemetry';
 import {useViewTelemetry} from 'src/hooks/telemetry';

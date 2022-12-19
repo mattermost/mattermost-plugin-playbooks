@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, useCallback} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import React, {useCallback, useEffect, useState} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideChannelActionsModal} from 'src/actions';
-import {isChannelActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
+import {isChannelActionsModalVisible, isCurrentUserAdmin, isCurrentUserChannelAdmin} from 'src/selectors';
 import Action from 'src/components/actions_modal_action';
 import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
-import {ChannelActionType, ChannelTriggerType, WelcomeMessageActionPayload, CategorizeChannelPayload, PromptRunPlaybookFromKeywordsPayload, PayloadType} from 'src/types/channel_actions';
+import {CategorizeChannelPayload, ChannelActionType, ChannelTriggerType, PayloadType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
 
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
 import {CategorizeChannelChildren, RunPlaybookChildren, WelcomeActionChildren} from 'src/components/actions_modal_action_children';

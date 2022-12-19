@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-import {ImportIcon, PlayBoxMultipleOutlineIcon, PlusIcon, GlobeIcon} from '@mattermost/compass-icons/components';
+import {GlobeIcon, ImportIcon, PlayBoxMultipleOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';

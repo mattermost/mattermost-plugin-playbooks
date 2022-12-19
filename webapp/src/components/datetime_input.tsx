@@ -1,12 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
+import React, {ComponentProps, ReactNode, useEffect, useMemo, useState} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';
 
-import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
+import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
 
 import {useIntl} from 'react-intl';
 
@@ -15,7 +15,7 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
-import {parse, parseDateTimes, Mode} from './datetime_parsing';
+import {Mode, parse, parseDateTimes} from './datetime_parsing';
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 

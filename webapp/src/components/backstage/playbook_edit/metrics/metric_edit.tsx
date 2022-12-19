@@ -7,9 +7,9 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
+import {ErrorText, HelpText, StyledInput} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {stringToMetric, metricToString, isMetricValueValid} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {isMetricValueValid, metricToString, stringToMetric} from 'src/components/backstage/playbook_edit/metrics/shared';
 import MetricInput from 'src/components/backstage/playbook_runs/playbook_run/metrics/metric_input';
 import {BaseTextArea} from 'src/components/assets/inputs';
 import {VerticalSpacer} from 'src/components/backstage/styles';

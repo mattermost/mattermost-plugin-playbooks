@@ -24,7 +24,7 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import {useUpdateRun} from 'src/graphql/hooks';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {PlaybookRunStatus, Metadata as PlaybookRunMetadata, PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata, PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;

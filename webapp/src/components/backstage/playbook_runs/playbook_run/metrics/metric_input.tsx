@@ -8,7 +8,7 @@ import {useIntl} from 'react-intl';
 
 import {useClickOutsideRef} from 'src/hooks';
 
-import {StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
+import {ErrorText, HelpText, StyledInput} from 'src/components/backstage/playbook_runs/shared';
 
 interface Props {
     id: string;
