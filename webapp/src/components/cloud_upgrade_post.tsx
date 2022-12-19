@@ -16,7 +16,12 @@ import {FormattedMessage} from 'react-intl';
 import UpgradeIllustrationSvg from 'src/components/assets/upgrade_illustration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
-import {CustomPostButtonRow, CustomPostContainer, CustomPostContent, CustomPostHeader} from 'src/components/custom_post_styles';
+import {
+    CustomPostButtonRow,
+    CustomPostContainer,
+    CustomPostContent,
+    CustomPostHeader,
+} from 'src/components/custom_post_styles';
 import {useOpenCloudModal} from 'src/hooks';
 
 const StyledTertiaryButton = styled(TertiaryButton)`

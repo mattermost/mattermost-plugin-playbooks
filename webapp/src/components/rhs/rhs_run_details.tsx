@@ -1,7 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -13,7 +18,8 @@ import {debounce} from 'lodash';
 
 import {
     RHSContainer,
-    RHSContent, renderThumbHorizontal,
+    RHSContent,
+    renderThumbHorizontal,
     renderThumbVertical,
     renderView,
 } from 'src/components/rhs/rhs_shared';
@@ -22,7 +28,12 @@ import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklis
 import {usePrevious, useRun} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
-import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {
+    FINISHED,
+    RunDetailsTutorialSteps,
+    SKIPPED,
+    TutorialTourCategories,
+} from 'src/components/tutorial/tours';
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';

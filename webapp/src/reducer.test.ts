@@ -1,6 +1,4 @@
-import {
-    REMOVED_FROM_CHANNEL,
-} from 'src/types/actions';
+import {REMOVED_FROM_CHANNEL} from 'src/types/actions';
 import reducer from 'src/reducer';
 
 describe('myPlaybookRunsByTeam', () => {

@@ -21,11 +21,7 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName, useRunMetadata} from 'src/hooks';
-import {
-    followPlaybookRun,
-    telemetryEvent,
-    unfollowPlaybookRun,
-} from 'src/client';
+import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';

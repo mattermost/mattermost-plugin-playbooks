@@ -17,7 +17,12 @@ import {useRunFollowers} from 'src/hooks';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
-import {CopyRunLinkMenuItem, FavoriteRunMenuItem, FollowRunMenuItem, LeaveRunMenuItem} from './playbook_runs/playbook_run/controls';
+import {
+    CopyRunLinkMenuItem,
+    FavoriteRunMenuItem,
+    FollowRunMenuItem,
+    LeaveRunMenuItem,
+} from './playbook_runs/playbook_run/controls';
 import {DotMenuButtonStyled} from './shared';
 import {useLHSRefresh} from './lhs_navigation';
 

@@ -14,7 +14,8 @@ import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
-    playbookArchived, playbookCreated,
+    playbookArchived,
+    playbookCreated,
     playbookRestored,
     playbookRunCreated,
     playbookRunUpdated,

@@ -4,7 +4,12 @@
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {BookOutlineIcon, CheckIcon, PlayOutlineIcon, SortAscendingIcon} from '@mattermost/compass-icons/components';
+import {
+    BookOutlineIcon,
+    CheckIcon,
+    PlayOutlineIcon,
+    SortAscendingIcon,
+} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';

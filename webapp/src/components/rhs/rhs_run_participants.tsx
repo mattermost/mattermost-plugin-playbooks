@@ -6,10 +6,7 @@ import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeam} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/teams';
 
-import {
-    RHSContainer,
-    RHSContent,
-} from 'src/components/rhs/rhs_shared';
+import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
 
 import {Participants} from 'src/components/backstage/playbook_runs/playbook_run/rhs_participants';
 import {Role} from 'src/components/backstage/playbook_runs/shared';

@@ -12,7 +12,14 @@ import {hideChannelActionsModal} from 'src/actions';
 import {isChannelActionsModalVisible, isCurrentUserAdmin, isCurrentUserChannelAdmin} from 'src/selectors';
 import Action from 'src/components/actions_modal_action';
 import Trigger, {TriggerKeywords} from 'src/components/actions_modal_trigger';
-import {CategorizeChannelPayload, ChannelActionType, ChannelTriggerType, PayloadType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
+import {
+    CategorizeChannelPayload,
+    ChannelActionType,
+    ChannelTriggerType,
+    PayloadType,
+    PromptRunPlaybookFromKeywordsPayload,
+    WelcomeMessageActionPayload,
+} from 'src/types/channel_actions';
 
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
 import {CategorizeChannelChildren, RunPlaybookChildren, WelcomeActionChildren} from 'src/components/actions_modal_action_children';

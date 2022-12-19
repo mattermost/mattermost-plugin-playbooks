@@ -7,7 +7,12 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import {CheckAllIcon, OpenInNewIcon, PlayOutlineIcon, SyncIcon} from '@mattermost/compass-icons/components';
+import {
+    CheckAllIcon,
+    OpenInNewIcon,
+    PlayOutlineIcon,
+    SyncIcon,
+} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';

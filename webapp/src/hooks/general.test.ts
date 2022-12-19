@@ -4,7 +4,14 @@ import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'matterm
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
-import {clearLocks, useEnsureProfile, useEnsureProfiles, useProfilesInChannel, useProfilesInCurrentChannel, useProfilesInTeam} from './general';
+import {
+    clearLocks,
+    useEnsureProfile,
+    useEnsureProfiles,
+    useProfilesInChannel,
+    useProfilesInCurrentChannel,
+    useProfilesInTeam,
+} from './general';
 
 jest.mock('mattermost-redux/actions/users', () => ({
     getProfilesByIds: jest.fn(),

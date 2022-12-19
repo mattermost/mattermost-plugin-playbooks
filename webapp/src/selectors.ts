@@ -7,22 +7,14 @@ import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {
-    getMyChannelMemberships,
-    getMyCurrentChannelMembership,
-    getUsers,
-} from 'mattermost-redux/selectors/entities/common';
+import {getMyChannelMemberships, getMyCurrentChannelMembership, getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from '@mattermost/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {DateTime} from 'luxon';
 
-import {
-    haveIChannelPermission,
-    haveISystemPermission,
-    haveITeamPermission,
-} from 'mattermost-redux/selectors/entities/roles';
+import {haveIChannelPermission, haveISystemPermission, haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 

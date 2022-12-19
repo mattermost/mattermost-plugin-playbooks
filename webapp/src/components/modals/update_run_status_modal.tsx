@@ -1,7 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useEffect, useMemo, useState} from 'react';
+import React, {
+    ComponentProps,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -15,7 +20,13 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
-import {Mode, Option, ms, useDateTimeInput, useMakeOption} from 'src/components/datetime_input';
+import {
+    Mode,
+    Option,
+    ms,
+    useDateTimeInput,
+    useMakeOption,
+} from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost, useRun} from 'src/hooks';
 

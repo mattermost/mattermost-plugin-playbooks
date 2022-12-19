@@ -11,7 +11,15 @@ import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/action
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
-import {useChannel, useEnsureProfiles, usePlaybook, useRun, useRunFollowers, useRunMetadata, useRunStatusUpdates} from 'src/hooks';
+import {
+    useChannel,
+    useEnsureProfiles,
+    usePlaybook,
+    useRun,
+    useRunFollowers,
+    useRunMetadata,
+    useRunStatusUpdates,
+} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';

@@ -3,18 +3,22 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {UserProfile} from '@mattermost/types/users';
 
-import {DotMenuIcon, DropdownIcon, DropdownIconRed, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
+import {
+    DotMenuIcon,
+    DropdownIcon,
+    DropdownIconRed,
+    StyledDotMenuButton,
+    StyledDropdownMenu,
+    StyledDropdownMenuItem,
+    StyledDropdownMenuItemRed,
+} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
 
-import {
-    clientDuplicateChecklistItem,
-    clientRestoreChecklistItem,
-    clientSkipChecklistItem,
-} from 'src/client';
+import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
 
 import AssignTo from './assign_to';
 import {DueDateHoverMenuButton} from './duedate';

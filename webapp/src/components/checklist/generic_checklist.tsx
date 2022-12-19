@@ -9,11 +9,7 @@ import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {
-    Checklist,
-    ChecklistItem,
-    emptyChecklistItem,
-} from 'src/types/playbook';
+import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
