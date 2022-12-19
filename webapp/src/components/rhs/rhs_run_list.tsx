@@ -63,6 +63,7 @@ interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void;
     onRunCreated: (runID: string, channelId: string) => void;
+    onLinkRunToChannel: () => void;
     getMore: () => Promise<any>;
     hasMore: boolean;
 
@@ -206,6 +207,7 @@ const RHSRunList = (props: Props) => {
                             {props.runs.map((run: RunToDisplay) => (
                                 <RHSRunListCard
                                     key={run.id}
+                                    onLinkRunToChannel={props.onLinkRunToChannel}
                                     onClick={() => props.onSelectRun(run.id)}
                                     {...run}
                                 />
@@ -399,18 +401,23 @@ const BlueCheckmark = styled(CheckIcon)`
 `;
 
 interface RHSRunListCardProps extends RunToDisplay {
-    onClick: () => void
+    onClick: () => void;
+    onLinkRunToChannel: () => void;
 }
 
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
+    const [removed, setRemoved] = useState(false);
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
     const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
 
     return (
-        <CardWrapper progress={props.progress * 100}>
+        <CardWrapper
+            progress={props.progress * 100}
+            className={removed ? 'removed' : ''}
+        >
             <CardContainer
                 onClick={props.onClick}
                 data-testid='run-list-card'
@@ -424,6 +431,12 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         teamID={teamId}
                         canSeePlaybook={Boolean(props.playbook?.title)}
                         canEditRun={canEditRun}
+                        onLinkRunToChannelStart={() => {
+                            setRemoved(true);
+                        }}
+                        onLinkRunToChannelEnd={() => {
+                            props.onLinkRunToChannel();
+                        }}
                     />
                 </CardTitleContainer>
                 <PeopleRow>
@@ -471,6 +484,35 @@ const CardWrapper = styled.div<{progress: number}>`
         border-bottom: 2px solid var(--online-indicator);
         border-bottom-left-radius: inherit;
         border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
+    }
+
+    &.removed {
+        -webkit-animation: disapear 0.7s;
+        -webkit-animation-fill-mode: forwards;
+        animation: disapear 0.7s;
+        animation-fill-mode: forwards;
+    }
+
+    @-webkit-keyframes disapear{
+        35% {
+            -webkit-transform: translateY(5%);
+            transform: translateY(5%);
+        }
+        100% {
+            -webkit-transform: translateY(-1000%);
+            transform: translateY(-1000%);
+        }
+    }
+
+    @keyframes disapear{
+        35% {
+            -webkit-transform: translateY(5%);
+            transform: translateY(5%);
+        }
+        100% {
+            -webkit-transform: translateY(-1000%);
+            transform: translateY(-1000%);
+        }
     }
 `;
 
@@ -670,6 +712,8 @@ interface ContextMenuProps {
     playbookTitle: string;
     canSeePlaybook: boolean;
     canEditRun: boolean;
+    onLinkRunToChannelStart: () => void;
+    onLinkRunToChannelEnd: () => void;
 }
 const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
@@ -690,7 +734,10 @@ const ContextMenu = (props: ContextMenuProps) => {
             icon={<ThreeDotsIcon/>}
         >
             <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', addToast))}
+                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', props.onLinkRunToChannelStart, (message) => {
+                    props.onLinkRunToChannelEnd();
+                    addToast(message);
+                }))}
                 disabled={!props.canEditRun}
                 disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
             >
@@ -700,7 +747,7 @@ const ContextMenu = (props: ContextMenuProps) => {
                 <FormattedMessage defaultMessage='Link run to a different channel'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name', addToast))}
+                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name'))}
                 disabled={!props.canEditRun}
                 disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
             >

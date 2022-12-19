@@ -21,7 +21,8 @@ type Props = {
     playbookRunId: string;
     teamId: string;
     field: 'name' | 'channel_id';
-    addToast: (message: string) => void;
+    onSubmitStart?: () => void;
+    onSubmitEnd?: (successMessage: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -34,7 +35,8 @@ const UpdateRunModal = ({
     playbookRunId,
     teamId,
     field,
-    addToast,
+    onSubmitStart,
+    onSubmitEnd,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
@@ -57,12 +59,18 @@ const UpdateRunModal = ({
     }, [run, run?.name]);
 
     const onSubmit = () => {
+        onSubmitStart?.();
         if (field === 'name') {
             updateRun({name});
+            onSubmitEnd?.('');
         }
+
         if (field === 'channel_id') {
-            updateRun({channelID: channelId});
-            addToast(formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: channelName}));
+            // delay is to allow animation to shine
+            setTimeout(() => {
+                updateRun({channelID: channelId});
+                onSubmitEnd?.(formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: channelName}));
+            }, 700);
         }
     };
 

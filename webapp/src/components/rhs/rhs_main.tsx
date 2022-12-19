@@ -113,6 +113,7 @@ const RightHandSidebar = () => {
     const currentTeam = useSelector(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
+    const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
     const [playbooks, {isLoading}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
@@ -121,9 +122,12 @@ const RightHandSidebar = () => {
     useEffect(() => {
         if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
             const singleRunID = fetchedRuns.runsInProgress[0].id;
-            if (singleRunID !== currentRunId) {
+            if (singleRunID !== currentRunId && !skipNextDetailNav) {
                 setCurrentRunId(singleRunID);
             }
+        }
+        if (skipNextDetailNav) {
+            setSkipNextDetailNav(false);
         }
     }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
 
@@ -193,6 +197,7 @@ const RightHandSidebar = () => {
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
+            onLinkRunToChannel={() => setSkipNextDetailNav(true)}
         />
     );
 };
