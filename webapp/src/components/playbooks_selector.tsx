@@ -10,14 +10,14 @@ import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compas
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
-import {usePlaybooksModalQuery, PlaybookModalFieldsFragment} from 'src/graphql/generated_types';
+import {PlaybookModalFieldsFragment, usePlaybooksModalQuery} from 'src/graphql/generated_types';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import SearchSvg from 'src/components/assets/illustrations/search_svg';
 import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import {useHasPlaybookPermission, PlaybookPermissionsParams} from 'src/hooks';
+import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 interface Props {

@@ -1,6 +1,4 @@
-import {
-    changeOpacity,
-} from 'mattermost-redux/utils/theme_utils';
+import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 import cssVars from 'css-vars-ponyfill';
 
 export function applyTheme(theme: any) {

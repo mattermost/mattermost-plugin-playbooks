@@ -64,6 +64,17 @@ ifneq ($(HAS_SERVER),)
 	$(GOBIN)/golangci-lint run ./...
 endif
 
+## Fix JS file ESLint issues
+.PHONY: fix-style
+fix-style: apply webapp/node_modules tests-e2e/node_modules
+	@echo Fixing lint issues to follow style guide
+
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && npm run fix
+endif
+	cd tests-e2e && npm run fix
+
+
 .PHONY: check-golangci
 check-golangci:
 ifneq ($(HAS_SERVER),)

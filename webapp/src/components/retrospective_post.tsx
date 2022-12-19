@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {Post} from '@mattermost/types/posts';
 
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 import {Metric, MetricType} from 'src/types/playbook';
 

@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {components, ControlProps} from 'react-select';
+import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
 
 import {Placement} from '@floating-ui/react-dom-interactions';

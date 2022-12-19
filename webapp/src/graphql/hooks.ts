@@ -19,10 +19,10 @@ import {
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
+    useSetRunFavoriteMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
     useUpdateRunTaskActionsMutation,
-    useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']

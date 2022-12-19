@@ -7,22 +7,22 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Link} from 'react-router-dom';
 
 import {
-    PlusIcon,
-    CloseIcon,
-    ArchiveOutlineIcon,
-    ExportVariantIcon,
-    ContentCopyIcon,
-    PencilOutlineIcon,
     AccountMultipleOutlineIcon,
-    StarOutlineIcon,
-    StarIcon,
+    ArchiveOutlineIcon,
+    CloseIcon,
+    ContentCopyIcon,
+    ExportVariantIcon,
     LinkVariantIcon,
-    RestoreIcon,
-    PlayOutlineIcon,
     LockOutlineIcon,
+    PencilOutlineIcon,
+    PlayOutlineIcon,
+    PlusIcon,
+    RestoreIcon,
+    StarIcon,
+    StarOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
@@ -33,20 +33,26 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 
 import {createGlobalState} from 'react-use';
 
-import {pluginUrl, navigateToPluginUrl} from 'src/browser_routing';
-import {PlaybookPermissionsMember, useAllowMakePlaybookPrivate, useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+import {
+    PlaybookPermissionsMember,
+    useAllowMakePlaybookPrivate,
+    useHasPlaybookPermission,
+    useHasTeamPermission,
+    useLinkRunToExistingChannelEnabled,
+} from 'src/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {
-    duplicatePlaybook as clientDuplicatePlaybook,
+    archivePlaybook,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
-    telemetryEventForPlaybook,
-    playbookExportProps,
-    archivePlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybookFollowers,
     getSiteUrl,
+    playbookExportProps,
     restorePlaybook,
+    telemetryEventForPlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';

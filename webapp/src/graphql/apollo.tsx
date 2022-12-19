@@ -3,7 +3,13 @@
 
 import React from 'react';
 
-import {ApolloClient, ApolloProvider, HttpLink, InMemoryCache, NormalizedCacheObject} from '@apollo/client';
+import {
+    ApolloClient,
+    ApolloProvider,
+    HttpLink,
+    InMemoryCache,
+    NormalizedCacheObject,
+} from '@apollo/client';
 
 import {Client4} from 'mattermost-redux/client';
 import {relayStylePagination} from '@apollo/client/utilities';

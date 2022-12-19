@@ -7,11 +7,7 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PresetTemplates} from 'src/components/templates/template_data';
-import {
-    DraftPlaybookWithChecklist,
-    Playbook,
-    emptyPlaybook,
-} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, Playbook, emptyPlaybook} from 'src/types/playbook';
 import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';

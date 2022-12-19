@@ -15,8 +15,8 @@ import Dropdown from 'src/components/dropdown';
 
 import {Timestamp} from 'src/webapp_globals';
 
-import {defaultMakeOptions, Option} from './datetime_input';
-import {parse, parseDateTimes, Mode} from './datetime_parsing';
+import {Option, defaultMakeOptions} from './datetime_input';
+import {Mode, parse, parseDateTimes} from './datetime_parsing';
 
 import {formatDuration} from './formatted_duration';
 

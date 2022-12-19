@@ -22,11 +22,7 @@ import {createPlaybookRun} from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {AutomationLabel, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
-import {
-    ButtonLabel,
-    StyledChannelSelector,
-    VerticalSplit,
-} from 'src/components/backstage/playbook_edit/automation/channel_access';
+import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
 
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 

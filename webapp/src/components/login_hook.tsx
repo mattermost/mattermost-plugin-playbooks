@@ -1,12 +1,12 @@
 import {useEffect} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 
 import {globalSettings} from 'src/selectors';
 import {actionSetGlobalSettings} from 'src/actions';
-import {notifyConnect, fetchGlobalSettings} from 'src/client';
+import {fetchGlobalSettings, notifyConnect} from 'src/client';
 import {PlaybookRole} from 'src/types/permissions';
 
 // This component is meant to be registered as RootComponent.

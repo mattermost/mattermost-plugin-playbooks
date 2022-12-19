@@ -2,18 +2,23 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon, PencilOutlineIcon, LinkVariantIcon} from '@mattermost/compass-icons/components';
+import {
+    BookOutlineIcon,
+    CheckIcon,
+    LinkVariantIcon,
+    PencilOutlineIcon,
+    PlayOutlineIcon,
+    SortAscendingIcon,
+} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
-import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal, openUpdateRunModal} from 'src/actions';
@@ -32,6 +37,7 @@ import {ToastStyle} from 'src/components/backstage/toast';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
+import { getCurrentUserId } from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 interface PlaybookToDisplay {
     title: string

@@ -13,11 +13,11 @@ import {PresetTemplates} from 'src/components/templates/template_data';
 import {DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {
+    RHSContainer,
+    RHSContent,
     renderThumbVertical,
     renderTrackHorizontal,
     renderView,
-    RHSContainer,
-    RHSContent,
 } from 'src/components/rhs/rhs_shared';
 import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate} from 'src/client';

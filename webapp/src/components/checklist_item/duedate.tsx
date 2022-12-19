@@ -4,15 +4,26 @@
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {components, ControlProps} from 'react-select';
+import {ControlProps, components} from 'react-select';
 import styled, {css} from 'styled-components';
-import {DateObjectUnits, DateTime, Duration, DurationLikeObject} from 'luxon';
+import {
+    DateObjectUnits,
+    DateTime,
+    Duration,
+    DurationLikeObject,
+} from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {Placement} from '@floating-ui/react-dom-interactions';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
-import {labelFrom, Mode, ms, Option, useMakeOption} from 'src/components/datetime_input';
+import {
+    Mode,
+    Option,
+    labelFrom,
+    ms,
+    useMakeOption,
+} from 'src/components/datetime_input';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 import {Timestamp} from 'src/webapp_globals';

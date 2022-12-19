@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {useLocation, useRouteMatch, matchPath} from 'react-router-dom';
+import {matchPath, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {GlobalState} from '@mattermost/types/store';
-import {getTheme, Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {Theme, getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';

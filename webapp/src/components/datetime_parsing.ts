@@ -1,10 +1,24 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Chrono, ParsingOption, en, nl, de, fr, ja, pt} from 'chrono-node';
+import {
+    Chrono,
+    ParsingOption,
+    de,
+    en,
+    fr,
+    ja,
+    nl,
+    pt,
+} from 'chrono-node';
 import parseDuration from 'parse-duration';
 
-import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
+import {
+    DateObjectUnits,
+    DateTime,
+    Duration,
+    DurationLikeObject,
+} from 'luxon';
 
 /**
  * Get language from locale

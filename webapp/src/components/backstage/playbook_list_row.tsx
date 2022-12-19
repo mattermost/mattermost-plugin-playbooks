@@ -5,9 +5,20 @@ import React, {Fragment, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {PlayOutlineIcon, RestoreIcon, ArchiveOutlineIcon, ExportVariantIcon, ContentCopyIcon, PencilOutlineIcon, CloseIcon, EyeOutlineIcon, AccountPlusOutlineIcon, DotsVerticalIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountPlusOutlineIcon,
+    ArchiveOutlineIcon,
+    CloseIcon,
+    ContentCopyIcon,
+    DotsVerticalIcon,
+    ExportVariantIcon,
+    EyeOutlineIcon,
+    PencilOutlineIcon,
+    PlayOutlineIcon,
+    RestoreIcon,
+} from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
@@ -15,12 +26,17 @@ import {GlobalState} from '@mattermost/types/store';
 import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling, DotMenuButton} from 'src/components/dot_menu';
+import DotMenu, {
+    DotMenuButton,
+    DropdownMenuItem as DropdownMenuItemBase,
+    DropdownMenuItemStyled,
+    iconSplitStyling,
+} from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
+import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';

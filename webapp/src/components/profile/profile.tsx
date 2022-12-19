@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';

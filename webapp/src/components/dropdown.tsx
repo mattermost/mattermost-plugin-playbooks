@@ -1,22 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {cloneElement, useState, ComponentProps} from 'react';
+import React, {ComponentProps, cloneElement, useState} from 'react';
 import styled, {css} from 'styled-components';
 
 import {
-    useFloating,
-    offset,
-    flip,
-    shift,
-    autoUpdate,
-    useInteractions,
-    useClick,
-    useRole,
-    useDismiss,
     FloatingFocusManager,
     FloatingPortal,
     Placement,
+    autoUpdate,
+    flip,
+    offset,
+    shift,
+    useClick,
+    useDismiss,
+    useFloating,
+    useInteractions,
+    useRole,
 } from '@floating-ui/react-dom-interactions';
 
 const FloatingContainer = styled.div`

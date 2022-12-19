@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, ComponentProps, CSSProperties} from 'react';
+import React, {CSSProperties, ComponentProps, ReactNode} from 'react';
 import {Tooltip as InnerTooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {OVERLAY_DELAY} from 'src/constants';
