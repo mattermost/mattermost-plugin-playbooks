@@ -439,7 +439,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Verify that the 'Target' section is gone
                 cy.getStyledComponent('ViewContainer')
-                    .getStyledComponent('Detail')
+                    .getStyledComponent('DetailDiv')
                     .should('have.length', 1);
 
                 verifyViewMetric(0, 'test duration', '', 'test description');
@@ -461,7 +461,7 @@ describe('playbooks > edit_metrics', () => {
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 2).eq(1).within(() => {
                     // # Verify that the 'Target' section is gone
-                    cy.getStyledComponent('Detail')
+                    cy.getStyledComponent('DetailDiv')
                         .should('have.length', 1);
                 });
 
@@ -484,7 +484,7 @@ describe('playbooks > edit_metrics', () => {
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 3).eq(2).within(() => {
                     // # Verify that the 'Target' section is gone
-                    cy.getStyledComponent('Detail')
+                    cy.getStyledComponent('DetailDiv')
                         .should('have.length', 1);
                 });
 
@@ -531,15 +531,15 @@ const addMetric = (type, title, target, description) => {
 
 const verifyViewMetric = (index, title, target, description) => {
     cy.getStyledComponent('ViewContainer').should('have.length.of.at.least', index + 1).eq(index).within(() => {
-        cy.getStyledComponent('Title-').should('have.text', title);
+        cy.getStyledComponent('Title').should('have.text', title);
 
         if (target) {
-            cy.getStyledComponent('Detail').eq(0).contains(target);
+            cy.getStyledComponent('DetailDiv').eq(0).contains(target);
         }
 
         if (description) {
             const idx = target ? 1 : 0;
-            cy.getStyledComponent('Detail').eq(idx).contains(description);
+            cy.getStyledComponent('DetailDiv').eq(idx).contains(description);
         }
     });
 };

@@ -87,7 +87,7 @@ describe('runs > run details page > run info', () => {
             it('Participants entry shows the participants', () => {
                 // * Verify that the participants are rendered
                 getOverviewEntry('participants').within(() => {
-                    cy.getStyledComponent('Participants-').within(() => {
+                    cy.getStyledComponent('Participants').within(() => {
                         cy.getStyledComponent('UserPic').should('exist');
                     });
                 });
