@@ -151,15 +151,10 @@
   },
   {
     "id": "app.user.run.confirm_finish.num_outstanding",
-    "translation": "There are **{{.Count}}** outstanding tasks."
-  },
-  {
-    "id": "app.user.run.confirm_finish.one_outstanding",
-    "translation": "There is **1 outstanding task**."
-  },
-  {
-    "id": "app.user.run.confirm_finish.question",
-    "translation": "Are you sure you want to finish the run *{{.RunName}}* for all participants?"
+    "translation": {
+      "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish the run *{{.RunName}}* for all participants?",
+      "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish the run *{{.RunName}}* for all participants?"
+    }
   },
   {
     "id": "app.user.run.confirm_finish.submit_label",
@@ -198,16 +193,11 @@
     "translation": "Also mark the run as finished"
   },
   {
-    "id": "app.user.run.update_status.intro",
-    "translation": "Provide an update to the stakeholders."
-  },
-  {
     "id": "app.user.run.update_status.num_channel",
-    "translation": "This post will be broadcasted to {{.Count}} channels."
-  },
-  {
-    "id": "app.user.run.update_status.one_channel",
-    "translation": "This post will be broadcasted to 1 channel."
+    "translation": {
+      "one": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channel.",
+      "other": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channels."
+    }
   },
   {
     "id": "app.user.run.update_status.reminder_for_next_update",

@@ -2443,13 +2443,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 		"RunName": playbookRun.Name,
 		"Count":   outstanding,
 	}
-
-	message := T("app.user.run.confirm_finish.question", data)
-	if outstanding == 1 {
-		message = T("app.user.run.confirm_finish.one_outstanding") + " " + message
-	} else if outstanding > 1 {
-		message = T("app.user.run.confirm_finish.num_outstanding", data) + " " + message
-	}
+	message := T("app.user.run.confirm_finish.num_outstanding", data)
 
 	return &model.Dialog{
 		Title:            T("app.user.run.confirm_finish.title"),
@@ -2533,16 +2527,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelNum int, reminderTimer time.Duration, locale string) (*model.Dialog, error) {
 	T := i18n.GetUserTranslations(locale)
 
-	introductionText := T("app.user.run.update_status.intro") + " "
-
-	if broadcastChannelNum == 1 {
-		introductionText += T("app.user.run.update_status.one_channel")
-	} else {
-		data := map[string]interface{}{
-			"Count": broadcastChannelNum,
-		}
-		introductionText += T("app.user.run.update_status.num_channel", data)
+	data := map[string]interface{}{
+		"Count": broadcastChannelNum,
 	}
+	introductionText := T("app.user.run.update_status.num_channel", data)
 
 	reminderOptions := []*model.PostActionOptions{
 		{
