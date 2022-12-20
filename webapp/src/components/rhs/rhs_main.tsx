@@ -15,10 +15,12 @@ import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/genera
 import {navigateToChannel} from 'src/browser_routing';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
+import {telemetryEvent} from 'src/client';
+
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
+
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
-import { telemetryEvent } from 'src/client';
-import { PlaybookRunEventTarget } from 'src/types/telemetry';
 
 const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) => {
     const inProgressResult = useRhsActiveRunsQuery({
@@ -140,7 +142,6 @@ const RightHandSidebar = () => {
         fetchedRuns.refetch();
         setCurrentRunId(undefined);
     };
-
 
     const handleOnCreateRun = (place: 'channels_rhs_home' | 'channels_rhs_runlist') => {
         return (runId: string, channelId: string, statsData: object) => {

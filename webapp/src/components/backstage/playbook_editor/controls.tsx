@@ -49,8 +49,8 @@ import {
     getSiteUrl,
     playbookExportProps,
     restorePlaybook,
-    telemetryEventForPlaybook,
     telemetryEvent,
+    telemetryEventForPlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';

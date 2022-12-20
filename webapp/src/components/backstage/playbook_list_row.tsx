@@ -33,7 +33,12 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
-import {createPlaybookRun, playbookExportProps, telemetryEvent, telemetryEventForPlaybook} from 'src/client';
+import {
+    createPlaybookRun,
+    playbookExportProps,
+    telemetryEvent,
+    telemetryEventForPlaybook,
+} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
@@ -41,10 +46,11 @@ import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
+
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
 import {useLHSRefresh} from './lhs_navigation';
-import { PlaybookRunEventTarget } from 'src/types/telemetry';
 
 interface Props {
     playbook: Playbook

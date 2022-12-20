@@ -130,7 +130,7 @@ const RunPlaybookNewModal = ({
                     hasNameChanged: runName !== playbook.channel_name_template,
                     hasSummaryChanged: runSummary !== playbook.run_summary_template,
                     hasChannelModeChanged: channelMode !== playbook.channel_mode,
-                    hasChannelIdChanged: channelId !==  playbook.channel_id,
+                    hasChannelIdChanged: channelId !== playbook.channel_id,
                     hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
                 };
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
