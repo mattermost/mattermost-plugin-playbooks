@@ -5,18 +5,12 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import Scrollbars from 'react-custom-scrollbars';
 import styled, {css} from 'styled-components';
-
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {ArrowDownIcon, ArrowRightIcon, PlusIcon} from '@mattermost/compass-icons/components';
-
 import {FormattedMessage} from 'react-intl';
-
 import {PresetTemplates} from 'src/components/templates/template_data';
-
 import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
-
 import {
     RHSContainer,
     RHSContent,
@@ -27,7 +21,6 @@ import {
 import {displayPlaybookCreateModal, setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 import {telemetryEventForTemplate} from 'src/client';
-
 import {
     getPlaybookOrFetch,
     useHasTeamPermission,
@@ -35,14 +28,12 @@ import {
     usePlaybooksRouting,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
-
 import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
 import {RHSTitleText} from './rhs_title_common';
 
 const WelcomeBlock = styled.div`
@@ -190,7 +181,7 @@ const ListSection = styled.div`
 `;
 
 interface Props {
-    onRunCreated: (runId: string, channelId: string) => void;
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void;
 }
 
 const RHSHome = ({onRunCreated}: Props) => {

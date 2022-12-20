@@ -28,9 +28,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
-
 import {createGlobalState} from 'react-use';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
@@ -42,7 +40,6 @@ import {
     useLinkRunToExistingChannelEnabled,
 } from 'src/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
-
 import {
     archivePlaybook,
     autoFollowPlaybook,
@@ -53,30 +50,23 @@ import {
     playbookExportProps,
     restorePlaybook,
     telemetryEventForPlaybook,
+    telemetryEvent,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
-
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-
 import {displayEditPlaybookAccessModal, openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
-
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
-
 import CopyLink from 'src/components/widgets/copy_link';
-
 import useConfirmPlaybookRestoreModal from 'src/components/backstage/restore_playbook_modal';
-
 import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
-
 import {copyToClipboard} from 'src/utils';
-
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import useConfirmPlaybookConvertPrivateModal from 'src/components/backstage/convert_private_playbook_modal';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 type ControlProps = {
     playbook: {
@@ -272,9 +262,10 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
             onClick={() => {
                 if (isLinkRunToExistingChannelEnabled) {
                     dispatch(openPlaybookRunNewModal({
-                        onRunCreated: (runId, channelId) => {
+                        onRunCreated: (runId, channelId, statsData) => {
                             navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                             refreshLHS();
+                            telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_editor'});
                         },
                         playbookId: playbook.id,
                         teamId: team.id,

@@ -27,7 +27,7 @@ export const makeModalDefinition = (
     playbookId: string | undefined,
     triggerChannelId: string | undefined,
     teamId: string,
-    onRunCreated: (runId: string, channelId: string) => void,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 ) => ({
     modalId: ID,
     dialogType: ApolloWrappedModal,
@@ -38,7 +38,7 @@ type Props = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    onRunCreated: (runId: string, channelId: string) => void,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookNewModal = ({
@@ -121,7 +121,19 @@ const RunPlaybookNewModal = ({
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id);
+                const channelMode = linkExistingChannel ? 'link_existing_channel' : 'create_new_channel';
+                const statsData = {
+                    playbookId: selectedPlaybookId,
+                    channelMode,
+                    public: createNewChannel ? createPublicRun : undefined,
+                    hasPlaybookChanged: playbookId !== selectedPlaybookId,
+                    hasNameChanged: runName !== playbook.channel_name_template,
+                    hasSummaryChanged: runSummary !== playbook.run_summary_template,
+                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
+                    hasChannelIdChanged: channelId !==  playbook.channel_id,
+                    hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
+                };
+                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
             // show error
             });

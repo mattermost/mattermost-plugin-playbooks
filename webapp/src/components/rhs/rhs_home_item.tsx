@@ -163,7 +163,7 @@ const TIME_SPEC = {
 
 type RHSHomePlaybookProps = {
     playbook: Playbook;
-    onRunCreated: (runId: string, channelId: string) => void;
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void;
 }
 
 export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) => {

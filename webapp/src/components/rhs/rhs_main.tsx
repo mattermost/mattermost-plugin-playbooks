@@ -17,6 +17,8 @@ import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
+import { telemetryEvent } from 'src/client';
+import { PlaybookRunEventTarget } from 'src/types/telemetry';
 
 const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) => {
     const inProgressResult = useRhsActiveRunsQuery({
@@ -139,23 +141,27 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
-    const handleOnCreateRun = (runId: string, channelId: string) => {
-        if (channelId === currentChannelId) {
-            fetchedRuns.refetch();
-            setCurrentRunId(runId);
-            return;
-        }
-        navigateToChannel(currentTeam.name, channelId);
+
+    const handleOnCreateRun = (place: 'channels_rhs_home' | 'channels_rhs_runlist') => {
+        return (runId: string, channelId: string, statsData: object) => {
+            telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place});
+            if (channelId === currentChannelId) {
+                fetchedRuns.refetch();
+                setCurrentRunId(runId);
+                return;
+            }
+            navigateToChannel(currentTeam.name, channelId);
+        };
     };
 
     // Not a channel
     if (!currentChannelId) {
-        return <RHSHome onRunCreated={handleOnCreateRun}/>;
+        return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
     }
 
     // No runs (ever) in this channel
     if (fetchedRuns.numRunsInProgress + fetchedRuns.numRunsFinished === 0) {
-        return <RHSHome onRunCreated={handleOnCreateRun}/>;
+        return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
     }
 
     // If we have a run selected and it's in the current channel show that
@@ -181,7 +187,7 @@ const RightHandSidebar = () => {
             }}
             options={listOptions}
             setOptions={setListOptions}
-            onRunCreated={handleOnCreateRun}
+            onRunCreated={handleOnCreateRun('channels_rhs_runlist')}
             getMore={getMoreRuns}
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}

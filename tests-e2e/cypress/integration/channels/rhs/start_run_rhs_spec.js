@@ -83,6 +83,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -96,6 +99,25 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'create_new_channel',
+                            public: true,
+                            hasPlaybookChanged: false,
+                            hasNameChanged: false,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
@@ -127,6 +149,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -146,6 +171,25 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'create_new_channel',
+                            public: true,
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: true,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
@@ -177,6 +221,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -193,6 +240,24 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: true,
+                            hasChannelIdChanged: true,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
@@ -227,6 +292,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -243,6 +311,24 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
@@ -274,6 +360,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -293,6 +382,24 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: true,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
@@ -325,6 +432,9 @@ describe('channels rhs > start a run', () => {
                     // # Click start a run button
                     cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
 
+                    // # intercepts telemetry
+                    cy.interceptTelemetry();
+
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
                         cy.wait(500);
@@ -338,6 +448,24 @@ describe('channels rhs > start a run', () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
+
+                    // * Assert telemetry data
+                    cy.wait('@telemetry');
+                    cy.expectTelemetryToBe([{
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'channels_rhs_home',
+                            playbookId: playbook.id,
+                            channelMode: 'create_new_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: true,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        }}
+                    ]);
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
@@ -357,6 +485,7 @@ describe('channels rhs > start a run', () => {
 
     describe('From RHS Run list  > ', () => {
         let now;
+        let testPlaybook;
         beforeEach(() => {
             now = Date.now();
             createPlaybook({
@@ -365,6 +494,7 @@ describe('channels rhs > start a run', () => {
                 runSummaryTemplate: 'run summary template',
                 channelMode: 'create_new_channel'
             }).then((playbook) => {
+                testPlaybook = playbook;
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: playbook.id,
@@ -385,6 +515,9 @@ describe('channels rhs > start a run', () => {
             // # Click start a run button
             cy.findByTestId('rhs-runlist-start-run').click();
 
+            // # intercepts telemetry
+            cy.interceptTelemetry();
+
             cy.get('#root-portal.modal-open').within(() => {
                 // # Wait the modal to render
                 cy.wait(500);
@@ -404,6 +537,24 @@ describe('channels rhs > start a run', () => {
                 // # Click start button
                 cy.findByTestId('modal-confirm-button').click();
             });
+
+            // * Assert telemetry data
+            cy.wait('@telemetry');
+            cy.expectTelemetryToBe([{
+                name: 'playbookrun_create',
+                type: 'track',
+                properties: {
+                    place: 'channels_rhs_runlist',
+                    playbookId: testPlaybook.id,
+                    channelMode: 'create_new_channel',
+                    hasPlaybookChanged: true,
+                    hasNameChanged: false,
+                    hasSummaryChanged: false,
+                    hasChannelModeChanged: false,
+                    hasChannelIdChanged: false,
+                    hasPublicChanged: false,
+                }}
+            ]);
 
             // * Verify we are on the channel just created
             cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
@@ -427,6 +578,9 @@ describe('channels rhs > start a run', () => {
 
             // # Click start a run button
             cy.findByTestId('rhs-runlist-start-run').click();
+
+            // # intercepts telemetry
+            cy.interceptTelemetry();
 
             cy.get('#root-portal.modal-open').within(() => {
                 // # Wait the modal to render
@@ -459,6 +613,24 @@ describe('channels rhs > start a run', () => {
                 // # Click start button
                 cy.findByTestId('modal-confirm-button').click();
             });
+
+            // * Assert telemetry data
+            cy.wait('@telemetry');
+            cy.expectTelemetryToBe([{
+                name: 'playbookrun_create',
+                type: 'track',
+                properties: {
+                    place: 'channels_rhs_runlist',
+                    playbookId: testPlaybook.id,
+                    channelMode: 'link_existing_channel',
+                    hasPlaybookChanged: true,
+                    hasNameChanged: true,
+                    hasSummaryChanged: false,
+                    hasChannelModeChanged: true,
+                    hasChannelIdChanged: true,
+                    hasPublicChanged: false,
+                }}
+            ]);
 
             // * Verify we are on the same channel
             cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
