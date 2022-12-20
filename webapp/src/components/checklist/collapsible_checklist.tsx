@@ -7,9 +7,7 @@ import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {
-    clientRenameChecklist,
-} from 'src/client';
+import {clientRenameChecklist} from 'src/client';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import {CancelSaveButtons} from 'src/components/checklist_item/inputs';

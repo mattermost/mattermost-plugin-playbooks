@@ -10,9 +10,7 @@ import CommandInput from 'src/components/command_input';
 import Dropdown from 'src/components/dropdown';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-
 import {useTimeout} from 'src/hooks';
-
 import {CancelSaveButtons} from './inputs';
 import {DropdownArrow} from './assign_to';
 

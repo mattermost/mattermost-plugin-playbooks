@@ -3,10 +3,10 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-import {OpenInNewIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import Tooltip from 'src/components/widgets/tooltip';

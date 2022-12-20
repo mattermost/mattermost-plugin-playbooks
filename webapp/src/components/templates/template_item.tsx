@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {HTMLAttributes} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {isKeyPressed, KeyCodes} from 'src/utils';
+import {KeyCodes, isKeyPressed} from 'src/utils';
 
 import Tooltip from 'src/components/widgets/tooltip';
 

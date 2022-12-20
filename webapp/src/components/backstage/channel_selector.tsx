@@ -1,11 +1,11 @@
 import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {createSelector} from 'reselect';
 import styled from 'styled-components';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
-import {IDMappedObjects, RelationOneToOne, RelationOneToMany} from '@mattermost/types/utilities';
+import {IDMappedObjects, RelationOneToMany, RelationOneToOne} from '@mattermost/types/utilities';
 import {GlobeIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';

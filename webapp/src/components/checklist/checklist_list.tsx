@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
-    DropResult,
-    Droppable,
-    DroppableProvided,
     Draggable,
     DraggableProvided,
     DraggableStateSnapshot,
+    DropResult,
+    Droppable,
+    DroppableProvided,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -20,18 +20,9 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {
-    playbookRunUpdated,
-} from 'src/actions';
-import {
-    Checklist,
-    ChecklistItem,
-} from 'src/types/playbook';
-import {
-    clientMoveChecklist,
-    clientMoveChecklistItem,
-    clientAddChecklist,
-} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';

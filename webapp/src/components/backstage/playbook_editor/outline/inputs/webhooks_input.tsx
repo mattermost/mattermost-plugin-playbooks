@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ReactNode} from 'react';
+import React, {ReactNode, useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 

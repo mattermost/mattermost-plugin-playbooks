@@ -15,28 +15,38 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
-    PlaybookRun,
     Metadata,
+    PlaybookRun,
     RunMetricData,
     StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
-import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
+import {
+    PlaybookRunEventTarget,
+    PlaybookRunViewTarget,
+    TelemetryEventTarget,
+    TelemetryViewTarget,
+} from 'src/types/telemetry';
 import {
     Checklist,
+    ChecklistItem,
     ChecklistItemState,
+    DraftPlaybookWithChecklist,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,
-    PlaybookWithChecklist,
-    DraftPlaybookWithChecklist,
     Playbook,
-    ChecklistItem,
+    PlaybookWithChecklist,
 } from 'src/types/playbook';
-import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
+import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
+import {
+    EmptyPlaybookStats,
+    PlaybookStats,
+    SiteStats,
+    Stats,
+} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';

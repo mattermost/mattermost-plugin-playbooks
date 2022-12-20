@@ -17,15 +17,11 @@ import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
-import {TertiaryButton, SecondaryButton} from 'src/components/assets/buttons';
+import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName, useRunMetadata} from 'src/hooks';
-import {
-    telemetryEvent,
-    unfollowPlaybookRun,
-    followPlaybookRun,
-} from 'src/client';
+import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';

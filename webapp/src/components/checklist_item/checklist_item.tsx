@@ -14,12 +14,12 @@ import {
     clientAddChecklistItem,
     clientEditChecklistItem,
     clientSetChecklistItemCommand,
+    setDueDate as clientSetDueDate,
     setAssignee,
     setChecklistItemState,
-    setDueDate as clientSetDueDate,
     telemetryEvent,
 } from 'src/client';
-import {ChecklistItem as ChecklistItemType, ChecklistItemState, TaskAction as TaskActionType} from 'src/types/playbook';
+import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
 import {TaskActionsEventTarget} from 'src/types/telemetry';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 

@@ -1,29 +1,22 @@
 import {
+    DependencyList,
     MutableRefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
-    useMemo,
-    DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
-import {
-    getCurrentUserId,
-    getUser,
-    getProfilesInCurrentTeam,
-} from 'mattermost-redux/selectors/entities/users';
-import {
-    getCurrentChannelId,
-    getChannel as getChannelFromState,
-} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId, getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getChannel as getChannelFromState, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -41,21 +34,22 @@ import {debounce, isEqual} from 'lodash';
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel,
-    selectExperimentalFeatures,
+import {
+    getProfileSetForChannel,
     getRun,
-    selectLinkRunToExistingChannelEnabled,
     globalSettings,
     isCurrentUserAdmin,
     noopSelector,
+    selectExperimentalFeatures,
+    selectLinkRunToExistingChannelEnabled,
 } from 'src/selectors';
 import {
-    fetchPlaybookRuns,
     clientFetchPlaybook,
-    fetchPlaybookRunStatusUpdates,
     fetchPlaybookRun,
-    fetchPlaybookStats,
     fetchPlaybookRunMetadata,
+    fetchPlaybookRunStatusUpdates,
+    fetchPlaybookRuns,
+    fetchPlaybookStats,
 } from 'src/client';
 import {isCloud} from 'src/license';
 import {resolve} from 'src/utils';

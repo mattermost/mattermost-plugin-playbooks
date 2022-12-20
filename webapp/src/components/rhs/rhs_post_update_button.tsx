@@ -5,7 +5,7 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled, {css} from 'styled-components';
 
-import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
+import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     collapsed: boolean;

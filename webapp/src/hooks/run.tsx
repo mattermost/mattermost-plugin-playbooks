@@ -1,14 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {useUpdateEffect} from 'react-use';
 
-import {
-    isFavoriteItem,
-} from 'src/client';
+import {isFavoriteItem} from 'src/client';
 import {useSetRunFavorite} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';

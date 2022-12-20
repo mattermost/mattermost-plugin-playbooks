@@ -1,10 +1,17 @@
 import {renderHook} from '@testing-library/react-hooks';
 import * as redux from 'react-redux';
-import {getProfilesByIds, getProfilesInTeam, getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
-import {clearLocks, useEnsureProfile, useEnsureProfiles, useProfilesInTeam, useProfilesInCurrentChannel, useProfilesInChannel} from './general';
+import {
+    clearLocks,
+    useEnsureProfile,
+    useEnsureProfiles,
+    useProfilesInChannel,
+    useProfilesInCurrentChannel,
+    useProfilesInTeam,
+} from './general';
 
 jest.mock('mattermost-redux/actions/users', () => ({
     getProfilesByIds: jest.fn(),

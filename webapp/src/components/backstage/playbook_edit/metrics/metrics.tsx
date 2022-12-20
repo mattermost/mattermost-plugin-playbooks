@@ -9,7 +9,13 @@ import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {DraftPlaybookWithChecklist, MetricType, Metric, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
+import {
+    DraftPlaybookWithChecklist,
+    Metric,
+    MetricType,
+    PlaybookWithChecklist,
+    newMetric,
+} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';

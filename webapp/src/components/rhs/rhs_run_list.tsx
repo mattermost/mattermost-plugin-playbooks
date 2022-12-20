@@ -2,15 +2,20 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {BookOutlineIcon, SortAscendingIcon, CheckIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    BookOutlineIcon,
+    CheckIcon,
+    PlayOutlineIcon,
+    SortAscendingIcon,
+} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {useDispatch, useSelector} from 'react-redux';
-import {getCurrentChannelId, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';

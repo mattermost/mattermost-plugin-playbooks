@@ -10,7 +10,7 @@ import styled from 'styled-components';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
-import {useEditPlaybook, useHasPlaybookPermission, useAllowMakePlaybookPrivate} from 'src/hooks';
+import {useAllowMakePlaybookPrivate, useEditPlaybook, useHasPlaybookPermission} from 'src/hooks';
 import {Playbook, PlaybookMember, PlaybookWithChecklist} from 'src/types/playbook';
 
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';

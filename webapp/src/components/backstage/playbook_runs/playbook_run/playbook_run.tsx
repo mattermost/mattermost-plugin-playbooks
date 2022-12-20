@@ -1,17 +1,25 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useLocation, useRouteMatch, Redirect} from 'react-router-dom';
+import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
-import {usePlaybook, useRun, useChannel, useRunMetadata, useRunStatusUpdates, useRunFollowers, useEnsureProfiles} from 'src/hooks';
+import {
+    useChannel,
+    useEnsureProfiles,
+    usePlaybook,
+    useRun,
+    useRunFollowers,
+    useRunMetadata,
+    useRunStatusUpdates,
+} from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';

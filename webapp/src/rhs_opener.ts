@@ -10,10 +10,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {matchPath} from 'react-router-dom';
 
 import {fetchPlaybookRuns, telemetryEventForPlaybookRun} from 'src/client';
-import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
+import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {toggleRHS, receivedTeamPlaybookRuns} from 'src/actions';
+import {receivedTeamPlaybookRuns, toggleRHS} from 'src/actions';
 import {browserHistory} from 'src/webapp_globals';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {

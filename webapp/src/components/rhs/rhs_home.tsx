@@ -14,25 +14,25 @@ import {FormattedMessage} from 'react-intl';
 
 import {PresetTemplates} from 'src/components/templates/template_data';
 
-import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 
 import {
+    RHSContainer,
+    RHSContent,
     renderThumbVertical,
     renderTrackHorizontal,
     renderView,
-    RHSContainer,
-    RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {setRHSViewingPlaybookRun, displayPlaybookCreateModal} from 'src/actions';
+import {displayPlaybookCreateModal, setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 import {telemetryEventForTemplate} from 'src/client';
 
 import {
-    usePlaybooksCrud,
     getPlaybookOrFetch,
-    usePlaybooksRouting,
     useHasTeamPermission,
+    usePlaybooksCrud,
+    usePlaybooksRouting,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
