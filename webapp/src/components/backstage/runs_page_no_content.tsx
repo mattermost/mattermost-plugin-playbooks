@@ -7,11 +7,7 @@ import styled from 'styled-components';
 
 import {useDispatch, useSelector} from 'react-redux';
 
-import {GlobalState} from '@mattermost/types/store';
-
-import {Team} from '@mattermost/types/teams';
-
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
@@ -19,7 +15,7 @@ import {Playbook} from 'src/types/playbook';
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
 import {startPlaybookRun} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
-import {useCanCreatePlaybooksOnAnyTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
 
 import {clientHasPlaybooks} from 'src/client';
 
@@ -91,37 +87,33 @@ const NoContentPlaybookRunSvgContainer = styled.div`
 
 const NoContentPage = () => {
     const dispatch = useDispatch();
-    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const goToMattermost = () => {
-        navigateToUrl('');
-    };
-    const [playbookExist, setplaybookExist] = useState(false);
+    const teamId = useSelector(getCurrentTeamId);
+    const [playbookExist, setPlaybookExist] = useState(false);
+    const [,,
+        {setSelectedPlaybook},
+    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+    const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
 
     // When the component is first mounted, determine if there are any
     // playbooks at all.If yes show Run playbook else create playbook
     useEffect(() => {
         async function checkForPlaybook() {
-            const returnedPlaybookExist = await clientHasPlaybooks(teams[0].id);
-            setplaybookExist(returnedPlaybookExist);
+            const returnedPlaybookExist = await clientHasPlaybooks(teamId);
+            setPlaybookExist(returnedPlaybookExist);
         }
         checkForPlaybook();
-    }, [teams]);
+    }, [teamId]);
 
-    /*Redirecting user to new playbook page when no playbook exists*/
-    const [,,
-        {setSelectedPlaybook},
-    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
-    const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
-    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
-    const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
-        create({teamId: team.id, template: templateTitle});
+    const goToMattermost = () => {
+        navigateToUrl('');
     };
     const handleClick = () => {
         if (playbookExist) {
             goToMattermost();
-            dispatch(startPlaybookRun(teams[0].id));
+            dispatch(startPlaybookRun(teamId));
         } else {
-            newPlaybook(teams[0]);
+            create({teamId});
         }
     };
     return (

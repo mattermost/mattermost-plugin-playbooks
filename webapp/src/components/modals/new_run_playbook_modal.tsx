@@ -20,7 +20,7 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
 import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
-import {useHasTeamPermission} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -62,9 +62,7 @@ const RunPlaybookNewModal = ({
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showsearch, setShowsearch] = useState(true);
-    const permissionForPublic = useHasTeamPermission(teamId || '', 'playbook_public_create');
-    const permissionForPrivate = useHasTeamPermission(teamId || '', 'playbook_private_create');
-    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
     let userId = useSelector(getCurrentUserId);
     if (playbook?.default_owner_enabled && playbook.default_owner_id) {

@@ -21,7 +21,7 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate} from 'src/client';
-import {useHasTeamPermission} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -109,10 +109,7 @@ const ListSection = styled.div`
 const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
-
-    const permissionForPublic = useHasTeamPermission(currentTeam.id || '', 'playbook_public_create');
-    const permissionForPrivate = useHasTeamPermission(currentTeam.id || '', 'playbook_private_create');
-    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(currentTeam.id || '');
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {

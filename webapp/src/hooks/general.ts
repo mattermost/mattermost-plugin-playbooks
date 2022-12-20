@@ -189,6 +189,11 @@ export function useCanCreatePlaybooksOnAnyTeam() {
         ))
     ));
 }
+export function useCanCreatePlaybooksInTeam(teamId: string) {
+    return useSelector(
+        (state: GlobalState) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
+    );
+}
 
 // lockProfilesInTeamFetch and lockProfilesInChannelFetch prevent concurrently fetching profiles
 // from multiple components mounted at the same time, only to all fetch the same data.
