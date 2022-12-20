@@ -997,7 +997,7 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 		return
 	}
 
-	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.TriggerId); err != nil {
+	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.UserId, requestData.TriggerId); err != nil {
 		h.HandleError(w, c.logger, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}
