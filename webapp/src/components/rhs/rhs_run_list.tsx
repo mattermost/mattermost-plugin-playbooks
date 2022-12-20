@@ -431,7 +431,6 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 if (!movedChannel.channelId) {
                     return;
                 }
-                console.log('moving run to ', movedChannel.channelId, movedChannel.channelName);
                 updateRun({channelID: movedChannel.channelId});
                 addToastMessage({
                     content: formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}),
@@ -457,7 +456,6 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                             updateRun({name: newName});
                         }}
                         onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                            console.log('starting animation for ', movedChannel.channelId, movedChannel.channelName);
                             setRemoved(true);
                             setMovedChannel({
                                 channelId: newChannelId,
