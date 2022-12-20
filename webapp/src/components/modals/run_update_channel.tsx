@@ -1,12 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, { ComponentProps, useEffect, useState } from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
-import { useIntl } from 'react-intl';
+import {useIntl} from 'react-intl';
 
-import GenericModal, { InlineLabel, ModalSubheading } from 'src/components/widgets/generic_modal';
-import { useRun } from 'src/hooks';
+import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
+import {useRun} from 'src/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
@@ -31,7 +31,7 @@ const UpdateRunModal = ({
     onSubmit,
     ...modalProps
 }: Props) => {
-    const { formatMessage } = useIntl();
+    const {formatMessage} = useIntl();
     const [channelId, setChannelId] = useState('');
     const [channelName, setChannelName] = useState('');
     const [run] = useRun(playbookRunId);
@@ -44,7 +44,7 @@ const UpdateRunModal = ({
 
     const header = (
         <Header>
-            {formatMessage({ defaultMessage: 'Link run to a different channel' })}
+            {formatMessage({defaultMessage: 'Link run to a different channel'})}
             <ModalSubheading>
                 {run?.name}
             </ModalSubheading>
@@ -53,15 +53,15 @@ const UpdateRunModal = ({
 
     return (
         <StyledGenericModal
-            cancelButtonText={formatMessage({ defaultMessage: 'Cancel' })}
-            confirmButtonText={formatMessage({ defaultMessage: 'Save' })}
+            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Save'})}
             showCancel={true}
             isConfirmDisabled={!(channelId !== '' && channelId !== run?.channel_id)}
             handleConfirm={() => onSubmit(channelId, channelName)}
             id={ID}
             modalHeaderText={
                 <Header>
-                    {formatMessage({ defaultMessage: 'Link run to a different channel' })}
+                    {formatMessage({defaultMessage: 'Link run to a different channel'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>
@@ -70,7 +70,7 @@ const UpdateRunModal = ({
             {...modalProps}
         >
             <Body>
-                <InlineLabel>{formatMessage({ defaultMessage: 'Select channel' })}</InlineLabel>
+                <InlineLabel>{formatMessage({defaultMessage: 'Select channel'})}</InlineLabel>
                 <StyledChannelSelector
                     id={'link_existing_channel_selector'}
                     onChannelSelected={(channel_id: string, channel_name: string) => {
@@ -79,7 +79,7 @@ const UpdateRunModal = ({
                     }}
                     channelIds={[channelId]}
                     isClearable={false}
-                    selectComponents={{ ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList }}
+                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
                     isDisabled={false}
                     captureMenuScroll={false}
                     shouldRenderValue={true}

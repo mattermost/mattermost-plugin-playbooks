@@ -23,7 +23,7 @@ import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/
 
 import {useUpdateRun} from 'src/graphql/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {openPlaybookRunNewModal, openUpdateRunNameModal, openUpdateRunChannelModal} from 'src/actions';
+import {openPlaybookRunNewModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -189,20 +189,20 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                 </Header>
                 {showNoRuns &&
-                <>
-                    <NoRunsWrapper>
-                        <NoRuns
-                            active={props.options.filter === FilterType.InProgress}
-                            numInProgress={props.numInProgress}
-                            numFinished={props.numFinished}
-                            setOptions={props.setOptions}
-                            onStartRunClicked={handleStartRun}
-                        />
-                    </NoRunsWrapper>
-                    <FeedbackWrapper>
-                        <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                    </FeedbackWrapper>
-                </>
+                    <>
+                        <NoRunsWrapper>
+                            <NoRuns
+                                active={props.options.filter === FilterType.InProgress}
+                                numInProgress={props.numInProgress}
+                                numFinished={props.numFinished}
+                                setOptions={props.setOptions}
+                                onStartRunClicked={handleStartRun}
+                            />
+                        </NoRunsWrapper>
+                        <FeedbackWrapper>
+                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
+                        </FeedbackWrapper>
+                    </>
                 }
                 {!showNoRuns &&
                     <Scrollbars
@@ -420,7 +420,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const currentUserId = useSelector(getCurrentUserId);
     const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
-    const [movedChannel, setMovedChannel]  = useState({channelId: '', channelName: ''});
+    const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
     const updateRun = useUpdateRun(props.id);
 
     return (
@@ -431,7 +431,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 if (!movedChannel.channelId) {
                     return;
                 }
-                console.log('moving run to ', movedChannel.channelId, movedChannel.channelName)
+                console.log('moving run to ', movedChannel.channelId, movedChannel.channelName);
                 updateRun({channelID: movedChannel.channelId});
                 addToastMessage({
                     content: formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}),
@@ -457,12 +457,12 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                             updateRun({name: newName});
                         }}
                         onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                            console.log('starting animation for ', movedChannel.channelId, movedChannel.channelName)
+                            console.log('starting animation for ', movedChannel.channelId, movedChannel.channelName);
                             setRemoved(true);
                             setMovedChannel({
                                 channelId: newChannelId,
                                 channelName: newChannelName,
-                            })
+                            });
                         }}
                     />
                 </CardTitleContainer>
@@ -483,19 +483,19 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         )}
                     </LastUpdatedText>
                     {props.playbook &&
-                    <PlaybookChip>
-                        <StyledBookOutlineIcon
-                            size={11}
-                        />
-                        <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
-                    </PlaybookChip>
+                        <PlaybookChip>
+                            <StyledBookOutlineIcon
+                                size={11}
+                            />
+                            <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
+                        </PlaybookChip>
                     }
                 </InfoRow>
             </CardContainer>
         </CardWrapper>
     );
 };
-const CardWrapper = styled.div<{progress: number}>`
+const CardWrapper = styled.div<{ progress: number }>`
     margin: 0;
     padding:0;
     border-radius: 4px;

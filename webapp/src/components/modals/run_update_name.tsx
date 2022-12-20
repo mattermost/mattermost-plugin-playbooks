@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, { ComponentProps, useEffect, useState } from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
-import { useIntl } from 'react-intl';
+import {useIntl} from 'react-intl';
 
-import GenericModal, { InlineLabel, ModalSubheading } from 'src/components/widgets/generic_modal';
-import { BaseInput } from 'src/components/assets/inputs';
-import { useRun } from 'src/hooks';
+import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
+import {BaseInput} from 'src/components/assets/inputs';
+import {useRun} from 'src/hooks';
 
 const ID = 'playbook_run_update';
 
@@ -29,7 +29,7 @@ const UpdateRunModal = ({
     onSubmit,
     ...modalProps
 }: Props) => {
-    const { formatMessage } = useIntl();
+    const {formatMessage} = useIntl();
     const [name, setName] = useState('');
     const [run] = useRun(playbookRunId);
 
@@ -39,18 +39,17 @@ const UpdateRunModal = ({
         }
     }, [run, run?.name]);
 
-
     return (
         <StyledGenericModal
-            cancelButtonText={formatMessage({ defaultMessage: 'Cancel' })}
-            confirmButtonText={formatMessage({ defaultMessage: 'Save' })}
+            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Save'})}
             showCancel={true}
             isConfirmDisabled={name === '' || name === run?.name}
             handleConfirm={() => onSubmit(name)}
             id={ID}
             modalHeaderText={
                 <Header>
-                    {formatMessage({ defaultMessage: 'Rename run' })}
+                    {formatMessage({defaultMessage: 'Rename run'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>
@@ -59,7 +58,7 @@ const UpdateRunModal = ({
             {...modalProps}
         >
             <Body>
-                <InlineLabel>{formatMessage({ defaultMessage: 'Run name' })}</InlineLabel>
+                <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
                 <BaseInput
                     data-testid={'run-name-input'}
                     autoFocus={true}
