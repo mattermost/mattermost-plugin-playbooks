@@ -137,11 +137,6 @@ before(() => {
     });
 });
 
-// Add login cookies to whitelist to preserve it
-beforeEach(() => {
-    Cypress.Cookies.preserveOnce('MMAUTHTOKEN', 'MMUSERID', 'MMCSRF');
-});
-
 function printLicenseStatus() {
     cy.apiGetClientLicense().then(({isLicensed, license}) => {
         if (isLicensed) {

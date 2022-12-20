@@ -85,7 +85,7 @@ Cypress.Commands.add('externalRequest', ({user, method, path, data, failOnStatus
 });
 
 /**
-* postMessageAs is a task which is wrapped as command with post-verification
+* postBotMessage is a task which is wrapped as command with post-verification
 * that a message is successfully posted by the bot
 * @param {String} message - message in a post
 * @param {Object} channelId - where a post will be posted
@@ -118,14 +118,10 @@ Cypress.Commands.add('urlHealthCheck', ({name, url, helperMessage, method, httpS
     return cy.task('urlHealthCheck', {url, method}).then(({data, errorCode, status, success}) => {
         const urlService = `__${name}__ at ${url}`;
 
-        const successMessage = success ?
-            `${urlService}: reachable` :
-            `${errorCode}: The test you're running requires ${urlService} to be reachable. \n${helperMessage}`;
+        const successMessage = success ? `${urlService}: reachable` : `${errorCode}: The test you're running requires ${urlService} to be reachable. \n${helperMessage}`;
         expect(success, successMessage).to.equal(true);
 
-        const statusMessage = status === httpStatus ?
-            `${urlService}: responded with ${status} HTTP status` :
-            `${urlService}: expected to respond with ${httpStatus} but got ${status} HTTP status`;
+        const statusMessage = status === httpStatus ? `${urlService}: responded with ${status} HTTP status` : `${urlService}: expected to respond with ${httpStatus} but got ${status} HTTP status`;
         expect(status, statusMessage).to.equal(httpStatus);
 
         return cy.wrap({data, status});

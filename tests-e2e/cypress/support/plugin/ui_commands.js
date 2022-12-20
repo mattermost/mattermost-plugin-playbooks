@@ -247,7 +247,7 @@ Cypress.Commands.add('getStatusUpdateDialog', () => {
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {
-    cy.get(`[class^="${className}"]`);
+    cy.get(`[class^="${className}-"]`);
 });
 
 /**
