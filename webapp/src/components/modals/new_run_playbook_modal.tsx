@@ -121,7 +121,6 @@ const RunPlaybookNewModal = ({
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                const channelMode = linkExistingChannel ? 'link_existing_channel' : 'create_new_channel';
                 const statsData = {
                     playbookId: selectedPlaybookId,
                     channelMode,
