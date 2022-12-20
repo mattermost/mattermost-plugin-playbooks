@@ -7,9 +7,10 @@ import {FormattedMessage} from 'react-intl';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
-import Spinner from 'src/components/assets/icons/spinner';
 import Filters from 'src/components/backstage/runs_list/filters';
 import {Metric, MetricType} from 'src/types/playbook';
+
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import MetricsRunListHeader from './metrics_run_list_header';
 import MetricsRow from './metrics_row';
@@ -76,7 +77,7 @@ const MetricsRunList = ({
                 dataLength={playbookRuns.length}
                 next={nextPage}
                 hasMore={playbookRuns.length < totalCount}
-                loader={<StyledSpinner/>}
+                loader={<SpinnerContainer><StyledSpinner/></SpinnerContainer>}
                 scrollableTarget={'playbooks-backstageRoot'}
             >
                 {playbookRuns.map((playbookRun) => (
@@ -116,10 +117,17 @@ const Count = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-const StyledSpinner = styled(Spinner)`
+const SpinnerContainer = styled.div`
     width: 100%;
+    height: 16px;
     text-align: center;
     margin-top: 10px;
+    overflow: visible;
+`;
+
+const StyledSpinner = styled(LoadingSpinner)`
+    width: auto;
+    height: 100%;
 `;
 
 export default MetricsRunList;
