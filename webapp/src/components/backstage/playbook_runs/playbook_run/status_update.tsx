@@ -127,6 +127,11 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
+    const {RequestUpdateButton, UpgradeLicenseModal} = useRequestUpdateButton({
+        onClick: showRequestUpdateConfirm,
+        type: 'button',
+        disabled: false,
+    });
 
     if (!playbookRun.status_update_enabled) {
         return null;
@@ -174,13 +179,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                     >
                         {dueInfo.time}
                     </DueDateViewer>
-                    {playbookRun.current_status === PlaybookRunStatus.InProgress ? (
-                        <RequestUpdateButton
-                            onClick={showRequestUpdateConfirm}
-                            type={'button'}
-                            disabled={false}
-                        />
-                    ) : null}
+                    {playbookRun.current_status === PlaybookRunStatus.InProgress ? RequestUpdateButton : null}
                 </RightWrapper>
             </Header>
             <Content isShort={false}>
@@ -190,6 +189,7 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
                 {openRHSText}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
+            {UpgradeLicenseModal}
         </Container>
     );
 };
@@ -204,6 +204,11 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
+    const {RequestUpdateButton, UpgradeLicenseModal} = useRequestUpdateButton({
+        onClick: playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm,
+        disabled: playbookRun.current_status === PlaybookRunStatus.Finished,
+        type: 'dotmenu',
+    });
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
 
@@ -263,11 +268,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                             >
                                 {openRHSText}
                             </DropdownItem>
-                            <RequestUpdateButton
-                                onClick={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm}
-                                disabled={playbookRun.current_status === PlaybookRunStatus.Finished}
-                                type={'dotmenu'}
-                            />
+                            {RequestUpdateButton}
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
@@ -276,6 +277,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
+            {UpgradeLicenseModal}
         </Container>
     );
 };
@@ -376,7 +378,7 @@ const PostUpdateButton = styled(TertiaryButton)`
     padding: 0 48px;
 `;
 
-const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
+const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
     const {formatMessage} = useIntl();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const requestUpdateAllowed = useAllowRequestUpdate();
@@ -394,7 +396,7 @@ const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boole
     };
 
     if (requestUpdateAllowed) {
-        return type === 'dotmenu' ? (
+        const RequestUpdateButton = type === 'dotmenu' ? (
             <DropdownItem
                 disabled={disabled}
                 onClick={onClick}
@@ -408,6 +410,7 @@ const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boole
                 {...commonProps}
             />
         );
+        return {RequestUpdateButton};
     }
 
     const UpgradeLicenseModal = (
@@ -418,7 +421,7 @@ const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boole
         />
     );
 
-    return (<>
+    const RequestUpdateButton = (
         <Tooltip
             id={'request-update-button-tooltip'}
             placement={'bottom'}
@@ -449,8 +452,9 @@ const RequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boole
                 />
             )}
         </Tooltip>
-        {UpgradeLicenseModal}
-    </>);
+    );
+
+    return {RequestUpdateButton, UpgradeLicenseModal};
 };
 
 const ViewAllUpdates = styled.div`
