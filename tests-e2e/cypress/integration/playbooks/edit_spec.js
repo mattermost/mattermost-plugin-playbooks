@@ -1341,7 +1341,7 @@ describe('playbooks > edit', () => {
             cy.findByText('Blank').click();
 
             // # Open the title dropdown and Rename
-            cy.findByRole('button', {name: /'s Blank/i}).click();
+            cy.findByTestId('playbook-editor-title').click();
             cy.findByText('Rename').click();
 
             // # Change the name and save
