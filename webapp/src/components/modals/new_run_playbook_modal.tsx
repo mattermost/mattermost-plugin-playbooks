@@ -103,7 +103,7 @@ const RunPlaybookNewModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
-    const isFormValid = runName !== '' && runName.length <= 64 && (createNewChannel || channelId !== '');
+    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
 
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
