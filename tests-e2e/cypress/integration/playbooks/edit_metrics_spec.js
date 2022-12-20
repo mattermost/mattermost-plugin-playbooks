@@ -134,7 +134,7 @@ describe('playbooks > edit_metrics', () => {
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
                 saveMetric();
-                verifyViewMetric(0, 'test duration', '2 days, 12 hours, 1 minute per run', 'test description');
+                verifyViewMetric(0, 'test duration again', '2 days, 12 hours, 1 minute per run', 'test description');
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
