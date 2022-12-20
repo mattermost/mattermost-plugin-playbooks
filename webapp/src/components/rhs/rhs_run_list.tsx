@@ -21,8 +21,9 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {useUpdateRun} from 'src/graphql/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {openPlaybookRunNewModal, openUpdateRunModal} from 'src/actions';
+import {openPlaybookRunNewModal, openUpdateRunNameModal, openUpdateRunChannelModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -414,15 +415,30 @@ interface RHSRunListCardProps extends RunToDisplay {
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
     const [removed, setRemoved] = useState(false);
+    const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
     const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
+    const [movedChannel, setMovedChannel]  = useState({channelId: '', channelName: ''});
+    const updateRun = useUpdateRun(props.id);
 
     return (
         <CardWrapper
             progress={props.progress * 100}
             className={removed ? 'removed' : ''}
+            onAnimationEnd={() => {
+                if (!movedChannel.channelId) {
+                    return;
+                }
+                console.log('moving run to ', movedChannel.channelId, movedChannel.channelName)
+                updateRun({channelID: movedChannel.channelId});
+                addToastMessage({
+                    content: formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}),
+                    toastStyle: ToastStyle.Success,
+                });
+                props.onLinkRunToChannel();
+            }}
         >
             <CardContainer
                 onClick={props.onClick}
@@ -437,11 +453,16 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         teamID={teamId}
                         canSeePlaybook={Boolean(props.playbook?.title)}
                         canEditRun={canEditRun}
-                        onLinkRunToChannelStart={() => {
-                            setRemoved(true);
+                        onUpdateName={(newName) => {
+                            updateRun({name: newName});
                         }}
-                        onLinkRunToChannelEnd={() => {
-                            props.onLinkRunToChannel();
+                        onUpdateChannel={(newChannelId: string, newChannelName: string) => {
+                            console.log('starting animation for ', movedChannel.channelId, movedChannel.channelName)
+                            setRemoved(true);
+                            setMovedChannel({
+                                channelId: newChannelId,
+                                channelName: newChannelName,
+                            })
                         }}
                     />
                 </CardTitleContainer>
@@ -718,20 +739,14 @@ interface ContextMenuProps {
     playbookTitle: string;
     canSeePlaybook: boolean;
     canEditRun: boolean;
-    onLinkRunToChannelStart: () => void;
-    onLinkRunToChannelEnd: () => void;
+    onUpdateChannel: (channelId: string, channelName: string) => void;
+    onUpdateName: (name: string) => void;
 }
 const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookID}`;
-    const {add: addToastMessage} = useToaster();
-
-    const addToast = (message: string) => addToastMessage({
-        content: message,
-        toastStyle: ToastStyle.Success,
-    });
 
     return (
         <DotMenu
@@ -740,12 +755,7 @@ const ContextMenu = (props: ContextMenuProps) => {
             icon={<ThreeDotsIcon/>}
         >
             <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'channel_id', props.onLinkRunToChannelStart, (message) => {
-                    props.onLinkRunToChannelEnd();
-                    if (message) {
-                        addToast(message);
-                    }
-                }))}
+                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, props.onUpdateChannel))}
                 disabled={!props.canEditRun}
                 disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
             >
@@ -755,7 +765,7 @@ const ContextMenu = (props: ContextMenuProps) => {
                 <FormattedMessage defaultMessage='Link run to a different channel'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunModal(props.playbookRunID, props.teamID, 'name'))}
+                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.teamID, props.onUpdateName))}
                 disabled={!props.canEditRun}
                 disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
             >
