@@ -106,11 +106,7 @@ const ListSection = styled.div`
     }
 `;
 
-interface Props {
-    onRunCreated: (runId: string, channelId: string, statsData: object) => void;
-}
-
-const RHSHome = ({onRunCreated}: Props) => {
+const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
 

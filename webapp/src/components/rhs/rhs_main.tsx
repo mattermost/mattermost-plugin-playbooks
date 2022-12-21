@@ -149,26 +149,24 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
-    const handleOnCreateRun = (place: 'channels_rhs_home' | 'channels_rhs_runlist') => {
-        return (runId: string, channelId: string, statsData: object) => {
-            telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place});
-            if (channelId === currentChannelId) {
-                fetchedRuns.refetch();
-                setCurrentRunId(runId);
-                return;
-            }
-            navigateToChannel(currentTeam.name, channelId);
-        };
+    const handleOnCreateRun = (runId: string, channelId: string, statsData: object) => {
+        telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'channels_rhs_runlist'});
+        if (channelId === currentChannelId) {
+            fetchedRuns.refetch();
+            setCurrentRunId(runId);
+            return;
+        }
+        navigateToChannel(currentTeam.name, channelId);
     };
 
     // Not a channel
     if (!currentChannelId) {
-        return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
+        return <RHSHome/>;
     }
 
     // No playbooks
     if (!isLoading && playbooks?.length === 0) {
-        return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
+        return <RHSHome/>;
     }
 
     // Wait for full load to avoid flashing
@@ -199,7 +197,7 @@ const RightHandSidebar = () => {
             }}
             options={listOptions}
             setOptions={setListOptions}
-            onRunCreated={handleOnCreateRun('channels_rhs_runlist')}
+            onRunCreated={handleOnCreateRun}
             getMore={getMoreRuns}
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}
