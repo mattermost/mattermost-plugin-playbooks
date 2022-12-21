@@ -200,7 +200,7 @@ const RunPlaybookNewModal = ({
                         value={runName}
                         onChange={onRunNameChange}
                     />
-                    {runNameError && <ErrorMessage>{runNameError}</ErrorMessage>}
+                    {runNameError && <ErrorMessage data-testid={'run-name-error'}>{runNameError}</ErrorMessage>}
 
                     <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
                     <BaseTextArea
