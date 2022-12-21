@@ -142,6 +142,7 @@ func (r *RunRootResolver) SetRunFavorite(ctx context.Context, args struct {
 type RunUpdates struct {
 	Name                                    *string
 	Summary                                 *string
+	ChannelID                               *string
 	CreateChannelMemberOnNewParticipant     *bool
 	RemoveChannelMemberOnRemovedParticipant *bool
 	StatusUpdateBroadcastChannelsEnabled    *bool
@@ -175,6 +176,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	setmap := map[string]interface{}{}
 	addToSetmap(setmap, "Name", args.Updates.Name)
 	addToSetmap(setmap, "Description", args.Updates.Summary)
+	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
 	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
 	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)

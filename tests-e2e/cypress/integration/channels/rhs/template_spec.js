@@ -10,19 +10,19 @@ describe('channels > rhs > template', () => {
     let team1;
     let testUser;
 
-    before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
-            team1 = team;
-            testUser = user;
-        });
-    });
-
     beforeEach(() => {
-        // # Size the viewport to show the RHS without covering posts.
-        cy.viewport('macbook-13');
+        cy.apiAdminLogin().then(() => {
+            cy.apiInitSetup().then(({team, user}) => {
+                team1 = team;
+                testUser = user;
 
-        // # Login as testUser
-        cy.apiLogin(testUser);
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
+                // # Login as testUser
+                cy.apiLogin(testUser);
+            });
+        });
     });
 
     describe('create playbook', () => {

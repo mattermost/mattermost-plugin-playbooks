@@ -311,6 +311,7 @@ input RunUpdates {
 	statusUpdateBroadcastWebhooksEnabled: Boolean
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
+	channelID: String
 }
 
 type Metadata {

@@ -8,6 +8,8 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RhsActiveRunsDocument,
+    RhsFinishedRunsDocument,
     RunDocument,
     RunUpdates,
     TaskActionUpdates,
@@ -57,6 +59,8 @@ export const useUpdateRun = (id?: string) => {
     const [innerUpdateRun] = useUpdateRunMutation({
         refetchQueries: [
             PlaybookLhsDocument,
+            RhsActiveRunsDocument,
+            RhsFinishedRunsDocument,
         ],
     });
 

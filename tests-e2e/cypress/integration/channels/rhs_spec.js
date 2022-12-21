@@ -209,8 +209,13 @@ describe('channels > rhs', () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.TWO_SEC);
 
+                // # open start run dialog
+                cy.findByTestId('rhs-runlist-start-run').click();
+
                 // # Create a new playbook
-                cy.findAllByTestId('use-playbook').first().click();
+                cy.findByText('Create new playbook').click();
+
+                // # confirm new playbook creation (with defaults)
                 cy.findByTestId('modal-confirm-button').click();
 
                 // * Verify we're in the playbook edit screen

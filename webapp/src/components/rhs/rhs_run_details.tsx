@@ -35,9 +35,7 @@ import {
     TutorialTourCategories,
 } from 'src/components/tutorial/tours';
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
-
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';
-
 import {browserHistory} from 'src/webapp_globals';
 import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';

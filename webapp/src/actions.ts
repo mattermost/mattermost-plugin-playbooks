@@ -9,6 +9,8 @@ import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
+import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -103,6 +105,22 @@ export function startPlaybookRun(teamId: string, postId?: string) {
 
         await clientExecuteCommand(dispatch, getState, command, teamId);
     };
+}
+
+export function openUpdateRunNameModal(playbookRunId: string, teamId: string, onSubmit: (newName: string) => void) {
+    return modals.openModal(makeUpdateRunNameModalDefinition({
+        playbookRunId,
+        teamId,
+        onSubmit,
+    }));
+}
+
+export function openUpdateRunChannelModal(playbookRunId: string, teamId: string, onSubmit: (newChannelId: string, newChannelName: string) => void) {
+    return modals.openModal(makeUpdateRunChannelModalDefinition({
+        playbookRunId,
+        teamId,
+        onSubmit,
+    }));
 }
 
 export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
