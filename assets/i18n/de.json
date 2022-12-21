@@ -116,5 +116,115 @@
     {
         "id": "app.user.run.status_disable",
         "translation": "@{{.Username}} hat die Statusaktualisierungen für [{{.RunName}}]({{.RunURL}}) deaktiviert"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Status-Updates"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Status aktualisieren"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Erinnerung an das nächste Update"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird auf einem Kanal veröffentlicht.",
+            "other": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird auf {{.Count}} Kanälen veröffentlicht."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Markiere den Durchlauf auch als beendet"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Durchlauf beenden"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Änderung seit der letzten Aktualisierung"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Bestätige das Beenden des Durchlaufs"
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Durchlauf beenden"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "Es gibt eine **{{.Count}} offene Aufgabe**. Bist du sicher, dass du den Lauf *{{.RunName}}* für alle Teilnehmer beenden willst?",
+            "other": "Es gibt **{{.Count}} offene Aufgaben**. Bist du sicher, dass du den Lauf *{{.RunName}}* für alle Teilnehmer beenden willst?"
+        }
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Zur Zeitleiste hinzufügen"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Kurze Zusammenfassung auf der Zeitachse"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "Maximal 64 Zeichen"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Zusammenfassung"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Zur Zeitleiste hinzufügen"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Playbook-Durchlauf"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Neue Aufgabe hinzufügen"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Aufgabe hinzufügen"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Name"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Beschreibung"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Playbook starten"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Starte Durchlauf"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Durchlaufname"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Playbook"
+    },
+    {
+        "id": "app.user.new_run.new_playbook",
+        "translation": "[Klicke hier]({{.RunURL}}), um dein eigenes Playbook zu erstellen."
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Eigentümer** {{.Benutzername}}"
     }
 ]
