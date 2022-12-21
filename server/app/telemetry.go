@@ -76,9 +76,10 @@ const (
 var pageTypes = [...]string{
 	telemetryRunStatusUpdate:    "run_status_update",
 	telemetryTaskInbox:          "task_inbox",
-	telemetryChannelsRunDetails: "channels_rhs_rundetails",
-	telemetryChannelsHome:       "channels_rhs_home",
-	telemetryChannelsRunList:    "channels_rhs_runlist",
+	telemetryRunDetails:         "run_details",             // Backstage RDP
+	telemetryChannelsRunDetails: "channels_rhs_rundetails", // RHS details
+	telemetryChannelsHome:       "channels_rhs_home",       // RHS templates list
+	telemetryChannelsRunList:    "channels_rhs_runlist",    // RHS runs list
 }
 
 // String creates the string version of the Telemetrypage
