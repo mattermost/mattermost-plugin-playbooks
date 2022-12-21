@@ -25,9 +25,6 @@ describe('playbooks > start a run', () => {
             cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
                 featureFlagPrevValue = prevValue;
             });
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
     });
 
@@ -40,6 +37,9 @@ describe('playbooks > start a run', () => {
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Create a public playbook
         cy.apiCreatePlaybook({
             teamId: testTeam.id,

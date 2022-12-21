@@ -13,6 +13,7 @@ import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
 import {navigateToChannel} from 'src/browser_routing';
+import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import {telemetryEvent} from 'src/client';
@@ -116,16 +117,21 @@ const RightHandSidebar = () => {
     const currentTeam = useSelector(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
+    const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
+    const [playbooks, {isLoading}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
 
     // If there is only one active run in this channel select it.
     useEffect(() => {
         if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
             const singleRunID = fetchedRuns.runsInProgress[0].id;
-            if (singleRunID !== currentRunId) {
+            if (singleRunID !== currentRunId && !skipNextDetailNav) {
                 setCurrentRunId(singleRunID);
             }
+        }
+        if (skipNextDetailNav) {
+            setSkipNextDetailNav(false);
         }
     }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
 
@@ -160,9 +166,14 @@ const RightHandSidebar = () => {
         return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
     }
 
-    // No runs (ever) in this channel
-    if (fetchedRuns.numRunsInProgress + fetchedRuns.numRunsFinished === 0) {
+    // No playbooks
+    if (!isLoading && playbooks?.length === 0) {
         return <RHSHome onRunCreated={handleOnCreateRun('channels_rhs_home')}/>;
+    }
+
+    // Wait for full load to avoid flashing
+    if (isLoading) {
+        return null;
     }
 
     // If we have a run selected and it's in the current channel show that
@@ -193,6 +204,7 @@ const RightHandSidebar = () => {
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
+            onLinkRunToChannel={() => setSkipNextDetailNav(true)}
         />
     );
 };

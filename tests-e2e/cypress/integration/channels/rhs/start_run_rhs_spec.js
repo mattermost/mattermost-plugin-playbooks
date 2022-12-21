@@ -25,9 +25,6 @@ describe('channels rhs > start a run', () => {
             cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
                 featureFlagPrevValue = prevValue;
             });
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
     });
 
@@ -40,6 +37,9 @@ describe('channels rhs > start a run', () => {
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         cy.apiCreateChannel(testTeam.id, 'existing-channel', 'Existing Channel').then(({channel}) => {
             testChannel = channel;
         });
@@ -70,6 +70,7 @@ describe('channels rhs > start a run', () => {
             it('defaults', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel'
@@ -81,12 +82,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 
@@ -136,6 +146,7 @@ describe('channels rhs > start a run', () => {
             it('change title/summary', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel'
@@ -147,12 +158,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 
@@ -208,6 +228,7 @@ describe('channels rhs > start a run', () => {
             it('change to link to existing channel', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel'
@@ -219,12 +240,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 
@@ -278,6 +308,7 @@ describe('channels rhs > start a run', () => {
             it('defaults', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'link_existing_channel',
@@ -290,12 +321,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 
@@ -347,6 +387,7 @@ describe('channels rhs > start a run', () => {
             it('fill initially empty channel', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'link_existing_channel',
@@ -358,12 +399,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 
@@ -418,6 +468,7 @@ describe('channels rhs > start a run', () => {
             it('change to create new channel', () => {
                 // # Fill default values
                 createPlaybook({
+                    title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'link_existing_channel',
@@ -430,12 +481,21 @@ describe('channels rhs > start a run', () => {
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
                     // # Click start a run button
-                    cy.get(`#pbitem-${playbook.id}`).findByTestId('run-playbook').click();
+                    cy.findByTestId('rhs-runlist-start-run').click();
 
                     // # intercepts telemetry
                     cy.interceptTelemetry();
 
                     cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
                         // # Wait the modal to render
                         cy.wait(500);
 

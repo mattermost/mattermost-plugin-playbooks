@@ -13,7 +13,9 @@ describe('channels > post type components', () => {
     let testPlaybookRun;
 
     beforeEach(() => {
-        cy.apiInitSetup({loginAfter: true, promoteNewUserAsAdmin: true}).then(({team, user}) => {
+        cy.apiAdminLogin();
+
+        cy.apiInitSetup({loginAfter: true}).then(({team, user}) => {
             testTeam = team;
             testUser = user;
 

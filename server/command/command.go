@@ -454,7 +454,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 
 	// If we didn't get the item's text, then use the interactive dialog
 	if len(args) == index {
-		if err := r.playbookRunService.OpenAddChecklistItemDialog(r.args.TriggerId, playbookRuns[run].ID, checklist); err != nil {
+		if err := r.playbookRunService.OpenAddChecklistItemDialog(r.args.TriggerId, r.args.UserId, playbookRuns[run].ID, checklist); err != nil {
 			r.warnUserAndLogErrorf("Error: %v", err)
 			return
 		}
@@ -841,7 +841,7 @@ func (r *Runner) actionFinishByID(args []string) {
 		return
 	}
 
-	err := r.playbookRunService.OpenFinishPlaybookRunDialog(args[0], r.args.TriggerId)
+	err := r.playbookRunService.OpenFinishPlaybookRunDialog(args[0], r.args.UserId, r.args.TriggerId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return
@@ -887,7 +887,7 @@ func (r *Runner) actionUpdate(args []string) {
 		return
 	}
 
-	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRuns[run].ID, r.args.TriggerId)
+	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRuns[run].ID, r.args.UserId, r.args.TriggerId)
 	switch {
 	case errors.Is(err, app.ErrPlaybookRunNotActive):
 		r.postCommandResponse("This playbook run has already been closed.")

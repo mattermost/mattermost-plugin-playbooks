@@ -336,6 +336,9 @@ describe('playbooks > overview', () => {
         let testPlaybook;
 
         before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
                 title: playbookTitle,
