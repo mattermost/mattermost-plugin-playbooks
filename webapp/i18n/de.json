@@ -815,5 +815,12 @@
     "LKu0ex": "Bist du sicher, dass du den Durchlauf <i>{runName}</i> für alle Teilnehmer beenden möchtest?",
     "bEoDyV": "@{authorUsername} hat ein Update für [{runName}]({overviewURL}) gepostet",
     "ZSa3cf": "@{targetUsername}, bitte aktualisiere den Status von [{runName}]({playbookURL}).",
-    "Bgt0C8": "Diese Aktualisierung für den Durchlauf <i>{runName}</i> wird an {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {einen Kanal} other {{broadcastChannelCount, number} Kanäle}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { und } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {eine Direktnachricht} other {{followersChannelCount, number} Direktnachrichten}}</FollowersTooltip>} other {}} gesendet."
+    "Bgt0C8": "Diese Aktualisierung für den Durchlauf <i>{runName}</i> wird an {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {einen Kanal} other {{broadcastChannelCount, number} Kanäle}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { und } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {eine Direktnachricht} other {{followersChannelCount, number} Direktnachrichten}}</FollowersTooltip>} other {}} gesendet.",
+    "uCS6py": "Du hast keine Erlaubnis, dieses Playbook zu sehen",
+    "l3QwVw": "Kanal auswählen",
+    "ksG35Q": "Du hast keine Berechtigung zum Erstellen von Playbooks in diesem Arbeitsbereich.",
+    "YKLHXL": "Aktive Durchläufe anzeigen",
+    "QvEO6m": "Du hast keine Berechtigung, diesen Durchlauf zu bearbeiten",
+    "QJTSaI": "Durchlauf mit einem anderen Kanal verknüpfen",
+    "BiQjuS": "Durchlauf verschoben nach {channel}"
 }
