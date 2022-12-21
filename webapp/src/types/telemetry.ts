@@ -7,6 +7,8 @@
 
 export enum GeneralViewTarget {
     TaskInbox = 'task_inbox',
+    ChannelsRHSHome = 'channels_rhs_home',
+    ChannelsRHSRunList = 'channels_rhs_runlist',
 }
 
 export enum PlaybookViewTarget {
@@ -17,8 +19,7 @@ export enum PlaybookViewTarget {
 
 export enum PlaybookRunViewTarget {
 
-    // Pending to be migrated to page/channel_run_rhs
-    ChannelsRHSDetails = 'view_run_channels_rhs_details',
+    ChannelsRHSDetails = 'channels_rhs_rundetails',
 
     // StatusUpdate is triggered any time a StatusUpdatePost is shown in a
     // channel, so we track impressions

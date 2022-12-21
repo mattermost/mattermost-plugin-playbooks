@@ -21,11 +21,13 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate} from 'src/client';
-import {useHasTeamPermission} from 'src/hooks';
+import {useHasTeamPermission, useViewTelemetry} from 'src/hooks';
 import {RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
+
+import {GeneralViewTarget} from 'src/types/telemetry';
 
 import {RHSTitleText} from './rhs_title_common';
 
@@ -113,6 +115,7 @@ const RHSHome = () => {
     const permissionForPublic = useHasTeamPermission(currentTeam.id || '', 'playbook_public_create');
     const permissionForPrivate = useHasTeamPermission(currentTeam.id || '', 'playbook_private_create');
     const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
+    useViewTelemetry(GeneralViewTarget.ChannelsRHSHome, 'fixed');
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {

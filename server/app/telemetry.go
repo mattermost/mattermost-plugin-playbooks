@@ -68,12 +68,17 @@ const (
 	telemetryRunStatusUpdate TelemetryPage = iota
 	telemetryRunDetails
 	telemetryTaskInbox
+	telemetryChannelsRunDetails
+	telemetryChannelsHome
+	telemetryChannelsRunList
 )
 
 var pageTypes = [...]string{
-	telemetryRunStatusUpdate: "run_status_update",
-	telemetryRunDetails:      "run_details",
-	telemetryTaskInbox:       "task_inbox",
+	telemetryRunStatusUpdate:    "run_status_update",
+	telemetryTaskInbox:          "task_inbox",
+	telemetryChannelsRunDetails: "channels_rhs_rundetails",
+	telemetryChannelsHome:       "channels_rhs_home",
+	telemetryChannelsRunList:    "channels_rhs_runlist",
 }
 
 // String creates the string version of the Telemetrypage
