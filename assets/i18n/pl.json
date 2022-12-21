@@ -122,5 +122,117 @@
     {
         "id": "app.user.run.status_disable",
         "translation": "@{{.Username}} wyłączył aktualizacje statusu dla [{{.RunName}}]({{.RunURL}})"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Playbok"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Aktualizacje statusu"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Status aktualizacji"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Przypomnienie o następnej aktualizacji"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "Przedstaw aktualizację dla interesariuszy. Ten post będzie transmitowany na {{.Count}} kanał.",
+            "few": "Przedstawić aktualizację dla interesariuszy. Ten post będzie transmitowany na {{.Count}} kanały.",
+            "many": "Przedstawić aktualizację dla interesariuszy. Ten post będzie transmitowany na {{.Count}} kanałów."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Oznacz również uruchomienie jako zakończone"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Zakończ uruchomienie"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Zmiana od ostatniej aktualizacji"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Potwierdź zakończenie uruchomienia"
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Zakończ uruchomienie"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "Jest **{.Count}} zaległe zadanie**. Czy na pewno chcesz zakończyć uruchomienie *{.RunName}}* dla wszystkich uczestników?",
+            "few": "Jest **{.Count}} zaległe zadania**. Czy na pewno chcesz zakończyć bieg *{.RunName}}* dla wszystkich uczestników?",
+            "many": "Jest **{.Count}} zaległych zadań**. Czy na pewno chcesz zakończyć bieg *{.RunName}}* dla wszystkich uczestników?"
+        }
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Dodaj do osi czasu uruchomienia"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Krótkie podsumowanie widoczne na osi czasu"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "Maksymalnie 64 znaki"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Podsumowanie"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Dodaj do osi czasu uruchomienia"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Uruchomienie Playbooka"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Dodaj nowe zadanie"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Dodaj zadanie"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Nazwa"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Opis"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Uruchom playbook"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Rozpocznij uruchomienie"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Nazwa uruchomienia"
+    },
+    {
+        "id": "app.user.new_run.new_playbook",
+        "translation": "[Kliknij tutaj]({{.RunURL}}), aby stworzyć własny playbook."
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Właściciel** {{.Username}}"
     }
 ]
