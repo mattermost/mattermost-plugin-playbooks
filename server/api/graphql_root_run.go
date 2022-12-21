@@ -187,6 +187,17 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 
 	if args.Updates.BroadcastChannelIDs != nil {
+		for _, channelID := range *args.Updates.BroadcastChannelIDs {
+			channel, err := c.pluginAPI.Channel.Get(channelID)
+			if err != nil {
+				return "", errors.Wrap(err, "broadcasting to invalid channel ID")
+			}
+			// check if channel is archived
+			if channel.DeleteAt != 0 {
+				return "", errors.New("broadcasting to archived channel")
+			}
+		}
+
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
 			return "", err
 		}
