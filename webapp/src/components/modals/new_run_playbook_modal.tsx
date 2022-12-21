@@ -21,6 +21,7 @@ import PlaybooksSelector from 'src/components/playbooks_selector';
 import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
 import {useHasTeamPermission} from 'src/hooks';
+import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -56,6 +57,7 @@ const RunPlaybookNewModal = ({
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
+    const [runNameError, setRunNameError] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
@@ -109,8 +111,20 @@ const RunPlaybookNewModal = ({
         dispatch(displayPlaybookCreateModal({}));
         modalProps.onHide?.();
     };
+
+    const onRunNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (runNameError && e.target.value.length <= RUN_NAME_MAX_LENGTH) {
+            setRunNameError('');
+        }
+        setRunName(e.target.value);
+    };
     const onSubmit = () => {
         if (!playbook || !selectedPlaybookId) {
+            return;
+        }
+
+        if (runName.length > RUN_NAME_MAX_LENGTH) {
+            setRunNameError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
             return;
         }
 
@@ -151,6 +165,7 @@ const RunPlaybookNewModal = ({
                 showCancel={true}
                 isConfirmDisabled={!isFormValid}
                 handleConfirm={onSubmit}
+                autoCloseOnConfirmButton={false}
                 id={ID}
                 modalHeaderText={(
                     <ColContainer>
@@ -174,14 +189,18 @@ const RunPlaybookNewModal = ({
                 {...modalProps}
             >
                 <Body>
-                    <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
+                    <RunNameLabel invalid={Boolean(runNameError)}>
+                        {formatMessage({defaultMessage: 'Run name'})}{runNameError ? ' *' : ''}
+                    </RunNameLabel>
                     <BaseInput
+                        invalid={Boolean(runNameError)}
                         data-testid={'run-name-input'}
                         autoFocus={true}
                         type={'text'}
                         value={runName}
-                        onChange={(e) => setRunName(e.target.value)}
+                        onChange={onRunNameChange}
                     />
+                    {runNameError && <ErrorMessage>{runNameError}</ErrorMessage>}
 
                     <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
                     <BaseTextArea
@@ -461,6 +480,19 @@ const CreatePlaybookButton = styled(SecondaryButton)`
 `;
 
 const SearchWrapper = styled.div`
+`;
+
+const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
+    color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
+`;
+
+const ErrorMessage = styled.div`
+    color: var(--error-text);
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: -8px;
+    font-weight: 400;
+    margin-bottom: 20px !important;
 `;
 
 const ApolloWrappedModal = (props: Props) => {
