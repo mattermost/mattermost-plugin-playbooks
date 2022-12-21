@@ -202,6 +202,8 @@ describe('channels > rhs > runlist', () => {
         describe('navigation', () => {
             let testChannelWith2Runs;
             before(() => {
+                cy.apiLogin(testUser);
+
                 // # Create a test channel
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel').then(({channel}) => {
                     testChannelWith2Runs = channel;
