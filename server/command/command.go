@@ -27,7 +27,6 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook checkadd [checklist #] [item text]` - add a checklist item. \n" +
 	"* `/playbook checkremove [checklist #] [item #]` - remove a checklist item. \n" +
 	"* `/playbook owner [@username]` - Show or change the current owner. \n" +
-	"* `/playbook list` - List all your playbook runs. \n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
 	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
@@ -102,9 +101,6 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 	command.AddCommand(itemAdd)
 	command.AddCommand(itemRemove)
-
-	list := model.NewAutocompleteData("list", "", "Lists all your playbook runs")
-	command.AddCommand(list)
 
 	owner := model.NewAutocompleteData("owner", "[@username]",
 		"Show or change the current owner")
@@ -629,84 +625,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 		r.warnUserAndLogErrorf("Failed to change owner to @%s: %v", targetOwnerUsername, err)
 		return
 	}
-}
-
-func (r *Runner) actionList() {
-	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving current team: %v", err)
-		return
-	}
-
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
-		return
-	}
-
-	if !session.IsMobileApp() {
-		// The RHS was opened by the webapp, so inform the user
-		r.postCommandResponse("The list of your playbook runs is open in the right hand side of the channel.")
-		return
-	}
-
-	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
-		return
-	}
-
-	options := app.PlaybookRunFilterOptions{
-		TeamID:        r.args.TeamId,
-		ParticipantID: r.args.UserId,
-		Page:          0,
-		PerPage:       maxPlaybookRunsToList,
-		Sort:          app.SortByCreateAt,
-		Direction:     app.DirectionDesc,
-	}
-
-	result, err := r.playbookRunService.GetPlaybookRuns(requesterInfo, options)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving the playbook runs: %v", err)
-		return
-	}
-
-	message := "Ongoing Runs in **" + team.DisplayName + "** Team:\n"
-	if len(result.Items) == 0 {
-		message = "There are no ongoing playbook runs in **" + team.DisplayName + "** team."
-	}
-
-	now := time.Now()
-	attachments := make([]*model.SlackAttachment, len(result.Items))
-	for i, playbookRun := range result.Items {
-		owner, err := r.pluginAPI.User.Get(playbookRun.OwnerUserID)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving owner of playbook run '%s': %v", playbookRun.Name, err)
-			return
-		}
-
-		channel, err := r.pluginAPI.Channel.Get(playbookRun.ChannelID)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving channel of playbook run '%s': %v", playbookRun.Name, err)
-			return
-		}
-
-		attachments[i] = &model.SlackAttachment{
-			Pretext: fmt.Sprintf("### ~%s", channel.Name),
-			Fields: []*model.SlackAttachmentField{
-				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(playbookRun.CreateAt), now)},
-				{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
-			},
-		}
-	}
-
-	post := &model.Post{
-		Message: message,
-		Props: map[string]interface{}{
-			"attachments": attachments,
-		},
-	}
-	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
 func (r *Runner) actionInfo(args []string) {
@@ -2112,8 +2030,6 @@ func (r *Runner) Execute() error {
 		r.actionRemoveChecklistItem(parameters)
 	case "owner":
 		r.actionOwner(parameters)
-	case "list":
-		r.actionList()
 	case "info":
 		r.actionInfo(parameters)
 	case "add":
