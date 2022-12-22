@@ -40,6 +40,8 @@ const (
 	metricsExposePort = ":9093"
 )
 
+const ServerKey product.ServiceKey = "server"
+
 // These credentials for Rudder need to be populated at build-time,
 // passing the following flags to the go build command:
 // -ldflags "-X main.rudderDataplaneURL=<url> -X main.rudderWriteKey=<write_key>"
@@ -68,26 +70,26 @@ type TelemetryClient interface {
 }
 
 func init() {
-	mmapp.RegisterProduct(playbooksProductName, mmapp.ProductManifest{
+	product.RegisterProduct(playbooksProductName, product.Manifest{
 		Initializer: newPlaybooksProduct,
-		Dependencies: map[mmapp.ServiceKey]struct{}{
-			mmapp.TeamKey:          {},
-			mmapp.ChannelKey:       {},
-			mmapp.UserKey:          {},
-			mmapp.PostKey:          {},
-			mmapp.BotKey:           {},
-			mmapp.ClusterKey:       {},
-			mmapp.ConfigKey:        {},
-			mmapp.LogKey:           {},
-			mmapp.LicenseKey:       {},
-			mmapp.FilestoreKey:     {},
-			mmapp.FileInfoStoreKey: {},
-			mmapp.RouterKey:        {},
-			mmapp.CloudKey:         {},
-			mmapp.KVStoreKey:       {},
-			mmapp.StoreKey:         {},
-			mmapp.SystemKey:        {},
-			mmapp.PreferencesKey:   {},
+		Dependencies: map[product.ServiceKey]struct{}{
+			product.TeamKey:          {},
+			product.ChannelKey:       {},
+			product.UserKey:          {},
+			product.PostKey:          {},
+			product.BotKey:           {},
+			product.ClusterKey:       {},
+			product.ConfigKey:        {},
+			product.LogKey:           {},
+			product.LicenseKey:       {},
+			product.FilestoreKey:     {},
+			product.FileInfoStoreKey: {},
+			product.RouterKey:        {},
+			product.CloudKey:         {},
+			product.KVStoreKey:       {},
+			product.StoreKey:         {},
+			product.SystemKey:        {},
+			product.PreferencesKey:   {},
 		},
 	})
 }
@@ -130,7 +132,7 @@ type playbooksProduct struct {
 	// pluginAPIAdapter *adapters.PluginAPIAdapter
 }
 
-func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]interface{}) (mmapp.Product, error) {
+func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.Product, error) {
 	playbooks := &playbooksProduct{}
 	err := playbooks.setProductServices(services)
 	if err != nil {
@@ -139,6 +141,8 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 
 	logger := logrus.StandardLogger()
 	ConfigureLogrus(logger, playbooks.logger)
+
+	server := services[ServerKey].(*mmapp.Server)
 
 	serviceAdapter := newServiceAPIAdapter(playbooks, server)
 	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, playbooks.configService, manifest)
@@ -236,118 +240,118 @@ func newPlaybooksProduct(server *mmapp.Server, services map[mmapp.ServiceKey]int
 	return playbooks, nil
 }
 
-func (pp *playbooksProduct) setProductServices(services map[mmapp.ServiceKey]interface{}) error {
+func (pp *playbooksProduct) setProductServices(services map[product.ServiceKey]interface{}) error {
 	for key, service := range services {
 		switch key {
-		case mmapp.TeamKey:
+		case product.TeamKey:
 			teamService, ok := service.(product.TeamService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.teamService = teamService
-		case mmapp.ChannelKey:
+		case product.ChannelKey:
 			channelService, ok := service.(product.ChannelService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.channelService = channelService
-		case mmapp.UserKey:
+		case product.UserKey:
 			userService, ok := service.(product.UserService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.userService = userService
-		case mmapp.PostKey:
+		case product.PostKey:
 			postService, ok := service.(product.PostService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.postService = postService
-		case mmapp.PermissionsKey:
+		case product.PermissionsKey:
 			permissionsService, ok := service.(product.PermissionService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.permissionsService = permissionsService
-		case mmapp.BotKey:
+		case product.BotKey:
 			botService, ok := service.(product.BotService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.botService = botService
-		case mmapp.ClusterKey:
+		case product.ClusterKey:
 			clusterService, ok := service.(product.ClusterService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.clusterService = clusterService
-		case mmapp.ConfigKey:
+		case product.ConfigKey:
 			configService, ok := service.(product.ConfigService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.configService = configService
-		case mmapp.LogKey:
+		case product.LogKey:
 			logger, ok := service.(mlog.LoggerIFace)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.logger = logger.With(mlog.String("product", playbooksProductName))
-		case mmapp.LicenseKey:
+		case product.LicenseKey:
 			licenseService, ok := service.(product.LicenseService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.licenseService = licenseService
-		case mmapp.FilestoreKey:
+		case product.FilestoreKey:
 			filestoreService, ok := service.(product.FilestoreService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.filestoreService = filestoreService
-		case mmapp.FileInfoStoreKey:
+		case product.FileInfoStoreKey:
 			fileInfoStoreService, ok := service.(product.FileInfoStoreService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.fileInfoStoreService = fileInfoStoreService
-		case mmapp.RouterKey:
+		case product.RouterKey:
 			routerService, ok := service.(product.RouterService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.routerService = routerService
-		case mmapp.CloudKey:
+		case product.CloudKey:
 			cloudService, ok := service.(product.CloudService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.cloudService = cloudService
-		case mmapp.KVStoreKey:
+		case product.KVStoreKey:
 			kvStoreService, ok := service.(product.KVStoreService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.kvStoreService = kvStoreService
-		case mmapp.StoreKey:
+		case product.StoreKey:
 			storeService, ok := service.(product.StoreService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.storeService = storeService
-		case mmapp.SystemKey:
+		case product.SystemKey:
 			systemService, ok := service.(product.SystemService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.systemService = systemService
-		case mmapp.PreferencesKey:
+		case product.PreferencesKey:
 			preferencesService, ok := service.(product.PreferencesService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.preferencesService = preferencesService
-		case mmapp.HooksKey:
+		case product.HooksKey:
 			hooksService, ok := service.(product.HooksService)
 			if !ok {
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
