@@ -28,6 +28,8 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
+import {PlaybookUpdates} from 'src/graphql/generated_types';
+import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 
@@ -68,27 +70,40 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
-        const updated = updatedPlaybook?.checklists.map((cl) => {
-            return {
-                ...cl,
-                items: cl.items.map((ci) => {
-                    return {
-                        title: ci.title,
-                        description: ci.description,
-                        state: ci.state,
-                        stateModified: ci.state_modified || 0,
-                        assigneeID: ci.assignee_id || '',
-                        assigneeModified: ci.assignee_modified || 0,
-                        command: ci.command,
-                        commandLastRun: ci.command_last_run,
-                        dueDate: ci.due_date,
-                        taskActions: ci.task_actions,
-                    };
-                }),
-            };
-        });
+        const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: ci.assignee_id || '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        const updates: PlaybookUpdates = {
+            checklists: updatedChecklists,
+        };
 
-        updatePlaybook({checklists: updated});
+        if (updatedPlaybook) {
+            const preAssignees = getDistinctAssignees(updatedPlaybook.checklists);
+            if (preAssignees.length && !updatedPlaybook.invite_users_enabled) {
+                updates.inviteUsersEnabled = true;
+            }
+
+            // Append all assignees found in the updated checklists and clear duplicates
+            // Only update the invited users when new assignees were added
+            const invitedUsers = new Set([...updatedPlaybook.invited_user_ids, ...preAssignees]);
+            if (invitedUsers.size > updatedPlaybook.invited_user_ids.length) {
+                updates.invitedUserIDs = [...invitedUsers];
+            }
+        }
+
+        updatePlaybook(updates);
     }, [updatePlaybook]), 0);
     const checklists = playbookRun?.checklists || playbook?.checklists || [];
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);

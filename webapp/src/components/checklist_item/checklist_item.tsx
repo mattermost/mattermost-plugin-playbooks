@@ -201,11 +201,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
-        // render only in the RHS
-        if (!props.playbookRunId) {
-            return null;
-        }
-
         const shouldHideName = () => {
             if (buttonsFormat !== ButtonsFormat.Short) {
                 return false;

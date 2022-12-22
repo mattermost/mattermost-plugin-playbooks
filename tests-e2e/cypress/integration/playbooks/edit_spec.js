@@ -63,6 +63,77 @@ describe('playbooks > edit', () => {
     });
 
     describe('checklists', () => {
+        describe('pre-assignee', () => {
+            it('user gets pre-assigned, added to invite user list, and invitations become enabled', () => {
+                // # Open Playbooks
+                cy.visit('/playbooks/playbooks');
+
+                // # Start a blank playbook
+                cy.findByText('Blank').click();
+                cy.findByText('Outline').click();
+
+                cy.get('#actions').within(() => {
+                    cy.get('#invite-users').within(() => {
+                        // * Verify invitations are disabled and no invited user exists
+                        cy.get('label input').should('not.be.checked');
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '');
+                    });
+                });
+
+                // # Pre-assign the user
+                cy.get('#checklists').within(() => {
+                    // # Trigger assignee select menu
+                    cy.findByText('Untitled task').trigger('mouseover');
+                    cy.findByTestId('hover-menu-edit-button').click();
+                    cy.findByText('Assignee...').click();
+
+                    // * Verify that the assignee input is focused now
+                    cy.focused()
+                        .should('have.attr', 'type', 'text')
+                        .should('have.attr', 'id');
+
+                    // * Verify that the root of the assignee select menu exists
+                    cy.focused().parents('.playbook-react-select')
+                        .should('exist')
+                        .within(() => {
+                            // # Select the test user
+                            cy.findByText('@' + testUser.username).click({force: true});
+                        });
+                });
+
+                cy.reload();
+
+                cy.get('#checklists').within(() => {
+                    // # Trigger assignee select menu
+                    cy.findByText('Untitled task').trigger('mouseover');
+                    cy.findByTestId('hover-menu-edit-button').click();
+                    cy.findByText('@' + testUser.username).click();
+
+                    // * Verify that the assignee input is focused now
+                    cy.focused()
+                        .should('have.attr', 'type', 'text')
+                        .should('have.attr', 'id');
+
+                    // * Verify that the root of the assignee select menu exists
+                    cy.focused()
+                        .parents('.playbook-react-select')
+                        .should('exist');
+                });
+
+                cy.get('#actions').within(() => {
+                    cy.get('#invite-users').within(() => {
+                        // * Verify invitations are enabled and a single user is invited
+                        cy.get('label input').should('be.checked');
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '1 SELECTED');
+                    });
+                });
+            });
+        });
+
         describe('slash command', () => {
             it('autocompletes after clicking Command...', () => {
                 // # Open Playbooks
@@ -430,6 +501,149 @@ describe('playbooks > edit', () => {
                                     cy.findByText(testUser2.username);
                                     cy.findByText(testUser2.username);
                                 });
+                        });
+                    });
+                });
+
+                describe('allow removing pre-assigned users with confirmation', () => {
+                    beforeEach(() => {
+                        // # Create a playbook
+                        cy.apiCreateTestPlaybook({
+                            teamId: testTeam.id,
+                            title: 'Playbook (' + Date.now() + ')',
+                            userId: testUser.id,
+                            checklists: [{
+                                title: 'Example',
+                                items: [
+                                    {
+                                        title: 'Untitled task',
+                                        assignee_id: testUser.id,
+                                    }
+                                ]
+                            }],
+                            invitedUserIds: [testUser.id],
+                            inviteUsersEnabled: true,
+                        }).then((playbook) => {
+                            testPlaybook = playbook;
+                        });
+                    });
+
+                    it('when removing an invited user', () => {
+                        // # Visit the selected playbook
+                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify user is pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText(`@${testUser.username}`).should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify invitations enabled and user is invited
+                                cy.get('label input').should('be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '1 SELECTED');
+
+                                cy.openSelector();
+
+                                cy.get('.invite-users-selector__menu').within(() => {
+                                    // # Trigger remove for pre-assigned user
+                                    cy.findByText('Remove').click({force: true});
+                                });
+                            });
+                        });
+
+                        // * Verify that confirmation dialog is open
+                        cy.get('#confirmModal').should('be.visible');
+
+                        // * Verify that confirmation dialog contains correct text
+                        cy.get('#confirmModal').should('contain', 'Are you sure you want to stop inviting this user as a member of the run?');
+
+                        // * Verify that the confirmation button is focused and click
+                        cy.focused()
+                            .should('have.id', 'confirmModalButton')
+                            .click({force: true});
+
+                        // * Verify that the confirmation dialog is closed
+                        cy.get('#confirmModal').should('not.be.visible');
+
+                        cy.reload();
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify that user is not pre-assigned anymore
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText('Assignee...').should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify that user is not invited anymore
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '');
+                            });
+                        });
+                    });
+
+                    it('when disabling invitations', () => {
+                        // # Visit the selected playbook
+                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify user is pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText(`@${testUser.username}`).should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify invitations are enabled and user is invited
+                                cy.get('label input').should('be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '1 SELECTED');
+
+                                // # Disable invitations
+                                cy.get('label input').click({force: true});
+                            });
+                        });
+
+                        // * Verify that confirmation dialog is open
+                        cy.get('#confirmModal').should('be.visible');
+
+                        // * Verify that confirmation dialog contains correct text
+                        cy.get('#confirmModal').should('contain', 'Are you sure you want to disable invitations?');
+
+                        // * Verify that the confirmation button is focused and click
+                        cy.focused()
+                            .should('have.id', 'confirmModalButton')
+                            .click({force: true});
+
+                        // * Verify that confirmation dialog is closed
+                        cy.get('#confirmModal').should('not.be.visible');
+
+                        cy.reload();
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify that user is not pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText('Assignee...').should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify that invitations are disabled and no user is invited
+                                cy.get('label input').should('not.be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '');
+                            });
                         });
                     });
                 });
