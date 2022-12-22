@@ -25,16 +25,16 @@ export function makeSlashCommandHook(store: Store) {
         }
 
         if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {
-            const currentChannel = getCurrentChannelId(state)
+            const currentChannel = getCurrentChannelId(state);
             if (currentChannel) {
                 const playbookRuns = await fetchPlaybookRunsForChannelByUser(currentChannel);
                 const clientId = generateId();
                 store.dispatch(setClientId(clientId));
 
-                const runNumber = message.substring(16)
+                const runNumber = message.substring(16);
                 const multipleRuns = playbookRuns?.length > 1;
                 if (multipleRuns && runNumber === '') {
-                    postEphemeralPost(currentChannel, 'Command expects one argument: the run number.')
+                    postEphemeralPost(currentChannel, 'Command expects one argument: the run number.');
                     return {};
                 }
 
@@ -42,16 +42,15 @@ export function makeSlashCommandHook(store: Store) {
                 if (multipleRuns) {
                     run = parseInt(runNumber, 10);
                     if (isNaN(run)) {
-                        postEphemeralPost(currentChannel, 'Error parsing the first argument. Must be a number.')
+                        postEphemeralPost(currentChannel, 'Error parsing the first argument. Must be a number.');
                         return {};
                     }
 
                     if (run < 0 || run >= playbookRuns.length) {
-                        postEphemeralPost(currentChannel, 'Invalid run number.')
+                        postEphemeralPost(currentChannel, 'Invalid run number.');
                         return {};
                     }
                 }
-                console.log("runs: ", playbookRuns);
 
                 store.dispatch(promptUpdateStatus(playbookRuns[run].team_id, playbookRuns[run].id, currentChannel));
                 return {};

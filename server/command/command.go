@@ -37,7 +37,6 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	""
 
 const confirmPrompt = "CONFIRM"
-const maxPlaybookRunsToList = 10
 
 // Register is a function that allows the runner to register commands with the mattermost server.
 type Register func(*model.Command) error
