@@ -8,6 +8,8 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RhsActiveRunsDocument,
+    RhsFinishedRunsDocument,
     RunDocument,
     RunUpdates,
     TaskActionUpdates,
@@ -17,10 +19,10 @@ import {
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
+    useSetRunFavoriteMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
     useUpdateRunTaskActionsMutation,
-    useSetRunFavoriteMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -57,6 +59,8 @@ export const useUpdateRun = (id?: string) => {
     const [innerUpdateRun] = useUpdateRunMutation({
         refetchQueries: [
             PlaybookLhsDocument,
+            RhsActiveRunsDocument,
+            RhsFinishedRunsDocument,
         ],
     });
 

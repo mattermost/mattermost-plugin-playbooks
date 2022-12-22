@@ -247,7 +247,7 @@ Cypress.Commands.add('getStatusUpdateDialog', () => {
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {
-    cy.get(`[class^="${className}"]`);
+    cy.get(`[class^="${className}-"]`);
 });
 
 /**
@@ -319,7 +319,7 @@ Cypress.Commands.add('expectTelemetryToBe', (items) => {
             // just validate properties if they are passed (and just the ones passed)
             if (item.properties) {
                 for (const [key, value] of Object.entries(item.properties)) {
-                    expect(xhrs[index].request.body.properties[key]).to.eq(value);
+                    expect(xhrs[index].request.body.properties[key]).to.eq(value, `Property ${key} does not match for event ${item.name}`);
                 }
             }
         });

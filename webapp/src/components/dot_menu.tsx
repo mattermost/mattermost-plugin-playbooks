@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps} from 'react';
+import React, {ComponentProps, useState} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useUpdateEffect} from 'react-use';

@@ -4,10 +4,10 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
-import {requestTrialLicense, postMessageToAdmins} from 'src/client';
+import {postMessageToAdmins, requestTrialLicense} from 'src/client';
 import UpgradeModalFooter from 'src/components/backstage/upgrade_modal_footer';
 
-import {isCurrentUserAdmin, getAdminAnalytics, isTeamEdition} from 'src/selectors';
+import {getAdminAnalytics, isCurrentUserAdmin, isTeamEdition} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
 import {isCloud} from 'src/license';

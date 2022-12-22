@@ -31,6 +31,7 @@ type TelemetryTrack int
 const (
 	telemetryRunFollow TelemetryTrack = iota
 	telemetryRunUnfollow
+	telemetryRunCreate
 	telemetryRunParticipate
 	telemetryRunLeave
 	telemetryRunUpdateActions
@@ -42,6 +43,7 @@ const (
 var trackTypes = [...]string{
 	telemetryRunFollow:                 "playbookrun_follow",
 	telemetryRunUnfollow:               "playbookrun_unfollow",
+	telemetryRunCreate:                 "playbookrun_create",
 	telemetryRunParticipate:            "playbookrun_participate",
 	telemetryRunLeave:                  "playbookrun_leave",
 	telemetryRunUpdateActions:          "playbookrun_update_actions",

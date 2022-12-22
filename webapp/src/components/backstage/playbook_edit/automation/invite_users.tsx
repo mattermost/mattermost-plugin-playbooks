@@ -7,11 +7,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {
-    AutomationHeader,
-    AutomationTitle,
-    SelectorWrapper,
-} from 'src/components/backstage/playbook_edit/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import InviteUsersSelector from 'src/components/backstage/playbook_edit/automation/invite_users_selector';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -65,7 +61,7 @@ export const InviteUsers = (props: Props) => {
                         onChange={handleToggle}
                         disabled={props.disabled}
                     />
-                    <div><FormattedMessage defaultMessage='Invite participants'/></div>
+                    <FormattedMessage defaultMessage='Invite participants'/>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <InviteUsersSelector

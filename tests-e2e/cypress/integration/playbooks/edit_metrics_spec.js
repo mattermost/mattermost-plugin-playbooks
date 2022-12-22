@@ -21,6 +21,9 @@ describe('playbooks > edit_metrics', () => {
         let testPlaybook;
 
         beforeEach(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
             // # Create a playbook
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
@@ -131,7 +134,7 @@ describe('playbooks > edit_metrics', () => {
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
                 saveMetric();
-                verifyViewMetric(0, 'test duration', '2 days, 12 hours, 1 minute per run', 'test description');
+                verifyViewMetric(0, 'test duration again', '2 days, 12 hours, 1 minute per run', 'test description');
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
@@ -436,7 +439,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Verify that the 'Target' section is gone
                 cy.getStyledComponent('ViewContainer')
-                    .getStyledComponent('Detail')
+                    .getStyledComponent('DetailDiv')
                     .should('have.length', 1);
 
                 verifyViewMetric(0, 'test duration', '', 'test description');
@@ -458,7 +461,7 @@ describe('playbooks > edit_metrics', () => {
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 2).eq(1).within(() => {
                     // # Verify that the 'Target' section is gone
-                    cy.getStyledComponent('Detail')
+                    cy.getStyledComponent('DetailDiv')
                         .should('have.length', 1);
                 });
 
@@ -481,7 +484,7 @@ describe('playbooks > edit_metrics', () => {
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 3).eq(2).within(() => {
                     // # Verify that the 'Target' section is gone
-                    cy.getStyledComponent('Detail')
+                    cy.getStyledComponent('DetailDiv')
                         .should('have.length', 1);
                 });
 
@@ -531,12 +534,12 @@ const verifyViewMetric = (index, title, target, description) => {
         cy.getStyledComponent('Title').should('have.text', title);
 
         if (target) {
-            cy.getStyledComponent('Detail').eq(0).contains(target);
+            cy.getStyledComponent('DetailDiv').eq(0).contains(target);
         }
 
         if (description) {
             const idx = target ? 1 : 0;
-            cy.getStyledComponent('Detail').eq(idx).contains(description);
+            cy.getStyledComponent('DetailDiv').eq(idx).contains(description);
         }
     });
 };

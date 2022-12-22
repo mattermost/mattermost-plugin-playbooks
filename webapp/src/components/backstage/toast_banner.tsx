@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {TransitionGroup, CSSTransition} from 'react-transition-group';
+import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
 import {Toast, ToastProps} from './toast';
 

@@ -1,4 +1,10 @@
-import React, {useState, useCallback, useRef, useEffect, ComponentProps} from 'react';
+import React, {
+    ComponentProps,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
 import {debounce} from 'debounce';
 

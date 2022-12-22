@@ -7,7 +7,12 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import {CheckAllIcon, SyncIcon, OpenInNewIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    CheckAllIcon,
+    OpenInNewIcon,
+    PlayOutlineIcon,
+    SyncIcon,
+} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
@@ -15,8 +20,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
-import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useHasPlaybookPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
+import {useHasPlaybookPermission, useLinkRunToExistingChannelEnabled, usePlaybooksRouting} from 'src/hooks';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
@@ -158,7 +163,7 @@ const TIME_SPEC = {
 
 type RHSHomePlaybookProps = {
     playbook: Playbook;
-    onRunCreated: (runId: string, channelId: string) => void;
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void;
 }
 
 export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) => {
@@ -330,7 +335,10 @@ export const RHSHomeTemplate = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => onUse(template)}>
+            <RunButton
+                data-testid={'use-playbook'}
+                onClick={() => onUse(template)}
+            >
                 <OpenInNewIcon color={'var(--button-bg)'}/>
                 {formatMessage({defaultMessage: 'Use'})}
             </RunButton>

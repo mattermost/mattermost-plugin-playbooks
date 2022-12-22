@@ -364,6 +364,7 @@ export type RunEdge = {
 
 export type RunUpdates = {
     broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
+    channelID?: InputMaybe<Scalars['String']>;
     createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
     name?: InputMaybe<Scalars['String']>;
     removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
@@ -435,7 +436,7 @@ export type PlaybookLhsQueryVariables = Exact<{
 
 export type PlaybookLhsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } }> }, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
-export type PlaybookModalFieldsFragment = { __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number };
+export type PlaybookModalFieldsFragment = { __typename?: 'Playbook', id: string, title: string, public: boolean, is_favorite: boolean, team_id: string, default_playbook_member_role: string, last_run_at: number, active_runs: number, members: Array<{ __typename?: 'Member', user_id: string, scheme_roles: Array<string> }> };
 
 export type PlaybooksModalQueryVariables = Exact<{
     channelID: Scalars['String'];
@@ -443,7 +444,7 @@ export type PlaybooksModalQueryVariables = Exact<{
     searchTerm: Scalars['String'];
 }>;
 
-export type PlaybooksModalQuery = { __typename?: 'Query', channelPlaybooks: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', playbookID: string } }> }, yourPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }>, allPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean, lastRunAt: number, activeRuns: number }> };
+export type PlaybooksModalQuery = { __typename?: 'Query', channelPlaybooks: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', playbookID: string } }> }, yourPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, public: boolean, is_favorite: boolean, team_id: string, default_playbook_member_role: string, last_run_at: number, active_runs: number, members: Array<{ __typename?: 'Member', user_id: string, scheme_roles: Array<string> }> }>, allPlaybooks: Array<{ __typename?: 'Playbook', id: string, title: string, public: boolean, is_favorite: boolean, team_id: string, default_playbook_member_role: string, last_run_at: number, active_runs: number, members: Array<{ __typename?: 'Member', user_id: string, scheme_roles: Array<string> }> }> };
 
 export type AddPlaybookMemberMutationVariables = Exact<{
     playbookID: Scalars['String'];
@@ -465,7 +466,7 @@ export type RunQueryVariables = Exact<{
 
 export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> }, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }> } | null };
 
-export type RhsRunFieldsFragment = { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null };
+export type RhsRunFieldsFragment = { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null };
 
 export type RhsActiveRunsQueryVariables = Exact<{
     channelID: Scalars['String'];
@@ -475,7 +476,7 @@ export type RhsActiveRunsQueryVariables = Exact<{
     after?: InputMaybe<Scalars['String']>;
 }>;
 
-export type RhsActiveRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+export type RhsActiveRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
 
 export type RhsFinishedRunsQueryVariables = Exact<{
     channelID: Scalars['String'];
@@ -485,7 +486,7 @@ export type RhsFinishedRunsQueryVariables = Exact<{
     after?: InputMaybe<Scalars['String']>;
 }>;
 
-export type RhsFinishedRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+export type RhsFinishedRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
 
 export type SetRunFavoriteMutationVariables = Exact<{
     id: Scalars['String'];
@@ -536,10 +537,16 @@ export const PlaybookModalFieldsFragmentDoc = gql`
     fragment PlaybookModalFields on Playbook {
   id
   title
-  isFavorite
+  is_favorite: isFavorite
   public
-  lastRunAt
-  activeRuns
+  team_id: teamID
+  members {
+    user_id: userID
+    scheme_roles: schemeRoles
+  }
+  default_playbook_member_role: defaultPlaybookMemberRole
+  last_run_at: lastRunAt
+  active_runs: activeRuns
 }
     `;
 export const RhsRunFieldsFragmentDoc = gql`
@@ -548,6 +555,7 @@ export const RhsRunFieldsFragmentDoc = gql`
   name
   participantIDs
   ownerUserID
+  playbookID
   playbook {
     title
   }

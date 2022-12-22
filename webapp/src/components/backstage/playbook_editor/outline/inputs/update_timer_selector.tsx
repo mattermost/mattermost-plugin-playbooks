@@ -6,10 +6,10 @@ import React, {useMemo} from 'react';
 import DateTimeSelector from 'src/components/datetime_selector';
 
 import {
-    useMakeOption,
-    ms,
     Mode,
     Option,
+    ms,
+    useMakeOption,
 } from 'src/components/datetime_input';
 
 import {Placeholder} from 'src/components/backstage/playbook_editor/outline/section_status_updates';

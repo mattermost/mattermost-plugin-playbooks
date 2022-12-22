@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -15,27 +15,21 @@ import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    finishRun,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     setEveryChecklistCollapsedStateChange,
-    finishRun,
 } from 'src/actions';
 import {
     Checklist,
     ChecklistItem,
-    ChecklistItemsFilter,
     ChecklistItemState,
+    ChecklistItemsFilter,
 } from 'src/types/playbook';
-import {
-    telemetryEventForPlaybookRun,
-} from 'src/client';
+import {telemetryEventForPlaybookRun} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {
-    currentChecklistAllCollapsed,
-    currentChecklistCollapsedState,
-    currentChecklistItemsFilter,
-} from 'src/selectors';
+import {currentChecklistAllCollapsed, currentChecklistCollapsedState, currentChecklistItemsFilter} from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';

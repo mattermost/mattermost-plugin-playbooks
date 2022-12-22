@@ -10,9 +10,9 @@ import {
     Draggable,
     DraggableProvided,
     DraggableStateSnapshot,
+    DropResult,
     Droppable,
     DroppableProvided,
-    DropResult,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';

@@ -1,4 +1,4 @@
-import React, {ComponentProps, useState, useEffect} from 'react';
+import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -20,6 +20,7 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
 import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
+import {useHasTeamPermission} from 'src/hooks';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -27,7 +28,7 @@ export const makeModalDefinition = (
     playbookId: string | undefined,
     triggerChannelId: string | undefined,
     teamId: string,
-    onRunCreated: (runId: string, channelId: string) => void,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 ) => ({
     modalId: ID,
     dialogType: ApolloWrappedModal,
@@ -38,7 +39,7 @@ type Props = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    onRunCreated: (runId: string, channelId: string) => void,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookNewModal = ({
@@ -61,6 +62,9 @@ const RunPlaybookNewModal = ({
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showsearch, setShowsearch] = useState(true);
+    const permissionForPublic = useHasTeamPermission(teamId || '', 'playbook_public_create');
+    const permissionForPrivate = useHasTeamPermission(teamId || '', 'playbook_private_create');
+    const canCreatePlaybooks = permissionForPublic || permissionForPrivate;
 
     let userId = useSelector(getCurrentUserId);
     if (playbook?.default_owner_enabled && playbook.default_owner_id) {
@@ -121,7 +125,18 @@ const RunPlaybookNewModal = ({
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id);
+                const statsData = {
+                    playbookId: selectedPlaybookId,
+                    channelMode,
+                    public: createNewChannel ? createPublicRun : undefined,
+                    hasPlaybookChanged: playbookId !== selectedPlaybookId,
+                    hasNameChanged: runName !== playbook.channel_name_template,
+                    hasSummaryChanged: runSummary !== playbook.run_summary_template,
+                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
+                    hasChannelIdChanged: channelId !== playbook.channel_id,
+                    hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
+                };
+                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
             // show error
             });
@@ -202,9 +217,9 @@ const RunPlaybookNewModal = ({
                             <FormattedMessage defaultMessage='Select a playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
-                            <CreatePlaybookButton onClick={onCreatePlaybook}>
+                            {canCreatePlaybooks && <CreatePlaybookButton onClick={onCreatePlaybook}>
                                 <FormattedMessage defaultMessage='Create new playbook'/>
-                            </CreatePlaybookButton>
+                            </CreatePlaybookButton>}
                         </HeaderButtonWrapper>
                     </ColContainer>
                     {showsearch && <SearchWrapper>
@@ -251,7 +266,6 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
-
     return (
         <ChannelContainer>
             <ChannelBlock>
@@ -261,7 +275,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={linkExistingChannel}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -287,7 +301,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                <FormattedMessage defaultMessage='Create a run channel'/>
             </ChannelBlock>
 
             {createNewChannel && (
@@ -401,13 +415,16 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-const ChannelBlock = styled.div`
+const ChannelBlock = styled.label`
     display: flex;
     flex-direction: row;
     width: 350px;
     align-items: center;
     column-gap: 12px;
     align-self: 'flex-start';
+    font-weight: inherit;
+    margin-bottom: 0;
+    cursor: pointer;
 `;
 
 const SelectorWrapper = styled.div`

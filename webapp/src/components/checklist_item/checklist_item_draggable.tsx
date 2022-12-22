@@ -5,8 +5,8 @@ import React from 'react';
 import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
 import {setChecklistItemState} from 'src/client';
-import {ButtonsFormat as ItemButtonsFormat, ChecklistItem} from 'src/components/checklist_item/checklist_item';
-import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem, ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
+import {ChecklistItemState, ChecklistItem as ChecklistItemType} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {

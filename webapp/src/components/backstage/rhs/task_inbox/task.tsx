@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
-import {PlayOutlineIcon, CheckAllIcon} from '@mattermost/compass-icons/components';
+import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
 import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';

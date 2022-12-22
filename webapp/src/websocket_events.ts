@@ -14,19 +14,20 @@ import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
-    playbookRunCreated, playbookRunUpdated,
-    removedFromPlaybookRunChannel,
-    receivedTeamPlaybookRuns,
-    playbookCreated,
     playbookArchived,
+    playbookCreated,
     playbookRestored,
+    playbookRunCreated,
+    playbookRunUpdated,
+    receivedTeamPlaybookRuns,
+    removedFromPlaybookRunChannel,
     setHasViewedChannel,
 } from 'src/actions';
 import {
+    fetchChannelActions,
     fetchCheckAndSendMessageOnJoin,
     fetchPlaybookRunByChannel,
     fetchPlaybookRuns,
-    fetchChannelActions,
 } from 'src/client';
 import {clientId, hasViewedByChannelID, myPlaybookRunsMap} from 'src/selectors';
 

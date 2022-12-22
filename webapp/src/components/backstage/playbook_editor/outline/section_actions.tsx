@@ -242,8 +242,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Add them to the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
@@ -263,8 +264,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>

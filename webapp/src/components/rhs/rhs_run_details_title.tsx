@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 
 import {useRunFollowers, useRunMetadata} from 'src/hooks';
@@ -13,7 +13,12 @@ import ExternalLink from 'src/components/assets/icons/external_link';
 import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
 
-import {RHSTitleButton, RHSTitleContainer, RHSTitleLink, RHSTitleStyledButtonIcon} from './rhs_title_common';
+import {
+    RHSTitleButton,
+    RHSTitleContainer,
+    RHSTitleLink,
+    RHSTitleStyledButtonIcon,
+} from './rhs_title_common';
 
 interface Props {
     onBackClick: () => void;

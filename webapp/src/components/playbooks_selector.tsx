@@ -3,19 +3,22 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ApolloProvider} from '@apollo/client';
-import {BookOutlineIcon, BookLockOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
-import {usePlaybooksModalQuery} from 'src/graphql/generated_types';
+import {PlaybookModalFieldsFragment, usePlaybooksModalQuery} from 'src/graphql/generated_types';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
-import {PrimaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import SearchSvg from 'src/components/assets/illustrations/search_svg';
 import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
+import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 interface Props {
     teamID: string;
@@ -76,10 +79,6 @@ const PlaybooksSelector = (props: Props) => {
     if (!loading) {
         props.onZeroCaseNoPlaybooks(props.searchTerm === '' && !hasResults);
     }
-    const iconProps = {
-        size: 18,
-        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
-    };
 
     if (!hasResults && !loading) {
         return props.searchTerm === '' ? (
@@ -101,6 +100,10 @@ const PlaybooksSelector = (props: Props) => {
         );
     }
 
+    if (loading) {
+        return <LoadingContainer><LoadingSpinner/></LoadingContainer>;
+    }
+
     return (
         <Container>
             <Scrollbars
@@ -113,31 +116,57 @@ const PlaybooksSelector = (props: Props) => {
                         {group.list && group.list.length > 0 && <GroupTitle>{group.title}</GroupTitle>}
                         <Group>
                             {group.list?.map((playbook) => (
-                                <Item
+                                <PlaybookRow
                                     key={`item-${playbook.id}`}
-                                    onClick={() => props.onSelectPlaybook(playbook.id)}
-                                >
-                                    <ItemIcon>
-                                        {playbook.public ? <BookOutlineIcon {...iconProps}/> : <BookLockOutlineIcon {...iconProps}/>}
-                                    </ItemIcon>
-                                    <ItemCenter>
-                                        <ItemTitle>{playbook.title}</ItemTitle>
-                                        <ItemSubTitle>
-                                            <span>{playbook.lastRunAt === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.lastRunAt).toRelative()})}</span>
-                                            <Dot/>
-                                            <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.activeRuns})}</span>
-                                        </ItemSubTitle>
-                                    </ItemCenter>
-                                    <ButtonWrappper className='modal-list-cta'>
-                                        <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
-                                    </ButtonWrappper>
-                                </Item>
+                                    playbook={playbook}
+                                    onSelectPlaybook={props.onSelectPlaybook}
+                                />
                             ))}
                         </Group>
                     </>
                 ))}
             </Scrollbars>
         </Container>
+    );
+};
+
+interface PlaybookRowProps {
+    onSelectPlaybook: (playbookId: string) => void;
+    playbook: PlaybookModalFieldsFragment;
+}
+
+const PlaybookRow = ({playbook, onSelectPlaybook}: PlaybookRowProps) => {
+    const {formatMessage} = useIntl();
+    const hasPermission = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook as Maybe<PlaybookPermissionsParams>);
+
+    const iconProps = {
+        size: 18,
+        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
+    };
+    return (
+        <PlaybookItem
+            hasPermission={hasPermission}
+            onClick={hasPermission ? () => onSelectPlaybook(playbook.id) : undefined}
+        >
+            <ItemIcon>
+                {playbook.public ? <BookOutlineIcon {...iconProps}/> : <BookLockOutlineIcon {...iconProps}/>}
+            </ItemIcon>
+            <ItemCenter>
+                <ItemTitle>{playbook.title}</ItemTitle>
+                <ItemSubTitle>
+                    <span>{playbook.last_run_at === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.last_run_at).toRelative()})}</span>
+                    <Dot/>
+                    <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.active_runs})}</span>
+                </ItemSubTitle>
+            </ItemCenter>
+            <ButtonWrappper className='modal-list-cta'>
+                {hasPermission ? (
+                    <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
+                ) : (
+                    <SecondaryButton >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
+                )}
+            </ButtonWrappper>
+        </PlaybookItem>
     );
 };
 
@@ -175,10 +204,12 @@ const Group = styled.div`
     padding: 0;
 `;
 
-const Item = styled.div`
+const PlaybookItem = styled.div<{hasPermission: boolean}>`
     display: flex;
     flex-direction: row;
-    cursor: pointer;
+    ${(props) => props.hasPermission && css`
+        cursor: pointer;
+    `};
     padding: 10px 0;
     margin-right: 10px;
     border-radius: 4px;
@@ -249,4 +280,9 @@ const Plus = styled(PlusIcon)`
 const ClipboardSvg = styled(ClipboardChecklistSvg)`
     height:150px;
     width:150px;
+`;
+
+const LoadingContainer = styled(Container)`
+    justify-content: center;
+    align-items: center;
 `;

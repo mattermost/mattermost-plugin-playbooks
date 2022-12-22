@@ -3,14 +3,19 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    AutomationHeader,
+    AutomationLabel,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/playbook_edit/automation/styles';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 import {showPlaybookActionsModal} from 'src/actions';
 import {useLinkRunToExistingChannelEnabled} from 'src/hooks/general';
@@ -71,13 +76,15 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 <AutomationTitle
                     css={{alignSelf: 'flex-start'}}
                 >
-                    <ChannelModeRadio
-                        type='radio'
-                        disabled={archived}
-                        checked={playbook.channel_mode === 'link_existing_channel'}
-                        onChange={() => handleChannelModeChange('link_existing_channel')}
-                    />
-                    <div>{formatMessage({defaultMessage: 'Link to an existing channel'})}</div>
+                    <AutomationLabel disabled={archived}>
+                        <ChannelModeRadio
+                            type='radio'
+                            disabled={archived}
+                            checked={playbook.channel_mode === 'link_existing_channel'}
+                            onChange={() => handleChannelModeChange('link_existing_channel')}
+                        />
+                        <FormattedMessage defaultMessage='Link to an existing channel'/>
+                    </AutomationLabel>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <StyledChannelSelector
@@ -96,13 +103,15 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationHeader>}
             <AutomationHeader id={'create-new-channel'}>
                 <AutomationTitle css={{alignSelf: 'flex-start'}} >
-                    <ChannelModeRadio
-                        type='radio'
-                        disabled={archived}
-                        checked={playbook.channel_mode === 'create_new_channel'}
-                        onChange={() => handleChannelModeChange('create_new_channel')}
-                    />
-                    <div>{formatMessage({defaultMessage: 'Create a run channel'})}</div>
+                    <AutomationLabel disabled={archived}>
+                        <ChannelModeRadio
+                            type='radio'
+                            disabled={archived}
+                            checked={playbook.channel_mode === 'create_new_channel'}
+                            onChange={() => handleChannelModeChange('create_new_channel')}
+                        />
+                        <FormattedMessage defaultMessage='Create a run channel'/>
+                    </AutomationLabel>
                 </AutomationTitle>
                 <HorizontalSplit>
                     <VerticalSplit>

@@ -23,45 +23,49 @@ import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
-import {
-    RetrospectiveFirstReminder,
-    RetrospectiveReminder,
-} from 'src/components/retrospective_reminder_posts';
+import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
 import {pluginId} from 'src/manifest';
-import {
-    ChannelHeaderButton,
-    ChannelHeaderText,
-    ChannelHeaderTooltip,
-} from 'src/components/channel_header';
+import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings, showChannelActionsModal, publishTemplates,
+    actionSetGlobalSettings,
+    publishTemplates,
+    setToggleRHSAction,
+    showChannelActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
     handleReconnect,
-    handleWebsocketPlaybookRunUpdated,
-    handleWebsocketPlaybookRunCreated,
-    handleWebsocketPlaybookCreated,
+    handleWebsocketChannelUpdated,
+    handleWebsocketChannelViewed,
     handleWebsocketPlaybookArchived,
+    handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookRestored,
+    handleWebsocketPlaybookRunCreated,
+    handleWebsocketPlaybookRunUpdated,
+    handleWebsocketPostEditedOrDeleted,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
-    handleWebsocketPostEditedOrDeleted,
-    handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
 } from 'src/websocket_events';
 import {
-    WEBSOCKET_PLAYBOOK_RUN_UPDATED,
-    WEBSOCKET_PLAYBOOK_RUN_CREATED,
-    WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_ARCHIVED,
+    WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_RESTORED,
+    WEBSOCKET_PLAYBOOK_RUN_CREATED,
+    WEBSOCKET_PLAYBOOK_RUN_UPDATED,
 } from 'src/types/websocket_events';
-import {fetchGlobalSettings, fetchSiteStats, getMyTopPlaybooks, getTeamTopPlaybooks, notifyConnect, setSiteUrl} from 'src/client';
+import {
+    fetchGlobalSettings,
+    fetchSiteStats,
+    getMyTopPlaybooks,
+    getTeamTopPlaybooks,
+    notifyConnect,
+    setSiteUrl,
+} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
