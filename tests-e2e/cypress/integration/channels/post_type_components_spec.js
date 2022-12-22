@@ -143,7 +143,6 @@ describe('channels > post type components', () => {
                 // * Assert telemetry data
                 cy.wait('@telemetry').wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'channels_rhs_rundetails', type: 'page'},
                     {
                         name: 'run_status_update',
                         type: 'page',
