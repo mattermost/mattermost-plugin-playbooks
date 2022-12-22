@@ -5,7 +5,7 @@ import React from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {ArrowDownIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import {FormattedMessage} from 'react-intl';
 
@@ -108,15 +108,15 @@ const ListSection = styled.div`
 
 const RHSHome = () => {
     const dispatch = useDispatch();
-    const currentTeam = useSelector(getCurrentTeam);
-    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(currentTeam.id || '');
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(currentTeamId || '');
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
 
-        dispatch(displayPlaybookCreateModal({startingTemplate: template?.title, startingTeamId: currentTeam.id}));
+        dispatch(displayPlaybookCreateModal({startingTemplate: template?.title, startingTeamId: currentTeamId}));
     };
 
     const headerContent = (
