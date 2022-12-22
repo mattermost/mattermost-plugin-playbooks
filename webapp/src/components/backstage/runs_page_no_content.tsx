@@ -89,9 +89,7 @@ const NoContentPage = () => {
     const dispatch = useDispatch();
     const teamId = useSelector(getCurrentTeamId);
     const [playbookExist, setPlaybookExist] = useState(false);
-    const [,,
-        {setSelectedPlaybook},
-    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+    const {setSelectedPlaybook} = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
 

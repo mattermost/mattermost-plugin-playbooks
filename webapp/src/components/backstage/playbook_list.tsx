@@ -120,11 +120,11 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const content = useRef<JSX.Element | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
 
-    const [
+    const {
         playbooks,
-        {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
-    ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
+        isLoading, totalCount, params,
+        setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks,
+    } = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
