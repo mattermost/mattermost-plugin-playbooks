@@ -586,11 +586,11 @@ describe('playbooks > start a run', () => {
                 // # Type run name that exceeds maximum length
                 cy.findByTestId('run-name-input').type('a'.repeat(RUN_NAME_MAX_LENGTH + 1));
 
-                // # Click start button
-                cy.findByTestId('modal-confirm-button').click();
-
                 // * Assert error shown and contains maximum length in message
                 cy.findByTestId('run-name-error').should('contain', RUN_NAME_MAX_LENGTH);
+
+                // * Assert start button is disabled
+                cy.findByTestId('modal-confirm-button').should('have.attr', 'disabled');
 
                 // # Delete last character via backspace
                 cy.findByTestId('run-name-input').type('{backspace}');

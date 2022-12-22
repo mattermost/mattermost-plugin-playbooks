@@ -57,7 +57,6 @@ const RunPlaybookNewModal = ({
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
-    const [runNameError, setRunNameError] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
@@ -105,26 +104,14 @@ const RunPlaybookNewModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
-    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
+    const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
 
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
         modalProps.onHide?.();
     };
-
-    const onRunNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (runNameError && e.target.value.length <= RUN_NAME_MAX_LENGTH) {
-            setRunNameError('');
-        }
-        setRunName(e.target.value);
-    };
     const onSubmit = () => {
         if (!playbook || !selectedPlaybookId) {
-            return;
-        }
-
-        if (runName.length > RUN_NAME_MAX_LENGTH) {
-            setRunNameError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
             return;
         }
 
@@ -189,18 +176,10 @@ const RunPlaybookNewModal = ({
                 {...modalProps}
             >
                 <Body>
-                    <RunNameLabel invalid={Boolean(runNameError)}>
-                        {formatMessage({defaultMessage: 'Run name'})}{runNameError ? ' *' : ''}
-                    </RunNameLabel>
-                    <BaseInput
-                        invalid={Boolean(runNameError)}
-                        data-testid={'run-name-input'}
-                        autoFocus={true}
-                        type={'text'}
-                        value={runName}
-                        onChange={onRunNameChange}
+                    <RunNameSection
+                        runName={runName}
+                        onSetRunName={setRunName}
                     />
-                    {runNameError && <ErrorMessage data-testid={'run-name-error'}>{runNameError}</ErrorMessage>}
 
                     <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
                     <BaseTextArea
@@ -269,6 +248,42 @@ const RunPlaybookNewModal = ({
             </Body>
         </StyledGenericModal>
     );
+};
+
+type runNameProps = {
+    runName: string;
+    onSetRunName: (name: string) => void;
+};
+
+const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
+    const {formatMessage} = useIntl();
+    const [error, setError] = useState('');
+
+    const onRunNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (error && value.length <= RUN_NAME_MAX_LENGTH) {
+            setError('');
+        } else if (!error && value.length > RUN_NAME_MAX_LENGTH) {
+            setError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
+        }
+
+        onSetRunName(value);
+    };
+
+    return (<>
+        <RunNameLabel invalid={Boolean(error)}>
+            {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
+        </RunNameLabel>
+        <BaseInput
+            invalid={Boolean(error)}
+            data-testid={'run-name-input'}
+            autoFocus={true}
+            type={'text'}
+            value={runName}
+            onChange={onRunNameChange}
+        />
+        {error && <ErrorMessage data-testid={'run-name-error'}>{error}</ErrorMessage>}
+    </>);
 };
 
 type channelProps = {
