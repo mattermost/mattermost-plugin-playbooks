@@ -805,5 +805,12 @@
     "zscc/+": "Jest {outstanding, plural, =1 {# zaległe zadanie} other {# zaległych zadań}}. Czy na pewno chcesz zakończyć uruchomienie <i>{runName}</i> dla wszystkich uczestników?",
     "bEoDyV": "@{authorUsername} zamieścił aktualizację dla [{runName}]({overviewURL})",
     "ZSa3cf": "@{targetUsername}, proszę podać aktualizację statusu dla [{runName}]({playbookURL}).",
-    "LKu0ex": "Czy na pewno chcesz zakończyć uruchomienie <i>{runName}</i> dla wszystkich uczestników?"
+    "LKu0ex": "Czy na pewno chcesz zakończyć uruchomienie <i>{runName}</i> dla wszystkich uczestników?",
+    "uCS6py": "Nie masz uprawnień do oglądania tego playbooka",
+    "l3QwVw": "Wybierz kanał",
+    "ksG35Q": "Nie masz uprawnień do tworzenia playbooków w tej przestrzeni roboczej.",
+    "YKLHXL": "Wyświetlanie uruchomień w toku",
+    "QvEO6m": "Nie masz uprawnień do edycji tego uruchomienia",
+    "QJTSaI": "Podlinkuj uruchomienie do innego kanału",
+    "BiQjuS": "Uruchomienie przeniesione do {channel}"
 }
