@@ -307,19 +307,27 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
-Cypress.Commands.add('expectTelemetryToBe', (items) => {
-    // # assert telemetry data
+Cypress.Commands.add('expectTelemetryToBe', (items, {strict} = {strict: false}) => {
     cy.get('@telemetry.all').then((xhrs) => {
-        expect(xhrs.length).to.eq(items.length);
+        if (strict) {
+            expect(xhrs.length).to.eq(items.length);
+        }
         items.forEach((item, index) => {
-            // always valida name and type
-            expect(xhrs[index].request.body.name).to.eq(item.name);
-            expect(xhrs[index].request.body.type).to.eq(item.type);
-
-            // just validate properties if they are passed (and just the ones passed)
+            const matches = xhrs.filter((xhr, pos) =>
+                xhr.request.body.name === item.name &&
+                xhr.request.body.type === item.type &&
+                (!strict || index === pos)
+            );
+            if (matches.length === 0) {
+                expect.fail(`No telemetry event found for ${item.name} of type ${item.type}`);
+            }
+            if (matches.length > 1) {
+                expect.fail(`Unsupported multiple telemetry event found for ${item.name} of type ${item.type}`);
+            }
+            const xhr = matches[0];
             if (item.properties) {
                 for (const [key, value] of Object.entries(item.properties)) {
-                    expect(xhrs[index].request.body.properties[key]).to.eq(value, `Property ${key} does not match for event ${item.name}`);
+                    expect(xhr.request.body.properties[key]).to.eq(value, `Property ${key} does not match for event ${item.name}`);
                 }
             }
         });
