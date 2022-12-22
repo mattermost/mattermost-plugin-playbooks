@@ -128,8 +128,8 @@ describe('channels > post type components', () => {
             });
 
             cy.getLastPostId().then((postId) => {
-                // # Intercept all calls to telemetry
-                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+                // # intercepts telemetry
+                cy.interceptTelemetry();
 
                 // # Leave the playbook run channel
                 cy.uiLeaveChannel();
@@ -140,15 +140,19 @@ describe('channels > post type components', () => {
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                // * assert telemetry pageview
-                // * Some params will be empty since some data is not available in the permalink context
-                cy.wait('@telemetry').then((interception) => {
-                    expect(interception.request.body.name).to.eq('run_status_update');
-                    expect(interception.request.body.type).to.eq('page');
-                    expect(interception.request.body.properties.post_id).to.eq(postId);
-                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
-                    expect(interception.request.body.properties.channel_type).to.eq('');
-                });
+                // * Assert telemetry data
+                cy.wait('@telemetry').wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'channels_rhs_rundetails', type: 'page'},
+                    {
+                        name: 'run_status_update',
+                        type: 'page',
+                        properties: {
+                            post_id: postId,
+                            playbook_run_id: testPlaybookRun.id,
+                        },
+                    },
+                ]);
 
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text
