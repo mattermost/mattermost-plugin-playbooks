@@ -90,6 +90,59 @@ describe('playbooks > start a run', () => {
             });
         }
     };
+    describe('from playbook list', () => {
+        it('defaults', () => {
+            // # Visit playbook list
+            cy.visit('/playbooks/playbooks');
+
+            // # Click "Run" button on the first playbook
+            cy.findAllByTestId('playbook-item').first().within(() => {
+                cy.findByText('Run').click();
+            });
+
+            // # intercepts telemetry
+            cy.interceptTelemetry();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Wait the modal to render
+                cy.wait(500);
+
+                // * Assert template name is filled
+                cy.findByTestId('run-name-input').clear().type('Run name');
+
+                // # Click start button
+                cy.findByTestId('modal-confirm-button').click();
+            });
+
+            // * Assert telemetry data
+            cy.wait('@telemetry');
+            cy.expectTelemetryToBe([
+                {name: 'run_details', type: 'page'},
+                {
+                    name: 'playbookrun_create',
+                    type: 'track',
+                    properties: {
+                        place: 'backstage_playbook_list',
+                        playbookId: testPlaybook.id,
+                        channelMode: 'create_new_channel',
+                        hasPlaybookChanged: false,
+                        hasNameChanged: true,
+                        hasSummaryChanged: false,
+                        hasChannelModeChanged: false,
+                        hasChannelIdChanged: false,
+                        hasPublicChanged: false,
+                    },
+                },
+            ]);
+
+            // * Verify we are on RDP
+            cy.url().should('include', '/playbooks/runs/');
+            cy.url().should('include', '?from=run_modal');
+
+            // * Verify run name
+            cy.get('h1').contains('Run name');
+        });
+    });
 
     describe('from playbook editor', () => {
         describe('pbe configured as create new channel', () => {
@@ -102,6 +155,9 @@ describe('playbooks > start a run', () => {
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
+
+                // # intercepts telemetry
+                cy.interceptTelemetry();
 
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
@@ -116,6 +172,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'create_new_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: false,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -138,6 +215,9 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
+                // # intercepts telemetry
+                cy.interceptTelemetry();
+
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -155,6 +235,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'create_new_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: true,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -177,6 +278,9 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
+                // # intercepts telemetry
+                cy.interceptTelemetry();
+
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -196,6 +300,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: true,
+                            hasChannelIdChanged: true,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -223,6 +348,9 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
+                // # intercepts telemetry
+                cy.interceptTelemetry();
+
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -242,6 +370,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -270,6 +419,9 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
+                // # intercepts telemetry
+                cy.interceptTelemetry();
+
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -292,6 +444,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'link_existing_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: false,
+                            hasChannelIdChanged: true,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -320,6 +493,9 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
+                // # intercepts telemetry
+                cy.interceptTelemetry();
+
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -333,6 +509,27 @@ describe('playbooks > start a run', () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
+
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToBe([
+                    {name: 'run_details', type: 'page'},
+                    {
+                        name: 'playbookrun_create',
+                        type: 'track',
+                        properties: {
+                            place: 'backstage_playbook_editor',
+                            playbookId: testPlaybook.id,
+                            channelMode: 'create_new_channel',
+                            hasPlaybookChanged: false,
+                            hasNameChanged: true,
+                            hasSummaryChanged: false,
+                            hasChannelModeChanged: true,
+                            hasChannelIdChanged: false,
+                            hasPublicChanged: false,
+                        },
+                    },
+                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');

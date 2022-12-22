@@ -69,7 +69,7 @@ export interface RunListOptions {
 interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void;
-    onRunCreated: (runID: string, channelId: string) => void;
+    onRunCreated: (runID: string, channelId: string, statsData: object) => void;
     onLinkRunToChannel: () => void;
     getMore: () => Promise<any>;
     hasMore: boolean;
