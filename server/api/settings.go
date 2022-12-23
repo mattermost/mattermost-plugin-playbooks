@@ -6,22 +6,21 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 )
 
 // SettingsHandler is the API handler.
 type SettingsHandler struct {
 	*ErrorHandler
-	pluginAPI *pluginapi.Client
-	config    config.Service
+	api    playbooks.ServicesAPI
+	config config.Service
 }
 
 // NewSettingsHandler returns a new settings api handler
-func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, configService config.Service) *SettingsHandler {
+func NewSettingsHandler(router *mux.Router, api playbooks.ServicesAPI, configService config.Service) *SettingsHandler {
 	handler := &SettingsHandler{
 		ErrorHandler: &ErrorHandler{},
-		pluginAPI:    api,
+		api:          api,
 		config:       configService,
 	}
 

@@ -7,23 +7,22 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const maxItemsInRunsAndPlaybooksCategory = 1000
 
 type CategoryHandler struct {
 	*ErrorHandler
-	api                *pluginapi.Client
+	api                playbooks.ServicesAPI
 	categoryService    app.CategoryService
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
 }
 
-func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, categoryService app.CategoryService, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService) *CategoryHandler {
+func NewCategoryHandler(router *mux.Router, api playbooks.ServicesAPI, categoryService app.CategoryService, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService) *CategoryHandler {
 	handler := &CategoryHandler{
 		ErrorHandler:       &ErrorHandler{},
 		api:                api,

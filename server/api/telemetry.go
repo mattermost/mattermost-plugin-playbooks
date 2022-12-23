@@ -7,10 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 )
 
 // TelemetryHandler is the API handler.
@@ -23,14 +22,14 @@ type TelemetryHandler struct {
 	playbookTelemetry    app.PlaybookTelemetry
 	genericTelemetry     app.GenericTelemetry
 	botTelemetry         bot.Telemetry
-	pluginAPI            *pluginapi.Client
+	api                  playbooks.ServicesAPI
 }
 
 // NewTelemetryHandler Creates a new Plugin API handler.
 func NewTelemetryHandler(
 	router *mux.Router,
 	playbookRunService app.PlaybookRunService,
-	api *pluginapi.Client,
+	api playbooks.ServicesAPI,
 	playbookRunTelemetry app.PlaybookRunTelemetry,
 	playbookService app.PlaybookService,
 	playbookTelemetry app.PlaybookTelemetry,
@@ -46,7 +45,7 @@ func NewTelemetryHandler(
 		playbookTelemetry:    playbookTelemetry,
 		genericTelemetry:     genericTelemetry,
 		botTelemetry:         botTelemetry,
-		pluginAPI:            api,
+		api:                  api,
 		permissions:          permissions,
 	}
 

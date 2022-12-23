@@ -78,6 +78,7 @@ type ServicesAPI interface {
 
 	// License service
 	GetLicense() *mm_model.License
+	RequestTrialLicense(requesterID string, users int, termsAccepted bool, receiveEmailsAccepted bool) error
 
 	// FileInfoStore service
 	GetFileInfo(fileID string) (*mm_model.FileInfo, error)
@@ -124,4 +125,6 @@ type ServicesAPI interface {
 	//TODO:
 	OpenInteractiveDialog(dialog mm_model.OpenDialogRequest) error
 	Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error)
+	IsEnterpriseReady() bool
+	RegisterCommand(command *mm_model.Command) error
 }

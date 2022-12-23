@@ -7,22 +7,21 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type SignalHandler struct {
 	*ErrorHandler
-	api                   *pluginapi.Client
+	api                   playbooks.ServicesAPI
 	playbookRunService    app.PlaybookRunService
 	playbookService       app.PlaybookService
 	keywordsThreadIgnorer app.KeywordsThreadIgnorer
 }
 
-func NewSignalHandler(router *mux.Router, api *pluginapi.Client, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
+func NewSignalHandler(router *mux.Router, api playbooks.ServicesAPI, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
 	handler := &SignalHandler{
 		ErrorHandler:          &ErrorHandler{},
 		api:                   api,
@@ -72,7 +71,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	post, err := h.api.Post.GetPost(req.PostId)
+	post, err := h.api.GetPost(req.PostId)
 	if err != nil {
 		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, c.logger, w)
 		return
@@ -107,7 +106,7 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
 	}
-	post, err := h.api.Post.GetPost(postID)
+	post, err := h.api.GetPost(postID)
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
@@ -119,7 +118,7 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	if err := h.api.Post.DeletePost(req.PostId); err != nil {
+	if _, err := h.api.DeletePost(req.PostId); err != nil {
 		h.returnError("unable to delete original post", err, c.logger, w)
 		return
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
@@ -119,6 +120,7 @@ type playbooksProduct struct {
 	config               *config.ServiceImpl
 	playbookRunService   app.PlaybookRunService
 	playbookService      app.PlaybookService
+	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
 	categoryService      app.CategoryService
 	bot                  *bot.Bot
@@ -209,7 +211,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
-	// statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
+	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	playbooks.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
@@ -236,6 +238,123 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.licenseChecker,
 		playbooks.metricsService,
 	)
+
+	if err = scheduler.SetCallback(playbooks.playbookRunService.HandleReminder); err != nil {
+		logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
+	}
+	if err = scheduler.Start(); err != nil {
+		logrus.WithError(err).Error("JobOnceScheduler could not start")
+	}
+
+	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
+	mutex, err := cluster.NewMutex(serviceAdapter, "IR_dbMutex")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed creating cluster mutex")
+	}
+	mutex.Lock()
+	if err = sqlStore.RunMigrations(); err != nil {
+		mutex.Unlock()
+		return nil, errors.Wrapf(err, "failed to run migrations")
+	}
+	mutex.Unlock()
+
+	playbooks.permissions = app.NewPermissionsService(
+		playbooks.playbookService,
+		playbooks.playbookRunService,
+		serviceAdapter,
+		playbooks.config,
+		playbooks.licenseChecker,
+	)
+
+	api.NewGraphQLHandler(
+		playbooks.handler.APIRouter,
+		playbooks.playbookService,
+		playbooks.playbookRunService,
+		playbooks.categoryService,
+		serviceAdapter,
+		playbooks.config,
+		playbooks.permissions,
+		playbookStore,
+		playbooks.licenseChecker,
+	)
+	api.NewPlaybookHandler(
+		playbooks.handler.APIRouter,
+		playbooks.playbookService,
+		serviceAdapter,
+		playbooks.config,
+		playbooks.permissions,
+	)
+	api.NewPlaybookRunHandler(
+		playbooks.handler.APIRouter,
+		playbooks.playbookRunService,
+		playbooks.playbookService,
+		playbooks.permissions,
+		playbooks.licenseChecker,
+		serviceAdapter,
+		playbooks.bot,
+		playbooks.config,
+	)
+	api.NewStatsHandler(
+		playbooks.handler.APIRouter,
+		serviceAdapter,
+		statsStore,
+		playbooks.playbookService,
+		playbooks.permissions,
+		playbooks.licenseChecker,
+	)
+	api.NewBotHandler(
+		playbooks.handler.APIRouter,
+		serviceAdapter, playbooks.bot,
+		playbooks.config,
+		playbooks.playbookRunService,
+		playbooks.userInfoStore,
+	)
+	api.NewTelemetryHandler(
+		playbooks.handler.APIRouter,
+		playbooks.playbookRunService,
+		serviceAdapter,
+		playbooks.telemetryClient,
+		playbooks.playbookService,
+		playbooks.telemetryClient,
+		playbooks.telemetryClient,
+		playbooks.telemetryClient,
+		playbooks.permissions,
+	)
+	api.NewSignalHandler(
+		playbooks.handler.APIRouter,
+		serviceAdapter,
+		playbooks.playbookRunService,
+		playbooks.playbookService,
+		keywordsThreadIgnorer,
+	)
+	api.NewSettingsHandler(
+		playbooks.handler.APIRouter,
+		serviceAdapter,
+		playbooks.config,
+	)
+	api.NewActionsHandler(
+		playbooks.handler.APIRouter,
+		playbooks.channelActionService,
+		serviceAdapter,
+		playbooks.permissions,
+	)
+	api.NewCategoryHandler(
+		playbooks.handler.APIRouter,
+		serviceAdapter,
+		playbooks.categoryService,
+		playbooks.playbookService,
+		playbooks.playbookRunService,
+	)
+
+	isTestingEnabled := false
+	flag := serviceAdapter.GetConfig().ServiceSettings.EnableTesting
+	if flag != nil {
+		isTestingEnabled = *flag
+	}
+
+	if err = command.RegisterCommands(serviceAdapter.RegisterCommand, isTestingEnabled); err != nil {
+		return nil, errors.Wrapf(err, "failed register commands")
+	}
 
 	return playbooks, nil
 }
@@ -365,6 +484,10 @@ func (pp *playbooksProduct) setProductServices(services map[product.ServiceKey]i
 func (pp *playbooksProduct) Start() error {
 	logrus.Warn("################ Playbooks product start ##################")
 
+	if err := pp.hooksService.RegisterHooks(playbooksProductName, pp); err != nil {
+		return fmt.Errorf("failed to register hooks: %w", err)
+	}
+
 	enableMetrics := pp.configService.Config().MetricsSettings.Enable
 	if enableMetrics != nil && *enableMetrics {
 		pp.metricsService = newMetricsInstance()
@@ -462,4 +585,20 @@ func (pp *playbooksProduct) getErrorCounterHandler() func(next http.Handler) htt
 			}
 		})
 	}
+}
+
+// ServeHTTP routes incoming HTTP requests to the plugin's REST API.
+func (pp *playbooksProduct) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	pp.handler.ServeHTTP(w, r)
+}
+
+//
+// These callbacks are called by the suite automatically
+//
+
+func (pp *playbooksProduct) OnConfigurationChange() error {
+	if pp.config == nil {
+		return nil
+	}
+	return pp.config.OnConfigurationChange()
 }

@@ -257,6 +257,10 @@ func (a *serviceAPIAdapter) GetLicense() *mm_model.License {
 	return a.api.licenseService.GetLicense()
 }
 
+func (a *serviceAPIAdapter) RequestTrialLicense(requesterID string, users int, termsAccepted bool, receiveEmailsAccepted bool) error {
+	return normalizeAppErr(a.api.licenseService.RequestTrialLicense(requesterID, users, termsAccepted, receiveEmailsAccepted))
+}
+
 //
 // FileInfoStore service.
 //
@@ -424,6 +428,16 @@ func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.Co
 	//TODO: add implementation
 	// pluginAPI.SlashCommand.Execute
 	return nil, nil
+}
+
+func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
+	//TODO: add implementation
+	return true
+}
+
+func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
+	//TODO: add implementation
+	return nil
 }
 
 // Ensure the adapter implements ServicesAPI.

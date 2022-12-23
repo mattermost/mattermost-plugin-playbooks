@@ -13,24 +13,23 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type BotHandler struct {
 	*ErrorHandler
-	pluginAPI          *pluginapi.Client
+	api                playbooks.ServicesAPI
 	poster             bot.Poster
 	config             config.Service
 	playbookRunService app.PlaybookRunService
 	userInfoStore      app.UserInfoStore
 }
 
-func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, config config.Service, playbookRunService app.PlaybookRunService, userInfoStore app.UserInfoStore) *BotHandler {
+func NewBotHandler(router *mux.Router, api playbooks.ServicesAPI, poster bot.Poster, config config.Service, playbookRunService app.PlaybookRunService, userInfoStore app.UserInfoStore) *BotHandler {
 	handler := &BotHandler{
 		ErrorHandler:       &ErrorHandler{},
-		pluginAPI:          api,
+		api:                api,
 		poster:             poster,
 		config:             config,
 		playbookRunService: playbookRunService,
@@ -62,7 +61,7 @@ func (h *BotHandler) notifyAdmins(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.poster.NotifyAdmins(payload.MessageType, userID, !h.pluginAPI.System.IsEnterpriseReady()); err != nil {
+	if err := h.poster.NotifyAdmins(payload.MessageType, userID, !h.api.IsEnterpriseReady()); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -70,8 +69,8 @@ func (h *BotHandler) notifyAdmins(c *Context, w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 }
 
-func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
-	if !pluginAPI.User.HasPermissionTo(userID, model.PermissionManageLicenseInformation) {
+func CanStartTrialLicense(userID string, api playbooks.ServicesAPI) error {
+	if !api.HasPermissionTo(userID, model.PermissionManageLicenseInformation) {
 		return errors.Wrap(app.ErrNoPermissions, "no permission to manage license information")
 	}
 
@@ -80,7 +79,7 @@ func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
 
 func (h *BotHandler) startTrial(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
-	if err := CanStartTrialLicense(userID, h.pluginAPI); err != nil {
+	if err := CanStartTrialLicense(userID, h.api); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to start a trial license", err)
 		return
 	}
@@ -113,7 +112,7 @@ func (h *BotHandler) startTrial(c *Context, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	originalPost, err := h.pluginAPI.Post.GetPost(requestData.PostId)
+	originalPost, err := h.api.GetPost(requestData.PostId)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -131,16 +130,16 @@ outer:
 		}
 	}
 	model.ParseSlackAttachment(originalPost, originalAttachments)
-	_ = h.pluginAPI.Post.UpdatePost(originalPost)
+	_, _ = h.api.UpdatePost(originalPost)
 
 	post := &model.Post{
 		Id: requestData.PostId,
 	}
 
-	if err := h.pluginAPI.System.RequestTrialLicense(requestData.UserId, int(users), termsAccepted, receiveEmailsAccepted); err != nil {
+	if err := h.api.RequestTrialLicense(requestData.UserId, int(users), termsAccepted, receiveEmailsAccepted); err != nil {
 		post.Message = "Trial license could not be retrieved. Visit [https://mattermost.com/trial/](https://mattermost.com/trial/) to request a license."
 
-		if postErr := h.pluginAPI.Post.UpdatePost(post); postErr != nil {
+		if _, postErr := h.api.UpdatePost(post); postErr != nil {
 			logrus.WithError(postErr).WithField("post_id", post.Id).Error("unable to edit the admin notification post")
 		}
 
@@ -157,7 +156,7 @@ outer:
 	}
 	model.ParseSlackAttachment(post, attachments)
 
-	if err := h.pluginAPI.Post.UpdatePost(post); err != nil {
+	if _, err := h.api.UpdatePost(post); err != nil {
 		logrus.WithError(err).WithField("post_id", post.Id).Error("unable to edit the admin notification post")
 	}
 

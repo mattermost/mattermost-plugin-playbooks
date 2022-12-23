@@ -6,29 +6,28 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/pkg/errors"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type StatsHandler struct {
 	*ErrorHandler
-	pluginAPI       *pluginapi.Client
+	api             playbooks.ServicesAPI
 	statsStore      *sqlstore.StatsStore
 	playbookService app.PlaybookService
 	permissions     *app.PermissionsService
 	licenseChecker  app.LicenseChecker
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api playbooks.ServicesAPI, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
 	handler := &StatsHandler{
 		ErrorHandler:    &ErrorHandler{},
-		pluginAPI:       api,
+		api:             api,
 		statsStore:      statsStore,
 		playbookService: playbookService,
 		permissions:     permissions,
@@ -147,7 +146,7 @@ func (h *StatsHandler) playbookSiteStats(c *Context, w http.ResponseWriter, r *h
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	// user must have right to access analytics
-	if !h.pluginAPI.User.HasPermissionTo(userID, model.PermissionGetAnalytics) {
+	if !h.api.HasPermissionTo(userID, model.PermissionGetAnalytics) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "user is not allowed to get site stats", nil)
 		return
 	}
