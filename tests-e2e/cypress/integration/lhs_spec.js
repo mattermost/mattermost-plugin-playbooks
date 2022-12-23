@@ -7,6 +7,7 @@
 // ***************************************************************
 
 import {stubClipboard} from '../utils';
+import {waitToLoadLHS} from '../integration/runs/rdp_main_header_spec.js';
 
 describe('lhs', () => {
     let testTeam;
@@ -142,7 +143,7 @@ describe('lhs', () => {
         });
 
         it('can copy link', () => {
-            cy.wait('@gqlPlaybookLHS');
+            waitToLoadLHS(testUser.username);
             stubClipboard().as('clipboard');
 
             // # Click on Copy link menu item

@@ -863,7 +863,7 @@ describe('runs > run details page > header', () => {
     });
 });
 
-const waitToLoadLHS = (username) => {
+export const waitToLoadLHS = (username) => {
     // # Intercept these graphQL requests for wait()'s
     // # that help ensure rendering has finished.
     cy.gqlInterceptQuery('PlaybookLHS');
