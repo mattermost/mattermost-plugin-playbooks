@@ -812,5 +812,11 @@
     "YKLHXL": "Wyświetlanie uruchomień w toku",
     "QvEO6m": "Nie masz uprawnień do edycji tego uruchomienia",
     "QJTSaI": "Podlinkuj uruchomienie do innego kanału",
-    "BiQjuS": "Uruchomienie przeniesione do {channel}"
+    "BiQjuS": "Uruchomienie przeniesione do {channel}",
+    "k7Nzfi": "Wyłącz zaproszenie",
+    "fwW0T1": "Potwierdzenie usunięcia wstępnie przypisanych członków",
+    "TP/O/b": "Usuń użytkownika",
+    "IE2BzH": "Istnieją użytkownicy, którzy są wstępnie przypisani do jednego lub więcej zadań. Wyłączenie zaproszeń wyczyści <strong>wszystkie wstępnie przypisane zadania</strong>.{br}{br}Czy na pewno chcesz wyłączyć zaproszenia?",
+    "DQn9Uj": "Użytkownik <i>{name}</i> jest wstępnie przypisany do jednego lub więcej zadań. Brak automatycznego zapraszania tego użytkownika spowoduje usunięcie jego wstępnych przydziałów.{br}{br}Czy na pewno chcesz przestać zapraszać tego użytkownika jako członka uruchomienia?",
+    "9w0mDI": "Potwierdzenie usunięcia wstępnie przydzielonego członka"
 }
