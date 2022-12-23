@@ -116,5 +116,69 @@
     {
         "id": "app.user.run.status_disable",
         "translation": "@{{.Username}}, [{{.RunName}}]({{.RunURL}}) için durum güncellemelerini devre dışı bıraktı"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Oyun zaman akışına ekle"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Zaman akışında görüntülenecek kısa açıklama"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "En fazla 64 karakter"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Özet"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Oyun zaman akışı ekle"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Senaryo oyunu"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Yeni görev ekle"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Görev ekle"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Ad"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Açıklama"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Senaryoyu oyuna"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Oyunu başlat"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Oyun adı"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Senaryo"
+    },
+    {
+        "id": "app.user.new_run.new_playbook",
+        "translation": "Kendi senaryonuzu oluşturmak için [buraya tıklayın]({{.RunURL}})."
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Sahibi** {{.Username}}"
     }
 ]
