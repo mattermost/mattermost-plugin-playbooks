@@ -26,28 +26,28 @@ describe('lhs', () => {
             cy.apiCreateUser().then(({user: viewer}) => {
                 testViewerUser = viewer;
                 cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
-            });
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
+                // # Login as testUser
+                cy.apiLogin(testUser);
 
-            // # Create a public playbook
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Public Playbook',
-                memberIDs: [],
-            }).then((playbook) => {
-                testPublicPlaybook = playbook;
-            });
+                // # Create a public playbook
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Public Playbook',
+                    memberIDs: [],
+                }).then((playbook) => {
+                    testPublicPlaybook = playbook;
+                });
 
-            // # Create a private playbook
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Private Playbook',
-                memberIDs: [],
-                public: false,
-            }).then((playbook) => {
-                testPrivatePlaybook = playbook;
+                // # Create a private playbook
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Private Playbook',
+                    memberIDs: [],
+                    public: false,
+                }).then((playbook) => {
+                    testPrivatePlaybook = playbook;
+                });
             });
         });
     });
