@@ -311,12 +311,7 @@ Cypress.Commands.add('expectTelemetryToContain', (items) => {
     cy.get('@telemetry.all').then((xhrs) => {
         items.forEach((item) => {
             const matches = xhrs.filter((xhr) => xhr.request.body.name === item.name && xhr.request.body.type === item.type);
-            if (matches.length === 0) {
-                expect.fail(`No telemetry event found for ${item.name} of type ${item.type}`);
-            }
-            if (matches.length > 1) {
-                expect.fail(`Unsupported multiple telemetry event found for ${item.name} of type ${item.type}`);
-            }
+            expect(matches).to.have.lengthOf(1, `Unsupported number of matches (${matches.length} != 1) telemetry event found for ${item.name} of type ${item.type}`);
             const xhr = matches[0];
             if (item.properties) {
                 for (const [key, value] of Object.entries(item.properties)) {
