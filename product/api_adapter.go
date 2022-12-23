@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -306,6 +307,7 @@ func (a *serviceAPIAdapter) GetConfig() *mm_model.Config {
 	return cfg
 }
 
+// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 	finalConfig := make(map[string]any)
 
@@ -333,6 +335,7 @@ func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 	return nil
 }
 
+// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) SavePluginConfig(pluginConfig map[string]any) error {
 	cfg := a.GetConfig()
 	cfg.PluginSettings.Plugins[a.manifest.Id] = pluginConfig
@@ -425,6 +428,7 @@ func (a *serviceAPIAdapter) GetDiagnosticID() string {
 	return a.api.systemService.GetDiagnosticId()
 }
 
+// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) GetServerVersion() string {
 	return model.CurrentVersion
 }
@@ -473,13 +477,14 @@ func (a *serviceAPIAdapter) OpenInteractiveDialog(dialog model.OpenDialogRequest
 
 func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error) {
 	//TODO: add implementation
-	// pluginAPI.SlashCommand.Execute
+	// pluginAPI.SlashCommand.Execute (api.ExecuteSlashCommand)
 	return nil, nil
 }
 
+// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
-	//TODO: add implementation
-	return true
+	result, _ := strconv.ParseBool(model.BuildEnterpriseReady)
+	return result
 }
 
 func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
