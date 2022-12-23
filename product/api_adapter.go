@@ -7,9 +7,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	mmapp "github.com/mattermost/mattermost-server/v6/app"
@@ -44,13 +46,16 @@ type serviceAPIAdapter struct {
 	api    *playbooksProduct
 	ctx    *request.Context
 	server *mmapp.Server
+
+	manifest *model.Manifest
 }
 
-func newServiceAPIAdapter(api *playbooksProduct, server *mmapp.Server) *serviceAPIAdapter {
+func newServiceAPIAdapter(api *playbooksProduct, server *mmapp.Server, manifest *model.Manifest) *serviceAPIAdapter {
 	return &serviceAPIAdapter{
-		api:    api,
-		ctx:    request.EmptyContext(api.logger),
-		server: server,
+		api:      api,
+		ctx:      request.EmptyContext(api.logger),
+		server:   server,
+		manifest: manifest,
 	}
 }
 
@@ -295,7 +300,45 @@ func (a *serviceAPIAdapter) GetCloudLimits() (*mm_model.ProductLimits, error) {
 //
 
 func (a *serviceAPIAdapter) GetConfig() *mm_model.Config {
-	return a.api.configService.Config()
+	cfg := a.api.configService.Config().Clone()
+	cfg.Sanitize()
+
+	return cfg
+}
+
+func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
+	finalConfig := make(map[string]any)
+
+	// First set final config to defaults
+	if a.manifest.SettingsSchema != nil {
+		for _, setting := range a.manifest.SettingsSchema.Settings {
+			finalConfig[strings.ToLower(setting.Key)] = setting.Default
+		}
+	}
+
+	// If we have settings given we override the defaults with them
+	for setting, value := range a.api.configService.Config().PluginSettings.Plugins[playbooksProductID] {
+		finalConfig[strings.ToLower(setting)] = value
+	}
+
+	pluginSettingsJsonBytes, err := json.Marshal(finalConfig)
+	if err != nil {
+		logrus.WithError(err).Error("Error marshaling config for plugin", mlog.Err(err))
+		return nil
+	}
+	err = json.Unmarshal(pluginSettingsJsonBytes, dest)
+	if err != nil {
+		logrus.WithError(err).Error("Error unmarshaling config for plugin", mlog.Err(err))
+	}
+	return nil
+}
+
+func (a *serviceAPIAdapter) SavePluginConfig(pluginConfig map[string]any) error {
+	cfg := a.GetConfig()
+	cfg.PluginSettings.Plugins[a.manifest.Id] = pluginConfig
+	_, _, err := a.api.configService.SaveConfig(cfg, true)
+
+	return normalizeAppErr(err)
 }
 
 //
@@ -380,6 +423,10 @@ func (a *serviceAPIAdapter) DriverName() string {
 
 func (a *serviceAPIAdapter) GetDiagnosticID() string {
 	return a.api.systemService.GetDiagnosticId()
+}
+
+func (a *serviceAPIAdapter) GetServerVersion() string {
+	return model.CurrentVersion
 }
 
 //

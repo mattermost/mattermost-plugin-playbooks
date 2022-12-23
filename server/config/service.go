@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/product/adapters"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/model"
 )
@@ -15,8 +14,7 @@ const npsPluginID = "com.mattermost.nps"
 
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
-	api              playbooks.ServicesAPI
-	pluginAPIAdapter *adapters.PluginAPIAdapter
+	api playbooks.ServicesAPI
 
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
@@ -33,17 +31,16 @@ type ServiceImpl struct {
 }
 
 // NewConfigService Creates a new ServiceImpl struct.
-func NewConfigService(api playbooks.ServicesAPI, pluginAPIAdapter *adapters.PluginAPIAdapter, manifest *model.Manifest) *ServiceImpl {
+func NewConfigService(api playbooks.ServicesAPI, manifest *model.Manifest) *ServiceImpl {
 	c := &ServiceImpl{
 		manifest: manifest,
 	}
 	c.api = api
-	c.pluginAPIAdapter = pluginAPIAdapter
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
 
 	// LoadPluginConfiguration never returns an error, so ignore it.
-	_ = pluginAPIAdapter.LoadPluginConfiguration(c.configuration)
+	_ = api.LoadPluginConfiguration(c.configuration)
 
 	return c
 }
@@ -78,7 +75,7 @@ func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Unlock()
 
 	if !reflect.DeepEqual(oldStorableConfig, newStorableConfig) {
-		if appErr := c.pluginAPIAdapter.SavePluginConfig(newStorableConfig); appErr != nil {
+		if appErr := c.api.SavePluginConfig(newStorableConfig); appErr != nil {
 			return errors.New(appErr.Error())
 		}
 	}
@@ -118,7 +115,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	var configuration = new(Configuration)
 
 	// Load the public configuration fields from the Mattermost server configuration.
-	if err := c.pluginAPIAdapter.LoadPluginConfiguration(configuration); err != nil {
+	if err := c.api.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrapf(err, "failed to load plugin configuration")
 	}
 
@@ -168,7 +165,7 @@ func (c *ServiceImpl) setConfiguration(configuration *Configuration) {
 // IsConfiguredForDevelopmentAndTesting returns true when the server has `EnableDeveloper` and
 // `EnableTesting` configuration settings enabled.
 func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
-	config := c.pluginAPIAdapter.GetConfig()
+	config := c.api.GetConfig()
 
 	return config != nil &&
 		config.ServiceSettings.EnableTesting != nil &&

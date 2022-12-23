@@ -92,6 +92,8 @@ type ServicesAPI interface {
 
 	// Config service
 	GetConfig() *mm_model.Config
+	LoadPluginConfiguration(dest any) error
+	SavePluginConfig(pluginConfig map[string]any) error
 
 	// Logger service
 	GetLogger() mlog.LoggerIFace
@@ -110,6 +112,7 @@ type ServicesAPI interface {
 
 	// System service
 	GetDiagnosticID() string
+	GetServerVersion() string
 
 	// Router service
 	RegisterRouter(sub *mux.Router)

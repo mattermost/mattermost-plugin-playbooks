@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/product/adapters"
 	"github.com/mattermost/mattermost-plugin-playbooks/product/pluginapi/cluster"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -146,8 +145,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	server := services[ServerKey].(*mmapp.Server)
 
-	serviceAdapter := newServiceAPIAdapter(playbooks, server)
-	pluginAPIAdapter := adapters.NewPluginAPIAdapter(playbooksProductID, playbooks.configService, manifest)
+	serviceAdapter := newServiceAPIAdapter(playbooks, server, manifest)
 	botID, err := serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
@@ -158,7 +156,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		return nil, errors.Wrapf(err, "failed to ensure bot")
 	}
 
-	playbooks.config = config.NewConfigService(serviceAdapter, pluginAPIAdapter, manifest)
+	playbooks.config = config.NewConfigService(serviceAdapter, manifest)
 	err = playbooks.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
@@ -174,7 +172,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
 		diagnosticID := serviceAdapter.GetDiagnosticID()
-		serverVersion := pluginAPIAdapter.GetServerVersion()
+		serverVersion := serviceAdapter.GetServerVersion()
 		playbooks.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed init telemetry client")
@@ -182,7 +180,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	}
 
 	toggleTelemetry := func() {
-		diagnosticsFlag := pluginAPIAdapter.GetConfig().LogSettings.EnableDiagnostics
+		diagnosticsFlag := serviceAdapter.GetConfig().LogSettings.EnableDiagnostics
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
