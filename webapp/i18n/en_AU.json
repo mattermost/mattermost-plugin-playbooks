@@ -803,5 +803,18 @@
     "ZSa3cf": "@{targetUsername}, please provide a status update for [{runName}]({playbookURL}).",
     "Wy3sw+": "{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}",
     "W1EKh5": "Create new playbook",
-    "LKu0ex": "Are you sure you want to finish the run <i>{runName}</i> for all participants?"
+    "LKu0ex": "Are you sure you want to finish the run <i>{runName}</i> for all participants?",
+    "QvEO6m": "You do not have permission to edit this run",
+    "DQn9Uj": "The user <i>{name}</i> is pre-assigned to one or more tasks. Not automatically inviting this user will clear their pre-assignments.{br}{br}Are you sure you want to stop inviting this user as a member of the run?",
+    "uCS6py": "You do not have permission to see this playbook",
+    "l3QwVw": "Select channel",
+    "ksG35Q": "You don't have permission to create playbooks in this workspace.",
+    "k7Nzfi": "Disable invitation",
+    "fwW0T1": "Confirm removal of pre-assigned members",
+    "YKLHXL": "View in progress runs",
+    "TP/O/b": "Remove user",
+    "QJTSaI": "Link run to a different channel",
+    "IE2BzH": "There are users that are pre-assigned to one or more tasks. Disabling invitations will clear <strong>all</strong> pre-assignments.{br}{br}Are you sure you want to disable invitations?",
+    "BiQjuS": "Run moved to {channel}",
+    "9w0mDI": "Confirm removal of pre-assigned member"
 }
