@@ -24,7 +24,7 @@ type Playbook struct {
 	ReminderTimerDefaultSeconds             int64                  `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs                          []string               `json:"invited_user_ids"`
 	InvitedGroupIDs                         []string               `json:"invited_group_ids"`
-	InvitedUsersEnabled                     bool                   `json:"invited_users_enabled"`
+	InviteUsersEnabled                      bool                   `json:"invite_users_enabled"`
 	DefaultOwnerID                          string                 `json:"default_owner_id"`
 	DefaultOwnerEnabled                     bool                   `json:"default_owner_enabled"`
 	BroadcastChannelIDs                     []string               `json:"broadcast_channel_ids"`

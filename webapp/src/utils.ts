@@ -1,6 +1,7 @@
 import {useState} from 'react';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {Checklist} from 'src/types/playbook';
 
 let idCounter = 0;
 
@@ -107,3 +108,17 @@ export type Resolvable<TVal> = ResolvableFunction<TVal> | TVal;
 export function resolve<TVal>(prop: Resolvable<TVal>, ...args: any): TVal {
     return typeof prop === 'function' ? (prop as ResolvableFunction<TVal>)(...args) : prop;
 }
+
+export function getDistinctAssignees(checklists: Checklist[]) {
+    return [
+        ...checklists.reduce((assignees, cl) => {
+            cl.items.forEach((ci) => {
+                if (ci.assignee_id) {
+                    assignees.add(ci.assignee_id);
+                }
+            });
+            return assignees;
+        }, new Set<string>()),
+    ];
+}
+

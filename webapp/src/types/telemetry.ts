@@ -31,6 +31,7 @@ export enum PlaybookRunViewTarget {
 export enum PlaybookRunEventTarget {
     RequestUpdateClick = 'playbookrun_request_update',
     Participate = 'playbookrun_participate',
+    Create = 'playbookrun_create',
     Leave = 'playbookrun_leave',
     Follow = 'playbookrun_follow',
     Unfollow = 'playbookrun_unfollow',

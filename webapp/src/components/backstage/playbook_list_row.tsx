@@ -33,13 +33,20 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
-import {createPlaybookRun, playbookExportProps, telemetryEventForPlaybook} from 'src/client';
+import {
+    createPlaybookRun,
+    playbookExportProps,
+    telemetryEvent,
+    telemetryEventForPlaybook,
+} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
+
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -146,9 +153,10 @@ const PlaybookListRow = (props: Props) => {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
             if (isLinkRunToExistingChannelEnabled) {
                 dispatch(openPlaybookRunNewModal({
-                    onRunCreated: (runId, channelId) => {
+                    onRunCreated: (runId, channelId, statsData) => {
                         navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                         refreshLHS();
+                        telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_list'});
                     },
                     playbookId: props.playbook.id,
                     teamId: team.id,

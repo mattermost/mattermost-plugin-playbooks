@@ -138,7 +138,7 @@ type newRunModalProps = {
     playbookId?: string,
     triggerChannelId?: string,
     teamId: string,
-    onRunCreated: (runId: string, channelId: string) => void,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 };
 
 export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
