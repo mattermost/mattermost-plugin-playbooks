@@ -8,7 +8,7 @@ import {Store} from 'src/types/store';
 import {promptUpdateStatus, setClientId, toggleRHS} from 'src/actions';
 import {inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 
-import {fetchPlaybookRunsForChannelByUser, postEphemeralPost} from './client';
+import {fetchPlaybookRunsForChannelByUser} from './client';
 
 type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};
 
@@ -34,21 +34,18 @@ export function makeSlashCommandHook(store: Store) {
                 const runNumber = message.substring(16);
                 const multipleRuns = playbookRuns?.length > 1;
                 if (multipleRuns && runNumber === '') {
-                    postEphemeralPost(currentChannel, 'Command expects one argument: the run number.');
-                    return {};
+                    return {message: inMessage, args};
                 }
 
                 let run = 0;
                 if (multipleRuns) {
                     run = parseInt(runNumber, 10);
                     if (isNaN(run)) {
-                        postEphemeralPost(currentChannel, 'Error parsing the first argument. Must be a number.');
-                        return {};
+                        return {message: inMessage, args};
                     }
 
                     if (run < 0 || run >= playbookRuns.length) {
-                        postEphemeralPost(currentChannel, 'Invalid run number.');
-                        return {};
+                        return {message: inMessage, args};
                     }
                 }
 

@@ -93,7 +93,6 @@ func NewPlaybookRunHandler(
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
 	channelRouter.HandleFunc("", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
 	channelRouter.HandleFunc("/runs", withContext(handler.getPlaybookRunsForChannelByUser)).Methods(http.MethodGet)
-	channelRouter.HandleFunc("/ephemeral", withContext(handler.postEphemeralPost)).Methods(http.MethodPost)
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
 	checklistsRouter.HandleFunc("", withContext(handler.addChecklist)).Methods(http.MethodPost)
@@ -1168,16 +1167,6 @@ func (h *PlaybookRunHandler) getPlaybookRunsForChannelByUser(c *Context, w http.
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
 			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
 	}
-	if len(playbookRuns) == 0 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
-			errors.Errorf("playbook run for channel id %s not found", channelID))
-		return
-	}
-
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
 
 	ReturnJSON(w, playbookRuns, http.StatusOK)
 }
@@ -1736,30 +1725,6 @@ func (h *PlaybookRunHandler) postPlaybookRunCreatedMessage(playbookRun *app.Play
 	h.poster.EphemeralPost(playbookRun.OwnerUserID, channelID, post)
 
 	return nil
-}
-
-func (h *PlaybookRunHandler) postEphemeralPost(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	channelID := vars["channel_id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var data struct {
-		Message string `json:"message"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal new message", err)
-		return
-	}
-
-	if !app.CanPostToChannel(userID, channelID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to channel", nil)
-		return
-	}
-
-	post := &model.Post{
-		Message: data.Message,
-	}
-	h.poster.EphemeralPost(userID, channelID, post)
 }
 
 func (h *PlaybookRunHandler) updateRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {

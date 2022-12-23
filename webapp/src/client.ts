@@ -175,17 +175,6 @@ export async function fetchPlaybookRunsForChannelByUser(channelId: string) {
     return data as PlaybookRun[];
 }
 
-export async function postEphemeralPost(channelId: string, message: string) {
-    try {
-        return await doPost(`${apiUrl}/runs/channel/${channelId}/ephemeral`,
-            JSON.stringify({
-                message,
-            }));
-    } catch (error) {
-        return {error};
-    }
-}
-
 export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
     const data = await doGet(`${apiUrl}/actions/channels/${channelId}/check-and-send-message-on-join`);
     return Boolean(data.viewed);
