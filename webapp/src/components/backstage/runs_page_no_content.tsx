@@ -7,17 +7,22 @@ import styled from 'styled-components';
 
 import {useDispatch, useSelector} from 'react-redux';
 
+import {GlobalState} from '@mattermost/types/store';
+
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
 
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
-import {startPlaybookRun} from 'src/actions';
-import {navigateToUrl} from 'src/browser_routing';
+import {openPlaybookRunNewModal} from 'src/actions';
+import {navigateToPluginUrl} from 'src/browser_routing';
 import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
+import {PrimaryButton} from 'src/components/assets/buttons';
 
-import {clientHasPlaybooks} from 'src/client';
+import {clientHasPlaybooks, telemetryEvent} from 'src/client';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 const NoContentContainer = styled.div`
     display: flex;
@@ -53,32 +58,6 @@ const NoContentDescription = styled.h5`
     text-align: left;
 `;
 
-const NoContentButton = styled.button`
-    display: inline-flex;
-    background: var(--button-bg);
-    color: var(--button-color);
-    border-radius: 4px;
-    border: 0px;
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 18px;
-    align-items: center;
-    padding: 14px 24px;
-    transition: all 0.15s ease-out;
-    align-self: center;
-    &:hover {
-        opacity: 0.8;
-    }
-    &:active  {
-        background: rgba(var(--button-bg-rgb), 0.8);
-    }
-    i {
-        font-size: 24px;
-    }
-`;
-
 const NoContentPlaybookRunSvgContainer = styled.div`
     @media (max-width: 1000px) {
         display: none;
@@ -87,11 +66,12 @@ const NoContentPlaybookRunSvgContainer = styled.div`
 
 const NoContentPage = () => {
     const dispatch = useDispatch();
-    const teamId = useSelector(getCurrentTeamId);
+    const teamId = useSelector<GlobalState, string>(getCurrentTeamId);
     const [playbookExist, setPlaybookExist] = useState(false);
     const {setSelectedPlaybook} = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
+    const refreshLHS = useLHSRefresh();
 
     // When the component is first mounted, determine if there are any
     // playbooks at all.If yes show Run playbook else create playbook
@@ -103,30 +83,34 @@ const NoContentPage = () => {
         checkForPlaybook();
     }, [teamId]);
 
-    const goToMattermost = () => {
-        navigateToUrl('');
-    };
     const handleClick = () => {
         if (playbookExist) {
-            goToMattermost();
-            dispatch(startPlaybookRun(teamId));
+            dispatch(openPlaybookRunNewModal({
+                teamId,
+                onRunCreated: (runId: string, channelId: string, statsData: object) => {
+                    navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                    refreshLHS();
+                    telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_runs_no_content'});
+                },
+            }));
         } else {
             create({teamId});
         }
     };
+
     return (
         <NoContentContainer>
             <NoContentTextContainer>
                 <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
                 <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
                 {(canCreatePlaybooks || playbookExist) &&
-                <NoContentButton
+                <PrimaryButton
                     className='mt-6'
                     onClick={handleClick}
                 >
                     <i className='icon-plus mr-2'/>
                     {playbookExist ? <FormattedMessage defaultMessage='Run playbook'/> : <FormattedMessage defaultMessage='Create playbook'/>}
-                </NoContentButton>
+                </PrimaryButton>
                 }
             </NoContentTextContainer>
             <NoContentPlaybookRunSvgContainer>
