@@ -32,12 +32,14 @@ export function makeSlashCommandHook(store: Store) {
                 store.dispatch(setClientId(clientId));
 
                 const runNumber = message.substring(16);
-                // no runs, propagate so server could handle this command and post ephemeral message 
+
+                // no runs, propagate so server could handle this command and post ephemeral message
                 if (!playbookRuns || playbookRuns?.length === 0) {
                     return {message: inMessage, args};
                 }
 
                 const multipleRuns = playbookRuns?.length > 1;
+
                 // multiple runs, mussing run number
                 if (multipleRuns && runNumber === '') {
                     return {message: inMessage, args};
@@ -46,6 +48,7 @@ export function makeSlashCommandHook(store: Store) {
                 let run = 0;
                 if (multipleRuns) {
                     run = parseInt(runNumber, 10);
+
                     // run number parsing error
                     if (isNaN(run)) {
                         return {message: inMessage, args};
