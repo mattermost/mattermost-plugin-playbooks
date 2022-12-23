@@ -307,7 +307,7 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
-Cypress.Commands.add('expectTelemetryToBe', (items) => {
+Cypress.Commands.add('expectTelemetryToContain', (items) => {
     cy.get('@telemetry.all').then((xhrs) => {
         items.forEach((item) => {
             const matches = xhrs.filter((xhr) => xhr.request.body.name === item.name && xhr.request.body.type === item.type);
