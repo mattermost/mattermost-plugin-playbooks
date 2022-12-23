@@ -807,5 +807,18 @@
     "W1EKh5": "Nieuw playbook maken",
     "VA1Q/S": "Publiek kanaal",
     "SRbTcY": "Andere playbooks",
-    "RgQwWr": "Uitvoeringen sorteren op"
+    "RgQwWr": "Uitvoeringen sorteren op",
+    "fwW0T1": "Bevestig verwijderen van vooraf toegewezen leden",
+    "TP/O/b": "Gebruiker verwijderen",
+    "QvEO6m": "Je hebt geen rechten om deze uitvoering te bewerken",
+    "QJTSaI": "Link uitvoering aan een ander kanaal",
+    "IE2BzH": "Er zijn gebruikers die vooraf zijn toegewezen aan een of meer taken. Het uitschakelen van uitnodigingen zal <strong>alle</strong> vooraf toegewezen taken wissen.{br}{br}Weet je zeker dat u de uitnodigingen wilt uitschakelen?",
+    "DQn9Uj": "De gebruiker <i>{name}</i> is vooraf toegewezen aan een of meer taken. Als u deze gebruiker niet automatisch uitnodigt, worden zijn vooraf toegewezen taken gewist.{br}{br}Weet je zeker dat je deze gebruiker niet meer wilt uitnodigen als lid van de uitvoering?",
+    "BiQjuS": "Uitvoering verplaatst naar {channel}",
+    "9w0mDI": "Bevestig verwijderen van vooraf toegewezen lid",
+    "uCS6py": "Je hebt geen toestemming om deze playbook te zien",
+    "l3QwVw": "Kanaal selecteren",
+    "ksG35Q": "Je hebt geen rechten om playbooks aan te maken in deze werkruimte.",
+    "k7Nzfi": "Uitnodiging uitschakelen",
+    "YKLHXL": "Lopende uitvoeringen bekijken"
 }
