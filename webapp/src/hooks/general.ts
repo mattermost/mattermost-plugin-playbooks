@@ -41,7 +41,6 @@ import {
     isCurrentUserAdmin,
     noopSelector,
     selectExperimentalFeatures,
-    selectLinkRunToExistingChannelEnabled,
 } from 'src/selectors';
 import {
     clientFetchPlaybook,
@@ -278,10 +277,6 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
-}
-
-export function useLinkRunToExistingChannelEnabled() {
-    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been
