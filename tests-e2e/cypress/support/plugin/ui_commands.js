@@ -307,17 +307,10 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
-Cypress.Commands.add('expectTelemetryToBe', (items, {strict} = {strict: false}) => {
+Cypress.Commands.add('expectTelemetryToBe', (items) => {
     cy.get('@telemetry.all').then((xhrs) => {
-        if (strict) {
-            expect(xhrs.length).to.eq(items.length);
-        }
-        items.forEach((item, index) => {
-            const matches = xhrs.filter((xhr, pos) =>
-                xhr.request.body.name === item.name &&
-                xhr.request.body.type === item.type &&
-                (!strict || index === pos)
-            );
+        items.forEach((item) => {
+            const matches = xhrs.filter((xhr) => xhr.request.body.name === item.name && xhr.request.body.type === item.type);
             if (matches.length === 0) {
                 expect.fail(`No telemetry event found for ${item.name} of type ${item.type}`);
             }

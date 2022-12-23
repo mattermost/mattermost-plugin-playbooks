@@ -119,7 +119,7 @@ describe('playbooks > edit > task actions', () => {
 
             // # assert telemetry data
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'taskactions_updated', type: 'track', playbook_id: testPlaybook.id}]);
+            cy.expectTelemetryToContain([{name: 'taskactions_updated', type: 'track', playbook_id: testPlaybook.id}]);
         });
 
         it('allows multiple keywords', () => {

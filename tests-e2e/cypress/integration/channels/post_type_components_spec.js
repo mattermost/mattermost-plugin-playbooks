@@ -52,8 +52,8 @@ describe('channels > post type components', () => {
             // # Go to the playbook run channel
             cy.visit(`/${testTeam.name}/channels/test-run`);
 
-            // # Intercept all calls to telemetry
-            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+            // # intercepts telemetry
+            cy.interceptTelemetry();
 
             // # Post a status update
             cy.apiUpdateStatus({
@@ -64,15 +64,19 @@ describe('channels > post type components', () => {
 
             // Grab the post id
             cy.getLastPostId().then((postId) => {
-                // * assert telemetry pageview
-                // * Some params will be empty since some data is not available in the permalink context
-                cy.wait('@telemetry').then((interception) => {
-                    expect(interception.request.body.name).to.eq('run_status_update');
-                    expect(interception.request.body.type).to.eq('page');
-                    expect(interception.request.body.properties.post_id).to.eq(postId);
-                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
-                    expect(interception.request.body.properties.channel_type).to.eq('O');
-                });
+                // * Assert telemetry data
+                cy.wait('@telemetry').wait('@telemetry');
+                cy.expectTelemetryToContain([
+                    {
+                        name: 'run_status_update',
+                        type: 'page',
+                        properties: {
+                            post_id: postId,
+                            playbook_run_id: testPlaybookRun.id,
+                            channel_type: 'O',
+                        },
+                    },
+                ]);
             });
         });
 
@@ -89,8 +93,8 @@ describe('channels > post type components', () => {
 
             // Grab the post id
             cy.getLastPostId().then((postId) => {
-                // # Intercept all calls to telemetry
-                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+                // # intercepts telemetry
+                cy.interceptTelemetry();
 
                 // # Go to the other channel
                 cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
@@ -98,15 +102,19 @@ describe('channels > post type components', () => {
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                // * assert telemetry pageview
-                // * Some params will be empty since some data is not available in the permalink context
-                cy.wait('@telemetry').then((interception) => {
-                    expect(interception.request.body.name).to.eq('run_status_update');
-                    expect(interception.request.body.type).to.eq('page');
-                    expect(interception.request.body.properties.post_id).to.eq(postId);
-                    expect(interception.request.body.properties.playbook_run_id).to.eq(testPlaybookRun.id);
-                    expect(interception.request.body.properties.channel_type).to.eq('O');
-                });
+                // * Assert telemetry data
+                cy.wait('@telemetry');
+                cy.expectTelemetryToContain([
+                    {
+                        name: 'run_status_update',
+                        type: 'page',
+                        properties: {
+                            post_id: postId,
+                            playbook_run_id: testPlaybookRun.id,
+                            channel_type: 'O',
+                        },
+                    },
+                ]);
 
                 cy.getLastPost().then((element) => {
                     // # Verify the expected message text
@@ -142,13 +150,14 @@ describe('channels > post type components', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry').wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {
                         name: 'run_status_update',
                         type: 'page',
                         properties: {
                             post_id: postId,
                             playbook_run_id: testPlaybookRun.id,
+                            channel_type: '',
                         },
                     },
                 ]);

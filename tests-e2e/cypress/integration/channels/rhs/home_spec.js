@@ -39,7 +39,7 @@ describe('channels > rhs > home', () => {
 
             // * Assert telemetry data
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'channels_rhs_home', type: 'page'}]);
+            cy.expectTelemetryToContain([{name: 'channels_rhs_home', type: 'page'}]);
         });
     });
 

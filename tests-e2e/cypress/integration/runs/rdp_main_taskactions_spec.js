@@ -125,7 +125,7 @@ describe('runs > task actions', () => {
 
             // # assert telemetry data
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'taskactions_updated', type: 'track', playbookrun_id: testPlaybookRun.id}]);
+            cy.expectTelemetryToContain([{name: 'taskactions_updated', type: 'track', playbookrun_id: testPlaybookRun.id}]);
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);

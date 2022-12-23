@@ -96,7 +96,7 @@ describe('digest messages', () => {
 
             // # assert telemetry tracks correctly the origin
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_overduestatus'}}]);
+            cy.expectTelemetryToContain([{name: 'run_details', type: 'page', properties: {from: 'digest_overduestatus'}}]);
         });
 
         it('has one run in progress and links to RDP', () => {
@@ -125,7 +125,7 @@ describe('digest messages', () => {
 
             // # assert telemetry tracks correctly the origin
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_runsinprogress'}}]);
+            cy.expectTelemetryToContain([{name: 'run_details', type: 'page', properties: {from: 'digest_runsinprogress'}}]);
         });
 
         it('has one run with one assigned task and links to RDP', () => {
@@ -154,7 +154,7 @@ describe('digest messages', () => {
 
             // # assert telemetry tracks correctly the origin
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_assignedtask'}}]);
+            cy.expectTelemetryToContain([{name: 'run_details', type: 'page', properties: {from: 'digest_assignedtask'}}]);
         });
     });
 });

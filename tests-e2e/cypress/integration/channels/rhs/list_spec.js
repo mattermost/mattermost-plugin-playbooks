@@ -86,7 +86,7 @@ describe('channels > rhs > runlist', () => {
 
         // * Assert telemetry data
         cy.wait('@telemetry');
-        cy.expectTelemetryToBe([{name: 'channels_rhs_runlist', type: 'page'}]);
+        cy.expectTelemetryToContain([{name: 'channels_rhs_runlist', type: 'page'}]);
     });
 
     it('can filter', () => {

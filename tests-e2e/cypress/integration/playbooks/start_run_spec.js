@@ -116,7 +116,7 @@ describe('playbooks > start a run', () => {
 
             // * Assert telemetry data
             cy.wait('@telemetry');
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {name: 'run_details', type: 'page'},
                 {
                     name: 'playbookrun_create',
@@ -175,7 +175,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
@@ -238,7 +238,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
@@ -303,7 +303,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
@@ -373,7 +373,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
@@ -447,7 +447,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
@@ -512,7 +512,7 @@ describe('playbooks > start a run', () => {
 
                 // * Assert telemetry data
                 cy.wait('@telemetry');
-                cy.expectTelemetryToBe([
+                cy.expectTelemetryToContain([
                     {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
