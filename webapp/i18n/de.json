@@ -822,5 +822,11 @@
     "YKLHXL": "Aktive Durchläufe anzeigen",
     "QvEO6m": "Du hast keine Berechtigung, diesen Durchlauf zu bearbeiten",
     "QJTSaI": "Durchlauf mit einem anderen Kanal verknüpfen",
-    "BiQjuS": "Durchlauf verschoben nach {channel}"
+    "BiQjuS": "Durchlauf verschoben nach {channel}",
+    "k7Nzfi": "Einladung deaktivieren",
+    "fwW0T1": "Bestätige das Entfernen eines vordefinierten Mitglieds",
+    "TP/O/b": "Benutzer entfernen",
+    "IE2BzH": "Es gibt Benutzer, die bereits vorab einer oder mehreren Aufgaben zugewiesen sind. Wenn du die Einladungen deaktivierst, werden alle <strong></strong> Vorabzuweisungen gelöscht.{br}{br}Bist du sicher, dass du Einladungen deaktivieren möchtest?",
+    "DQn9Uj": "Der Benutzer <i>{name}</i> ist bereits vorab einer oder mehreren Aufgaben zugewiesen. Wenn du diesen Benutzer nicht automatisch einlädst, werden seine Vorab-Zuweisungen gelöscht.{br}{br}Bist du sicher, dass du diesen Benutzer nicht mehr als Mitglied des Durchlaufs einladen möchtest?",
+    "9w0mDI": "Bestätige das Entfernen eines vordefinierten Mitglieds"
 }
