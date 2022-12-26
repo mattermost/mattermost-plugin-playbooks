@@ -130,5 +130,117 @@
     {
         "id": "app.user.run.status_disable",
         "translation": "@{{.Username}} je deaktivirao/la aktualiziranja stanja za [{{.RunName}}]({{.RunURL}})"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Aktualiziranje stanja"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Aktualiziraj stanje"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Podsjetnik za sljedeće slanje aktualnog stanja"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "Obavijesti sudionike o aktualnom stanju. Ova će se objava poslati na {{.Count}} kanal.",
+            "few": "Obavijesti sudionike o aktualnom stanju. Ova će se objava poslati na {{.Count}} kanala.",
+            "other": "Obavijesti sudionike o aktualnom stanju. Ova će se objava poslati na {{.Count}} kanala."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Također, označi izvođenje kao završeno"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Završi izvođenje"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Promjena od zadnjeg aktualiziranja"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Potvrdi završavanje izvođenja"
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Završi izvođenje"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "Postoji **{{.Count}} neobavljen zadatak**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?",
+            "few": "Postoje **{{.Count}} neobavljena zadatka**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?",
+            "other": "Postoji **{{.Count}} neobavljenih zadataka**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?"
+        }
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Dodaj u vremensku crtu izvođenja"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Kratak sažetak prikazan na vremenskoj crti"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "Maks. 64 znakova"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Sažetak"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Dodaj u vremensku crtu izvođenja"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Izvođenje priručnika"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Dodaj novi zadatak"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Dodaj zadatak"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Ime"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Opis"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Priručnik izvođenja"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Pokreni izvođenje"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Ime izvođenja"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Priručnik"
+    },
+    {
+        "id": "app.user.new_run.new_playbook",
+        "translation": "[Pritisni ovdje]({{.RunURL}}) za izradu vlastitog priručnika."
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Vlasnik** {{.Username}}"
     }
 ]
