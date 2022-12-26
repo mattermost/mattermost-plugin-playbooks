@@ -86,12 +86,83 @@
     "translation": "You have 0 assigned tasks."
   },
   {
-    "id": "app.user.run.joined_run_channel_private_add_participant",
-    "translation": "@{{.Name}} has been added to the run by @{{.RequesterName}}. They haven't been automatically added to the channel because @{{.RequesterName}} isn't a channel member and the channel is private.\n"
+    "id": "app.user.new_run.intro",
+    "translation": "**Owner** {{.Username}}"
   },
   {
-    "id": "app.user.run.joined_run_channel_private_participate",
-    "translation": "@{{.Name}} has joined the run. They haven't been automatically added to this private channel but any member of the channel can invite them to join.\n"
+    "id": "app.user.new_run.new_playbook",
+    "translation": "[Click here]({{.RunURL}}) to create your own playbook."
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Run name"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Start run"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Run playbook"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Description"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Name"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Add task"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Add new task"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Playbook Run"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Add to run timeline"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Summary"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Max 64 chars"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Short summary shown in the timeline"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Add to run timeline"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish the run *{{.RunName}}* for all participants?",
+      "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish the run *{{.RunName}}* for all participants?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Finish run"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Confirm finish run"
   },
   {
     "id": "app.user.run.request_join_channel",
@@ -99,14 +170,45 @@
   },
   {
     "id": "app.user.run.request_update",
-    "translation": "@here — @{{.Name}} requested a status update. \n"
+    "translation": "@here — @{{.Name}} requested a status update for [{{.RunName}}]({{.RunURL}}). \n"
   },
   {
     "id": "app.user.run.status_disable",
-    "translation": "@{{.Username}} disabled the status updates for this run"
+    "translation": "@{{.Username}} disabled the status updates for [{{.RunName}}]({{.RunURL}})"
   },
   {
     "id": "app.user.run.status_enable",
-    "translation": "@{{.Username}} enabled the status updates for this run"
+    "translation": "@{{.Username}} enabled the status updates for [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Change since last update"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Finish run"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Also mark the run as finished"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channel.",
+      "other": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channels."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Reminder for next update"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Update status"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Status update"
   }
 ]

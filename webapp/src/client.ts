@@ -15,28 +15,38 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
-    PlaybookRun,
     Metadata,
+    PlaybookRun,
     RunMetricData,
     StatusPostComplete,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
-import {TelemetryViewTarget, TelemetryEventTarget, PlaybookRunViewTarget, PlaybookRunEventTarget} from 'src/types/telemetry';
+import {
+    PlaybookRunEventTarget,
+    PlaybookRunViewTarget,
+    TelemetryEventTarget,
+    TelemetryViewTarget,
+} from 'src/types/telemetry';
 import {
     Checklist,
+    ChecklistItem,
     ChecklistItemState,
+    DraftPlaybookWithChecklist,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,
-    PlaybookWithChecklist,
-    DraftPlaybookWithChecklist,
     Playbook,
-    ChecklistItem,
+    PlaybookWithChecklist,
 } from 'src/types/playbook';
-import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
+import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {EmptyPlaybookStats, PlaybookStats, Stats, SiteStats} from 'src/types/stats';
+import {
+    EmptyPlaybookStats,
+    PlaybookStats,
+    SiteStats,
+    Stats,
+} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -88,13 +98,23 @@ export async function fetchPlaybookRunStatusUpdates(id: string) {
     return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
-export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+export async function createPlaybookRun(
+    playbook_id: string,
+    owner_user_id: string,
+    team_id: string,
+    name: string,
+    description: string,
+    channel_id?: string,
+    create_public_run?: boolean
+) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
         team_id,
         name,
         description,
         playbook_id,
+        channel_id,
+        create_public_run,
     }));
     return run as PlaybookRun;
 }
@@ -632,13 +652,6 @@ export const changeChannelName = async (channelId: string, newName: string) => {
     await doFetchWithoutResponse(`${basePath}/api/v4/channels/${channelId}/patch`, {
         method: 'PUT',
         body: JSON.stringify({display_name: newName}),
-    });
-};
-
-export const updatePlaybookRunDescription = async (playbookRunId: string, newDescription: string) => {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/update-description`, {
-        method: 'PUT',
-        body: JSON.stringify({description: newDescription}),
     });
 };
 

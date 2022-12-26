@@ -259,6 +259,10 @@ Cypress.Commands.add('apiCreatePlaybook', (
         signalAnyKeywords,
         signalAnyKeywordsEnabled,
         channelNameTemplate,
+        runSummaryTemplate,
+        runSummaryTemplateEnabled,
+        channelMode = 'create_new_channel',
+        channelId = '',
         metrics,
     }) => {
     return cy.request({
@@ -297,6 +301,10 @@ Cypress.Commands.add('apiCreatePlaybook', (
             signal_any_keywords: signalAnyKeywords,
             signal_any_keywords_enabled: signalAnyKeywordsEnabled,
             channel_name_template: channelNameTemplate,
+            run_summary_template: runSummaryTemplate,
+            run_summary_template_enabled: runSummaryTemplateEnabled,
+            channel_mode: channelMode,
+            channel_id: channelId,
             metrics,
         },
     }).then((response) => {
@@ -321,6 +329,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
+        checklists,
+        inviteUsersEnabled,
         reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         otherMembers = [],
         invitedUserIds = [],
@@ -329,7 +339,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
     cy.apiCreatePlaybook({
         teamId,
         title,
-        checklists: [{
+        checklists: checklists || [{
             title: 'Stage 1',
             items: [
                 {title: 'Step 1'},
@@ -345,7 +355,10 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
         invitedUserIds,
+        inviteUsersEnabled,
         channelNameTemplate,
+        createChannelMemberOnNewParticipant: true,
+        removeChannelMemberOnRemovedParticipant: true,
     })
 ));
 
@@ -437,6 +450,23 @@ Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
         userIDs: usersIds,
     };
     return doGraphqlQuery(query, 'AddRunParticipants', vars).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+//updateRun
+Cypress.Commands.add('apiUpdateRun', (playbookRunId, updates) => {
+    const query = `
+        mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+            updateRun(id: $id, updates: $updates)
+        }
+    `;
+    const vars = {
+        id: playbookRunId,
+        updates,
+    };
+    return doGraphqlQuery(query, 'UpdateRun', vars).then((response) => {
         expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });

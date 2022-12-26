@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
-    DropResult,
-    Droppable,
-    DroppableProvided,
     Draggable,
     DraggableProvided,
     DraggableStateSnapshot,
+    DropResult,
+    Droppable,
+    DroppableProvided,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -20,25 +20,19 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {
-    playbookRunUpdated,
-} from 'src/actions';
-import {
-    Checklist,
-    ChecklistItem,
-} from 'src/types/playbook';
-import {
-    clientMoveChecklist,
-    clientMoveChecklistItem,
-    clientAddChecklist,
-} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
+import {PlaybookUpdates} from 'src/graphql/generated_types';
+import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
+
 import GenericChecklist, {generateKeys} from './generic_checklist';
 
 // disable all react-beautiful-dnd development warnings
@@ -54,6 +48,7 @@ interface Props {
     onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
+    onViewerModeInteract?: () => void;
 }
 
 const ChecklistList = ({
@@ -65,6 +60,7 @@ const ChecklistList = ({
     onEveryChecklistCollapsedStateChange,
     showItem,
     itemButtonsFormat,
+    onViewerModeInteract,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -74,31 +70,45 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
-        const updated = updatedPlaybook?.checklists.map((cl) => {
-            return {
-                ...cl,
-                items: cl.items.map((ci) => {
-                    return {
-                        title: ci.title,
-                        description: ci.description,
-                        state: ci.state,
-                        stateModified: ci.state_modified || 0,
-                        assigneeID: ci.assignee_id || '',
-                        assigneeModified: ci.assignee_modified || 0,
-                        command: ci.command,
-                        commandLastRun: ci.command_last_run,
-                        dueDate: ci.due_date,
-                    };
-                }),
-            };
-        });
+        const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: ci.assignee_id || '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        const updates: PlaybookUpdates = {
+            checklists: updatedChecklists,
+        };
 
-        updatePlaybook({checklists: updated});
+        if (updatedPlaybook) {
+            const preAssignees = getDistinctAssignees(updatedPlaybook.checklists);
+            if (preAssignees.length && !updatedPlaybook.invite_users_enabled) {
+                updates.inviteUsersEnabled = true;
+            }
+
+            // Append all assignees found in the updated checklists and clear duplicates
+            // Only update the invited users when new assignees were added
+            const invitedUsers = new Set([...updatedPlaybook.invited_user_ids, ...preAssignees]);
+            if (invitedUsers.size > updatedPlaybook.invited_user_ids.length) {
+                updates.invitedUserIDs = [...invitedUsers];
+            }
+        }
+
+        updatePlaybook(updates);
     }, [updatePlaybook]), 0);
     const checklists = playbookRun?.checklists || playbook?.checklists || [];
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
-    const disabled = finished || archived || isReadOnly;
+    const readOnly = finished || archived || isReadOnly;
 
     if (!playbook && !playbookRun) {
         return null;
@@ -332,7 +342,7 @@ const ChecklistList = ({
                                                 index={checklistIndex}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}
-                                                disabled={disabled}
+                                                disabled={readOnly}
                                                 playbookRunID={playbookRun?.id}
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
@@ -349,12 +359,14 @@ const ChecklistList = ({
                                                 <GenericChecklist
                                                     id={playbookRun?.id || ''}
                                                     playbookRun={playbookRun}
-                                                    disabled={disabled}
+                                                    playbookId={playbook?.id || playbookRun?.playbook_id || ''}
+                                                    readOnly={readOnly}
                                                     checklist={checklist}
                                                     checklistIndex={checklistIndex}
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
+                                                    onViewerModeInteract={onViewerModeInteract}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -371,7 +383,7 @@ const ChecklistList = ({
                         </ChecklistsContainer>
                     )}
                 </Droppable>
-                {!disabled && addChecklist}
+                {!readOnly && addChecklist}
             </DragDropContext>
         </>
     );

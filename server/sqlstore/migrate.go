@@ -3,10 +3,12 @@ package sqlstore
 import (
 	"context"
 	"embed"
+	"fmt"
 	"path/filepath"
 
 	"github.com/blang/semver"
 
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/morph"
 	"github.com/mattermost/morph/drivers"
 	"github.com/mattermost/morph/sources"
@@ -80,9 +82,18 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 }
 
 func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
+	driverName := sqlStore.db.DriverName()
+
 	var driver drivers.Driver
 	var err error
-	driver, err = ms.WithInstance(sqlStore.db.DB)
+	switch driverName {
+	case model.DatabaseDriverMysql:
+		driver, err = ms.WithInstance(sqlStore.db.DB)
+	case model.DatabaseDriverPostgres:
+		driver, err = ms.WithInstance(sqlStore.db.DB)
+	default:
+		err = fmt.Errorf("unsupported database type %s for migration", driverName)
+	}
 	return driver, err
 }
 
@@ -121,6 +132,8 @@ func (sqlStore *SQLStore) createMorphEngine() (*morph.Morph, error) {
 
 	opts := []morph.EngineOption{
 		morph.WithLock("mm-playbooks-lock-key"),
+		morph.SetMigrationTableName("IR_db_migrations"),
+		morph.SetStatementTimeoutInSeconds(100000),
 	}
 	engine, err := morph.New(context.Background(), driver, src, opts...)
 

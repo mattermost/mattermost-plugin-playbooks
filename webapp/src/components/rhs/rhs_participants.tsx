@@ -3,25 +3,28 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-import {OpenInNewIcon, AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {pluginUrl} from 'src/browser_routing';
 import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
-    playbookRunId: string;
     onParticipate?: () => void;
+    setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RHSParticipants = (props: Props) => {
     const {formatMessage} = useIntl();
     const openMembersModal = useOpenMembersModalIfPresent();
+
+    const showParticipants = () => {
+        props.setShowParticipants(true);
+    };
 
     const becomeParticipant = (
         <Tooltip
@@ -47,7 +50,10 @@ const RHSParticipants = (props: Props) => {
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
                     {props.onParticipate ? null : (
-                        <LinkAddParticipants to={pluginUrl(`/runs/${props.playbookRunId}?from=channel_rhs_participants`)}>
+                        <LinkAddParticipants
+                            to={'#'}
+                            onClick={showParticipants}
+                        >
                             {formatMessage({defaultMessage: 'Add participant'})}
                             <OpenInNewIcon size={11}/>
                         </LinkAddParticipants>
@@ -65,7 +71,7 @@ const RHSParticipants = (props: Props) => {
             <UserRow
                 tabIndex={0}
                 role={'button'}
-                onClick={openMembersModal}
+                onClick={showParticipants}
                 onKeyDown={(e) => {
                     // Handle Enter and Space as clicking on the button
                     if (e.keyCode === 13 || e.keyCode === 32) {
@@ -123,40 +129,6 @@ const useOpenMembersModalIfPresent = () => {
             dialogProps: {channel},
         }));
     };
-};
-
-const AddParticipants = () => {
-    const dispatch = useDispatch();
-    const channel = useSelector(getCurrentChannel);
-
-    // @ts-ignore
-    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CHANNEL_INVITE || !window.Components?.ChannelInviteModal) {
-        return null;
-    }
-
-    // @ts-ignore
-    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
-
-    // @ts-ignore
-    const ChannelInviteModal = window.Components.ChannelInviteModal;
-
-    return (
-        <a
-            href={'#'}
-            tabIndex={0}
-            role={'button'}
-            onClick={(e) => {
-                e.preventDefault();
-                dispatch(openModal({
-                    modalId: ModalIdentifiers.CHANNEL_INVITE,
-                    dialogType: ChannelInviteModal,
-                    dialogProps: {channel},
-                }));
-            }}
-        >
-            <FormattedMessage defaultMessage='Add participants?'/>
-        </a>
-    );
 };
 
 const NoParticipants = styled.div`

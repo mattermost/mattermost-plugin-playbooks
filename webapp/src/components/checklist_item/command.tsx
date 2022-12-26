@@ -3,15 +3,14 @@ import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 
-import {
-    clientRunChecklistItemSlashCommand,
-} from 'src/client';
-import Spinner from 'src/components/assets/icons/spinner';
-import {useTimeout} from 'src/hooks';
+import {clientRunChecklistItemSlashCommand} from 'src/client';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
 
 import Dropdown from 'src/components/dropdown';
+
+import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {useTimeout} from 'src/hooks';
 
 import {CancelSaveButtons} from './inputs';
 import {DropdownArrow} from './assign_to';
@@ -45,8 +44,11 @@ const Command = (props: CommandProps) => {
 
     const placeholder = (
         <PlaceholderDiv
+            isDisabled={props.disabled}
             onClick={() => {
-                setCommandOpen((open) => !open);
+                if (!props.disabled) {
+                    setCommandOpen((open) => !open);
+                }
             }}
         >
             <CommandIcon
@@ -141,14 +143,16 @@ const Command = (props: CommandProps) => {
     );
 };
 
-const PlaceholderDiv = styled.div`
+const PlaceholderDiv = styled.div<{isDisabled: boolean}>`
     display: flex;
     align-items: center;
     flex-direction: row;
 
-    &:hover {
-        cursor: pointer;
-    }
+    ${({isDisabled}) => !isDisabled && css`
+        :hover {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlaceholder: boolean}>`
@@ -215,9 +219,13 @@ const CommandText = styled.div<{isDisabled: boolean}>`
     `}
 `;
 
-const StyledSpinner = styled(Spinner)`
-    margin-left: 4px;
-    padding-top: 3px;
+const StyledSpinner = styled(LoadingSpinner)`
+    width: 14px;
+    height: 14px;
+    align-self: center;
+    margin: 0 2px;
+    position: relative;
+    bottom: 1px;
 `;
 
 const CommandIcon = styled.i`

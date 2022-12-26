@@ -2,7 +2,7 @@ import {Duration, DurationObjectUnits, Settings} from 'luxon';
 
 import range from 'lodash/range';
 
-import {durationFromQuery, parse, Mode} from './datetime_parsing';
+import {Mode, durationFromQuery, parse} from './datetime_parsing';
 
 describe('durationFromQuery', () => {
     const locales = [

@@ -15,6 +15,7 @@ type PlaybookRun struct {
 	ID                                      string          `json:"id"`
 	Name                                    string          `json:"name"`
 	Summary                                 string          `json:"summary"`
+	SummaryModifiedAt                       int64           `json:"summary_modified_at"`
 	OwnerUserID                             string          `json:"owner_user_id"`
 	ReporterUserID                          string          `json:"reporter_user_id"`
 	TeamID                                  string          `json:"team_id"`
@@ -124,13 +125,14 @@ type TimelineEvent struct {
 
 // PlaybookRunCreateOptions specifies the parameters for PlaybookRunService.Create method.
 type PlaybookRunCreateOptions struct {
-	Name        string `json:"name"`
-	OwnerUserID string `json:"owner_user_id"`
-	TeamID      string `json:"team_id"`
-	ChannelID   string `json:"channel_id"`
-	Description string `json:"description"`
-	PostID      string `json:"post_id"`
-	PlaybookID  string `json:"playbook_id"`
+	Name            string `json:"name"`
+	OwnerUserID     string `json:"owner_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	Description     string `json:"description"`
+	PostID          string `json:"post_id"`
+	PlaybookID      string `json:"playbook_id"`
+	CreatePublicRun *bool  `json:"create_public_run"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
@@ -274,4 +276,13 @@ type StatusUpdateOptions struct {
 type RunMetricData struct {
 	MetricConfigID string   `json:"metric_config_id"`
 	Value          null.Int `json:"value"`
+}
+
+// OwnerInfo holds the summary information of a owner.
+type OwnerInfo struct {
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 }

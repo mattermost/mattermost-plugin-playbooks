@@ -7,7 +7,12 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import {CheckAllIcon, SyncIcon, OpenInNewIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    CheckAllIcon,
+    OpenInNewIcon,
+    PlayOutlineIcon,
+    SyncIcon,
+} from '@mattermost/compass-icons/components';
 
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
@@ -15,9 +20,9 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
-import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
-import {openPlaybookRunModal} from 'src/actions';
+import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
+import {useHasPlaybookPermission, useLinkRunToExistingChannelEnabled, usePlaybooksRouting} from 'src/hooks';
+import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -158,14 +163,16 @@ const TIME_SPEC = {
 
 type RHSHomePlaybookProps = {
     playbook: Playbook;
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void;
 }
 
-export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
+export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {view} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
+    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const {
         id,
@@ -182,7 +189,10 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, team_id || ''));
     const {id: teamId, name: teamName} = team;
     return (
-        <Item data-testid='rhs-home-item'>
+        <Item
+            data-testid='rhs-home-item'
+            id={`pbitem-${id}`}
+        >
             <div>
                 <Title>
                     <Link
@@ -243,13 +253,21 @@ export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
             <RunButton
                 data-testid={'run-playbook'}
                 onClick={() => {
-                    return dispatch(openPlaybookRunModal(
-                        id,
-                        default_owner_enabled ? default_owner_id : null,
-                        description,
-                        teamId,
-                        teamName
-                    ));
+                    if (isLinkRunToExistingChannelEnabled) {
+                        dispatch(openPlaybookRunNewModal({
+                            teamId,
+                            onRunCreated,
+                            playbookId: id,
+                        }));
+                    } else {
+                        dispatch(openPlaybookRunModal(
+                            id,
+                            default_owner_enabled ? default_owner_id : null,
+                            description,
+                            teamId,
+                            teamName,
+                        ));
+                    }
                 }}
             >
                 <PlayOutlineIcon/>
@@ -317,7 +335,10 @@ export const RHSHomeTemplate = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => onUse(template)}>
+            <RunButton
+                data-testid={'use-playbook'}
+                onClick={() => onUse(template)}
+            >
                 <OpenInNewIcon color={'var(--button-bg)'}/>
                 {formatMessage({defaultMessage: 'Use'})}
             </RunButton>

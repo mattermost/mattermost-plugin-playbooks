@@ -41,7 +41,11 @@ const FormattedMarkdown = ({
     options,
 }: Props) => {
     const opts = useDefaultMarkdownOptions(options);
-    return messageHtmlToComponent(formatText(value, opts), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    return messageHtmlToComponent(formatText(value, opts), true, messageHtmlToComponentOptions);
 };
 
 export default FormattedMarkdown;

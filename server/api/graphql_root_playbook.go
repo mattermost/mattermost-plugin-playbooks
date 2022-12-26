@@ -14,14 +14,11 @@ import (
 type PlaybookRootResolver struct {
 }
 
-func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
-	ID string
-}) (*PlaybookResolver, error) {
+func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	playbookID := args.ID
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
@@ -34,6 +31,13 @@ func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	}
 
 	return &PlaybookResolver{playbook}, nil
+}
+
+func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
+	ID string
+}) (*PlaybookResolver, error) {
+	playbookID := args.ID
+	return getGraphqlPlaybook(ctx, playbookID)
 }
 
 func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
@@ -122,6 +126,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		IsFavorite                              *bool
 		CreateChannelMemberOnNewParticipant     *bool
 		RemoveChannelMemberOnRemovedParticipant *bool
+		ChannelID                               *string
+		ChannelMode                             *string
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -229,15 +235,26 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RunSummaryTemplateEnabled", args.Updates.RunSummaryTemplateEnabled)
 	addToSetmap(setmap, "RunSummaryTemplate", args.Updates.RunSummaryTemplate)
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
+	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
+	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 
 	// Not optimal graphql. Stopgap measure. Should be updated seperately.
 	if args.Updates.Checklists != nil {
-		cleanUpUpdateChecklist(*args.Updates.Checklists)
+		app.CleanUpChecklists(*args.Updates.Checklists)
+		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
+		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 		}
 		setmap["ChecklistsJSON"] = checklistsJSON
+	}
+
+	if args.Updates.Checklists != nil || args.Updates.InvitedUserIDs != nil || args.Updates.InviteUsersEnabled != nil {
+		if err := validatePreAssignmentUpdate(currentPlaybook, args.Updates.Checklists, args.Updates.InvitedUserIDs, args.Updates.InviteUsersEnabled); err != nil {
+			return "", errors.Wrapf(err, "invalid user pre-assignment for playbook id: '%s'", args.ID)
+		}
 	}
 
 	if len(setmap) > 0 {
@@ -458,16 +475,43 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	return args.ID, nil
 }
 
-// cleanUpUpdateChecklist sets empty values for playbooks checklist fields that are not editable
-// NOTE: Any changes to this function must be made to function 'cleanUpChecklist' for the REST endpoint.
-func cleanUpUpdateChecklist(checklists []UpdateChecklist) {
-	for listIndex := range checklists {
-		for itemIndex := range checklists[listIndex].Items {
-			checklists[listIndex].Items[itemIndex].AssigneeID = ""
-			checklists[listIndex].Items[itemIndex].AssigneeModified = 0
-			checklists[listIndex].Items[itemIndex].State = ""
-			checklists[listIndex].Items[itemIndex].StateModified = 0
-			checklists[listIndex].Items[itemIndex].CommandLastRun = 0
+func validatePreAssignmentUpdate[T app.ChecklistCommon](pb app.Playbook, newChecklists *[]T, newInvitedUsers *[]string, newInviteUsersEnabled *bool) error {
+	assignees := app.GetDistinctAssignees(pb.Checklists)
+	if newChecklists != nil {
+		assignees = app.GetDistinctAssignees(*newChecklists)
+	}
+
+	invitedUsers := pb.InvitedUserIDs
+	if newInvitedUsers != nil {
+		invitedUsers = *newInvitedUsers
+	}
+
+	inviteUsersEnabled := pb.InviteUsersEnabled
+	if newInviteUsersEnabled != nil {
+		inviteUsersEnabled = *newInviteUsersEnabled
+	}
+
+	return app.ValidatePreAssignment(assignees, invitedUsers, inviteUsersEnabled)
+}
+
+// validateUpdateTaskActions validates the taskactions in the given checklist
+// NOTE: Any changes to this function must be made to function 'validateTaskActions' for the REST endpoint.
+func validateUpdateTaskActions(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if taskActions := item.TaskActions; taskActions != nil {
+				for _, ta := range *taskActions {
+					if err := app.ValidateTrigger(ta.Trigger); err != nil {
+						return err
+					}
+					for _, a := range ta.Actions {
+						if err := app.ValidateAction(a); err != nil {
+							return err
+						}
+					}
+				}
+			}
 		}
 	}
+	return nil
 }

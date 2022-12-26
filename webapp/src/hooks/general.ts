@@ -1,29 +1,22 @@
 import {
+    DependencyList,
     MutableRefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
-    useMemo,
-    DependencyList,
 } from 'react';
 import {useIntl} from 'react-intl';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getMyTeams, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
-import {
-    getCurrentUserId,
-    getUser,
-    getProfilesInCurrentTeam,
-} from 'mattermost-redux/selectors/entities/users';
-import {
-    getCurrentChannelId,
-    getChannel as getChannelFromState,
-} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId, getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getChannel as getChannelFromState, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -32,34 +25,33 @@ import {UserProfile} from '@mattermost/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ClientError} from '@mattermost/client';
-
 import {useHistory, useLocation} from 'react-router-dom';
 import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
-
 import {useUpdateEffect} from 'react-use';
-
 import {debounce, isEqual} from 'lodash';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel, selectExperimentalFeatures, getRun} from 'src/selectors';
 import {
-    fetchPlaybookRuns,
-    clientFetchPlaybook,
-    fetchPlaybookRunStatusUpdates,
-    fetchPlaybookRun,
-    fetchPlaybookStats,
-    fetchPlaybookRunMetadata,
-} from 'src/client';
-
-import {isCloud} from '../license';
-import {
+    getProfileSetForChannel,
+    getRun,
     globalSettings,
     isCurrentUserAdmin,
     noopSelector,
-} from '../selectors';
+    selectExperimentalFeatures,
+    selectLinkRunToExistingChannelEnabled,
+} from 'src/selectors';
+import {
+    clientFetchPlaybook,
+    fetchPlaybookRun,
+    fetchPlaybookRunMetadata,
+    fetchPlaybookRunStatusUpdates,
+    fetchPlaybookRuns,
+    fetchPlaybookStats,
+} from 'src/client';
+import {isCloud} from 'src/license';
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {
@@ -286,6 +278,10 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
+}
+
+export function useLinkRunToExistingChannelEnabled() {
+    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been

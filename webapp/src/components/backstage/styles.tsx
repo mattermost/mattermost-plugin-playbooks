@@ -197,12 +197,7 @@ export const InfoLine = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
-
-interface PlaybookRunFilterButtonProps {
-    active?: boolean;
-}
-
-export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
+export const FilterButton = styled.button<{active?: boolean;}>`
     display: flex;
     align-items: center;
     border: none;

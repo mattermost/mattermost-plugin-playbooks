@@ -7,78 +7,90 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {addChannelMember} from 'mattermost-redux/actions/channels';
 import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
-
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
+import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
-
+import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
+import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
+import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
+    CLOSE_BACKSTAGE_RHS,
+    CloseBackstageRHS,
+    HIDE_CHANNEL_ACTIONS_MODAL,
+    HIDE_PLAYBOOK_ACTIONS_MODAL,
+    HIDE_POST_MENU_MODAL,
+    HIDE_RUN_ACTIONS_MODAL,
+    HideChannelActionsModal,
+    HidePlaybookActionsModal,
+    HidePostMenuModal,
+    HideRunActionsModal,
+    OPEN_BACKSTAGE_RHS,
+    OpenBackstageRHS,
+    PLAYBOOK_ARCHIVED,
+    PLAYBOOK_CREATED,
+    PLAYBOOK_RESTORED,
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
+    PUBLISH_TEMPLATES,
+    PlaybookArchived,
+    PlaybookCreated,
+    PlaybookRestored,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    PublishTemplates,
+    RECEIVED_GLOBAL_SETTINGS,
+    RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     RECEIVED_TOGGLE_RHS_ACTION,
+    REMOVED_FROM_CHANNEL,
+    ReceivedGlobalSettings,
+    ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRuns,
     ReceivedToggleRHSAction,
-    REMOVED_FROM_CHANNEL,
     RemovedFromChannel,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SET_CHECKLIST_ITEMS_FILTER,
     SET_CLIENT_ID,
+    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
+    SET_HAS_VIEWED_CHANNEL,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
     SET_RHS_OPEN,
     SET_RHS_STATE,
+    SHOW_CHANNEL_ACTIONS_MODAL,
+    SHOW_PLAYBOOK_ACTIONS_MODAL,
+    SHOW_POST_MENU_MODAL,
+    SHOW_RUN_ACTIONS_MODAL,
+    SetAllChecklistsCollapsedState,
+    SetChecklistCollapsedState,
+    SetChecklistItemsFilter,
     SetClientId,
+    SetEveryChecklistCollapsedState,
+    SetHasViewedChannel,
+    SetRHSAboutCollapsedState,
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
-    PLAYBOOK_CREATED,
-    PlaybookCreated,
-    PLAYBOOK_ARCHIVED,
-    PlaybookArchived,
-    PLAYBOOK_RESTORED,
-    PlaybookRestored,
-    RECEIVED_GLOBAL_SETTINGS,
-    ReceivedGlobalSettings,
-    SHOW_POST_MENU_MODAL,
-    ShowPostMenuModal,
-    HIDE_POST_MENU_MODAL,
-    HidePostMenuModal,
-    SHOW_CHANNEL_ACTIONS_MODAL,
     ShowChannelActionsModal,
-    HIDE_CHANNEL_ACTIONS_MODAL,
-    HideChannelActionsModal,
-    SHOW_RUN_ACTIONS_MODAL,
-    ShowRunActionsModal,
-    HIDE_RUN_ACTIONS_MODAL,
-    HideRunActionsModal,
-    SHOW_PLAYBOOK_ACTIONS_MODAL,
     ShowPlaybookActionsModal,
-    HIDE_PLAYBOOK_ACTIONS_MODAL,
-    HidePlaybookActionsModal,
-    SetHasViewedChannel,
-    SET_HAS_VIEWED_CHANNEL,
-    SetRHSAboutCollapsedState,
-    SET_RHS_ABOUT_COLLAPSED_STATE,
-    SET_CHECKLIST_COLLAPSED_STATE,
-    SetChecklistCollapsedState,
-    SetAllChecklistsCollapsedState,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER,
-    SetChecklistItemsFilter,
-    SetEveryChecklistCollapsedState,
-    SET_EVERY_CHECKLIST_COLLAPSED_STATE,
+    ShowPostMenuModal,
+    ShowRunActionsModal,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter} from 'src/types/playbook';
+import {ChecklistItemsFilter, TaskAction as TaskActionType} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
-import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
+import {PlaybookCreateModalProps, makePlaybookCreateModal} from 'src/components/create_playbook_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
+import {PresetTemplate} from 'src/components/templates/template_data';
+import {makeTaskActionsModalDefinition} from 'src/components/checklist_item/task_actions_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -95,6 +107,22 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
+export function openUpdateRunNameModal(playbookRunId: string, teamId: string, onSubmit: (newName: string) => void) {
+    return modals.openModal(makeUpdateRunNameModalDefinition({
+        playbookRunId,
+        teamId,
+        onSubmit,
+    }));
+}
+
+export function openUpdateRunChannelModal(playbookRunId: string, teamId: string, onSubmit: (newChannelId: string, newChannelName: string) => void) {
+    return modals.openModal(makeUpdateRunChannelModalDefinition({
+        playbookRunId,
+        teamId,
+        onSubmit,
+    }));
+}
+
 export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
     return modals.openModal(makePlaybookRunModalDefinition(
         playbookId,
@@ -103,6 +131,22 @@ export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string 
         teamId,
         teamName,
         refreshLHS
+    ));
+}
+
+type newRunModalProps = {
+    playbookId?: string,
+    triggerChannelId?: string,
+    teamId: string,
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
+};
+
+export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
+    return modals.openModal(makePlaybookRunNewModalDefinition(
+        dialogProps.playbookId,
+        dialogProps.triggerChannelId,
+        dialogProps.teamId,
+        dialogProps.onRunCreated,
     ));
 }
 
@@ -157,9 +201,9 @@ export function displayRhsRunDetailsTourDialog(props: Parameters<typeof makeRhsR
     };
 }
 
-export function finishRun(teamId: string) {
+export function finishRun(teamId: string, playbookRunId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook finish', teamId);
+        await clientExecuteCommand(dispatch, getState, `/playbook finish-by-id ${playbookRunId}`, teamId);
     };
 }
 
@@ -205,6 +249,13 @@ export function setRHSViewingList(): SetRHSState {
     return {
         type: SET_RHS_STATE,
         nextState: RHSState.ViewingList,
+    };
+}
+
+export function setRHSViewingParticipants(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingPlaybookRunParticipants,
     };
 }
 
@@ -262,6 +313,11 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
+});
+
+export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({
+    type: RECEIVED_PLAYBOOK_RUNS,
+    playbookRuns,
 });
 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
@@ -347,4 +403,23 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
     type: SET_CHECKLIST_ITEMS_FILTER,
     key,
     nextState,
+});
+
+export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null, playbookRunId?: string) {
+    return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions, playbookRunId));
+}
+
+export const closeBackstageRHS = (): CloseBackstageRHS => ({
+    type: CLOSE_BACKSTAGE_RHS,
+});
+
+export const openBackstageRHS = (section: BackstageRHSSection, viewMode: BackstageRHSViewMode): OpenBackstageRHS => ({
+    type: OPEN_BACKSTAGE_RHS,
+    section,
+    viewMode,
+});
+
+export const publishTemplates = (templates: PresetTemplate[]): PublishTemplates => ({
+    type: PUBLISH_TEMPLATES,
+    templates,
 });

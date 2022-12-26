@@ -2,35 +2,34 @@
 // See LICENSE.txt for license information.
 
 import {createSelector} from 'reselect';
-
 import General from 'mattermost-redux/constants/general';
 import {GlobalState} from '@mattermost/types/store';
-import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getUsers, getMyCurrentChannelMembership, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/common';
+import {getMyChannelMemberships, getMyCurrentChannelMembership, getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from '@mattermost/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {DateTime} from 'luxon';
 
-import {
-    haveIChannelPermission,
-    haveISystemPermission,
-    haveITeamPermission,
-} from 'mattermost-redux/selectors/entities/roles';
+import {haveIChannelPermission, haveISystemPermission, haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
 import {Team} from '@mattermost/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
-import {RHSState} from 'src/types/rhs';
+import {PlaybookRun, PlaybookRunStatus, playbookRunIsActive} from 'src/types/playbook_run';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter, ChecklistItemsFilterDefault} from 'src/types/playbook';
+import {
+    ChecklistItem,
+    ChecklistItemState,
+    ChecklistItemsFilter,
+    ChecklistItemsFilterDefault,
+} from 'src/types/playbook';
 import {PlaybooksPluginState} from 'src/reducer';
 
 // Assert known typing
@@ -44,13 +43,24 @@ export const selectToggleRHS = (state: GlobalState): () => void => pluginState(s
 
 export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
-export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
+export const backstageRHS = {
+    section: (state: GlobalState) => pluginState(state).backstageRHS.section,
+    isOpen: (state: GlobalState) => pluginState(state).backstageRHS.isOpen,
+    viewMode: (state: GlobalState) => pluginState(state).backstageRHS.viewMode,
+};
+
+export const getIsRhsExpanded = (state: any): boolean => state.views.rhs.isSidebarExpanded;
 
 export const getAdminAnalytics = (state: GlobalState): Record<string, number> => state.entities.admin.analytics as Record<string, number>;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
+
+/**
+ * @returns runs indexed by playbookRunId->playbookRun
+ */
+export const myPlaybookRuns = (state: GlobalState) => pluginState(state).myPlaybookRuns;
 
 /**
  * @returns runs indexed by teamId->{channelId->playbookRun}
@@ -162,8 +172,6 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
     return myPlaybookRunsByTeam(state)[getCurrentTeamId(state)] || {};
 };
 
-export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
-
 export const lastUpdatedByPlaybookRunId = createSelector(
     'lastUpdatedByPlaybookRunId',
     getCurrentTeamId,
@@ -267,8 +275,68 @@ export const currentRHSAboutCollapsedState = createSelector(
 export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) => {
     return getMyTeams(state).filter((team: Team) => (
         haveITeamPermission(state, team.id, 'playbook_public_create') ||
-		haveITeamPermission(state, team.id, 'playbook_private_create')
+        haveITeamPermission(state, team.id, 'playbook_private_create')
     ));
 };
 
 export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+export const selectLinkRunToExistingChannelEnabled = (state: GlobalState) => Boolean(globalSettings(state)?.link_run_to_existing_channel_enabled);
+
+// Select tasks assigned to the current user, or unassigned but belonging to a run owned by the
+// current user.
+export const selectMyTasks = createSelector(
+    'selectMyTasks',
+    myPlaybookRuns,
+    getCurrentUser,
+    (playbookRuns, currentUser) => Object
+
+        // Flatten to a list of playbook runs, ignoring the keys.
+        .values(playbookRuns)
+
+        // Only consider in progress runs.
+        .filter((playbookRun) => playbookRun.current_status === PlaybookRunStatus.InProgress)
+
+        // Flatten to a list of tasks, annotated with the playbook_run_id and checklist name.
+        .flatMap((playbookRun) =>
+            playbookRun.checklists.flatMap((checklist, checklistNum) =>
+                checklist.items.map((item, itemNum) => ({
+                    ...item,
+                    item_num: itemNum,
+                    playbook_run_id: playbookRun.id,
+                    playbook_run_name: playbookRun.name,
+                    playbook_run_owner_user_id: playbookRun.owner_user_id,
+                    playbook_run_participant_user_ids: playbookRun.participant_ids,
+                    playbook_run_create_at: playbookRun.create_at,
+                    checklist_title: checklist.title,
+                    checklist_num: checklistNum,
+                }))
+            )
+        )
+
+        // Filter to tasks assigned to the current user, or unassigned but belonging to a run
+        // owned by the current user.
+        .filter((checklistItem) =>
+            checklistItem.assignee_id === currentUser.id ||
+            (!checklistItem.assignee_id && checklistItem.playbook_run_owner_user_id === currentUser.id)
+        )
+);
+
+export const isTaskOverdue = (item: ChecklistItem) => {
+    if (item.due_date === 0 || DateTime.fromMillis(item.due_date) > DateTime.now()) {
+        return false;
+    }
+
+    if (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip) {
+        return false;
+    }
+
+    return true;
+};
+
+// Determine if there are overdue tasks assigned to the current user, or unassigned but belonging
+// to a run owned by the current user.
+export const selectHasOverdueTasks = createSelector(
+    'hasOverdueTasks',
+    selectMyTasks,
+    (myTasks) => myTasks.some((checklistItem) => isTaskOverdue(checklistItem))
+);

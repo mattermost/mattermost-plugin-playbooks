@@ -5,7 +5,7 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from '@mattermost/types/posts';
-import {WebSocketMessage} from 'mattermost-redux/types/websocket';
+import {WebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -14,19 +14,20 @@ import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
-    playbookRunCreated, playbookRunUpdated,
-    removedFromPlaybookRunChannel,
-    receivedTeamPlaybookRuns,
-    playbookCreated,
     playbookArchived,
+    playbookCreated,
     playbookRestored,
+    playbookRunCreated,
+    playbookRunUpdated,
+    receivedTeamPlaybookRuns,
+    removedFromPlaybookRunChannel,
     setHasViewedChannel,
 } from 'src/actions';
 import {
+    fetchChannelActions,
     fetchCheckAndSendMessageOnJoin,
     fetchPlaybookRunByChannel,
     fetchPlaybookRuns,
-    fetchChannelActions,
 } from 'src/client';
 import {clientId, hasViewedByChannelID, myPlaybookRunsMap} from 'src/selectors';
 

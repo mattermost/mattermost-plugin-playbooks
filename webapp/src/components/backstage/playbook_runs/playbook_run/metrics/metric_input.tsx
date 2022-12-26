@@ -7,7 +7,8 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {useClickOutsideRef} from 'src/hooks';
-import {StyledInput, HelpText, ErrorText} from '../../shared';
+
+import {ErrorText, HelpText, StyledInput} from 'src/components/backstage/playbook_runs/shared';
 
 interface Props {
     id: string;
@@ -85,11 +86,11 @@ const InputContainer = styled.div`
 
 const Title = styled.div`
     font-weight: 600;
-    
+
     :after {
         content: attr(data-end);
         color: red;
-    }    
+    }
 `;
 
 const Error = ({text}: { text: string }) => (
@@ -114,9 +115,9 @@ const InputWithIcon = styled.span`
 const Header = styled.div`
     display: flex;
     flex: 1;
-    
+
     font-size: 14px;
-    line-height: 20px;    
+    line-height: 20px;
     margin: 0 0 8px 0;
 `;
 
@@ -127,7 +128,7 @@ const TargetTitle = styled.div`
     align-items: center;
     justify-content: flex-end;
 
-    color: rgba(var(--center-channel-color-rgb), 0.72);    
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const Target = ({title, text}: { title: string, text?: string }) => {

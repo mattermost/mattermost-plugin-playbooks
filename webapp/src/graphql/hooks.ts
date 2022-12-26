@@ -8,16 +8,21 @@ import {
     PlaybookQuery,
     PlaybookQueryHookResult,
     PlaybookUpdates,
+    RhsActiveRunsDocument,
+    RhsFinishedRunsDocument,
     RunDocument,
     RunUpdates,
+    TaskActionUpdates,
     useAddPlaybookMemberMutation,
     useAddRunParticipantsMutation,
     useChangeRunOwnerMutation,
     usePlaybookQuery,
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
+    useSetRunFavoriteMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
+    useUpdateRunTaskActionsMutation,
 } from 'src/graphql/generated_types';
 
 export type FullPlaybook = PlaybookQuery['playbook']
@@ -54,11 +59,28 @@ export const useUpdateRun = (id?: string) => {
     const [innerUpdateRun] = useUpdateRunMutation({
         refetchQueries: [
             PlaybookLhsDocument,
+            RhsActiveRunsDocument,
+            RhsFinishedRunsDocument,
         ],
     });
 
     return useCallback((updates: RunUpdates) => {
         return innerUpdateRun({variables: {id: id || '', updates}});
+    }, [id, innerUpdateRun]);
+};
+
+export const useSetRunFavorite = (id: string|undefined) => {
+    const [innerUpdateRun] = useSetRunFavoriteMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+        ],
+    });
+
+    return useCallback((fav: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdateRun({variables: {id, fav}});
     }, [id, innerUpdateRun]);
 };
 
@@ -101,53 +123,18 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useRunMembership = (runID?: string, userIDs?: string[]) => {
-    const [add] = useAddRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const [remove] = useRemoveRunParticipantsMutation({
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            runID: runID || '',
-            userIDs: userIDs || [],
-        },
-    });
-
-    const addToRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await add();
-    }, [runID, JSON.stringify(userIDs), add]);
-
-    const removeFromRun = useCallback(async () => {
-        if (!runID || !userIDs || userIDs?.length === 0) {
-            return;
-        }
-        await remove();
-    }, [runID, JSON.stringify(userIDs), remove]);
-    return {addToRun, removeFromRun};
-};
-
 export const useManageRunMembership = (runID?: string) => {
     const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
             RunDocument,
+            PlaybookLhsDocument,
         ],
     });
 
@@ -157,11 +144,11 @@ export const useManageRunMembership = (runID?: string) => {
         ],
     });
 
-    const addToRun = useCallback(async (userIDs?: string[]) => {
+    const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await add({variables: {runID: runID || '', userIDs: userIDs || []}});
+        await add({variables: {runID: runID || '', userIDs: userIDs || [], forceAddToChannel: forceAddToChannel || false}});
     }, [runID, add]);
 
     const removeFromRun = useCallback(async (userIDs?: string[]) => {
@@ -179,4 +166,21 @@ export const useManageRunMembership = (runID?: string) => {
     }, [runID, changeOwner]);
 
     return {addToRun, removeFromRun, changeRunOwner};
+};
+
+export const useUpdateRunItemTaskActions = (runID?: string) => {
+    const [updateTaskActions] = useUpdateRunTaskActionsMutation({
+        refetchQueries: [
+            RunDocument,
+        ],
+    });
+
+    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskActionUpdates[]) => {
+        if (!runID) {
+            return;
+        }
+        await updateTaskActions({variables: {runID, checklistNum, itemNum, taskActions}});
+    }, [runID, updateTaskActions]);
+
+    return {updateRunTaskActions};
 };

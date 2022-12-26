@@ -195,6 +195,49 @@ describe('channels > rhs', () => {
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
         });
+
+        it('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
+            // # Create a new channel
+            const channelName = 'playbook-test-' + Date.now();
+            cy.apiCreateChannel(testTeam.id, channelName, channelName, 'O').then(({channel}) => {
+                // # Navigate to the new channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+
+                // # Open RHS
+                cy.getPlaybooksAppBarIcon().click();
+
+                // # Wait a bit
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # open start run dialog
+                cy.findByTestId('rhs-runlist-start-run').click();
+
+                // # Create a new playbook
+                cy.findByText('Create new playbook').click();
+
+                // # confirm new playbook creation (with defaults)
+                cy.findByTestId('modal-confirm-button').click();
+
+                // * Verify we're in the playbook edit screen
+                cy.findByTestId('playbook-members');
+
+                // # Run the playbook
+                cy.findByTestId('run-playbook').click();
+                cy.findByTestId('run-name-input').type('Playbook Run');
+
+                // # Link to the new channel
+                cy.findByTestId('link-existing-channel-radio').click();
+                cy.get('#link-existing-channel-selector input').type(`${channel.name}{enter}`, {force: true});
+
+                cy.findByTestId('modal-confirm-button').click();
+
+                // # Wait a bit
+                cy.wait(TIMEOUTS.FIVE_SEC);
+
+                // * Verify the playbook run RHS is not open.
+                cy.get('#rhsContainer').should('not.exist');
+            });
+        });
     });
 
     describe('opens', () => {
@@ -317,60 +360,6 @@ describe('channels > rhs', () => {
             });
         });
 
-        it('when clicking on a todo digest link when rhs is already open', () => {
-            const runName = 'Playbook Run (' + Date.now() + ')';
-
-            // # Start a run
-            cy.apiRunPlaybook({
-                teamId: testTeam.id,
-                playbookId: testPlaybook.id,
-                playbookRunName: runName,
-                ownerUserId: testUser.id,
-            }).then((run) => {
-                // # Set a timer that will expire.
-                cy.apiUpdateStatus({
-                    playbookRunId: run.id,
-                    message: 'no message 1',
-                    reminder: 1,
-                });
-
-                // # Switch to playbooks DM channel
-                cy.visit(`/${testTeam.name}/messages/@playbooks`);
-
-                // # Wait until the channel loads enough to show the post textbox.
-                cy.get('#post-create').should('exist');
-
-                // # Run a slash command to show the to-do list.
-                cy.executeSlashCommand('/playbook todo');
-
-                // # Open the saved posts RHS
-                cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
-                    .click({force: true});
-
-                // * Verify Saved Posts is open
-                cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
-
-                // # Should show the runs overdue -- ignoring the rest
-                cy.getLastPost().within(() => {
-                    cy.get('li').then((liItems) => {
-                        // # Click to get to the run's channel
-                        cy.wrap(liItems[0]).get('a').contains(runName).click();
-                    });
-                });
-
-                // # Wait until the channel loads enough to show the post textbox.
-                cy.get('#post-create').should('exist');
-
-                // * Verify we're in the playbook channel
-                cy.get('#channelHeaderTitle').should('contain.text', runName);
-
-                // * Verify the playbook run RHS is open.
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText(runName).should('exist');
-                });
-            });
-        });
-
         it('when navigating directly to a finished playbook run channel and clicking on the button', () => {
             // # Run the playbook
             const now = Date.now();
@@ -392,9 +381,9 @@ describe('channels > rhs', () => {
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-            // * Verify RHS Home shows the run details
+            // * Verify no active runs screen shows
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Run details').should('exist');
+                cy.findByTestId('no-active-runs').should('exist');
             });
         });
     });

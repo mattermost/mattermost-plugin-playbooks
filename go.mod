@@ -11,7 +11,7 @@ replace github.com/golang/mock => github.com/golang/mock v1.4.4
 replace github.com/mattermost/mattermost-server/v6 => ../mattermost-server
 
 require (
-	github.com/Masterminds/squirrel v1.5.2
+	github.com/Masterminds/squirrel v1.5.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/mock v1.6.0
@@ -22,7 +22,7 @@ require (
 	github.com/mattermost/logr/v2 v2.0.15
 	github.com/mattermost/mattermost-plugin-api v0.0.29
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost-server/v6 v6.0.0-20221027094206-effbf7d620f1
+	github.com/mattermost/mattermost-server/v6 v6.0.0-20221214122404-8d90c7042f93
 	github.com/mattermost/morph v1.0.5-0.20221115094356-4c18a75b1f5e
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
@@ -115,6 +115,7 @@ require (
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80 // indirect
 	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect
+	github.com/mattermost/focalboard/server v0.0.0-20221222174020-fd4cf95f8ac9 // indirect
 	github.com/mattermost/go-i18n v1.11.1-0.20211013152124-5c415071e404 // indirect
 	github.com/mattermost/gziphandler v0.0.1 // indirect
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d // indirect
@@ -145,7 +146,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
+	github.com/prometheus/common v0.33.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/reflog/dateconstraints v0.2.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
@@ -197,7 +198,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	lukechampine.com/uint128 v1.1.1 // indirect
+	lukechampine.com/uint128 v1.2.0 // indirect
 	modernc.org/cc/v3 v3.36.0 // indirect
 	modernc.org/ccgo/v3 v3.16.6 // indirect
 	modernc.org/libc v1.16.7 // indirect

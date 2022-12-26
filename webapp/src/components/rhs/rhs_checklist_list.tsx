@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -11,36 +11,32 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
-import {GlobalState} from 'mattermost-webapp/types/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    finishRun,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     setEveryChecklistCollapsedStateChange,
-    finishRun,
 } from 'src/actions';
 import {
     Checklist,
     ChecklistItem,
-    ChecklistItemsFilter,
     ChecklistItemState,
+    ChecklistItemsFilter,
 } from 'src/types/playbook';
-import {
-    telemetryEventForPlaybookRun,
-} from 'src/client';
+import {telemetryEventForPlaybookRun} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {
-    currentChecklistAllCollapsed,
-    currentChecklistCollapsedState,
-    currentChecklistItemsFilter,
-} from 'src/selectors';
+import {currentChecklistAllCollapsed, currentChecklistCollapsedState, currentChecklistItemsFilter} from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
-import {AnchorLinkTitle} from '../backstage/playbook_runs/shared';
+
+import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
+
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
@@ -197,7 +193,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             title={formatMessage({defaultMessage: 'Tasks'})}
             id={id || ''}
         />
-    ) : <>{formatMessage({defaultMessage: 'Checklists'})}</>;
+    ) : <>{formatMessage({defaultMessage: 'Tasks'})}</>;
 
     const itemButtonsFormat = () => {
         if (parentContainer === ChecklistParent.RHS) {
@@ -274,6 +270,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                 onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
+                onViewerModeInteract={onViewerModeInteract}
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&
@@ -282,7 +279,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                         if (viewerMode && onViewerModeInteract) {
                             onViewerModeInteract();
                         } else {
-                            dispatch(finishRun(playbookRun?.team_id || ''));
+                            dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
                         }
                     }}
                 >

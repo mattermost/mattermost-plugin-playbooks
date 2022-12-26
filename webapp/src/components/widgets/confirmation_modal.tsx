@@ -5,9 +5,14 @@ import React, {useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
-import {PrimaryButton, TertiaryButton} from '../assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
-import {DefaultFooterContainer, StyledModal, Buttons, ModalHeading} from './generic_modal';
+import {
+    Buttons,
+    DefaultFooterContainer,
+    ModalHeading,
+    StyledModal,
+} from './generic_modal';
 
 type Props = {
 

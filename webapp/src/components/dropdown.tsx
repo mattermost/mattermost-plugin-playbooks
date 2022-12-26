@@ -1,22 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {cloneElement, useState, ComponentProps} from 'react';
+import React, {ComponentProps, cloneElement, useState} from 'react';
 import styled, {css} from 'styled-components';
 
 import {
-    useFloating,
-    offset,
-    flip,
-    shift,
-    autoUpdate,
-    useInteractions,
-    useClick,
-    useRole,
-    useDismiss,
     FloatingFocusManager,
     FloatingPortal,
     Placement,
+    autoUpdate,
+    flip,
+    offset,
+    shift,
+    useClick,
+    useDismiss,
+    useFloating,
+    useInteractions,
+    useRole,
 } from '@floating-ui/react-dom-interactions';
 
 const FloatingContainer = styled.div`
@@ -29,12 +29,12 @@ const FloatingContainer = styled.div`
 		}
 	}
 
-    .playbook-run-user-select__menu-list {
+    .playbook-react-select__menu-list {
         padding: 0 0 12px;
         border: none;
     }
 
-    .playbook-run-user-select {
+    .playbook-react-select {
         border-radius: 4px;
         -webkit-overflow-scrolling: touch;
         background-color: var(--center-channel-bg);

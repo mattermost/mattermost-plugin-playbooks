@@ -13,6 +13,7 @@ describe('playbooks > edit', () => {
     let testUser;
     let testUser2;
     let testUser3;
+    let featureFlagPrevValue;
 
     const openCategorySelector = () => {
         cy.get('.channel-selector__control input').click({force: true});
@@ -30,6 +31,10 @@ describe('playbooks > edit', () => {
                 testSysadmin = sysadmin;
             });
 
+            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', false).then(({prevValue}) => {
+                featureFlagPrevValue = prevValue;
+            });
+
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
                 testUser2 = payload.user;
@@ -41,10 +46,15 @@ describe('playbooks > edit', () => {
                 testUser3 = payload.user;
                 cy.apiAddUserToTeam(testTeam.id, payload.user.id);
             });
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
+    });
+
+    after(() => {
+        if (featureFlagPrevValue) {
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+            });
+        }
     });
 
     beforeEach(() => {
@@ -53,6 +63,77 @@ describe('playbooks > edit', () => {
     });
 
     describe('checklists', () => {
+        describe('pre-assignee', () => {
+            it('user gets pre-assigned, added to invite user list, and invitations become enabled', () => {
+                // # Open Playbooks
+                cy.visit('/playbooks/playbooks');
+
+                // # Start a blank playbook
+                cy.findByText('Blank').click();
+                cy.findByText('Outline').click();
+
+                cy.get('#actions').within(() => {
+                    cy.get('#invite-users').within(() => {
+                        // * Verify invitations are disabled and no invited user exists
+                        cy.get('label input').should('not.be.checked');
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '');
+                    });
+                });
+
+                // # Pre-assign the user
+                cy.get('#checklists').within(() => {
+                    // # Trigger assignee select menu
+                    cy.findByText('Untitled task').trigger('mouseover');
+                    cy.findByTestId('hover-menu-edit-button').click();
+                    cy.findByText('Assignee...').click();
+
+                    // * Verify that the assignee input is focused now
+                    cy.focused()
+                        .should('have.attr', 'type', 'text')
+                        .should('have.attr', 'id');
+
+                    // * Verify that the root of the assignee select menu exists
+                    cy.focused().parents('.playbook-react-select')
+                        .should('exist')
+                        .within(() => {
+                            // # Select the test user
+                            cy.findByText('@' + testUser.username).click({force: true});
+                        });
+                });
+
+                cy.reload();
+
+                cy.get('#checklists').within(() => {
+                    // # Trigger assignee select menu
+                    cy.findByText('Untitled task').trigger('mouseover');
+                    cy.findByTestId('hover-menu-edit-button').click();
+                    cy.findByText('@' + testUser.username).click();
+
+                    // * Verify that the assignee input is focused now
+                    cy.focused()
+                        .should('have.attr', 'type', 'text')
+                        .should('have.attr', 'id');
+
+                    // * Verify that the root of the assignee select menu exists
+                    cy.focused()
+                        .parents('.playbook-react-select')
+                        .should('exist');
+                });
+
+                cy.get('#actions').within(() => {
+                    cy.get('#invite-users').within(() => {
+                        // * Verify invitations are enabled and a single user is invited
+                        cy.get('label input').should('be.checked');
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '1 SELECTED');
+                    });
+                });
+            });
+        });
+
         describe('slash command', () => {
             it('autocompletes after clicking Command...', () => {
                 // # Open Playbooks
@@ -137,80 +218,29 @@ describe('playbooks > edit', () => {
         });
     });
 
-    describe('actions', () => {
-        let testPrivateChannel;
-        let testPlaybook;
-
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
-            // # Create a public channel
-            cy.apiCreateChannel(
-                testTeam.id,
-                'public-channel',
-                'Public Channel',
-                'O'
-            );
-
-            // # Create a private channel
-            cy.apiCreateChannel(
-                testTeam.id,
-                'private-channel',
-                'Private Channel',
-                'P'
-            ).then(({channel}) => {
-                testPrivateChannel = channel;
-            });
-        });
-
-        beforeEach(() => {
-            // # Create a playbook
-            cy.apiCreateTestPlaybook({
-                teamId: testTeam.id,
-                title: 'Playbook (' + Date.now() + ')',
-                userId: testUser.id,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-            });
-        });
-
+    const commonActionTests = () => {
         describe('when a playbook run starts', () => {
+            let testPlaybook;
+            beforeEach(() => {
+                // # Create a playbook
+                cy.apiCreateTestPlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook (' + Date.now() + ')',
+                    userId: testUser.id,
+                }).then((playbook) => {
+                    testPlaybook = playbook;
+                });
+            });
+
             describe('create channel setting', () => {
-                it('is enabled in a new playbook', () => {
+                it('is enabled by default in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                     // # select the actions section.
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is checked
-                        cy.get('#create-channel label input').should(
-                            'be.checked'
-                        );
-
-                        // * Verify that the toggle is disabled
-                        cy.get('#create-channel label input').should(
-                            'be.disabled'
-                        );
-                    });
-                });
-
-                it('can not be disabled', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-
-                    // # select the actions section
-                    cy.get('#actions').within(() => {
-                        cy.get('#create-channel').within(() => {
-                            // * Verify that the toggle is checked
-                            cy.get('[type="checkbox"]').should('be.checked');
-
-                            // # Click on the toggle to enable the setting
-                            cy.get('[type="checkbox"]').click({force: true});
-
-                            // * Verify that the toggle remains checked
-                            cy.get('[type="checkbox"]').should('be.checked');
-                        });
+                        cy.get('#create-new-channel label input').should('be.checked');
                     });
                 });
             });
@@ -223,9 +253,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
-                        cy.get('#invite-users label input').should(
-                            'not.be.checked'
-                        );
+                        cy.get('#invite-users label input').should('not.be.checked');
                     });
                 });
 
@@ -255,9 +283,7 @@ describe('playbooks > edit', () => {
                     // # select the actions section
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is unchecked
-                        cy.get('#invite-users label input').should(
-                            'not.be.checked'
-                        );
+                        cy.get('#invite-users label input').should('not.be.checked');
 
                         // * Verify that the menu is disabled
                         cy.get('#invite-users').within(() => {
@@ -475,6 +501,149 @@ describe('playbooks > edit', () => {
                                     cy.findByText(testUser2.username);
                                     cy.findByText(testUser2.username);
                                 });
+                        });
+                    });
+                });
+
+                describe('allow removing pre-assigned users with confirmation', () => {
+                    beforeEach(() => {
+                        // # Create a playbook
+                        cy.apiCreateTestPlaybook({
+                            teamId: testTeam.id,
+                            title: 'Playbook (' + Date.now() + ')',
+                            userId: testUser.id,
+                            checklists: [{
+                                title: 'Example',
+                                items: [
+                                    {
+                                        title: 'Untitled task',
+                                        assignee_id: testUser.id,
+                                    }
+                                ]
+                            }],
+                            invitedUserIds: [testUser.id],
+                            inviteUsersEnabled: true,
+                        }).then((playbook) => {
+                            testPlaybook = playbook;
+                        });
+                    });
+
+                    it('when removing an invited user', () => {
+                        // # Visit the selected playbook
+                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify user is pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText(`@${testUser.username}`).should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify invitations enabled and user is invited
+                                cy.get('label input').should('be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '1 SELECTED');
+
+                                cy.openSelector();
+
+                                cy.get('.invite-users-selector__menu').within(() => {
+                                    // # Trigger remove for pre-assigned user
+                                    cy.findByText('Remove').click({force: true});
+                                });
+                            });
+                        });
+
+                        // * Verify that confirmation dialog is open
+                        cy.get('#confirmModal').should('be.visible');
+
+                        // * Verify that confirmation dialog contains correct text
+                        cy.get('#confirmModal').should('contain', 'Are you sure you want to stop inviting this user as a member of the run?');
+
+                        // * Verify that the confirmation button is focused and click
+                        cy.focused()
+                            .should('have.id', 'confirmModalButton')
+                            .click({force: true});
+
+                        // * Verify that the confirmation dialog is closed
+                        cy.get('#confirmModal').should('not.be.visible');
+
+                        cy.reload();
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify that user is not pre-assigned anymore
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText('Assignee...').should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify that user is not invited anymore
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '');
+                            });
+                        });
+                    });
+
+                    it('when disabling invitations', () => {
+                        // # Visit the selected playbook
+                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify user is pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText(`@${testUser.username}`).should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify invitations are enabled and user is invited
+                                cy.get('label input').should('be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '1 SELECTED');
+
+                                // # Disable invitations
+                                cy.get('label input').click({force: true});
+                            });
+                        });
+
+                        // * Verify that confirmation dialog is open
+                        cy.get('#confirmModal').should('be.visible');
+
+                        // * Verify that confirmation dialog contains correct text
+                        cy.get('#confirmModal').should('contain', 'Are you sure you want to disable invitations?');
+
+                        // * Verify that the confirmation button is focused and click
+                        cy.focused()
+                            .should('have.id', 'confirmModalButton')
+                            .click({force: true});
+
+                        // * Verify that confirmation dialog is closed
+                        cy.get('#confirmModal').should('not.be.visible');
+
+                        cy.reload();
+
+                        cy.get('#checklists').within(() => {
+                            // * Verify that user is not pre-assigned
+                            cy.findByText('Untitled task').trigger('mouseover');
+                            cy.findByTestId('hover-menu-edit-button').click();
+                            cy.findByText('Assignee...').should('exist');
+                        });
+
+                        cy.get('#actions').within(() => {
+                            cy.get('#invite-users').within(() => {
+                                // * Verify that invitations are disabled and no user is invited
+                                cy.get('label input').should('not.be.checked');
+                                cy.get('.invite-users-selector__control')
+                                    .after('content')
+                                    .should('eq', '');
+                            });
                         });
                     });
                 });
@@ -792,6 +961,159 @@ describe('playbooks > edit', () => {
                 });
             });
         });
+    };
+
+    describe('actions toggled linkruntoexistingchannelenabled=OFF', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+        commonActionTests();
+    });
+
+    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
+        let testPlaybook;
+
+        before(() => {
+            cy.apiLogin(testSysadmin).then(() => {
+                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
+                    featureFlagPrevValue = prevValue;
+                });
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        after(() => {
+            if (!featureFlagPrevValue) {
+                cy.apiLogin(testSysadmin).then(() => {
+                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
+                });
+            }
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        commonActionTests();
+
+        describe('link to an existing channel setting', () => {
+            beforeEach(() => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            });
+
+            it('can be checked', () => {
+                // # select the action section.
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // * Verify that the toggle is unchecked and input is disabled
+                    cy.get('input[type=radio]').should('not.be.checked');
+                    cy.get('input[type=text]').should('be.disabled');
+
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+
+                    // * Verify that the toggle is checked and input is enabled
+                    cy.get('input[type=radio]').should('be.checked');
+                    cy.get('input[type=text]').should('not.be.disabled');
+                });
+            });
+
+            it('create channel choices are disabled when is checked', () => {
+                // # select the action section.
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+                });
+
+                // # select the action section.
+                cy.get('#actions #create-new-channel').within(() => {
+                    // * Verify that the toggle is unchecked and inputs are disabled
+                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('button').should('be.disabled');
+                });
+            });
+
+            it.skip('can fill a channel and is persisted', () => {
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // # click radio
+                    cy.get('input[type=radio]').click();
+
+                    cy.findByText('Select a channel').click().type('Town{enter}');
+                });
+
+                cy.reload();
+
+                // * wait for page to load
+                cy.get('h1').should('be.visible');
+
+                cy.get('#actions #create-new-channel').within(() => {
+                    // * Verify that the toggle is unchecked and inputs are disabled
+                    cy.get('input[type=radio]').eq(0).should('not.be.checked');
+                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('button').should('be.disabled');
+                });
+
+                cy.get('#actions #link-existing-channel').within(() => {
+                    // * Verify that the toggle is checked and input is enabled
+                    cy.get('input[type=radio]').should('be.checked');
+                    cy.get('input[type=text]').should('not.be.disabled');
+                    cy.findByText('Town Square').should('exist');
+                });
+            });
+        });
+    });
+
+    describe('actions', () => {
+        let testPrivateChannel;
+        let testPlaybook;
+
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a public channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'public-channel',
+                'Public Channel',
+                'O'
+            );
+
+            // # Create a private channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'private-channel',
+                'Private Channel',
+                'P'
+            ).then(({channel}) => {
+                testPrivateChannel = channel;
+            });
+        });
+
+        beforeEach(() => {
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
 
         describe('when an update is posted', () => {
             describe('broadcast channel setting', () => {
@@ -991,7 +1313,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('be.checked');
@@ -1006,7 +1328,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it('allows selecting a category when enabled', () => {
+                it.skip('allows selecting a category when enabled', () => {
                     cy.findByTestId('user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1034,7 +1356,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
@@ -1117,7 +1439,7 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('not.be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('label').eq(1).click();
 
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
@@ -1233,7 +1555,7 @@ describe('playbooks > edit', () => {
             cy.findByText('Blank').click();
 
             // # Open the title dropdown and Rename
-            cy.findByRole('button', {name: /'s Blank/i}).click();
+            cy.findByTestId('playbook-editor-title').click();
             cy.findByText('Rename').click();
 
             // # Change the name and save

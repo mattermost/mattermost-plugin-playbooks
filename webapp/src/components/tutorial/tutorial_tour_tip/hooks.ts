@@ -1,6 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {useSelector} from 'react-redux';
 import throttle from 'lodash/throttle';
 

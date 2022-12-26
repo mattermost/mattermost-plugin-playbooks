@@ -21,7 +21,7 @@ import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
 
-import Header from '../widgets/header';
+import Header from 'src/components/widgets/header';
 
 import RunList from './runs_list/runs_list';
 import NoContentPage from './runs_page_no_content';
@@ -42,7 +42,7 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    participant_or_follower_id: 'me',
+    participant_or_follower_id: '',
     statuses: statusOptions
         .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
         .map((opt) => opt.value),

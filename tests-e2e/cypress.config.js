@@ -1,8 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+const dns = require('node:dns');
+
 const {defineConfig} = require('cypress');
 
 const cypressPlugins = require('./cypress/plugins/index');
+
+// Work around an issue on some platforms where localhost resolves to ipv6, but only with axios.
+dns.setDefaultResultOrder('ipv4first');
 
 module.exports = defineConfig({
     defaultCommandTimeout: 20000,

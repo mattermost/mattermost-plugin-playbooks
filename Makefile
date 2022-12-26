@@ -45,7 +45,7 @@ apply:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules check-golangci
+check-style: apply webapp/node_modules tests-e2e/node_modules check-golangci
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -55,17 +55,30 @@ endif
 
 	cd tests-e2e && npm run check
 
+# It's highly recommended to run go-vet first
+# to find potential compile errors that could introduce
+# weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
+	$(GO) vet ./...
 	$(GOBIN)/golangci-lint run ./...
 endif
+
+## Fix JS file ESLint issues
+.PHONY: fix-style
+fix-style: apply webapp/node_modules tests-e2e/node_modules
+	@echo Fixing lint issues to follow style guide
+
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && npm run fix
+endif
+	cd tests-e2e && npm run fix
+
 
 .PHONY: check-golangci
 check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
-
-	@# Keep the version in sync with the command in .circleci/config.yml
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
 endif
 
@@ -104,7 +117,14 @@ endif
 webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && node skip_integrity_check.js
-	cd webapp && $(NPM) install
+	cd webapp && $(NPM) install --ignore-scripts --legacy-peer-deps
+	touch $@
+endif
+
+## Ensures NPM dependencies are installed without having to run this all the time.
+tests-e2e/node_modules: $(wildcard tests-e2e/package.json)
+ifneq ($(HAS_WEBAPP),)
+	cd tests-e2e && $(NPM) install
 	touch $@
 endif
 

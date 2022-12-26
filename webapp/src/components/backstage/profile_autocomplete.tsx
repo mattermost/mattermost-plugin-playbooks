@@ -6,7 +6,12 @@ import AsyncSelect from 'react-select/async';
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
-import {OptionsType, ControlProps, OptionTypeBase, StylesConfig} from 'react-select';
+import {
+    ControlProps,
+    OptionTypeBase,
+    OptionsType,
+    StylesConfig,
+} from 'react-select';
 
 import Profile, {ProfileImage, ProfileName} from 'src/components/profile/profile';
 
@@ -74,6 +79,8 @@ interface Props {
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
     placeholder?: string;
+    defaultValue?: UserProfile[]
+    autoFocus?: boolean;
 }
 
 const ProfileAutocomplete = (props: Props) => {
@@ -143,13 +150,14 @@ const ProfileAutocomplete = (props: Props) => {
     return (
         <StyledAsyncSelect
             id={'profile-autocomplete'}
-            autoFocus={true}
+            autoFocus={props.autoFocus ?? true}
             isDisabled={props.isDisabled}
             isMulti={props.isMultiMode}
             controlShouldRenderValue={props.isMultiMode}
             cacheOptions={false}
             defaultOptions={!props.isMultiMode}
             loadOptions={usersLoader}
+            defaultValue={props.defaultValue}
             filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
             onChange={onChange}
             getOptionValue={getOptionValue}
@@ -190,5 +198,5 @@ const StyledProfile = styled(Profile)`
         font-size: 14px;
         line-height: 16px;
     }
-    
+
 `;

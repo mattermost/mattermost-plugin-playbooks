@@ -1,10 +1,6 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {
-    GroupType,
-    ControlProps,
-    OptionsType,
-} from 'react-select';
+import ReactSelect, {ControlProps, GroupType, OptionsType} from 'react-select';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -22,7 +18,7 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 interface Props {
     userIds: string[];
     onAddUser: (userid: string) => void;
-    onRemoveUser: (userid: string) => void;
+    onRemoveUser: (userid: string, username: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     isDisabled: boolean;
@@ -106,7 +102,7 @@ const InviteUsersSelector = (props: Props) => {
             getOptionValue={(user: UserProfile) => user.id}
             formatOptionLabel={(option: UserProfile) => (
                 <UserLabel
-                    onRemove={() => props.onRemoveUser(option.id)}
+                    onRemove={() => props.onRemoveUser(option.id, option.username)}
                     id={option.id}
                     invitedUsers={(options.length > 0 && isGroup(options[0])) ? options[0].options : []}
                 />

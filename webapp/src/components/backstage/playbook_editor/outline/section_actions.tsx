@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, ComponentProps} from 'react';
+import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -9,7 +9,7 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {PlayIcon, AccountPlusOutlineIcon, AccountMinusOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -19,9 +19,12 @@ import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {Toggle} from '../../playbook_edit/automation/toggle';
-import {AutomationTitle} from '../../playbook_edit/automation/styles';
+
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+
 import {useProxyState} from 'src/hooks';
+import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -40,8 +43,14 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
+            channelMode: update.channel_mode,
+            channelId: update.channel_id,
         });
     }, [updatePlaybook]));
+
+    const preAssignees = useMemo(() => {
+        return getDistinctAssignees(playbook.checklists);
+    }, [playbook.checklists]);
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
@@ -63,6 +72,53 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const idx = playbook.invited_user_ids.indexOf(userId);
         updatePlaybook({
             invitedUserIDs: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+    };
+
+    const handleRemovePreAssignedUserInvited = (userId: string) => {
+        // Iterate all checklists and their tasks and unassign the given user from all tasks
+        const checklists = playbook.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        const idx = playbook.invited_user_ids.indexOf(userId);
+        updatePlaybook({
+            checklists,
+            invitedUserIDs: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+    };
+
+    const handleRemovePreAssignedUsers = () => {
+        // Iterate all checklists and their tasks and unassign all assignees
+        const checklists = playbook.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        updatePlaybook({
+            checklists,
+            inviteUsersEnabled: false,
         });
     };
 
@@ -119,7 +175,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
                 </StyledSectionTitle>
-                <Setting id={'create-channel'}>
+                <Setting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
@@ -133,8 +189,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
+                        preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
+                        onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
+                        onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
                 </Setting>
                 <Setting id={'assign-owner'}>
@@ -183,8 +242,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Add them to the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Add them to the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
@@ -204,8 +264,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                     removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
                                 });
                             }}
-                        />
-                        <div><FormattedMessage defaultMessage='Remove them from the run channel'/></div>
+                        >
+                            <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                        </Toggle>
                     </AutomationTitle>
                 </Setting>
             </StyledSection>

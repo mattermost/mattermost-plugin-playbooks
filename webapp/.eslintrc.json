@@ -10,7 +10,9 @@
     "import",
     "formatjs",
     "@typescript-eslint",
-    "unused-imports"
+    "unused-imports",
+    "no-relative-import-paths",
+    "import-newlines"
   ],
   "env": {
     "browser": true,
@@ -144,13 +146,11 @@
         ]
       }
     ],
-    "indent": [
-      2,
-      4,
-      {
-        "SwitchCase": 0
-      }
+    "import-newlines/enforce": [
+        2,
+        3
     ],
+    "indent": 0, // ts handles this
     "jsx-quotes": [
       2,
       "prefer-single"
@@ -574,7 +574,12 @@
         "after": true
       }
     ],
-    "sort-imports": 0,
+    "sort-imports": [
+      2,
+      {
+        "ignoreDeclarationSort": true
+      }
+    ],
     "sort-keys": 0,
     "space-before-blocks": [
       2,
@@ -631,7 +636,11 @@
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
     "formatjs/no-literal-string-in-jsx": 2,
-    "unused-imports/no-unused-imports": 2
+    "unused-imports/no-unused-imports": 2,
+    "no-relative-import-paths/no-relative-import-paths": [
+      "error",
+      { "allowSameFolder": true }
+    ]
   },
   "overrides": [
     {

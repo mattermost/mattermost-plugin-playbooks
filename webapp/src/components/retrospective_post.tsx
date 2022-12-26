@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {Post} from '@mattermost/types/posts';
 
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 import {Metric, MetricType} from 'src/types/playbook';
 
@@ -27,7 +27,11 @@ export const RetrospectivePost = (props: Props) => {
         atMentions: true,
     };
 
-    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+    const messageHtmlToComponentOptions = {
+        hasPluginTooltips: true,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
     const metricsConfigs: Array<Metric> = JSON.parse(props.post.props.metricsConfigs);
     const metricsData: Array<RunMetricData> = JSON.parse(props.post.props.metricsData);

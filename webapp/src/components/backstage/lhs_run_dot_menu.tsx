@@ -7,17 +7,22 @@ import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
 
-import {followPlaybookRun, unfollowPlaybookRun, telemetryEvent} from 'src/client';
+import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useSetRunFavorite} from 'src/graphql/hooks';
 import {useRunFollowers} from 'src/hooks';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
-import {CopyRunLinkMenuItem, FavoriteRunMenuItem, FollowRunMenuItem, LeaveRunMenuItem} from './playbook_runs/playbook_run/controls';
+import {
+    CopyRunLinkMenuItem,
+    FavoriteRunMenuItem,
+    FollowRunMenuItem,
+    LeaveRunMenuItem,
+} from './playbook_runs/playbook_run/controls';
 import {DotMenuButtonStyled} from './shared';
 import {useLHSRefresh} from './lhs_navigation';
 
@@ -33,7 +38,7 @@ interface Props {
 export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participantIDs, followerIDs, hasPermanentViewerAccess}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const updateRun = useUpdateRun(playbookRunId);
+    const setRunFavorite = useSetRunFavorite(playbookRunId);
     const currentUser = useSelector(getCurrentUser);
     const refreshLHS = useLHSRefresh();
 
@@ -44,7 +49,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
 
     const toggleFavorite = () => {
-        updateRun({isFavorite: !isFavorite});
+        setRunFavorite(!isFavorite);
     };
 
     // TODO: converge with src/hooks/run useFollowRun

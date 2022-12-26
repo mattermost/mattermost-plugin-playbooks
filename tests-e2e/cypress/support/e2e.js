@@ -103,8 +103,6 @@ Cypress.on('uncaught:exception', () => {
     return false;
 });
 
-require('cypress-terminal-report/src/installLogsCollector')();
-
 before(() => {
     // # Clear localforage state
     localforage.clear();
@@ -137,11 +135,6 @@ before(() => {
         printLicenseStatus();
         printServerDetails();
     });
-});
-
-// Add login cookies to whitelist to preserve it
-beforeEach(() => {
-    Cypress.Cookies.preserveOnce('MMAUTHTOKEN', 'MMUSERID', 'MMCSRF');
 });
 
 function printLicenseStatus() {

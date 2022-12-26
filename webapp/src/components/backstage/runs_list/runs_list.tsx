@@ -11,7 +11,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
-import Spinner from 'src/components/assets/icons/spinner';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 
 import Row from './row';
 import RunListHeader from './run_list_header';
@@ -44,10 +44,17 @@ const Count = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-const StyledSpinner = styled(Spinner)`
+const SpinnerContainer = styled.div`
     width: 100%;
-    text-align:center;
+    height: 24px;
+    text-align: center;
     margin-top: 10px;
+    overflow: visible;
+`;
+
+const StyledSpinner = styled(LoadingSpinner)`
+    width: auto;
+    height: 100%;
 `;
 
 const RunList = ({
@@ -100,7 +107,7 @@ const RunList = ({
                 dataLength={playbookRuns.length}
                 next={nextPage}
                 hasMore={playbookRuns.length < totalCount}
-                loader={<StyledSpinner/>}
+                loader={<SpinnerContainer><StyledSpinner/></SpinnerContainer>}
                 scrollableTarget={'playbooks-backstageRoot'}
             >
                 {playbookRuns.map((playbookRun) => (

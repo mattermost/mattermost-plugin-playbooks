@@ -1,11 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';
-import {useKeyPress, useClickOutsideRef} from 'src/hooks';
+import {useClickOutsideRef, useKeyPress} from 'src/hooks';
 
 export interface SelectOption{
     display: String;

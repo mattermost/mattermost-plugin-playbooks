@@ -63,12 +63,13 @@ describe('runs > retrospective', () => {
 
     describe('runs with metrics', () => {
         let runId;
+        let runName;
         let playbookRunChannelName;
 
         beforeEach(() => {
             // # Create a new playbook run
             const now = Date.now();
-            const runName = `Run (${now})`;
+            runName = `Run (${now})`;
             playbookRunChannelName = `run-${now}`;
 
             cy.apiRunPlaybook({
@@ -104,7 +105,7 @@ describe('runs > retrospective', () => {
                 cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Verify channel retro post content
-                cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
+                cy.findAllByTestId('postView').last().contains(`Retrospective for ${runName} has been published by`);
                 cy.getStyledComponent('MetricInfo').should('have.length', 4);
                 cy.getStyledComponent('MetricInfo').eq(0).contains('11 hours, 10 minutes');
                 cy.getStyledComponent('MetricInfo').eq(1).contains('560');
@@ -135,7 +136,7 @@ describe('runs > retrospective', () => {
                     cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify channel retro post content
-                    cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
+                    cy.findAllByTestId('postView').last().contains(`Retrospective for ${runName} has been published by`);
                     cy.getStyledComponent('MetricInfo').should('have.length', 3);
                     cy.getStyledComponent('MetricInfo').eq(0).contains('43');
                     cy.getStyledComponent('MetricInfo').eq(1).contains('121');
@@ -165,7 +166,7 @@ describe('runs > retrospective', () => {
                     cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify channel retro post content
-                    cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
+                    cy.findAllByTestId('postView').last().contains(`Retrospective for ${runName} has been published by`);
                     cy.getStyledComponent('MetricInfo').should('have.length', 2);
                     cy.getStyledComponent('MetricInfo').eq(0).contains('0');
                     cy.getStyledComponent('MetricInfo').eq(1).contains('4 hours, 2 minutes');
@@ -193,7 +194,7 @@ describe('runs > retrospective', () => {
                     cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify channel retro post content
-                    cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
+                    cy.findAllByTestId('postView').last().contains(`Retrospective for ${runName} has been published by`);
                     cy.getStyledComponent('MetricInfo').should('have.length', 1);
                     cy.getStyledComponent('MetricInfo').eq(0).contains('0 seconds');
                 });
@@ -216,7 +217,7 @@ describe('runs > retrospective', () => {
                     cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify channel retro post content
-                    cy.findAllByTestId('postView').last().contains('Retrospective has been published by');
+                    cy.findAllByTestId('postView').last().contains(`Retrospective for ${runName} has been published by`);
                     cy.getStyledComponent('MetricInfo').should('not.exist');
                 });
             });

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, HTMLAttributes} from 'react';
+import React, {HTMLAttributes, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -33,7 +33,8 @@ const CopyLink = ({
     const {formatMessage} = useIntl();
     const [wasCopied, setWasCopied] = useState(false);
 
-    const copyLink = () => {
+    const copyLink = (e: React.MouseEvent) => {
+        e.stopPropagation();
         copyToClipboard(to);
         setWasCopied(true);
     };

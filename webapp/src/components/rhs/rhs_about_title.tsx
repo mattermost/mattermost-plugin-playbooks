@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {StyledComponent} from 'styled-components';
 
@@ -77,7 +77,10 @@ const RHSAboutTitle = (props: Props) => {
 
         return (
             <TitleWrapper>
-                <RenderedTitle onClick={onRenderedTitleClick}>
+                <RenderedTitle
+                    onClick={onRenderedTitleClick}
+                    data-testid='rendered-run-name'
+                >
                     {editedValue}
                 </RenderedTitle>
                 {props.status === PlaybookRunStatus.Finished &&
@@ -90,6 +93,7 @@ const RHSAboutTitle = (props: Props) => {
     return (
         <>
             <TitleInput
+                data-testid='textarea-run-name'
                 type={'text'}
                 ref={inputRef}
                 onChange={(e) => setEditedValue(e.target.value)}

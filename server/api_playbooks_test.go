@@ -227,12 +227,111 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, 2, playbookResults.TotalCount)
 
 	})
+
+	t.Run("create playbook with valid user list", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "pre-assigned-test1",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			InvitedUserIDs: []string{e.RegularUser.Id},
+		})
+		assert.Nil(t, err)
+	})
+
+	t.Run("create playbook with pre-assigned task, valid user list, and invitations enabled", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "pre-assigned-test2",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:      "Do this1",
+							AssigneeID: e.RegularUser.Id,
+						},
+					},
+				},
+			},
+			InvitedUserIDs:     []string{e.RegularUser.Id},
+			InviteUsersEnabled: true,
+		})
+		assert.Nil(t, err)
+	})
 }
 
 func TestCreateInvalidPlaybook(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
+
+	t.Run("fails if pre-assigned task is added but invitations are disabled", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "fail-pre-assigned-test1",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:      "Do this1",
+							AssigneeID: e.RegularUser.Id,
+						},
+					},
+				},
+			},
+			InvitedUserIDs: []string{e.RegularUser.Id},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Empty(t, id)
+	})
+
+	t.Run("fails if pre-assigned task is added but existing invite user list is missing assignee", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "fail-pre-assigned-test2",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:      "Do this1",
+							AssigneeID: e.RegularUser.Id,
+						},
+					},
+				},
+			},
+			InviteUsersEnabled: true,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Empty(t, id)
+	})
+
+	t.Run("fails if pre-assigned task is added but assignee is missing in invite user list", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "fail-pre-assigned-test3",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "A",
+					Items: []client.ChecklistItem{
+						{
+							Title:      "Do this1",
+							AssigneeID: e.RegularUser.Id,
+						},
+					},
+				},
+			},
+			InvitedUserIDs:     []string{e.RegularUser2.Id},
+			InviteUsersEnabled: true,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Empty(t, id)
+	})
 
 	t.Run("fails if json is larger than 256K", func(t *testing.T) {
 		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -306,6 +405,101 @@ func TestPlaybookUpdate(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("fails if pre-assigned task is added but invitations are disabled", func(t *testing.T) {
+		e.BasicPlaybook.InvitedUserIDs = []string{e.RegularUser2.Id}
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:      "Do this1",
+						AssigneeID: e.RegularUser2.Id,
+					},
+				},
+			},
+		}
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("fails if pre-assigned task is added but existing invite user list is missing assignee", func(t *testing.T) {
+		e.BasicPlaybook.InviteUsersEnabled = true
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:      "Do this1",
+						AssigneeID: e.RegularUser.Id,
+					},
+				},
+			},
+		}
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("fails if pre-assigned task is added but assignee is missing in updated invite user list", func(t *testing.T) {
+		e.BasicPlaybook.InviteUsersEnabled = true
+		e.BasicPlaybook.InvitedUserIDs = []string{e.RegularUser2.Id}
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:      "Do this1",
+						AssigneeID: e.RegularUser.Id,
+					},
+				},
+			},
+		}
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update playbook with pre-assigned task, valid invite user list, and invitations enabled", func(t *testing.T) {
+		e.BasicPlaybook.InviteUsersEnabled = true
+		e.BasicPlaybook.InvitedUserIDs = []string{e.RegularUser.Id}
+		e.BasicPlaybook.Checklists = []client.Checklist{
+			{
+				Title: "A",
+				Items: []client.ChecklistItem{
+					{
+						Title:      "Do this1",
+						AssigneeID: e.RegularUser.Id,
+					},
+				},
+			},
+		}
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+	})
+
+	t.Run("update playbook with valid invite user list", func(t *testing.T) {
+		e.BasicPlaybook.InvitedUserIDs = append(e.BasicPlaybook.InvitedUserIDs, e.RegularUser2.Id)
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+	})
+
+	t.Run("fails if invite user list is updated but is missing pre-assigned users", func(t *testing.T) {
+		e.BasicPlaybook.InvitedUserIDs = []string{}
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("fails if invitations are getting disabled but there are pre-assigned users", func(t *testing.T) {
+		e.BasicPlaybook.InviteUsersEnabled = false
+
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
 	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
 		urls := []string{}
 		for i := 0; i < 65; i++ {
@@ -315,6 +509,36 @@ func TestPlaybookUpdate(t *testing.T) {
 		e.BasicPlaybook.WebhookOnCreationURLs = urls
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+}
+
+func TestPlaybookUpdateCrossTeam(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update playbook properties not in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("lost acccess to playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members,
+			client.PlaybookMember{
+				UserID: e.RegularUserNotInTeam.Id,
+				Roles:  []string{app.PlaybookRoleMember},
+			})
+		uperr := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, uperr)
+		err := e.PlaybooksClientNotInTeam.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update playbook properties in team public playbook", func(t *testing.T) {
+		e.BasicPlaybook.Description = "This is the updated description"
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
 	})
 }
 
@@ -1215,7 +1439,6 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 				Items: []client.ChecklistItem{
 					{
 						Title:            "title1",
-						AssigneeID:       "id1",
 						AssigneeModified: 101,
 						State:            "Closed",
 						StateModified:    102,
@@ -1234,7 +1457,6 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 				Items: []client.ChecklistItem{
 					{
 						Title:            "title1",
-						AssigneeID:       "",
 						AssigneeModified: 0,
 						State:            "",
 						StateModified:    0,
@@ -1257,7 +1479,6 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 					Items: []client.ChecklistItem{
 						{
 							Title:            "title1",
-							AssigneeID:       "id1",
 							AssigneeModified: 101,
 							State:            "Closed",
 							StateModified:    102,
@@ -1275,7 +1496,6 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 				Items: []client.ChecklistItem{
 					{
 						Title:            "title1",
-						AssigneeID:       "",
 						AssigneeModified: 0,
 						State:            "",
 						StateModified:    0,

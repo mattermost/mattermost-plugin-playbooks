@@ -12,9 +12,9 @@ import {savePreferences as storeSavePreferences} from 'mattermost-redux/actions/
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {Client4} from 'mattermost-redux/client';
 
-import {FINISHED, SKIPPED, TTCategoriesMapToSteps} from '../tours';
+import {FINISHED, SKIPPED, TTCategoriesMapToSteps} from 'src/components/tutorial/tours';
 
-import {isKeyPressed, KeyCodes} from 'src/utils';
+import {KeyCodes, isKeyPressed} from 'src/utils';
 
 export interface TutorialTourTipManager {
     show: boolean;

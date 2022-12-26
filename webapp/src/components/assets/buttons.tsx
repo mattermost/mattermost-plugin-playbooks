@@ -80,7 +80,7 @@ export const PrimaryButton = styled(Button)`
     &:disabled {
         color: rgba(var(--center-channel-color-rgb), 0.32);
         background: rgba(var(--center-channel-color-rgb), 0.08);
-    }    
+    }
 `;
 
 export const SubtlePrimaryButton = styled(Button)`
@@ -95,6 +95,7 @@ export const SubtlePrimaryButton = styled(Button)`
 export const TertiaryButton = styled.button`
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     height: 40px;
     border-radius: 4px;
     border: 0px;

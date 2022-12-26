@@ -5,7 +5,7 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {PlayOutlineIcon, NotebookOutlineIcon, PencilOutlineIcon} from '@mattermost/compass-icons/components';
+import {NotebookOutlineIcon, PencilOutlineIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {navigateToPluginUrl} from 'src/browser_routing';

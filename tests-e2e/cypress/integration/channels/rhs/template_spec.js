@@ -10,19 +10,19 @@ describe('channels > rhs > template', () => {
     let team1;
     let testUser;
 
-    before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
-            team1 = team;
-            testUser = user;
-        });
-    });
-
     beforeEach(() => {
-        // # Size the viewport to show the RHS without covering posts.
-        cy.viewport('macbook-13');
+        cy.apiAdminLogin().then(() => {
+            cy.apiInitSetup().then(({team, user}) => {
+                team1 = team;
+                testUser = user;
 
-        // # Login as testUser
-        cy.apiLogin(testUser);
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
+                // # Login as testUser
+                cy.apiLogin(testUser);
+            });
+        });
     });
 
     describe('create playbook', () => {
@@ -30,6 +30,10 @@ describe('channels > rhs > template', () => {
             it('after clicking on Use', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                // * Checking the bot badge as an indicator of page
+                // * stability / rendering finished
+                cy.findByText('BOT').should('be.visible');
 
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -50,6 +54,10 @@ describe('channels > rhs > template', () => {
             it('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                // * Checking the bot badge as an indicator of page
+                // * stability / rendering finished
+                cy.findByText('BOT').should('be.visible');
 
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();

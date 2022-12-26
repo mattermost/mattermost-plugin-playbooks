@@ -8,14 +8,14 @@ import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 
 import {
-    AccountOutlineIcon,
     AccountMultipleOutlineIcon,
+    AccountOutlineIcon,
+    ArrowForwardIosIcon,
     BookOutlineIcon,
     BullhornOutlineIcon,
-    ProductChannelsIcon,
-    OpenInNewIcon,
     LockOutlineIcon,
-    ArrowForwardIosIcon,
+    OpenInNewIcon,
+    ProductChannelsIcon,
 } from '@mattermost/compass-icons/components';
 import {UserProfile} from '@mattermost/types/users';
 
@@ -29,13 +29,13 @@ import AssignTo, {AssignToContainer} from 'src/components/checklist_item/assign_
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {requestJoinChannel, setOwner as clientSetOwner} from 'src/client';
+import {setOwner as clientSetOwner, requestJoinChannel} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {PlaybookRun, Metadata} from 'src/types/playbook_run';
+import {Metadata, PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
-import {useLHSRefresh} from '../../lhs_navigation';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 import {FollowState} from './rhs_info';
 
@@ -126,8 +126,8 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
         }
     };
 
-    const onOwnerChange = async (userType?: string, user?: UserProfile) => {
-        if (!user || !userType) {
+    const onOwnerChange = async (user?: UserProfile) => {
+        if (!user) {
             return;
         }
         setOwner(user.id);
@@ -152,7 +152,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                     assignee_id={run.owner_user_id}
                     editable={editable}
                     onSelectedChange={onOwnerChange}
-                    channelId={run.channel_id}
+                    participantUserIds={run.participant_ids}
                     placement={'bottom-end'}
                 />
             </Item>

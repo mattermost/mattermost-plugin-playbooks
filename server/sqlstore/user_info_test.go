@@ -26,8 +26,9 @@ func Test_userInfoStore_Get(t *testing.T) {
 
 		t.Run("gets existing userInfo correctly", func(t *testing.T) {
 			expected := app.UserInfo{
-				ID:                model.NewId(),
-				LastDailyTodoDMAt: 12345678,
+				ID:                         model.NewId(),
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: false},
 			}
 			err := userInfoStore.Upsert(expected)
 			require.NoError(t, err)
@@ -54,7 +55,7 @@ func Test_userInfoStore_Get(t *testing.T) {
 			expected := app.UserInfo{
 				ID:                         model.NewId(),
 				LastDailyTodoDMAt:          12345678,
-				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false},
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: false},
 			}
 
 			statement, args, err := sq.Insert("IR_UserInfo").
@@ -93,8 +94,9 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// insert:
 			expected = app.UserInfo{
-				ID:                userID,
-				LastDailyTodoDMAt: 12345678,
+				ID:                         userID,
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: false},
 			}
 
 			err = userInfoStore.Upsert(expected)
@@ -110,8 +112,9 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 		t.Run("upserts userInfo correctly", func(t *testing.T) {
 			expected := app.UserInfo{
-				ID:                model.NewId(),
-				LastDailyTodoDMAt: 12345678,
+				ID:                         model.NewId(),
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false, DisableWeeklyDigest: false},
 			}
 
 			// insert:

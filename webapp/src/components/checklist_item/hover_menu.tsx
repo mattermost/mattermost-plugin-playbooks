@@ -3,24 +3,29 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {UserProfile} from '@mattermost/types/users';
 
-import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon, StyledDropdownMenuItemRed, DropdownIconRed} from 'src/components/checklist/collapsible_checklist_hover_menu';
+import {
+    DotMenuIcon,
+    DropdownIcon,
+    DropdownIconRed,
+    StyledDotMenuButton,
+    StyledDropdownMenu,
+    StyledDropdownMenuItem,
+    StyledDropdownMenuItemRed,
+} from 'src/components/checklist/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
 
-import {
-    clientSkipChecklistItem,
-    clientRestoreChecklistItem,
-    clientDuplicateChecklistItem,
-} from 'src/client';
+import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
 
 import AssignTo from './assign_to';
 import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
     playbookRunId?: string;
+    participantUserIds: string[];
     channelId?: string;
     checklistNum: number;
     itemNum: number;
@@ -32,7 +37,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
-    onAssigneeChange: (userType?: string, user?: UserProfile) => void;
+    onAssigneeChange: (user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
@@ -55,9 +60,9 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            {props.playbookRunId !== undefined &&
+            {!props.isSkipped &&
                 <AssignTo
-                    channelId={props.channelId}
+                    participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
                     editable={props.isEditing}
                     inHoverMenu={true}
@@ -66,14 +71,16 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onOpenChange={props.onItemOpenChange}
                 />
             }
-            <DueDateHoverMenuButton
-                date={props.due_date}
-                mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
-                onSelectedChange={props.onDueDateChange}
-                placement={'bottom-end'}
-                onOpenChange={props.onItemOpenChange}
-                editable={props.isEditing}
-            />
+            {!props.isSkipped &&
+                <DueDateHoverMenuButton
+                    date={props.due_date}
+                    mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
+                    onSelectedChange={props.onDueDateChange}
+                    placement={'bottom-end'}
+                    onOpenChange={props.onItemOpenChange}
+                    editable={props.isEditing}
+                />
+            }
             <ChecklistHoverMenuButton
                 data-testid='hover-menu-edit-button'
                 title={formatMessage({defaultMessage: 'Edit'})}

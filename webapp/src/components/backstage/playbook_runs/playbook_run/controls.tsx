@@ -1,7 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ArrowDownIcon, BullhornOutlineIcon, UpdateIcon, CloseIcon, FlagOutlineIcon, LightningBoltOutlineIcon, LinkVariantIcon, StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    ArrowDownIcon,
+    BullhornOutlineIcon,
+    CloseIcon,
+    FlagOutlineIcon,
+    LightningBoltOutlineIcon,
+    LinkVariantIcon,
+    PencilOutlineIcon,
+    StarIcon,
+    StarOutlineIcon,
+    UpdateIcon,
+} from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
@@ -11,9 +22,10 @@ import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
-import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from '../../shared';
-import {useToaster} from '../../toast_banner';
-import {Role, Separator} from '../shared';
+
+import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -53,6 +65,20 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
             <FormattedMessage defaultMessage='Copy link'/>
         </StyledDropdownMenuItem>
     );
+};
+
+export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
+    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+        return (
+            <StyledDropdownMenuItem
+                onClick={props.onClick}
+            >
+                <PencilOutlineIcon size={18}/>
+                <FormattedMessage defaultMessage='Rename run'/>
+            </StyledDropdownMenuItem>
+        );
+    }
+    return null;
 };
 
 export const FollowRunMenuItem = (props: {isFollowing: boolean, toggleFollow: () => void}) => {

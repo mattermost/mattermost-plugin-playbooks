@@ -14,21 +14,6 @@ describe('channels > rhs > home', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Create a public playbook
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Team Playbook',
-                memberIDs: [],
-            });
-
-            // # Create a public playbook with a channel name template
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Channel Name Template',
-                memberIDs: [],
-                channelNameTemplate: 'templated name',
-            });
         });
     });
 
@@ -38,22 +23,13 @@ describe('channels > rhs > home', () => {
 
         // # Navigate to the application, starting in a non-run channel.
         cy.visit(`/${testTeam.name}/`);
+
+        // * Check time bar in the channel section
+        // * as an indicator of page stability / end of rendering
+        cy.findByText('Today').should('be.visible');
     });
 
     describe('shows available', () => {
-        it('team playbooks', () => {
-            // # Click the icon
-            cy.getPlaybooksAppBarIcon().should('exist').click();
-
-            // * Verify the playbook is shown
-            cy.findByText('Your Playbooks')
-                .parent()
-                .next()
-                .within(() => {
-                    cy.findByText('Team Playbook').should('exist');
-                });
-        });
-
         it('starter templates', () => {
             // templates are defined in webapp/src/components/templates/template_data.tsx
             const templates = [
@@ -86,28 +62,25 @@ describe('channels > rhs > home', () => {
         });
     });
 
-    describe('runs playbook', () => {
+    describe('show zero case if there are playbooks', () => {
         beforeEach(() => {
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Team Playbook',
+                memberIDs: [],
+            });
+
             // # Click the icon
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
         });
 
         it('without pre-populated channel name template', () => {
-            cy.findByText('Team Playbook').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
+            // * Verify the templates are not shown
+            cy.findAllByTestId('template-details').should('not.exist');
 
-            cy.get('#playbooks_run_playbook_dialog').within(() => {
-                // * Verify run name prompt
-                cy.get('input').eq(0).should('be.empty');
-            });
-        });
-
-        it('with pre-populated channel name template', () => {
-            cy.findByText('Channel Name Template').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
-
-            cy.get('#playbooks_run_playbook_dialog').within(() => {
-                // * Verify run name prompt
-                cy.get('input').eq(0).should('have.value', 'templated name');
-            });
+            // * Verify the zero case is shown
+            cy.get('#sidebar-right').findByText('There are no runs in progress linked to this channel').should('be.visible');
         });
     });
 });
