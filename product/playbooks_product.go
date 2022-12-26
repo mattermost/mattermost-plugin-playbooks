@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	playbooksProductName = "playbooks######"
+	playbooksProductName = "playbooks"
 	playbooksProductID   = "com.mattermost.playbooks"
 )
 
@@ -38,6 +38,16 @@ const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
 	metricsExposePort = ":9093"
+
+	// Topic represents a start of a thread. In playbooks we support 2 types of topics:
+	// status topic - indicating the start of the thread below status update and
+	// task topic - indicating the start of the thread below task(checklist item)
+	TopicTypeStatus = "status"
+	TopicTypeTask   = "task"
+
+	// Collection is a group of topics and their corresponding threads.
+	// In Playbooks we support a single type of collection - a run
+	CollectionTypeRun = "run"
 )
 
 const ServerKey product.ServiceKey = "server"
@@ -90,6 +100,9 @@ func init() {
 			product.StoreKey:         {},
 			product.SystemKey:        {},
 			product.PreferencesKey:   {},
+			product.SessionKey:       {},
+			product.FrontendKey:      {},
+			product.CommandKey:       {},
 		},
 	})
 }
@@ -114,6 +127,9 @@ type playbooksProduct struct {
 	systemService        product.SystemService
 	preferencesService   product.PreferencesService
 	hooksService         product.HooksService
+	sessionService       product.SessionService
+	frontendService      product.FrontendService
+	commandService       product.CommandService
 
 	handler              *api.Handler
 	config               *config.ServiceImpl
@@ -264,6 +280,17 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.config,
 		playbooks.licenseChecker,
 	)
+
+	/* TODO: Add these functions to product api
+	// register collections and topics.
+	// TODO bump the minimum server version
+	if err := playbooks.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeStatus); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeStatus)
+	}
+	if err := playbooks.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeTask); err != nil {
+		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeTask)
+	}
+	*/
 
 	api.NewGraphQLHandler(
 		playbooks.handler.APIRouter,
@@ -475,6 +502,24 @@ func (pp *playbooksProduct) setProductServices(services map[product.ServiceKey]i
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.hooksService = hooksService
+		case product.SessionKey:
+			sessionService, ok := service.(product.SessionService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.sessionService = sessionService
+		case product.FrontendKey:
+			frontendService, ok := service.(product.FrontendService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.frontendService = frontendService
+		case product.CommandKey:
+			commandService, ok := service.(product.CommandService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.commandService = commandService
 		}
 	}
 	return nil

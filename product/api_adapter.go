@@ -19,6 +19,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
@@ -461,35 +462,44 @@ func (a *serviceAPIAdapter) DeletePreferencesForUser(userID string, preferences 
 }
 
 //
-// Unknown service api
+// Session service.
 //
 
-//TODO: Should we add this method to product api?
 func (a *serviceAPIAdapter) GetSession(sessionID string) (*mm_model.Session, error) {
-	return a.server.Platform().GetSessionByID(sessionID)
+	session, appErr := a.api.sessionService.GetSessionById(sessionID)
+	return session, normalizeAppErr(appErr)
 }
+
+//
+// Frontend service.
+//
 
 func (a *serviceAPIAdapter) OpenInteractiveDialog(dialog model.OpenDialogRequest) error {
-	//TODO: add implementation
-	// pluginAPI.Frontend.OpenInteractiveDialog
-	return nil
+	return normalizeAppErr(a.api.frontendService.OpenInteractiveDialog(dialog))
 }
+
+//
+// Command service.
+//
 
 func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error) {
-	//TODO: add implementation
-	// pluginAPI.SlashCommand.Execute (api.ExecuteSlashCommand)
-	return nil, nil
-}
-
-// TODO: should we add this to product api?
-func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
-	result, _ := strconv.ParseBool(model.BuildEnterpriseReady)
-	return result
+	user, err := a.GetUserByID(command.UserId)
+	if err != nil {
+		return nil, err
+	}
+	command.T = i18n.GetUserTranslations(user.Locale)
+	command.SiteURL = *a.GetConfig().ServiceSettings.SiteURL
+	response, appErr := a.api.commandService.ExecuteCommand(a.ctx, command)
+	return response, normalizeAppErr(appErr)
 }
 
 func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
-	//TODO: add implementation
-	return nil
+	return a.api.commandService.RegisterPluginCommand(playbooksProductID, command)
+}
+
+func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
+	result, _ := strconv.ParseBool(model.BuildEnterpriseReady)
+	return result
 }
 
 // Ensure the adapter implements ServicesAPI.
