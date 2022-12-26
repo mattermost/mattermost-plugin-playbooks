@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
-	mmapp "github.com/mattermost/mattermost-server/v6/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
@@ -45,18 +44,16 @@ func normalizeAppErr(appErr *mm_model.AppError) error {
 // Note: when supporting a plugin build is no longer needed this adapter may be removed as the Boards app
 // can be modified to use the services in modular fashion.
 type serviceAPIAdapter struct {
-	api    *playbooksProduct
-	ctx    *request.Context
-	server *mmapp.Server
+	api *playbooksProduct
+	ctx *request.Context
 
 	manifest *model.Manifest
 }
 
-func newServiceAPIAdapter(api *playbooksProduct, server *mmapp.Server, manifest *model.Manifest) *serviceAPIAdapter {
+func newServiceAPIAdapter(api *playbooksProduct, manifest *model.Manifest) *serviceAPIAdapter {
 	return &serviceAPIAdapter{
 		api:      api,
 		ctx:      request.EmptyContext(api.logger),
-		server:   server,
 		manifest: manifest,
 	}
 }

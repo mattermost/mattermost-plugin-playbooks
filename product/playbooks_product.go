@@ -108,6 +108,7 @@ func init() {
 }
 
 type playbooksProduct struct {
+	server               *mmapp.Server
 	teamService          product.TeamService
 	channelService       product.ChannelService
 	userService          product.UserService
@@ -143,10 +144,12 @@ type playbooksProduct struct {
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+	playbookStore        app.PlaybookStore
+	playbookRunStore     app.PlaybookRunStore
+	metricsServer        *metrics.Service
+	metricsUpdaterTask   *scheduler.ScheduledTask
 
 	plugin.MattermostPlugin
-
-	// pluginAPIAdapter *adapters.PluginAPIAdapter
 }
 
 func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.Product, error) {
@@ -159,9 +162,9 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	logger := logrus.StandardLogger()
 	ConfigureLogrus(logger, playbooks.logger)
 
-	server := services[ServerKey].(*mmapp.Server)
+	playbooks.server = services[ServerKey].(*mmapp.Server)
 
-	serviceAdapter := newServiceAPIAdapter(playbooks, server, manifest)
+	serviceAdapter := newServiceAPIAdapter(playbooks, manifest)
 	botID, err := serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
@@ -223,8 +226,8 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		return nil, errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
-	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
+	playbooks.playbookRunStore = sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
+	playbooks.playbookStore = sqlstore.NewPlaybookStore(apiClient, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
 	playbooks.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
@@ -232,7 +235,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	playbooks.handler = api.NewHandler(playbooks.config)
 
-	playbooks.playbookService = app.NewPlaybookService(playbookStore, playbooks.bot, playbooks.telemetryClient, serviceAdapter, playbooks.metricsService)
+	playbooks.playbookService = app.NewPlaybookService(playbooks.playbookStore, playbooks.bot, playbooks.telemetryClient, serviceAdapter, playbooks.metricsService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	playbooks.channelActionService = app.NewChannelActionsService(serviceAdapter, playbooks.bot, playbooks.config, channelActionStore, playbooks.playbookService, keywordsThreadIgnorer, playbooks.telemetryClient)
@@ -241,7 +244,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	playbooks.licenseChecker = enterprise.NewLicenseChecker(serviceAdapter)
 
 	playbooks.playbookRunService = app.NewPlaybookRunService(
-		playbookRunStore,
+		playbooks.playbookRunStore,
 		playbooks.bot,
 		playbooks.config,
 		scheduler,
@@ -300,7 +303,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		serviceAdapter,
 		playbooks.config,
 		playbooks.permissions,
-		playbookStore,
+		playbooks.playbookStore,
 		playbooks.licenseChecker,
 	)
 	api.NewPlaybookHandler(
@@ -526,8 +529,6 @@ func (pp *playbooksProduct) setProductServices(services map[product.ServiceKey]i
 }
 
 func (pp *playbooksProduct) Start() error {
-	logrus.Warn("################ Playbooks product start ##################")
-
 	if err := pp.hooksService.RegisterHooks(playbooksProductName, pp); err != nil {
 		return fmt.Errorf("failed to register hooks: %w", err)
 	}
@@ -537,18 +538,26 @@ func (pp *playbooksProduct) Start() error {
 		pp.metricsService = newMetricsInstance()
 		// run metrics server to expose data
 		pp.runMetricsServer()
-		//TODO: uncomment after store layer initialization
 		// run metrics updater recurring task
-		// pp.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+		pp.runMetricsUpdaterTask(pp.playbookStore, pp.playbookRunStore, updateMetricsTaskFrequency)
 		// set error counter middleware handler
 		pp.handler.APIRouter.Use(pp.getErrorCounterHandler())
 	}
 
-	logrus.Warn("################ Start END ##################")
+	pp.routerService.RegisterRouter(playbooksProductName, pp.handler.APIRouter)
+
+	logrus.Debug("Playbooks product successfully started.")
 	return nil
 }
 
 func (pp *playbooksProduct) Stop() error {
+
+	if pp.metricsServer != nil {
+		pp.metricsServer.Shutdown()
+	}
+	if pp.metricsUpdaterTask != nil {
+		pp.metricsUpdaterTask.Cancel()
+	}
 	return nil
 }
 
@@ -564,10 +573,10 @@ func newMetricsInstance() *metrics.Metrics {
 func (pp *playbooksProduct) runMetricsServer() {
 	logrus.WithField("port", metricsExposePort).Info("Starting Playbooks metrics server")
 
-	metricServer := metrics.NewMetricsServer(metricsExposePort, pp.metricsService)
+	pp.metricsServer = metrics.NewMetricsServer(metricsExposePort, pp.metricsService)
 	// Run server to expose metrics
 	go func() {
-		err := metricServer.Run()
+		err := pp.metricsServer.Run()
 		if err != nil {
 			logrus.WithError(err).Error("Metrics server could not be started")
 		}
@@ -613,7 +622,7 @@ func (pp *playbooksProduct) runMetricsUpdaterTask(playbookStore app.PlaybookStor
 		}
 	}
 
-	scheduler.CreateRecurringTask("metricsUpdater", metricsUpdater, updateMetricsTaskFrequency)
+	pp.metricsUpdaterTask = scheduler.CreateRecurringTask("metricsUpdater", metricsUpdater, updateMetricsTaskFrequency)
 }
 
 func (pp *playbooksProduct) getErrorCounterHandler() func(next http.Handler) http.Handler {
