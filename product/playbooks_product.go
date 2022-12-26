@@ -230,6 +230,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.config,
 		scheduler,
 		playbooks.telemetryClient,
+		playbooks.telemetryClient,
 		serviceAdapter,
 		playbooks.playbookService,
 		playbooks.channelActionService,

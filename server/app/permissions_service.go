@@ -92,7 +92,7 @@ func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun
 	}
 
 	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
+	return p.api.HasPermissionToTeam(userID, run.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
@@ -446,12 +446,12 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 }
 
 func (p *PermissionsService) RunUpdateStatus(userID string, playbookRun *PlaybookRun) error {
-	if !CanPostToChannel(userID, playbookRun.ChannelID, p.pluginAPI) {
+	if !CanPostToChannel(userID, playbookRun.ChannelID, p.api) {
 		return errors.Wrapf(ErrNoPermissions, "user %s cannot post to playbook run channel %s", userID, playbookRun.ChannelID)
 	}
 
 	for _, channelID := range playbookRun.BroadcastChannelIDs {
-		if !CanPostToChannel(userID, channelID, p.pluginAPI) {
+		if !CanPostToChannel(userID, channelID, p.api) {
 			return errors.Wrapf(ErrNoPermissions, "user %s cannot post to broadcast channel %s", userID, channelID)
 		}
 	}
