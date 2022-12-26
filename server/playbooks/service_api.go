@@ -122,12 +122,16 @@ type ServicesAPI interface {
 	UpdatePreferencesForUser(userID string, preferences mm_model.Preferences) error
 	DeletePreferencesForUser(userID string, preferences mm_model.Preferences) error
 
-	//TODO: Should we add this method to product api?
+	// Session service
 	GetSession(sessionID string) (*mm_model.Session, error)
 
-	//TODO:
+	// Frontend service
 	OpenInteractiveDialog(dialog mm_model.OpenDialogRequest) error
+
+	// Command service
 	Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error)
-	IsEnterpriseReady() bool
 	RegisterCommand(command *mm_model.Command) error
+
+	IsEnterpriseReady() bool
+	GetBundlePath() (string, error)
 }

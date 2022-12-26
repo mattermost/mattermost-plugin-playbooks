@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -497,6 +498,15 @@ func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
 func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
 	result, _ := strconv.ParseBool(model.BuildEnterpriseReady)
 	return result
+}
+
+func (api *serviceAPIAdapter) GetBundlePath() (string, error) {
+	bundlePath, err := filepath.Abs(filepath.Join(*api.GetConfig().PluginSettings.Directory, api.manifest.Id))
+	if err != nil {
+		return "", err
+	}
+
+	return bundlePath, err
 }
 
 // Ensure the adapter implements ServicesAPI.

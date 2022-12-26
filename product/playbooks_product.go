@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/product/pluginapi/cluster"
@@ -24,6 +25,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/product"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -173,6 +175,15 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to ensure bot")
+	}
+
+	bundlePath, err := serviceAdapter.GetBundlePath()
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to get bundle path")
+	}
+
+	if err := i18n.TranslationsPreInit(filepath.Join(bundlePath, "assets/i18n")); err != nil {
+		return nil, errors.Wrapf(err, "unable to load translation files")
 	}
 
 	playbooks.config = config.NewConfigService(serviceAdapter, manifest)
