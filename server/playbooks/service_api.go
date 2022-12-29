@@ -132,6 +132,9 @@ type ServicesAPI interface {
 	Execute(command *mm_model.CommandArgs) (*mm_model.CommandResponse, error)
 	RegisterCommand(command *mm_model.Command) error
 
+	// Threads service
+	RegisterCollectionAndTopic(collectionType, topicType string) error
+
 	IsEnterpriseReady() bool
 	GetBundlePath() (string, error)
 }

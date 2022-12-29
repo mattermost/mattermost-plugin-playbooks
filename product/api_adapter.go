@@ -509,5 +509,13 @@ func (api *serviceAPIAdapter) GetBundlePath() (string, error) {
 	return bundlePath, err
 }
 
+//
+// Threads service
+//
+
+func (api *serviceAPIAdapter) RegisterCollectionAndTopic(collectionType, topicType string) error {
+	return api.api.threadsService.RegisterCollectionAndTopic(playbooksProductID, collectionType, topicType)
+}
+
 // Ensure the adapter implements ServicesAPI.
 var _ playbooks.ServicesAPI = &serviceAPIAdapter{}

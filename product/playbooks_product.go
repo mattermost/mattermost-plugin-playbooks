@@ -101,6 +101,7 @@ func init() {
 			product.SessionKey:       {},
 			product.FrontendKey:      {},
 			product.CommandKey:       {},
+			product.ThreadsKey:       {},
 		},
 	})
 }
@@ -129,6 +130,7 @@ type playbooksProduct struct {
 	sessionService       product.SessionService
 	frontendService      product.FrontendService
 	commandService       product.CommandService
+	threadsService       product.ThreadsService
 
 	handler              *api.Handler
 	config               *config.ServiceImpl
@@ -291,16 +293,14 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.licenseChecker,
 	)
 
-	/* TODO: Add these functions to product api
 	// register collections and topics.
 	// TODO bump the minimum server version
-	if err := playbooks.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeStatus); err != nil {
+	if err := playbooks.serviceAdapter.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeStatus); err != nil {
 		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeStatus)
 	}
-	if err := playbooks.API.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeTask); err != nil {
+	if err := playbooks.serviceAdapter.RegisterCollectionAndTopic(CollectionTypeRun, TopicTypeTask); err != nil {
 		logrus.WithError(err).Warnf("failed to register collection - %s and topic - %s", CollectionTypeRun, TopicTypeTask)
 	}
-	*/
 
 	api.NewGraphQLHandler(
 		playbooks.handler.APIRouter,
@@ -530,6 +530,12 @@ func (pp *playbooksProduct) setProductServices(services map[product.ServiceKey]i
 				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
 			}
 			pp.commandService = commandService
+		case product.ThreadsKey:
+			threadsService, ok := service.(product.ThreadsService)
+			if !ok {
+				return fmt.Errorf("invalid service key '%s': %w", key, errServiceTypeAssert)
+			}
+			pp.threadsService = threadsService
 		}
 	}
 	return nil
