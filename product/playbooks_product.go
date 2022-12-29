@@ -18,6 +18,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
@@ -63,11 +64,6 @@ var (
 )
 
 var errServiceTypeAssert = errors.New("type assertion failed")
-
-type StatusRecorder struct {
-	http.ResponseWriter
-	Status int
-}
 
 type TelemetryClient interface {
 	app.PlaybookRunTelemetry
@@ -151,7 +147,7 @@ type playbooksProduct struct {
 	metricsServer        *metrics.Service
 	metricsUpdaterTask   *scheduler.ScheduledTask
 
-	plugin.MattermostPlugin
+	serviceAdapter playbooks.ServicesAPI
 }
 
 func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.Product, error) {
@@ -166,8 +162,8 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	playbooks.server = services[ServerKey].(*mmapp.Server)
 
-	serviceAdapter := newServiceAPIAdapter(playbooks, manifest)
-	botID, err := serviceAdapter.EnsureBot(&model.Bot{
+	playbooks.serviceAdapter = newServiceAPIAdapter(playbooks, manifest)
+	botID, err := playbooks.serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
 		Description: "Playbooks bot.",
@@ -177,7 +173,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		return nil, errors.Wrapf(err, "failed to ensure bot")
 	}
 
-	bundlePath, err := serviceAdapter.GetBundlePath()
+	bundlePath, err := playbooks.serviceAdapter.GetBundlePath()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get bundle path")
 	}
@@ -186,7 +182,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		return nil, errors.Wrapf(err, "unable to load translation files")
 	}
 
-	playbooks.config = config.NewConfigService(serviceAdapter, manifest)
+	playbooks.config = config.NewConfigService(playbooks.serviceAdapter, manifest)
 	err = playbooks.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
@@ -201,8 +197,8 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
 		playbooks.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
-		diagnosticID := serviceAdapter.GetDiagnosticID()
-		serverVersion := serviceAdapter.GetServerVersion()
+		diagnosticID := playbooks.serviceAdapter.GetDiagnosticID()
+		serverVersion := playbooks.serviceAdapter.GetServerVersion()
 		playbooks.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed init telemetry client")
@@ -210,7 +206,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	}
 
 	toggleTelemetry := func() {
-		diagnosticsFlag := serviceAdapter.GetConfig().LogSettings.EnableDiagnostics
+		diagnosticsFlag := playbooks.serviceAdapter.GetConfig().LogSettings.EnableDiagnostics
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
@@ -228,9 +224,9 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	toggleTelemetry()
 	playbooks.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	apiClient := sqlstore.NewClient(serviceAdapter)
-	playbooks.bot = bot.New(serviceAdapter, playbooks.config.GetConfiguration().BotUserID, playbooks.config, playbooks.telemetryClient)
-	scheduler := cluster.GetJobOnceScheduler(serviceAdapter)
+	apiClient := sqlstore.NewClient(playbooks.serviceAdapter)
+	playbooks.bot = bot.New(playbooks.serviceAdapter, playbooks.config.GetConfiguration().BotUserID, playbooks.config, playbooks.telemetryClient)
+	scheduler := cluster.GetJobOnceScheduler(playbooks.serviceAdapter)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)
 	if err != nil {
@@ -246,13 +242,13 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	playbooks.handler = api.NewHandler(playbooks.config)
 
-	playbooks.playbookService = app.NewPlaybookService(playbooks.playbookStore, playbooks.bot, playbooks.telemetryClient, serviceAdapter, playbooks.metricsService)
+	playbooks.playbookService = app.NewPlaybookService(playbooks.playbookStore, playbooks.bot, playbooks.telemetryClient, playbooks.serviceAdapter, playbooks.metricsService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	playbooks.channelActionService = app.NewChannelActionsService(serviceAdapter, playbooks.bot, playbooks.config, channelActionStore, playbooks.playbookService, keywordsThreadIgnorer, playbooks.telemetryClient)
-	playbooks.categoryService = app.NewCategoryService(categoryStore, serviceAdapter, playbooks.telemetryClient)
+	playbooks.channelActionService = app.NewChannelActionsService(playbooks.serviceAdapter, playbooks.bot, playbooks.config, channelActionStore, playbooks.playbookService, keywordsThreadIgnorer, playbooks.telemetryClient)
+	playbooks.categoryService = app.NewCategoryService(categoryStore, playbooks.serviceAdapter, playbooks.telemetryClient)
 
-	playbooks.licenseChecker = enterprise.NewLicenseChecker(serviceAdapter)
+	playbooks.licenseChecker = enterprise.NewLicenseChecker(playbooks.serviceAdapter)
 
 	playbooks.playbookRunService = app.NewPlaybookRunService(
 		playbooks.playbookRunStore,
@@ -261,7 +257,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		scheduler,
 		playbooks.telemetryClient,
 		playbooks.telemetryClient,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.playbookService,
 		playbooks.channelActionService,
 		playbooks.licenseChecker,
@@ -276,7 +272,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	}
 
 	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
-	mutex, err := cluster.NewMutex(serviceAdapter, "IR_dbMutex")
+	mutex, err := cluster.NewMutex(playbooks.serviceAdapter, "IR_dbMutex")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed creating cluster mutex")
 	}
@@ -290,7 +286,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	playbooks.permissions = app.NewPermissionsService(
 		playbooks.playbookService,
 		playbooks.playbookRunService,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.config,
 		playbooks.licenseChecker,
 	)
@@ -311,7 +307,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.playbookService,
 		playbooks.playbookRunService,
 		playbooks.categoryService,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.config,
 		playbooks.permissions,
 		playbooks.playbookStore,
@@ -320,7 +316,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	api.NewPlaybookHandler(
 		playbooks.handler.APIRouter,
 		playbooks.playbookService,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.config,
 		playbooks.permissions,
 	)
@@ -330,13 +326,13 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		playbooks.playbookService,
 		playbooks.permissions,
 		playbooks.licenseChecker,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.bot,
 		playbooks.config,
 	)
 	api.NewStatsHandler(
 		playbooks.handler.APIRouter,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		statsStore,
 		playbooks.playbookService,
 		playbooks.permissions,
@@ -344,7 +340,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	)
 	api.NewBotHandler(
 		playbooks.handler.APIRouter,
-		serviceAdapter, playbooks.bot,
+		playbooks.serviceAdapter, playbooks.bot,
 		playbooks.config,
 		playbooks.playbookRunService,
 		playbooks.userInfoStore,
@@ -352,7 +348,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	api.NewTelemetryHandler(
 		playbooks.handler.APIRouter,
 		playbooks.playbookRunService,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.telemetryClient,
 		playbooks.playbookService,
 		playbooks.telemetryClient,
@@ -362,37 +358,37 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	)
 	api.NewSignalHandler(
 		playbooks.handler.APIRouter,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.playbookRunService,
 		playbooks.playbookService,
 		keywordsThreadIgnorer,
 	)
 	api.NewSettingsHandler(
 		playbooks.handler.APIRouter,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.config,
 	)
 	api.NewActionsHandler(
 		playbooks.handler.APIRouter,
 		playbooks.channelActionService,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.permissions,
 	)
 	api.NewCategoryHandler(
 		playbooks.handler.APIRouter,
-		serviceAdapter,
+		playbooks.serviceAdapter,
 		playbooks.categoryService,
 		playbooks.playbookService,
 		playbooks.playbookRunService,
 	)
 
 	isTestingEnabled := false
-	flag := serviceAdapter.GetConfig().ServiceSettings.EnableTesting
+	flag := playbooks.serviceAdapter.GetConfig().ServiceSettings.EnableTesting
 	if flag != nil {
 		isTestingEnabled = *flag
 	}
 
-	if err = command.RegisterCommands(serviceAdapter.RegisterCommand, isTestingEnabled); err != nil {
+	if err = command.RegisterCommands(playbooks.serviceAdapter.RegisterCommand, isTestingEnabled); err != nil {
 		return nil, errors.Wrapf(err, "failed register commands")
 	}
 
@@ -651,6 +647,16 @@ func (pp *playbooksProduct) getErrorCounterHandler() func(next http.Handler) htt
 	}
 }
 
+type StatusRecorder struct {
+	http.ResponseWriter
+	Status int
+}
+
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.Status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (pp *playbooksProduct) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	pp.handler.ServeHTTP(w, r)
@@ -665,4 +671,136 @@ func (pp *playbooksProduct) OnConfigurationChange() error {
 		return nil
 	}
 	return pp.config.OnConfigurationChange()
+}
+
+// ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
+func (pp *playbooksProduct) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	runner := command.NewCommandRunner(c, args, pp.serviceAdapter, pp.bot,
+		pp.playbookRunService, pp.playbookService, pp.config, pp.userInfoStore, pp.telemetryClient, pp.permissions)
+
+	if err := runner.Execute(); err != nil {
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return &model.CommandResponse{}, nil
+}
+
+func (pp *playbooksProduct) UserHasJoinedChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
+	actorID := ""
+	if actor != nil && actor.Id != channelMember.UserId {
+		actorID = actor.Id
+	}
+	pp.channelActionService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (pp *playbooksProduct) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	pp.channelActionService.MessageHasBeenPosted(c.SessionId, post)
+	pp.playbookRunService.MessageHasBeenPosted(c.SessionId, post)
+}
+
+func (pp *playbooksProduct) UserHasPermissionToCollection(c *plugin.Context, userID string, collectionType, collectionID string, permission *model.Permission) (bool, error) {
+	if collectionType != CollectionTypeRun {
+		return false, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := pp.playbookRunService.GetPlaybookRun(collectionID)
+	if err != nil {
+		return false, errors.Wrapf(err, "No run with id - %s", collectionID)
+	}
+	return pp.permissions.HasPermissionsToRun(userID, run, permission), nil
+}
+
+func (pp *playbooksProduct) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectionType string) ([]string, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	ids, err := pp.playbookRunService.GetPlaybookRunIDsForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (pp *playbooksProduct) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+
+	run, err := pp.playbookRunService.GetPlaybookRun(collectionID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "No run with id - %s", collectionID)
+	}
+	followers, err := pp.playbookRunService.GetFollowers(collectionID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't get followers for run - %s", collectionID)
+	}
+	return mergeSlice(run.ParticipantIDs, followers), nil
+}
+
+func (pp *playbooksProduct) GetCollectionMetadataByIds(c *plugin.Context, collectionType string, collectionIDs []string) (map[string]*model.CollectionMetadata, error) {
+	if collectionType != CollectionTypeRun {
+		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
+	}
+	runsMetadata := map[string]*model.CollectionMetadata{}
+	runs, err := pp.playbookRunService.GetRunMetadataByIDs(collectionIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get playbook run metadata by ids")
+	}
+	for _, run := range runs {
+		runsMetadata[run.ID] = &model.CollectionMetadata{
+			Id:             run.ID,
+			CollectionType: CollectionTypeRun,
+			TeamId:         run.TeamID,
+			Name:           run.Name,
+			RelativeURL:    app.GetRunDetailsRelativeURL(run.ID),
+		}
+	}
+	return runsMetadata, nil
+}
+
+func (pp *playbooksProduct) GetTopicMetadataByIds(c *plugin.Context, topicType string, topicIDs []string) (map[string]*model.TopicMetadata, error) {
+	topicsMetadata := map[string]*model.TopicMetadata{}
+
+	var getTopicMetadataByIDs func(topicIDs []string) ([]app.TopicMetadata, error)
+	switch topicType {
+	case TopicTypeStatus:
+		getTopicMetadataByIDs = pp.playbookRunService.GetStatusMetadataByIDs
+	case TopicTypeTask:
+		getTopicMetadataByIDs = pp.playbookRunService.GetTaskMetadataByIDs
+	default:
+		return map[string]*model.TopicMetadata{}, errors.Errorf("topic type %s is not registered by playbooks", topicType)
+	}
+
+	topics, err := getTopicMetadataByIDs(topicIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata by topic ids")
+	}
+	for _, topic := range topics {
+		topicsMetadata[topic.ID] = &model.TopicMetadata{
+			Id:             topic.ID,
+			TopicType:      topicType,
+			CollectionType: CollectionTypeRun,
+			TeamId:         topic.TeamID,
+			CollectionId:   topic.RunID,
+		}
+	}
+
+	return topicsMetadata, nil
+}
+
+func mergeSlice(a, b []string) []string {
+	m := make(map[string]struct{}, len(a)+len(b))
+	for _, elem := range a {
+		m[elem] = struct{}{}
+	}
+	for _, elem := range b {
+		m[elem] = struct{}{}
+	}
+	merged := make([]string, 0, len(m))
+	for key := range m {
+		merged = append(merged, key)
+	}
+	return merged
 }
