@@ -10,7 +10,6 @@ import {
     PlaybookUpdates,
     RhsActiveRunsDocument,
     RhsFinishedRunsDocument,
-    RunDocument,
     RunUpdates,
     TaskActionUpdates,
     useAddPlaybookMemberMutation,
@@ -126,21 +125,18 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
 export const useManageRunMembership = (runID?: string) => {
     const [add] = useAddRunParticipantsMutation({
         refetchQueries: [
-            RunDocument,
             PlaybookLhsDocument,
         ],
     });
 
     const [remove] = useRemoveRunParticipantsMutation({
         refetchQueries: [
-            RunDocument,
             PlaybookLhsDocument,
         ],
     });
 
     const [changeOwner] = useChangeRunOwnerMutation({
         refetchQueries: [
-            RunDocument,
         ],
     });
 
@@ -171,7 +167,6 @@ export const useManageRunMembership = (runID?: string) => {
 export const useUpdateRunItemTaskActions = (runID?: string) => {
     const [updateTaskActions] = useUpdateRunTaskActionsMutation({
         refetchQueries: [
-            RunDocument,
         ],
     });
 

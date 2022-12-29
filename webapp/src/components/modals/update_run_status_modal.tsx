@@ -17,6 +17,8 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {ApolloProvider} from '@apollo/client';
+
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
@@ -47,6 +49,7 @@ import {openUpdateRunStatusModal, showRunActionsModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -62,7 +65,7 @@ type Props = {
 
 export const makeModalDefinition = (props: Props) => ({
     modalId: ID,
-    dialogType: UpdateRunStatusModal,
+    dialogType: ApolloWrappedModal,
     dialogProps: props,
 });
 
@@ -469,4 +472,7 @@ const StyledCheckboxInput = styled(CheckboxInput)`
     }
 `;
 
-export default UpdateRunStatusModal;
+const ApolloWrappedModal = (props: Props) => {
+    const client = getPlaybooksGraphQLClient();
+    return <ApolloProvider client={client}><UpdateRunStatusModal {...props}/></ApolloProvider>;
+};

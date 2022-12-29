@@ -1,27 +1,3 @@
-query Run($id: String!) {
-    run(id: $id) {
-      id
-      name
-      ownerUserID
-      participantIDs
-      metadata { followers }
-	  checklists {
-	    items {
-		  task_actions: taskActions {
-		    trigger: trigger {
-		      type
-		      payload
-		    }
-		    actions: actions {
-		      type
-		      payload
-		    }
-		  }
-		}
-      }
-    }
-}
-
 fragment RHSRunFields on Run {
 	id
 	name

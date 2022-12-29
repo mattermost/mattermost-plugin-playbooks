@@ -460,12 +460,6 @@ export type RemovePlaybookMemberMutationVariables = Exact<{
 
 export type RemovePlaybookMemberMutation = { __typename?: 'Mutation', removePlaybookMember: string };
 
-export type RunQueryVariables = Exact<{
-    id: Scalars['String'];
-}>;
-
-export type RunQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> }, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }> } | null };
-
 export type RhsRunFieldsFragment = { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null };
 
 export type RhsActiveRunsQueryVariables = Exact<{
@@ -879,61 +873,6 @@ export function useRemovePlaybookMemberMutation(baseOptions?: Apollo.MutationHoo
 export type RemovePlaybookMemberMutationHookResult = ReturnType<typeof useRemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationResult = Apollo.MutationResult<RemovePlaybookMemberMutation>;
 export type RemovePlaybookMemberMutationOptions = Apollo.BaseMutationOptions<RemovePlaybookMemberMutation, RemovePlaybookMemberMutationVariables>;
-export const RunDocument = gql`
-    query Run($id: String!) {
-  run(id: $id) {
-    id
-    name
-    ownerUserID
-    participantIDs
-    metadata {
-      followers
-    }
-    checklists {
-      items {
-        task_actions: taskActions {
-          trigger: trigger {
-            type
-            payload
-          }
-          actions: actions {
-            type
-            payload
-          }
-        }
-      }
-    }
-  }
-}
-    `;
-
-/**
- * __useRunQuery__
- *
- * To run a query within a React component, call `useRunQuery` and pass it any options that fit your needs.
- * When your component renders, `useRunQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useRunQuery({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useRunQuery(baseOptions: Apollo.QueryHookOptions<RunQuery, RunQueryVariables>) {
-    const options = {...defaultOptions, ...baseOptions};
-    return Apollo.useQuery<RunQuery, RunQueryVariables>(RunDocument, options);
-}
-export function useRunLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunQuery, RunQueryVariables>) {
-    const options = {...defaultOptions, ...baseOptions};
-    return Apollo.useLazyQuery<RunQuery, RunQueryVariables>(RunDocument, options);
-}
-export type RunQueryHookResult = ReturnType<typeof useRunQuery>;
-export type RunLazyQueryHookResult = ReturnType<typeof useRunLazyQuery>;
-export type RunQueryResult = Apollo.QueryResult<RunQuery, RunQueryVariables>;
 export const RhsActiveRunsDocument = gql`
     query RHSActiveRuns($channelID: String!, $sort: String!, $direction: String!, $first: Int, $after: String) {
   runs(
