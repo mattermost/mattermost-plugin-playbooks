@@ -268,7 +268,7 @@ type Run {
 	lastUpdatedAt: Float!
 
 	timelineEvents: [TimelineEvent!]!
-	metadata: Metadata!
+	followers: [String!]!
 
 	progress: Float!
 }
@@ -312,8 +312,4 @@ input RunUpdates {
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
 	channelID: String
-}
-
-type Metadata {
-	followers: [String!]!
 }

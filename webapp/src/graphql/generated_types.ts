@@ -74,11 +74,6 @@ export type Member = {
     userID: Scalars['String'];
 };
 
-export type Metadata = {
-    __typename?: 'Metadata';
-    followers: Array<Scalars['String']>;
-};
-
 export {MetricType};
 
 export type Mutation = {
@@ -316,11 +311,11 @@ export type Run = {
     createChannelMemberOnNewParticipant: Scalars['Boolean'];
     currentStatus: Scalars['String'];
     endAt: Scalars['Float'];
+    followers: Array<Scalars['String']>;
     id: Scalars['String'];
     isFavorite: Scalars['Boolean'];
     lastStatusUpdateAt: Scalars['Float'];
     lastUpdatedAt: Scalars['Float'];
-    metadata: Metadata;
     name: Scalars['String'];
     ownerUserID: Scalars['String'];
     participantIDs: Array<Scalars['String']>;
@@ -434,7 +429,7 @@ export type PlaybookLhsQueryVariables = Exact<{
     teamID: Scalars['String'];
 }>;
 
-export type PlaybookLhsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, metadata: { __typename?: 'Metadata', followers: Array<string> } } }> }, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
+export type PlaybookLhsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, isFavorite: boolean, playbookID: string, ownerUserID: string, participantIDs: Array<string>, followers: Array<string> } }> }, playbooks: Array<{ __typename?: 'Playbook', id: string, title: string, isFavorite: boolean, public: boolean }> };
 
 export type PlaybookModalFieldsFragment = { __typename?: 'Playbook', id: string, title: string, public: boolean, is_favorite: boolean, team_id: string, default_playbook_member_role: string, last_run_at: number, active_runs: number, members: Array<{ __typename?: 'Member', user_id: string, scheme_roles: Array<string> }> };
 
@@ -481,6 +476,12 @@ export type RhsFinishedRunsQueryVariables = Exact<{
 }>;
 
 export type RhsFinishedRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, progress: number, lastUpdatedAt: number, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+
+export type RunStatusModalQueryVariables = Exact<{
+    runID: Scalars['String'];
+}>;
+
+export type RunStatusModalQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, name: string, teamID: string, reminderMessageTemplate: string, previousReminder: number, reminderTimerDefaultSeconds: number, broadcastChannelIDs: Array<string>, statusUpdateBroadcastChannelsEnabled: boolean, followers: Array<string>, statusPosts: Array<{ __typename?: 'StatusPost', id: string, deleteAt: number }>, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', state: string }> }> } | null };
 
 export type SetRunFavoriteMutationVariables = Exact<{
     id: Scalars['String'];
@@ -711,9 +712,7 @@ export const PlaybookLhsDocument = gql`
         playbookID
         ownerUserID
         participantIDs
-        metadata {
-          followers
-        }
+        followers
       }
     }
   }
@@ -983,6 +982,58 @@ export function useRhsFinishedRunsLazyQuery(baseOptions?: Apollo.LazyQueryHookOp
 export type RhsFinishedRunsQueryHookResult = ReturnType<typeof useRhsFinishedRunsQuery>;
 export type RhsFinishedRunsLazyQueryHookResult = ReturnType<typeof useRhsFinishedRunsLazyQuery>;
 export type RhsFinishedRunsQueryResult = Apollo.QueryResult<RhsFinishedRunsQuery, RhsFinishedRunsQueryVariables>;
+export const RunStatusModalDocument = gql`
+    query RunStatusModal($runID: String!) {
+  run(id: $runID) {
+    id
+    name
+    teamID
+    statusPosts {
+      id
+      deleteAt
+    }
+    reminderMessageTemplate
+    previousReminder
+    reminderTimerDefaultSeconds
+    broadcastChannelIDs
+    statusUpdateBroadcastChannelsEnabled
+    checklists {
+      items {
+        state
+      }
+    }
+    followers
+  }
+}
+    `;
+
+/**
+ * __useRunStatusModalQuery__
+ *
+ * To run a query within a React component, call `useRunStatusModalQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRunStatusModalQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRunStatusModalQuery({
+ *   variables: {
+ *      runID: // value for 'runID'
+ *   },
+ * });
+ */
+export function useRunStatusModalQuery(baseOptions: Apollo.QueryHookOptions<RunStatusModalQuery, RunStatusModalQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useQuery<RunStatusModalQuery, RunStatusModalQueryVariables>(RunStatusModalDocument, options);
+}
+export function useRunStatusModalLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RunStatusModalQuery, RunStatusModalQueryVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useLazyQuery<RunStatusModalQuery, RunStatusModalQueryVariables>(RunStatusModalDocument, options);
+}
+export type RunStatusModalQueryHookResult = ReturnType<typeof useRunStatusModalQuery>;
+export type RunStatusModalLazyQueryHookResult = ReturnType<typeof useRunStatusModalLazyQuery>;
+export type RunStatusModalQueryResult = Apollo.QueryResult<RunStatusModalQuery, RunStatusModalQueryVariables>;
 export const SetRunFavoriteDocument = gql`
     mutation SetRunFavorite($id: String!, $fav: Boolean!) {
   setRunFavorite(id: $id, fav: $fav)

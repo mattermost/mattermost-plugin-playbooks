@@ -89,7 +89,7 @@ query PlaybookLHS($userID: String!, $teamID: String!) {
 				playbookID
 				ownerUserID
 				participantIDs
-				metadata { followers }
+				followers
 			}
 		}
 	}

@@ -67,6 +67,29 @@ query RHSFinishedRuns(
 	}
 }
 
+query RunStatusModal($runID: String!) {
+	run(id: $runID) {
+		id
+		name
+		teamID
+		statusPosts {
+			id
+			deleteAt
+		}
+		reminderMessageTemplate
+		previousReminder
+		reminderTimerDefaultSeconds
+		broadcastChannelIDs
+		statusUpdateBroadcastChannelsEnabled
+		checklists {
+			items {
+				state
+			}
+		}
+		followers
+	}
+}
+
 mutation SetRunFavorite($id: String!, $fav: Boolean!) {
   setRunFavorite(id: $id, fav: $fav)
 }

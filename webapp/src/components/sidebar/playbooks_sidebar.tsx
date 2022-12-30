@@ -84,7 +84,7 @@ const useLHSData = (teamID: string) => {
                     isFavorite={run.isFavorite}
                     ownerUserId={run.ownerUserID}
                     participantIDs={run.participantIDs}
-                    followerIDs={run.metadata.followers}
+                    followerIDs={run.followers}
                     hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbookID)}
                 />),
             isFavorite: run.isFavorite,
