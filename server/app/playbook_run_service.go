@@ -3337,7 +3337,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -3367,7 +3367,10 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 		for _, task := range run.Tasks {
 			// no due date
 			if task.ChecklistItem.DueDate == 0 {
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
+				// add information about tasks without due date only if the full list was requested
+				if !onlyTasksDueUntilToday {
+					tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
+				}
 				tasksNoDueDate++
 				continue
 			}
@@ -3389,7 +3392,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 				continue
 			}
 			// due after today
-			if !onlyDueUntilToday {
+			if !onlyTasksDueUntilToday {
 				days := timeutils.GetDaysDiff(currentTime, dueTime)
 				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
 			}
@@ -3403,13 +3406,13 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 		}
 	}
 
-	// if there are only tasks that are due after today and we need to show only tasks due now, skip a message
-	if onlyDueUntilToday && tasksDoAfterToday == total {
+	// if we need tasks due now and there are only tasks that are due after today or without due date, skip a message
+	if onlyTasksDueUntilToday && tasksDoAfterToday+tasksNoDueDate == total {
 		return ""
 	}
 
 	// add title
-	if onlyDueUntilToday {
+	if onlyTasksDueUntilToday {
 		msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
 	} else {
 		msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
@@ -3420,7 +3423,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	msg.WriteString(runsInfo.String())
 
 	// add summary info for tasks without a due date or due date after today
-	if tasksDoAfterToday > 0 && onlyDueUntilToday {
+	if tasksDoAfterToday > 0 && onlyTasksDueUntilToday {
 		msg.WriteString(":information_source: ")
 		msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
 		msg.WriteString(" ")
