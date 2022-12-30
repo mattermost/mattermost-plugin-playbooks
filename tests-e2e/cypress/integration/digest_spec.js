@@ -42,6 +42,9 @@ describe('digest messages', () => {
     });
 
     beforeEach(() => {
+        // # intercepts telemetry
+        cy.interceptTelemetry();
+
         // # Login as testUser
         cy.apiLogin(testUser);
     });
@@ -80,9 +83,6 @@ describe('digest messages', () => {
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
 
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-
             cy.getLastPost().within(() => {
                 // # assert two blocks: inprogress+overdue
                 cy.get('ul').should('have.length', 3);
@@ -95,8 +95,15 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_overduestatus');
 
             // # assert telemetry tracks correctly the origin
-            cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_overduestatus'}}]);
+            cy.expectTelemetryToBe([
+                {
+                    name: 'run_details',
+                    type: 'page',
+                    properties: {
+                        from: 'digest_overduestatus',
+                    },
+                }
+            ]);
         });
 
         it('has one run in progress and links to RDP', () => {
@@ -108,9 +115,6 @@ describe('digest messages', () => {
 
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
-
-            // # intercepts telemetry
-            cy.interceptTelemetry();
 
             cy.getLastPost().within(() => {
                 // # assert two blocks: inprogress+overdue
@@ -124,8 +128,15 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_runsinprogress');
 
             // # assert telemetry tracks correctly the origin
-            cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_runsinprogress'}}]);
+            cy.expectTelemetryToBe([
+                {
+                    name: 'run_details',
+                    type: 'page',
+                    properties: {
+                        from: 'digest_runsinprogress',
+                    }
+                }
+            ]);
         });
 
         it('has one run with one assigned task and links to RDP', () => {
@@ -134,9 +145,6 @@ describe('digest messages', () => {
 
             // # Wait until the channel loads enough to show the post textbox.
             cy.get('#post-create').should('exist');
-
-            // # intercepts telemetry
-            cy.interceptTelemetry();
 
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
@@ -153,8 +161,15 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_assignedtask');
 
             // # assert telemetry tracks correctly the origin
-            cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'run_details', type: 'page', properties: {from: 'digest_assignedtask'}}]);
+            cy.expectTelemetryToBe([
+                {
+                    name: 'run_details',
+                    type: 'page',
+                    properties: {
+                        from: 'digest_assignedtask',
+                    }
+                }
+            ]);
         });
     });
 });
