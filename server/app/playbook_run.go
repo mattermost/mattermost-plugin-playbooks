@@ -208,7 +208,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	return &newPlaybookRun
 }
 
-func (r *PlaybookRun) MarshalJSON() ([]byte, error) {
+func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	type Alias PlaybookRun
 
 	old := (*Alias)(r.Clone())
