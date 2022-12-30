@@ -37,6 +37,9 @@ describe('playbooks > start a run', () => {
     });
 
     beforeEach(() => {
+        // # intercepts telemetry
+        cy.interceptTelemetry();
+
         // # Login as testUser
         cy.apiLogin(testUser);
 
@@ -100,9 +103,6 @@ describe('playbooks > start a run', () => {
                 cy.findByText('Run').click();
             });
 
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-
             cy.get('#root-portal.modal-open').within(() => {
                 // # Wait the modal to render
                 cy.wait(500);
@@ -115,9 +115,7 @@ describe('playbooks > start a run', () => {
             });
 
             // * Assert telemetry data
-            cy.wait('@telemetry');
             cy.expectTelemetryToBe([
-                {name: 'run_details', type: 'page'},
                 {
                     name: 'playbookrun_create',
                     type: 'track',
@@ -156,9 +154,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -174,9 +169,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -215,9 +208,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -237,9 +227,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -278,9 +266,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -302,9 +287,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -348,9 +331,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -372,9 +352,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -419,9 +397,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -446,9 +421,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -493,9 +466,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -511,9 +481,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
