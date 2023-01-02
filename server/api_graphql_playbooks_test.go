@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -362,12 +364,109 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	})
 }
 
-func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
-	testPlaybookMutateQuery :=
-		`
-mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
-  updatePlaybook(id: $id, updates: $updates)
+func TestUpdatePlaybookFavorite(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("favorite", func(t *testing.T) {
+		isFavorite, err := getPlaybookFavorite(e.PlaybooksClient, e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+
+		response, err := updatePlaybookFavorite(e.PlaybooksClient, e.BasicPlaybook.ID, true)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		isFavorite, err = getPlaybookFavorite(e.PlaybooksClient, e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+	})
+
+	t.Run("unfavorite", func(t *testing.T) {
+		response, err := updatePlaybookFavorite(e.PlaybooksClient, e.BasicPlaybook.ID, false)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		isFavorite, err := getPlaybookFavorite(e.PlaybooksClient, e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.False(t, isFavorite)
+	})
+
+	t.Run("favorite playbook with read access", func(t *testing.T) {
+		response, err := updatePlaybookFavorite(e.PlaybooksClient2, e.BasicPlaybook.ID, true)
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		isFavorite, err := getPlaybookFavorite(e.PlaybooksClient2, e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.True(t, isFavorite)
+	})
+
+	t.Run("favorite private playbook no access", func(t *testing.T) {
+		response, _ := updatePlaybookFavorite(e.PlaybooksClient, e.PrivatePlaybookNoMembers.ID, false)
+		require.NotEmpty(t, response.Errors)
+	})
 }
+
+func updatePlaybookFavorite(c *client.Client, playbookID string, favorite bool) (graphql.Response, error) {
+	mutation := `mutation UpdatePlaybookFavorite($id: String!, $favorite: Boolean!) {
+		updatePlaybookFavorite(id: $id, favorite: $favorite)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdatePlaybookFavorite",
+		Variables: map[string]interface{}{
+			"id":       playbookID,
+			"favorite": favorite,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
+	query := `
+	query GetPlaybookFavorite($id: String!) {
+		playbook(id: $id) {
+			isFavorite
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetPlaybookFavorite",
+		Variables: map[string]interface{}{
+			"id": playbookID,
+		},
+	}, &response)
+
+	if err != nil {
+		return false, err
+	}
+	if len(response.Errors) > 0 {
+		return false, fmt.Errorf("error from query %v", response.Errors)
+	}
+
+	favoriteResponse := struct {
+		Playbook struct {
+			IsFavorite bool `json:"isFavorite"`
+		} `json:"playbook"`
+	}{}
+	err = json.Unmarshal(response.Data, &favoriteResponse)
+	if err != nil {
+		return false, err
+	}
+	return favoriteResponse.Playbook.IsFavorite, nil
+}
+
+func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
+	testPlaybookMutateQuery := `
+	mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+	updatePlaybook(id: $id, updates: $updates)
+	}
 		`
 	var response graphql.Response
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
