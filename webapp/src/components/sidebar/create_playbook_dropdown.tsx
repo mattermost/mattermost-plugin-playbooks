@@ -117,7 +117,10 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 overlay={tooltip}
             >
                 <>
-                    <Button aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}>
+                    <Button
+                        aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}
+                        data-testid='create-playbook-dropdown-toggle'
+                    >
                         <PlusIcon size={18}/>
                     </Button>
                     {inputImportPlaybook}
