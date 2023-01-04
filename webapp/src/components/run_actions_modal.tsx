@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -39,6 +39,18 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
     const [isValid, setIsValid] = useState<boolean>(true);
     const updateRun = useUpdateRun(playbookRun.id);
+
+    // Update states on run change
+    // When this component is already mounted, the initial states passed above will not be used
+    // Therefore the states have to be explicitly updated when the run changes
+    useEffect(() => {
+        setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
+        setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
+        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
+        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
+        setChannelIds(playbookRun.broadcast_channel_ids);
+        setWebhooks(playbookRun.webhook_on_status_update_urls);
+    }, [playbookRun]);
 
     const onHide = () => {
         dispatch(hideRunActionsModal());
