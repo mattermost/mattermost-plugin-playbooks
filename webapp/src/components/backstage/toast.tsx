@@ -14,6 +14,9 @@ export interface ToastProps {
     buttonName?: string;
     buttonCallback?: () => void;
     closeCallback?: () => void;
+    interactive?: boolean;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
 export const Toast = (props: ToastProps) => {
@@ -30,9 +33,12 @@ export const Toast = (props: ToastProps) => {
             iconName = 'information-outline';
         }
     }
+    const interactive = props.interactive ?? Boolean(props.buttonCallback);
     return (
         <StyledToast
             toastStyle={props.toastStyle ?? ToastStyle.Success}
+            onMouseEnter={interactive ? props.onMouseEnter : undefined}
+            onMouseLeave={interactive ? props.onMouseLeave : undefined}
         >
             <StyledIcon className={`icon icon-${iconName}`}/>
             <StyledText>{props.content}</StyledText>
