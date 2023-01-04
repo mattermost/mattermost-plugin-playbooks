@@ -108,6 +108,7 @@ const RHSRunDetails = (props: Props) => {
             buttonName: formatMessage({defaultMessage: 'Participate'}),
             buttonCallback: showConfirm,
             iconName: 'account-plus-outline',
+            duration: 4500,
         });
     }, toastDebounce, {leading: true, trailing: false}), []);
 
