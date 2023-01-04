@@ -88,6 +88,9 @@ describe('playbooks > edit > task actions', () => {
         });
 
         it('allows a single keyword', () => {
+            // # intercepts telemetry
+            cy.interceptTelemetry();
+
             // Open the task actions modal
             editTask();
             cy.findByText('Task Actions').click();
@@ -99,9 +102,6 @@ describe('playbooks > edit > task actions', () => {
 
             // Enable the trigger
             cy.findByText('Mark the task as done').click();
-
-            // # intercepts telemetry
-            cy.interceptTelemetry();
 
             // Save the dialog
             cy.findByTestId('modal-confirm-button').click();
@@ -118,8 +118,15 @@ describe('playbooks > edit > task actions', () => {
             });
 
             // # assert telemetry data
-            cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'taskactions_updated', type: 'track', playbook_id: testPlaybook.id}]);
+            cy.expectTelemetryToBe([
+                {
+                    name: 'taskactions_updated',
+                    type: 'track',
+                    properties: {
+                        playbook_id: testPlaybook.id,
+                    },
+                }
+            ]);
         });
 
         it('allows multiple keywords', () => {

@@ -329,6 +329,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
+        checklists,
+        inviteUsersEnabled,
         reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         otherMembers = [],
         invitedUserIds = [],
@@ -337,7 +339,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
     cy.apiCreatePlaybook({
         teamId,
         title,
-        checklists: [{
+        checklists: checklists || [{
             title: 'Stage 1',
             items: [
                 {title: 'Step 1'},
@@ -353,6 +355,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
         invitedUserIds,
+        inviteUsersEnabled,
         channelNameTemplate,
         createChannelMemberOnNewParticipant: true,
         removeChannelMemberOnRemovedParticipant: true,
