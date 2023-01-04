@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
-export const BaseInput = styled.input`
+export const BaseInput = styled.input<{invalid?: boolean}>`
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     background-color: rgb(var(--center-channel-bg-rgb));
     border: none;
-    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+    box-shadow: ${(props) => (props.invalid ? 'inset 0 0 0 2px var(--error-text)' : 'inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16)')};
     border-radius: 4px;
     height: 40px;
     line-height: 40px;
@@ -12,7 +12,7 @@ export const BaseInput = styled.input`
     font-size: 14px;
 
     &:focus {
-        box-shadow: inset 0 0 0 2px var(--button-bg);
+        box-shadow: ${(props) => (props.invalid ? 'inset 0 0 0 2px var(--error-text)' : 'inset 0 0 0 2px var(--button-bg)')};
     }
 `;
 
