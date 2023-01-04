@@ -51,7 +51,7 @@ export const RunPlaybookChildren = ({playbookId, onUpdate, editable}: RunPlayboo
     const {formatMessage} = useIntl();
     const portalEl = useFloatingPortalNode();
     const [playbook] = usePlaybook(playbookId);
-    const [playbooks, {params}, {setSearchTerm}] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
+    const {playbooks, params, setSearchTerm} = usePlaybooksCrud({sort: 'title'}, {infinitePaging: false});
 
     // Format the playbooks for use with StyledSelect.
     const playbookOptions = playbooks?.map((p) => ({value: p.title, label: p.title, id: p.id})) || [];

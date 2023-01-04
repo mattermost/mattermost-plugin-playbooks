@@ -19,7 +19,7 @@ import TemplateSelector from 'src/components/templates/template_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {useCanCreatePlaybooksOnAnyTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {Playbook} from 'src/types/playbook';
 import PresetTemplates from 'src/components/templates/template_data';
@@ -115,16 +115,16 @@ const PlaybooksListFilters = styled.div`
 
 const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
-    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teamId = useSelector(getCurrentTeamId);
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
     const content = useRef<JSX.Element | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
 
-    const [
+    const {
         playbooks,
-        {isLoading, totalCount, params},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks},
-    ] = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
+        isLoading, totalCount, params,
+        setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks,
+    } = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
