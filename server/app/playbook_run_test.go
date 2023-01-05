@@ -9,10 +9,19 @@ import (
 )
 
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
-	testPlaybookRun := &PlaybookRun{}
-	result, err := json.Marshal(testPlaybookRun)
-	require.NoError(t, err)
-	require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
+	t.Run("marshal pointer", func(t *testing.T) {
+		testPlaybookRun := &PlaybookRun{}
+		result, err := json.Marshal(testPlaybookRun)
+		require.NoError(t, err)
+		require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
+	})
+
+	t.Run("marshal value", func(t *testing.T) {
+		testPlaybookRun := PlaybookRun{}
+		result, err := json.Marshal(testPlaybookRun)
+		require.NoError(t, err)
+		require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
+	})
 }
 
 func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
