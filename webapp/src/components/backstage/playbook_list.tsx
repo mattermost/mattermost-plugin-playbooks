@@ -28,6 +28,8 @@ import {pluginUrl} from 'src/browser_routing';
 
 import Header from 'src/components/widgets/header';
 
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
@@ -119,6 +121,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
     const content = useRef<JSX.Element | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
+    const refreshLHS = useLHSRefresh();
 
     const {
         playbooks,
@@ -130,7 +133,10 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
 
     const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
-    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => edit(id));
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => {
+        refreshLHS();
+        edit(id);
+    });
 
     const hasPlaybooks = Boolean(playbooks?.length);
 
