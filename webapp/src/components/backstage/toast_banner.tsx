@@ -8,7 +8,7 @@ const Ctx = React.createContext({} as ToastFuncs);
 
 const DEFAULT_DURATION = 3000;
 let toastCount = 0;
-const toastTimeoutMap :Record<number, number> = {};
+const toastTimeoutMap: Record<number, number> = {};
 
 const ToastContainer = styled.div`
     position: fixed;
