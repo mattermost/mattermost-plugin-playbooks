@@ -90,7 +90,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 
 // DM sends a DM from the plugin bot to the specified user
 func (b *Bot) DM(userID string, post *model.Post) error {
-	channel, err := b.serviceAdapter.GetDirectChannel(userID, b.botUserID)
+	channel, err := b.serviceAdapter.GetDirectChannelOrCreate(userID, b.botUserID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get bot DM channel with user_id %s", userID)
 	}
@@ -259,7 +259,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 	for _, admin := range admins {
 		go func(adminID string) {
-			channel, err := b.serviceAdapter.GetDirectChannel(adminID, b.botUserID)
+			channel, err := b.serviceAdapter.GetDirectChannelOrCreate(adminID, b.botUserID)
 			if err != nil {
 				logrus.WithError(err).WithFields(logrus.Fields{
 					"user_id": adminID,
@@ -285,7 +285,7 @@ func (b *Bot) PromptForFeedback(userID string) error {
 		return fmt.Errorf("unable to find feedbackbot user: %w", err)
 	}
 
-	channel, err := b.serviceAdapter.GetDirectChannel(userID, feedbackBot.Id)
+	channel, err := b.serviceAdapter.GetDirectChannelOrCreate(userID, feedbackBot.Id)
 	if err != nil {
 		return fmt.Errorf("failed to get direct message channel between user %s and feedbackbot %s: %w", userID, feedbackBot.Id, err)
 	}

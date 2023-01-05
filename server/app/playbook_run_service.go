@@ -2353,7 +2353,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 
 	// Prefer the channel name the user chose. But if it already exists, add some random bits
 	// and try exactly once more.
-	_, err := s.api.CreateChannel(channel)
+	err := s.api.CreateChannel(channel)
 	if err != nil {
 		if appErr, ok := err.(*model.AppError); ok {
 			// Let the user correct display name errors:
@@ -2365,7 +2365,9 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 			// We can fix channel Name errors:
 			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
 				channel.Name = addRandomBits(channel.Name)
-				_, err = s.api.CreateChannel(channel)
+				// clean channel id
+				channel.Id = ""
+				err = s.api.CreateChannel(channel)
 			}
 		}
 

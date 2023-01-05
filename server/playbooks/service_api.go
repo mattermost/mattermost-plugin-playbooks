@@ -38,12 +38,13 @@ type ServicesAPI interface {
 	GetChannelMembers(channelID string, page, perPage int) (mm_model.ChannelMembers, error)
 	CreateChannelSidebarCategory(userID, teamID string, newCategory *mm_model.SidebarCategoryWithChannels) (*mm_model.SidebarCategoryWithChannels, error)
 	UpdateChannelSidebarCategories(userID, teamID string, categories []*mm_model.SidebarCategoryWithChannels) ([]*mm_model.SidebarCategoryWithChannels, error)
-	CreateChannel(channel *mm_model.Channel) (*mm_model.Channel, error)
+	CreateChannel(channel *mm_model.Channel) error
 	AddMemberToChannel(channelID, userID string) (*mm_model.ChannelMember, error)
 	AddUserToChannel(channelID, userID, asUserID string) (*mm_model.ChannelMember, error)
 	UpdateChannelMemberRoles(channelID, userID, newRoles string) (*mm_model.ChannelMember, error)
 	DeleteChannelMember(channelId, userID string) error
 	AddChannelMember(channelId, userID string) (*mm_model.ChannelMember, error)
+	GetDirectChannelOrCreate(userID1, userID2 string) (*mm_model.Channel, error)
 
 	// Post service
 	CreatePost(post *mm_model.Post) (*mm_model.Post, error)

@@ -56,7 +56,7 @@ func (c *channelActionStore) Create(action app.GenericChannelAction) (string, er
 	}
 
 	if len(payloadJSON) > maxJSONLength {
-		return "", errors.Wrapf(err, "payload json for action id '%s' is too long (max %d)", action.ID, maxJSONLength)
+		return "", errors.Wrapf(errors.New("invalid data"), "payload json for action id '%s' is too long (max %d)", action.ID, maxJSONLength)
 	}
 
 	_, err = c.store.execBuilder(c.store.db, sq.

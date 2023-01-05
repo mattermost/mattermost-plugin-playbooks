@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -24,6 +23,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
+
+	_ "github.com/mattermost/mattermost-plugin-playbooks/product"
 )
 
 func TestMain(m *testing.M) {
@@ -111,8 +112,8 @@ func Setup(t *testing.T) *TestEnvironment {
 	dir := t.TempDir()
 	clientDir := t.TempDir()
 	playbooksDir := path.Join(dir, "playbooks")
-	binaryDir := path.Join(playbooksDir, "server", "dist")
-	pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
+	// binaryDir := path.Join(playbooksDir, "server", "dist")
+	// pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
 	pluginManifest := path.Join(playbooksDir, "plugin.json")
 	assetsDir := path.Join(playbooksDir, "assets")
 
@@ -144,10 +145,10 @@ func Setup(t *testing.T) *TestEnvironment {
 	require.NoError(t, err)
 
 	// Copy ourselves into the correct directory so we are executed.
-	currentBinary, err := os.Executable()
-	require.NoError(t, err)
-	err = utils.CopyFile(currentBinary, pluginBinary)
-	require.NoError(t, err)
+	// currentBinary, err := os.Executable()
+	// require.NoError(t, err)
+	// err = utils.CopyFile(currentBinary, pluginBinary)
+	// require.NoError(t, err)
 	err = utils.CopyDir("../assets", assetsDir)
 	require.NoError(t, err)
 

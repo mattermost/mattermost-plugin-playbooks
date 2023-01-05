@@ -15,7 +15,8 @@ import (
 	"github.com/mattermost/morph/sources/embedded"
 	"github.com/pkg/errors"
 
-	ms "github.com/mattermost/morph/drivers/mysql"
+	"github.com/mattermost/morph/drivers/mysql"
+	"github.com/mattermost/morph/drivers/postgres"
 )
 
 //go:embed migrations
@@ -88,9 +89,9 @@ func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
 	var err error
 	switch driverName {
 	case model.DatabaseDriverMysql:
-		driver, err = ms.WithInstance(sqlStore.db.DB)
+		driver, err = mysql.WithInstance(sqlStore.db.DB)
 	case model.DatabaseDriverPostgres:
-		driver, err = ms.WithInstance(sqlStore.db.DB)
+		driver, err = postgres.WithInstance(sqlStore.db.DB)
 	default:
 		err = fmt.Errorf("unsupported database type %s for migration", driverName)
 	}

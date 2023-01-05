@@ -1078,7 +1078,7 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}
 
 	if len(checklistsJSON) > maxJSONLength {
-		return nil, errors.Wrapf(err, "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
+		return nil, errors.Wrapf(errors.New("invalid data"), "checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybook{

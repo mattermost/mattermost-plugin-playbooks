@@ -106,9 +106,9 @@ func (a *serviceAPIAdapter) UpdateChannelSidebarCategories(userID, teamID string
 	return channels, normalizeAppErr(appErr)
 }
 
-func (a *serviceAPIAdapter) CreateChannel(channel *mm_model.Channel) (*mm_model.Channel, error) {
-	channel, appErr := a.api.channelService.CreateChannel(channel)
-	return channel, normalizeAppErr(appErr)
+func (a *serviceAPIAdapter) CreateChannel(channel *mm_model.Channel) error {
+	_, appErr := a.api.channelService.CreateChannel(channel)
+	return normalizeAppErr(appErr)
 }
 
 func (a *serviceAPIAdapter) AddMemberToChannel(channelID, userID string) (*mm_model.ChannelMember, error) {
@@ -133,6 +133,11 @@ func (a *serviceAPIAdapter) DeleteChannelMember(channelID, userID string) error 
 func (a *serviceAPIAdapter) AddChannelMember(channelID, userID string) (*mm_model.ChannelMember, error) {
 	channelMember, appErr := a.api.channelService.AddChannelMember(channelID, userID)
 	return channelMember, normalizeAppErr(appErr)
+}
+
+func (a *serviceAPIAdapter) GetDirectChannelOrCreate(userID1, userID2 string) (*mm_model.Channel, error) {
+	channel, appErr := a.api.channelService.GetDirectChannelOrCreate(userID1, userID2)
+	return channel, normalizeAppErr(appErr)
 }
 
 //
