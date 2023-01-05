@@ -16,8 +16,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
@@ -612,7 +610,7 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 	currentPlaybookRun := playbookRuns[run]
 
 	targetOwnerUser, err := r.api.GetUserByUsername(targetOwnerUsername)
-	if errors.Is(err, pluginapi.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetOwnerUsername))
 		return
 	} else if err != nil {

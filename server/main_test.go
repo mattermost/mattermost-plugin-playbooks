@@ -16,7 +16,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/config"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/mattermost/mattermost-server/v6/utils"
@@ -29,11 +28,11 @@ import (
 
 func TestMain(m *testing.M) {
 	// Run the plugin under test if the server is trying to run us as a plugin.
-	value := os.Getenv("MATTERMOST_PLUGIN")
-	if value == "Securely message teams, anywhere." {
-		plugin.ClientMain(&Plugin{})
-		return
-	}
+	// value := os.Getenv("MATTERMOST_PLUGIN")
+	// if value == "Securely message teams, anywhere." {
+	// 	plugin.ClientMain(&Plugin{})
+	// 	return
+	// }
 
 	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost-server/v6").Output()
 	if err != nil {

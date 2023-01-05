@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
-	"github.com/mattermost/mattermost-server/v6/plugin"
 )
 
 func main() {
@@ -18,7 +17,7 @@ func main() {
 		return
 	}
 
-	plugin.ClientMain(&Plugin{})
+	// plugin.ClientMain(&Plugin{})
 }
 
 func graphqlCheck() {
