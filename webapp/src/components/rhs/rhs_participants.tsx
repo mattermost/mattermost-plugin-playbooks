@@ -140,38 +140,33 @@ const NoParticipants = styled.div`
 `;
 
 const Container = styled.div`
-    padding: 0;
     display: flex;
     flex-direction: row;
+    align-items: center;
+    margin-top: 2px;
 `;
 
 const UserRow = styled.div`
     width: max-content;
-    padding: 0;
     display: flex;
     flex-direction: row;
 
-    border-radius: 44px;
+    margin-left: -4px;
 
-    margin-top: 6px;
-    margin-left: 2px;
+    border-radius: 44px;
+    border: 6px solid transparent;
 
     :hover {
-        border: 6px solid rgba(var(--center-channel-color-rgb), 0.08);
+        border-color: rgba(var(--center-channel-color-rgb), 0.08);
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
         background-clip: padding-box;
-
-        margin-top: 0;
-        margin-left: -4px;
-        margin-bottom: -6px;
     }
 `;
 
 export default RHSParticipants;
 
 const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
-    margin-left: 10px;
-    margin-top: 6px;
+    margin-left: 6px;
     padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
     border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
     border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
