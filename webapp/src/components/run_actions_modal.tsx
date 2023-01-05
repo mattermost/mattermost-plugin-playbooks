@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -40,17 +41,29 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const [isValid, setIsValid] = useState<boolean>(true);
     const updateRun = useUpdateRun(playbookRun.id);
 
-    // Update states on run change
-    // When this component is already mounted, the initial states passed above will not be used
-    // Therefore the states have to be explicitly updated when the run changes
-    useEffect(() => {
+    useUpdateEffect(() => {
         setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
+    }, [playbookRun.status_update_broadcast_channels_enabled]);
+
+    useUpdateEffect(() => {
         setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
+    }, [playbookRun.status_update_broadcast_webhooks_enabled]);
+
+    useUpdateEffect(() => {
         setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
+    }, [playbookRun.create_channel_member_on_new_participant]);
+
+    useUpdateEffect(() => {
         setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
+    }, [playbookRun.remove_channel_member_on_removed_participant]);
+
+    useUpdateEffect(() => {
         setChannelIds(playbookRun.broadcast_channel_ids);
+    }, [playbookRun.broadcast_channel_ids]);
+
+    useUpdateEffect(() => {
         setWebhooks(playbookRun.webhook_on_status_update_urls);
-    }, [playbookRun]);
+    }, [playbookRun.webhook_on_status_update_urls]);
 
     const onHide = () => {
         dispatch(hideRunActionsModal());
