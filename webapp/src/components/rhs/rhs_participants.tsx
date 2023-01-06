@@ -135,8 +135,6 @@ const NoParticipants = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 11px;
     line-height: 16px;
-
-    margin-top: 12px;
 `;
 
 const Container = styled.div`
@@ -144,6 +142,7 @@ const Container = styled.div`
     flex-direction: row;
     align-items: center;
     margin-top: 2px;
+    min-height: 40px;
 `;
 
 const UserRow = styled.div`
