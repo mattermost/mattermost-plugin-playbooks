@@ -816,5 +816,6 @@
     "QJTSaI": "Link run to a different channel",
     "IE2BzH": "There are users that are pre-assigned to one or more tasks. Disabling invitations will clear <strong>all</strong> pre-assignments.{br}{br}Are you sure you want to disable invitations?",
     "BiQjuS": "Run moved to {channel}",
-    "9w0mDI": "Confirm removal of pre-assigned member"
+    "9w0mDI": "Confirm removal of pre-assigned member",
+    "mILd++": "The run name should not exceed {maxLength} characters"
 }
