@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+const RUN_NAME_MAX_LENGTH = 64;
+
 describe('playbooks > start a run', () => {
     let testTeam;
     let testSysadmin;
@@ -511,6 +513,58 @@ describe('playbooks > start a run', () => {
 
                 // * Verify we are on channel Test Run Name
                 cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
+            });
+        });
+    });
+
+    describe('start run modal > invalid user input', () => {
+        it('submit button is disabled when run name is empty', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Wait the modal to render
+                cy.wait(500);
+
+                // * Assert template name is empty
+                cy.findByTestId('run-name-input').should('have.value', '');
+
+                // * Assert start button is disabled
+                cy.findByTestId('modal-confirm-button').should('have.attr', 'disabled');
+            });
+        });
+
+        it('error is shown when maximum length of run name is exceeded', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Wait the modal to render
+                cy.wait(500);
+
+                // * Assert template name is empty
+                cy.findByTestId('run-name-input').should('have.value', '');
+
+                // # Type run name that exceeds maximum length
+                cy.findByTestId('run-name-input').type('a'.repeat(RUN_NAME_MAX_LENGTH + 1));
+
+                // * Assert error shown and contains maximum length in message
+                cy.findByTestId('run-name-error').should('contain', RUN_NAME_MAX_LENGTH);
+
+                // * Assert start button is disabled
+                cy.findByTestId('modal-confirm-button').should('have.attr', 'disabled');
+
+                // # Delete last character via backspace
+                cy.findByTestId('run-name-input').type('{backspace}');
+
+                // * Assert that error is not shown anymore
+                cy.findByTestId('run-name-error').should('not.exist');
             });
         });
     });
