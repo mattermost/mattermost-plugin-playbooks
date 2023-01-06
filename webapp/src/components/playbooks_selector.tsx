@@ -5,12 +5,12 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ApolloProvider} from '@apollo/client';
+import {ApolloProvider, useQuery} from '@apollo/client';
 import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
-import {PlaybookModalFieldsFragment, usePlaybooksModalQuery} from 'src/graphql/generated_types';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
@@ -33,9 +33,49 @@ interface Props {
     onSelectPlaybook: (playbookId: string) => void;
 }
 
+const PlaybookModalFieldsFragment = graphql(/* GraphQL */`
+    fragment PlaybookModalFields on Playbook {
+        id
+        title
+        is_favorite: isFavorite
+        public
+        team_id: teamID
+        members {
+            user_id: userID
+            scheme_roles: schemeRoles
+        }
+        default_playbook_member_role: defaultPlaybookMemberRole
+        last_run_at: lastRunAt
+        active_runs: activeRuns
+    }
+`);
+
+const PlaybooksModalQuery = graphql(/* GraphQL */`
+    query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {
+        channelPlaybooks: 	runs(
+            channelID: $channelID,
+            first: 1000,
+        ) {
+            edges {
+                node {
+                    playbookID
+                }
+            }
+        }
+        yourPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: true, searchTerm: $searchTerm) {
+            id
+            ...PlaybookModalFields
+        }
+        allPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: false, searchTerm: $searchTerm) {
+            id
+            ...PlaybookModalFields
+        }
+    }
+`);
+
 const PlaybooksSelector = (props: Props) => {
     const {formatMessage} = useIntl();
-    const {data, loading} = usePlaybooksModalQuery({
+    const {data, loading} = useQuery(PlaybooksModalQuery, {
         variables: {
             teamID: props.teamID,
             searchTerm: props.searchTerm,
@@ -132,12 +172,13 @@ const PlaybooksSelector = (props: Props) => {
 
 interface PlaybookRowProps {
     onSelectPlaybook: (playbookId: string) => void;
-    playbook: PlaybookModalFieldsFragment;
+    playbook: FragmentType<typeof PlaybookModalFieldsFragment>;
 }
 
-const PlaybookRow = ({playbook, onSelectPlaybook}: PlaybookRowProps) => {
+const PlaybookRow = (props: PlaybookRowProps) => {
     const {formatMessage} = useIntl();
-    const hasPermission = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook as Maybe<PlaybookPermissionsParams>);
+    const hasPermission = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook as Maybe<PlaybookPermissionsParams>);
+    const playbook = getFragmentData(PlaybookModalFieldsFragment, props.playbook);
 
     const iconProps = {
         size: 18,
@@ -146,7 +187,7 @@ const PlaybookRow = ({playbook, onSelectPlaybook}: PlaybookRowProps) => {
     return (
         <PlaybookItem
             hasPermission={hasPermission}
-            onClick={hasPermission ? () => onSelectPlaybook(playbook.id) : undefined}
+            onClick={hasPermission ? () => props.onSelectPlaybook(playbook.id) : undefined}
         >
             <ItemIcon>
                 {playbook.public ? <BookOutlineIcon {...iconProps}/> : <BookLockOutlineIcon {...iconProps}/>}

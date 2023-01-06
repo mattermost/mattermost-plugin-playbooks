@@ -12,7 +12,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {ApolloProvider} from '@apollo/client';
+import {ApolloProvider, useQuery} from '@apollo/client';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
@@ -44,7 +44,7 @@ import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {StatusPost, useRunStatusModalQuery} from 'src/graphql/generated_types';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -64,6 +64,26 @@ export const makeModalDefinition = (props: Props) => ({
     dialogProps: props,
 });
 
+const runStatusModalQueryDocument = graphql(/* GraphQL */`
+    query RunStatusModal($runID: String!) {
+        run(id: $runID) {
+            id
+            name
+            teamID
+            ...DefaultMessageFragment
+            ...ReminderTimerFragment
+            broadcastChannelIDs
+            statusUpdateBroadcastChannelsEnabled
+            checklists {
+                items {
+                    state
+                }
+            }
+            followers
+        }
+    }
+`);
+
 const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
@@ -76,7 +96,7 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const {data, loading} = useRunStatusModalQuery({
+    const {data, loading} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
         },
@@ -84,7 +104,7 @@ const UpdateRunStatusModal = ({
     const run = data?.run;
 
     const [message, setMessage] = useState(providedMessage);
-    const defaultMessage = useDefaultMessage(run?.statusPosts ?? [], run?.reminderMessageTemplate ?? '', !loading);
+    const defaultMessage = useDefaultMessage(run);
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
@@ -333,11 +353,23 @@ const UpdateRunStatusModal = ({
     );
 };
 
-const useDefaultMessage = (statusPosts: Partial<StatusPost>[], messageTemplate: string, loaded: boolean) => {
-    const lastStatusPostMeta = statusPosts.slice().reverse().find(({deleteAt}) => !deleteAt);
+const DefaultMessageFragment = graphql(/* GraphQL */`
+    fragment DefaultMessageFragment on Run {
+        reminderMessageTemplate
+        statusPosts {
+            id
+            deleteAt
+        }
+    }
+`);
+
+const useDefaultMessage = (query: Maybe<FragmentType<typeof DefaultMessageFragment>>) => {
+    const data = getFragmentData(DefaultMessageFragment, query);
+
+    const lastStatusPostMeta = data?.statusPosts.slice().reverse().find(({deleteAt}) => !deleteAt);
     const [lastStatusPost] = usePost(lastStatusPostMeta?.id ?? '');
 
-    if (!loaded) {
+    if (!data) {
         return null;
     }
 
@@ -347,19 +379,27 @@ const useDefaultMessage = (statusPosts: Partial<StatusPost>[], messageTemplate: 
     }
 
     // run loaded and was no last status post, but there might be a message template
-    return messageTemplate;
+    return data?.reminderMessageTemplate;
 };
 
-const useReminderTimerOption = (run: Maybe<{
-    previousReminder: number,
-    reminderTimerDefaultSeconds: number,
-    statusPosts: Partial<StatusPost>[],
-}>,
-disabled?: boolean,
-preselectedValue?: number,
+const ReminderTimerFragment = graphql(/* GraphQL */`
+    fragment ReminderTimerFragment on Run {
+        previousReminder
+        reminderTimerDefaultSeconds
+        statusPosts {
+            deleteAt
+        }
+    }
+`);
+
+const useReminderTimerOption = (
+    run: Maybe<FragmentType<typeof ReminderTimerFragment>>,
+    disabled?: boolean,
+    preselectedValue?: number,
 ) => {
     const {locale} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue);
+    const data = getFragmentData(ReminderTimerFragment, run);
 
     const defaults = useMemo(() => {
         const options = [
@@ -372,19 +412,19 @@ preselectedValue?: number,
         if (preselectedValue) {
             value = makeOption({seconds: preselectedValue});
         }
-        if (run) {
-            if (!value && run.previousReminder) {
-                value = makeOption({seconds: nearest(run.previousReminder * 1e-9, 60)});
+        if (data) {
+            if (!value && data.previousReminder) {
+                value = makeOption({seconds: nearest(data.previousReminder * 1e-9, 60)});
             }
 
-            if (run.reminderTimerDefaultSeconds) {
-                const defaultReminderOption = makeOption({seconds: run.reminderTimerDefaultSeconds});
+            if (data.reminderTimerDefaultSeconds) {
+                const defaultReminderOption = makeOption({seconds: data.reminderTimerDefaultSeconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
                 }
 
-                if (!value && !run.statusPosts.some(({deleteAt}) => !deleteAt)) {
+                if (!value && !data?.statusPosts.some(({deleteAt}) => !deleteAt)) {
                     // set preselected-default if it was not set previously
                     // and there are no previous status posts (excluding deleted)
                     // (the previous reminder timer specified take precedence)
@@ -403,7 +443,7 @@ preselectedValue?: number,
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [run, preselectedValue, locale]);
+    }, [data, preselectedValue, locale]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
