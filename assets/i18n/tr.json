@@ -180,5 +180,51 @@
     {
         "id": "app.user.new_run.intro",
         "translation": "**Sahibi** {{.Username}}"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "Bekleyen **{{.Count}} görev** var. *{{.RunName}}* oyununu tüm katılımcılar için tamamlamak istediğinize emin misiniz?",
+            "other": "Bekleyen **{{.Count}} görev** var. *{{.RunName}}* oyununu tüm katılımcılar için tamamlamak istediğinize emin misiniz?"
+        }
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Ayrıca oyunu da tamamlanmış olarak işaretle"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Oyunu tamamla"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Oyunu tamamlamayı onayla"
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Oyunu tamamla"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Durum güncellemesi"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Durumu güncelle"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Sonraki güncelleme hatırlatıcısı"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "Paydaşlara bir güncelleme duyurun. Bu gönderi {{.Count}} kanalında yayınlanacak.",
+            "other": "Paydaşlara bir güncelleme duyurun. Bu gönderi {{.Count}} kanalında yayınlanacak."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Son güncellemeden sonraki değişiklik"
     }
 ]
