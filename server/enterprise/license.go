@@ -1,7 +1,7 @@
 package enterprise
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/product/pluginapi"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 )
 

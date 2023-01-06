@@ -21,8 +21,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const checklistItemDescriptionCharLimit = 4000
@@ -1703,7 +1701,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		TeamId:    playbookRun.TeamID,
 		ChannelId: playbookRun.ChannelID,
 	})
-	if err == pluginapi.ErrNotFound {
+	if err == ErrNotFound {
 		trigger := strings.Fields(command)[0]
 		s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
 
