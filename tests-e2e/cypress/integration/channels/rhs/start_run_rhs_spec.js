@@ -128,7 +128,7 @@ describe('channels rhs > start a run', () => {
                             hasChannelIdChanged: false,
                             hasPublicChanged: false,
                         }}
-                    ]);
+                    ], {waitForCalls: 2});
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);

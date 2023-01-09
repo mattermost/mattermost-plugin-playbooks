@@ -308,11 +308,23 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
+const defaultExpectTelemetryToContainOptions = {
+    waitForCalls: 'auto',
+};
+
 // cy.expectTelemetryToContain expects to find the given telemetry events in the order given among the
 // recorded telemetry. It doesn't fail if other telemetry events happen to occur in between.
-Cypress.Commands.add('expectTelemetryToContain', (items) => {
-    // Wait for at least as many telemetry events as requested.
-    items.forEach(() => cy.wait('@telemetry'));
+Cypress.Commands.add('expectTelemetryToContain', (items, opts) => {
+    const options = {...defaultExpectTelemetryToContainOptions, ...opts};
+
+    // Wait for at least as many telemetry events as requested if auto, or explicit number is passed.
+    if (options.waitForCalls === 'auto') {
+        items.forEach(() => cy.wait('@telemetry'));
+    } else {
+        for (let i = 0; i < options.waitForCalls; i++) {
+            cy.wait('@telemetry');
+        }
+    }
 
     // When additional telemetry events are emitted than what is expected, the ones we want may
     // still be be pending, so wait a bit more to try to let requests settle.
