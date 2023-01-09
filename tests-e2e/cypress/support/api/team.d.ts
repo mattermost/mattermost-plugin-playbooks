@@ -180,5 +180,19 @@ declare namespace Cypress {
          *   cy.apiUpdateTeamMemberSchemeRole(teamId, userId, {scheme_admin: false, scheme_user: true});
          */
         apiUpdateTeamMemberSchemeRole(teamId: string, userId: string, schemeRoles: Record<string, any>): Chainable<Record<string, any>>;
+
+        /**
+         * Set a team's scheme.
+         * Requires sysadmin session to initiate this command.
+         * See https://api.mattermost.com/#tag/teams/operation/UpdateTeamScheme
+         * @param {string} teamId - team ID
+         * @param {string} schemeId - scheme ID
+         * @returns {Object} `out.data` as response status
+         *
+         * @example
+         *   cy.apiSetTeamScheme('team-id'', 'scheme-id');
+         */
+        apiSetTeamScheme(teamId: string, schemeId: string): Chainable<Record<string, any>>;
+
     }
 }

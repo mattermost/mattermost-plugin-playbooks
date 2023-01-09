@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
     GlobeIcon,
     ImportIcon,
@@ -21,7 +21,7 @@ import MenuGroup from 'src/components/widgets/menu/menu_group';
 import MenuWrapper from 'src/components/widgets/menu/menu_wrapper';
 
 import {OVERLAY_DELAY} from 'src/constants';
-import {useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 
 interface CreatePlaybookDropdownProps {
     team_id: string;
@@ -30,10 +30,11 @@ interface CreatePlaybookDropdownProps {
 const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const teams = useSelector(getMyTeams);
-    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const teamId = props.team_id || currentTeamId;
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
 
-    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(props.team_id || teams[0].id, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
+    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
@@ -116,7 +117,10 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 overlay={tooltip}
             >
                 <>
-                    <Button aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}>
+                    <Button
+                        aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}
+                        data-testid='create-playbook-dropdown-toggle'
+                    >
                         <PlusIcon size={18}/>
                     </Button>
                     {inputImportPlaybook}

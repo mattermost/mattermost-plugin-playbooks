@@ -530,6 +530,49 @@ describe('channels > slash command > owner', () => {
             // * Verify the message.
             cy.verifyEphemeralMessage(`Timeline for ${playbookRuns[1].name}`);
         });
+
+        it('update', () => {
+            // # Run a slash command with not enough parameters
+            cy.executeSlashCommand('/playbook update');
+
+            // * Verify the expected error message.
+            cy.verifyEphemeralMessage('Command expects one argument: the run number.');
+
+            // # Run a slash command wrong run number
+            cy.executeSlashCommand('/playbook update 2');
+
+            // * Verify the expected error message.
+            cy.verifyEphemeralMessage('Invalid run number');
+
+            // # Type a command
+            cy.findByTestId('post_textbox').clear().type('/playbook update ');
+
+            // * Verify suggestions number: 2 runs + 1 title
+            cy.get('.slash-command').should('have.length', 3);
+
+            // # Clear input
+            cy.findByTestId('post_textbox').clear();
+
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook update 1');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // # Enter valid data
+                cy.findByTestId('update_run_status_textbox').type('valid update');
+
+                // # Submit the dialog.
+                cy.get('button.confirm').click();
+            });
+
+            // * Verify that the Post update dialog has gone.
+            cy.getStatusUpdateDialog().should('not.exist');
+
+            // * Verify that the status update was posted.
+            cy.getLastPost().within(() => {
+                cy.findByText('posted an update for').should('exist');
+            });
+        });
     });
 });
 

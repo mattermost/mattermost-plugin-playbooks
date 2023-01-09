@@ -163,7 +163,10 @@ const PlaybookRow = ({playbook, onSelectPlaybook}: PlaybookRowProps) => {
                 {hasPermission ? (
                     <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
                 ) : (
-                    <SecondaryButton >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
+                    <SecondaryButton
+                        disabled={true}
+                        title={'You do not have permissions'}
+                    >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
                 )}
             </ButtonWrappper>
         </PlaybookItem>

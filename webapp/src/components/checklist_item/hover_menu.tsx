@@ -60,7 +60,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     onClick={props.toggleDescription}
                 />
             }
-            {props.playbookRunId !== undefined && !props.isSkipped &&
+            {!props.isSkipped &&
                 <AssignTo
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}

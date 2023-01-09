@@ -127,7 +127,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 			{
 				"title":            "title1",
 				"description":      "description1",
-				"assigneeID":       "id1",
+				"assigneeID":       "",
 				"assigneeModified": 101,
 				"state":            "Closed",
 				"stateModified":    102,
@@ -171,6 +171,33 @@ func TestGraphQLPlaybooks(t *testing.T) {
 
 		require.Equal(t, updatedPlaybook.Checklists, actual)
 	})
+
+	t.Run("update playbook with pre-assigned task, valid invite user list, and invitations enabled", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"invitedUserIDs":     []string{e.RegularUser.Id},
+			"inviteUsersEnabled": true,
+		})
+		require.NoError(t, err)
+	})
+
 }
 func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	e := Setup(t)
@@ -193,6 +220,144 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 		require.Error(t, err)
 
 		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": strings.Repeat("A", 4097)})
+		require.Error(t, err)
+	})
+
+	t.Run("update playbook with pre-assigned task fails due to disabled invitations", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"invitedUserIDs": []string{e.RegularUser.Id},
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("update playbook with pre-assigned task fails due to missing assignee in existing invite user list", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"inviteUsersEnabled": true,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("update playbook with pre-assigned task fails due to assignee missing in new invite user list", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"invitedUserIDs":     []string{e.RegularUser2.Id},
+			"inviteUsersEnabled": true,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("update playbook with invite user list fails due to missing a pre-assignee", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"invitedUserIDs":     []string{e.RegularUser.Id},
+			"inviteUsersEnabled": true,
+		})
+		require.NoError(t, err)
+
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"invitedUserIDs": []string{e.RegularUser2.Id},
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("update playbook fails if invitations are getting disabled but there are pre-assigned users", func(t *testing.T) {
+		items := []map[string]interface{}{
+			{
+				"title":            "title1",
+				"description":      "description1",
+				"assigneeID":       e.RegularUser.Id,
+				"assigneeModified": 0,
+				"state":            "",
+				"stateModified":    0,
+				"command":          "",
+				"commandLastRun":   0,
+				"lastSkipped":      0,
+				"dueDate":          0,
+			},
+		}
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"checklists": map[string]interface{}{
+				"title": "A",
+				"items": items,
+			},
+			"invitedUserIDs":     []string{e.RegularUser.Id},
+			"inviteUsersEnabled": true,
+		})
+		require.NoError(t, err)
+
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+			"inviteUsersEnabled": false,
+		})
 		require.Error(t, err)
 	})
 }

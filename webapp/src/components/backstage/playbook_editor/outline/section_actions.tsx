@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useCallback} from 'react';
+import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {useDispatch} from 'react-redux';
@@ -24,6 +24,7 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 
 import {useProxyState} from 'src/hooks';
+import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -47,6 +48,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         });
     }, [updatePlaybook]));
 
+    const preAssignees = useMemo(() => {
+        return getDistinctAssignees(playbook.checklists);
+    }, [playbook.checklists]);
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
     };
@@ -67,6 +72,53 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const idx = playbook.invited_user_ids.indexOf(userId);
         updatePlaybook({
             invitedUserIDs: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+    };
+
+    const handleRemovePreAssignedUserInvited = (userId: string) => {
+        // Iterate all checklists and their tasks and unassign the given user from all tasks
+        const checklists = playbook.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        const idx = playbook.invited_user_ids.indexOf(userId);
+        updatePlaybook({
+            checklists,
+            invitedUserIDs: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+    };
+
+    const handleRemovePreAssignedUsers = () => {
+        // Iterate all checklists and their tasks and unassign all assignees
+        const checklists = playbook.checklists.map((cl) => ({
+            ...cl,
+            items: cl.items.map((ci) => ({
+                title: ci.title,
+                description: ci.description,
+                state: ci.state,
+                stateModified: ci.state_modified || 0,
+                assigneeID: '',
+                assigneeModified: ci.assignee_modified || 0,
+                command: ci.command,
+                commandLastRun: ci.command_last_run,
+                dueDate: ci.due_date,
+                taskActions: ci.task_actions,
+            })),
+        }));
+        updatePlaybook({
+            checklists,
+            inviteUsersEnabled: false,
         });
     };
 
@@ -137,8 +189,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
+                        preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
+                        onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
+                        onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
                 </Setting>
                 <Setting id={'assign-owner'}>
