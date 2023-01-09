@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import React, {useRef} from 'react';
+import React, {PropsWithChildren, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -115,7 +115,7 @@ const PlaybooksListFilters = styled.div`
     align-items: center;
 `;
 
-const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
+const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     const {formatMessage} = useIntl();
     const teamId = useSelector(getCurrentTeamId);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
@@ -133,7 +133,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);
 
     const {view, edit} = usePlaybooksRouting<string>({onGo: setSelectedPlaybook});
-    const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => {
+    const [fileInputRef, inputImportPlaybook, importPlaybookFile] = useImportPlaybook(teamId, (id: string) => {
         refreshLHS();
         edit(id);
     });
@@ -152,6 +152,22 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         if (fileInputRef && fileInputRef.current) {
             fileInputRef.current.click();
         }
+    };
+
+    const handleImportDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleImportDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleImportDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        if (!e.dataTransfer.files?.[0]) {
+            return;
+        }
+        importPlaybookFile(e.dataTransfer.files[0]);
     };
 
     let listBody: JSX.Element | JSX.Element[] | null = null;
@@ -202,6 +218,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                 <>
                                     <ImportButton
                                         onClick={handleImportClick}
+                                        onDragEnter={handleImportDragEnter}
+                                        onDragOver={handleImportDragOver}
+                                        onDrop={handleImportDrop}
                                     />
                                     <HorizontalSpacer size={12}/>
                                     <PlaybookModalButton/>
@@ -303,6 +322,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                         ImportPlaybookButton: (chunks) => (
                                             <ImportLinkButton
                                                 onClick={handleImportClick}
+                                                onDragEnter={handleImportDragEnter}
+                                                onDragOver={handleImportDragOver}
+                                                onDrop={handleImportDrop}
                                             >
                                                 {chunks}
                                             </ImportLinkButton>
@@ -339,20 +361,30 @@ function swapEnds(arr: Array<any>) {
     return [arr[arr.length - 1], ...arr.slice(1, -1), arr[0]];
 }
 
-const ImportButton = (props: {onClick?: () => void}) => {
+interface ImportButtonProps {
+    onDragEnter: (e: React.DragEvent) => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+    onClick?: () => void;
+}
+
+const ImportButton = (props: ImportButtonProps) => {
     return (
-        <TertiaryButton
-            onClick={props.onClick}
-        >
+        <TertiaryButton {...props}>
             <FormattedMessage defaultMessage='Import'/>
         </TertiaryButton>
     );
 };
 
-const ImportLinkButton = (props: {children: React.ReactNode | React.ReactNode[]; onClick?: () => void}) => {
+const ImportLinkButton = ({onDragEnter, onDragOver, onDrop, onClick, children}: PropsWithChildren<ImportButtonProps>) => {
     return (
-        <ImportLink onClick={props.onClick}>
-            {props.children}
+        <ImportLink
+            onClick={onClick}
+            onDragEnter={onDragEnter}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+        >
+            {children}
         </ImportLink>
     );
 };
