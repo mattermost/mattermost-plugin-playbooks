@@ -44,7 +44,8 @@ import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+import {getFragmentData, graphql} from 'src/graphql/generated';
+import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -70,8 +71,8 @@ const runStatusModalQueryDocument = graphql(/* GraphQL */`
             id
             name
             teamID
-            ...DefaultMessageFragment
-            ...ReminderTimerFragment
+            ...DefaultMessage
+            ...ReminderTimer
             broadcastChannelIDs
             statusUpdateBroadcastChannelsEnabled
             checklists {
@@ -96,15 +97,16 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const {data, loading} = useQuery(runStatusModalQueryDocument, {
+    const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
         },
+        fetchPolicy: 'network-only',
     });
     const run = data?.run;
 
     const [message, setMessage] = useState(providedMessage);
-    const defaultMessage = useDefaultMessage(run);
+    const defaultMessage = useDefaultMessage(getFragmentData(DefaultMessage, run));
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
@@ -116,7 +118,7 @@ const UpdateRunStatusModal = ({
     const [showUnsavedRoute, setShowUnsaveRoute] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
+    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), finishRun, providedReminder);
     const isReminderValid = finishRun || (reminder && reminder > 0);
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
@@ -353,8 +355,8 @@ const UpdateRunStatusModal = ({
     );
 };
 
-const DefaultMessageFragment = graphql(/* GraphQL */`
-    fragment DefaultMessageFragment on Run {
+const DefaultMessage = graphql(/* GraphQL */`
+    fragment DefaultMessage on Run {
         reminderMessageTemplate
         statusPosts {
             id
@@ -363,13 +365,11 @@ const DefaultMessageFragment = graphql(/* GraphQL */`
     }
 `);
 
-const useDefaultMessage = (query: Maybe<FragmentType<typeof DefaultMessageFragment>>) => {
-    const data = getFragmentData(DefaultMessageFragment, query);
-
-    const lastStatusPostMeta = data?.statusPosts.slice().reverse().find(({deleteAt}) => !deleteAt);
+const useDefaultMessage = (run: Maybe<DefaultMessageFragment>) => {
+    const lastStatusPostMeta = run?.statusPosts.slice().reverse().find(({deleteAt}) => !deleteAt);
     const [lastStatusPost] = usePost(lastStatusPostMeta?.id ?? '');
 
-    if (!data) {
+    if (!run) {
         return null;
     }
 
@@ -379,11 +379,11 @@ const useDefaultMessage = (query: Maybe<FragmentType<typeof DefaultMessageFragme
     }
 
     // run loaded and was no last status post, but there might be a message template
-    return data?.reminderMessageTemplate;
+    return run?.reminderMessageTemplate;
 };
 
-const ReminderTimerFragment = graphql(/* GraphQL */`
-    fragment ReminderTimerFragment on Run {
+const ReminderTimer = graphql(/* GraphQL */`
+    fragment ReminderTimer on Run {
         previousReminder
         reminderTimerDefaultSeconds
         statusPosts {
@@ -393,13 +393,12 @@ const ReminderTimerFragment = graphql(/* GraphQL */`
 `);
 
 const useReminderTimerOption = (
-    run: Maybe<FragmentType<typeof ReminderTimerFragment>>,
+    run: Maybe<ReminderTimerFragment>,
     disabled?: boolean,
     preselectedValue?: number,
 ) => {
     const {locale} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue);
-    const data = getFragmentData(ReminderTimerFragment, run);
 
     const defaults = useMemo(() => {
         const options = [
@@ -412,19 +411,19 @@ const useReminderTimerOption = (
         if (preselectedValue) {
             value = makeOption({seconds: preselectedValue});
         }
-        if (data) {
-            if (!value && data.previousReminder) {
-                value = makeOption({seconds: nearest(data.previousReminder * 1e-9, 60)});
+        if (run) {
+            if (!value && run.previousReminder) {
+                value = makeOption({seconds: nearest(run.previousReminder * 1e-9, 60)});
             }
 
-            if (data.reminderTimerDefaultSeconds) {
-                const defaultReminderOption = makeOption({seconds: data.reminderTimerDefaultSeconds});
+            if (run.reminderTimerDefaultSeconds) {
+                const defaultReminderOption = makeOption({seconds: run.reminderTimerDefaultSeconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
                 }
 
-                if (!value && !data?.statusPosts.some(({deleteAt}) => !deleteAt)) {
+                if (!value && !run?.statusPosts.some(({deleteAt}) => !deleteAt)) {
                     // set preselected-default if it was not set previously
                     // and there are no previous status posts (excluding deleted)
                     // (the previous reminder timer specified take precedence)
@@ -443,7 +442,7 @@ const useReminderTimerOption = (
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [data, preselectedValue, locale]);
+    }, [run, preselectedValue, locale]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
