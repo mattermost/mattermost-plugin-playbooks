@@ -32,6 +32,21 @@ declare namespace Cypress {
         apiGetSchemes(scope: string): Chainable<Scheme[]>;
 
         /**
+         * Create a scheme.
+         * See https://api.mattermost.com/#tag/schemes/paths/~1schemes/post
+         * @param {String} name - Name of the scheme
+         * @param {String} scope - Scope of the scheme ('team' or 'channel')
+         * @param {String} description - Description of the scheme
+         * @returns {Scheme} `out.scheme` as `Scheme`
+         *
+         * @example
+         *   cy.apiCreateScheme('Example', 'team').then(({scheme}) => {
+         *       // do something with scheme
+         *   });
+         */
+        apiCreateScheme(name: string, scope: 'team' | 'channel', description?: string): Chainable<Scheme>;
+
+        /**
          * Delete a scheme.
          * See https://api.mattermost.com/#tag/schemes/paths/~1schemes~1{scheme_id}/delete
          * @param {string} schemeId - ID of the scheme to delete
