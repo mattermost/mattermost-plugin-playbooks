@@ -820,5 +820,6 @@
     "l3QwVw": "Kanaal selecteren",
     "ksG35Q": "Je hebt geen rechten om playbooks aan te maken in deze werkruimte.",
     "k7Nzfi": "Uitnodiging uitschakelen",
-    "YKLHXL": "Lopende uitvoeringen bekijken"
+    "YKLHXL": "Lopende uitvoeringen bekijken",
+    "mILd++": "De naam van de uitvoering mag niet langer zijn dan {maxLength} tekens"
 }
