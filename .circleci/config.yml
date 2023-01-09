@@ -207,7 +207,7 @@ jobs:
       - run:
           name: Checking diff of webapp graphql generated files
           command: |
-            git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
+            git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
       # - run:
       #     name: Checking diff of server i18n files
       #     command: |
