@@ -45,9 +45,6 @@ describe('runs > run details page', () => {
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
             testPlaybookRun = playbookRun;
-
-            // # Visit the playbook run
-            cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
     });
 
@@ -61,19 +58,23 @@ describe('runs > run details page', () => {
 
     it('telemetry is triggered', () => {
         // # Intercept all calls to telemetry
-        cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+        cy.interceptTelemetry();
 
         // # Visit the URL of a non-existing playbook run
         cy.visit(`/playbooks/runs/${testPlaybookRun.id}`);
 
         // * assert telemetry pageview
-        cy.wait('@telemetry').then((interception) => {
-            expect(interception.request.body.name).to.eq('run_details');
-            expect(interception.request.body.type).to.eq('page');
-            expect(interception.request.body.properties.from).to.eq('');
-            expect(interception.request.body.properties.role).to.eq('participant');
-            expect(interception.request.body.properties.playbookrun_id).to.eq(testPlaybookRun.id);
-            expect(interception.request.body.properties.playbook_id).to.eq(testPublicPlaybook.id);
-        });
+        cy.expectTelemetryToContain([
+            {
+                name: 'run_details',
+                type: 'page',
+                properties: {
+                    from: '',
+                    role: 'participant',
+                    playbookrun_id: testPlaybookRun.id,
+                    playbook_id: testPublicPlaybook.id,
+                },
+            }
+        ]);
     });
 });

@@ -113,7 +113,7 @@ describe('Task Inbox >', () => {
 
     it('icon toggles taskinbox view', () => {
         // # Intercept all calls to telemetry
-        cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+        cy.interceptTelemetry();
 
         // # Click on global header icon to open
         cy.findByTestId('header-task-inbox-icon').click();
@@ -122,10 +122,12 @@ describe('Task Inbox >', () => {
         getRHS().should('be.visible');
 
         // * assert telemetry pageview
-        cy.wait('@telemetry').then((interception) => {
-            expect(interception.request.body.name).to.eq('task_inbox');
-            expect(interception.request.body.type).to.eq('page');
-        });
+        cy.expectTelemetryToContain([
+            {
+                name: 'task_inbox',
+                type: 'page',
+            }
+        ]);
 
         // * assert zero case
         getRHS().within(() => {

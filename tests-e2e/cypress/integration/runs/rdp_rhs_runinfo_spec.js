@@ -124,8 +124,7 @@ describe('runs > run details page > run info', () => {
 
             it('Following button can be toggled', () => {
                 // # Intercept all calls to telemetry
-                cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
-                cy.wait('@telemetry');
+                cy.interceptTelemetry();
 
                 getOverviewEntry('following').within(() => {
                     // * Verify that the user shows in the following list
@@ -134,7 +133,7 @@ describe('runs > run details page > run info', () => {
                     });
 
                     // # Click the Following button
-                    cy.findByRole('button', {name: /Following/}).click({force: true}).wait('@telemetry');
+                    cy.findByRole('button', {name: /Following/}).click({force: true});
 
                     // * Verify that it now says (exactly) Follow
                     cy.findByRole('button', {name: /^Follow$/}).should('exist');
@@ -143,28 +142,26 @@ describe('runs > run details page > run info', () => {
                     cy.getStyledComponent('UserRow').should('not.exist');
 
                     // # Click the Follow button
-                    cy.findByRole('button', {name: /^Follow$/}).click({force: true}).wait('@telemetry');
+                    cy.findByRole('button', {name: /^Follow$/}).click({force: true});
 
                     // * Verify that it now says Following
                     cy.findByRole('button', {name: /Following/}).should('exist');
                 });
 
-                cy.get('@telemetry.all').then((xhrs) => {
-                    expect(xhrs.length).to.eq(3);
-
-                    expect(xhrs[0].request.body.name).to.eq('run_details');
-                    expect(xhrs[0].request.body.type).to.eq('page');
-
-                    expect(xhrs[1].request.body.name).to.eq('playbookrun_unfollow');
-                    expect(xhrs[1].request.body.type).to.eq('track');
-                    expect(xhrs[1].request.body.properties.from).to.eq('run_details');
-                    expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(testRun.id);
-
-                    expect(xhrs[2].request.body.name).to.eq('playbookrun_follow');
-                    expect(xhrs[2].request.body.type).to.eq('track');
-                    expect(xhrs[2].request.body.properties.from).to.eq('run_details');
-                    expect(xhrs[2].request.body.properties.playbookrun_id).to.eq(testRun.id);
-                });
+                cy.expectTelemetryToContain([
+                    {
+                        name: 'playbookrun_unfollow',
+                        type: 'track',
+                        from: 'run_details',
+                        playbookrun_id: testRun.id,
+                    },
+                    {
+                        name: 'playbookrun_follow',
+                        type: 'track',
+                        from: 'run_details',
+                        playbookrun_id: testRun.id,
+                    }
+                ], {waitForCalls: 3});
             });
 
             it('click channel link navigates to run\'s channel', () => {
