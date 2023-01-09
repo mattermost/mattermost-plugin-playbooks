@@ -36,7 +36,7 @@ describe('channels > rhs > home', () => {
         });
 
         describe('telemetry', () => {
-            it.only('track page view', () => {
+            it('track page view', () => {
                 // # intercepts telemetry
                 cy.interceptTelemetry();
 
