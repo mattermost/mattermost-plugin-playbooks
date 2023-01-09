@@ -65,7 +65,6 @@ describe('channels > post type components', () => {
             // Grab the post id
             cy.getLastPostId().then((postId) => {
                 // * Assert telemetry data
-                cy.wait('@telemetry').wait('@telemetry');
                 cy.expectTelemetryToContain([
                     {
                         name: 'run_status_update',
@@ -103,7 +102,6 @@ describe('channels > post type components', () => {
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToContain([
                     {
                         name: 'run_status_update',
@@ -149,7 +147,6 @@ describe('channels > post type components', () => {
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
                 // * Assert telemetry data
-                cy.wait('@telemetry').wait('@telemetry');
                 cy.expectTelemetryToContain([
                     {
                         name: 'run_status_update',

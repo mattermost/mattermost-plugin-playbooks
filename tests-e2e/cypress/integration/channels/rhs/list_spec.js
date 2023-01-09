@@ -85,7 +85,6 @@ describe('channels > rhs > runlist', () => {
         cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
         // * Assert telemetry data
-        cy.wait('@telemetry');
         cy.expectTelemetryToContain([{name: 'channels_rhs_runlist', type: 'page'}]);
     });
 
