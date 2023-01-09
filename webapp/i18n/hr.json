@@ -816,5 +816,6 @@
     "YKLHXL": "Prikaži izvođenja u tijeku",
     "TP/O/b": "Ukloni korisnika",
     "QvEO6m": "Nemaš dozvole za mijenjanje ovog izvođenja",
-    "QJTSaI": "Poveži izvođenje s jednim drugim kanalom"
+    "QJTSaI": "Poveži izvođenje s jednim drugim kanalom",
+    "mILd++": "Ime izvođenja ne smije sadržati više od {maxLength} znakova"
 }
