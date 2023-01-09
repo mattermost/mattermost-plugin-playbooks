@@ -222,6 +222,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         onDragOver={handleImportDragOver}
                                         onDrop={handleImportDrop}
                                     />
+                                    {inputImportPlaybook}
                                     <HorizontalSpacer size={12}/>
                                     <PlaybookModalButton/>
                                 </>
@@ -247,7 +248,6 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                         onChange={setWithArchived}
                     />
                     <HorizontalSpacer size={12}/>
-                    {inputImportPlaybook}
                 </PlaybooksListFilters>
                 <BackstageListHeader $edgeless={true}>
                     <div className='row'>

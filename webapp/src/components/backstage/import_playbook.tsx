@@ -51,6 +51,7 @@ export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
 
     const input = (
         <input
+            data-testid='playbook-import-input'
             type='file'
             accept='*.json,application/JSON'
             onChange={onChange}

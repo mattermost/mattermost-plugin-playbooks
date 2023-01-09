@@ -107,6 +107,67 @@ describe('playbooks > list', () => {
         });
     });
 
+    describe('can import playbook', () => {
+        it('triggered by using button/input', () => {
+            // # Load fixture of playbook export
+            cy.fixture('playbook-export.json').as('playbookExport');
+
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Select loaded fixture for upload
+                cy.findByTestId('playbook-import-input').selectFile('@playbookExport', {force: true});
+            });
+
+            // * Verify that a new playbook was created.
+            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        });
+
+        it('triggered by drag and drop', () => {
+            // # Load fixture of playbook export
+            cy.fixture('playbook-export.json').as('playbookExport');
+
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Drop loaded fixture onto import button
+                cy.findByText('Import').selectFile('@playbookExport', {
+                    action: 'drag-drop'
+                });
+            });
+
+            // * Verify that a new playbook was created.
+            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        });
+
+        it('fails to import invalid file type', () => {
+            // # Load fixture of playbook export
+            cy.fixture('mp3-audio-file.mp3').as('playbookExport');
+
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Select loaded fixture for upload
+                cy.findByTestId('playbook-import-input').selectFile('@playbookExport', {force: true});
+            });
+
+            // * Verify that an error message is displayed.
+            cy.findByText('The playbook import has failed. Please check that JSON is valid and try again.').should('be.visible');
+        });
+    });
+
     context('archived playbooks', () => {
         it('does not show them by default', () => {
             // # Open the product
