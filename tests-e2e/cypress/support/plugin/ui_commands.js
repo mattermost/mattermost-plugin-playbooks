@@ -308,7 +308,7 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
-// expectTelemetryToContain expects to find the given telemetry events in the order given among the
+// cy.expectTelemetryToContain expects to find the given telemetry events in the order given among the
 // recorded telemetry. It doesn't fail if other telemetry events happen to occur in between.
 Cypress.Commands.add('expectTelemetryToContain', (items) => {
     // Wait for at least as many telemetry events as requested.
