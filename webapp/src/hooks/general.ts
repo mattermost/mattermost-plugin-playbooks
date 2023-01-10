@@ -672,7 +672,7 @@ export const useProxyState = <T>(
         setValue(prop);
     }, [prop]);
 
-    const onChangeDebounced = useCallback(debounce((v) => {
+    const onChangeDebounced = useMemo(() => debounce((v) => {
         check.current = v; // send check
         onChange(v);
     }, wait), [wait, onChange]);

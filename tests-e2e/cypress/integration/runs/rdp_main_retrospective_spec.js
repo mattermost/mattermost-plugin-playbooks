@@ -247,6 +247,7 @@ describe('runs > run details page', () => {
                     testRun = playbookRun;
                 });
             });
+
             beforeEach(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
             });
@@ -297,8 +298,7 @@ describe('runs > run details page', () => {
                 });
             });
 
-            // skipped flaky test: https://mattermost.atlassian.net/browse/MM-48509
-            it.skip('auto save', () => {
+            it('auto save', () => {
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();

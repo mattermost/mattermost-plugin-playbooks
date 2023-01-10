@@ -1,4 +1,9 @@
-import {useEffect, useState} from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';
 
@@ -155,11 +160,14 @@ export function usePlaybooksCrud(
         setParams({sort: colName, direction: 'desc'});
     };
 
-    const setSearchTerm = (term: string) => {
+    const setSearchTerm = useCallback((term: string) => {
         setLoading(true);
         setParams({search_term: term, page: 0});
-    };
-    const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
+    }, [setLoading, setParams]);
+    const setSearchTermDebounced = useMemo(
+        () => debounce(setSearchTerm, searchDebounceDelayMilliseconds),
+        [setSearchTerm],
+    );
 
     const setWithArchived = (with_archived: boolean) => {
         setLoading(true);
