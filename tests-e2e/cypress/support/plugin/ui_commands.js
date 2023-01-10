@@ -317,7 +317,7 @@ const defaultExpectTelemetryToContainOptions = {
 Cypress.Commands.add('expectTelemetryToContain', (items, opts) => {
     const options = {...defaultExpectTelemetryToContainOptions, ...opts};
 
-    // Wait for at least as many telemetry events as requested if auto, or explicit number is passed.
+    // Wait for at least as many telemetry events as requested if auto, or explicit number if passed.
     if (options.waitForCalls === 'auto') {
         items.forEach(() => cy.wait('@telemetry'));
     } else {
