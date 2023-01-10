@@ -30,6 +30,9 @@ import Header from 'src/components/widgets/header';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
+import {ToastStyle} from 'src/components/backstage/toast';
+import {useToaster} from 'src/components/backstage/toast_banner';
+
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
@@ -122,6 +125,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     const content = useRef<JSX.Element | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
     const refreshLHS = useLHSRefresh();
+    const addToast = useToaster().add;
 
     const {
         playbooks,
@@ -165,6 +169,13 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     const handleImportDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (!e.dataTransfer.files?.[0]) {
+            return;
+        }
+        if (e.dataTransfer.files.length > 1) {
+            addToast({
+                content: formatMessage({defaultMessage: 'Can not import multiple files at once.'}),
+                toastStyle: ToastStyle.Failure,
+            });
             return;
         }
         importPlaybookFile(e.dataTransfer.files[0]);
