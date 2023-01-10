@@ -139,6 +139,9 @@ describe('runs > run details page > rhs > participants', () => {
                 // # Intercept all calls to telemetry
                 cy.interceptTelemetry();
 
+                // * Verify modal message is correct
+                cy.findByText('Participants will also be added to the channel linked to this run').should('exist');
+
                 // # Add selected participant
                 cy.findByTestId('modal-confirm-button').click();
 
@@ -154,9 +157,6 @@ describe('runs > run details page > rhs > participants', () => {
                         },
                     }
                 ]);
-
-                // * Verify modal message is correct
-                cy.findByText('Participants will also be added to the channel linked to this run').should('exist');
 
                 // * Verify the users have been added
                 cy.findByTestId(testUser2.id).should('exist');
