@@ -10,32 +10,14 @@ const RUN_NAME_MAX_LENGTH = 64;
 
 describe('playbooks > start a run', () => {
     let testTeam;
-    let testSysadmin;
     let testUser;
     let testPlaybook;
-    let featureFlagPrevValue;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
-
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                featureFlagPrevValue = prevValue;
-            });
         });
-    });
-
-    after(() => {
-        if (!featureFlagPrevValue) {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-            });
-        }
     });
 
     beforeEach(() => {
