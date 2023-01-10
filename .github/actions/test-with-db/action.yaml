@@ -1,0 +1,49 @@
+# Copyright 2022 Mattermost, Inc.
+name: "test-with-db"
+description: This action used to runs tests with db integration
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        cache: true
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version-file: ".nvmrc"
+        cache: "npm"
+        cache-dependency-path: |
+          webapp/package-lock.json
+          tests-e2e/package-lock.json
+    - name: Install webapp npm deps
+      shell: bash
+      run: |
+        set -e
+        cd webapp
+        NODE_ENV=development npm install --ignore-scripts --no-save --legacy-peer-deps
+    - name: Test db integration
+      shell: bash
+      env:
+        POSTGRES_USER: mmuser
+        POSTGRES_DB: mattermost_test
+        MYSQL_ROOT_PASSWORD: mostest
+        MYSQL_DATABASE: mattermost_test
+        MYSQL_USER: mmuser
+        MYSQL_PASSWORD: mostest
+        MARIADB_ROOT_PASSWORD: mostest
+        MARIADB_DATABASE: mattermost_test
+        MARIADB_USER: mmuser
+        MARIADB_PASSWORD: mostest
+      run: |
+        set -e
+        make test-ci
+        mkdir -p server/test-results
+        cp report.xml server/test-results
+    - name: Pesist test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: server/test-results/
+        retention-days: 5 ## No need to keep CI builds more than 5 days
