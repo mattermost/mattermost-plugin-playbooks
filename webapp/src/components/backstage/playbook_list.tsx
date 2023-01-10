@@ -5,7 +5,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import React, {PropsWithChildren, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
@@ -32,6 +32,8 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useToaster} from 'src/components/backstage/toast_banner';
+
+import {useFileDragDetection} from 'src/components/backstage/file_drag_detection';
 
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
@@ -108,8 +110,18 @@ const ImportSub = styled(Sub)`
     color: inherit;
 `;
 
-const ImportLink = styled.a`
+const ImportTertiaryButton = styled(TertiaryButton)<{highlightDropzone?: boolean;}>`
+  ${(props) => props.highlightDropzone && css`
+      outline: 2px dashed var(--center-channel-color);
+  `}
+`;
+
+const ImportLink = styled.a<{highlightDropzone?: boolean;}>`
     font-weight: 600;
+
+    ${(props) => props.highlightDropzone && css`
+      outline: 2px dashed var(--center-channel-color);
+  `}
 `;
 
 const PlaybooksListFilters = styled.div`
@@ -142,6 +154,8 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
         edit(id);
     });
 
+    const isDraggingFile = useFileDragDetection();
+
     const hasPlaybooks = Boolean(playbooks?.length);
 
     if (props.firstTimeUserExperience && hasPlaybooks) {
@@ -153,9 +167,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     };
 
     const handleImportClick = () => {
-        if (fileInputRef && fileInputRef.current) {
-            fileInputRef.current.click();
-        }
+        fileInputRef.current?.click();
     };
 
     const handleImportDragEnter = (e: React.DragEvent) => {
@@ -228,6 +240,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                             {canCreatePlaybooks && (
                                 <>
                                     <ImportButton
+                                        highlightDropzone={isDraggingFile}
                                         onClick={handleImportClick}
                                         onDragEnter={handleImportDragEnter}
                                         onDragOver={handleImportDragOver}
@@ -332,6 +345,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                     {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
                                         ImportPlaybookButton: (chunks) => (
                                             <ImportLinkButton
+                                                highlightDropzone={isDraggingFile}
                                                 onClick={handleImportClick}
                                                 onDragEnter={handleImportDragEnter}
                                                 onDragOver={handleImportDragOver}
@@ -376,27 +390,22 @@ interface ImportButtonProps {
     onDragEnter: (e: React.DragEvent) => void;
     onDragOver: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
+
+    highlightDropzone?: boolean;
     onClick?: () => void;
 }
 
 const ImportButton = (props: ImportButtonProps) => {
     return (
-        <TertiaryButton {...props}>
+        <ImportTertiaryButton {...props}>
             <FormattedMessage defaultMessage='Import'/>
-        </TertiaryButton>
+        </ImportTertiaryButton>
     );
 };
 
-const ImportLinkButton = ({onDragEnter, onDragOver, onDrop, onClick, children}: PropsWithChildren<ImportButtonProps>) => {
+const ImportLinkButton = (props: PropsWithChildren<ImportButtonProps>) => {
     return (
-        <ImportLink
-            onClick={onClick}
-            onDragEnter={onDragEnter}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-        >
-            {children}
-        </ImportLink>
+        <ImportLink {...props}/>
     );
 };
 
