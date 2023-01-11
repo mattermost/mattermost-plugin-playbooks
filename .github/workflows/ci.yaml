@@ -7,115 +7,278 @@ defaults:
     shell: bash
 
 jobs:
-  lint:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-      - name: Setup Go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
-        with:
-          cache: true
-      - name: Setup Node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: |
-            webapp/package-lock.json
-            tests-e2e/package-lock.json
-      - name: Install webapp npm deps
-        env:
-          NODE_ENV: development
-        run: |
-          set -e
-          cd webapp
-          npm install --ignore-scripts --no-save --legacy-peer-deps
-      - name: Install e2e npm deps
-        env:
-          NODE_ENV: development
-        run: |
-          set -e
-          cd tests-e2e
-          npm install --ignore-scripts --no-save
-      - name: Checking code style
-        run: make check-style
-      - name: Go tidy
-        run: go mod tidy -v
-      - name: Checking diff on go mod files
-        run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
-      - run: make apply
-      - name: Checking diff of generated manifest files
-        run: git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
-      - run: make i18n-extract-webapp
-      - name: Checking diff of webapp i18n files
-        run: git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
-      - run: make graphql
-      - name: Checking diff of webapp graphql generated files
-        run: git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
+  # lint:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - name: Setup Go
+  #       uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+  #       with:
+  #         cache: true
+  #     - name: Setup Node
+  #       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+  #       with:
+  #         node-version-file: ".nvmrc"
+  #         cache: "npm"
+  #         cache-dependency-path: |
+  #           webapp/package-lock.json
+  #           tests-e2e/package-lock.json
+  #     - name: Install webapp npm deps
+  #       env:
+  #         NODE_ENV: development
+  #       run: |
+  #         set -e
+  #         cd webapp
+  #         npm install --ignore-scripts --no-save --legacy-peer-deps
+  #     - name: Install e2e npm deps
+  #       env:
+  #         NODE_ENV: development
+  #       run: |
+  #         set -e
+  #         cd tests-e2e
+  #         npm install --ignore-scripts --no-save
+  #     - name: Checking code style
+  #       run: make check-style
+  #     - name: Go tidy
+  #       run: go mod tidy -v
+  #     - name: Checking diff on go mod files
+  #       run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
+  #     - run: make apply
+  #     - name: Checking diff of generated manifest files
+  #       run: git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
+  #     - run: make i18n-extract-webapp
+  #     - name: Checking diff of webapp i18n files
+  #       run: git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
+  #     - run: make graphql
+  #     - name: Checking diff of webapp graphql generated files
+  #       run: git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
 
-  build:
-    runs-on: ubuntu-22.04
-    needs:
-      - test-MySQL57-Postgres10
-      - test-MySQL8-Postgres11
-      - test-MariaDB10-Postgres12
-      - test-MySQL8-Postgres14
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-      - name: Setup Go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
-        with:
-          cache: true
-      - name: Setup Node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: |
-            webapp/package-lock.json
-            tests-e2e/package-lock.json
-      - name: Install webapp npm deps
-        env:
-          NODE_ENV: development
-        run: |
-          set -e
-          cd webapp
-          npm install --ignore-scripts --no-save --legacy-peer-deps
-      - name: Building Plugin Bundle
-        run: make dist CGO_ENABLED=0
-      - name: Generating Release Notes
-        run: |
-          set -e
-          printf "Supported Mattermost Server Versions: **$(cat plugin.json | jq .min_server_version -r)+** \n## Enhancements\n\n## Fixes\n"  >> dist/release-notes.md
-          if [[ $(git tag -l | wc -l) -eq 1 ]]; then
-            git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git rev-list --max-parents=0 HEAD) HEAD >> dist/release-notes.md
-          else
-            git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git describe --tags --abbrev=0 $(git describe --tags --abbrev=0)^)..HEAD >> dist/release-notes.md
-          fi
-      - name: Pesist build artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
-        with:
-          name: dist
-          path: |
-            dist/*.tar.gz
-            dist/release-notes.md
-          retention-days: 5 ## No need to keep CI builds more than 5 days
+  # build:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - test-MySQL57-Postgres10
+  #     - test-MySQL8-Postgres11
+  #     - test-MariaDB10-Postgres12
+  #     - test-MySQL8-Postgres14
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - name: Setup Go
+  #       uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+  #       with:
+  #         cache: true
+  #     - name: Setup Node
+  #       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+  #       with:
+  #         node-version-file: ".nvmrc"
+  #         cache: "npm"
+  #         cache-dependency-path: |
+  #           webapp/package-lock.json
+  #           tests-e2e/package-lock.json
+  #     - name: Install webapp npm deps
+  #       env:
+  #         NODE_ENV: development
+  #       run: |
+  #         set -e
+  #         cd webapp
+  #         npm install --ignore-scripts --no-save --legacy-peer-deps
+  #     - name: Building Plugin Bundle
+  #       run: make dist CGO_ENABLED=0
+  #     - name: Generating Release Notes
+  #       run: |
+  #         set -e
+  #         printf "Supported Mattermost Server Versions: **$(cat plugin.json | jq .min_server_version -r)+** \n## Enhancements\n\n## Fixes\n"  >> dist/release-notes.md
+  #         if [[ $(git tag -l | wc -l) -eq 1 ]]; then
+  #           git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git rev-list --max-parents=0 HEAD) HEAD >> dist/release-notes.md
+  #         else
+  #           git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git describe --tags --abbrev=0 $(git describe --tags --abbrev=0)^)..HEAD >> dist/release-notes.md
+  #         fi
+  #     - name: Pesist build artifacts
+  #       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+  #       with:
+  #         name: dist
+  #         path: |
+  #           dist/*.tar.gz
+  #           dist/release-notes.md
+  #         retention-days: 5 ## No need to keep CI builds more than 5 days
 
-  test-MySQL57-Postgres10:
+  # test-MySQL57-Postgres10:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - lint
+  #   services:
+  #     postgres:
+  #       image: postgres:10.17
+  #       env:
+  #         POSTGRES_USER: mmuser
+  #         POSTGRES_DB: mattermost_test
+  #         POSTGRES_HOST_AUTH_METHOD: trust
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #     mysql:
+  #       image: mysql:8.0
+  #       env:
+  #         MYSQL_ROOT_PASSWORD: mostest
+  #         MYSQL_DATABASE: mattermost_test
+  #         MYSQL_USER: mmuser
+  #         MYSQL_PASSWORD: mostest
+  #       ports:
+  #         - 3306:3306
+  #       options: >-
+  #         --health-cmd "mysqladmin ping"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - uses: ./.github/actions/test-with-db
+
+  # test-MySQL8-Postgres11:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - lint
+  #   services:
+  #     postgres:
+  #       image: postgres:11.13
+  #       env:
+  #         POSTGRES_USER: mmuser
+  #         POSTGRES_DB: mattermost_test
+  #         POSTGRES_HOST_AUTH_METHOD: trust
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #     mysql:
+  #       image: mysql:8.0
+  #       env:
+  #         MYSQL_ROOT_PASSWORD: mostest
+  #         MYSQL_DATABASE: mattermost_test
+  #         MYSQL_USER: mmuser
+  #         MYSQL_PASSWORD: mostest
+  #       ports:
+  #         - 3306:3306
+  #       options: >-
+  #         --health-cmd "mysqladmin ping"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - uses: ./.github/actions/test-with-db
+
+  # test-MySQL8-Postgres14:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - lint
+  #   services:
+  #     postgres:
+  #       image: postgres:14.1
+  #       env:
+  #         POSTGRES_USER: mmuser
+  #         POSTGRES_DB: mattermost_test
+  #         POSTGRES_HOST_AUTH_METHOD: trust
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #     mysql:
+  #       image: mysql:8.0
+  #       env:
+  #         MYSQL_ROOT_PASSWORD: mostest
+  #         MYSQL_DATABASE: mattermost_test
+  #         MYSQL_USER: mmuser
+  #         MYSQL_PASSWORD: mostest
+  #       ports:
+  #         - 3306:3306
+  #       options: >-
+  #         --health-cmd "mysqladmin ping"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - uses: ./.github/actions/test-with-db
+
+  # test-MariaDB10-Postgres12:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - lint
+  #   services:
+  #     postgres:
+  #       image: postgres:12.9
+  #       env:
+  #         POSTGRES_USER: mmuser
+  #         POSTGRES_DB: mattermost_test
+  #         POSTGRES_HOST_AUTH_METHOD: trust
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #     mysql:
+  #       image: mariadb:10.6
+  #       env:
+  #         MARIADB_ROOT_PASSWORD: mostest
+  #         MARIADB_DATABASE: mattermost_test
+  #         MARIADB_USER: mmuser
+  #         MARIADB_PASSWORD: mostest
+  #       ports:
+  #         - 3306:3306
+  #       options: >-
+  #         --health-cmd "mysqladmin ping"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #       with:
+  #         fetch-depth: "0"
+  #     - uses: ./.github/actions/test-with-db
+
+  e2e-cypress-tests-cloud:
     runs-on: ubuntu-22.04
-    needs:
-      - lint
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - image: mattermost/mm-ee-test:prerelease
+            cloud: Cloud
+          - image: mattermost/mattermost-enterprise-edition:master
+            cloud: E20
     services:
       postgres:
         image: postgres:10.17
         env:
           POSTGRES_USER: mmuser
+          POSTGRES_PASSWORD: mostest
           POSTGRES_DB: mattermost_test
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
@@ -125,140 +288,70 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      mysql:
-        image: mysql:8.0
+      minio:
+        image: minio/minio:RELEASE.2019-10-11T00-38-09Z
         env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-      - uses: ./.github/actions/test-with-db
+          MINIO_ACCESS_KEY: minioaccesskey
+          MINIO_SECRET_KEY: miniosecretkey
+          MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
 
-  test-MySQL8-Postgres11:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:11.13
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
+      inbucket:
+        image: mattermost/inbucket:release-1.2.0
         ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:8.0
+          - 10080:10080
+          - 10110:10110
+          - 10025:10025
+      elasticsearch:
+        image: mattermost/mattermost-elasticsearch-docker:7.0.0
         env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
+          http.host: "0.0.0.0"
+          http.port: 9200
+          http.cors.enabled: "true"
+          http.cors.allow-origin: "http://localhost:1358,http://127.0.0.1:1358"
+          http.cors.allow-headers: "X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+          http.cors.allow-credentials: "true"
+          transport.host: "127.0.0.1"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
         ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          - 9200:9200
+        # options: >-
+        #   --health-cmd curl -s http://elasticsearch01:9200 >/dev/null || exit 1
+        #   --health-interval 10s
+        #   --health-timeout 5s
+        #   --health-retries 5
+      mattermost-server:
+        image: ${{ matrix.image }}
+        env:
+          DB_HOST: localhost
+          DB_PORT_NUMBER: 5432
+          MM_DBNAME: mattermost_test
+          MM_USERNAME: mmuser
+          MM_PASSWORD: mostest
+          CI_INBUCKET_HOST: localhost
+          CI_INBUCKET_PORT: 10080
+          CI_MINIO_HOST: minio
+          IS_CI: true
+          MM_CLUSTERSETTINGS_READONLYCONFIG: false
+          MM_EMAILSETTINGS_SMTPSERVER: localhost
+          MM_EMAILSETTINGS_SMTPPORT: 10025
+          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
+          MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
+          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+          MM_SQLSETTINGS_DRIVERNAME: postgres
+          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: true
+          MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
+          MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
+          MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
+          MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
+        ports:
+          - 8065:8065
     steps:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           fetch-depth: "0"
-      - uses: ./.github/actions/test-with-db
-
-  test-MySQL8-Postgres14:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:14.1
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - uses: ./.github/actions/e2e-test
         with:
-          fetch-depth: "0"
-      - uses: ./.github/actions/test-with-db
-
-  test-MariaDB10-Postgres12:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:12.9
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mariadb:10.6
-        env:
-          MARIADB_ROOT_PASSWORD: mostest
-          MARIADB_DATABASE: mattermost_test
-          MARIADB_USER: mmuser
-          MARIADB_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-      - uses: ./.github/actions/test-with-db
+          CYPRESS_serverEdition: ${{ matrix.cloud }}
