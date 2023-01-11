@@ -164,6 +164,7 @@ endif
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
+## Generates a tar bundle of the plugin for install.
 .PHONY: bundle-server
 bundle-server:
 	mkdir -p dist/$(PLUGIN_ID)
@@ -188,11 +189,10 @@ deploy: dist upload-to-server
 ## Builds and installs the plugin to a server, updating the webapp automatically when changed.
 .PHONY: watch
 watch: apply modd bundle
-ifeq ($(MM_DEBUG),)
 	modd&
+ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
-	modd&
 	cd webapp && $(NPM) run debug:watch
 endif
 
