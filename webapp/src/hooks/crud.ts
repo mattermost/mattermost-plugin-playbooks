@@ -168,23 +168,27 @@ export function usePlaybooksCrud(
 
     const isFiltering = (params?.search_term?.length ?? 0) > 0;
 
-    return [
+    return {
         playbooks,
-        {isLoading, totalCount, hasMore, params, selectedPlaybook},
-        {
-            setPage,
-            setParams,
-            sortBy,
-            setSelectedPlaybook,
-            archivePlaybook,
-            restorePlaybook,
-            duplicatePlaybook,
-            setSearchTerm: setSearchTermDebounced,
-            setWithArchived,
-            isFiltering,
-            fetchPlaybooks,
-        },
-    ] as const;
+
+        isLoading,
+        totalCount,
+        hasMore,
+        params,
+        selectedPlaybook,
+
+        setPage,
+        setParams,
+        sortBy,
+        setSelectedPlaybook,
+        archivePlaybook,
+        restorePlaybook,
+        duplicatePlaybook,
+        setSearchTerm: setSearchTermDebounced,
+        setWithArchived,
+        isFiltering,
+        fetchPlaybooks,
+    };
 }
 
 /**

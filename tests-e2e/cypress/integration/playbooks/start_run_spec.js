@@ -6,37 +6,24 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+const RUN_NAME_MAX_LENGTH = 64;
+
 describe('playbooks > start a run', () => {
     let testTeam;
-    let testSysadmin;
     let testUser;
     let testPlaybook;
-    let featureFlagPrevValue;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
-
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                featureFlagPrevValue = prevValue;
-            });
         });
     });
 
-    after(() => {
-        if (!featureFlagPrevValue) {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-            });
-        }
-    });
-
     beforeEach(() => {
+        // # intercepts telemetry
+        cy.interceptTelemetry();
+
         // # Login as testUser
         cy.apiLogin(testUser);
 
@@ -100,9 +87,6 @@ describe('playbooks > start a run', () => {
                 cy.findByText('Run').click();
             });
 
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-
             cy.get('#root-portal.modal-open').within(() => {
                 // # Wait the modal to render
                 cy.wait(500);
@@ -115,9 +99,7 @@ describe('playbooks > start a run', () => {
             });
 
             // * Assert telemetry data
-            cy.wait('@telemetry');
             cy.expectTelemetryToBe([
-                {name: 'run_details', type: 'page'},
                 {
                     name: 'playbookrun_create',
                     type: 'track',
@@ -156,9 +138,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -174,9 +153,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -215,9 +192,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -237,9 +211,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -278,9 +250,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -302,9 +271,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -348,9 +315,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -372,9 +336,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -419,9 +381,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -446,9 +405,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -493,9 +450,6 @@ describe('playbooks > start a run', () => {
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 cy.get('#root-portal.modal-open').within(() => {
                     // # Wait the modal to render
                     cy.wait(500);
@@ -511,9 +465,7 @@ describe('playbooks > start a run', () => {
                 });
 
                 // * Assert telemetry data
-                cy.wait('@telemetry');
                 cy.expectTelemetryToBe([
-                    {name: 'run_details', type: 'page'},
                     {
                         name: 'playbookrun_create',
                         type: 'track',
@@ -543,6 +495,58 @@ describe('playbooks > start a run', () => {
 
                 // * Verify we are on channel Test Run Name
                 cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
+            });
+        });
+    });
+
+    describe('start run modal > invalid user input', () => {
+        it('submit button is disabled when run name is empty', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Wait the modal to render
+                cy.wait(500);
+
+                // * Assert template name is empty
+                cy.findByTestId('run-name-input').should('have.value', '');
+
+                // * Assert start button is disabled
+                cy.findByTestId('modal-confirm-button').should('have.attr', 'disabled');
+            });
+        });
+
+        it('error is shown when maximum length of run name is exceeded', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Wait the modal to render
+                cy.wait(500);
+
+                // * Assert template name is empty
+                cy.findByTestId('run-name-input').should('have.value', '');
+
+                // # Type run name that exceeds maximum length
+                cy.findByTestId('run-name-input').type('a'.repeat(RUN_NAME_MAX_LENGTH + 1));
+
+                // * Assert error shown and contains maximum length in message
+                cy.findByTestId('run-name-error').should('contain', RUN_NAME_MAX_LENGTH);
+
+                // * Assert start button is disabled
+                cy.findByTestId('modal-confirm-button').should('have.attr', 'disabled');
+
+                // # Delete last character via backspace
+                cy.findByTestId('run-name-input').type('{backspace}');
+
+                // * Assert that error is not shown anymore
+                cy.findByTestId('run-name-error').should('not.exist');
             });
         });
     });

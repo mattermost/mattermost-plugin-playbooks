@@ -14,7 +14,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {debounce} from 'lodash';
+import {throttle} from 'lodash';
 
 import {
     RHSContainer,
@@ -48,7 +48,7 @@ import RHSRunDetailsTitle from './rhs_run_details_title';
 import RHSRunParticipants from './rhs_run_participants';
 import RHSRunParticipantsTitle from './rhs_run_participants_title';
 
-const toastDebounce = 2000;
+const toastDuration = 4500;
 
 interface Props {
     runID: string
@@ -96,7 +96,7 @@ const RHSRunDetails = (props: Props) => {
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
-    const displayReadOnlyToast = useMemo(() => debounce(() => {
+    const displayReadOnlyToast = useMemo(() => throttle(() => {
         let toastID = -1;
         const showConfirm = () => {
             removeToast(toastID);
@@ -108,8 +108,9 @@ const RHSRunDetails = (props: Props) => {
             buttonName: formatMessage({defaultMessage: 'Participate'}),
             buttonCallback: showConfirm,
             iconName: 'account-plus-outline',
+            duration: toastDuration,
         });
-    }, toastDebounce, {leading: true, trailing: false}), []);
+    }, toastDuration, {leading: true, trailing: false}), []);
 
     const rhsContainerPunchout = useMeasurePunchouts(
         ['rhsContainer'],

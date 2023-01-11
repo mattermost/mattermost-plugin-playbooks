@@ -8,6 +8,7 @@ const Ctx = React.createContext({} as ToastFuncs);
 
 const DEFAULT_DURATION = 3000;
 let toastCount = 0;
+const toastTimeoutMap: Record<number, number> = {};
 
 const ToastContainer = styled.div`
     position: fixed;
@@ -39,30 +40,60 @@ interface ToastFuncs {
 export const ToastProvider = (props: Props) => {
     const [toasts, setToasts] = useState<ToastOptionsWithID[]>([]);
 
-    const add = (options: ToastOptions) => {
-        const id = toastCount++;
-        const duration = options.duration ?? DEFAULT_DURATION;
-
-        setToasts((ts) => [...ts, {id, ...options}]);
+    const addTimeout = (toastId: number, duration = DEFAULT_DURATION) => {
         if (duration <= 0) {
-            return id;
+            return;
         }
-
-        window.setTimeout(() => {
+        toastTimeoutMap[toastId] = window.setTimeout(() => {
+            removeTimeout(toastId);
             setToasts((ts) => {
-                const index = ts.findIndex((t) => t.id === id);
+                const index = ts.findIndex((t) => t.id === toastId);
                 if (index === -1) {
                     return ts;
                 }
                 return [...ts.slice(0, index), ...ts.slice(index + 1)];
             });
         }, duration);
+    };
+
+    const removeTimeout = (toastId: number) => {
+        if (!toastTimeoutMap[toastId]) {
+            return;
+        }
+        delete toastTimeoutMap[toastId];
+    };
+
+    const add = (options: ToastOptions) => {
+        const id = toastCount++;
+
+        setToasts((ts) => [...ts, {id, ...options}]);
+        addTimeout(id, options.duration);
 
         return id;
     };
 
     const remove = (id: number) => {
+        removeTimeout(id);
         setToasts((ts) => ts.filter((t: ToastOptionsWithID) => t.id !== id));
+    };
+
+    const onToastMouseEnter = (id: number) => {
+        if (!toastTimeoutMap[id]) {
+            return;
+        }
+        window.clearTimeout(toastTimeoutMap[id]);
+        removeTimeout(id);
+    };
+
+    const onToastMouseLeave = (id: number) => {
+        if (toastTimeoutMap[id]) {
+            return;
+        }
+        const toastOptions = toasts.find((toast) => toast.id === id);
+        if (!toastOptions) {
+            return;
+        }
+        addTimeout(id, toastOptions.duration);
     };
 
     return (
@@ -83,6 +114,8 @@ export const ToastProvider = (props: Props) => {
                                         remove(options.id);
                                         options.closeCallback?.();
                                     }}
+                                    onMouseEnter={() => onToastMouseEnter(options.id)}
+                                    onMouseLeave={() => onToastMouseLeave(options.id)}
                                 />
                             </CSSTransition>
                         );

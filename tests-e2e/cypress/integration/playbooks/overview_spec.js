@@ -15,16 +15,11 @@ describe('playbooks > overview', () => {
     let testPublicPlaybook;
     let testPlaybookOnTeamForSwitching;
     let testPlaybookOnOtherTeamForSwitching;
-    let testSysadmin;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
 
             // Create another user in the same team
             cy.apiCreateUser().then(({user: user2}) => {
@@ -119,7 +114,7 @@ describe('playbooks > overview', () => {
             cy.visit(`${team.name}/channels/town-square`);
 
             // # Open Playbooks
-            cy.get('[aria-label="Select to open product switch menu."]').click({force: true});
+            cy.get('[aria-label="Product switch menu"]').click({force: true});
             cy.get('a[href="/playbooks"]').click({force: true});
 
             // Click through to open the playbook
@@ -376,27 +371,14 @@ describe('playbooks > overview', () => {
     });
 
     describe('start a run', () => {
-        let featureFlagPrevValue;
         let testPlaybook;
 
         before(() => {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                    featureFlagPrevValue = prevValue;
-                });
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
         });
 
         after(() => {
-            if (!featureFlagPrevValue) {
-                cy.apiLogin(testSysadmin).then(() => {
-                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-                });
-            }
-
             // # Login as testUser
             cy.apiLogin(testUser);
         });

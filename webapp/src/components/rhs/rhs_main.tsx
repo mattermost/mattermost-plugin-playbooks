@@ -120,7 +120,7 @@ const RightHandSidebar = () => {
     const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
-    const [playbooks, {isLoading}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
+    const {playbooks, isLoading} = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
 
     // If there is only one active run in this channel select it.
     useEffect(() => {

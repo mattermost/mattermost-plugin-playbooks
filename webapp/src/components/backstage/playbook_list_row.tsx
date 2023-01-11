@@ -23,7 +23,7 @@ import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 
-import {useHasPlaybookPermission, useHasTeamPermission, useLinkRunToExistingChannelEnabled} from 'src/hooks';
+import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
@@ -44,7 +44,7 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
-import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
+import {openPlaybookRunNewModal} from 'src/actions';
 
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
@@ -136,7 +136,6 @@ const PlaybookListRow = (props: Props) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
     const enableRunPlaybook = props.playbook.delete_at === 0 && hasPermissionToRunPlaybook;
-    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const run = async () => {
         if (props.playbook && isTutorialPlaybook) {
@@ -151,26 +150,15 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            if (isLinkRunToExistingChannelEnabled) {
-                dispatch(openPlaybookRunNewModal({
-                    onRunCreated: (runId, channelId, statsData) => {
-                        navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
-                        refreshLHS();
-                        telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_list'});
-                    },
-                    playbookId: props.playbook.id,
-                    teamId: team.id,
-                }));
-            } else {
-                dispatch(openPlaybookRunModal(
-                    props.playbook.id,
-                    props.playbook.default_owner_enabled ? props.playbook.default_owner_id : null,
-                    props.playbook.description,
-                    team.id,
-                    team.name,
-                    refreshLHS
-                ));
-            }
+            dispatch(openPlaybookRunNewModal({
+                onRunCreated: (runId, channelId, statsData) => {
+                    navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                    refreshLHS();
+                    telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_list'});
+                },
+                playbookId: props.playbook.id,
+                teamId: team.id,
+            }));
         }
     };
 
