@@ -6,11 +6,11 @@ runs:
   using: "composite"
   steps:
     - name: Setup Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
       with:
         cache: true
     - name: Setup Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
         node-version-file: ".nvmrc"
         cache: "npm"
@@ -19,10 +19,12 @@ runs:
           tests-e2e/package-lock.json
     - name: Install webapp npm deps
       shell: bash
+      env:
+        NODE_ENV: development
       run: |
         set -e
         cd webapp
-        NODE_ENV=development npm install --ignore-scripts --no-save --legacy-peer-deps
+        npm install --ignore-scripts --no-save --legacy-peer-deps
     - name: Test db integration
       shell: bash
       env:
@@ -42,7 +44,7 @@ runs:
         mkdir -p server/test-results
         cp report.xml server/test-results
     - name: Pesist test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: test-results
         path: server/test-results/
