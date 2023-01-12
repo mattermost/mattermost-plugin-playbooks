@@ -107,7 +107,7 @@ describe('playbooks > list', () => {
         });
     });
 
-    describe.only('can import playbook', () => {
+    describe('can import playbook', () => {
         it('triggered by using button/input', () => {
             // # Load fixture of playbook export
             cy.fixture('playbook-export.json').as('playbookExport');
