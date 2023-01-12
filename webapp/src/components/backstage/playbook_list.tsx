@@ -34,7 +34,6 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {useFileDragDetection} from 'src/components/backstage/file_drag_detection';
-
 import {FileUploadOverlay} from 'src/components/backstage/file_upload_overlay';
 
 import CheckboxInput from './runs_list/checkbox_input';
