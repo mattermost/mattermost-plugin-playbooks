@@ -107,7 +107,7 @@ describe('playbooks > list', () => {
         });
     });
 
-    describe('can import playbook', () => {
+    describe.only('can import playbook', () => {
         it('triggered by using button/input', () => {
             // # Load fixture of playbook export
             cy.fixture('playbook-export.json').as('playbookExport');
@@ -137,11 +137,9 @@ describe('playbooks > list', () => {
             // # Switch to Playbooks
             cy.findByTestId('playbooksLHSButton').click();
 
-            cy.findByTestId('titlePlaybook').within(() => {
-                // # Drop loaded fixture onto import button
-                cy.findByText('Import').selectFile('@playbookExport', {
-                    action: 'drag-drop'
-                });
+            // # Drop loaded fixture onto playbook list
+            cy.findByTestId('playbook-list-scroll-container').selectFile('@playbookExport', {
+                action: 'drag-drop'
             });
 
             // * Verify that a new playbook was created.

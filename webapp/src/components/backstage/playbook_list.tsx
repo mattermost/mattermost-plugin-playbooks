@@ -5,7 +5,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import React, {PropsWithChildren, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
@@ -35,6 +35,8 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {useFileDragDetection} from 'src/components/backstage/file_drag_detection';
 
+import {FileUploadOverlay} from 'src/components/backstage/file_upload_overlay';
+
 import CheckboxInput from './runs_list/checkbox_input';
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
@@ -47,6 +49,14 @@ const ContainerMedium = styled.article`
 
 const PlaybookListContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.9);
+    position: relative;
+    height: 100%;
+    overflow-y: hidden;
+`;
+
+const ScrollContainer = styled.div`
+  height: 100%;
+  overflow-y: auto;
 `;
 
 const TableContainer = styled.div`
@@ -110,18 +120,8 @@ const ImportSub = styled(Sub)`
     color: inherit;
 `;
 
-const ImportTertiaryButton = styled(TertiaryButton)<{highlightDropzone?: boolean;}>`
-  ${(props) => props.highlightDropzone && css`
-      outline: 2px dashed var(--center-channel-color);
-  `}
-`;
-
-const ImportLink = styled.a<{highlightDropzone?: boolean;}>`
+const ImportLink = styled.a`
     font-weight: 600;
-
-    ${(props) => props.highlightDropzone && css`
-      outline: 2px dashed var(--center-channel-color);
-  `}
 `;
 
 const PlaybooksListFilters = styled.div`
@@ -240,11 +240,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                             {canCreatePlaybooks && (
                                 <>
                                     <ImportButton
-                                        highlightDropzone={isDraggingFile}
                                         onClick={handleImportClick}
-                                        onDragEnter={handleImportDragEnter}
-                                        onDragOver={handleImportDragOver}
-                                        onDrop={handleImportDrop}
                                     />
                                     {inputImportPlaybook}
                                     <HorizontalSpacer size={12}/>
@@ -330,54 +326,61 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
 
     return (
         <PlaybookListContainer>
-            {content.current}
-            {canCreatePlaybooks && (
-                <>
-                    <ContainerMedium
-                        ref={selectorRef}
-                    >
-                        {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
-                            <AltCreatePlaybookHeader>
-                                <AltHeading>
-                                    {formatMessage({defaultMessage: 'Choose a template'})}
-                                </AltHeading>
-                                <ImportSub>
-                                    {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
-                                        ImportPlaybookButton: (chunks) => (
-                                            <ImportLinkButton
-                                                highlightDropzone={isDraggingFile}
-                                                onClick={handleImportClick}
-                                                onDragEnter={handleImportDragEnter}
-                                                onDragOver={handleImportDragOver}
-                                                onDrop={handleImportDrop}
-                                            >
-                                                {chunks}
-                                            </ImportLinkButton>
-                                        ),
-                                    })}
-                                </ImportSub>
-                                <AltSub>
-                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
-                                </AltSub>
-                            </AltCreatePlaybookHeader>
-                        ) : (
-                            <CreatePlaybookHeader>
-                                <Heading>
-                                    {formatMessage({defaultMessage: 'Do more with Playbooks'})}
-                                </Heading>
-                                <Sub>
-                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
-                                </Sub>
-                            </CreatePlaybookHeader>
-                        )}
-                        <TemplateSelector
-                            templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}
-                        />
-                    </ContainerMedium>
-                </>
-            )}
-            {confirmArchiveModal}
-            {confirmRestoreModal}
+            <FileUploadOverlay
+                show={isDraggingFile}
+                overlayType='center'
+            />
+            <ScrollContainer
+                onDragEnter={handleImportDragEnter}
+                onDragOver={handleImportDragOver}
+                onDrop={handleImportDrop}
+                data-testid='playbook-list-scroll-container'
+            >
+                {content.current}
+                {canCreatePlaybooks && (
+                    <>
+                        <ContainerMedium
+                            ref={selectorRef}
+                        >
+                            {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
+                                <AltCreatePlaybookHeader>
+                                    <AltHeading>
+                                        {formatMessage({defaultMessage: 'Choose a template'})}
+                                    </AltHeading>
+                                    <ImportSub>
+                                        {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
+                                            ImportPlaybookButton: (chunks) => (
+                                                <ImportLinkButton
+                                                    onClick={handleImportClick}
+                                                >
+                                                    {chunks}
+                                                </ImportLinkButton>
+                                            ),
+                                        })}
+                                    </ImportSub>
+                                    <AltSub>
+                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                    </AltSub>
+                                </AltCreatePlaybookHeader>
+                            ) : (
+                                <CreatePlaybookHeader>
+                                    <Heading>
+                                        {formatMessage({defaultMessage: 'Do more with Playbooks'})}
+                                    </Heading>
+                                    <Sub>
+                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                    </Sub>
+                                </CreatePlaybookHeader>
+                            )}
+                            <TemplateSelector
+                                templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}
+                            />
+                        </ContainerMedium>
+                    </>
+                )}
+                {confirmArchiveModal}
+                {confirmRestoreModal}
+            </ScrollContainer>
         </PlaybookListContainer>
     );
 };
@@ -387,19 +390,14 @@ function swapEnds(arr: Array<any>) {
 }
 
 interface ImportButtonProps {
-    onDragEnter: (e: React.DragEvent) => void;
-    onDragOver: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent) => void;
-
-    highlightDropzone?: boolean;
     onClick?: () => void;
 }
 
 const ImportButton = (props: ImportButtonProps) => {
     return (
-        <ImportTertiaryButton {...props}>
+        <TertiaryButton {...props}>
             <FormattedMessage defaultMessage='Import'/>
-        </ImportTertiaryButton>
+        </TertiaryButton>
     );
 };
 

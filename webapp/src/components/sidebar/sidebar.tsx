@@ -72,7 +72,7 @@ const Sidebar = (props: SidebarProps) => {
                 renderTrackHorizontal={renderTrackHorizontal}
                 style={{
                     position: 'relative',
-                    marginBottom: '40px',
+                    marginBottom: '66px',
                 }}
             >
                 {props.groups.map((group) => {
