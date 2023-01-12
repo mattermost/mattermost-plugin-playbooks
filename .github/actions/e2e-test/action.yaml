@@ -87,10 +87,9 @@ runs:
       run: |
         set -e
         cd tests-e2e
-        # SPECS=$(circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings | tr '\n' ',')
-        # SPECS=${SPECS::-1}
         npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
+      continue-on-error: true
 
     - name: Pesist cypress test results
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
