@@ -555,7 +555,7 @@ describe('playbooks > edit', () => {
                             .click({force: true});
 
                         // * Verify that the confirmation dialog is closed
-                        cy.get('#confirmModal').should('not.be.visible');
+                        cy.get('#confirmModal').should('not.exist');
 
                         cy.reload();
 
@@ -612,7 +612,7 @@ describe('playbooks > edit', () => {
                             .click({force: true});
 
                         // * Verify that confirmation dialog is closed
-                        cy.get('#confirmModal').should('not.be.visible');
+                        cy.get('#confirmModal').should('not.exist');
 
                         cy.reload();
 

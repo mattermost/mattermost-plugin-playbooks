@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -91,7 +91,7 @@ const RHSRunList = (props: Props) => {
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentChannelId = useSelector(getCurrentChannelId);
     const [loadingMore, setLoadingMore] = useState(false);
-    const debouncedSetLoadingMore = debounce(setLoadingMore, 100);
+    const debouncedSetLoadingMore = useMemo(() => debounce(setLoadingMore, 100), [setLoadingMore]);
     const getMore = async () => {
         debouncedSetLoadingMore(true);
         await props.getMore();

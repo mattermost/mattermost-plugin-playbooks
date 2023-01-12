@@ -121,7 +121,7 @@ export const DateTimeSelector = ({
         const duration = parse(locale, query, Mode.DurationValue);
 
         setOptionsDateTime(makeOptions?.(query, datetimes, duration ? [duration] : [], mode) ?? suggestedOptions);
-    }, 150), [makeOptions, suggestedOptions, mode]);
+    }, 150), [locale, makeOptions, suggestedOptions, mode]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {
