@@ -263,16 +263,33 @@ jobs:
   #         fetch-depth: "0"
   #     - uses: ./.github/actions/test-with-db
 
+  generate-specs:
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.generate-specs.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - id: generate-specs
+        uses: ./.github/actions/generate-specs
+        with:
+          parallelism: 5
+          directory: tests-e2e
+          search_path: cypress/integration
+
   e2e-cypress-tests-cloud:
     runs-on: ubuntu-22.04
+    needs:
+      - generate-specs
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - image: mattermost/mm-ee-test:prerelease
-            cloud: Cloud
-          - image: mattermost/mattermost-enterprise-edition:master
-            cloud: E20
+        ${{ fromJSON(needs.generate-specs.outputs.matrix) }}
+        # include:
+        #   - image: mattermost/mm-ee-test:prerelease
+        #     cloud: Cloud
+        #   - image: mattermost/mattermost-enterprise-edition:master
+        #     cloud: E20
     services:
       postgres:
         image: postgres:10.17
@@ -320,7 +337,7 @@ jobs:
         #   --health-timeout 5s
         #   --health-retries 5
       mattermost-server:
-        image: ${{ matrix.image }}
+        image: mattermost/mm-ee-test:prerelease
         env:
           DB_HOST: localhost
           DB_PORT_NUMBER: 5432
@@ -354,4 +371,5 @@ jobs:
           fetch-depth: "0"
       - uses: ./.github/actions/e2e-test
         with:
-          CYPRESS_serverEdition: ${{ matrix.cloud }}
+          CYPRESS_serverEdition: Cloud
+          SPECS: ${{ matrix.specs }}

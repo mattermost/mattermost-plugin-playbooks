@@ -6,7 +6,9 @@ inputs:
   CYPRESS_serverEdition:
     description: The cypress server edition
     required: true
-
+  SPECS:
+    description: The cypress specs to run
+    required: true
 runs:
   using: "composite"
   steps:
@@ -87,8 +89,7 @@ runs:
         cd tests-e2e
         # SPECS=$(circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings | tr '\n' ',')
         # SPECS=${SPECS::-1}
-        # npm run test -- --spec "${SPECS}"
-        npm run test
+        npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
 
     - name: Pesist cypress test results
