@@ -22,6 +22,7 @@ import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {useUpdateRun} from 'src/graphql/hooks';
+import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunNewModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
@@ -36,6 +37,8 @@ import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
+
+import {GeneralViewTarget} from 'src/types/telemetry';
 
 import {UserList} from './rhs_participants';
 import {RHSTitleText} from './rhs_title_common';
@@ -97,6 +100,7 @@ const RHSRunList = (props: Props) => {
     const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
+    useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
 
     const handleStartRun = () => {
         dispatch(openPlaybookRunNewModal({

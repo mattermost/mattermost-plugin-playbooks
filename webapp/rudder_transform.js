@@ -40,6 +40,11 @@ export function transformEvent(event, metadata) {
             event.event = 'run_details';
             delete event.properties.Action;
             break;
+        case 'view_run_channels_rhs_details':
+            event.event = 'channels_rhs_rundetails';
+            event.type = 'page';
+            delete event.properties.Action;
+            break;
 
             // ... other actions for frontend event
         }

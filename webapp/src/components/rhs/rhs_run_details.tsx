@@ -37,11 +37,10 @@ import {
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useParticipateInRun} from 'src/hooks';
+import {useParticipateInRun, useViewTelemetry} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';
@@ -63,7 +62,7 @@ const RHSRunDetails = (props: Props) => {
 
     const [playbookRun] = useRun(props.runID);
     const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
+    useViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 

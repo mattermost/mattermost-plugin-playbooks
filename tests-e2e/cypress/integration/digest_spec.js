@@ -95,7 +95,7 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_overduestatus');
 
             // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     name: 'run_details',
                     type: 'page',
@@ -128,7 +128,7 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_runsinprogress');
 
             // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     name: 'run_details',
                     type: 'page',
@@ -161,7 +161,7 @@ describe('digest messages', () => {
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_assignedtask');
 
             // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     name: 'run_details',
                     type: 'page',

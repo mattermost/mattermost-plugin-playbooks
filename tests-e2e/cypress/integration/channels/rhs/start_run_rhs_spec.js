@@ -95,7 +95,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -110,7 +110,7 @@ describe('channels rhs > start a run', () => {
                             hasChannelIdChanged: false,
                             hasPublicChanged: false,
                         }}
-                    ]);
+                    ], {waitForCalls: 2});
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
@@ -173,7 +173,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -248,7 +248,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -325,7 +325,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -402,7 +402,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -474,7 +474,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
