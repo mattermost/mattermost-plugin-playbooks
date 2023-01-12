@@ -266,30 +266,33 @@ jobs:
   generate-specs:
     runs-on: ubuntu-22.04
     outputs:
-      matrix: ${{ steps.generate-specs.outputs.matrix }}
+      specs: ${{ steps.generate-specs.outputs.specs }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - id: generate-specs
         uses: ./.github/actions/generate-specs
         with:
-          parallelism: 5
+          parallelism: 6
           directory: tests-e2e
           search_path: cypress/integration
 
-  e2e-cypress-tests-cloud:
+  e2e-cypress-tests:
     runs-on: ubuntu-22.04
+    name: e2e-cypress-tests-${{ matrix.name }}
     needs:
       - generate-specs
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        ${{ fromJSON(needs.generate-specs.outputs.matrix) }}
-        # include:
-        #   - image: mattermost/mm-ee-test:prerelease
-        #     cloud: Cloud
-        #   - image: mattermost/mattermost-enterprise-edition:master
-        #     cloud: E20
+        specs: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
+        include:
+          - name: cloud
+            image: mattermost/mm-ee-test:prerelease
+            cloud: Cloud
+          - name: master
+            image: mattermost/mattermost-enterprise-edition:master
+            cloud: E20
     services:
       postgres:
         image: postgres:10.17
@@ -311,7 +314,6 @@ jobs:
           MINIO_ACCESS_KEY: minioaccesskey
           MINIO_SECRET_KEY: miniosecretkey
           MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
-
       inbucket:
         image: mattermost/inbucket:release-1.2.0
         ports:
@@ -331,27 +333,22 @@ jobs:
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
         ports:
           - 9200:9200
-        # options: >-
-        #   --health-cmd curl -s http://elasticsearch01:9200 >/dev/null || exit 1
-        #   --health-interval 10s
-        #   --health-timeout 5s
-        #   --health-retries 5
       mattermost-server:
-        image: mattermost/mm-ee-test:prerelease
+        image: ${{ matrix.image }}
         env:
-          DB_HOST: localhost
+          DB_HOST: postgres
           DB_PORT_NUMBER: 5432
           MM_DBNAME: mattermost_test
           MM_USERNAME: mmuser
           MM_PASSWORD: mostest
-          CI_INBUCKET_HOST: localhost
+          CI_INBUCKET_HOST: inbucket
           CI_INBUCKET_PORT: 10080
           CI_MINIO_HOST: minio
           IS_CI: true
           MM_CLUSTERSETTINGS_READONLYCONFIG: false
-          MM_EMAILSETTINGS_SMTPSERVER: localhost
+          MM_EMAILSETTINGS_SMTPSERVER: inbucket
           MM_EMAILSETTINGS_SMTPPORT: 10025
-          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
+          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://elasticsearch:9200
           MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
           MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10"
           MM_SQLSETTINGS_DRIVERNAME: postgres
@@ -371,5 +368,5 @@ jobs:
           fetch-depth: "0"
       - uses: ./.github/actions/e2e-test
         with:
-          CYPRESS_serverEdition: Cloud
+          CYPRESS_serverEdition: ${{ matrix.cloud }}
           SPECS: ${{ matrix.specs }}

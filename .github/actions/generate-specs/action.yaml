@@ -13,9 +13,9 @@ inputs:
     description: The parallelism for the tests
     required: true
 outputs:
-  matrix:
-    description: The matrix generated for the strategy
-    value: ${{ steps.generate-specs.outputs.matrix }}
+  specs:
+    description: The specs generated for the strategy
+    value: ${{ steps.generate-specs.outputs.specs }}
 runs:
   using: "composite"
   steps:
@@ -27,5 +27,5 @@ runs:
       run: |
         set -e
         python ${{ github.action_path }}/split-tests.py > output.json
-        echo "matrix=$(cat output.json)" >> $GITHUB_OUTPUT
+        echo "specs=$(cat output.json)" >> $GITHUB_OUTPUT
       shell: bash
