@@ -175,7 +175,7 @@ deploy: dist upload-to-server
 ## Builds and installs the plugin to a server, updating the plugin automatically when changed.
 .PHONY: watch
 watch: apply install-modd bundle upload-to-server
-	modd
+	$(GOBIN)/modd
 
 ## Watch mode for webapp side
 .PHONY: watch-webapp
