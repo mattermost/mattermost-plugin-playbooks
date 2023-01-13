@@ -164,20 +164,6 @@ endif
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
-## Generates a tar bundle of the plugin for install.
-.PHONY: bundle-server
-bundle-server:
-	mkdir -p dist/$(PLUGIN_ID)
-	./build/bin/manifest dist
-ifneq ($(HAS_SERVER),)
-	mkdir -p dist/$(PLUGIN_ID)/server
-	cp -r server/dist dist/$(PLUGIN_ID)/server/
-endif
-	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
-
-	@echo plugin built at: dist/$(BUNDLE_NAME)
-
-
 ## Builds and bundles the plugin.
 .PHONY: dist
 dist:	apply server webapp bundle
@@ -186,10 +172,14 @@ dist:	apply server webapp bundle
 .PHONY: deploy
 deploy: dist upload-to-server
 
-## Builds and installs the plugin to a server, updating the webapp automatically when changed.
+## Builds and installs the plugin to a server, updating the plugin automatically when changed.
 .PHONY: watch
-watch: apply modd bundle
-	modd&
+watch: apply install-modd bundle upload-to-server
+	modd
+
+## Watch mode for webapp side
+.PHONY: watch-webapp
+watch-webapp:
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
@@ -254,7 +244,7 @@ gotestsum:
 	$(GO) install gotest.tools/gotestsum@v1.7.0
 
 ## Ensure modd is installed and available as a tool for development.
-modd:
+install-modd:
 	$(GO) install github.com/cortesi/modd/cmd/modd@latest
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
