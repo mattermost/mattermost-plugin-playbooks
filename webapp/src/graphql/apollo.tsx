@@ -35,6 +35,7 @@ export function makeGraphqlClient() {
     };
     const graphqlClient = new ApolloClient({
         link: new HttpLink({fetch: graphqlFetch}),
+        connectToDevTools: true,
         cache: new InMemoryCache({
             typePolicies: {
                 Query: {
