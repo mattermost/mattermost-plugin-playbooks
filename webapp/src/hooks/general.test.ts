@@ -9,7 +9,6 @@ import {
     useEnsureProfile,
     useEnsureProfiles,
     useProfilesInChannel,
-    useProfilesInCurrentChannel,
     useProfilesInTeam,
 } from './general';
 
@@ -230,7 +229,7 @@ describe('useEnsureProfiles', () => {
 describe('useProfilesInTeam', () => {
     it('dispatches if no team members have been loaded', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInCurrentTeam = [] as String[];
+        const profilesInCurrentTeam = [] as string[];
         const currentTeamId = 'team_id';
 
         let calls = 0;
@@ -262,7 +261,7 @@ describe('useProfilesInTeam', () => {
 
     it('dispatches if the current team changes', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInCurrentTeam = [] as String[];
+        const profilesInCurrentTeam = [] as string[];
         let currentTeamId = 'team_id';
 
         let calls = 0;
@@ -298,7 +297,7 @@ describe('useProfilesInTeam', () => {
 
     it('does not dispatch after loading team members', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        let profilesInCurrentTeam = [] as String[];
+        let profilesInCurrentTeam = [] as string[];
         const currentTeamId = 'team_id';
 
         let calls = 0;
@@ -360,7 +359,7 @@ describe('useProfilesInTeam', () => {
 
     it('does not dispatch if already fetching', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInCurrentTeam = [] as String[];
+        const profilesInCurrentTeam = [] as string[];
         let currentTeamId = 'team_id';
 
         let calls = 0;
@@ -400,182 +399,10 @@ describe('useProfilesInTeam', () => {
     });
 });
 
-describe('useProfilesInCurrentChannel', () => {
-    it('dispatches if no channel members have been loaded', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
-        const currentChannelId = 'channel_id';
-
-        let calls = 0;
-        useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
-            if (calls++ % 2 === 0) {
-                return currentChannelId;
-            }
-            return profilesInChannel;
-        });
-
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
-        const mockDispatchFn = jest.fn();
-        useDispatchSpy.mockReturnValue(mockDispatchFn);
-
-        const {rerender} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        rerender();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-
-        jest.clearAllMocks();
-        clearLocks();
-    });
-
-    it('dispatches if the channel changes', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
-        let currentChannelId = 'channel_id';
-
-        let calls = 0;
-        useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
-            if (calls++ % 2 === 0) {
-                return currentChannelId;
-            }
-            return profilesInChannel;
-        });
-
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
-        const mockDispatchFn = jest.fn();
-        useDispatchSpy.mockReturnValue(mockDispatchFn);
-
-        const {rerender} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        rerender();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-
-        currentChannelId = 'new_channel_id';
-        rerender();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(2);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        jest.clearAllMocks();
-        clearLocks();
-    });
-
-    it('does not dispatch after loading channel members', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        let profilesInChannel = [] as String[];
-        const currentChannelId = 'channel_id';
-
-        let calls = 0;
-        useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
-            if (calls++ % 2 === 0) {
-                return currentChannelId;
-            }
-            return profilesInChannel;
-        });
-
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
-        const mockDispatchFn = jest.fn();
-        useDispatchSpy.mockReturnValue(mockDispatchFn);
-
-        const {rerender} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        profilesInChannel = ['user_1', 'user_2'];
-        rerender();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-
-        jest.clearAllMocks();
-        clearLocks();
-    });
-
-    it('does not dispatch if channel members are already loaded', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = ['user_1', 'user_2'];
-        const currentChannelId = 'channel_id';
-
-        let calls = 0;
-        useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
-            if (calls++ % 2 === 0) {
-                return currentChannelId;
-            }
-            return profilesInChannel;
-        });
-
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
-        const mockDispatchFn = jest.fn();
-        useDispatchSpy.mockReturnValue(mockDispatchFn);
-
-        const {rerender} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        expect(mockDispatchFn).toHaveBeenCalledTimes(0);
-
-        rerender();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(0);
-
-        jest.clearAllMocks();
-        clearLocks();
-    });
-
-    it('does not dispatch if already fetching', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
-        let currentChannelId = 'channel_id';
-
-        let calls = 0;
-        useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
-            if (calls++ % 2 === 0) {
-                return currentChannelId;
-            }
-            return profilesInChannel;
-        });
-
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
-        const mockDispatchFn = jest.fn();
-        useDispatchSpy.mockReturnValue(mockDispatchFn);
-
-        const {rerender: rerender1} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        const {rerender: rerender2} = renderHook(() => {
-            useProfilesInCurrentChannel();
-        });
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        rerender1();
-        rerender2();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(1);
-
-        currentChannelId = 'new_channel_id';
-        rerender1();
-        rerender2();
-        expect(mockDispatchFn).toHaveBeenCalledTimes(2);
-        expect(getProfilesInChannel).toHaveBeenCalledWith('new_channel_id', 0, PROFILE_CHUNK_SIZE);
-
-        jest.clearAllMocks();
-        clearLocks();
-    });
-});
-
 describe('useProfilesInChannel', () => {
     it('dispatches if no channel members have been loaded', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
+        const profilesInChannel = [] as string[];
         const channelId = 'channel_id';
 
         useSelectorSpy.mockReturnValue(profilesInChannel);
@@ -599,7 +426,7 @@ describe('useProfilesInChannel', () => {
 
     it('dispatches if the channel changes', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
+        const profilesInChannel = [] as string[];
         let channelId = 'channel_id';
 
         useSelectorSpy.mockReturnValue(profilesInChannel);
@@ -628,7 +455,7 @@ describe('useProfilesInChannel', () => {
 
     it('does not dispatch after loading channel members', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        let profilesInChannel = [] as String[];
+        let profilesInChannel = [] as string[];
         const channelId = 'channel_id';
 
         useSelectorSpy.mockReturnValue(profilesInChannel);
@@ -676,7 +503,7 @@ describe('useProfilesInChannel', () => {
 
     it('does not dispatch if already fetching', async () => {
         const useSelectorSpy = jest.spyOn(redux, 'useSelector');
-        const profilesInChannel = [] as String[];
+        const profilesInChannel = [] as string[];
         let channelId = 'channel_id';
         const channelId2 = 'channel_id2';
 
