@@ -2236,14 +2236,14 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale)
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, *siteURL, user.Locale)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
 		return nil, err
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, *siteURL, user.Locale, timezone, !force)
 	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, *siteURL, user.Locale)
 
 	var message string
@@ -3343,7 +3343,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, siteURL, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -3407,7 +3407,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 
 		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
-			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID)))
+			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID)))
 			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
@@ -3458,7 +3458,7 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL, locale string) string {
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, locale string) string {
+func buildRunsOverdueMessage(runs []RunLink, siteURL, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -3470,7 +3470,7 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
 	}
 
 	return msg
