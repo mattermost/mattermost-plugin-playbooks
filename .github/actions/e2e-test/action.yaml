@@ -12,11 +12,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Go
+    - name: ci/setup-go
       uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
       with:
         cache: true
-    - name: Setup Node
+    - name: ci/setup-node
       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
         node-version-file: ".nvmrc"
@@ -24,23 +24,21 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
-    - name: Disable ALSA
+    - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       shell: bash
-    - name: Set and Restore PostgresSQL DB
-      uses: docker://postgres:10.17
+    - name: ci/restore-postresql
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      with:
-        entrypoint:
-          - /bin/bash
-          - -c
-        args: |
-          set -e
-          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
-          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
-          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
-    - name: Upload Licence
+      run: |
+        set -e
+        sudo apt-get update
+        sudo apt-get install libxss1 postgresql-client -y
+        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
+        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
+        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
+      shell: bash
+    - name: ci/upload-licence
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
@@ -53,7 +51,7 @@ runs:
         if test $STATUSCODE -ne 200; then exit 1; fi
       shell: bash
 
-    - name: Getting Cypress & JavaScript dependencies
+    - name: ci/installing-cypress-and-deps
       shell: bash
       env:
         NODE_ENV: development
@@ -66,7 +64,7 @@ runs:
         npm install --ignore-scripts --no-save
         npx cypress install
 
-    - name: Install Playbooks
+    - name: ci/install-playbooks
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
@@ -74,7 +72,7 @@ runs:
       run: make deploy CGO_ENABLED=0
       shell: bash
 
-    - name: Run Cypress Tests
+    - name: ci/run-cypress-tests
       env:
         TYPE: NONE
         PULL_REQUEST: ""
@@ -93,7 +91,7 @@ runs:
       shell: bash
       continue-on-error: true
 
-    - name: Pesist cypress test results
+    - name: ci/upload-cypress-test-results
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: cypress-test-results

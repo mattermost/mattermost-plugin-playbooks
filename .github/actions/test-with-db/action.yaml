@@ -5,11 +5,11 @@ description: This action used to runs tests with db integration
 runs:
   using: "composite"
   steps:
-    - name: Setup Go
+    - name: ci/setup-go
       uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
       with:
         cache: true
-    - name: Setup Node
+    - name: ci/setup-node
       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
         node-version-file: ".nvmrc"
@@ -17,7 +17,7 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
-    - name: Install webapp npm deps
+    - name: ci/setup-webapp-npm-deps
       shell: bash
       env:
         NODE_ENV: development
@@ -25,7 +25,7 @@ runs:
         set -e
         cd webapp
         npm install --ignore-scripts --no-save --legacy-peer-deps
-    - name: Test db integration
+    - name: ci/test-db-integration
       shell: bash
       env:
         POSTGRES_USER: mmuser
@@ -43,7 +43,7 @@ runs:
         make test-ci
         mkdir -p server/test-results
         cp report.xml server/test-results
-    - name: Pesist test results
+    - name: ci/upload-test-results
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: test-results

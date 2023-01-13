@@ -19,7 +19,8 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - id: generate-specs
+    - name: ci/generate-specs
+      id: generate-specs
       env:
         PARALLELISM: ${{ inputs.parallelism }}
         SEARCH_PATH: ${{ inputs.search_path }}
