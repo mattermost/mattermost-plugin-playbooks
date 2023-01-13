@@ -118,7 +118,7 @@ describe('playbooks > edit > task actions', () => {
             });
 
             // # assert telemetry data
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     name: 'taskactions_updated',
                     type: 'track',

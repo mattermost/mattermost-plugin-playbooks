@@ -14,6 +14,8 @@ export interface ToastProps {
     buttonName?: string;
     buttonCallback?: () => void;
     closeCallback?: () => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
 export const Toast = (props: ToastProps) => {
@@ -33,6 +35,8 @@ export const Toast = (props: ToastProps) => {
     return (
         <StyledToast
             toastStyle={props.toastStyle ?? ToastStyle.Success}
+            onMouseEnter={props.onMouseEnter}
+            onMouseLeave={props.onMouseLeave}
         >
             <StyledIcon className={`icon icon-${iconName}`}/>
             <StyledText>{props.content}</StyledText>

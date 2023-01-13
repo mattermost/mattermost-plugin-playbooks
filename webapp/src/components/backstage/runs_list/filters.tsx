@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import debounce from 'debounce';
 import {ControlProps, components} from 'react-select';
 import styled from 'styled-components';
@@ -145,12 +145,17 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         return playbooks ? playbooks.items : [] as Playbook[];
     }
 
+    const onSearch = useMemo(
+        () => debounce(setSearchTerm, searchDebounceDelayMilliseconds),
+        [setSearchTerm],
+    );
+
     return (
         <PlaybookRunListFilters>
             <SearchInput
                 testId={'search-filter'}
                 default={fetchParams.search_term}
-                onSearch={debounce(setSearchTerm, searchDebounceDelayMilliseconds)}
+                onSearch={onSearch}
                 placeholder={formatMessage({defaultMessage: 'Search by run name'})}
             />
             <CheckboxInput

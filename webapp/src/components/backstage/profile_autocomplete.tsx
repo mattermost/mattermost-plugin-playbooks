@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {useIntl} from 'react-intl';
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
@@ -119,7 +119,7 @@ const ProfileAutocomplete = (props: Props) => {
         );
     };
 
-    const debouncedSearchProfiles = debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
+    const debouncedSearchProfiles = useMemo(() => debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
         let profiles;
         if (term.trim().length === 0) {
             profiles = props.getProfiles?.();
@@ -135,7 +135,7 @@ const ProfileAutocomplete = (props: Props) => {
             console.error('Error searching user profiles in custom attribute settings dropdown.');
             callback([]);
         });
-    }, 150);
+    }, 150), [props]);
 
     const usersLoader = (term: string, callback: (options: OptionsType<UserProfile>) => void) => {
         try {
