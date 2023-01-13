@@ -3618,9 +3618,7 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 			}
 			if a.Payload.Enabled {
 				if err := s.ModifyCheckedState(runID, userID, ChecklistItemStateClosed, checklistNum, itemNum); err != nil {
-					if err != nil {
-						return errors.Wrapf(err, "can't mark item as done")
-					}
+					return errors.Wrapf(err, "can't mark item as done")
 				}
 			}
 		}
