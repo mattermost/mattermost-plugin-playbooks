@@ -28,16 +28,18 @@ runs:
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       shell: bash
     - name: Set and Restore PostgresSQL DB
+      uses: docker://postgres:10.17
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      run: |
-        set -e
-        sudo apt-get update
-        sudo apt-get install libxss1 postgresql-client -y
-        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
-        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
-        psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
-      shell: bash
+      with:
+        entrypoint:
+          - /bin/bash
+          - -c
+        args: |
+          set -e
+          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
+          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
+          psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
     - name: Upload Licence
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
