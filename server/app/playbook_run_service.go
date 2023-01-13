@@ -2217,6 +2217,12 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot send webhook on creation, please set siteURL")
+		return nil, errors.New("siteURL not set")
+	}
+
 	// if we have no items to send and we're not forced to, return early
 	if len(digestMessageItems.assignedRuns) == 0 &&
 		len(digestMessageItems.overdueRuns) == 0 &&
@@ -2238,7 +2244,7 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	}
 
 	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, *siteURL, user.Locale)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {
@@ -3432,7 +3438,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	return msg.String()
 }
 
-func buildRunsInProgressMessage(runs []RunLink, locale string) string {
+func buildRunsInProgressMessage(runs []RunLink, siteURL, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -3446,7 +3452,7 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
 	}
 
 	return msg
