@@ -327,6 +327,9 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
         <PlaybookListContainer>
             <FileUploadOverlay
                 show={isDraggingFile}
+                message={formatMessage({
+                    defaultMessage: 'Drop a playbook export file to import it.',
+                })}
                 overlayType='center'
             />
             <ScrollContainer

@@ -2,16 +2,21 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+
+import {useIntl} from 'react-intl';
 
 import MattermostLogo from 'src/components/assets/mattermost_logo_svg';
-import {FilesOverlayImage} from 'src/components/assets/files_overlay_image';
+import filesOverlay from 'src/components/assets/files_overlay.png';
 
 export interface FileUploadOverlayProps {
+    message: string;
     show: boolean;
     overlayType: string;
 }
+
 export const FileUploadOverlay = (props: FileUploadOverlayProps) => {
+    const {formatMessage} = useIntl();
+
     let overlayClass = 'file-overlay';
     if (!props.show) {
         overlayClass += ' hidden';
@@ -26,15 +31,14 @@ export const FileUploadOverlay = (props: FileUploadOverlayProps) => {
         <div className={overlayClass}>
             <div className='overlay__indent'>
                 <div className='overlay__circle'>
-                    <FilesOverlayImage
+                    <img
                         className='overlay__files'
-                        alt={'Files'}
+                        alt={formatMessage({defaultMessage: 'Files'})}
+                        src={filesOverlay}
                     />
                     <span>
                         <i className='fa fa-upload'/>
-                        <FormattedMessage
-                            defaultMessage='Drop a file to upload it.'
-                        />
+                        {props.message}
                     </span>
                     <MattermostLogo
                         className='overlay__logo'
