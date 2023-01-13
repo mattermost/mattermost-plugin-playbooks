@@ -1,6 +1,9 @@
 name: ci
 on:
   pull_request:
+  push:
+    branches:
+      - master
 
 defaults:
   run:
@@ -56,59 +59,6 @@ jobs:
       - name: Checking diff of webapp graphql generated files
         run: git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
 
-  build:
-    runs-on: ubuntu-22.04
-    needs:
-      - test-MySQL57-Postgres10
-      - test-MySQL8-Postgres11
-      - test-MariaDB10-Postgres12
-      - test-MySQL8-Postgres14
-      - e2e-cypress-tests-master
-      - e2e-cypress-tests-cloud
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-      - name: Setup Go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
-        with:
-          cache: true
-      - name: Setup Node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: |
-            webapp/package-lock.json
-            tests-e2e/package-lock.json
-      - name: Install webapp npm deps
-        env:
-          NODE_ENV: development
-        run: |
-          set -e
-          cd webapp
-          npm install --ignore-scripts --no-save --legacy-peer-deps
-      - name: Building Plugin Bundle
-        run: make dist CGO_ENABLED=0
-      - name: Generating Release Notes
-        run: |
-          set -e
-          printf "Supported Mattermost Server Versions: **$(cat plugin.json | jq .min_server_version -r)+** \n## Enhancements\n\n## Fixes\n"  >> dist/release-notes.md
-          if [[ $(git tag -l | wc -l) -eq 1 ]]; then
-            git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git rev-list --max-parents=0 HEAD) HEAD >> dist/release-notes.md
-          else
-            git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git describe --tags --abbrev=0 $(git describe --tags --abbrev=0)^)..HEAD >> dist/release-notes.md
-          fi
-      - name: Pesist build artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
-        with:
-          name: dist
-          path: |
-            dist/*.tar.gz
-            dist/release-notes.md
-          retention-days: 5 ## No need to keep CI builds more than 5 days
-
   test-MySQL57-Postgres10:
     runs-on: ubuntu-22.04
     needs:
@@ -128,7 +78,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       mysql:
-        image: mysql:8.0
+        image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -275,7 +225,7 @@ jobs:
       - id: generate-specs
         uses: ./.github/actions/generate-specs
         with:
-          parallelism: 10
+          parallelism: 15
           directory: tests-e2e
           search_path: cypress/integration
 
