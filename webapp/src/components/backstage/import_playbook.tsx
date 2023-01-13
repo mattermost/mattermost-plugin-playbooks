@@ -32,6 +32,14 @@ export const useImportPlaybook = (teamId: string, cb: (id: string) => void) => {
             reject(new Error('File size limit exceeded'));
             return;
         }
+        if (file.type !== 'application/json') {
+            addToast({
+                content: formatMessage({defaultMessage: 'The file must be a valid JSON playbook template.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+            reject(new Error('File must be a JSON file'));
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
             return resolve(e.target?.result);
