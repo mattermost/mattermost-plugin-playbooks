@@ -5,8 +5,6 @@ import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from '@mattermost/types/users';
-import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from '@mattermost/client';
@@ -39,14 +37,9 @@ import {
     Playbook,
     PlaybookWithChecklist,
 } from 'src/types/playbook';
-import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
+import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {
-    EmptyPlaybookStats,
-    PlaybookStats,
-    SiteStats,
-    Stats,
-} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -180,9 +173,10 @@ export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
     return Boolean(data.viewed);
 }
 
-export function fetchPlaybookRunChannels(teamID: string, userID: string) {
-    return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
-}
+// REMOVED
+// export function fetchPlaybookRunChannels(teamID: string, userID: string) {
+//     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
+// }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
     let currentChannel = getCurrentChannel(getState());
@@ -273,18 +267,6 @@ export async function importFile(file: any, teamId: string) {
 export async function duplicatePlaybook(playbookId: Playbook['id']) {
     const {id} = await doPost(`${apiUrl}/playbooks/${playbookId}/duplicate`, '');
     return id;
-}
-
-export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
-}
-
-export async function fetchMyChannels(teamId: string): Promise<Channel[]> {
-    return Client4.getMyChannels(teamId);
-}
-
-export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
 export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
@@ -503,15 +485,6 @@ export async function fetchSiteStats(): Promise<SiteStats | null> {
         return null;
     }
     return data as SiteStats;
-}
-
-export async function fetchStats(teamID: string): Promise<Stats | null> {
-    const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
-    if (!data) {
-        return null;
-    }
-
-    return data as Stats;
 }
 
 export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookStats> {
@@ -761,28 +734,6 @@ export const requestJoinChannel = async (playbookRunId: string) => {
     }
 };
 
-export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
-    try {
-        return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
-            item_id: itemID,
-            type: itemType,
-        }));
-    } catch (error) {
-        return {error};
-    }
-};
-
-export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
-    try {
-        return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
-            item_id: itemID,
-            type: itemType,
-        }));
-    } catch (error) {
-        return {error};
-    }
-};
-
 export const isFavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     const data = await doGet<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}&item_id=${itemID}&type=${itemType}`);
     return Boolean(data);
@@ -833,15 +784,6 @@ export const doDelete = async <TData = any>(url: string, body = {}) => {
 export const doPut = async <TData = any>(url: string, body = {}) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PUT',
-        body,
-    });
-
-    return data;
-};
-
-export const doPatch = async <TData = any>(url: string, body = {}) => {
-    const {data} = await doFetchWithResponse<TData>(url, {
-        method: 'PATCH',
         body,
     });
 

@@ -696,7 +696,7 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, *filterOptions)
 	if err != nil {
-		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get owners"))
+		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get playbookRuns"))
 		return
 	}
 
