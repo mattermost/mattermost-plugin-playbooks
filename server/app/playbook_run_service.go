@@ -2219,7 +2219,7 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
-		logrus.Error("cannot send webhook on creation, please set siteURL")
+		logrus.Error("cannot send todo digest message, please set siteURL")
 		return nil, errors.New("siteURL not set")
 	}
 
