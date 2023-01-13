@@ -26,6 +26,16 @@ const RHSParticipants = (props: Props) => {
         props.setShowParticipants(true);
     };
 
+    const addParticipant = (
+        <LinkAddParticipants
+            to={'#'}
+            onClick={showParticipants}
+        >
+            {formatMessage({defaultMessage: 'Add participant'})}
+            <OpenInNewIcon size={11}/>
+        </LinkAddParticipants>
+    );
+
     const becomeParticipant = (
         <Tooltip
             id={'rhs-participate'}
@@ -49,15 +59,7 @@ const RHSParticipants = (props: Props) => {
                     <FormattedMessage defaultMessage='Nobody yet.'/>
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
-                    {props.onParticipate ? null : (
-                        <LinkAddParticipants
-                            to={'#'}
-                            onClick={showParticipants}
-                        >
-                            {formatMessage({defaultMessage: 'Add participant'})}
-                            <OpenInNewIcon size={11}/>
-                        </LinkAddParticipants>
-                    )}
+                    {props.onParticipate ? null : addParticipant}
                 </NoParticipants>
                 {props.onParticipate ? becomeParticipant : null}
             </Container>
@@ -84,7 +86,7 @@ const RHSParticipants = (props: Props) => {
                     sizeInPx={height}
                 />
             </UserRow>
-            {props.onParticipate ? becomeParticipant : null}
+            {props.onParticipate ? becomeParticipant : addParticipant}
         </Container>
     );
 };
@@ -151,6 +153,7 @@ const UserRow = styled.div`
     flex-direction: row;
 
     margin-left: -4px;
+    margin-right: 2px;
 
     border-radius: 44px;
     border: 6px solid transparent;
@@ -189,6 +192,9 @@ const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
 `;
 
 const LinkAddParticipants = styled(Link)`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 11px;
+    line-height: 16px;
     display: inline-flex;
     align-items: center;
     svg {
