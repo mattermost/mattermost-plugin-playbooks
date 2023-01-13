@@ -4,7 +4,6 @@
 import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {RHSState} from 'src/types/rhs';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {pluginId} from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
@@ -22,7 +21,6 @@ export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
 export const RECEIVED_PLAYBOOK_RUNS = pluginId + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
-export const SET_RHS_STATE = pluginId + '_set_rhs_state';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
@@ -110,11 +108,6 @@ export interface ReceivedTeamPlaybookRuns {
 export interface RemovedFromChannel {
     type: typeof REMOVED_FROM_CHANNEL;
     channelId: string;
-}
-
-export interface SetRHSState {
-    type: typeof SET_RHS_STATE;
-    nextState: RHSState;
 }
 
 export interface ReceivedGlobalSettings {

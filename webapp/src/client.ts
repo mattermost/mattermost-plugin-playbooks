@@ -173,10 +173,10 @@ export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
     return Boolean(data.viewed);
 }
 
-// REMOVED
-// export function fetchPlaybookRunChannels(teamID: string, userID: string) {
-//     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
-// }
+// ts-prune-ignore-next It's very likely to need this one to avoid fetching each channelswitch the channel actions
+export function fetchPlaybookRunChannels(teamID: string, userID: string) {
+    return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
+}
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
     let currentChannel = getCurrentChannel(getState());
