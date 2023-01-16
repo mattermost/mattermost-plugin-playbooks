@@ -90,19 +90,8 @@ let config = {
                 use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg)$/,
-                use: [
-                    {
-                        loader: 'file-loader',
-                        options: {
-                            name: 'files/[contenthash].[ext]',
-                        },
-                    },
-                    {
-                        loader: 'image-webpack-loader',
-                        options: {},
-                    },
-                ],
+                test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg|jpeg)$/,
+                type: 'asset/inline', // consider 'asset' when URL resource chunks are supported
             },
             {
                 test: /\.apng$/,

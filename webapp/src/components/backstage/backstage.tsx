@@ -29,7 +29,7 @@ const Backstage = () => {
 
     const {url} = useRouteMatch();
     const noContainerScroll = matchPath<{playbookRunId?: string; playbookId?: string;}>(pathname, {
-        path: [`${url}/runs/:playbookRunId`],
+        path: [`${url}/runs/:playbookRunId`, `${url}/playbooks`],
     });
 
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
