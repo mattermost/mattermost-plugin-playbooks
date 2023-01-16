@@ -21,8 +21,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
-import {useHasPlaybookPermission, useLinkRunToExistingChannelEnabled, usePlaybooksRouting} from 'src/hooks';
-import {openPlaybookRunModal, openPlaybookRunNewModal} from 'src/actions';
+import {useHasPlaybookPermission, usePlaybooksRouting} from 'src/hooks';
+import {openPlaybookRunNewModal} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -172,7 +172,6 @@ export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) 
     const {view} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
-    const isLinkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const {
         id,
@@ -253,21 +252,11 @@ export const RHSHomePlaybook = ({playbook, onRunCreated}: RHSHomePlaybookProps) 
             <RunButton
                 data-testid={'run-playbook'}
                 onClick={() => {
-                    if (isLinkRunToExistingChannelEnabled) {
-                        dispatch(openPlaybookRunNewModal({
-                            teamId,
-                            onRunCreated,
-                            playbookId: id,
-                        }));
-                    } else {
-                        dispatch(openPlaybookRunModal(
-                            id,
-                            default_owner_enabled ? default_owner_id : null,
-                            description,
-                            teamId,
-                            teamName,
-                        ));
-                    }
+                    dispatch(openPlaybookRunNewModal({
+                        teamId,
+                        onRunCreated,
+                        playbookId: id,
+                    }));
                 }}
             >
                 <PlayOutlineIcon/>

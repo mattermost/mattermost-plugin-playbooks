@@ -46,6 +46,9 @@ describe('runs > task actions', () => {
     });
 
     beforeEach(() => {
+        // # intercepts telemetry
+        cy.interceptTelemetry();
+
         // # Login as testUser
         cy.apiLogin(testUser);
     });
@@ -106,9 +109,6 @@ describe('runs > task actions', () => {
             // # Enable the trigger
             cy.findByText('Mark the task as done').click();
 
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-
             // # Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
@@ -124,8 +124,15 @@ describe('runs > task actions', () => {
             });
 
             // # assert telemetry data
-            cy.wait('@telemetry');
-            cy.expectTelemetryToBe([{name: 'taskactions_updated', type: 'track', playbookrun_id: testPlaybookRun.id}]);
+            cy.expectTelemetryToContain([
+                {
+                    name: 'taskactions_updated',
+                    type: 'track',
+                    properties: {
+                        playbookrun_id: testPlaybookRun.id,
+                    },
+                }
+            ]);
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
@@ -684,6 +691,9 @@ describe('runs > task actions', () => {
                 message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
                 channelId: testChannel.id,
             });
+
+            // Give the system a chance to effect the task actions.
+            cy.wait(TIMEOUTS.HALF_SEC);
 
             // * Verify action activated ion testPlaybookRun1
             cy.apiGetPlaybookRun(testPlaybookRun1.id).then(({body: playbookRun}) => {

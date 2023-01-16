@@ -77,6 +77,17 @@ describe('channels > rhs > runlist', () => {
         cy.findByText('Runs in progress').should('be.visible');
     });
 
+    it('track page view', () => {
+        // # intercepts telemetry
+        cy.interceptTelemetry();
+
+        // # Navigate directly to the application and the playbook run channel
+        cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+        // * Assert telemetry data
+        cy.expectTelemetryToContain([{name: 'channels_rhs_runlist', type: 'page'}]);
+    });
+
     it('can filter', () => {
         // # Click the filter menu
         cy.findByTestId('rhs-runs-filter-menu').click();

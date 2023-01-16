@@ -146,6 +146,7 @@ func (a *ActionsHandler) getChannelActions(c *Context, w http.ResponseWriter, r 
 	options, err := parseGetChannelActionsOptions(r.URL.Query())
 	if err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, errors.Wrapf(err, "bad options").Error(), err)
+		return
 	}
 
 	actions, err := a.channelActionsService.GetChannelActions(channelID, *options)

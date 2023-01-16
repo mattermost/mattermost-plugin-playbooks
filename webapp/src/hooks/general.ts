@@ -12,9 +12,8 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {Team} from '@mattermost/types/teams';
 import {getCurrentUserId, getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
@@ -41,7 +40,6 @@ import {
     isCurrentUserAdmin,
     noopSelector,
     selectExperimentalFeatures,
-    selectLinkRunToExistingChannelEnabled,
 } from 'src/selectors';
 import {
     clientFetchPlaybook,
@@ -180,14 +178,10 @@ export function useProfilesInCurrentChannel() {
     return profilesInChannel;
 }
 
-export function useCanCreatePlaybooksOnAnyTeam() {
-    const teams = useSelector(getMyTeams);
-    return useSelector((state: GlobalState) => (
-        teams.some((team: Team) => (
-            haveITeamPermission(state, team.id, 'playbook_public_create') ||
-            haveITeamPermission(state, team.id, 'playbook_private_create')
-        ))
-    ));
+export function useCanCreatePlaybooksInTeam(teamId: string) {
+    return useSelector(
+        (state: GlobalState) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
+    );
 }
 
 // lockProfilesInTeamFetch and lockProfilesInChannelFetch prevent concurrently fetching profiles
@@ -278,10 +272,6 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
-}
-
-export function useLinkRunToExistingChannelEnabled() {
-    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been
@@ -677,7 +667,7 @@ export const useProxyState = <T>(
         setValue(prop);
     }, [prop]);
 
-    const onChangeDebounced = useCallback(debounce((v) => {
+    const onChangeDebounced = useMemo(() => debounce((v) => {
         check.current = v; // send check
         onChange(v);
     }, wait), [wait, onChange]);

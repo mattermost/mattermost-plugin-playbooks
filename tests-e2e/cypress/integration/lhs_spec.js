@@ -6,6 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import * as TIMEOUTS from '../fixtures/timeouts';
 import {stubClipboard} from '../utils';
 
 describe('lhs', () => {
@@ -51,6 +52,11 @@ describe('lhs', () => {
         });
     });
 
+    beforeEach(() => {
+        // # Intercepts telemetry
+        cy.interceptTelemetry();
+    });
+
     const getRunDropdownItemByText = (groupName, runName, itemName) => {
         cy.findByTestId(groupName).should('exist')
             .findByTestId(runName).should('exist')
@@ -82,24 +88,27 @@ describe('lhs', () => {
                 cy.visit('/playbooks/runs');
                 cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('be.visible');
             });
+
+            cy.wait;
         });
 
         it('click run', () => {
-            // # Intercept all calls to telemetry
-            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
-
             // # Click on run at LHS
             cy.findByTestId('Runs').findByTestId(playbookRun.name).click();
 
-            // * assert telemetry pageview
-            cy.wait('@telemetry').then((interception) => {
-                expect(interception.request.body.name).to.eq('run_details');
-                expect(interception.request.body.type).to.eq('page');
-                expect(interception.request.body.properties.from).to.eq('playbooks_lhs');
-                expect(interception.request.body.properties.role).to.eq('participant');
-                expect(interception.request.body.properties.playbookrun_id).to.eq(playbookRun.id);
-                expect(interception.request.body.properties.playbook_id).to.eq(testPublicPlaybook.id);
-            });
+            // * assert telemetry
+            cy.expectTelemetryToContain([
+                {
+                    type: 'page',
+                    name: 'run_details',
+                    properties: {
+                        from: 'playbooks_lhs',
+                        role: 'participant',
+                        playbookrun_id: playbookRun.id,
+                        playbook_id: testPublicPlaybook.id,
+                    },
+                },
+            ]);
         });
     });
 
@@ -119,16 +128,18 @@ describe('lhs', () => {
             }).then((run) => {
                 playbookRun = run;
 
-                // # Visit the playbook run
-                cy.visit(`/playbooks/runs/${playbookRun.id}`);
-
-                // # Intercept these graphQL requests for wait()'s
-                // # that help ensure rendering has finished.
+                // # Intercept these requests for later wait()'s to help ensure rendering is done.
                 cy.gqlInterceptQuery('PlaybookLHS');
+                cy.intercept('GET', `/plugins/playbooks/api/v0/runs/${playbookRun.id}`).as('fetchRun');
             });
         });
 
         it('shows on click', () => {
+            // # Visit the playbook run
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+            // # Wait for loading to finish
+            cy.wait('@fetchRun');
             cy.wait('@gqlPlaybookLHS');
 
             // # Click dot menu
@@ -142,7 +153,13 @@ describe('lhs', () => {
         });
 
         it('can copy link', () => {
+            // # Visit the playbook run
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+            // # Wait for loading to finish
+            cy.wait('@fetchRun');
             cy.wait('@gqlPlaybookLHS');
+
             stubClipboard().as('clipboard');
 
             // # Click on Copy link menu item
@@ -153,6 +170,11 @@ describe('lhs', () => {
         });
 
         it('can favorite / unfavorite', () => {
+            // # Visit the playbook run
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+            // # Wait for loading to finish
+            cy.wait('@fetchRun');
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on favorite menu item
@@ -172,15 +194,15 @@ describe('lhs', () => {
             });
         });
 
-        it.skip('lhs refresh on follow/unfollow', () => {
+        it('lhs refresh on follow/unfollow', () => {
             cy.apiLogin(testViewerUser);
 
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
-            cy.wait('@gqlPlaybookLHS');
 
-            // # intercept all telemetry calls
-            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
+            // # Wait for loading to finish
+            cy.wait('@fetchRun');
+            cy.wait('@gqlPlaybookLHS');
 
             // # The assertions here guard against the click() on 194
             // # happening on a detached element.
@@ -188,7 +210,7 @@ describe('lhs', () => {
             cy.findByTestId('runinfo-following').should('be.visible').within(() => {
                 // # Verify follower icon
                 cy.findAllByTestId('profile-option', {exact: false}).should('have.length', 1);
-                cy.findByText('Follow').should('be.visible').click().wait('@telemetry');
+                cy.findByText('Follow').should('be.visible').click();
 
                 // # Verify icons update
                 cy.wait('@gqlPlaybookLHS');
@@ -199,35 +221,43 @@ describe('lhs', () => {
             cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('exist');
 
             // # Click on unfollow menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Unfollow').click().wait('@telemetry').then(() => {
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Unfollow').click().then(() => {
                 cy.wait('@gqlPlaybookLHS');
 
                 // * Verify that the run is removed lhs
                 cy.findByTestId('Runs').findByTestId(playbookRun.name).should('not.exist');
             });
 
-            cy.get('@telemetry.all').then((xhrs) => {
-                expect(xhrs.length).to.eq(2);
-                expect(xhrs[0].request.body.name).to.eq('playbookrun_follow');
-                expect(xhrs[0].request.body.type).to.eq('track');
-                expect(xhrs[0].request.body.properties.from).to.eq('run_details');
-                expect(xhrs[0].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
-                expect(xhrs[1].request.body.name).to.eq('playbookrun_unfollow');
-                expect(xhrs[1].request.body.type).to.eq('track');
-                expect(xhrs[1].request.body.properties.from).to.eq('playbooks_lhs');
-                expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
-            });
+            // # assert telemetry data
+            cy.expectTelemetryToContain([
+                {
+                    type: 'track',
+                    name: 'playbookrun_follow',
+                    properties: {
+                        from: 'run_details',
+                        playbookrun_id: playbookRun.id,
+                    },
+                },
+                {
+                    type: 'track',
+                    name: 'playbookrun_unfollow',
+                    properties: {
+                        from: 'playbooks_lhs',
+                        playbookrun_id: playbookRun.id,
+                    },
+                },
+            ]);
         });
 
-        it.skip('leave run', () => {
-            // # Intercept all calls to telemetry
-            cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
-
+        it('leave run', () => {
             // # Add viewer user to the channel
             cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
 
             // # Visit the playbook run
-            cy.visit(`/playbooks/runs/${playbookRun.id}`).wait('@telemetry');
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+
+            // # Wait for loading to finish
+            cy.wait('@fetchRun');
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item
@@ -239,7 +269,9 @@ describe('lhs', () => {
             // # Change the owner to testViewerUser
             cy.findByTestId('runinfo-owner').findByTestId('assignee-profile-selector').click();
             cy.get('.playbook-react-select').findByText('@' + testViewerUser.username).click();
-            cy.wait('@gqlPlaybookLHS');
+
+            // # Wait for owner to change
+            cy.wait(TIMEOUTS.HALF_SEC);
 
             // # Click on leave menu item
             getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
@@ -247,19 +279,17 @@ describe('lhs', () => {
             // * Click leave confirmation
             cy.get('#confirmModalButton').click();
 
-            cy.wait('@telemetry');
-
             // # assert telemetry data
-            cy.get('@telemetry.all').then((xhrs) => {
-                expect(xhrs.length).to.eq(2);
-                expect(xhrs[0].request.body.name).to.eq('run_details');
-                expect(xhrs[0].request.body.type).to.eq('page');
-
-                expect(xhrs[1].request.body.name).to.eq('playbookrun_leave');
-                expect(xhrs[1].request.body.type).to.eq('track');
-                expect(xhrs[1].request.body.properties.from).to.eq('playbooks_lhs');
-                expect(xhrs[1].request.body.properties.playbookrun_id).to.eq(playbookRun.id);
-            });
+            cy.expectTelemetryToContain([
+                {
+                    type: 'track',
+                    name: 'playbookrun_leave',
+                    properties: {
+                        from: 'playbooks_lhs',
+                        playbookrun_id: playbookRun.id,
+                    },
+                },
+            ]);
         });
     });
 
@@ -292,7 +322,7 @@ describe('lhs', () => {
             });
         });
 
-        it.skip('leave run, when on rdp of the same run', () => {
+        it('leave run, when on rdp of the same run', () => {
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item

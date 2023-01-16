@@ -68,12 +68,18 @@ const (
 	telemetryRunStatusUpdate TelemetryPage = iota
 	telemetryRunDetails
 	telemetryTaskInbox
+	telemetryChannelsRunDetails
+	telemetryChannelsHome
+	telemetryChannelsRunList
 )
 
 var pageTypes = [...]string{
-	telemetryRunStatusUpdate: "run_status_update",
-	telemetryRunDetails:      "run_details",
-	telemetryTaskInbox:       "task_inbox",
+	telemetryRunStatusUpdate:    "run_status_update",
+	telemetryTaskInbox:          "task_inbox",
+	telemetryRunDetails:         "run_details",             // Backstage RDP
+	telemetryChannelsRunDetails: "channels_rhs_rundetails", // RHS details
+	telemetryChannelsHome:       "channels_rhs_home",       // RHS templates list
+	telemetryChannelsRunList:    "channels_rhs_runlist",    // RHS runs list
 }
 
 // String creates the string version of the Telemetrypage

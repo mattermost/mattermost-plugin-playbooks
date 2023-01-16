@@ -13,7 +13,6 @@ describe('channels > slash command > owner', () => {
     let testUser;
     let testUser2;
     let testPlaybook;
-    let testSysadmin;
     let playbookRunName;
     let playbookRunChannelName;
 
@@ -21,10 +20,6 @@ describe('channels > slash command > owner', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
 
             cy.apiCreateUser().then(({user: user2}) => {
                 testUser2 = user2;
@@ -156,17 +151,10 @@ describe('channels > slash command > owner', () => {
         let playbookRuns;
         let testPrivatePlaybook;
         let testPublicPlaybook;
-        let featureFlagPrevValue;
         let testPublicChannel;
         let channelName;
 
         before(() => {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                    featureFlagPrevValue = prevValue;
-                });
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
@@ -224,17 +212,6 @@ describe('channels > slash command > owner', () => {
             }).then((playbook) => {
                 testPublicPlaybook = playbook;
             });
-        });
-
-        after(() => {
-            if (!featureFlagPrevValue) {
-                cy.apiLogin(testSysadmin).then(() => {
-                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-                });
-            }
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
 
         beforeEach(() => {
@@ -529,6 +506,49 @@ describe('channels > slash command > owner', () => {
 
             // * Verify the message.
             cy.verifyEphemeralMessage(`Timeline for ${playbookRuns[1].name}`);
+        });
+
+        it('update', () => {
+            // # Run a slash command with not enough parameters
+            cy.executeSlashCommand('/playbook update');
+
+            // * Verify the expected error message.
+            cy.verifyEphemeralMessage('Command expects one argument: the run number.');
+
+            // # Run a slash command wrong run number
+            cy.executeSlashCommand('/playbook update 2');
+
+            // * Verify the expected error message.
+            cy.verifyEphemeralMessage('Invalid run number');
+
+            // # Type a command
+            cy.findByTestId('post_textbox').clear().type('/playbook update ');
+
+            // * Verify suggestions number: 2 runs + 1 title
+            cy.get('.slash-command').should('have.length', 3);
+
+            // # Clear input
+            cy.findByTestId('post_textbox').clear();
+
+            // # Run a slash command with correct parameters
+            cy.executeSlashCommand('/playbook update 1');
+
+            // # Get dialog modal.
+            cy.getStatusUpdateDialog().within(() => {
+                // # Enter valid data
+                cy.findByTestId('update_run_status_textbox').type('valid update');
+
+                // # Submit the dialog.
+                cy.get('button.confirm').click();
+            });
+
+            // * Verify that the Post update dialog has gone.
+            cy.getStatusUpdateDialog().should('not.exist');
+
+            // * Verify that the status update was posted.
+            cy.getLastPost().within(() => {
+                cy.findByText('posted an update for').should('exist');
+            });
         });
     });
 });

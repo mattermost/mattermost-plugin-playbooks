@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as TIMEOUTS from '../../fixtures/timeouts';
 const playbookRunStartCommand = '/playbook run';
 
 // function startPlaybookRun(playbookRunName) {
@@ -24,7 +25,7 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
-    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200});
+    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: TIMEOUTS.TWO_HUNDRED_MILLIS});
     cy.findByTestId('post_textbox').type('{enter}');
 });
 
@@ -96,7 +97,7 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.visit('/playbooks/playbooks/new');
 
-    cy.findByTestId('save_playbook', {timeout: 30000}).should('exist');
+    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('exist');
 
     // # Type playbook name
     cy.get('#playbook-name .editable-trigger').click();
@@ -104,9 +105,9 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.get('#playbook-name .editable-input').type('{enter}');
 
     // # Save playbook
-    cy.findByTestId('save_playbook', {timeout: 30000}).should('not.be.disabled').click();
-    cy.wait(2000);
-    cy.findByTestId('save_playbook', {timeout: 30000}).should('not.be.disabled').click();
+    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
+    cy.wait(TIMEOUTS.TWO_SEC);
+    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
 });
 
 // Select the playbook from the dropdown menu
@@ -193,7 +194,7 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
 
         if (reminderQuery) {
             cy.get('#reminder_timer_datetime').within(() => {
-                cy.get('input').type(reminderQuery, {delay: 200, force: true}).type('{enter}', {force: true});
+                cy.get('input').type(reminderQuery, {delay: TIMEOUTS.TWO_HUNDRED_MILLIS, force: true}).type('{enter}', {force: true});
             });
         }
 
@@ -307,21 +308,50 @@ Cypress.Commands.add('interceptTelemetry', () => {
     cy.intercept('/plugins/playbooks/api/v0/telemetry').as('telemetry');
 });
 
-Cypress.Commands.add('expectTelemetryToBe', (items) => {
-    // # assert telemetry data
-    cy.get('@telemetry.all').then((xhrs) => {
-        expect(xhrs.length).to.eq(items.length);
-        items.forEach((item, index) => {
-            // always valida name and type
-            expect(xhrs[index].request.body.name).to.eq(item.name);
-            expect(xhrs[index].request.body.type).to.eq(item.type);
+const defaultExpectTelemetryToContainOptions = {
+    waitForCalls: 'auto',
+};
 
-            // just validate properties if they are passed (and just the ones passed)
-            if (item.properties) {
-                for (const [key, value] of Object.entries(item.properties)) {
-                    expect(xhrs[index].request.body.properties[key]).to.eq(value, `Property ${key} does not match for event ${item.name}`);
+// cy.expectTelemetryToContain expects to find the given telemetry events in the order given among the
+// recorded telemetry. It doesn't fail if other telemetry events happen to occur in between.
+Cypress.Commands.add('expectTelemetryToContain', (items, opts) => {
+    const options = {...defaultExpectTelemetryToContainOptions, ...opts};
+
+    // Wait for at least as many telemetry events as requested if auto, or explicit number if passed.
+    if (options.waitForCalls === 'auto') {
+        items.forEach(() => cy.wait('@telemetry'));
+    } else {
+        for (let i = 0; i < options.waitForCalls; i++) {
+            cy.wait('@telemetry');
+        }
+    }
+
+    // When additional telemetry events are emitted than what is expected, the ones we want may
+    // still be be pending, so wait a bit more to try to let requests settle.
+    cy.wait(TIMEOUTS.HALF_SEC);
+
+    cy.get('@telemetry.all').then((xhrs) => {
+        let xhrIndex = 0;
+        items.forEach((item) => {
+            while (xhrIndex < xhrs.length) {
+                const xhr = xhrs[xhrIndex];
+
+                // Advance to the next xhr element regardless of whether or not we find a match.
+                xhrIndex++;
+
+                if (xhr.request.body.name === item.name && xhr.request.body.type === item.type) {
+                    // Validate only passed properties
+                    if (item.properties) {
+                        for (const [key, value] of Object.entries(item.properties)) {
+                            expect(xhr.request.body.properties[key]).to.eq(value, `Property ${key} does not match for event ${item.name}`);
+                        }
+                    }
+
+                    return;
                 }
             }
+
+            throw new Error(`failed to find telemetry event '${item.type}' '${item.name}'`);
         });
     });
 });

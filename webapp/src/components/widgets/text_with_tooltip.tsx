@@ -2,6 +2,7 @@ import React, {
     ComponentProps,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
@@ -21,7 +22,7 @@ const TextWithTooltip = (props: Props) => {
     const ref = useRef<HTMLAnchorElement|null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    const resizeListener = useCallback(debounce(() => {
+    const resizeListener = useMemo(() => debounce(() => {
         if (ref?.current && ref?.current?.offsetWidth < ref?.current?.scrollWidth) {
             setShowTooltip(true);
         } else {
