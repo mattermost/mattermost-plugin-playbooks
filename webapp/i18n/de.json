@@ -829,5 +829,10 @@
     "IE2BzH": "Es gibt Benutzer, die bereits vorab einer oder mehreren Aufgaben zugewiesen sind. Wenn du die Einladungen deaktivierst, werden alle <strong></strong> Vorabzuweisungen gelöscht.{br}{br}Bist du sicher, dass du Einladungen deaktivieren möchtest?",
     "DQn9Uj": "Der Benutzer <i>{name}</i> ist bereits vorab einer oder mehreren Aufgaben zugewiesen. Wenn du diesen Benutzer nicht automatisch einlädst, werden seine Vorab-Zuweisungen gelöscht.{br}{br}Bist du sicher, dass du diesen Benutzer nicht mehr als Mitglied des Durchlaufs einladen möchtest?",
     "9w0mDI": "Bestätige das Entfernen eines vordefinierten Mitglieds",
-    "mILd++": "Der Durchlaufname darf nicht mehr als {maxLength} Zeichen enthalten"
+    "mILd++": "Der Durchlaufname darf nicht mehr als {maxLength} Zeichen enthalten",
+    "uYrkxy": "Die Datei muss ein gültiges JSON-Playbook Template sein.",
+    "m4vqJl": "Dateien",
+    "Zbk+OU": "Die Dateigröße überschreitet die Grenze von 5 MB.",
+    "MieztS": "Lege eine Playbook-Exportdatei ab um sie zu importieren.",
+    "HGSVzc": "Es können nicht mehrere Dateien auf einmal importiert werden."
 }
