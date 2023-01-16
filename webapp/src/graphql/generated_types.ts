@@ -93,6 +93,7 @@ export type Mutation = {
     setRunFavorite: Scalars['String'];
     updateMetric: Scalars['String'];
     updatePlaybook: Scalars['String'];
+    updatePlaybookFavorite: Scalars['String'];
     updateRun: Scalars['String'];
     updateRunTaskActions: Scalars['String'];
 };
@@ -150,6 +151,11 @@ export type MutationUpdateMetricArgs = {
 export type MutationUpdatePlaybookArgs = {
     id: Scalars['String'];
     updates: PlaybookUpdates;
+};
+
+export type MutationUpdatePlaybookFavoriteArgs = {
+    favorite: Scalars['Boolean'];
+    id: Scalars['String'];
 };
 
 export type MutationUpdateRunArgs = {
@@ -249,7 +255,6 @@ export type PlaybookUpdates = {
     inviteUsersEnabled?: InputMaybe<Scalars['Boolean']>;
     invitedGroupIDs?: InputMaybe<Array<Scalars['String']>>;
     invitedUserIDs?: InputMaybe<Array<Scalars['String']>>;
-    isFavorite?: InputMaybe<Scalars['Boolean']>;
     messageOnJoin?: InputMaybe<Scalars['String']>;
     messageOnJoinEnabled?: InputMaybe<Scalars['Boolean']>;
     public?: InputMaybe<Scalars['Boolean']>;
@@ -421,6 +426,13 @@ export type PlaybookQueryVariables = Exact<{
 }>;
 
 export type PlaybookQuery = { __typename?: 'Query', playbook?: { __typename?: 'Playbook', id: string, title: string, description: string, public: boolean, team_id: string, delete_at: number, default_playbook_member_role: string, invited_user_ids: Array<string>, broadcast_channel_ids: Array<string>, webhook_on_creation_urls: Array<string>, reminder_timer_default_seconds: number, reminder_message_template: string, broadcast_enabled: boolean, webhook_on_status_update_enabled: boolean, webhook_on_status_update_urls: Array<string>, status_update_enabled: boolean, retrospective_enabled: boolean, retrospective_reminder_interval_seconds: number, retrospective_template: string, default_owner_id: string, run_summary_template: string, run_summary_template_enabled: boolean, message_on_join: string, category_name: string, invite_users_enabled: boolean, default_owner_enabled: boolean, webhook_on_creation_enabled: boolean, message_on_join_enabled: boolean, categorize_channel_enabled: boolean, create_public_playbook_run: boolean, channel_name_template: string, create_channel_member_on_new_participant: boolean, remove_channel_member_on_removed_participant: boolean, channel_id: string, channel_mode: string, is_favorite: boolean, checklists: Array<{ __typename?: 'Checklist', title: string, items: Array<{ __typename?: 'ChecklistItem', title: string, description: string, state: string, command: string, state_modified: number, assignee_id: string, assignee_modified: number, command_last_run: number, due_date: number, task_actions: Array<{ __typename?: 'TaskAction', trigger: { __typename?: 'Trigger', type: string, payload: string }, actions: Array<{ __typename?: 'Action', type: string, payload: string }> }> }> }>, members: Array<{ __typename?: 'Member', roles: Array<string>, user_id: string, scheme_roles: Array<string> }>, metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, title: string, description: string, type: MetricType, target?: number | null }> } | null };
+
+export type UpdatePlaybookFavoriteMutationVariables = Exact<{
+    id: Scalars['String'];
+    favorite: Scalars['Boolean'];
+}>;
+
+export type UpdatePlaybookFavoriteMutation = { __typename?: 'Mutation', updatePlaybookFavorite: string };
 
 export type UpdatePlaybookMutationVariables = Exact<{
     id: Scalars['String'];
@@ -669,6 +681,38 @@ export function usePlaybookLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<P
 export type PlaybookQueryHookResult = ReturnType<typeof usePlaybookQuery>;
 export type PlaybookLazyQueryHookResult = ReturnType<typeof usePlaybookLazyQuery>;
 export type PlaybookQueryResult = Apollo.QueryResult<PlaybookQuery, PlaybookQueryVariables>;
+export const UpdatePlaybookFavoriteDocument = gql`
+    mutation UpdatePlaybookFavorite($id: String!, $favorite: Boolean!) {
+  updatePlaybookFavorite(id: $id, favorite: $favorite)
+}
+    `;
+export type UpdatePlaybookFavoriteMutationFn = Apollo.MutationFunction<UpdatePlaybookFavoriteMutation, UpdatePlaybookFavoriteMutationVariables>;
+
+/**
+ * __useUpdatePlaybookFavoriteMutation__
+ *
+ * To run a mutation, you first call `useUpdatePlaybookFavoriteMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdatePlaybookFavoriteMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updatePlaybookFavoriteMutation, { data, loading, error }] = useUpdatePlaybookFavoriteMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      favorite: // value for 'favorite'
+ *   },
+ * });
+ */
+export function useUpdatePlaybookFavoriteMutation(baseOptions?: Apollo.MutationHookOptions<UpdatePlaybookFavoriteMutation, UpdatePlaybookFavoriteMutationVariables>) {
+    const options = {...defaultOptions, ...baseOptions};
+    return Apollo.useMutation<UpdatePlaybookFavoriteMutation, UpdatePlaybookFavoriteMutationVariables>(UpdatePlaybookFavoriteDocument, options);
+}
+export type UpdatePlaybookFavoriteMutationHookResult = ReturnType<typeof useUpdatePlaybookFavoriteMutation>;
+export type UpdatePlaybookFavoriteMutationResult = Apollo.MutationResult<UpdatePlaybookFavoriteMutation>;
+export type UpdatePlaybookFavoriteMutationOptions = Apollo.BaseMutationOptions<UpdatePlaybookFavoriteMutation, UpdatePlaybookFavoriteMutationVariables>;
 export const UpdatePlaybookDocument = gql`
     mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)

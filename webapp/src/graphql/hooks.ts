@@ -20,6 +20,7 @@ import {
     useRemovePlaybookMemberMutation,
     useRemoveRunParticipantsMutation,
     useSetRunFavoriteMutation,
+    useUpdatePlaybookFavoriteMutation,
     useUpdatePlaybookMutation,
     useUpdateRunMutation,
     useUpdateRunTaskActionsMutation,
@@ -52,6 +53,22 @@ export const useUpdatePlaybook = (id?: string) => {
     });
     return useCallback((updates: PlaybookUpdates) => {
         return innerUpdatePlaybook({variables: {id: id || '', updates}});
+    }, [id, innerUpdatePlaybook]);
+};
+
+export const useUpdatePlaybookFavorite = (id: string|undefined) => {
+    const [innerUpdatePlaybook] = useUpdatePlaybookFavoriteMutation({
+        refetchQueries: [
+            PlaybookLhsDocument,
+            PlaybookDocument,
+        ],
+    });
+
+    return useCallback((favorite: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdatePlaybook({variables: {id, favorite}});
     }, [id, innerUpdatePlaybook]);
 };
 
