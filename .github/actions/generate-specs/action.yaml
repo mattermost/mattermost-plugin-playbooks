@@ -27,6 +27,6 @@ runs:
         DIRECTORY: ${{ inputs.directory }}
       run: |
         set -e
-        python ${{ github.action_path }}/split-tests.py > output.json
+        go run ${{ github.action_path }}/split-tests.go > output.json
         echo "specs=$(cat output.json)" >> $GITHUB_OUTPUT
       shell: bash
