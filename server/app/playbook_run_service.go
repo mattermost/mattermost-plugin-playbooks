@@ -16,11 +16,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/i18n"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 )
 
 const checklistItemDescriptionCharLimit = 4000
@@ -608,7 +608,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	T := i18n.GetUserTranslations(user.Locale)
+	T := i18n.TranslationFuncByLocal(user.Locale)
 
 	dialog := &model.Dialog{
 		Title: T("app.user.run.add_checklist_item.title"),
@@ -1060,7 +1060,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	}
 
 	user, err := s.api.GetUserByID(userID)
-	T := i18n.GetUserTranslations(user.Locale)
+	T := i18n.TranslationFuncByLocal(user.Locale)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
@@ -2429,7 +2429,7 @@ func (s *PlaybookRunServiceImpl) GetSchemeRolesForChannel(channel *model.Channel
 }
 
 func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *PlaybookRun, outstanding int, locale string) *model.Dialog {
-	T := i18n.GetUserTranslations(locale)
+	T := i18n.TranslationFuncByLocal(locale)
 
 	data := map[string]interface{}{
 		"RunName": playbookRun.Name,
@@ -2451,7 +2451,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
 
-	T := i18n.GetUserTranslations(user.Locale)
+	T := i18n.TranslationFuncByLocal(user.Locale)
 
 	state, err := json.Marshal(DialogState{
 		PostID:       postID,
@@ -2517,7 +2517,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 }
 
 func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelNum int, reminderTimer time.Duration, locale string) (*model.Dialog, error) {
-	T := i18n.GetUserTranslations(locale)
+	T := i18n.TranslationFuncByLocal(locale)
 
 	data := map[string]interface{}{
 		"Count": broadcastChannelNum,
@@ -2597,7 +2597,7 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	T := i18n.GetUserTranslations(user.Locale)
+	T := i18n.TranslationFuncByLocal(user.Locale)
 
 	var options []*model.PostActionOptions
 	for _, i := range playbookRuns {
@@ -2896,7 +2896,7 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
-	T := i18n.GetUserTranslations(requesterUser.Locale)
+	T := i18n.TranslationFuncByLocal(requesterUser.Locale)
 	data := map[string]interface{}{
 		"Name": requesterUser.Username,
 	}
@@ -2920,7 +2920,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
-	T := i18n.GetUserTranslations(requesterUser.Locale)
+	T := i18n.TranslationFuncByLocal(requesterUser.Locale)
 	data := map[string]interface{}{
 		"RunName": playbookRun.Name,
 		"RunURL":  GetRunDetailsRelativeURL(playbookRunID),
@@ -3332,7 +3332,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
 	var msg strings.Builder
 
-	T := i18n.GetUserTranslations(locale)
+	T := i18n.TranslationFuncByLocal(locale)
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
@@ -3425,7 +3425,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 }
 
 func buildRunsInProgressMessage(runs []RunLink, locale string) string {
-	T := i18n.GetUserTranslations(locale)
+	T := i18n.TranslationFuncByLocal(locale)
 	total := len(runs)
 
 	msg := "\n"
@@ -3445,7 +3445,7 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 }
 
 func buildRunsOverdueMessage(runs []RunLink, locale string) string {
-	T := i18n.GetUserTranslations(locale)
+	T := i18n.TranslationFuncByLocal(locale)
 	total := len(runs)
 	msg := "\n"
 	msg += "##### " + T("app.user.digest.overdue_status_updates.heading") + "\n"

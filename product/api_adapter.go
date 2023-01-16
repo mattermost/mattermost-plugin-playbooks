@@ -15,11 +15,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/server/i18n"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-server/v6/app/request"
 	"github.com/mattermost/mattermost-server/v6/model"
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
@@ -490,7 +490,7 @@ func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.Co
 	if err != nil {
 		return nil, err
 	}
-	command.T = i18n.GetUserTranslations(user.Locale)
+	command.T = i18n.TranslationFuncByLocal(user.Locale)
 	command.SiteURL = *a.GetConfig().ServiceSettings.SiteURL
 	response, appErr := a.api.commandService.ExecuteCommand(a.ctx, command)
 	return response, normalizeAppErr(appErr)
