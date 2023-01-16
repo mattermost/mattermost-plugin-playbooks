@@ -14,7 +14,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {debounce} from 'lodash';
+import {throttle} from 'lodash';
 
 import {
     RHSContainer,
@@ -37,18 +37,17 @@ import {
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
-import {usePlaybookRunViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useParticipateInRun} from 'src/hooks';
+import {useParticipateInRun, useViewTelemetry} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';
 import RHSRunParticipants from './rhs_run_participants';
 import RHSRunParticipantsTitle from './rhs_run_participants_title';
 
-const toastDebounce = 2000;
+const toastDuration = 4500;
 
 interface Props {
     runID: string
@@ -63,7 +62,7 @@ const RHSRunDetails = (props: Props) => {
 
     const [playbookRun] = useRun(props.runID);
     const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
-    usePlaybookRunViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
+    useViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 
@@ -96,7 +95,7 @@ const RHSRunDetails = (props: Props) => {
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
-    const displayReadOnlyToast = useMemo(() => debounce(() => {
+    const displayReadOnlyToast = useMemo(() => throttle(() => {
         let toastID = -1;
         const showConfirm = () => {
             removeToast(toastID);
@@ -108,8 +107,9 @@ const RHSRunDetails = (props: Props) => {
             buttonName: formatMessage({defaultMessage: 'Participate'}),
             buttonCallback: showConfirm,
             iconName: 'account-plus-outline',
+            duration: toastDuration,
         });
-    }, toastDebounce, {leading: true, trailing: false}), []);
+    }, toastDuration, {leading: true, trailing: false}), []);
 
     const rhsContainerPunchout = useMeasurePunchouts(
         ['rhsContainer'],

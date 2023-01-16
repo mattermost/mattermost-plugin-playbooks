@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import {useUpdateEffect} from 'react-use';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -39,6 +40,30 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
     const [isValid, setIsValid] = useState<boolean>(true);
     const updateRun = useUpdateRun(playbookRun.id);
+
+    useUpdateEffect(() => {
+        setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
+    }, [playbookRun.status_update_broadcast_channels_enabled]);
+
+    useUpdateEffect(() => {
+        setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
+    }, [playbookRun.status_update_broadcast_webhooks_enabled]);
+
+    useUpdateEffect(() => {
+        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
+    }, [playbookRun.create_channel_member_on_new_participant]);
+
+    useUpdateEffect(() => {
+        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
+    }, [playbookRun.remove_channel_member_on_removed_participant]);
+
+    useUpdateEffect(() => {
+        setChannelIds(playbookRun.broadcast_channel_ids);
+    }, [playbookRun.broadcast_channel_ids]);
+
+    useUpdateEffect(() => {
+        setWebhooks(playbookRun.webhook_on_status_update_urls);
+    }, [playbookRun.webhook_on_status_update_urls]);
 
     const onHide = () => {
         dispatch(hideRunActionsModal());

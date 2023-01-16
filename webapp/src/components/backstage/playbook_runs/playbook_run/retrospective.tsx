@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import debounce from 'debounce';
@@ -39,6 +39,19 @@ const Retrospective = ({
     const [showConfirmation, setShowConfirmation] = useState(false);
     const childRef = useRef<any>();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
+
+    const onMetricsChange = useMemo(
+        () => debounce((metrics_data: RunMetricData[]) => {
+            updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
+        }, DEBOUNCE_2_SECS),
+        [playbookRun.id, playbookRun.retrospective],
+    );
+    const onReportChange = useMemo(
+        () => debounce((retrospective: string) => {
+            updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
+        }, DEBOUNCE_2_SECS),
+        [playbookRun.id, playbookRun.metrics_data],
+    );
 
     if (!playbookRun.retrospective_enabled) {
         return null;
@@ -112,13 +125,6 @@ const Retrospective = ({
             </>
         );
     };
-
-    const onMetricsChange = debounce((metrics_data: RunMetricData[]) => {
-        updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
-    }, DEBOUNCE_2_SECS);
-    const onReportChange = debounce((retrospective: string) => {
-        updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
-    }, DEBOUNCE_2_SECS);
 
     return (
         <Container

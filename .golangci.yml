@@ -12,7 +12,6 @@ run:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - errcheck
     - gofmt
     - goimports
@@ -25,9 +24,6 @@ linters:
     - staticcheck
     - unconvert
     - unused
-    - varcheck
-    # disabled until is compatible with go1.18 https://github.com/golangci/golangci-lint/issues/2649
-    # - structcheck
 
 linters-settings:
   gofmt:
