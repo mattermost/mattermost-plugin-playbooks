@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
     Redirect,
     Route,
@@ -36,9 +36,17 @@ const useInitTeamRoutingLogic = () => {
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
 
+    const history = useHistory();
+
+    useEffect(() => {
+        if (currentUserId?.length > 0 && teams.length === 0) {
+            history.push('/select_team');
+        }
+    });
+
     // ? consider moving to multi-product or plugin infrastructure
     // see https://github.com/mattermost/mattermost-webapp/blob/25043262dbab1fc2f9ac6972b1f1b0b1f9c20ae0/stores/local_storage_store.jsx#L9
-    const [prevTeamId, setPrevTeamId] = useLocalStorage(`user_prev_team:${currentUserId}`, teams[0].id, {raw: true});
+    const [prevTeamId, setPrevTeamId] = useLocalStorage(`user_prev_team:${currentUserId}`, teams[0]?.id, {raw: true});
 
     /**
      * * These routes will select the proper team they belong too.
