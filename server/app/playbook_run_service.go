@@ -128,15 +128,15 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	return s.store.GetPlaybookRuns(requesterInfo, options)
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID, siteURL string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
 		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
-		GetPlaybookDetailsRelativeURL(playbookID),
+		getPlaybookDetailsURL(siteURL, playbookID),
 	), nil
 }
 
@@ -217,6 +217,12 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot create playbook run, please set siteURL")
+		return nil, errors.New("siteURL not set")
+	}
+
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -240,8 +246,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.ChannelID == "" {
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
-			overviewURL := GetRunDetailsRelativeURL(playbookRun.ID)
-			playbookURL := GetPlaybookDetailsRelativeURL(pb.ID)
+			overviewURL := getRunDetailsURL(*siteURL, playbookRun.ID)
+			playbookURL := getPlaybookDetailsURL(*siteURL, pb.ID)
 			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 				pb.Title, playbookURL, overviewURL)
 		}
@@ -391,7 +397,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
-			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
+			playbookRun.Name, getRunDetailsURL(*siteURL, playbookRun.ID), reporter.Username)
 
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
 			return nil, errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
@@ -400,7 +406,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	if pb != nil {
 		var messageTemplate string
-		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, reporter)
+		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, *siteURL, playbookRun, reporter)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
@@ -910,32 +916,32 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
+func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, siteURL, userName string) string {
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_finished_dm&telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s%s)\n",
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		telemetryString,
 	)
 
 	return announcementMsg
 }
 
-func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
+func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, siteURL, userName string, status string) string {
 	telemetryString := fmt.Sprintf("?telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
 		"### Run status update %s : [%s](%s%s)\n",
 		status,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
@@ -943,7 +949,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 		userName,
 		status,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		telemetryString,
 	)
 
@@ -952,6 +958,12 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot send finish playbook run, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -973,7 +985,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, getRunDetailsURL(*siteURL, playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
@@ -987,7 +999,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
-	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
+	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, *siteURL, user.Username)
 	err = s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 	if err != nil {
 		logger.WithError(err).Error("failed to dm post to run followers")
@@ -1050,6 +1062,11 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 }
 
 func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot toggle status updates, please set siteURL")
+		return errors.New("siteURL not set")
+	}
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
@@ -1079,7 +1096,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 
 	data := map[string]interface{}{
 		"RunName":  playbookRunToModify.Name,
-		"RunURL":   GetRunDetailsRelativeURL(playbookRunID),
+		"RunURL":   getRunDetailsURL(*siteURL, playbookRunID),
 		"Username": user.Username,
 	}
 
@@ -1101,7 +1118,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
-	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
+	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, *siteURL, user.Username, statusUpdate)
 	if err := s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID); err != nil {
 		logger.WithError(err).Error("failed to dm post toggle-run-status-updates to run followers")
 	}
@@ -1143,6 +1160,12 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 
 // RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot restore playbook run, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToRestore, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1164,7 +1187,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
+	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, getRunDetailsURL(*siteURL, playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
@@ -1358,6 +1381,12 @@ func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
 // ChangeOwner processes a request from userID to change the owner for playbookRunID
 // to ownerID. Changing to the same ownerID is a no-op.
 func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID string) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot change owner, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err
@@ -1395,7 +1424,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
-			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
+			subjectUser.Username, playbookRunToModify.Name, getRunDetailsURL(*siteURL, playbookRunToModify.ID),
 			oldOwner.Username, newOwner.Username)
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in ChangeOwner")
@@ -1501,6 +1530,12 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 // SetAssignee sets the assignee for the specified checklist item
 // Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot set assignee, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1569,7 +1604,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
-		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, getRunDetailsURL(*siteURL, playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
@@ -2460,6 +2495,12 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot open new playbook run dialog, please set siteURL")
+		return nil, errors.New("siteURL not set")
+	}
+
 	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -2487,7 +2528,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	newPlaybookMarkdown := ""
 	if !isMobileApp {
 		data := map[string]interface{}{
-			"RunURL": getPlaybooksNewRelativeURL(),
+			"RunURL": getPlaybooksNewURL(*siteURL),
 		}
 		newPlaybookMarkdown = T("app.user.new_run.new_playbook", data)
 	}
@@ -2754,6 +2795,12 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 }
 
 func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID string, retrospective RetrospectiveUpdate) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot publish retrospective, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
@@ -2780,7 +2827,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
+	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, *siteURL, retrospectiveURL)
 	if err != nil {
 		return err
 	}
@@ -2814,7 +2861,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
+func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, siteURL, retrospectiveURL string) (*model.Post, error) {
 	props := map[string]interface{}{
 		"metricsData":       "null",
 		"metricsConfigs":    "null",
@@ -2842,7 +2889,7 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 	}
 
 	return &model.Post{
-		Message:   fmt.Sprintf("@channel Retrospective for [%s](%s) has been published by @%s\n[See the full retrospective](%s)\n", playbookRunToPublish.Name, GetRunDetailsRelativeURL(playbookRunToPublish.ID), publisherUser.Username, retrospectiveURL),
+		Message:   fmt.Sprintf("@channel Retrospective for [%s](%s) has been published by @%s\n[See the full retrospective](%s)\n", playbookRunToPublish.Name, getRunDetailsURL(siteURL, playbookRunToPublish.ID), publisherUser.Username, retrospectiveURL),
 		Type:      "custom_retro",
 		ChannelId: playbookRunToPublish.ChannelID,
 		Props:     props,
@@ -2850,6 +2897,12 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot cancel retrospective, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	playbookRunToCancel, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2872,7 +2925,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to get canceler user")
 	}
 
-	if _, err = s.poster.PostMessage(playbookRunToCancel.ChannelID, "@channel Retrospective for [%s](%s) has been canceled by @%s\n", playbookRunToCancel.Name, GetRunDetailsRelativeURL(playbookRunID), cancelerUser.Username); err != nil {
+	if _, err = s.poster.PostMessage(playbookRunToCancel.ChannelID, "@channel Retrospective for [%s](%s) has been canceled by @%s\n", playbookRunToCancel.Name, getRunDetailsURL(*siteURL, playbookRunID), cancelerUser.Username); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
@@ -2924,6 +2977,12 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		logrus.Error("cannot request update, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2937,7 +2996,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	T := i18n.GetUserTranslations(requesterUser.Locale)
 	data := map[string]interface{}{
 		"RunName": playbookRun.Name,
-		"RunURL":  GetRunDetailsRelativeURL(playbookRunID),
+		"RunURL":  getRunDetailsURL(*siteURL, playbookRunID),
 		"Name":    requesterUser.Username,
 	}
 
