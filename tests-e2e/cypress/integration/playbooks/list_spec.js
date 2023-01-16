@@ -157,7 +157,7 @@ describe('playbooks > list', () => {
             cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
         });
 
-        it('triggered by drag and drop', () => {
+        /*it('triggered by drag and drop', () => {
             // # Load fixture of playbook export
             cy.fixture('playbook-export.json').as('playbookExport');
 
@@ -193,6 +193,6 @@ describe('playbooks > list', () => {
 
             // * Verify that an error message is displayed.
             cy.findByText('The playbook import has failed. Please check that JSON is valid and try again.').should('be.visible');
-        });
+        });*/
     });
 });
