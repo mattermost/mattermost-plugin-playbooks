@@ -89,6 +89,7 @@ func (h *BotHandler) startTrial(c *Context, w http.ResponseWriter, r *http.Reque
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to parse json", err)
+		return
 	}
 	if requestData == nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "missing request data", nil)

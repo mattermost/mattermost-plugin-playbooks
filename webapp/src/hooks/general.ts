@@ -40,7 +40,6 @@ import {
     isCurrentUserAdmin,
     noopSelector,
     selectExperimentalFeatures,
-    selectLinkRunToExistingChannelEnabled,
 } from 'src/selectors';
 import {
     clientFetchPlaybook,
@@ -273,10 +272,6 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
-}
-
-export function useLinkRunToExistingChannelEnabled() {
-    return useSelector(selectLinkRunToExistingChannelEnabled);
 }
 
 // useProfilesInChannel ensures at least the first page of members for the given channel has been
@@ -672,7 +667,7 @@ export const useProxyState = <T>(
         setValue(prop);
     }, [prop]);
 
-    const onChangeDebounced = useCallback(debounce((v) => {
+    const onChangeDebounced = useMemo(() => debounce((v) => {
         check.current = v; // send check
         onChange(v);
     }, wait), [wait, onChange]);

@@ -99,7 +99,6 @@
     "eslint-plugin-unused-imports": "2.0.0",
     "file-loader": "^6.2.0",
     "identity-obj-proxy": "3.0.0",
-    "image-webpack-loader": "^8.0.1",
     "jest": "27.4.7",
     "jest-canvas-mock": "2.3.1",
     "jest-junit": "13.0.0",

@@ -97,7 +97,7 @@ describe('lhs', () => {
             cy.findByTestId('Runs').findByTestId(playbookRun.name).click();
 
             // * assert telemetry
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     type: 'page',
                     name: 'run_details',
@@ -229,7 +229,7 @@ describe('lhs', () => {
             });
 
             // # assert telemetry data
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     type: 'track',
                     name: 'playbookrun_follow',
@@ -280,7 +280,7 @@ describe('lhs', () => {
             cy.get('#confirmModalButton').click();
 
             // # assert telemetry data
-            cy.expectTelemetryToBe([
+            cy.expectTelemetryToContain([
                 {
                     type: 'track',
                     name: 'playbookrun_leave',

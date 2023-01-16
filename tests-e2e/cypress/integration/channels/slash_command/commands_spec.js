@@ -13,7 +13,6 @@ describe('channels > slash command > owner', () => {
     let testUser;
     let testUser2;
     let testPlaybook;
-    let testSysadmin;
     let playbookRunName;
     let playbookRunChannelName;
 
@@ -21,10 +20,6 @@ describe('channels > slash command > owner', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
 
             cy.apiCreateUser().then(({user: user2}) => {
                 testUser2 = user2;
@@ -156,17 +151,10 @@ describe('channels > slash command > owner', () => {
         let playbookRuns;
         let testPrivatePlaybook;
         let testPublicPlaybook;
-        let featureFlagPrevValue;
         let testPublicChannel;
         let channelName;
 
         before(() => {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                    featureFlagPrevValue = prevValue;
-                });
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
@@ -224,17 +212,6 @@ describe('channels > slash command > owner', () => {
             }).then((playbook) => {
                 testPublicPlaybook = playbook;
             });
-        });
-
-        after(() => {
-            if (!featureFlagPrevValue) {
-                cy.apiLogin(testSysadmin).then(() => {
-                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-                });
-            }
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
         });
 
         beforeEach(() => {

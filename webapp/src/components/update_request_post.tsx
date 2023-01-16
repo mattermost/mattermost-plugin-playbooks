@@ -57,7 +57,12 @@ export const UpdateRequestPost = (props: Props) => {
     const makeOption = useMakeOption(Mode.DurationValue);
 
     if (!playbookRun) {
-        return null;
+        return (
+            <StyledPostText
+                text={props.post.message}
+                team={team}
+            />
+        );
     }
 
     const options = [

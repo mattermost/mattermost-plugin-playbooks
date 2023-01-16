@@ -75,11 +75,14 @@ endif
 	cd tests-e2e && npm run fix
 
 
+## Check & install golangci version
+# Pinned version to commit until 10.2 is released since some macos version have problems
+# with the native diff tools used by typecheck (gometalinter problem)
 .PHONY: check-golangci
 check-golangci:
 ifneq ($(HAS_SERVER),)
 	@echo Ckecking golangci-lint
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@8f6de2c65895749d9ced401cde189d80f41617a0
 endif
 
 

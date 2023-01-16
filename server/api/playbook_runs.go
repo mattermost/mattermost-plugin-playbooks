@@ -1091,6 +1091,7 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.Res
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
 			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+		return
 	}
 	if len(playbookRuns) == 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
@@ -1116,6 +1117,7 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(c *Context, w http.Respons
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
 			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+		return
 	}
 	if len(playbookRuns) == 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
@@ -1141,6 +1143,7 @@ func (h *PlaybookRunHandler) getChannelRunsAutocomplete(c *Context, w http.Respo
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
 			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+		return
 	}
 	if len(playbookRuns) == 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
@@ -1166,6 +1169,7 @@ func (h *PlaybookRunHandler) getPlaybookRunsForChannelByUser(c *Context, w http.
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
 			fmt.Sprintf("unable to retrieve runs for channel id %s", channelID), err)
+		return
 	}
 
 	ReturnJSON(w, playbookRuns, http.StatusOK)

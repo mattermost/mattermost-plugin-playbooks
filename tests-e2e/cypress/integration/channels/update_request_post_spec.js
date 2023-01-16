@@ -8,21 +8,35 @@
 
 import * as TIMEOUTS from '../../fixtures/timeouts';
 
-describe('channels > run dialog', () => {
+describe('channels > update request post', () => {
     let testTeam;
-    let testUser;
+    let testParticipant;
+    let testChannelMemberOnly;
     let testPlaybookRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
-            testUser = user;
+            testParticipant = user;
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
+            cy.apiCreateUser().then(({user: channelMemberOnly}) => {
+                testChannelMemberOnly = channelMemberOnly;
+
+                // # Add testChannelMemberOnly to the testTeam
+                cy.apiAddUserToTeam(testTeam.id, testChannelMemberOnly.id);
+
+                // # Login as testChannelMemberOnly
+                cy.apiLogin(testChannelMemberOnly);
+
+                // # Enable threads view
+                cy.apiSaveCRTPreference(testChannelMemberOnly.id, 'on');
+            });
+
+            // # Login as testParticipant
+            cy.apiLogin(testParticipant);
 
             // # Enable threads view
-            cy.apiSaveCRTPreference(testUser.id, 'on');
+            cy.apiSaveCRTPreference(testParticipant.id, 'on');
 
             // # Create a public playbook
             cy.apiCreatePlaybook({
@@ -35,23 +49,21 @@ describe('channels > run dialog', () => {
                     teamId: testTeam.id,
                     playbookId: playbook.id,
                     playbookRunName: 'Test Run',
-                    ownerUserId: testUser.id,
+                    ownerUserId: testParticipant.id,
                 }).then((playbookRun) => {
                     testPlaybookRun = playbookRun;
+
+                    // # Add testChannelMemberOnly to the channel, but not the run.
+                    cy.apiAddUserToChannel(playbookRun.channel_id, testChannelMemberOnly.id);
                 });
             });
         });
     });
 
-    beforeEach(() => {
-        // # Login as testUser
-        cy.apiLogin(testUser);
-    });
-
     describe('displays interactive post', () => {
-        it('in the run channel', () => {
-            // # Navigate to the application
-            cy.visit(`${testTeam.name}/channels/test-run`);
+        beforeEach(() => {
+            // # Login as testUser
+            cy.apiLogin(testParticipant);
 
             // # Post a status update, with a reminder in 1 second.
             cy.apiUpdateStatus({
@@ -62,52 +74,88 @@ describe('channels > run dialog', () => {
 
             // Ensure the status update reminder gets posted
             cy.wait(TIMEOUTS.TWO_SEC);
+        });
 
-            cy.getLastPost().then((element) => {
-                // # Verify the expected message text
-                cy.get(element).contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
+        describe('as a participant', () => {
+            beforeEach(() => {
+                // # Navigate to the application
+                cy.visit(`${testTeam.name}/channels/test-run`);
+            });
 
-                // # Verify interactive message button to post an update
-                cy.get(element).find('button').contains('Post update');
+            it('in the run channel', () => {
+                cy.getLastPost().then((element) => {
+                    // # Verify the expected message text
+                    cy.get(element).contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
+
+                    // # Verify interactive message button to post an update
+                    cy.get(element).find('button').contains('Post update');
+                });
+            });
+
+            it('in threads view', () => {
+                // # Find the update request post and post a reply to make it show up in threads view
+                cy.getLastPostId().then((lastPostId) => {
+                    // Open RHS
+                    cy.clickPostCommentIcon(lastPostId);
+
+                    // Post a reply message
+                    cy.postMessageReplyInRHS('test reply');
+
+                    // # Navigate to the threads view
+                    cy.get('#sidebarItem_threads').click();
+
+                    // # Verify the expected text in the list view
+                    cy.get('.ThreadItem').first().contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
+
+                    // # Click to open details
+                    cy.get('.ThreadItem').first().click();
+
+                    // # Verify post still rendered
+                    cy.get(`#rhsPost_${lastPostId}`).contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
+
+                    // # Verify interactive message button to post an update
+                    cy.get(`#rhsPost_${lastPostId}`).find('button').contains('Post update');
+                });
             });
         });
 
-        it('in threads view', {retries: {runMode: 3}}, () => {
-            // # Navigate to the application
-            cy.visit(`${testTeam.name}/channels/test-run`);
+        describe('as a channel member only', () => {
+            beforeEach(() => {
+                // # Login as testChannelMemberOnly
+                cy.apiLogin(testChannelMemberOnly);
 
-            // # Post a status update, with a reminder in 1 second.
-            cy.apiUpdateStatus({
-                playbookRunId: testPlaybookRun.id,
-                message: 'status update',
-                reminder: 1,
+                // # Navigate to the application
+                cy.visit(`${testTeam.name}/channels/test-run`);
             });
 
-            // Ensure the status update reminder gets posted
-            cy.wait(TIMEOUTS.TWO_SEC);
+            it('in the run channel', () => {
+                cy.getLastPost().then((element) => {
+                    // # Verify the expected message text
+                    cy.get(element).contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
+                });
+            });
 
-            // # Find the update request post and post a reply to make it show up in threads view
-            cy.getLastPostId().then((lastPostId) => {
-                // Open RHS
-                cy.clickPostCommentIcon(lastPostId);
+            it('in threads view', () => {
+                // # Find the update request post and post a reply to make it show up in threads view
+                cy.getLastPostId().then((lastPostId) => {
+                    // Open RHS
+                    cy.clickPostCommentIcon(lastPostId);
 
-                // Post a reply message
-                cy.postMessageReplyInRHS('test reply');
+                    // Post a reply message
+                    cy.postMessageReplyInRHS('test reply');
 
-                // # Navigate to the threads view
-                cy.get('#sidebarItem_threads').click();
+                    // # Navigate to the threads view
+                    cy.get('#sidebarItem_threads').click();
 
-                // # Verify the expected text in the list view
-                cy.get('.ThreadItem').first().contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
+                    // # Verify the expected text in the list view
+                    cy.get('.ThreadItem').first().contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
 
-                // # Click to open details
-                cy.get('.ThreadItem').first().click();
+                    // # Click to open details
+                    cy.get('.ThreadItem').first().click();
 
-                // # Verify post still rendered
-                cy.get(`#rhsPost_${lastPostId}`).contains(`@${testUser.username}, please provide a status update for ${testPlaybookRun.name}.`);
-
-                // # Verify interactive message button to post an update
-                cy.get(`#rhsPost_${lastPostId}`).find('button').contains('Post update');
+                    // # Verify post still rendered
+                    cy.get(`#rhsPost_${lastPostId}`).contains(`@${testParticipant.username}, please provide a status update for ${testPlaybookRun.name}.`);
+                });
             });
         });
     });

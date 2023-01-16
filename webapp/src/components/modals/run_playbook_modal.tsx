@@ -15,7 +15,7 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 
 import {UserProfile} from '@mattermost/types/users';
 
-import {useLinkRunToExistingChannelEnabled, usePlaybook} from 'src/hooks';
+import {usePlaybook} from 'src/hooks';
 import {BaseInput} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -72,7 +72,6 @@ const RunPlaybookModal = ({
     const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const playbookOwner = getFullName(user) || displayUsername(user, teammateNameDisplaySetting);
     const profileUri = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
-    const linkRunToExistingChannelEnabled = useLinkRunToExistingChannelEnabled();
 
     const playbook = usePlaybook(playbookId)[0];
     const [channelMode, setChannelMode] = useState('');
@@ -249,7 +248,7 @@ const RunPlaybookModal = ({
                         }
                     }}
                 />
-                {linkRunToExistingChannelEnabled && channelConfigSection}
+                {channelConfigSection}
             </Body>
         </StyledGenericModal>
     );

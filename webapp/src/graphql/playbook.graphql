@@ -75,6 +75,10 @@ query Playbook($id: String!) {
     }
 }
 
+mutation UpdatePlaybookFavorite($id: String!, $favorite: Boolean!) {
+  updatePlaybookFavorite(id: $id, favorite: $favorite)
+}
+
 mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
   updatePlaybook(id: $id, updates: $updates)
 }

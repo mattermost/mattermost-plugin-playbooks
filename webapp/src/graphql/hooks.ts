@@ -17,6 +17,7 @@ import {
     SetRunFavoriteDocument,
     TaskActionUpdates,
     UpdatePlaybookDocument,
+    UpdatePlaybookFavoriteDocument,
     UpdateRunDocument,
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
@@ -50,6 +51,22 @@ export const useUpdatePlaybook = (id?: string) => {
     });
     return useCallback((updates: PlaybookUpdates) => {
         return innerUpdatePlaybook({variables: {id: id || '', updates}});
+    }, [id, innerUpdatePlaybook]);
+};
+
+export const useUpdatePlaybookFavorite = (id: string|undefined) => {
+    const [innerUpdatePlaybook] = useMutation(UpdatePlaybookFavoriteDocument, {
+        refetchQueries: [
+            PlaybookLhsDocument,
+            PlaybookDocument,
+        ],
+    });
+
+    return useCallback((favorite: boolean) => {
+        if (id === undefined) {
+            return;
+        }
+        innerUpdatePlaybook({variables: {id, favorite}});
     }, [id, innerUpdatePlaybook]);
 };
 
