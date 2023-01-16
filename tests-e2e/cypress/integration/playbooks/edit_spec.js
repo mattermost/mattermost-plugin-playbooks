@@ -13,7 +13,6 @@ describe('playbooks > edit', () => {
     let testUser;
     let testUser2;
     let testUser3;
-    let featureFlagPrevValue;
 
     const openCategorySelector = () => {
         cy.get('.channel-selector__control input').click({force: true});
@@ -31,10 +30,6 @@ describe('playbooks > edit', () => {
                 testSysadmin = sysadmin;
             });
 
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', false).then(({prevValue}) => {
-                featureFlagPrevValue = prevValue;
-            });
-
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
                 testUser2 = payload.user;
@@ -47,14 +42,6 @@ describe('playbooks > edit', () => {
                 cy.apiAddUserToTeam(testTeam.id, payload.user.id);
             });
         });
-    });
-
-    after(() => {
-        if (featureFlagPrevValue) {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-            });
-        }
     });
 
     beforeEach(() => {
@@ -568,7 +555,7 @@ describe('playbooks > edit', () => {
                             .click({force: true});
 
                         // * Verify that the confirmation dialog is closed
-                        cy.get('#confirmModal').should('not.be.visible');
+                        cy.get('#confirmModal').should('not.exist');
 
                         cy.reload();
 
@@ -625,7 +612,7 @@ describe('playbooks > edit', () => {
                             .click({force: true});
 
                         // * Verify that confirmation dialog is closed
-                        cy.get('#confirmModal').should('not.be.visible');
+                        cy.get('#confirmModal').should('not.exist');
 
                         cy.reload();
 
@@ -963,40 +950,13 @@ describe('playbooks > edit', () => {
         });
     };
 
-    describe('actions toggled linkruntoexistingchannelenabled=OFF', () => {
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-        commonActionTests();
-    });
-
-    describe('actions toggled linkruntoexistingchannelenabled=ON', () => {
+    describe('actions toggled', () => {
         let testPlaybook;
 
         before(() => {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                    featureFlagPrevValue = prevValue;
-                });
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
-        });
 
-        after(() => {
-            if (!featureFlagPrevValue) {
-                cy.apiLogin(testSysadmin).then(() => {
-                    cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-                });
-            }
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-
-        beforeEach(() => {
             // # Create a playbook
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,

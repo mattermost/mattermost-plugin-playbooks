@@ -8,32 +8,14 @@
 
 describe('channels rhs > start a run', () => {
     let testTeam;
-    let testSysadmin;
     let testUser;
     let testChannel;
-    let featureFlagPrevValue;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadmin = sysadmin;
-            });
-
-            cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', true).then(({prevValue}) => {
-                featureFlagPrevValue = prevValue;
-            });
         });
-    });
-
-    after(() => {
-        if (!featureFlagPrevValue) {
-            cy.apiLogin(testSysadmin).then(() => {
-                cy.apiEnsureFeatureFlag('linkruntoexistingchannelenabled', featureFlagPrevValue);
-            });
-        }
     });
 
     beforeEach(() => {
@@ -113,7 +95,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -128,7 +110,7 @@ describe('channels rhs > start a run', () => {
                             hasChannelIdChanged: false,
                             hasPublicChanged: false,
                         }}
-                    ]);
+                    ], {waitForCalls: 2});
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
@@ -191,7 +173,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -266,7 +248,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -343,7 +325,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -420,7 +402,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
@@ -492,7 +474,7 @@ describe('channels rhs > start a run', () => {
                     });
 
                     // * Assert telemetry data
-                    cy.expectTelemetryToBe([{
+                    cy.expectTelemetryToContain([{
                         name: 'playbookrun_create',
                         type: 'track',
                         properties: {
