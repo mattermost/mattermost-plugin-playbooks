@@ -30,30 +30,30 @@ func newSpecs(directory string, searchPath string, parallelism int) *Specs {
 func (s *Specs) findFiles() {
 	fileSystem := os.DirFS(filepath.Join(s.directory, s.searchPath))
 
-	fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		// Find all files matching _spec.js
-		r, _ := regexp.Compile(".*_spec.(js|ts)$")
-		if err != nil {
-			return err
-		}
+		// Find all files matching _spec.(js|ts)
+		r := regexp.MustCompile(".*_spec.(js|ts)$")
 		if r.MatchString(path) {
 			s.rawFiles = append(s.rawFiles, filepath.Join(s.searchPath, path))
 		}
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Specs) generateSplits() {
 	// Split to chunks based on the parallelism provided
-	chunkSize := math.Ceil(float64(len(s.rawFiles)) / float64(s.parallelism))
+	chunkSize := int(math.Ceil(float64(len(s.rawFiles)) / float64(s.parallelism)))
 
 	// We can figure out a more sophisticated way to split the tests
 	// We can use metadata in order to group them manually
-	for i := 0; i <= len(s.rawFiles); i += int(chunkSize) {
-		end := i + int(chunkSize)
+	for i := 0; i <= len(s.rawFiles); i += chunkSize {
+		end := i + chunkSize
 		if end > len(s.rawFiles) {
 			end = len(s.rawFiles)
 		}
@@ -68,7 +68,7 @@ func (s *Specs) generateSplits() {
 }
 
 func (s *Specs) dumpSplits() {
-// Dump json format for GitHub actions
+	// Dump json format for GitHub actions
 	b, err := json.Marshal(s.groupedFiles)
 	if err != nil {
 		panic(err)
