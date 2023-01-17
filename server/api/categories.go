@@ -294,6 +294,7 @@ func (h *CategoryHandler) getRunsCategory(teamID, userID string) (app.Category, 
 			TeamID:                  teamID,
 			ParticipantOrFollowerID: userID,
 			Statuses:                []string{app.StatusInProgress},
+			Types:                   []string{app.RunTypePlaybook}, // only playbook runs can be viewed in Playbook product
 			Page:                    0,
 			PerPage:                 maxItemsInRunsAndPlaybooksCategory,
 		},
