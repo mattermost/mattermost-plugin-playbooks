@@ -127,7 +127,7 @@ const Value = ({metricValue, metricType, editable}: ValueProps) => {
         );
     }
 
-    const valueString = metricType === MetricType.Duration ? formatDuration(Duration.fromMillis(metricValue)) : String(metricValue);
+    const valueString = metricType === MetricType.MetricDuration ? formatDuration(Duration.fromMillis(metricValue)) : String(metricValue);
 
     return (
         <ValueContainer>{valueString}</ValueContainer>

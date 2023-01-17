@@ -5,12 +5,10 @@ import React, {useRef} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-
 import {CheckAllIcon, OpenInNewIcon, SyncIcon} from '@mattermost/compass-icons/components';
 
-import {SubtlePrimaryButton} from 'src/components/assets/buttons';
-
 import {DraftPlaybookWithChecklist} from 'src/types/playbook';
+import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 import {PillBox} from 'src/components/widgets/pill';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 

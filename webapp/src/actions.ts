@@ -9,7 +9,6 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
-import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
@@ -116,17 +115,6 @@ export function openUpdateRunChannelModal(playbookRunId: string, teamId: string,
         teamId,
         onSubmit,
     }));
-}
-
-export function openPlaybookRunModal(playbookId: string, defaultOwnerId: string | null, description: string, teamId: string, teamName: string, refreshLHS?: () => void) {
-    return modals.openModal(makePlaybookRunModalDefinition(
-        playbookId,
-        defaultOwnerId,
-        description,
-        teamId,
-        teamName,
-        refreshLHS
-    ));
 }
 
 type newRunModalProps = {

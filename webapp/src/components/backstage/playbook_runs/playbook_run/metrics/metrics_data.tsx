@@ -66,7 +66,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
                 errors[index] = errorEmptyValue;
             }
             if (!isMetricValueValid(metricsConfigs[index].type, value)) {
-                errors[index] = metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
+                errors[index] = metricsConfigs[index].type === MetricType.MetricDuration ? errorDuration : errorCurrencyInteger;
             }
         });
         return errors;
@@ -108,9 +108,9 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
                 metricsConfigs.map((mc, idx) => {
                     let placeholder = formatMessage({defaultMessage: ' Add value'});
                     let inputIcon = <DollarSign sizePx={18}/>;
-                    if (mc.type === MetricType.Integer) {
+                    if (mc.type === MetricType.MetricInteger) {
                         inputIcon = <PoundSign sizePx={18}/>;
-                    } else if (mc.type === MetricType.Duration) {
+                    } else if (mc.type === MetricType.MetricDuration) {
                         placeholder = formatMessage({defaultMessage: ' Add value (in dd:hh:mm)'});
                         inputIcon = <ClockOutline sizePx={18}/>;
                     }
