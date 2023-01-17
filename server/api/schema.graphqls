@@ -19,6 +19,7 @@ type Query {
 		channelID: String = "",
 		first: Int,
 		after: String,
+		types: [String!] = [],
 	): RunConnection!
 }
 
@@ -271,6 +272,8 @@ type Run {
 	followers: [String!]!
 
 	progress: Float!
+
+	Type: String!
 }
 
 type RunConnection {

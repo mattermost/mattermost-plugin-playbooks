@@ -24,7 +24,7 @@ export const PlaybooksCategoryName = 'playbooksCategory';
 
 export const playbookLHSQueryDocument = graphql(/* GraphQL */`
     query PlaybookLHS($userID: String!, $teamID: String!) {
-        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
+        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"], types: ["playbook"]){
             edges {
                 node {
                     id
