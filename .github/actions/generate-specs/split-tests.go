@@ -35,7 +35,7 @@ func (s *Specs) findFiles() {
 			return err
 		}
 		// Find all files matching _spec.js
-		r, _ := regexp.Compile(".*_spec.js$")
+		r, _ := regexp.Compile(".*_spec.(js|ts)$")
 		if err != nil {
 			return err
 		}
@@ -50,7 +50,7 @@ func (s *Specs) generateSplits() {
 	// Split to chunks based on the parallelism provided
 	chunkSize := math.Ceil(float64(len(s.rawFiles)) / float64(s.parallelism))
 
-	// We can figure out a more sofisticated way to split the tests
+	// We can figure out a more sophisticated way to split the tests
 	// We can use metadata in order to group them manually
 	for i := 0; i <= len(s.rawFiles); i += int(chunkSize) {
 		end := i + int(chunkSize)
@@ -68,8 +68,11 @@ func (s *Specs) generateSplits() {
 }
 
 func (s *Specs) dumpSplits() {
-	// Dump jaon format for Github actions
-	b, _ := json.Marshal(s.groupedFiles)
+// Dump json format for GitHub actions
+	b, err := json.Marshal(s.groupedFiles)
+	if err != nil {
+		panic(err)
+	}
 	os.Stdout.Write(b)
 }
 
