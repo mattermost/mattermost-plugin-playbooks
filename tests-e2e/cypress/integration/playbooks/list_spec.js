@@ -138,29 +138,26 @@ describe('playbooks > list', () => {
     });
 
     describe('can import playbook', () => {
-        it('triggered by using button/input', () => {
-            // # Load fixture of playbook export
-            cy.fixture('playbook-export.json').as('playbookExport');
+        let validPlaybookExport;
+        let invalidTypePlaybookExport;
 
-            // # Open the product
-            cy.visit('/playbooks');
-
-            // # Switch to Playbooks
-            cy.findByTestId('playbooksLHSButton').click();
-
-            cy.findByTestId('titlePlaybook').within(() => {
-                // # Select loaded fixture for upload
-                cy.findByTestId('playbook-import-input').selectFile('@playbookExport', {force: true});
-            });
-
-            // * Verify that a new playbook was created.
-            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        const bufferToCypressFile = (fileName, fileData, fileType) => ({
+            fileName,
+            contents: fileData,
+            mimeType: fileType,
         });
 
-        /*it('triggered by drag and drop', () => {
-            // # Load fixture of playbook export
-            cy.fixture('playbook-export.json').as('playbookExport');
+        before(() => {
+            // # Load fixtures and convert to File
+            cy.fixture('playbook-export.json', null).then((buffer) => {
+                validPlaybookExport = bufferToCypressFile('export.json', buffer, 'application/json');
+            });
+            cy.fixture('mp3-audio-file.mp3', null).then((buffer) => {
+                invalidTypePlaybookExport = bufferToCypressFile('audio.mp3', buffer, 'audio/mpeg');
+            });
+        });
 
+        it('triggered by drag and drop', () => {
             // # Open the product
             cy.visit('/playbooks');
 
@@ -168,7 +165,7 @@ describe('playbooks > list', () => {
             cy.findByTestId('playbooksLHSButton').click();
 
             // # Drop loaded fixture onto playbook list
-            cy.findByTestId('playbook-list-scroll-container').selectFile('@playbookExport', {
+            cy.findByTestId('playbook-list-scroll-container').selectFile(validPlaybookExport, {
                 action: 'drag-drop'
             });
 
@@ -176,10 +173,7 @@ describe('playbooks > list', () => {
             cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
         });
 
-        it('fails to import invalid file type', () => {
-            // # Load fixture of playbook export
-            cy.fixture('mp3-audio-file.mp3').as('playbookExport');
-
+        it('triggered by using button/input', () => {
             // # Open the product
             cy.visit('/playbooks');
 
@@ -188,11 +182,27 @@ describe('playbooks > list', () => {
 
             cy.findByTestId('titlePlaybook').within(() => {
                 // # Select loaded fixture for upload
-                cy.findByTestId('playbook-import-input').selectFile('@playbookExport', {force: true});
+                cy.findByTestId('playbook-import-input').selectFile(validPlaybookExport, {force: true});
+            });
+
+            // * Verify that a new playbook was created.
+            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        });
+
+        it('fails to import invalid file type', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Select loaded fixture for upload
+                cy.findByTestId('playbook-import-input').selectFile(invalidTypePlaybookExport, {force: true});
             });
 
             // * Verify that an error message is displayed.
-            cy.findByText('The playbook import has failed. Please check that JSON is valid and try again.').should('be.visible');
-        });*/
+            cy.findByText('The file must be a valid JSON playbook template.').should('be.visible');
+        });
     });
 });
