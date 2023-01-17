@@ -247,14 +247,14 @@ export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybo
 
 export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
-        method: 'delete',
+        method: 'DELETE',
     });
     return data;
 }
 
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
-        method: 'put',
+        method: 'PUT',
     });
     return data;
 }
@@ -340,13 +340,6 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
     }
 }
 
-export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
-        method: 'delete',
-        body: '',
-    });
-}
-
 export async function clientDuplicateChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/duplicate`, {
         method: 'post',
@@ -420,12 +413,6 @@ export async function clientAddChecklist(playbookRunID: string, checklist: Check
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
         JSON.stringify(checklist),
     );
-
-    return data;
-}
-
-export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
-    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
 
     return data;
 }
@@ -539,13 +526,6 @@ export async function telemetryView(name: TelemetryViewTarget, properties: {[key
     });
 }
 
-export async function setGlobalSettings(settings: GlobalSettings) {
-    await doFetchWithoutResponse(`${apiUrl}/settings`, {
-        method: 'PUT',
-        body: JSON.stringify(settings),
-    });
-}
-
 export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     const data = await doGet(`${apiUrl}/settings`);
     if (!data) {
@@ -618,22 +598,6 @@ export const postMessageToAdmins = async (messageType: AdminNotificationType) =>
     }
 };
 
-export const promptForFeedback = async () => {
-    try {
-        const response = await doPost(`${apiUrl}/bot/prompt-for-feedback`);
-        return {data: response};
-    } catch (e) {
-        return {error: e.message};
-    }
-};
-
-export const changeChannelName = async (channelId: string, newName: string) => {
-    await doFetchWithoutResponse(`${basePath}/api/v4/channels/${channelId}/patch`, {
-        method: 'PUT',
-        body: JSON.stringify({display_name: newName}),
-    });
-};
-
 export const notifyConnect = async () => {
     await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
         method: 'GET',
@@ -666,15 +630,6 @@ export const autoUnfollowPlaybook = async (playbookId: string, userId: string) =
         method: 'DELETE',
     });
 };
-
-export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
-    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
-    if (!data) {
-        return false;
-    }
-
-    return data as boolean;
-}
 
 export async function clientFetchPlaybookFollowers(playbookId: string): Promise<string[]> {
     const data = await doGet<string[]>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
@@ -766,15 +721,6 @@ export const doGet = async <TData = any>(url: string) => {
 export const doPost = async <TData = any>(url: string, body = {}) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'POST',
-        body,
-    });
-
-    return data;
-};
-
-export const doDelete = async <TData = any>(url: string, body = {}) => {
-    const {data} = await doFetchWithResponse<TData>(url, {
-        method: 'DELETE',
         body,
     });
 

@@ -181,5 +181,4 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
     return {input, value};
 };
 
-export default DateTimeInput;
 export {Mode};

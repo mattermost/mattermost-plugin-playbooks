@@ -60,9 +60,6 @@ type Poster interface {
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
 
-	// PromptForFeedback sends a DM as the feedbackbot to the given user, prompting for product feedback.
-	PromptForFeedback(userID string) error
-
 	// IsFromPoster returns whether the provided post was sent by this poster
 	IsFromPoster(post *model.Post) bool
 }
