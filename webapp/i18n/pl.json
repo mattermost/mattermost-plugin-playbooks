@@ -819,5 +819,10 @@
     "IE2BzH": "Istnieją użytkownicy, którzy są wstępnie przypisani do jednego lub więcej zadań. Wyłączenie zaproszeń wyczyści <strong>wszystkie wstępnie przypisane zadania</strong>.{br}{br}Czy na pewno chcesz wyłączyć zaproszenia?",
     "DQn9Uj": "Użytkownik <i>{name}</i> jest wstępnie przypisany do jednego lub więcej zadań. Brak automatycznego zapraszania tego użytkownika spowoduje usunięcie jego wstępnych przydziałów.{br}{br}Czy na pewno chcesz przestać zapraszać tego użytkownika jako członka uruchomienia?",
     "9w0mDI": "Potwierdzenie usunięcia wstępnie przydzielonego członka",
-    "mILd++": "Nazwa uruchomienia nie powinna przekraczać {maxLength} znaków"
+    "mILd++": "Nazwa uruchomienia nie powinna przekraczać {maxLength} znaków",
+    "uYrkxy": "Plik musi być poprawnym szablonem playbooka JSON.",
+    "m4vqJl": "Pliki",
+    "Zbk+OU": "Rozmiar pliku przekracza limit 5MB.",
+    "MieztS": "Upuść plik eksportu playbooka, aby go zaimportować.",
+    "HGSVzc": "Nie można importować wielu plików jednocześnie."
 }
