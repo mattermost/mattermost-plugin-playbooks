@@ -396,6 +396,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 due_date: dueDate,
                                 assignee_id: assigneeID,
                                 task_actions: taskActions,
+                                state_modified: 0,
+                                assignee_modified: 0,
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);

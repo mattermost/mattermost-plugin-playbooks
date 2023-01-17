@@ -11,7 +11,7 @@ export const metricToString = (target: number | null | undefined, type: MetricTy
         return '';
     }
 
-    if (type === MetricType.Integer || type === MetricType.Currency) {
+    if (type === MetricType.MetricInteger || type === MetricType.MetricCurrency) {
         return target.toString();
     }
 
@@ -31,7 +31,7 @@ export const stringToMetric = (target: string, type: MetricType) => {
         return null;
     }
 
-    if (type === MetricType.Integer || type === MetricType.Currency) {
+    if (type === MetricType.MetricInteger || type === MetricType.MetricCurrency) {
         return parseInt(target, 10);
     }
 
@@ -45,7 +45,7 @@ export const stringToMetric = (target: string, type: MetricType) => {
 };
 
 export const isMetricValueValid = (type: MetricType, value: string) => {
-    if (type === MetricType.Duration) {
+    if (type === MetricType.MetricDuration) {
         const regex = /(^$|^\d{1,2}:\d{1,2}:\d{1,2}$)/;
         if (!regex.test(value)) {
             return false;

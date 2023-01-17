@@ -29,12 +29,13 @@ export const ApolloWrapper = (props: ApolloWrapperProps) => {
     );
 };
 
-export function makeGraphqlClient() {
+export function makeGraphqlClient(isDevelopment: boolean) {
     const graphqlFetch = (_: RequestInfo, options: any) => {
         return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
     };
     const graphqlClient = new ApolloClient({
         link: new HttpLink({fetch: graphqlFetch}),
+        connectToDevTools: isDevelopment,
         cache: new InMemoryCache({
             typePolicies: {
                 Query: {

@@ -5,19 +5,16 @@ import React from 'react';
 import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
-
 import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
-
 import {FormattedMessage} from 'react-intl';
-
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
-
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
@@ -303,7 +300,8 @@ export default class Plugin {
         Client4.setUrl(siteUrl);
 
         // Setup our graphql client
-        const graphqlClient = makeGraphqlClient();
+        const isDev = isConfiguredForDevelopment(store.getState());
+        const graphqlClient = makeGraphqlClient(isDev);
 
         // Store graphql client for bad modals.
         setPlaybooksGraphQLClient(graphqlClient);

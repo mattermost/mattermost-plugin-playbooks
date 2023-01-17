@@ -160,13 +160,13 @@ function getMetricInputIcon(metricType: string, colorName: string) {
             sizePx={24}
             color={colorName}
         />);
-    if (metricType === MetricType.Integer) {
+    if (metricType === MetricType.MetricInteger) {
         inputIcon = (
             <PoundSign
                 sizePx={24}
                 color={colorName}
             />);
-    } else if (metricType === MetricType.Duration) {
+    } else if (metricType === MetricType.MetricDuration) {
         inputIcon = (
             <ClockOutline
                 sizePx={24}
