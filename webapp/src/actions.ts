@@ -9,7 +9,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
-import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
+import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
@@ -124,8 +124,8 @@ type newRunModalProps = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 };
 
-export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
-    return modals.openModal(makePlaybookRunNewModalDefinition(
+export function openPlaybookRunModal(dialogProps: newRunModalProps) {
+    return modals.openModal(makePlaybookRunModalDefinition(
         dialogProps.playbookId,
         dialogProps.triggerChannelId,
         dialogProps.teamId,
