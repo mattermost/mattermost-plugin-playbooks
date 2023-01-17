@@ -11,7 +11,7 @@ import {DraftPlaybookWithChecklist, Playbook, emptyPlaybook} from 'src/types/pla
 import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
-import {PlaybookLhsDocument} from 'src/graphql/generated_types';
+import {PlaybookLhsDocument} from 'src/graphql/generated/graphql';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 type PlaybooksRoutingOptions<T> = {

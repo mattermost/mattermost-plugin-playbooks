@@ -4,9 +4,11 @@ import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
+import {useQuery} from '@apollo/client';
+
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
-import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
+import {graphql} from 'src/graphql/generated';
 
 import {pluginUrl} from 'src/browser_routing';
 
@@ -20,9 +22,33 @@ import {ItemContainer, StyledNavLink} from './item';
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
 
+export const playbookLHSQueryDocument = graphql(/* GraphQL */`
+    query PlaybookLHS($userID: String!, $teamID: String!) {
+        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
+            edges {
+                node {
+                    id
+                    name
+                    isFavorite
+                    playbookID
+                    ownerUserID
+                    participantIDs
+                    followers
+                }
+            }
+        }
+        playbooks (teamID: $teamID, withMembershipOnly: true) {
+            id
+            title
+            isFavorite
+            public
+        }
+    }
+`);
+
 const useLHSData = (teamID: string) => {
     const normalizeCategoryName = useReservedCategoryTitleMapper();
-    const {data, error} = usePlaybookLhsQuery({
+    const {data, error} = useQuery(playbookLHSQueryDocument, {
         variables: {
             userID: 'me',
             teamID,
@@ -84,7 +110,7 @@ const useLHSData = (teamID: string) => {
                     isFavorite={run.isFavorite}
                     ownerUserId={run.ownerUserID}
                     participantIDs={run.participantIDs}
-                    followerIDs={run.metadata.followers}
+                    followerIDs={run.followers}
                     hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbookID)}
                 />),
             isFavorite: run.isFavorite,

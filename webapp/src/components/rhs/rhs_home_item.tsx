@@ -6,20 +6,17 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-
 import {
     CheckAllIcon,
     OpenInNewIcon,
     PlayOutlineIcon,
     SyncIcon,
 } from '@mattermost/compass-icons/components';
-
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
-
 import {DraftPlaybookWithChecklist, Playbook} from 'src/types/playbook';
 import {useHasPlaybookPermission, usePlaybooksRouting} from 'src/hooks';
 import {openPlaybookRunNewModal} from 'src/actions';

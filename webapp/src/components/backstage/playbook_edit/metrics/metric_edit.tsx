@@ -53,7 +53,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
 
         // Is the target valid?
         if (!isMetricValueValid(metric.type, curTargetString)) {
-            setTargetError(metric.type === MetricType.Duration ? errorTargetDuration : errorTargetCurrencyInteger);
+            setTargetError(metric.type === MetricType.MetricDuration ? errorTargetDuration : errorTargetCurrencyInteger);
             return false;
         }
 
@@ -80,7 +80,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
             tagName={React.Fragment}
         />
     );
-    if (metric.type === MetricType.Integer) {
+    if (metric.type === MetricType.MetricInteger) {
         inputIcon = <PoundSign sizePx={18}/>;
         typeTitle = (
             <FormattedMessage
@@ -89,7 +89,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 tagName={React.Fragment}
             />
         );
-    } else if (metric.type === MetricType.Duration) {
+    } else if (metric.type === MetricType.MetricDuration) {
         inputIcon = <ClockOutline sizePx={18}/>;
         typeTitle = (
             <FormattedMessage
