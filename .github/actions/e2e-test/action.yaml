@@ -89,9 +89,9 @@ runs:
         cd tests-e2e
         npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
-      continue-on-error: true
 
     - name: ci/upload-cypress-test-results
+      if: failure()
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: cypress-test-results
