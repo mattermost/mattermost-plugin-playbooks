@@ -201,6 +201,17 @@ func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID 
 	return err
 }
 
+func (s *PlaybookRunService) RemoveChecklist(ctx context.Context, playbookRunID string, checklistNumber int) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d", playbookRunID, checklistNumber)
+	req, err := s.client.newRequest(http.MethodDelete, createURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID string, checklistNumber int, newTitle string) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/rename", playbookRunID, checklistNumber)
 	req, err := s.client.newRequest(http.MethodPut, createURL, struct{ Title string }{newTitle})
