@@ -65,6 +65,22 @@ jobs:
       - name: ci/check-diff-on-webapp-graphql-generated-files
         run: git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes." && exit 1)
 
+  dist:
+    runs-on: ubuntu-22.04
+    needs:
+      - lint
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          fetch-depth: "0"
+      - name: ci/setup-go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          cache: true
+      - name: ci/ensure-build-on-all-platforms
+        run: make dist
+
   test-MySQL57-Postgres10:
     runs-on: ubuntu-22.04
     needs:

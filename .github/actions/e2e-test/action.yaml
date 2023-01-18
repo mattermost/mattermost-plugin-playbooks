@@ -52,7 +52,7 @@ runs:
         NODE_ENV: development
       run: |
         set -e
-        sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+        sudo apt-get install libgtk2.0-0 libnotify-dev -y
         cd webapp
         npm install --ignore-scripts --no-save
         cd ../tests-e2e
@@ -64,6 +64,7 @@ runs:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
+        MM_SERVICESETTINGS_ENABLEDEVELOPER: "true" ## Build only default since we are testing all arch on lint stage to speed up tests
       run: make deploy CGO_ENABLED=0
       shell: bash
 
@@ -83,7 +84,7 @@ runs:
       run: |
         set -e
         cd tests-e2e
-        xvfb-run --auto-servernum npm run test -- --spec "${{ inputs.SPECS }}"
+        npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
 
     - name: ci/upload-cypress-test-results
