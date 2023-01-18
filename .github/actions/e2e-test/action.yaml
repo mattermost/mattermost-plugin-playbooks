@@ -83,7 +83,7 @@ runs:
       run: |
         set -e
         cd tests-e2e
-        npm run test -- --spec "${{ inputs.SPECS }}"
+        xvfb-run --auto-servernum npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
 
     - name: ci/upload-cypress-test-results
