@@ -22,8 +22,8 @@ interface Props {
 const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
     const {formatMessage} = useIntl();
     const stats = makeCardStats(playbookMetrics, playbookStats, index);
-    const transformFn = playbookMetrics[index].type === MetricType.Duration ? (val: number) => formatDuration(Duration.fromMillis(val)) : (val: number) => val;
-    const valueTransformFn = playbookMetrics[index].type === MetricType.Duration ? (val: number) => formatDuration(Duration.fromMillis(val), 'narrow', 'truncate') : (val: number) => val;
+    const transformFn = playbookMetrics[index].type === MetricType.MetricDuration ? (val: number) => formatDuration(Duration.fromMillis(val)) : (val: number) => val;
+    const valueTransformFn = playbookMetrics[index].type === MetricType.MetricDuration ? (val: number) => formatDuration(Duration.fromMillis(val), 'narrow', 'truncate') : (val: number) => val;
 
     const style = getComputedStyle(document.body);
     const buttonBg = style.getPropertyValue('--button-bg');

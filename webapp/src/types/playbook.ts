@@ -68,11 +68,9 @@ export interface PlaybookWithChecklist extends Playbook {
     webhook_on_creation_enabled: boolean;
 }
 
-export enum MetricType {
-    Duration = 'metric_duration',
-    Currency = 'metric_currency',
-    Integer = 'metric_integer',
-}
+import {MetricType} from 'src/graphql/generated/graphql';
+
+export {MetricType};
 
 export interface Metric {
     id: string;
@@ -120,9 +118,9 @@ export interface ChecklistItem {
     title: string;
     description: string;
     state: ChecklistItemState | string;
-    state_modified?: number;
-    assignee_id?: string;
-    assignee_modified?: number;
+    state_modified: number;
+    assignee_id: string;
+    assignee_modified: number;
     command: string;
     command_last_run: number;
     due_date: number;
@@ -230,6 +228,9 @@ export function emptyChecklistItem(): ChecklistItem {
         command_last_run: 0,
         due_date: 0,
         task_actions: [] as TaskAction[],
+        state_modified: 0,
+        assignee_modified: 0,
+        assignee_id: '',
     };
 }
 
@@ -241,6 +242,9 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state,
     due_date: 0,
     task_actions: [] as TaskAction[],
+    state_modified: 0,
+    assignee_modified: 0,
+    assignee_id: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

@@ -1324,23 +1324,18 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 		return nil, errors.Wrap(err, "can't get owners from the store")
 	}
 
-	// ShowFullName is coming as nil when setting is set to false
-	// TODO: further investigation https://mattermost.atlassian.net/browse/MM-48464
-	var showFullName bool
+	// System admin can see fullname no matter the settings
 	if IsSystemAdmin(requesterInfo.UserID, s.pluginAPI) {
-		showFullName = true
-	} else {
-		cfg := s.pluginAPI.Configuration.GetConfig()
-		if cfg.PrivacySettings.ShowFullName != nil {
-			showFullName = *cfg.PrivacySettings.ShowFullName
-		}
+		return owners, nil
 	}
-
+	// If setting is not nil, means that ShowFullName is true
+	if s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName != nil {
+		return owners, nil
+	}
+	// Remove names otherwise
 	for k, o := range owners {
-		if !showFullName {
-			o.FirstName = ""
-			o.LastName = ""
-		}
+		o.FirstName = ""
+		o.LastName = ""
 		owners[k] = o
 	}
 	return owners, nil
@@ -3623,9 +3618,7 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 			}
 			if a.Payload.Enabled {
 				if err := s.ModifyCheckedState(runID, userID, ChecklistItemStateClosed, checklistNum, itemNum); err != nil {
-					if err != nil {
-						return errors.Wrapf(err, "can't mark item as done")
-					}
+					return errors.Wrapf(err, "can't mark item as done")
 				}
 			}
 		}
