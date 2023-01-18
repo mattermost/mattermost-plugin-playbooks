@@ -327,7 +327,6 @@ export type QueryRunsArgs = {
 
 export type Run = {
   __typename?: 'Run';
-  Type: Scalars['String'];
   broadcastChannelIDs: Array<Scalars['String']>;
   channelID: Scalars['String'];
   checklists: Array<Checklist>;
@@ -365,6 +364,7 @@ export type Run = {
   summaryModifiedAt: Scalars['Float'];
   teamID: Scalars['String'];
   timelineEvents: Array<TimelineEvent>;
+  type: Scalars['String'];
   webhookOnStatusUpdateURLs: Array<Scalars['String']>;
 };
 
