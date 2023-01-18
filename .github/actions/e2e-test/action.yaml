@@ -30,7 +30,7 @@ runs:
     - name: ci/restore-postresql
       uses: docker://postgres:10.17
       env:
-        TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
+        TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
       with:
         entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
     - name: ci/upload-licence
