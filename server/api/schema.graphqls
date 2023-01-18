@@ -273,7 +273,7 @@ type Run {
 
 	progress: Float!
 
-	Type: String!
+	type: String!
 }
 
 type RunConnection {
