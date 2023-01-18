@@ -63,7 +63,7 @@ jobs:
       - name: ci/run-make-graphql
         run: make graphql
       - name: ci/check-diff-on-webapp-graphql-generated-files
-        run: git --no-pager diff --exit-code webapp/src/graphql/generated_types.ts || (echo "Please run \"make graphql\" and commit the changes in webapp/src/graphql/generated_types.ts." && exit 1)
+        run: git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes." && exit 1)
 
   test-MySQL57-Postgres10:
     runs-on: ubuntu-22.04
