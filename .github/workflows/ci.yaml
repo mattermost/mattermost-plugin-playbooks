@@ -9,6 +9,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  TERM: xterm
+
 jobs:
   lint:
     runs-on: ubuntu-22.04
@@ -232,18 +235,18 @@ jobs:
         id: generate-specs
         uses: ./.github/actions/generate-specs
         with:
-          parallelism: 15
+          parallelism: 1
           directory: tests-e2e
           search_path: cypress/integration
 
   e2e-cypress-tests-master:
     runs-on: ubuntu-22.04
+    name: e2e-cypress-tests-master-run-${{ matrix.runId }}
     needs:
       - generate-specs
     strategy:
       fail-fast: false
-      matrix:
-        specs: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
+      matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
         image: postgres:10.17
@@ -325,12 +328,12 @@ jobs:
 
   e2e-cypress-tests-cloud:
     runs-on: ubuntu-22.04
+    name: e2e-cypress-tests-cloud-run-${{ matrix.runId }}
     needs:
       - generate-specs
     strategy:
       fail-fast: false
-      matrix:
-        specs: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
+      matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
         image: postgres:10.17

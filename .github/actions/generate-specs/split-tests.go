@@ -16,7 +16,23 @@ type Specs struct {
 	directory    string
 	parallelism  int
 	rawFiles     []string
-	groupedFiles []string
+	groupedFiles []SpecGroup
+}
+
+type SpecGroup struct {
+	RunID string `json:"runId"`
+	Specs string `json:"specs"`
+}
+
+type Output struct {
+	Include []SpecGroup `json:"include"`
+}
+
+func newSpecGroup(runId string, specs string) *SpecGroup {
+	return &SpecGroup{
+		RunID: runId,
+		Specs: specs,
+	}
 }
 
 func newSpecs(directory string, searchPath string, parallelism int) *Specs {
@@ -49,7 +65,7 @@ func (s *Specs) findFiles() {
 func (s *Specs) generateSplits() {
 	// Split to chunks based on the parallelism provided
 	chunkSize := int(math.Ceil(float64(len(s.rawFiles)) / float64(s.parallelism)))
-
+	runNo := 1
 	// We can figure out a more sophisticated way to split the tests
 	// We can use metadata in order to group them manually
 	for i := 0; i <= len(s.rawFiles); i += chunkSize {
@@ -59,17 +75,24 @@ func (s *Specs) generateSplits() {
 		}
 
 		fileGroup := strings.Join(s.rawFiles[i:end], ",")
-		s.groupedFiles = append(s.groupedFiles, fileGroup)
+		specFileGroup := newSpecGroup(strconv.Itoa(runNo), fileGroup)
+		s.groupedFiles = append(s.groupedFiles, *specFileGroup)
+
 		// Break when we reach the end to avoid duplicate groups
 		if end == len(s.rawFiles) {
 			break
 		}
+
+		runNo++
 	}
 }
 
 func (s *Specs) dumpSplits() {
 	// Dump json format for GitHub actions
-	b, err := json.Marshal(s.groupedFiles)
+	o := &Output{
+		Include: s.groupedFiles,
+	}
+	b, err := json.Marshal(o)
 	if err != nil {
 		panic(err)
 	}
