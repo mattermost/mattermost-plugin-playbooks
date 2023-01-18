@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-import {AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {AccountMultiplePlusOutlineIcon, AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import Tooltip from 'src/components/widgets/tooltip';
@@ -25,16 +25,6 @@ const RHSParticipants = (props: Props) => {
     const showParticipants = () => {
         props.setShowParticipants(true);
     };
-
-    const addParticipant = (
-        <LinkAddParticipants
-            to={'#'}
-            onClick={showParticipants}
-        >
-            {formatMessage({defaultMessage: 'Add participant'})}
-            <OpenInNewIcon size={11}/>
-        </LinkAddParticipants>
-    );
 
     const becomeParticipant = (
         <Tooltip
@@ -59,7 +49,15 @@ const RHSParticipants = (props: Props) => {
                     <FormattedMessage defaultMessage='Nobody yet.'/>
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
-                    {props.onParticipate ? null : addParticipant}
+                    {props.onParticipate ? null : (
+                        <LinkAddParticipants
+                            to={'#'}
+                            onClick={showParticipants}
+                        >
+                            {formatMessage({defaultMessage: 'Add participant'})}
+                            <OpenInNewIcon size={11}/>
+                        </LinkAddParticipants>
+                    )}
                 </NoParticipants>
                 {props.onParticipate ? becomeParticipant : null}
             </Container>
@@ -86,7 +84,20 @@ const RHSParticipants = (props: Props) => {
                     sizeInPx={height}
                 />
             </UserRow>
-            {props.onParticipate ? becomeParticipant : addParticipant}
+            {props.onParticipate ? becomeParticipant : (
+                <Tooltip
+                    id={'rhs-add-participant'}
+                    content={formatMessage({defaultMessage: 'Add participant'})}
+                >
+                    <AddParticipantIconButton
+                        onClick={showParticipants}
+                        data-testid={'rhs-add-participant-icon'}
+                        format={'icon'}
+                    >
+                        <AccountMultiplePlusOutlineIcon size={20}/>
+                    </AddParticipantIconButton>
+                </Tooltip>
+            )}
         </Container>
     );
 };
@@ -168,7 +179,7 @@ const UserRow = styled.div`
 export default RHSParticipants;
 
 const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
-    margin-left: 6px;
+    margin-left: 2px;
     padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
     border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
     border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
@@ -191,10 +202,16 @@ const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
     }
 `;
 
+const AddParticipantIconButton = styled(IconWrapper)`
+    border-radius: 4px;
+    border: 0;
+    &:hover {
+        border: 0;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
 const LinkAddParticipants = styled(Link)`
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 11px;
-    line-height: 16px;
     display: inline-flex;
     align-items: center;
     svg {
