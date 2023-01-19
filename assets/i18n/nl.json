@@ -35,5 +35,29 @@
             "one": "Je hebt {{.Count}} uitvoering die een status update nodig hebben:",
             "other": "Je hebt {{.Count}} uitvoeringen die een status update nodig hebben:"
         }
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Samenvatting"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Voeg nieuwe taak toe"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Voeg taak toe"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Naam"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Achterstallige statusupdates"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Kan commando niet uitvoeren."
     }
 ]
