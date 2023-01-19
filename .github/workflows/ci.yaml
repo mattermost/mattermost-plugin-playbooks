@@ -251,7 +251,7 @@ jobs:
         id: generate-specs
         uses: ./.github/actions/generate-specs
         with:
-          parallelism: 15
+          parallelism: 3
           directory: tests-e2e
           search_path: cypress/integration
 
