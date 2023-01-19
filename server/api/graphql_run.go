@@ -142,7 +142,7 @@ func (r *TimelineEventResolver) DeleteAt() float64 {
 	return float64(r.TimelineEvent.DeleteAt)
 }
 
-func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
+func (r *RunResolver) Followers(ctx context.Context) ([]string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
 		return nil, errors.Wrap(err, "can't get metadata")
 	}
 
-	return &MetadataResolver{*metadata}, nil
+	return metadata.Followers, nil
 }
 
 func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
@@ -178,10 +178,6 @@ func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
 		return float64(r.PlaybookRun.CreateAt)
 	}
 	return float64(r.PlaybookRun.TimelineEvents[len(r.PlaybookRun.TimelineEvents)-1].EventAt)
-}
-
-type MetadataResolver struct {
-	app.Metadata
 }
 
 type RunConnectionResolver struct {

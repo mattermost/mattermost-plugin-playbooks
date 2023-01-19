@@ -14,9 +14,15 @@ import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
-import {Checklist, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItemState} from 'src/types/playbook';
 
-const outstandingTasks = (checklists: Checklist[]) => {
+interface ChecklistsSubset {
+    items: {
+        state: string
+    }[]
+}
+
+const outstandingTasks = (checklists: ChecklistsSubset[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
@@ -27,7 +33,8 @@ const outstandingTasks = (checklists: Checklist[]) => {
     }
     return count;
 };
-export const useFinishRunConfirmationMessage = (run: PlaybookRun | null | undefined) => {
+
+export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: ChecklistsSubset[], name: string}>) => {
     const {formatMessage} = useIntl();
     const outstanding = outstandingTasks(run?.checklists || []);
     const values = {
@@ -43,6 +50,7 @@ export const useFinishRunConfirmationMessage = (run: PlaybookRun | null | undefi
     }
     return confirmationMessage;
 };
+
 export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
