@@ -3611,6 +3611,70 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *mo
 	}
 }
 
+// UserHasJoinedChannel is called when userID has joined channelID.
+// If actorID is not blank, userID was invited by actorID
+func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
+	if actorID == "" {
+		actorID = userID
+	}
+	channelChecklists, err := s.getChannelChecklistsForChannelByUser(userID, channelID)
+	if err != nil {
+		logrus.WithError(err).Errorf("failed to get the channel checklists for userID %q and channelID %q", userID, channelID)
+		return
+	}
+
+	// Add userID to participants list of all found channel checklists
+	for _, channelChecklist := range channelChecklists {
+		err = s.AddParticipants(channelChecklist.ID, []string{userID}, actorID, false)
+		if err != nil {
+			logrus.WithError(err).Warnf("failed to add user %q in channel %q to channel checklist %q", userID, channelID, channelChecklist.ID)
+		}
+	}
+}
+
+// UserHasLeftChannel is called when userID has left channelID.
+// If actorID is not blank, userID was removed by actorID
+func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
+	if actorID == "" {
+		actorID = userID
+	}
+	channelChecklists, err := s.getChannelChecklistsForChannelByUser(userID, channelID)
+	if err != nil {
+		logrus.WithError(err).Errorf("failed to get the channel checklists for userID %q and channelID %q", userID, channelID)
+		return
+	}
+
+	// Remove userID from participants list of all found channel checklists
+	for _, channelChecklist := range channelChecklists {
+		err = s.RemoveParticipants(channelChecklist.ID, []string{userID}, actorID)
+		if err != nil {
+			logrus.WithError(err).Warnf("failed to remove user %q in channel %q from channel checklist %q", userID, channelID, channelChecklist.ID)
+		}
+	}
+}
+
+// getChannelChecklistsForChannelByUser get the playbookRuns list associated with this channel and user of the type channel checklist.
+func (s *PlaybookRunServiceImpl) getChannelChecklistsForChannelByUser(userID, channelID string) ([]PlaybookRun, error) {
+	result, err := s.GetPlaybookRuns(
+		RequesterInfo{
+			UserID: userID,
+		},
+		PlaybookRunFilterOptions{
+			ChannelID: channelID,
+			Statuses:  []string{StatusInProgress},
+			Page:      0,
+			PerPage:   1000,
+			Sort:      SortByCreateAt,
+			Direction: DirectionDesc,
+			Types:     []string{RunTypeChannelChecklist},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return result.Items, nil
+}
+
 func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, userID string, ChecklistItemStateClosed string, checklistNum int, itemNum int) error {
 	for _, action := range taskActions {
 		if action.Type == MarkItemAsDoneActionType {

@@ -807,6 +807,14 @@ type PlaybookRunService interface {
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(sessionID string, post *model.Post)
+
+	// UserHasJoinedChannel is called when userID has joined channelID.
+	// If actorID is not blank, userID was invited by actorID.
+	UserHasJoinedChannel(userID, channelID, actorID string)
+
+	// UserHasLeftChannel is called when userID has left channelID.
+	// If actorID is not blank, userID was removed from the channel by actorID.
+	UserHasLeftChannel(userID, channelID, actorID string)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
