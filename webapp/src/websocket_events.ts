@@ -201,12 +201,13 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
 };
 
 export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{ channel_id: string }>) => {
+    return async (msg: WebSocketMessage<{ channel_id: string, prev_viewed_at?: number}>) => {
         const channelId = msg.data.channel_id;
+        const isAlreadyViewed = msg.data.prev_viewed_at === 0;
 
-        // if the user has already viewed the channel,
-        // there's no need to fetch actions again
-        if (hasViewedByChannelID(getState())[channelId]) {
+        // if the user has already viewed the channel, there's no need to fetch actions again
+        // prev_viewed_at is not coming for server 7.7 and below, so we additionally check redux
+        if (!isAlreadyViewed || hasViewedByChannelID(getState())[channelId]) {
             return;
         }
 

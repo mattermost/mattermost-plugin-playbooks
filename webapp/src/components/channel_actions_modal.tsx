@@ -104,10 +104,10 @@ const ChannelActionsModal = () => {
             });
         };
 
-        if (channelID) {
+        if (channelID && show) {
             getActions(channelID);
         }
-    }, [channelID, welcomeMsgInit, categorizationInit, promptInit]);
+    }, [channelID, show, welcomeMsgInit, categorizationInit, promptInit]);
 
     const onHide = () => {
         welcomeMsgReset();
