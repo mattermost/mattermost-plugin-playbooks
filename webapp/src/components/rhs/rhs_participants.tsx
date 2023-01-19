@@ -205,6 +205,8 @@ const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
 const AddParticipantIconButton = styled(IconWrapper)`
     border-radius: 4px;
     border: 0;
+    width: 32px;
+    height: 32px;
     &:hover {
         border: 0;
         background: rgba(var(--center-channel-color-rgb), 0.08);
