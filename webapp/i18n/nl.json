@@ -821,5 +821,10 @@
     "ksG35Q": "Je hebt geen rechten om playbooks aan te maken in deze werkruimte.",
     "k7Nzfi": "Uitnodiging uitschakelen",
     "YKLHXL": "Lopende uitvoeringen bekijken",
-    "mILd++": "De naam van de uitvoering mag niet langer zijn dan {maxLength} tekens"
+    "mILd++": "De naam van de uitvoering mag niet langer zijn dan {maxLength} tekens",
+    "uYrkxy": "Het bestand moet een geldig JSON Playbook sjabloon zijn.",
+    "m4vqJl": "Bestanden",
+    "Zbk+OU": "De bestandsgrootte overschrijdt de limiet van 5MB.",
+    "MieztS": "Sleep een playbook export file om deze te importeren.",
+    "HGSVzc": "Kan geen meerdere bestanden tegelijk importeren."
 }
