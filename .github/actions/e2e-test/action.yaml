@@ -6,9 +6,6 @@ inputs:
   CYPRESS_serverEdition:
     description: The cypress server edition
     required: true
-  SPECS:
-    description: The cypress specs to run
-    required: true
 runs:
   using: "composite"
   steps:
@@ -102,9 +99,10 @@ runs:
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
         CYPRESS_serverEdition: ${{ inputs.CYPRESS_serverEdition }}
         TERM: xterm
+        CYPRESS_API_URL: http://ec2-18-191-58-221.us-east-2.compute.amazonaws.com/director
       run: |
         cd tests-e2e
-        npm run test -- --spec "${{ inputs.SPECS }}"
+        ./node_modules/cy2/bin/cy2 run --parallel --record --key somkey --ci-build-id "${{ github.run_number }}-${{ github.github.run_attempt }}"
       shell: bash
 
     - name: ci/upload-cypress-test-results

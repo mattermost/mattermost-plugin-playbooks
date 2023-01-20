@@ -10,6 +10,7 @@ const cypressPlugins = require('./cypress/plugins/index');
 dns.setDefaultResultOrder('ipv4first');
 
 module.exports = defineConfig({
+    projectId: 'mattermost-plugin-playbooks',
     defaultCommandTimeout: 20000,
     taskTimeout: 20000,
     video: true,

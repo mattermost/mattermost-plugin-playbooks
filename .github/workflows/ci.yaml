@@ -273,31 +273,15 @@ jobs:
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
 
-  generate-specs:
-    runs-on: ubuntu-22.04
-    outputs:
-      specs: ${{ steps.generate-specs.outputs.specs }}
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-
-      - name: ci/generate-specs
-        id: generate-specs
-        uses: ./.github/actions/generate-specs
-        with:
-          parallelism: 3
-          directory: tests-e2e
-          search_path: cypress/integration
-
   e2e-cypress-tests-master:
     runs-on: ubuntu-latest-8-cores
     name: e2e-cypress-tests-master-run-${{ matrix.runId }}
     needs:
       - lint
-      - generate-specs
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
+      matrix:
+        containers: [0, 1, 2]
     services:
       postgres:
         image: postgres:10.17
@@ -383,10 +367,10 @@ jobs:
     name: e2e-cypress-tests-cloud-run-${{ matrix.runId }}
     needs:
       - lint
-      - generate-specs
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
+      matrix:
+        containers: [0, 1, 2]
     services:
       postgres:
         image: postgres:10.17
@@ -466,26 +450,3 @@ jobs:
         with:
           CYPRESS_serverEdition: Cloud
           SPECS: ${{ matrix.specs }}
-
-  report-test-results:
-    if: always()
-    needs:
-      - e2e-cypress-tests-master
-      - e2e-cypress-tests-cloud
-      - test-MySQL57-Postgres10
-      - test-MySQL8-Postgres11
-      - test-MySQL8-Postgres14
-      - test-MariaDB10-Postgres12
-    runs-on: ubuntu-22.04
-    permissions:
-      checks: write
-      pull-requests: write
-    steps:
-      - name: ci/download-test-results
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
-      - name: ci/publish-results
-        uses: EnricoMi/publish-unit-test-result-action@a3caf02865c0604ad3dc1ecfcc5cdec9c41b7936 # v2.3.0
-        with:
-          comment_mode: failures
-          compare_to_earlier_commit: false
-          junit_files: "**/*.xml"
