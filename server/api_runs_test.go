@@ -502,7 +502,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 }
 
-func TestRunStatus(t *testing.T) {
+func TestRunPostStatusUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -537,9 +537,9 @@ func TestRunStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 
-		// Update should fail because no access to private broadcast channel
+		// Update should work even when we don't have access to private broadcast channel
 		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.NoError(t, err)
 	})
 }
 

@@ -696,7 +696,7 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, *filterOptions)
 	if err != nil {
-		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get owners"))
+		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get playbookRuns"))
 		return
 	}
 
@@ -755,12 +755,9 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
-	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return "", err
-	}
 
-	if err := h.permissions.RunUpdateStatus(userID, playbookRunToModify); err != nil {
+	// user must be a participant to be able to post an update
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		return "Not authorized", err
 	}
 
