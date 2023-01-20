@@ -773,5 +773,10 @@
     "DQn9Uj": "Användaren <i>{name}</i> har tilldelats en eller flera uppgifter i förväg. Om du inte automatiskt bjuder in denna användare kommer uppgifterna sakna denne som tilldelad.{br}{br}Är du säker på att du vill avbryta inbjudan av den här användaren som medlem i körningen?",
     "BiQjuS": "Körning flyttad till {channel}",
     "9w0mDI": "Bekräfta att ta bort en för-angiven medlem",
-    "mILd++": "Namnet på körningen bör inte vara längre än {maxLength} tecken"
+    "mILd++": "Namnet på körningen bör inte vara längre än {maxLength} tecken",
+    "uYrkxy": "Filen måste vara en giltig JSON-playbook-mall.",
+    "m4vqJl": "Filer",
+    "Zbk+OU": "Filstorleken överskrider gränsen på 5MB.",
+    "MieztS": "Släpp en exporterad playbook-fil för att importera den.",
+    "HGSVzc": "Det går inte att importera flera filer samtidigt."
 }
