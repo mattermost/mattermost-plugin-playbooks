@@ -1,1 +1,39 @@
-{}
+[
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Je hebt **{.Count}} taak toegewezen gekregen na vandaag**.",
+            "other": "Je hebt **{.Count}} taken toegewezen gekregen na vandaag**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "Gebruik `/playbook todo` om al jouw taken te zien."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Je hebt 0 lopende uitvoeringen."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Je hebt één {{.Count}} uitvoering lopen:",
+            "other": "Je hebt {{.Count}} uitvoeringen lopen:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Lopende uitvoeringen"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Je hebt 0 achterstallige uitvoeringen."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Je hebt {{.Count}} uitvoering die een status update nodig hebben:",
+            "other": "Je hebt {{.Count}} uitvoeringen die een status update nodig hebben:"
+        }
+    }
+]
