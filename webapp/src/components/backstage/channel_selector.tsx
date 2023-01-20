@@ -131,7 +131,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         return (
             <ChannelContainer>
                 <ChanneIcon>
-                    {channel.type === 'O' ? <GlobeIcon size={16}/> : <LockOutlineIcon size={16}/>}
+                    {channel.type === 'O' ? <GlobeIcon size={14}/> : <LockOutlineIcon size={14}/>}
                 </ChanneIcon>
                 <ChannelDisplay>{channel.display_name}</ChannelDisplay>
             </ChannelContainer>
@@ -190,8 +190,8 @@ const ChanneIcon = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 const ChannelDisplay = styled.div`
-    margin-left: 10px;
-    font-size: 14px;
+    margin-left: 6px;
+    font-size: 12px;
     color: var(--center-channel-color);
     overflow: hidden;
     text-overflow: ellipsis;
