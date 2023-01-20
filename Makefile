@@ -177,12 +177,16 @@ dist:	apply server webapp bundle
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
-deploy: dist
-	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
+deploy: dist upload-to-server
 
-## Builds and installs the plugin to a server, updating the webapp automatically when changed.
+## Builds and installs the plugin to a server, updating the plugin automatically when changed.
 .PHONY: watch
-watch: apply server bundle
+watch: apply install-modd bundle upload-to-server
+	$(GOBIN)/modd
+
+## Watch mode for webapp side
+.PHONY: watch-webapp
+watch-webapp:
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
@@ -196,7 +200,10 @@ dev: apply server bundle webapp/node_modules
 
 ## Installs a previous built plugin with updated webpack assets to a server.
 .PHONY: deploy-from-watch
-deploy-from-watch: bundle
+deploy-from-watch: bundle upload-to-server
+
+.PHONY: upload-to-server
+upload-to-server:
 	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
 ## Setup dlv for attaching, identifying the plugin PID for other targets.
@@ -242,6 +249,10 @@ detach: setup-attach
 ## Ensure gotestsum is installed and available as a tool for testing.
 gotestsum:
 	$(GO) install gotest.tools/gotestsum@v1.7.0
+
+## Ensure modd is installed and available as a tool for development.
+install-modd:
+	$(GO) install github.com/cortesi/modd/cmd/modd@latest
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
