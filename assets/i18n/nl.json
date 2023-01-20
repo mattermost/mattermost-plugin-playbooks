@@ -59,5 +59,12 @@
     {
         "id": "app.command.execute.error",
         "translation": "Kan commando niet uitvoeren."
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Verloopt binnen {{.Count}} dag",
+            "other": "Verloopt binnen {{.Count}} dagen"
+        }
     }
 ]
