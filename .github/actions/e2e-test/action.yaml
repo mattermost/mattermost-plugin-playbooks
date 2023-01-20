@@ -6,6 +6,9 @@ inputs:
   CYPRESS_serverEdition:
     description: The cypress server edition
     required: true
+  CYPRESS_RECORD_KEY:
+    description: The key used to authenticate with Sorry Cypress
+    required: true
 runs:
   using: "composite"
   steps:
@@ -102,7 +105,7 @@ runs:
         CYPRESS_API_URL: http://ec2-18-191-58-221.us-east-2.compute.amazonaws.com/director
       run: |
         cd tests-e2e
-        ./node_modules/cy2/bin/cy2 run --parallel --record --key "${{ secrets.CYPRESS_RECORD_KEY }}" --ci-build-id "${{ github.job_id }}-${{ github.run_number }}-${{ github.run_attempt }}"
+        ./node_modules/cy2/bin/cy2 run --parallel --record --key "${{ inputs.CYPRESS_RECORD_KEY }}" --ci-build-id "${{ github.job_id }}-${{ github.run_number }}-${{ github.run_attempt }}"
       shell: bash
 
     - name: ci/upload-cypress-test-results

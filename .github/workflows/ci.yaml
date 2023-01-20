@@ -357,6 +357,7 @@ jobs:
         with:
           CYPRESS_serverEdition: E20
           SPECS: ${{ matrix.specs }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
   e2e-cypress-tests-cloud:
     runs-on: ubuntu-latest-8-cores
