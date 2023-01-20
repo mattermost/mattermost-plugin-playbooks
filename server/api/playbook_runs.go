@@ -755,15 +755,6 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
-	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return "", err
-	}
-
-	if err := h.permissions.RunUpdateStatus(userID, playbookRunToModify); err != nil {
-		return "Not authorized", err
-	}
-
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
 		return "message must not be empty", errors.New("message field empty")

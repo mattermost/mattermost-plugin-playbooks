@@ -813,6 +813,31 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
+	// Make the caller join any public broadcast channel they is not still member of
+	// That will mitigate the effect the following permission check (when they are not a
+	// member of channels they want to broadcast to but channels are public)
+	for _, channelID := range playbookRunToModify.BroadcastChannelIDs {
+		_, err := s.pluginAPI.Channel.GetMember(channelID, userID)
+		if err != nil && err.Error() == "not found" {
+			channel, err := s.pluginAPI.Channel.Get(channelID)
+			if err == nil && channel.Type == model.ChannelTypeOpen {
+				if _, err := s.pluginAPI.Channel.AddMember(channelID, userID); err != nil {
+					logger.WithError(err).Errorf("failed to add user to channel %s", channelID)
+				} else {
+					logger.WithFields(map[string]any{
+						"channel_id": channelID,
+						"user_id":    userID,
+					}).Info("User added to channel for status update")
+				}
+			}
+		}
+	}
+
+	// Check broadcast permissions
+	if err := s.permissions.RunUpdateStatus(userID, playbookRunToModify); err != nil {
+		return err
+	}
+
 	// Add the status manually for the broadcasts
 	playbookRunToModify.StatusPosts = append(playbookRunToModify.StatusPosts,
 		StatusPost{

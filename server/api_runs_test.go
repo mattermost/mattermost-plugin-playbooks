@@ -502,16 +502,16 @@ func TestRunRetrieval(t *testing.T) {
 	})
 }
 
-func TestRunStatus(t *testing.T) {
+func TestRunPostStatus(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("update", func(t *testing.T) {
+	t.Run("regular post", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
 		assert.NoError(t, err)
 	})
 
-	t.Run("update empty message", func(t *testing.T) {
+	t.Run("empty message", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "  \t  \r ", 600)
 		assert.Error(t, err)
 	})
@@ -540,6 +540,36 @@ func TestRunStatus(t *testing.T) {
 		// Update should fail because no access to private broadcast channel
 		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("test not member (yet) of broadcast channel", func(t *testing.T) {
+		// Create a run with a public channel in the broadcast channels
+		// but don't add the user to the channel
+		pubChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+			DisplayName: "testpublic for broadcast",
+			Name:        "testpublic1-for-broadcast",
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(e.T, err)
+
+		e.BasicPlaybook.BroadcastChannelIDs = []string{pubChannel.Id}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Broadcast to channels I'm not yet a member",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Update should work because no access yet but broadcast channel is public
+		// (and user joins as part of the udpate)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
+		assert.NoError(t, err)
 	})
 }
 
