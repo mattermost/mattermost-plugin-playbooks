@@ -744,5 +744,10 @@
     "DQn9Uj": "<i>{name}</i> kullanıcısı önceden bir ya da birkaç göreve atanmış. Bu kullanıcıyı otomatik olarak çağırmamak, önceki atamaları kaldırır.{br}{br}Bu kullanıcının oyuna üye olarak çağrılmasını istemediğinizden emin misiniz?",
     "Bgt0C8": "<i>{runName}</i> oyununun bu güncellemesi {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {bir kanalda} other {{broadcastChannelCount, number} kanalda}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { ve } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {bir doğrudan iletide} other {{followersChannelCount, number} doğrudan iletide}}</FollowersTooltip>} other {}} yayınlanacak.",
     "BiQjuS": "Oyun {channel} kanalına taşındı",
-    "9w0mDI": "Önceden atanmış üyenin kaldırılmasını onayla"
+    "9w0mDI": "Önceden atanmış üyenin kaldırılmasını onayla",
+    "uYrkxy": "Dosya geçerli bir JSON senaryo kalıbı olmalıdır.",
+    "m4vqJl": "Dosyalar",
+    "Zbk+OU": "Dosya boyutu 5MB sınırından büyük.",
+    "MieztS": "İçe aktarmak istediğiniz senaryo dosyasını sürükleyip buraya bırakın.",
+    "HGSVzc": "Aynı anda birden fazla dosya içe aktarılamaz."
 }
