@@ -345,7 +345,7 @@
     "h+e7G+": "Aufforderung zur Ausführung dieses Playbooks, wenn eine Nachricht {numKeywords, select, 1 {das Schlüsselwort} andere {eines oder mehrere davon}} enthält",
     "fuDLDJ": "Kanal erstellen",
     "cp7KUI": "Playbook",
-    "cPIKU2": "Gefolgen",
+    "cPIKU2": "Gefolgt",
     "UMoxP9": "Vorlage für den Kanalnamen (optional)",
     "RO+BaS": "Link zum Lauf kopieren",
     "NA7Cw1": "Link zum Playbook kopieren",
