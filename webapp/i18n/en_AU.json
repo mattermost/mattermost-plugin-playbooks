@@ -773,7 +773,7 @@
     "tqAmbk": "Runs in progress",
     "Z1sgPO": "View finished runs",
     "RgQwWr": "Sort runs by",
-    "NNksk4": "",
+    "NNksk4": "Alphanumerically",
     "RC6rA2": "Recently created",
     "Q/t0//": "Finished runs",
     "AoNLta": "There are no finished runs linked to this channel",
@@ -817,5 +817,10 @@
     "IE2BzH": "There are users that are pre-assigned to one or more tasks. Disabling invitations will clear <strong>all</strong> pre-assignments.{br}{br}Are you sure you want to disable invitations?",
     "BiQjuS": "Run moved to {channel}",
     "9w0mDI": "Confirm removal of pre-assigned member",
-    "mILd++": "The run name should not exceed {maxLength} characters"
+    "mILd++": "The run name should not exceed {maxLength} characters",
+    "uYrkxy": "The file must be a valid JSON playbook template.",
+    "m4vqJl": "Files",
+    "Zbk+OU": "The file size exceeds the limit of 5MB.",
+    "MieztS": "Drop a playbook export file to import it.",
+    "HGSVzc": "Unable to import multiple files at once."
 }
