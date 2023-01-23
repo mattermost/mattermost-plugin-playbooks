@@ -356,7 +356,6 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           CYPRESS_serverEdition: E20
-          SPECS: ${{ matrix.specs }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
   e2e-cypress-tests-cloud:
@@ -446,4 +445,4 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           CYPRESS_serverEdition: Cloud
-          SPECS: ${{ matrix.specs }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
