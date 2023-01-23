@@ -11,7 +11,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
 
 aliases:
   - &restore_go_cache
@@ -285,7 +285,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
       - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
@@ -303,7 +303,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
       - image: cimg/postgres:11.13
         environment:
           POSTGRES_USER: mmuser
@@ -321,7 +321,7 @@ jobs:
 
   test-MariaDB10-Postgres12:
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
       - image: cimg/postgres:12.9
         environment:
           POSTGRES_USER: mmuser
@@ -340,7 +340,7 @@ jobs:
   # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
       - image: cimg/postgres:14.1
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -360,7 +360,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
@@ -434,7 +434,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: cimg/go:1.18.6-node
+      - image: cimg/go:1.19.5-node
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: cimg/postgres:10.17
