@@ -247,7 +247,7 @@ export type PlaybookMetricConfig = {
 };
 
 export enum PlaybookRunType {
-  ChannelChecklist = 'channel_checklist',
+  ChannelChecklist = 'channelChecklist',
   Playbook = 'playbook'
 }
 

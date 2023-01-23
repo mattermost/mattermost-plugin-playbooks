@@ -227,7 +227,7 @@ type PlaybookMetricConfig {
 
 enum PlaybookRunType {
 	playbook
-	channel_checklist
+	channelChecklist
 }
 
 type Run {
