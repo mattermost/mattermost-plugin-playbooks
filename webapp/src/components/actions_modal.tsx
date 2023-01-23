@@ -35,12 +35,12 @@ const ActionsModal = (props: Props) => {
                     color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                 />
             </IconWrapper>
-            <div>
+            <ModalTitle>
                 {props.title}
                 <ModalSubheading>
                     {props.subtitle}
                 </ModalSubheading>
-            </div>
+            </ModalTitle>
         </Header>
     );
 
@@ -100,6 +100,12 @@ const StyledModal = styled(GenericModal)`
             background: rgba(var(--center-channel-color-rgb), 0.08);
         }
     }
+`;
+
+const ModalTitle = styled.div`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 20px;
 `;
 
 const ModalFooter = styled(DefaultFooterContainer)`

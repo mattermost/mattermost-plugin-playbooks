@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
 import {IDMappedObjects, RelationOneToMany, RelationOneToOne} from '@mattermost/types/utilities';
-import {GlobeIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
+import {GlobeIcon, LockIcon} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
@@ -125,15 +125,12 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     };
 
     const formatOptionLabel = (channel: Channel) => {
-        if (channel.display_name === '') {
-            return formatMessage({defaultMessage: 'Unknown Channel'});
-        }
         return (
             <ChannelContainer>
                 <ChanneIcon>
-                    {channel.type === 'O' ? <GlobeIcon size={14}/> : <LockOutlineIcon size={14}/>}
+                    {channel.type === 'O' ? <GlobeIcon size={12}/> : <LockIcon size={12}/>}
                 </ChanneIcon>
-                <ChannelDisplay>{channel.display_name}</ChannelDisplay>
+                <ChannelDisplay>{channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}</ChannelDisplay>
             </ChannelContainer>
         );
     };
@@ -190,7 +187,7 @@ const ChanneIcon = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 const ChannelDisplay = styled.div`
-    margin-left: 6px;
+    margin-left: 7px;
     font-size: 12px;
     color: var(--center-channel-color);
     overflow: hidden;
