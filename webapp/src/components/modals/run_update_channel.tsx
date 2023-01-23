@@ -10,12 +10,14 @@ import {useRun} from 'src/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 const ID = 'playbook_run_update';
 
 type Props = {
     playbookRunId: string;
     teamId: string;
+    type: PlaybookRunType;
     onSubmit: (newChannelId: string, newChannelName: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
@@ -28,6 +30,7 @@ export const makeModalDefinition = (props: Props) => ({
 const UpdateRunModal = ({
     playbookRunId,
     teamId,
+    type,
     onSubmit,
     ...modalProps
 }: Props) => {
@@ -35,6 +38,7 @@ const UpdateRunModal = ({
     const [channelId, setChannelId] = useState('');
     const [channelName, setChannelName] = useState('');
     const [run] = useRun(playbookRunId);
+    const isPlaybookRun = type === PlaybookRunType.Playbook;
 
     useEffect(() => {
         if (run) {
@@ -44,7 +48,7 @@ const UpdateRunModal = ({
 
     const header = (
         <Header>
-            {formatMessage({defaultMessage: 'Link run to a different channel'})}
+            {isPlaybookRun ? formatMessage({defaultMessage: 'Link run to a different channel'}) : formatMessage({defaultMessage: 'Link checklist to a different channel'})}
             <ModalSubheading>
                 {run?.name}
             </ModalSubheading>
@@ -61,7 +65,7 @@ const UpdateRunModal = ({
             id={ID}
             modalHeaderText={
                 <Header>
-                    {formatMessage({defaultMessage: 'Link run to a different channel'})}
+                    {isPlaybookRun ? formatMessage({defaultMessage: 'Link run to a different channel'}) : formatMessage({defaultMessage: 'Link checklist to a different channel'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>

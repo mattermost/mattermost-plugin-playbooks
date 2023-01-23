@@ -90,6 +90,7 @@ import {PlaybookCreateModalProps, makePlaybookCreateModal} from 'src/components/
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
 import {PresetTemplate} from 'src/components/templates/template_data';
 import {makeTaskActionsModalDefinition} from 'src/components/checklist_item/task_actions_modal';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -106,18 +107,20 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function openUpdateRunNameModal(playbookRunId: string, teamId: string, onSubmit: (newName: string) => void) {
+export function openUpdateRunNameModal(playbookRunId: string, teamId: string, type: PlaybookRunType, onSubmit: (newName: string) => void) {
     return modals.openModal(makeUpdateRunNameModalDefinition({
         playbookRunId,
         teamId,
+        type,
         onSubmit,
     }));
 }
 
-export function openUpdateRunChannelModal(playbookRunId: string, teamId: string, onSubmit: (newChannelId: string, newChannelName: string) => void) {
+export function openUpdateRunChannelModal(playbookRunId: string, teamId: string, type: PlaybookRunType, onSubmit: (newChannelId: string, newChannelName: string) => void) {
     return modals.openModal(makeUpdateRunChannelModalDefinition({
         playbookRunId,
         teamId,
+        type,
         onSubmit,
     }));
 }

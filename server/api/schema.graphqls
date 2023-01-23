@@ -276,7 +276,8 @@ type Run {
 	timelineEvents: [TimelineEvent!]!
 	followers: [String!]!
 
-	progress: Float!
+	numTasks: Int!
+	numTasksClosed: Int!
 
 	type: PlaybookRunType!
 }
