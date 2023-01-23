@@ -33,22 +33,16 @@ type JobOnceScheduler struct {
 	storedCallback *syncedCallback
 }
 
-var schedulerOnce sync.Once
-var s *JobOnceScheduler
-
 // GetJobOnceScheduler returns a scheduler which is ready to have its callback set. Repeated
 // calls will return the same scheduler.
 func GetJobOnceScheduler(pluginAPI JobPluginAPI) *JobOnceScheduler {
-	schedulerOnce.Do(func() {
-		s = &JobOnceScheduler{
-			pluginAPI: pluginAPI,
-			activeJobs: &syncedJobs{
-				jobs: make(map[string]*JobOnce),
-			},
-			storedCallback: &syncedCallback{},
-		}
-	})
-	return s
+	return &JobOnceScheduler{
+		pluginAPI: pluginAPI,
+		activeJobs: &syncedJobs{
+			jobs: make(map[string]*JobOnce),
+		},
+		storedCallback: &syncedCallback{},
+	}
 }
 
 // Start starts the Scheduler. It finds all previous ScheduleOnce jobs and starts them running, and
