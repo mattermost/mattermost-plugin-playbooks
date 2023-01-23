@@ -163,7 +163,7 @@
     },
     {
         "id": "app.user.new_run.run_name",
-        "translation": "Naam uitvoering"
+        "translation": "Naam van de uitvoering"
     },
     {
         "id": "app.user.new_run.playbook",
