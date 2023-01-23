@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/morph"
 	"github.com/stretchr/testify/require"
@@ -156,6 +157,21 @@ var migrationsMapping = []MigrationMapping{
 		Name:                 "0.29.0 > 0.30.0",
 		LegacyMigrationIndex: 29,
 		MorphMigrationLimit:  6, // 000064-000069
+	},
+	{
+		Name:                 "0.30.0 > 0.31.0",
+		LegacyMigrationIndex: 30,
+		MorphMigrationLimit:  1, // 000070
+	},
+	{
+		Name:                 "0.31.0 > 0.32.0",
+		LegacyMigrationIndex: 31,
+		MorphMigrationLimit:  1, // 000071
+	},
+	{
+		Name:                 "0.32.0 > 0.33.0",
+		LegacyMigrationIndex: 32,
+		MorphMigrationLimit:  4, // 000072-000075
 	},
 }
 
@@ -575,6 +591,70 @@ func TestMigration_000063(t *testing.T) {
 	err = store.db.Select(&encodingActual, encodingQuery)
 	require.NoError(t, err)
 	require.Equal(t, encodingExpected, encodingActual)
+}
+
+func TestMigration_000070(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		runMigrationUp(t, store, engine, 69)
+
+		// insert test data
+		rows := [][]string{{"1", "com.mattermost.plugin-incident-management"}, {"1", "playbooks"}, {"2", "com.mattermost.plugin-incident-management"}, {"3", "playbooks"}}
+		for i := range rows {
+			_, err = store.execBuilder(store.db, sq.
+				Insert("PluginKeyValueStore").
+				SetMap(
+					map[string]interface{}{
+						"PKey":     rows[i][0],
+						"PluginId": rows[i][1],
+					},
+				))
+			require.NoError(t, err)
+		}
+
+		runMigrationUp(t, store, engine, 1)
+
+		// validate migration
+		type Data struct {
+			PKey     string
+			PluginId string
+		}
+
+		var res []Data
+		err = store.selectBuilder(store.db, &res, store.builder.
+			Select("PKey", "PluginId").
+			From("PluginKeyValueStore").
+			OrderBy("PKey ASC").
+			OrderBy("PluginId ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, res, 4)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginId)
+		require.Equal(t, "playbooks", res[1].PluginId)
+		require.Equal(t, "playbooks", res[2].PluginId)
+		require.Equal(t, "playbooks", res[3].PluginId)
+
+		// roll back migration
+		runMigrationDown(t, store, engine, 1)
+		res = nil
+		err = store.selectBuilder(store.db, &res, store.builder.
+			Select("PKey", "PluginId").
+			From("PluginKeyValueStore").
+			OrderBy("PKey ASC").
+			OrderBy("PluginId ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, res, 4)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginId)
+		require.Equal(t, "playbooks", res[1].PluginId)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[2].PluginId)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[3].PluginId)
+	}
 }
 
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
