@@ -30,7 +30,7 @@ const (
 
 const (
 	RunTypePlaybook         = "playbook"
-	RunTypeChannelChecklist = "channel"
+	RunTypeChannelChecklist = "channel_checklist"
 )
 
 // PlaybookRun holds the detailed information of a playbook run.
