@@ -86,7 +86,7 @@ type ChannelActionService interface {
 	CheckAndSendMessageOnJoin(userID, channelID string) bool
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
-	MessageHasBeenPosted(sessionID string, post *model.Post)
+	MessageHasBeenPosted(post *model.Post)
 }
 
 type ChannelActionStore interface {

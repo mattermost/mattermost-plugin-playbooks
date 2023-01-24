@@ -592,7 +592,7 @@ type PlaybookRunService interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
-	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
+	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
 	OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error
@@ -806,7 +806,7 @@ type PlaybookRunService interface {
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
-	MessageHasBeenPosted(sessionID string, post *model.Post)
+	MessageHasBeenPosted(post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

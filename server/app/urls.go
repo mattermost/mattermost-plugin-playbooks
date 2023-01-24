@@ -16,10 +16,6 @@ func GetPlaybookDetailsRelativeURL(playbookID string) string {
 	return fmt.Sprintf("%s/%s", PlaybooksPath, playbookID)
 }
 
-func getPlaybooksNewRelativeURL() string {
-	return fmt.Sprintf("%s/new", PlaybooksPath)
-}
-
 // absolute urls
 func getRunDetailsURL(siteURL string, playbookRunID string) string {
 	return fmt.Sprintf("%s%s", siteURL, GetRunDetailsRelativeURL(playbookRunID))
