@@ -817,5 +817,10 @@
     "TP/O/b": "Ukloni korisnika",
     "QvEO6m": "Nemaš dozvole za mijenjanje ovog izvođenja",
     "QJTSaI": "Poveži izvođenje s jednim drugim kanalom",
-    "mILd++": "Ime izvođenja ne smije sadržati više od {maxLength} znakova"
+    "mILd++": "Ime izvođenja ne smije sadržati više od {maxLength} znakova",
+    "MieztS": "Ispusti izvoznu datoteku priručnika za uvoz.",
+    "uYrkxy": "Datoteka mora biti valjani JSON predložak priručnika.",
+    "m4vqJl": "Datoteke",
+    "Zbk+OU": "Veličina datoteke premašuje ograničenje od 5 MB.",
+    "HGSVzc": "Nije moguće uvesti više datoteka odjednom."
 }
