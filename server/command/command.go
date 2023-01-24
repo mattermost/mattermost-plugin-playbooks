@@ -1206,6 +1206,7 @@ And... yes, of course, we have emojis
 		PlaybookID:          gotplaybook.ID,
 		Checklists:          gotplaybook.Checklists,
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
+		Type:                app.RunTypePlaybook,
 	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
@@ -1383,6 +1384,7 @@ func (r *Runner) actionTestCreate(params []string) {
 			TeamID:      r.args.TeamId,
 			PlaybookID:  playbookID,
 			Checklists:  playbook.Checklists,
+			Type:        app.RunTypePlaybook,
 		},
 		&playbook,
 		r.args.UserId,
@@ -1920,6 +1922,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 				Checklists:           playbook.Checklists,
 				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
 				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
+				Type:                 app.RunTypePlaybook,
 			},
 			&playbook,
 			r.args.UserId,

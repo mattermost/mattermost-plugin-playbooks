@@ -133,6 +133,7 @@ type PlaybookRunCreateOptions struct {
 	PostID          string `json:"post_id"`
 	PlaybookID      string `json:"playbook_id"`
 	CreatePublicRun *bool  `json:"create_public_run"`
+	Type            string `json:"type"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.

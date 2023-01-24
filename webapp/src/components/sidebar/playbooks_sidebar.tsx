@@ -14,6 +14,7 @@ import {pluginUrl} from 'src/browser_routing';
 
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -23,8 +24,8 @@ export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
 
 export const playbookLHSQueryDocument = graphql(/* GraphQL */`
-    query PlaybookLHS($userID: String!, $teamID: String!) {
-        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"]){
+    query PlaybookLHS($userID: String!, $teamID: String!, $types: [PlaybookRunType!]) {
+        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"], types: $types){
             edges {
                 node {
                     id
@@ -52,6 +53,7 @@ const useLHSData = (teamID: string) => {
         variables: {
             userID: 'me',
             teamID,
+            types: [PlaybookRunType.Playbook],
         },
         fetchPolicy: 'cache-and-network',
         pollInterval: 60000, // Poll every minute for updates

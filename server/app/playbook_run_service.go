@@ -579,6 +579,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 		ParticipantID: requesterInfo.UserID,
 		Sort:          SortByCreateAt,
 		Direction:     DirectionDesc,
+		Types:         []string{RunTypePlaybook},
 		Page:          0,
 		PerPage:       PerPageDefault,
 	}
@@ -1308,6 +1309,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunsForChannelByUser(channelID strin
 			PerPage:   1000,
 			Sort:      SortByCreateAt,
 			Direction: DirectionDesc,
+			Types:     []string{RunTypePlaybook},
 		},
 	)
 
