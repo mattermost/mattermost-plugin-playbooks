@@ -990,6 +990,37 @@ func TestUpdateRunTaskActions(t *testing.T) {
 	})
 }
 
+func TestBadGraphQLRequest(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	testRunsQuery := `
+		query Runs($userID: String!) {
+			runs(participantOrFollowerID: $userID) {
+				totalCount
+				these
+				fields
+				dont
+				exist
+			}
+		}
+		`
+	var result struct {
+		Data   struct{}
+		Errors []struct {
+			Message string
+			Path    string
+		}
+	}
+	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testRunsQuery,
+		OperationName: "Runs",
+		Variables:     map[string]interface{}{"userID": "me"},
+	}, &result)
+	require.NoError(t, err)
+	require.Len(t, result.Errors, 4)
+}
+
 // AddParticipants adds participants to the run
 func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
 	mutation := `

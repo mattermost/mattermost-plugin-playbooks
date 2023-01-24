@@ -147,6 +147,8 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 
 		if errors.Is(err, app.ErrNoPermissions) {
 			errLogger.Warn("Warning executing request")
+		} else if err.Rule == "FieldsOnCorrectType" {
+			errLogger.Warn("Query for non existent field")
 		} else {
 			errLogger.Error("Error executing request")
 		}
