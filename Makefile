@@ -51,6 +51,7 @@ install-go-tools:
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@8f6de2c65895749d9ced401cde189d80f41617a0
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	$(GO) install gotest.tools/gotestsum@v1.7.0
+	$(GO) install github.com/cortesi/modd/cmd/modd@latest
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
@@ -161,7 +162,11 @@ ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_ID)/webapp
 	cp -r webapp/dist dist/$(PLUGIN_ID)/webapp/
 endif
+ifeq ($(shell uname),Darwin)
+	cd dist && tar --disable-copyfile -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
+else
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
+endif
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
@@ -171,12 +176,16 @@ dist:	apply server webapp bundle
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
-deploy: dist
-	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
+deploy: dist upload-to-server
 
-## Builds and installs the plugin to a server, updating the webapp automatically when changed.
+## Builds and installs the plugin to a server, updating the plugin automatically when changed.
 .PHONY: watch
-watch: apply server bundle
+watch: apply install-go-tools bundle upload-to-server
+	$(GOBIN)/modd
+
+## Watch mode for webapp side
+.PHONY: watch-webapp
+watch-webapp:
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
@@ -190,7 +199,10 @@ dev: apply server bundle webapp/node_modules
 
 ## Installs a previous built plugin with updated webpack assets to a server.
 .PHONY: deploy-from-watch
-deploy-from-watch: bundle
+deploy-from-watch: bundle upload-to-server
+
+.PHONY: upload-to-server
+upload-to-server:
 	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
 ## Setup dlv for attaching, identifying the plugin PID for other targets.
