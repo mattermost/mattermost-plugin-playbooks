@@ -128,6 +128,7 @@ function getSiteURL(): string {
     return getSiteURLFromWindowObject(window);
 }
 
+// ts-prune-ignore-next
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;

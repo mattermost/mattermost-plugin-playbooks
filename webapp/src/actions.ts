@@ -198,14 +198,6 @@ export function addToTimeline(postId: string) {
     };
 }
 
-export function addNewTask(checklist: number) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentTeamId = getCurrentTeamId(getState());
-
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
-    };
-}
-
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
