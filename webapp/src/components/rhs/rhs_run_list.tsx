@@ -10,9 +10,11 @@ import {
     BookOutlineIcon,
     CheckAllIcon,
     CheckIcon,
+    ChevronDownIcon,
     LinkVariantIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
+    PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
@@ -102,7 +104,7 @@ const RHSRunList = (props: Props) => {
         debouncedSetLoadingMore(false);
     };
     const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
-    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
     useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
 
@@ -122,7 +124,7 @@ const RHSRunList = (props: Props) => {
                     <RHSTitleText>
                         {/* product name; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Playbooks'}
+                        {'Checklists'}
                     </RHSTitleText>
                     <VerticalLine/>
                     <ChannelNameText>
@@ -145,7 +147,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                         >
-                            {formatMessage({defaultMessage: 'Runs in progress'})}
+                            {formatMessage({defaultMessage: 'In progress'})}
                             <FilterMenuNumericValue>
                                 {props.numInProgress}
                             </FilterMenuNumericValue>
@@ -153,36 +155,63 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                         >
-                            {formatMessage({defaultMessage: 'Finished runs'})}
+                            {formatMessage({defaultMessage: 'Finished'})}
                             <FilterMenuNumericValue>
                                 {props.numFinished}
                             </FilterMenuNumericValue>
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <StartRunButton
-                        data-testid='rhs-runlist-start-run'
-                        onClick={handleStartRun}
+                    <DotMenu
+                        dotMenuButton={CreateNewDotMenuButton}
+                        placement='bottom-start'
+                        icon={
+                            <CreateNewMenuTitle data-testid='rhs-runs-create-new'>
+                                <PlusIcon size={14}/>
+                                <CreateNewText>
+                                    {formatMessage({defaultMessage: 'Create new'})}
+                                </CreateNewText>
+                                <ChevronDownIcon size={14}/>
+                            </CreateNewMenuTitle>
+                        }
                     >
-                        <PlayOutlineIcon size={14}/>
-                        {formatMessage({defaultMessage: 'Start run'})}
-                    </StartRunButton>
+                        <CreateNewMenuItem
+                            onClick={handleStartRun}
+                        >
+                            <CreateNewIcon>
+                                <CheckAllIcon size={18}/>
+                            </CreateNewIcon>
+                            <CreateNewMenuText data-testid='rhs-runlist-start-checklist'>
+                                {formatMessage({defaultMessage: 'Checklist'})}
+                            </CreateNewMenuText>
+                        </CreateNewMenuItem>
+                        <CreateNewMenuItem
+                            onClick={handleStartRun}
+                        >
+                            <CreateNewIcon>
+                                <PlayOutlineIcon size={18}/>
+                            </CreateNewIcon>
+                            <CreateNewMenuText data-testid='rhs-runlist-start-run'>
+                                {formatMessage({defaultMessage: 'Run'})}
+                            </CreateNewMenuText>
+                        </CreateNewMenuItem>
+                    </DotMenu>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
                         icon={<SortAscendingIcon size={18}/>}
                     >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
                         <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Recently created'})}
-                            sortItem={'create_at'}
+                            label={formatMessage({defaultMessage: 'Recently updated'})}
+                            sortItem={'last_status_update_at'}
                             sortDirection={'DESC'}
                             options={props.options}
                             setOptions={props.setOptions}
                         />
                         <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Last status update'})}
-                            sortItem={'last_status_update_at'}
+                            label={formatMessage({defaultMessage: 'Recently created'})}
+                            sortItem={'create_at'}
                             sortDirection={'DESC'}
                             options={props.options}
                             setOptions={props.setOptions}
@@ -382,6 +411,47 @@ const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
         background-color: var(--center-channel-color-08);
     }
 
+`;
+
+const CreateNewDotMenuButton = styled(TitleButton)`
+    padding: 0;
+`;
+
+const CreateNewMenuTitle = styled.div`
+    display: flex;
+    align-items: center;
+    color: var(--button-bg);
+    background: var(--button-bg-16);
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+`;
+
+const CreateNewText = styled.div`
+    margin: 0 4px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+`;
+
+const CreateNewMenuText = styled.div`
+    margin-left: 10px;
+    color: var(--center-channel-color);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+`;
+
+const CreateNewIcon = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const CreateNewMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    flex-direction: row;
+    min-width: 182px;
 `;
 
 interface SortMenuItemProps {

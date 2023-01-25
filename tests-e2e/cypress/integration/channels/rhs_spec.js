@@ -209,6 +209,9 @@ describe('channels > rhs', () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.TWO_SEC);
 
+                // # Click create new button
+                cy.findByTestId('rhs-runs-create-new').click();
+                
                 // # open start run dialog
                 cy.findByTestId('rhs-runlist-start-run').click();
 

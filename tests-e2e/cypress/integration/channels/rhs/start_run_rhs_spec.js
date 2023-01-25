@@ -68,6 +68,9 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
+
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
 
@@ -139,6 +142,9 @@ describe('channels rhs > start a run', () => {
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
 
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
@@ -218,6 +224,9 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
+
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
 
@@ -295,6 +304,9 @@ describe('channels rhs > start a run', () => {
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
+
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
 
@@ -368,6 +380,9 @@ describe('channels rhs > start a run', () => {
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
 
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
@@ -446,6 +461,9 @@ describe('channels rhs > start a run', () => {
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+                    // # Click create new button
+                    cy.findByTestId('rhs-runs-create-new').click();
 
                     // # Click start a run button
                     cy.findByTestId('rhs-runlist-start-run').click();
