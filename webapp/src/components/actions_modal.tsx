@@ -126,38 +126,6 @@ const ModalFooter = styled(DefaultFooterContainer)`
     }
 `;
 
-const renderThumbVertical = ({style, ...props}: any) => (
-    <div
-        {...props}
-        style={{
-            ...style,
-            width: '4px',
-            background: 'var(--center-channel-color)',
-            opacity: '0.24',
-            borderRadius: '4px',
-            position: 'fixed',
-            right: '8px',
-        }}
-    />
-);
-
-const renderTrackVertical = ({style, ...props}: any) => (
-    <div
-        {...props}
-        style={{
-            ...style,
-            paddingTop: '8px',
-            paddingBottom: '8px',
-
-            // The following three props are needed to actually render the track;
-            // without them, the scrollbar disappears
-            height: '100%',
-            top: '0',
-            right: '0',
-        }}
-    />
-);
-
 const Header = styled.div`
     display: flex;
     flex-direction: row;

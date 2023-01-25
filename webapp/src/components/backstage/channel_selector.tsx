@@ -187,7 +187,7 @@ const ChanneIcon = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 const ChannelDisplay = styled.div`
-    margin-left: 7px;
+    margin-left: 4px;
     font-size: 12px;
     color: var(--center-channel-color);
     overflow: hidden;
