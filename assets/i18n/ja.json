@@ -19,11 +19,11 @@
     },
     {
         "id": "app.user.run.update_status.finish_run.placeholder",
-        "translation": "また、実行されたプレイブックを終了としてマークする"
+        "translation": "また、実行を終了としてマークする"
     },
     {
         "id": "app.user.run.update_status.finish_run",
-        "translation": "実行されたプレイブックを終了する"
+        "translation": "実行を終了する"
     },
     {
         "id": "app.user.run.status_enable",
@@ -43,7 +43,7 @@
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{{.Name}} は実行されたプレイブックの参加者で、このチャンネルに参加したいようです。チャンネルのメンバーなら誰でも招待できます。\n"
+        "translation": "@{{.Name}} は実行の参加者で、このチャンネルに参加したいようです。チャンネルのメンバーなら誰でも招待できます。\n"
     },
     {
         "id": "app.user.run.confirm_finish.title",
@@ -51,17 +51,17 @@
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "実行されたプレイブックを終了する"
+        "translation": "実行を終了する"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "other": "**{{.Count}} 個の未処理のタスク**があります。 すべての参加者の実行されたプレイブック *{{.RunName}}* を終了してもよろしいですか?"
+            "other": "**{{.Count}} 個の未処理のタスク**があります。 すべての参加者の実行 *{{.RunName}}* を終了してもよろしいですか?"
         }
     },
     {
         "id": "app.user.run.add_to_timeline.title",
-        "translation": "実行されたプレイブックをタイムラインに追加する"
+        "translation": "実行をタイムラインに追加する"
     },
     {
         "id": "app.user.run.add_to_timeline.summary.placeholder",
@@ -81,7 +81,7 @@
     },
     {
         "id": "app.user.run.add_to_timeline.submit_label",
-        "translation": "実行されたプレイブックをタイムラインに追加する"
+        "translation": "実行をタイムラインに追加する"
     },
     {
         "id": "app.user.run.add_to_timeline.playbook_run",
@@ -109,7 +109,7 @@
     },
     {
         "id": "app.user.new_run.run_name",
-        "translation": "実行されたプレイブック名"
+        "translation": "実行名"
     },
     {
         "id": "app.user.new_run.playbook",
@@ -173,27 +173,27 @@
     },
     {
         "id": "app.user.digest.runs_in_progress.zero_in_progress",
-        "translation": "進行中の実行されたプレイブックは 0 です。"
+        "translation": "進行中の実行は 0 です。"
     },
     {
         "id": "app.user.digest.runs_in_progress.num_in_progress",
         "translation": {
-            "other": "現在、 {{.Count}} の実行されたプレイブックが進行中です:"
+            "other": "現在、 {{.Count}} の実行が進行中です:"
         }
     },
     {
         "id": "app.user.digest.runs_in_progress.heading",
-        "translation": "進行中の実行されたプレイブック"
+        "translation": "進行中の実行"
     },
     {
         "id": "app.user.digest.overdue_status_updates.num_overdue",
         "translation": {
-            "other": "ステータス更新の期日が過ぎた実行されたプレイブックが {{.Count}} あります:"
+            "other": "ステータス更新の期日が過ぎた実行が {{.Count}} あります:"
         }
     },
     {
         "id": "app.user.digest.overdue_status_updates.zero_overdue",
-        "translation": "期限切れの実行されたプレイブックは 0 です。"
+        "translation": "期限切れの実行は 0 です。"
     },
     {
         "id": "app.user.digest.overdue_status_updates.heading",
