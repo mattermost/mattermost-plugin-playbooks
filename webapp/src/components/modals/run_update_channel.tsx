@@ -17,7 +17,6 @@ const ID = 'playbook_run_update';
 type Props = {
     playbookRunId: string;
     teamId: string;
-    type: PlaybookRunType;
     onSubmit: (newChannelId: string, newChannelName: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
@@ -30,7 +29,6 @@ export const makeModalDefinition = (props: Props) => ({
 const UpdateRunModal = ({
     playbookRunId,
     teamId,
-    type,
     onSubmit,
     ...modalProps
 }: Props) => {
@@ -38,7 +36,7 @@ const UpdateRunModal = ({
     const [channelId, setChannelId] = useState('');
     const [channelName, setChannelName] = useState('');
     const [run] = useRun(playbookRunId);
-    const isPlaybookRun = type === PlaybookRunType.Playbook;
+    const isPlaybookRun = run?.type === PlaybookRunType.Playbook;
 
     useEffect(() => {
         if (run) {
