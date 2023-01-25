@@ -12,7 +12,7 @@
     "create_channel_member_on_new_participant": true,
     "create_channel_member_on_removed_participant": true,
     "description": "Customize this playbook's description to give an overview of when and how this playbook is run.",
-    "message_on_join": "Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.\n\nHere are some resources that you may find helpful:\n[Mattermost community channel](https://community.mattermost.com/core/channels/ee-incident-response)\n[User guide and documentation](https://docs.mattermost.com/administration/devops-command-center.html)",
+    "message_on_join": "Welcome! This channel was automatically created as part of a playbook run.",
     "metrics": [],
     "reminder_timer_default_seconds": 604800,
     "retrospective_enabled": true,
