@@ -181,4 +181,7 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
     return {input, value};
 };
 
+// ts-prune-ignore-next
+export default DateTimeInput;
+
 export {Mode};

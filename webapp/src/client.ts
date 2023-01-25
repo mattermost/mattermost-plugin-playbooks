@@ -173,7 +173,6 @@ export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
     return Boolean(data.viewed);
 }
 
-// ts-prune-ignore-next It's very likely to need this one to avoid fetching each channelswitch the channel actions
 export function fetchPlaybookRunChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
 }
