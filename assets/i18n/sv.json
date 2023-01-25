@@ -155,8 +155,8 @@
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Det finns **{{{.Count}} utestående uppgift**. Är du säker på att du vill avsluta körningen *{{{.RunName}}* för alla deltagare?",
-            "other": "Det finns **{{{.Count}} utestående uppgifter**. Är du säker på att du vill avsluta körningen *{{{.RunName}}* för alla deltagare?"
+            "one": "Det finns **{{.Count}} utestående uppgift**. Är du säker på att du vill avsluta körningen *{{.RunName}}* för alla deltagare?",
+            "other": "Det finns **{{.Count}} utestående uppgifter**. Är du säker på att du vill avsluta körningen *{{.RunName}}* för alla deltagare?"
         }
     },
     {
