@@ -61,7 +61,7 @@
     },
     {
         "id": "app.user.run.add_to_timeline.title",
-        "translation": "実行をタイムラインに追加する"
+        "translation": "実行タイムラインに追加する"
     },
     {
         "id": "app.user.run.add_to_timeline.summary.placeholder",
@@ -81,7 +81,7 @@
     },
     {
         "id": "app.user.run.add_to_timeline.submit_label",
-        "translation": "実行をタイムラインに追加する"
+        "translation": "実行タイムラインに追加する"
     },
     {
         "id": "app.user.run.add_to_timeline.playbook_run",
