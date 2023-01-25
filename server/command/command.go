@@ -270,13 +270,7 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
-		return
-	}
-
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, ""); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -325,13 +319,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
-	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
-		return
-	}
-
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, ""); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
