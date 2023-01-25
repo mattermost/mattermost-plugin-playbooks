@@ -76,7 +76,7 @@ interface ChecklistItemProps {
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
     participantUserIds: string[];
-    onViewerModeInteract?: () => void
+    onReadOnlyInteract?: () => void
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -352,7 +352,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     disabled={isSkipped() || props.playbookRunId === undefined}
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
-                    onViewerModeInteract={props.onViewerModeInteract}
+                    onReadOnlyInteract={props.onReadOnlyInteract}
                 />
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}

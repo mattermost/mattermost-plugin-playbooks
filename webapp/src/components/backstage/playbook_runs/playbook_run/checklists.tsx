@@ -24,7 +24,7 @@ const Checklists = ({id, playbookRun, role}: Props) => {
                 id={id}
                 playbookRun={playbookRun}
                 parentContainer={ChecklistParent.RunDetails}
-                viewerMode={role === Role.Viewer}
+                readOnly={role === Role.Viewer}
             />
         </Container>
     );
