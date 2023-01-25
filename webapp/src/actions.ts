@@ -106,7 +106,6 @@ export function openUpdateRunNameModal(playbookRunId: string, teamId: string, ty
     return modals.openModal(makeUpdateRunNameModalDefinition({
         playbookRunId,
         teamId,
-        type,
         onSubmit,
     }));
 }
@@ -115,7 +114,6 @@ export function openUpdateRunChannelModal(playbookRunId: string, teamId: string,
     return modals.openModal(makeUpdateRunChannelModalDefinition({
         playbookRunId,
         teamId,
-        type,
         onSubmit,
     }));
 }
