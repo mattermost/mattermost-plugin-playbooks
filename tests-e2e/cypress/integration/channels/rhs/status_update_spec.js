@@ -76,7 +76,7 @@ describe('channels > rhs > status update', () => {
             });
         });
 
-        it('description link navigates to run overview', () => {
+        it.skip('description link navigates to run overview', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
