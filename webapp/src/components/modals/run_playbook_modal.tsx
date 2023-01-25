@@ -43,7 +43,7 @@ type Props = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const RunPlaybookNewModal = ({
+const RunPlaybookModal = ({
     playbookId,
     triggerChannelId,
     teamId,
@@ -510,6 +510,6 @@ const ErrorMessage = styled.div`
 
 const ApolloWrappedModal = (props: Props) => {
     const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><RunPlaybookNewModal {...props}/></ApolloProvider>;
+    return <ApolloProvider client={client}><RunPlaybookModal {...props}/></ApolloProvider>;
 };
 

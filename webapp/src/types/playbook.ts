@@ -97,10 +97,6 @@ export interface FetchPlaybooksReturn {
     items: Playbook[];
 }
 
-export interface FetchPlaybooksCountReturn {
-    count: number;
-}
-
 export interface Checklist {
     title: string;
     items: ChecklistItem[];

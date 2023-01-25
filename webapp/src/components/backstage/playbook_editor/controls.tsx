@@ -54,7 +54,7 @@ import {
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {displayEditPlaybookAccessModal, openPlaybookRunNewModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
@@ -258,7 +258,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                dispatch(openPlaybookRunNewModal({
+                dispatch(openPlaybookRunModal({
                     onRunCreated: (runId, channelId, statsData) => {
                         navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                         refreshLHS();

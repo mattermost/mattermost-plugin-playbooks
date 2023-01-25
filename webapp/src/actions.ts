@@ -5,16 +5,13 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {addChannelMember} from 'mattermost-redux/actions/channels';
-import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
-import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
-import {makeModalDefinition as makePlaybookRunNewModalDefinition} from 'src/components/modals/new_run_playbook_modal';
+import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
-import {RHSState} from 'src/types/rhs';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     CLOSE_BACKSTAGE_RHS,
@@ -59,7 +56,6 @@ import {
     SET_HAS_VIEWED_CHANNEL,
     SET_RHS_ABOUT_COLLAPSED_STATE,
     SET_RHS_OPEN,
-    SET_RHS_STATE,
     SHOW_CHANNEL_ACTIONS_MODAL,
     SHOW_PLAYBOOK_ACTIONS_MODAL,
     SHOW_POST_MENU_MODAL,
@@ -72,7 +68,6 @@ import {
     SetHasViewedChannel,
     SetRHSAboutCollapsedState,
     SetRHSOpen,
-    SetRHSState,
     SetTriggerId,
     ShowChannelActionsModal,
     ShowPlaybookActionsModal,
@@ -129,8 +124,8 @@ type newRunModalProps = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 };
 
-export function openPlaybookRunNewModal(dialogProps: newRunModalProps) {
-    return modals.openModal(makePlaybookRunNewModalDefinition(
+export function openPlaybookRunModal(dialogProps: newRunModalProps) {
+    return modals.openModal(makePlaybookRunModalDefinition(
         dialogProps.playbookId,
         dialogProps.triggerChannelId,
         dialogProps.teamId,
@@ -203,47 +198,10 @@ export function addToTimeline(postId: string) {
     };
 }
 
-export function addNewTask(checklist: number) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentTeamId = getCurrentTeamId(getState());
-
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
-    };
-}
-
-export function addToCurrentChannel(userId: string) {
-    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        const currentChannelId = getCurrentChannelId(getState());
-
-        dispatch(addChannelMember(currentChannelId, userId));
-    };
-}
-
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
         open,
-    };
-}
-
-export function setRHSViewingPlaybookRun(): SetRHSState {
-    return {
-        type: SET_RHS_STATE,
-        nextState: RHSState.ViewingPlaybookRun,
-    };
-}
-
-export function setRHSViewingList(): SetRHSState {
-    return {
-        type: SET_RHS_STATE,
-        nextState: RHSState.ViewingList,
-    };
-}
-
-export function setRHSViewingParticipants(): SetRHSState {
-    return {
-        type: SET_RHS_STATE,
-        nextState: RHSState.ViewingPlaybookRunParticipants,
     };
 }
 

@@ -15,9 +15,8 @@ import {DateTime} from 'luxon';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId, getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
-import {getChannel as getChannelFromState, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
+import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
+import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from '@mattermost/types/users';
@@ -34,7 +33,6 @@ import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {
-    getProfileSetForChannel,
     getRun,
     globalSettings,
     isCurrentUserAdmin,
@@ -167,17 +165,6 @@ export function useClientRect() {
     return [rect, ref] as const;
 }
 
-// useProfilesInCurrentChannel ensures at least the first page of members for the current channel
-// has been loaded into Redux.
-//
-// See useProfilesInChannel for additional context.
-export function useProfilesInCurrentChannel() {
-    const currentChannelId = useSelector(getCurrentChannelId);
-    const profilesInChannel = useProfilesInChannel(currentChannelId);
-
-    return profilesInChannel;
-}
-
 export function useCanCreatePlaybooksInTeam(teamId: string) {
     return useSelector(
         (state: GlobalState) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
@@ -235,23 +222,6 @@ export function useProfilesInTeam() {
     return profilesInTeam;
 }
 
-export function useCanCreatePlaybooks() {
-    const settings = useSelector(globalSettings);
-    const currentUserID = useSelector(getCurrentUserId);
-
-    // This is really a loading state so just assume yes
-    if (!settings) {
-        return true;
-    }
-
-    // No restrictions if length is zero
-    if (settings.playbook_creators_user_ids.length === 0) {
-        return true;
-    }
-
-    return settings.playbook_creators_user_ids.includes(currentUserID);
-}
-
 export function useCanRestrictPlaybookCreation() {
     const settings = useSelector(globalSettings);
     const isAdmin = useSelector(isCurrentUserAdmin);
@@ -272,37 +242,6 @@ export function useCanRestrictPlaybookCreation() {
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
-}
-
-// useProfilesInChannel ensures at least the first page of members for the given channel has been
-// loaded into Redux.
-//
-// See useProfilesInTeam for additional detail regarding semantics.
-export function useProfilesInChannel(channelId: string) {
-    const dispatch = useDispatch() as DispatchFunc;
-    const profilesInChannel = useSelector((state) =>
-        getProfileSetForChannel(state as GlobalState, channelId),
-    );
-
-    useEffect(() => {
-        if (profilesInChannel.length > 0) {
-            // As soon as we successfully fetch a channel's profiles, clear the bit that prevents
-            // concurrent fetches. We won't try again since we shouldn't forget these profiles,
-            // but we also don't want to unexpectedly block this forever.
-            lockProfilesInChannelFetch.delete(channelId);
-            return;
-        }
-
-        // Avoid issuing multiple concurrent fetches for this channel.
-        if (lockProfilesInChannelFetch.has(channelId)) {
-            return;
-        }
-        lockProfilesInChannelFetch.add(channelId);
-
-        dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
-    }, [channelId]);
-
-    return profilesInChannel;
 }
 
 /**

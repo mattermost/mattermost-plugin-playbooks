@@ -177,18 +177,6 @@ const ExtraInfoContainer = styled.div`
     align-items: center;
 `;
 
-export const TriggersContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 16px;
-`;
-
-export const ActionsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 20px;
-`;
-
 const StyledCheckboxInput = styled(CheckboxInput)`
     font-weight: normal;
     padding: 10px 16px 10px 0;

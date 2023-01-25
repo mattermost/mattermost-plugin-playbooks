@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -6,7 +7,7 @@
 // It's the transformer function that ruddersack should have to transform the
 // old event data into the new event data.
 
-// eslint-disable-next-line no-unused-vars
+// ts-prune-ignore-next
 export function transformEvent(event, metadata) {
     const action = event.properties.Action;
 

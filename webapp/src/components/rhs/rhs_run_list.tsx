@@ -24,7 +24,7 @@ import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/
 import {useUpdateRun} from 'src/graphql/hooks';
 import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {openPlaybookRunNewModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
+import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -103,7 +103,7 @@ const RHSRunList = (props: Props) => {
     useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
 
     const handleStartRun = () => {
-        dispatch(openPlaybookRunNewModal({
+        dispatch(openPlaybookRunModal({
             onRunCreated: props.onRunCreated,
             triggerChannelId: currentChannelId,
             teamId: currentTeamId,

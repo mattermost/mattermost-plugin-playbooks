@@ -43,9 +43,19 @@ all: check-style test dist
 apply:
 	./build/bin/manifest apply
 
+## Install go tools
+# Golangci uses a pinned version to commit until 10.2 is released since some macos version have problems
+# with the native diff tools used by typecheck (gometalinter problem)
+install-go-tools:
+	@echo Installing go tools
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@8f6de2c65895749d9ced401cde189d80f41617a0
+	$(GO) install github.com/golang/mock/mockgen@v1.6.0
+	$(GO) install gotest.tools/gotestsum@v1.7.0
+	$(GO) install github.com/cortesi/modd/cmd/modd@latest
+
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules tests-e2e/node_modules check-golangci
+check-style: apply webapp/node_modules tests-e2e/node_modules install-go-tools
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -73,17 +83,6 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run fix
 endif
 	cd tests-e2e && npm run fix
-
-
-## Check & install golangci version
-# Pinned version to commit until 10.2 is released since some macos version have problems
-# with the native diff tools used by typecheck (gometalinter problem)
-.PHONY: check-golangci
-check-golangci:
-ifneq ($(HAS_SERVER),)
-	@echo Ckecking golangci-lint
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@8f6de2c65895749d9ced401cde189d80f41617a0
-endif
 
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
@@ -181,7 +180,7 @@ deploy: dist upload-to-server
 
 ## Builds and installs the plugin to a server, updating the plugin automatically when changed.
 .PHONY: watch
-watch: apply install-modd bundle upload-to-server
+watch: apply install-go-tools bundle upload-to-server
 	$(GOBIN)/modd
 
 ## Watch mode for webapp side
@@ -246,17 +245,9 @@ detach: setup-attach
 		kill -9 $$DELVE_PID ; \
 	fi
 
-## Ensure gotestsum is installed and available as a tool for testing.
-gotestsum:
-	$(GO) install gotest.tools/gotestsum@v1.7.0
-
-## Ensure modd is installed and available as a tool for development.
-install-modd:
-	$(GO) install github.com/cortesi/modd/cmd/modd@latest
-
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: apply webapp/node_modules gotestsum
+test: apply webapp/node_modules install-go-tools
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum -- -v ./...
 endif
@@ -267,7 +258,7 @@ endif
 ## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
 ## for a CI environment.
 .PHONY: test-ci
-test-ci: apply webapp/node_modules gotestsum
+test-ci: apply webapp/node_modules install-go-tools
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif

@@ -3,16 +3,11 @@
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-
 import styled from 'styled-components';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-
-import {Card} from 'src/components/backstage/playbook_preview_cards';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
-
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
 import {BackstageSubheader, BackstageSubheaderDescription, StyledSelect} from 'src/components/backstage/styles';
@@ -118,6 +113,23 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
 
 const RetrospectiveTextContainer = styled.div`
     padding: 0 8px;
+`;
+
+const Card = styled.div`
+    background: var(--center-channel-bg);
+    width: 100%;
+
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
+    box-sizing: border-box;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+
+    padding: 16px;
+    padding-left: 11px;
+    padding-right: 20px;
+
+    display: flex;
+    flex-direction: column;
 `;
 
 export default SectionRetrospective;

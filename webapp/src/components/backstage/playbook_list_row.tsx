@@ -44,7 +44,7 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
-import {openPlaybookRunNewModal} from 'src/actions';
+import {openPlaybookRunModal} from 'src/actions';
 
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
@@ -150,7 +150,7 @@ const PlaybookListRow = (props: Props) => {
         }
         if (props.playbook?.id) {
             telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
-            dispatch(openPlaybookRunNewModal({
+            dispatch(openPlaybookRunModal({
                 onRunCreated: (runId, channelId, statsData) => {
                     navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                     refreshLHS();
