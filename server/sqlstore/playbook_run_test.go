@@ -1555,6 +1555,7 @@ func NewBuilder(t testing.TB) *PlaybookRunBuilder {
 			PlaybookID:    model.NewId(),
 			Checklists:    nil,
 			CurrentStatus: "InProgress",
+			Type:          app.RunTypePlaybook,
 		},
 	}
 }

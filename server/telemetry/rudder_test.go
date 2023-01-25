@@ -96,6 +96,7 @@ var dummyPlaybookRun = &app.PlaybookRun{
 	PostID:         "post_id",
 	PlaybookID:     "playbookID1",
 	ParticipantIDs: []string{"owner_user_id", "dummy_user_id"},
+	Type:           app.RunTypePlaybook,
 	Checklists: []app.Checklist{
 		{
 			Title: "Checklist",
@@ -176,6 +177,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 			PreviousReminder: time.Duration((properties["PreviousReminder"]).(float64)),
 			TimelineEvents:   dummyPlaybookRun.TimelineEvents,
 			ParticipantIDs:   []string{"owner_user_id", "dummy_user_id"},
+			Type:             app.RunTypePlaybook,
 		}
 	}
 
