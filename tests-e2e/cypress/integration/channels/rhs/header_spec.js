@@ -152,4 +152,71 @@ describe('channels > rhs > header', () => {
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
         });
     });
+
+    describe('edit summary of finished run', () => {
+        let playbookRunChannelName;
+        let finishedPlaybookRun;
+
+        beforeEach(() => {
+            // # Run the playbook
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                finishedPlaybookRun = playbookRun;
+            });
+        });
+
+        it('by clicking on placeholder', () => {
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // # Wait for the RHS to open
+            cy.get('#rhsContainer').should('be.visible');
+
+            // # Mark the run as finished
+            cy.apiFinishRun(finishedPlaybookRun.id);
+
+            // # click on the field
+            cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();
+
+            // * Verify textarea does not appear
+            cy.get('#rhsContainer').findByTestId('textarea-description').should('not.exist');
+
+            // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
+            cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
+        });
+
+        it('by clicking on dot menu item', () => {
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // # Wait for the RHS to open
+            cy.get('#rhsContainer').should('be.visible');
+
+            // # Mark the run as finished
+            cy.apiFinishRun(finishedPlaybookRun.id);
+
+            // # click on the field
+            cy.get('#rhsContainer').within(() => {
+                cy.findByTestId('buttons-row').invoke('show').within(() => {
+                    cy.findAllByRole('button').eq(1).click();
+                });
+            });
+
+            // * Verify the menu items
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.get('span').should('have.length', 2);
+                cy.findByText('Edit run summary').should('not.exist');
+            });
+
+            // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
+            cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
+        });
+    });
 });
