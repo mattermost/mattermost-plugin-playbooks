@@ -185,10 +185,10 @@ describe('channels > rhs > header', () => {
             // # click on the field
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();
 
-            // # verify textarea does not appear
+            // * Verify textarea does not appear
             cy.get('#rhsContainer').findByTestId('textarea-description').should('not.exist');
 
-            // # Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
+            // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
             cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
         });
 
@@ -209,13 +209,13 @@ describe('channels > rhs > header', () => {
                 });
             });
 
-            // # verify the menu items
+            // * Verify the menu items
             cy.findByTestId('dropdownmenu').within(() => {
                 cy.get('span').should('have.length', 2);
                 cy.findByText('Edit run summary').should('not.exist');
             });
 
-            // # Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
+            // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
             cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
         });
     });
