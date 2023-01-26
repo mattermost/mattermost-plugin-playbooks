@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -47,17 +47,34 @@ export const playbookLHSQueryDocument = graphql(/* GraphQL */`
     }
 `);
 
+const pollInterval = 60000; // Poll every minute for updates
+
 const useLHSData = (teamID: string) => {
     const normalizeCategoryName = useReservedCategoryTitleMapper();
-    const {data, error} = useQuery(playbookLHSQueryDocument, {
+    const {data, error, startPolling, stopPolling} = useQuery(playbookLHSQueryDocument, {
         variables: {
             userID: 'me',
             teamID,
             types: [PlaybookRunType.Playbook],
         },
         fetchPolicy: 'cache-and-network',
-        pollInterval: 60000, // Poll every minute for updates
     });
+
+    useEffect(() => {
+        const focus = () => {
+            startPolling(pollInterval);
+        };
+        const blur = () => {
+            stopPolling();
+        };
+        window.addEventListener('focus', focus);
+        window.addEventListener('blur', blur);
+
+        return () => {
+            window.removeEventListener('focus', focus);
+            window.removeEventListener('blur', blur);
+        };
+    }, [startPolling, stopPolling]);
 
     if (error || !data) {
         return {groups: [], ready: false};
