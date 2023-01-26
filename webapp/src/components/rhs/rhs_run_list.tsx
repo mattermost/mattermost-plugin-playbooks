@@ -782,7 +782,7 @@ const NoRuns = (props: NoRunsProps) => {
 
     let text = formatMessage({defaultMessage: 'There are no in progress checklists or runs in this channel'});
     if (!props.active) {
-        text = formatMessage({defaultMessage: 'There are no finished checklists or runs in ths channel'});
+        text = formatMessage({defaultMessage: 'There are no finished checklists or runs in this channel'});
     }
     if (hasNoRuns) {
         text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
