@@ -1608,6 +1608,11 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.New("invalid checklist item indices")
 	}
 
+	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
+	// of the previous run is set (and show rerun in the UI)
+	if playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command != newCommand {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
+	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
