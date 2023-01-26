@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -12,14 +11,6 @@ type playbookInfo struct {
 	UserID string
 	TeamID string
 	ID     string
-}
-
-func (data *playbookInfo) String() string {
-	return fmt.Sprintf("playbook://%s-%s-%s", data.UserID, data.TeamID, data.ID)
-}
-
-func (data *playbookInfo) Raw() interface{} {
-	return data
 }
 
 func graphQLPlaybooksLoader[V *app.Playbook](ctx context.Context, keys []playbookInfo) []*dataloader.Result[V] {
@@ -60,9 +51,7 @@ func graphQLPlaybooksLoader[V *app.Playbook](ctx context.Context, keys []playboo
 	for i, playbookInfo := range keys {
 		playbook, ok := playbooksByID[playbookInfo.ID]
 		if !ok {
-			result[i] = &dataloader.Result[V]{
-				Error: fmt.Errorf("playbook %q not found", playbookInfo.ID),
-			}
+			result[i] = &dataloader.Result[V]{Data: nil}
 			continue
 		}
 		result[i] = &dataloader.Result[V]{

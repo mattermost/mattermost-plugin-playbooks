@@ -180,6 +180,10 @@ func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
 		return nil, err
 	}
 
+	if result == nil {
+		return nil, nil
+	}
+
 	return &PlaybookResolver{*result}, nil
 }
 

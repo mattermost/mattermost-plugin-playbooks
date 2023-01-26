@@ -40,7 +40,7 @@ func graphQLFavoritesLoader[V bool](ctx context.Context, keys []favoriteInfo) []
 		}
 	}
 
-	favorites, err := c.categoryService.GetItemFavorites(categoryItems, teamID, userID)
+	favorites, err := c.categoryService.AreItemsFavorites(categoryItems, teamID, userID)
 	if err != nil {
 		populateResultWithError(err, result)
 	}

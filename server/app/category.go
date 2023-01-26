@@ -108,7 +108,7 @@ type CategoryService interface {
 	// IsItemFavorite returns whether item was favorited or not
 	IsItemFavorite(item CategoryItem, teamID, userID string) (bool, error)
 
-	GetItemFavorites(items []CategoryItem, teamID, userID string) ([]bool, error)
+	AreItemsFavorites(items []CategoryItem, teamID, userID string) ([]bool, error)
 }
 
 type CategoryStore interface {
