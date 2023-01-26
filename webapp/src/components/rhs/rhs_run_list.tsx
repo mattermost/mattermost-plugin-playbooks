@@ -108,7 +108,6 @@ const RHSRunList = (props: Props) => {
     const hasNoRuns = props.numFinished === 0 && props.numInProgress === 0;
     const showNoRuns = props.runs.length === 0;
     useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
-
     const handleStartRun = () => {
         dispatch(openPlaybookRunModal({
             onRunCreated: props.onRunCreated,
@@ -181,7 +180,7 @@ const RHSRunList = (props: Props) => {
                                 </>
                             }
                         >
-                            <RunTypeMenu
+                            <RunTypeMenuContent
                                 onRunClicked={handleStartRun}
                                 onChannelChecklistClicked={handleCreateChannelChecklist}
                             />
@@ -419,7 +418,7 @@ const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
 
 `;
 
-const RunTypeMenu = (props: {onRunClicked: () => void; onChannelChecklistClicked: () => void;}) => {
+const RunTypeMenuContent = (props: {onRunClicked: () => void; onChannelChecklistClicked: () => void;}) => {
     return (<>
         <StyledDropdownMenuItem onClick={props.onChannelChecklistClicked}>
             <BrightIconWrapper>
@@ -817,7 +816,7 @@ const NoRuns = (props: NoRunsProps) => {
                         </>
                     }
                 >
-                    <RunTypeMenu
+                    <RunTypeMenuContent
                         onRunClicked={props.onStartRunClicked}
                         onChannelChecklistClicked={props.onCreateChecklistClicked}
                     />

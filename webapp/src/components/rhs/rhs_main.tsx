@@ -24,7 +24,6 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {graphql} from 'src/graphql/generated/gql';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
-import RHSHome from './rhs_home';
 
 const RHSRunsQuery = graphql(/* GraphQL */`
     query RHSRuns(
@@ -155,7 +154,7 @@ const defaultListOptions : RunListOptions = {
 // RightHandSidebar the sidebar for integration of playbooks into channels
 //
 // Rules for automatic display:
-// * No Runs Ever -> RHS Home
+// * No Runs Ever -> RHS list blank state
 // * Only Finished Runs -> Runs list blank state
 // * Single active run (ignoring finished) -> Details page for that run (back button goes to runs list)
 // * Multiple active runs -> Runs list
@@ -205,16 +204,6 @@ const RightHandSidebar = () => {
         }
         navigateToChannel(currentTeam.name, channelId);
     };
-
-    // Not a channel
-    if (!currentChannelId) {
-        return <RHSHome/>;
-    }
-
-    // No playbooks
-    if (!isLoading && playbooks?.length === 0) {
-        return <RHSHome/>;
-    }
 
     // Wait for full load to avoid flashing
     if (isLoading) {
