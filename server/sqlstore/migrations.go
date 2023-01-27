@@ -2447,7 +2447,7 @@ var migrations = []Migration{
 						UPDATE IR_UserInfo
 						SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
 							jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
-						
+
 					`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}
@@ -2466,6 +2466,26 @@ var migrations = []Migration{
 			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "RunType", "VARCHAR(32) DEFAULT 'playbook'"); err != nil {
 					return errors.Wrapf(err, "failed adding column RunType to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.63.0"),
+		toVersion:   semver.MustParse("0.64.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+
+			} else {
+				if _, err := e.Exec(`
+					UPDATE posts p
+					SET props=jsonb_insert(props,'{playbookRunId}', CONCAT('"',i.id,'"')::jsonb)
+					FROM ir_incident i
+					WHERE i.reminderpostid = p.id AND p.deleteat = 0
+					AND p.type = 'custom_update_status'	AND p.props -> 'playbookRunId' IS NULL
+				`); err != nil {
+					return errors.Wrapf(err, "failed updating reminder posts with playbookRunId")
 				}
 			}
 			return nil
