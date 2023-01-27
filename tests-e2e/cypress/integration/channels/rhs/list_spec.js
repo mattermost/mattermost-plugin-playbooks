@@ -162,7 +162,7 @@ describe('channels > rhs > runlist', () => {
             });
 
             // # Verify filter was changed
-            cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numActiveRuns);
+            cy.findByTestId('rhs-runs-filter-menu').should('have.text', 'In progress');
         });
     });
 

@@ -78,7 +78,7 @@ describe('channels > App Bar', () => {
             cy.getPlaybooksAppBarIcon().should('exist');
         });
 
-        it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
+        it('should show "Checklists" tooltip for Checklists App Bar icon', () => {
             onlyOn(appBarEnabled);
 
             // # Navigate directly to a non-playbook run channel
@@ -88,7 +88,7 @@ describe('channels > App Bar', () => {
             cy.getPlaybooksAppBarIcon().trigger('mouseover');
 
             // * Verify tooltip text
-            cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
+            cy.findByRole('tooltip', {name: 'Checklists'}).should('be.visible');
         });
     });
 });
