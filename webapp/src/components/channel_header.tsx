@@ -32,7 +32,7 @@ export const ChannelHeaderButton = () => {
 };
 
 export const ChannelHeaderText = () => {
-    return <FormattedMessage defaultMessage='Playbooks'/>;
+    return <FormattedMessage defaultMessage='Checklists'/>;
 };
 
 export const ChannelHeaderTooltip = ChannelHeaderText;

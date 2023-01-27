@@ -6,6 +6,17 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+function verifyCreateChecklistShown() {
+    // * Verify cancel button exists
+    cy.findByText('Cancel').should('be.visible');
+
+    // * Verify save button exists
+    cy.findByText('Save').should('be.visible');
+
+    // * Verify first task input is focused
+    cy.focused().should('have.attr', 'placeholder', 'Add a task title');
+}
+
 describe('channels > rhs > runlist', () => {
     let testTeam;
     let testUser;
@@ -80,8 +91,8 @@ describe('channels > rhs > runlist', () => {
             // # Click the button
             cy.findByText('Create a checklist').click();
 
-            // * Verify create state is shown
-            // TODO implement
+            // * Verify create checklist is shown
+            verifyCreateChecklistShown();
         });
 
         it('has link to playbooks', () => {
@@ -90,6 +101,68 @@ describe('channels > rhs > runlist', () => {
 
             // * Assert page has changed
             cy.findByText('Get started with Playbooks').should('be.visible');
+        });
+    });
+
+    describe('no filtered runs', () => {
+        beforeEach(() => {
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Wait the RHS to load
+            cy.findByText('In progress').should('be.visible');
+
+            // # Click the filter menu
+            cy.findByTestId('rhs-runs-filter-menu').click();
+
+            // # Click the finished filter
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+        });
+
+        it.skip('can create checklist', () => {
+            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
+                // # Click create button
+                cy.findByTestId('menuButton').click();
+            });
+
+            // * Verify displayed options
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
+
+            // # Click the checklist option
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(1)').click();
+
+            // * Verify create checklist is shown
+            verifyCreateChecklistShown();
+        });
+
+        it('can start run', () => {
+            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
+                // # Click create button
+                cy.findByTestId('menuButton').click();
+            });
+
+            // * Verify displayed options
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
+
+            // # Click the run option
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * Verify modal to select playbook is shown
+                cy.findByText('Select a playbook').should('be.visible');
+            });
+        });
+
+        it('shows button to change to other filter if there are runs', () => {
+            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
+                // # Click button to change filter
+                cy.findByText('View in progress').click();
+            });
+
+            // # Verify filter was changed
+            cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numActiveRuns);
         });
     });
 
@@ -281,68 +354,6 @@ describe('channels > rhs > runlist', () => {
                     cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 1);
                 });
             });
-        });
-    });
-
-    describe('no filtered runs', () => {
-        beforeEach(() => {
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
-
-            // # Wait the RHS to load
-            cy.findByText('In progress').should('be.visible');
-
-            // # Click the filter menu
-            cy.findByTestId('rhs-runs-filter-menu').click();
-
-            // # Click the finished filter
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
-        });
-
-        it.skip('can create checklist', () => {
-            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
-                // # Click create button
-                cy.findByTestId('menuButton').click();
-            });
-
-            // * Verify displayed options
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
-
-            // # Click the checklist option
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(1)').click();
-
-            // * Verify create state is shown
-            // TODO implement
-        });
-
-        it('can start run', () => {
-            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
-                // # Click create button
-                cy.findByTestId('menuButton').click();
-            });
-
-            // * Verify displayed options
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
-
-            // # Click the checklist option
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
-
-            cy.get('#root-portal.modal-open').within(() => {
-                // * Verify modal to select playbook is shown
-                cy.findByText('Select a playbook').should('be.visible');
-            });
-        });
-
-        it('shows button to change to other filter if there are runs', () => {
-            cy.findByTestId('no-active-runs').should('be.visible').within(() => {
-                // # Click button to change filter
-                cy.findByText('View in progress').click();
-            });
-
-            // # Verify filter was changed
-            cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numActiveRuns);
         });
     });
 });

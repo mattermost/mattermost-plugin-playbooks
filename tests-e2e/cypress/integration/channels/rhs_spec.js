@@ -200,6 +200,17 @@ describe('channels > rhs', () => {
             // # Create a new channel
             const channelName = 'playbook-test-' + Date.now();
             cy.apiCreateChannel(testTeam.id, channelName, channelName, 'O').then(({channel}) => {
+                // # Create two runs to not show blank state and not select only run
+                for (let i = 0; i < 2; i++) {
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: testPlaybook.id,
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookRunName: 'Test run ' + i,
+                    });
+                }
+
                 // # Navigate to the new channel
                 cy.visit(`/${testTeam.name}/channels/${channel.name}`);
 
@@ -210,7 +221,14 @@ describe('channels > rhs', () => {
                 cy.wait(TIMEOUTS.TWO_SEC);
 
                 // # open start run dialog
-                cy.findByTestId('rhs-runlist-start-run').click();
+                cy.findByText('Create new').click();
+
+                // * Verify displayed options
+                cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
+                cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
+
+                // # Click the run option
+                cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
 
                 // # Create a new playbook
                 cy.findByText('Create new playbook').click();
@@ -401,7 +419,7 @@ describe('channels > rhs', () => {
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Playbooks').should('exist');
+                cy.findByText('Checklists').should('exist');
             });
 
             // # Click the icon
