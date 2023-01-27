@@ -180,7 +180,7 @@ const UpdateRequestPost = (props: Props) => {
                     onClick={() => {
                         dispatch(promptUpdateStatus(
                             team.id,
-                            playbookRunId,
+                            run.id,
                             props.post.channel_id,
                         ));
                     }}
