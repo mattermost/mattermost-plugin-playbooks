@@ -31,6 +31,7 @@ import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
 import {graphql} from 'src/graphql/generated';
+import {PlaybookRunReminderQuery} from 'src/graphql/generated/graphql';
 
 interface Props {
     post: Post;
@@ -46,7 +47,7 @@ const playbookRunReminderDocument = graphql(/* GraphQL */`
     }
 `);
 
-const UpdateRequestPost = async (props: Props) => {
+const UpdateRequestPost = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
@@ -54,14 +55,39 @@ const UpdateRequestPost = async (props: Props) => {
     const targetUsername = props.post.props.targetUsername ?? '';
     const playbookRunId = props.post.props.playbookRunId;
 
-    const {data} = useQuery(playbookRunReminderDocument, {
+    const [run, setRun] = useState<PlaybookRunReminderQuery['run']>(null);
+    const {data, loading} = useQuery(playbookRunReminderDocument, {
         variables: {
             runID: playbookRunId,
         },
         fetchPolicy: 'network-only',
         skip: playbookRunId === undefined,
     });
-    let run = data?.run;
+
+    useEffect(() => {
+        setRun(data?.run);
+
+        // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
+        // to get all runs for the channel and take the first one (will be enough for
+        // old one-run-per-channel cases but without post props)
+        //
+        // Since posts are removed after post-update or snooze, this fallback will be unused with the
+        // pass of time. However, the only way the to check that the fallback is not needed is executing
+        // an SQL query.
+        const doFetchRuns = async () => {
+            const runsFromChannel = await fetchPlaybookRunsForChannelByUser(props.post.channel_id);
+            if (runsFromChannel.length > 0) {
+                setRun({
+                    name: runsFromChannel[0].name,
+                    previousReminder: runsFromChannel[0].previous_reminder,
+                    reminderTimerDefaultSeconds: runsFromChannel[0].reminder_timer_default_seconds,
+                });
+            }
+        };
+        if (!data?.run && !loading) {
+            doFetchRuns();
+        }
+    }, [data, loading, props.post.channel_id]);
 
     // Decide whether to open the snooze menu above or below
     const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
@@ -73,24 +99,6 @@ const UpdateRequestPost = async (props: Props) => {
 
         setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
     }, [rect]);
-
-    // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
-    // to get all runs for the channel and take the first one (will be enough for
-    // old one-run-per-channel cases but without post props)
-    //
-    // Since posts are removed after post-update or snooze, this fallback will be unused with the
-    // pass of time. However, the only way the to check that the fallback is not needed is executing
-    // an SQL query.
-    if (!playbookRunId) {
-        const runsFromChannel = await fetchPlaybookRunsForChannelByUser(props.post.channel_id);
-        if (runsFromChannel.length > 0) {
-            run = {
-                name: runsFromChannel[0].name,
-                previousReminder: runsFromChannel[0].previous_reminder,
-                reminderTimerDefaultSeconds: runsFromChannel[0].reminder_timer_default_seconds,
-            };
-        }
-    }
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
